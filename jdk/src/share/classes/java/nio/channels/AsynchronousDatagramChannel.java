@@ -109,17 +109,11 @@ import java.nio.ByteBuffer;
  *  // print the source address of all packets that we receive
  *  dc.receive(buffer, buffer, new CompletionHandler&lt;SocketAddress,ByteBuffer&gt;() {
  *      public void completed(SocketAddress sa, ByteBuffer buffer) {
- *          try {
- *               System.out.println(sa);
- *
- *               buffer.clear();
- *               dc.receive(buffer, buffer, this);
- *           } catch (...) { ... }
+ *          System.out.println(sa);
+ *          buffer.clear();
+ *          dc.receive(buffer, buffer, this);
  *      }
  *      public void failed(Throwable exc, ByteBuffer buffer) {
- *          ...
- *      }
- *      public void cancelled(ByteBuffer buffer) {
  *          ...
  *      }
  *  });
@@ -314,10 +308,10 @@ public abstract class AsynchronousDatagramChannel
     /**
      * Receives a datagram via this channel.
      *
-     * <p> This method initiates the receiving of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The {@code Future}'s {@link Future#get() get} method returns
-     * the source address of the datagram upon successful completion.
+     * <p> This method initiates the receiving of a datagram into the given
+     * buffer. The {@code handler} parameter is a completion handler that is
+     * invoked when the receive operation completes (or fails). The result
+     * passed to the completion handler is the datagram's source address.
      *
      * <p> The datagram is transferred into the given byte buffer starting at
      * its current position, as if by a regular {@link AsynchronousByteChannel#read
@@ -350,28 +344,26 @@ public abstract class AsynchronousDatagramChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the timeout is negative or the buffer is read-only
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<SocketAddress> receive(ByteBuffer dst,
-                                                      long timeout,
-                                                      TimeUnit unit,
-                                                      A attachment,
-                                                      CompletionHandler<SocketAddress,? super A> handler);
+    public abstract <A> void receive(ByteBuffer dst,
+                                     long timeout,
+                                     TimeUnit unit,
+                                     A attachment,
+                                     CompletionHandler<SocketAddress,? super A> handler);
 
     /**
      * Receives a datagram via this channel.
      *
-     * <p> This method initiates the receiving of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The {@code Future}'s {@link Future#get() get} method returns
-     * the source address of the datagram upon successful completion.
+     * <p> This method initiates the receiving of a datagram into the given
+     * buffer. The {@code handler} parameter is a completion handler that is
+     * invoked when the receive operation completes (or fails). The result
+     * passed to the completion handler is the datagram's source address.
      *
      * <p> This method is equivalent to invoking {@link
      * #receive(ByteBuffer,long,TimeUnit,Object,CompletionHandler)} with a
@@ -382,34 +374,30 @@ public abstract class AsynchronousDatagramChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the buffer is read-only
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public final <A> Future<SocketAddress> receive(ByteBuffer dst,
-                                                   A attachment,
-                                                   CompletionHandler<SocketAddress,? super A> handler)
+    public final <A> void receive(ByteBuffer dst,
+                                  A attachment,
+                                  CompletionHandler<SocketAddress,? super A> handler)
     {
-        return receive(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
+        receive(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
     }
 
     /**
      * Receives a datagram via this channel.
      *
-     * <p> This method initiates the receiving of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The {@code Future}'s {@link Future#get() get} method returns
-     * the source address of the datagram upon successful completion.
-     *
-     * <p> This method is equivalent to invoking {@link
-     * #receive(ByteBuffer,long,TimeUnit,Object,CompletionHandler)} with a
-     * timeout of {@code 0L}, and an attachment and completion handler
-     * of {@code null}.
+     * <p> This method initiates the receiving of a datagram into the given
+     * buffer. The method behaves in exactly the same manner as the {@link
+     * #receive(ByteBuffer,Object,CompletionHandler)
+     * receive(ByteBuffer,Object,CompletionHandler)} method except that instead
+     * of specifying a completion handler, this method returns a {@code Future}
+     * representing the pending result. The {@code Future}'s {@link Future#get()
+     * get} method returns the datagram's source address.
      *
      * @param   dst
      *          The buffer into which the datagram is to be transferred
@@ -419,84 +407,19 @@ public abstract class AsynchronousDatagramChannel
      * @throws  IllegalArgumentException
      *          If the buffer is read-only
      */
-    public final <A> Future<SocketAddress> receive(ByteBuffer dst) {
-        return receive(dst, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
+    public abstract Future<SocketAddress> receive(ByteBuffer dst);
 
     /**
      * Sends a datagram via this channel.
      *
-     * <p> This method initiates sending of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The operation sends the remaining bytes in the given buffer as a single
-     * datagram to the given target address. The result of the operation, obtained
-     * by invoking the {@code Future}'s {@link Future#get() get}
-     * method, is the number of bytes sent.
+     * <p> This method initiates sending of a datagram from the given buffer to
+     * the given address. The {@code handler} parameter is a completion handler
+     * that is invoked when the send completes (or fails). The result passed to
+     * the completion handler is the number of bytes sent.
      *
-     * <p> The datagram is transferred from the byte buffer as if by a regular
-     * {@link AsynchronousByteChannel#write write} operation.
-     *
-     * <p> If a timeout is specified and the timeout elapses before the operation
-     * completes then the operation completes with the exception {@link
-     * InterruptedByTimeoutException}. When a timeout elapses then the state of
-     * the {@link ByteBuffer} is not defined. The buffers should be discarded or
-     * at least care must be taken to ensure that the buffer is not accessed
-     * while the channel remains open.
-     *
-     * <p> If there is a security manager installed and the channel is not
-     * connected then this method verifies that the target address and port number
-     * are permitted by the security manager's {@link SecurityManager#checkConnect
-     * checkConnect} method.  The overhead of this security check can be avoided
-     * by first connecting the socket via the {@link #connect connect} method.
-     *
-     * @param   src
-     *          The buffer containing the datagram to be sent
-     * @param   target
-     *          The address to which the datagram is to be sent
-     * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
-     * @param   unit
-     *          The time unit of the {@code timeout} argument
-     * @param   attachment
-     *          The object to attach to the I/O operation; can be {@code null}
-     * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
-     *
-     * @throws  UnresolvedAddressException
-     *          If the given remote address is not fully resolved
-     * @throws  UnsupportedAddressTypeException
-     *          If the type of the given remote address is not supported
-     * @throws  IllegalArgumentException
-     *          If the timeout is negative, or if the channel's socket is
-     *          connected to an address that is not equal to {@code target}
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not permit
-     *          datagrams to be sent to the given address
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
-     */
-    public abstract <A> Future<Integer> send(ByteBuffer src,
-                                             SocketAddress target,
-                                             long timeout,
-                                             TimeUnit unit,
-                                             A attachment,
-                                             CompletionHandler<Integer,? super A> handler);
-
-    /**
-     * Sends a datagram via this channel.
-     *
-     * <p> This method initiates sending of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The operation sends the remaining bytes in the given buffer as a single
-     * datagram to the given target address. The result of the operation, obtained
-     * by invoking the {@code Future}'s {@link Future#get() get}
-     * method, is the number of bytes sent.
-     *
-     * <p> This method is equivalent to invoking {@link
-     * #send(ByteBuffer,SocketAddress,long,TimeUnit,Object,CompletionHandler)}
-     * with a timeout of {@code 0L}.
+     * <p> Otherwise this method works in the same manner as the {@link
+     * AsynchronousByteChannel#write(ByteBuffer,Object,CompletionHandler)}
+     * method.
      *
      * @param   src
      *          The buffer containing the datagram to be sent
@@ -505,9 +428,7 @@ public abstract class AsynchronousDatagramChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -520,30 +441,23 @@ public abstract class AsynchronousDatagramChannel
      *          If a security manager has been installed and it does not permit
      *          datagrams to be sent to the given address
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public final <A> Future<Integer> send(ByteBuffer src,
-                                          SocketAddress target,
-                                          A attachment,
-                                          CompletionHandler<Integer,? super A> handler)
-    {
-        return send(src, target, 0L, TimeUnit.MILLISECONDS, attachment, handler);
-    }
+    public abstract <A> void send(ByteBuffer src,
+                                  SocketAddress target,
+                                  A attachment,
+                                  CompletionHandler<Integer,? super A> handler);
 
     /**
      * Sends a datagram via this channel.
      *
-     * <p> This method initiates sending of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The operation sends the remaining bytes in the given buffer as a single
-     * datagram to the given target address. The result of the operation, obtained
-     * by invoking the {@code Future}'s {@link Future#get() get}
-     * method, is the number of bytes sent.
-     *
-     * <p> This method is equivalent to invoking {@link
-     * #send(ByteBuffer,SocketAddress,long,TimeUnit,Object,CompletionHandler)}
-     * with a timeout of {@code 0L} and an attachment and completion handler
-     * of {@code null}.
+     * <p> This method initiates sending of a datagram from the given buffer to
+     * the given address. The method behaves in exactly the same manner as the
+     * {@link #send(ByteBuffer,SocketAddress,Object,CompletionHandler)
+     * send(ByteBuffer,SocketAddress,Object,CompletionHandler)} method except
+     * that instead of specifying a completion handler, this method returns a
+     * {@code Future} representing the pending result. The {@code Future}'s
+     * {@link Future#get() get} method returns the number of bytes sent.
      *
      * @param   src
      *          The buffer containing the datagram to be sent
@@ -563,17 +477,15 @@ public abstract class AsynchronousDatagramChannel
      *          If a security manager has been installed and it does not permit
      *          datagrams to be sent to the given address
      */
-    public final Future<Integer> send(ByteBuffer src, SocketAddress target) {
-        return send(src, target, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
+    public abstract Future<Integer> send(ByteBuffer src, SocketAddress target);
 
     /**
      * Receives a datagram via this channel.
      *
-     * <p> This method initiates the receiving of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The {@code Future}'s {@link Future#get() get} method returns
-     * the number of bytes transferred upon successful completion.
+     * <p> This method initiates the receiving of a datagram into the given
+     * buffer. The {@code handler} parameter is a completion handler that is
+     * invoked when the receive operation completes (or fails). The result
+     * passed to the completion handler is number of bytes read.
      *
      * <p> This method may only be invoked if this channel is connected, and it
      * only accepts datagrams from the peer that the channel is connected too.
@@ -599,120 +511,62 @@ public abstract class AsynchronousDatagramChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the timeout is negative or buffer is read-only
      * @throws  NotYetConnectedException
      *          If this channel is not connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<Integer> read(ByteBuffer dst,
-                                             long timeout,
-                                             TimeUnit unit,
-                                             A attachment,
-                                             CompletionHandler<Integer,? super A> handler);
+    public abstract <A> void read(ByteBuffer dst,
+                                  long timeout,
+                                  TimeUnit unit,
+                                  A attachment,
+                                  CompletionHandler<Integer,? super A> handler);
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
     @Override
-    public final <A> Future<Integer> read(ByteBuffer dst,
-                                          A attachment,
-                                          CompletionHandler<Integer,? super A> handler)
+    public final <A> void read(ByteBuffer dst,
+                               A attachment,
+                               CompletionHandler<Integer,? super A> handler)
     {
-        return read(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
+        read(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
     }
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
     @Override
-    public final Future<Integer> read(ByteBuffer dst) {
-        return read(dst, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
-
-    /**
-     * Writes a datagram to this channel.
-     *
-     * <p> This method initiates sending of a datagram, returning a
-     * {@code Future} representing the pending result of the operation.
-     * The operation sends the remaining bytes in the given buffer as a single
-     * datagram. The result of the operation, obtained by invoking the
-     * {@code Future}'s {@link Future#get() get} method, is the
-     * number of bytes sent.
-     *
-     * <p> The datagram is transferred from the byte buffer as if by a regular
-     * {@link AsynchronousByteChannel#write write} operation.
-     *
-     * <p> This method may only be invoked if this channel is connected,
-     * in which case it sends datagrams directly to the socket's peer.  Otherwise
-     * it behaves exactly as specified in the {@link
-     * AsynchronousByteChannel} interface.
-     *
-     * <p> If a timeout is specified and the timeout elapses before the operation
-     * completes then the operation completes with the exception {@link
-     * InterruptedByTimeoutException}. When a timeout elapses then the state of
-     * the {@link ByteBuffer} is not defined. The buffers should be discarded or
-     * at least care must be taken to ensure that the buffer is not accessed
-     * while the channel remains open.
-     *
-     * @param   src
-     *          The buffer containing the datagram to be sent
-     * @param   timeout
-     *          The timeout, or {@code 0L} for no timeout
-     * @param   unit
-     *          The time unit of the {@code timeout} argument
-     * @param   attachment
-     *          The object to attach to the I/O operation; can be {@code null}
-     * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  a {@code Future} object representing the pending result
-     *
-     * @throws  IllegalArgumentException
-     *          If the timeout is negative
-     * @throws  NotYetConnectedException
-     *          If this channel is not connected
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
-     */
-    public abstract <A> Future<Integer> write(ByteBuffer src,
-                                              long timeout,
-                                              TimeUnit unit,
-                                              A attachment,
-                                              CompletionHandler<Integer,? super A> handler);
-    /**
-     * @throws  NotYetConnectedException
-     *          If this channel is not connected
-     * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
-     */
-    @Override
-    public final <A> Future<Integer> write(ByteBuffer src,
-                                           A attachment,
-                                           CompletionHandler<Integer,? super A> handler)
-    {
-        return write(src, 0L, TimeUnit.MILLISECONDS, attachment, handler);
-    }
+    public abstract Future<Integer> read(ByteBuffer dst);
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
     @Override
-    public final Future<Integer> write(ByteBuffer src) {
-        return write(src, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
+    public abstract <A> void  write(ByteBuffer src,
+                                    A attachment,
+                                    CompletionHandler<Integer,? super A> handler);
+
+
+    /**
+     * @throws  NotYetConnectedException
+     *          If this channel is not connected
+     * @throws  ShutdownChannelGroupException
+     *          If the channel group has terminated
+     */
+    @Override
+    public abstract Future<Integer> write(ByteBuffer src);
 }

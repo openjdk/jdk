@@ -50,6 +50,11 @@ import java.lang.annotation.Annotation;
  * java.lang.annotation.AnnotationTypeMismatchException} or an
  * {@link java.lang.annotation.IncompleteAnnotationException}.
  *
+ * @see java.lang.EnumConstantNotPresentException
+ * @see java.lang.TypeNotPresentException
+ * @see java.lang.annotation.AnnotationFormatError
+ * @see java.lang.annotation.AnnotationTypeMismatchException
+ * @see java.lang.annotation.IncompleteAnnotationException
  * @since 1.5
  * @author Josh Bloch
  */

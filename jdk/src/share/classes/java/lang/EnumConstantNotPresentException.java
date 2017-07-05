@@ -28,8 +28,12 @@ package java.lang;
 /**
  * Thrown when an application tries to access an enum constant by name
  * and the enum type contains no constant with the specified name.
+ * This exception can be thrown by the {@linkplain
+ * java.lang.reflect.AnnotatedElement API used to read annotations
+ * reflectively}.
  *
  * @author  Josh Bloch
+ * @see     java.lang.reflect.AnnotatedElement
  * @since   1.5
  */
 public class EnumConstantNotPresentException extends RuntimeException {

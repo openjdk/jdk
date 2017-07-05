@@ -61,20 +61,33 @@ class UnixAsynchronousSocketChannelImpl
     private final Object updateLock = new Object();
 
     // pending connect (updateLock)
-    private PendingFuture<Void,Object> pendingConnect;
+    private boolean connectPending;
+    private CompletionHandler<Void,Object> connectHandler;
+    private Object connectAttachment;
+    private PendingFuture<Void,Object> connectFuture;
 
-    // pending remote address (statLock)
+    // pending remote address (stateLock)
     private SocketAddress pendingRemote;
 
     // pending read (updateLock)
+    private boolean readPending;
+    private boolean isScatteringRead;
+    private ByteBuffer readBuffer;
     private ByteBuffer[] readBuffers;
-    private boolean scatteringRead;
-    private PendingFuture<Number,Object> pendingRead;
+    private CompletionHandler<Number,Object> readHandler;
+    private Object readAttachment;
+    private PendingFuture<Number,Object> readFuture;
+    private Future<?> readTimer;
 
     // pending write (updateLock)
+    private boolean writePending;
+    private boolean isGatheringWrite;
+    private ByteBuffer writeBuffer;
     private ByteBuffer[] writeBuffers;
-    private boolean gatheringWrite;
-    private PendingFuture<Number,Object> pendingWrite;
+    private CompletionHandler<Number,Object> writeHandler;
+    private Object writeAttachment;
+    private PendingFuture<Number,Object> writeFuture;
+    private Future<?> writeTimer;
 
 
     UnixAsynchronousSocketChannelImpl(Port port)
@@ -128,43 +141,36 @@ class UnixAsynchronousSocketChannelImpl
     private void updateEvents() {
         assert Thread.holdsLock(updateLock);
         int events = 0;
-        if (pendingRead != null)
+        if (readPending)
             events |= Port.POLLIN;
-        if (pendingConnect != null || pendingWrite != null)
+        if (connectPending || writePending)
             events |= Port.POLLOUT;
         if (events != 0)
             port.startPoll(fdVal, events);
     }
 
-    /**
-     * Invoked by event handler thread when file descriptor is polled
-     */
-    @Override
-    public void onEvent(int events) {
-        boolean readable = (events & Port.POLLIN) > 0;
-        boolean writable = (events & Port.POLLOUT) > 0;
-        if ((events & (Port.POLLERR | Port.POLLHUP)) > 0) {
-            readable = true;
-            writable = true;
-        }
-
-        PendingFuture<Void,Object> connectResult = null;
-        PendingFuture<Number,Object> readResult = null;
-        PendingFuture<Number,Object> writeResult = null;
+    // invoke to finish read and/or write operations
+    private void finish(boolean mayInvokeDirect,
+                        boolean readable,
+                        boolean writable)
+    {
+        boolean finishRead = false;
+        boolean finishWrite = false;
+        boolean finishConnect = false;
 
         // map event to pending result
         synchronized (updateLock) {
-            if (readable && (pendingRead != null)) {
-                readResult = pendingRead;
-                pendingRead = null;
+            if (readable && this.readPending) {
+                this.readPending = false;
+                finishRead = true;
             }
             if (writable) {
-                if (pendingWrite != null) {
-                    writeResult = pendingWrite;
-                    pendingWrite = null;
-                } else if (pendingConnect != null) {
-                    connectResult = pendingConnect;
-                    pendingConnect = null;
+                if (this.writePending) {
+                    this.writePending = false;
+                    finishWrite = true;
+                } else if (this.connectPending) {
+                    this.connectPending = false;
+                    finishConnect = true;
                 }
             }
         }
@@ -172,36 +178,32 @@ class UnixAsynchronousSocketChannelImpl
         // complete the I/O operation. Special case for when channel is
         // ready for both reading and writing. In that case, submit task to
         // complete write if write operation has a completion handler.
-        if (readResult != null) {
-            if (writeResult != null)
-                finishWrite(writeResult, false);
-            finishRead(readResult, true);
+        if (finishRead) {
+            if (finishWrite)
+                finishWrite(false);
+            finishRead(mayInvokeDirect);
             return;
         }
-        if (writeResult != null) {
-            finishWrite(writeResult, true);
+        if (finishWrite) {
+            finishWrite(mayInvokeDirect);
         }
-        if (connectResult != null) {
-            finishConnect(connectResult, true);
-        }
-    }
-
-    // returns and clears the result of a pending read
-    PendingFuture<Number,Object> grabPendingRead() {
-        synchronized (updateLock) {
-            PendingFuture<Number,Object> result = pendingRead;
-            pendingRead = null;
-            return result;
+        if (finishConnect) {
+            finishConnect(mayInvokeDirect);
         }
     }
 
-    // returns and clears the result of a pending write
-    PendingFuture<Number,Object> grabPendingWrite() {
-        synchronized (updateLock) {
-            PendingFuture<Number,Object> result = pendingWrite;
-            pendingWrite = null;
-            return result;
+    /**
+     * Invoked by event handler thread when file descriptor is polled
+     */
+    @Override
+    public void onEvent(int events, boolean mayInvokeDirect) {
+        boolean readable = (events & Port.POLLIN) > 0;
+        boolean writable = (events & Port.POLLOUT) > 0;
+        if ((events & (Port.POLLERR | Port.POLLHUP)) > 0) {
+            readable = true;
+            writable = true;
         }
+        finish(mayInvokeDirect, readable, writable);
     }
 
     @Override
@@ -213,26 +215,7 @@ class UnixAsynchronousSocketChannelImpl
         nd.close(fd);
 
         // All outstanding I/O operations are required to fail
-        final PendingFuture<Void,Object> readyToConnect;
-        final PendingFuture<Number,Object> readyToRead;
-        final PendingFuture<Number,Object> readyToWrite;
-        synchronized (updateLock) {
-            readyToConnect = pendingConnect;
-            pendingConnect = null;
-            readyToRead = pendingRead;
-            pendingRead = null;
-            readyToWrite = pendingWrite;
-            pendingWrite = null;
-        }
-        if (readyToConnect != null) {
-            finishConnect(readyToConnect, false);
-        }
-        if (readyToRead != null) {
-            finishRead(readyToRead, false);
-        }
-        if (readyToWrite != null) {
-            finishWrite(readyToWrite, false);
-        }
+        finish(false, true, true);
     }
 
     @Override
@@ -240,9 +223,9 @@ class UnixAsynchronousSocketChannelImpl
         if (task.getContext() == OpType.CONNECT)
             killConnect();
         if (task.getContext() == OpType.READ)
-            killConnect();
+            killReading();
         if (task.getContext() == OpType.WRITE)
-            killConnect();
+            killWriting();
     }
 
     // -- connect --
@@ -255,15 +238,12 @@ class UnixAsynchronousSocketChannelImpl
         }
     }
 
-    private void finishConnect(PendingFuture<Void,Object> result,
-                               boolean invokeDirect)
-    {
+    private void finishConnect(boolean mayInvokeDirect) {
         Throwable e = null;
         try {
             begin();
             checkConnect(fdVal);
             setConnected();
-            result.setResult(null);
         } catch (Throwable x) {
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
@@ -276,26 +256,38 @@ class UnixAsynchronousSocketChannelImpl
             try {
                 close();
             } catch (IOException ignore) { }
-            result.setFailure(e);
         }
-        if (invokeDirect) {
-            Invoker.invoke(result.handler(), result);
+
+
+        // invoke handler and set result
+        CompletionHandler<Void,Object> handler = connectHandler;
+        Object att = connectAttachment;
+        PendingFuture<Void,Object> future = connectFuture;
+        if (handler == null) {
+            future.setResult(null, e);
         } else {
-            Invoker.invokeIndirectly(result.handler(), result);
+            if (mayInvokeDirect) {
+                Invoker.invokeUnchecked(handler, att, null, e);
+            } else {
+                Invoker.invokeIndirectly(this, handler, att, null, e);
+            }
         }
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <A> Future<Void> connect(SocketAddress remote,
-                                    A attachment,
-                                    CompletionHandler<Void,? super A> handler)
+    <A> Future<Void> implConnect(SocketAddress remote,
+                                 A attachment,
+                                 CompletionHandler<Void,? super A> handler)
     {
         if (!isOpen()) {
-            CompletedFuture<Void,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable e = new ClosedChannelException();
+            if (handler == null) {
+                return CompletedFuture.withFailure(e);
+            } else {
+                Invoker.invoke(this, handler, attachment, null, e);
+                return null;
+            }
         }
 
         InetSocketAddress isa = Net.checkAddress(remote);
@@ -317,7 +309,6 @@ class UnixAsynchronousSocketChannelImpl
             notifyBeforeTcpConnect = (localAddress == null);
         }
 
-        AbstractFuture<Void,A> result = null;
         Throwable e = null;
         try {
             begin();
@@ -327,15 +318,21 @@ class UnixAsynchronousSocketChannelImpl
             int n = Net.connect(fd, isa.getAddress(), isa.getPort());
             if (n == IOStatus.UNAVAILABLE) {
                 // connection could not be established immediately
-                result = new PendingFuture<Void,A>(this, handler, attachment, OpType.CONNECT);
+                PendingFuture<Void,A> result = null;
                 synchronized (updateLock) {
-                    this.pendingConnect = (PendingFuture<Void,Object>)result;
+                    if (handler == null) {
+                        result = new PendingFuture<Void,A>(this, OpType.CONNECT);
+                        this.connectFuture = (PendingFuture<Void,Object>)result;
+                    } else {
+                        this.connectHandler = (CompletionHandler<Void,Object>)handler;
+                        this.connectAttachment = attachment;
+                    }
+                    this.connectPending = true;
                     updateEvents();
                 }
                 return result;
             }
             setConnected();
-            result = CompletedFuture.withResult(this, null, attachment);
         } catch (Throwable x) {
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
@@ -349,84 +346,111 @@ class UnixAsynchronousSocketChannelImpl
             try {
                 close();
             } catch (IOException ignore) { }
-            result = CompletedFuture.withFailure(this, e, attachment);
         }
-
-        Invoker.invoke(handler, result);
-        return result;
+        if (handler == null) {
+            return CompletedFuture.withResult(null, e);
+        } else {
+            Invoker.invoke(this, handler, attachment, null, e);
+            return null;
+        }
     }
 
     // -- read --
 
-    @SuppressWarnings("unchecked")
-    private void finishRead(PendingFuture<Number,Object> result,
-                            boolean invokeDirect)
-    {
+    private void finishRead(boolean mayInvokeDirect) {
         int n = -1;
-        PendingFuture<Number,Object> pending = null;
+        Throwable exc = null;
+
+        // copy fields as we can't access them after reading is re-enabled.
+        boolean scattering = isScatteringRead;
+        CompletionHandler<Number,Object> handler = readHandler;
+        Object att = readAttachment;
+        PendingFuture<Number,Object> future = readFuture;
+        Future<?> timeout = readTimer;
+
         try {
             begin();
 
-            ByteBuffer[] dsts = readBuffers;
-            if (dsts.length == 1) {
-                n = IOUtil.read(fd, dsts[0], -1, nd, null);
+            if (scattering) {
+                n = (int)IOUtil.read(fd, readBuffers, nd);
             } else {
-                n = (int)IOUtil.read(fd, dsts, nd);
+                n = IOUtil.read(fd, readBuffer, -1, nd, null);
             }
             if (n == IOStatus.UNAVAILABLE) {
                 // spurious wakeup, is this possible?
-                pending = result;
+                synchronized (updateLock) {
+                    readPending = true;
+                }
                 return;
             }
 
-            // allow buffer(s) to be GC'ed.
-            readBuffers = null;
+            // allow objects to be GC'ed.
+            this.readBuffer = null;
+            this.readBuffers = null;
+            this.readAttachment = null;
 
             // allow another read to be initiated
-            boolean wasScatteringRead = scatteringRead;
             enableReading();
-
-            // result is Integer or Long
-            if (wasScatteringRead) {
-                result.setResult(Long.valueOf(n));
-            } else {
-                result.setResult(Integer.valueOf(n));
-            }
 
         } catch (Throwable x) {
             enableReading();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            result.setFailure(x);
+            exc = x;
         } finally {
             // restart poll in case of concurrent write
             synchronized (updateLock) {
-                if (pending != null)
-                    this.pendingRead = pending;
                 updateEvents();
             }
             end();
         }
 
-        if (invokeDirect) {
-            Invoker.invoke(result.handler(), result);
+        // cancel the associated timer
+        if (timeout != null)
+            timeout.cancel(false);
+
+        // create result
+        Number result = (exc != null) ? null : (scattering) ?
+            (Number)Long.valueOf(n) : (Number)Integer.valueOf(n);
+
+        // invoke handler or set result
+        if (handler == null) {
+            future.setResult(result, exc);
         } else {
-            Invoker.invokeIndirectly(result.handler(), result);
+            if (mayInvokeDirect) {
+                Invoker.invokeUnchecked(handler, att, result, exc);
+            } else {
+                Invoker.invokeIndirectly(this, handler, att, result, exc);
+            }
         }
     }
 
     private Runnable readTimeoutTask = new Runnable() {
         public void run() {
-            PendingFuture<Number,Object> result = grabPendingRead();
-            if (result == null)
-                return;     // already completed
+            CompletionHandler<Number,Object> handler = null;
+            Object att = null;
+            PendingFuture<Number,Object> future = null;
+
+            synchronized (updateLock) {
+                if (!readPending)
+                    return;
+                readPending = false;
+                handler = readHandler;
+                att = readAttachment;
+                future = readFuture;
+            }
 
             // kill further reading before releasing waiters
             enableReading(true);
 
-            // set completed and invoke handler
-            result.setFailure(new InterruptedByTimeoutException());
-            Invoker.invokeIndirectly(result.handler(), result);
+            // invoke handler or set result
+            Exception exc = new InterruptedByTimeoutException();
+            if (handler == null) {
+                future.setFailure(exc);
+            } else {
+                AsynchronousChannel ch = UnixAsynchronousSocketChannelImpl.this;
+                Invoker.invokeIndirectly(ch, handler, att, null, exc);
+            }
         }
     };
 
@@ -435,8 +459,9 @@ class UnixAsynchronousSocketChannelImpl
      */
     @Override
     @SuppressWarnings("unchecked")
-    <V extends Number,A> Future<V> readImpl(ByteBuffer[] dsts,
-                                            boolean isScatteringRead,
+    <V extends Number,A> Future<V> implRead(boolean isScatteringRead,
+                                            ByteBuffer dst,
+                                            ByteBuffer[] dsts,
                                             long timeout,
                                             TimeUnit unit,
                                             A attachment,
@@ -450,144 +475,178 @@ class UnixAsynchronousSocketChannelImpl
         boolean invokeDirect = false;
         boolean attemptRead = false;
         if (!disableSynchronousRead) {
-            myGroupAndInvokeCount = Invoker.getGroupAndInvokeCount();
-            invokeDirect = Invoker.mayInvokeDirect(myGroupAndInvokeCount, port);
-            attemptRead = (handler == null) || invokeDirect ||
-                !port.isFixedThreadPool();  // okay to attempt read with user thread pool
+            if (handler == null) {
+                attemptRead = true;
+            } else {
+                myGroupAndInvokeCount = Invoker.getGroupAndInvokeCount();
+                invokeDirect = Invoker.mayInvokeDirect(myGroupAndInvokeCount, port);
+                // okay to attempt read with user thread pool
+                attemptRead = invokeDirect || !port.isFixedThreadPool();
+            }
         }
 
-        AbstractFuture<V,A> result;
+        int n = IOStatus.UNAVAILABLE;
+        Throwable exc = null;
+        boolean pending = false;
+
         try {
             begin();
 
-            int n;
             if (attemptRead) {
                 if (isScatteringRead) {
                     n = (int)IOUtil.read(fd, dsts, nd);
                 } else {
-                    n = IOUtil.read(fd, dsts[0], -1, nd, null);
+                    n = IOUtil.read(fd, dst, -1, nd, null);
                 }
-            } else {
-                n = IOStatus.UNAVAILABLE;
             }
 
             if (n == IOStatus.UNAVAILABLE) {
-                result = new PendingFuture<V,A>(this, handler, attachment, OpType.READ);
-
-                // update evetns so that read will complete asynchronously
+                PendingFuture<V,A> result = null;
                 synchronized (updateLock) {
+                    this.isScatteringRead = isScatteringRead;
+                    this.readBuffer = dst;
                     this.readBuffers = dsts;
-                    this.scatteringRead = isScatteringRead;
-                    this.pendingRead = (PendingFuture<Number,Object>)result;
+                    if (handler == null) {
+                        this.readHandler = null;
+                        result = new PendingFuture<V,A>(this, OpType.READ);
+                        this.readFuture = (PendingFuture<Number,Object>)result;
+                        this.readAttachment = null;
+                    } else {
+                        this.readHandler = (CompletionHandler<Number,Object>)handler;
+                        this.readAttachment = attachment;
+                        this.readFuture = null;
+                    }
+                    if (timeout > 0L) {
+                        this.readTimer = port.schedule(readTimeoutTask, timeout, unit);
+                    }
+                    this.readPending = true;
                     updateEvents();
                 }
-
-                // schedule timeout
-                if (timeout > 0L) {
-                    Future<?> timeoutTask =
-                        port.schedule(readTimeoutTask, timeout, unit);
-                    ((PendingFuture<V,A>)result).setTimeoutTask(timeoutTask);
-                }
+                pending = true;
                 return result;
             }
-
-            // data available
-            enableReading();
-
-            // result type is Long or Integer
-            if (isScatteringRead) {
-                result = (CompletedFuture<V,A>)CompletedFuture
-                    .withResult(this, Long.valueOf(n), attachment);
-            } else {
-                result = (CompletedFuture<V,A>)CompletedFuture
-                    .withResult(this, Integer.valueOf(n), attachment);
-            }
         } catch (Throwable x) {
-            enableReading();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            result = CompletedFuture.withFailure(this, x, attachment);
+            exc = x;
         } finally {
+            if (!pending)
+                enableReading();
             end();
         }
 
-        if (invokeDirect) {
-            Invoker.invokeDirect(myGroupAndInvokeCount, handler, result);
+        Number result = (exc != null) ? null : (isScatteringRead) ?
+            (Number)Long.valueOf(n) : (Number)Integer.valueOf(n);
+
+        // read completed immediately
+        if (handler != null) {
+            if (invokeDirect) {
+                Invoker.invokeDirect(myGroupAndInvokeCount, handler, attachment, (V)result, exc);
+            } else {
+                Invoker.invokeIndirectly(this, handler, attachment, (V)result, exc);
+            }
+            return null;
         } else {
-            Invoker.invokeIndirectly(handler, result);
+            return CompletedFuture.withResult((V)result, exc);
         }
-        return result;
     }
 
     // -- write --
 
-    private void finishWrite(PendingFuture<Number,Object> result,
-                             boolean invokeDirect)
-    {
-        PendingFuture<Number,Object> pending = null;
+    private void finishWrite(boolean mayInvokeDirect) {
+        int n = -1;
+        Throwable exc = null;
+
+        // copy fields as we can't access them after reading is re-enabled.
+        boolean gathering = this.isGatheringWrite;
+        CompletionHandler<Number,Object> handler = this.writeHandler;
+        Object att = this.writeAttachment;
+        PendingFuture<Number,Object> future = this.writeFuture;
+        Future<?> timer = this.writeTimer;
+
         try {
             begin();
 
-            ByteBuffer[] srcs = writeBuffers;
-            int n;
-            if (srcs.length == 1) {
-                n = IOUtil.write(fd, srcs[0], -1, nd, null);
+            if (gathering) {
+                n = (int)IOUtil.write(fd, writeBuffers, nd);
             } else {
-                n = (int)IOUtil.write(fd, srcs, nd);
+                n = IOUtil.write(fd, writeBuffer, -1, nd, null);
             }
             if (n == IOStatus.UNAVAILABLE) {
                 // spurious wakeup, is this possible?
-                pending = result;
+                synchronized (updateLock) {
+                    writePending = true;
+                }
                 return;
             }
 
-            // allow buffer(s) to be GC'ed.
-            writeBuffers = null;
+            // allow objects to be GC'ed.
+            this.writeBuffer = null;
+            this.writeBuffers = null;
+            this.writeAttachment = null;
 
             // allow another write to be initiated
-            boolean wasGatheringWrite = gatheringWrite;
             enableWriting();
-
-            // result is a Long or Integer
-            if (wasGatheringWrite) {
-                result.setResult(Long.valueOf(n));
-            } else {
-                result.setResult(Integer.valueOf(n));
-            }
 
         } catch (Throwable x) {
             enableWriting();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            result.setFailure(x);
+            exc = x;
         } finally {
-            // restart poll in case of concurrent read
-            synchronized (this) {
-                if (pending != null)
-                    this.pendingWrite = pending;
+            // restart poll in case of concurrent write
+            synchronized (updateLock) {
                 updateEvents();
             }
             end();
         }
-        if (invokeDirect) {
-            Invoker.invoke(result.handler(), result);
+
+        // cancel the associated timer
+        if (timer != null)
+            timer.cancel(false);
+
+        // create result
+        Number result = (exc != null) ? null : (gathering) ?
+            (Number)Long.valueOf(n) : (Number)Integer.valueOf(n);
+
+        // invoke handler or set result
+        if (handler == null) {
+            future.setResult(result, exc);
         } else {
-            Invoker.invokeIndirectly(result.handler(), result);
+            if (mayInvokeDirect) {
+                Invoker.invokeUnchecked(handler, att, result, exc);
+            } else {
+                Invoker.invokeIndirectly(this, handler, att, result, exc);
+            }
         }
     }
 
     private Runnable writeTimeoutTask = new Runnable() {
         public void run() {
-            PendingFuture<Number,Object> result = grabPendingWrite();
-            if (result == null)
-                return;     // already completed
+            CompletionHandler<Number,Object> handler = null;
+            Object att = null;
+            PendingFuture<Number,Object> future = null;
+
+            synchronized (updateLock) {
+                if (!writePending)
+                    return;
+                writePending = false;
+                handler = writeHandler;
+                att = writeAttachment;
+                future = writeFuture;
+            }
 
             // kill further writing before releasing waiters
             enableWriting(true);
 
-            // set completed and invoke handler
-            result.setFailure(new InterruptedByTimeoutException());
-            Invoker.invokeIndirectly(result.handler(), result);
+            // invoke handler or set result
+            Exception exc = new InterruptedByTimeoutException();
+            if (handler != null) {
+                Invoker.invokeIndirectly(UnixAsynchronousSocketChannelImpl.this,
+                    handler, att, null, exc);
+            } else {
+                future.setFailure(exc);
+            }
         }
     };
 
@@ -596,8 +655,9 @@ class UnixAsynchronousSocketChannelImpl
      */
     @Override
     @SuppressWarnings("unchecked")
-    <V extends Number,A> Future<V> writeImpl(ByteBuffer[] srcs,
-                                             boolean isGatheringWrite,
+    <V extends Number,A> Future<V> implWrite(boolean isGatheringWrite,
+                                             ByteBuffer src,
+                                             ByteBuffer[] srcs,
                                              long timeout,
                                              TimeUnit unit,
                                              A attachment,
@@ -607,66 +667,72 @@ class UnixAsynchronousSocketChannelImpl
             Invoker.getGroupAndInvokeCount();
         boolean invokeDirect = Invoker.mayInvokeDirect(myGroupAndInvokeCount, port);
         boolean attemptWrite = (handler == null) || invokeDirect ||
-            !port.isFixedThreadPool();  // okay to attempt read with user thread pool
+            !port.isFixedThreadPool();  // okay to attempt write with user thread pool
 
-        AbstractFuture<V,A> result;
+        int n = IOStatus.UNAVAILABLE;
+        Throwable exc = null;
+        boolean pending = false;
+
         try {
             begin();
 
-            int n;
             if (attemptWrite) {
                 if (isGatheringWrite) {
                     n = (int)IOUtil.write(fd, srcs, nd);
                 } else {
-                    n = IOUtil.write(fd, srcs[0], -1, nd, null);
+                    n = IOUtil.write(fd, src, -1, nd, null);
                 }
-            } else {
-                n = IOStatus.UNAVAILABLE;
             }
 
             if (n == IOStatus.UNAVAILABLE) {
-                result = new PendingFuture<V,A>(this, handler, attachment, OpType.WRITE);
-
-                // update evetns so that read will complete asynchronously
+                PendingFuture<V,A> result = null;
                 synchronized (updateLock) {
+                    this.isGatheringWrite = isGatheringWrite;
+                    this.writeBuffer = src;
                     this.writeBuffers = srcs;
-                    this.gatheringWrite = isGatheringWrite;
-                    this.pendingWrite = (PendingFuture<Number,Object>)result;
+                    if (handler == null) {
+                        this.writeHandler = null;
+                        result = new PendingFuture<V,A>(this, OpType.WRITE);
+                        this.writeFuture = (PendingFuture<Number,Object>)result;
+                        this.writeAttachment = null;
+                    } else {
+                        this.writeHandler = (CompletionHandler<Number,Object>)handler;
+                        this.writeAttachment = attachment;
+                        this.writeFuture = null;
+                    }
+                    if (timeout > 0L) {
+                        this.writeTimer = port.schedule(writeTimeoutTask, timeout, unit);
+                    }
+                    this.writePending = true;
                     updateEvents();
                 }
-
-                // schedule timeout
-                if (timeout > 0L) {
-                    Future<?> timeoutTask =
-                        port.schedule(writeTimeoutTask, timeout, unit);
-                    ((PendingFuture<V,A>)result).setTimeoutTask(timeoutTask);
-                }
+                pending = true;
                 return result;
             }
-
-            // data available
-            enableWriting();
-            if (isGatheringWrite) {
-                result = (CompletedFuture<V,A>)CompletedFuture
-                    .withResult(this, Long.valueOf(n), attachment);
-            } else {
-                result = (CompletedFuture<V,A>)CompletedFuture
-                    .withResult(this, Integer.valueOf(n), attachment);
-            }
         } catch (Throwable x) {
-            enableWriting();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            result = CompletedFuture.withFailure(this, x, attachment);
+            exc = x;
         } finally {
+            if (!pending)
+                enableWriting();
             end();
         }
-        if (invokeDirect) {
-            Invoker.invokeDirect(myGroupAndInvokeCount, handler, result);
+
+        Number result = (exc != null) ? null : (isGatheringWrite) ?
+            (Number)Long.valueOf(n) : (Number)Integer.valueOf(n);
+
+        // write completed immediately
+        if (handler != null) {
+            if (invokeDirect) {
+                Invoker.invokeDirect(myGroupAndInvokeCount, handler, attachment, (V)result, exc);
+            } else {
+                Invoker.invokeIndirectly(this, handler, attachment, (V)result, exc);
+            }
+            return null;
         } else {
-            Invoker.invokeIndirectly(handler, result);
+            return CompletedFuture.withResult((V)result, exc);
         }
-        return result;
     }
 
     // -- Native methods --

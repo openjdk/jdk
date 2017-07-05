@@ -160,7 +160,6 @@ FILES_src = \
 	\
 	sun/nio/ByteBuffered.java \
 	\
-	sun/nio/ch/AbstractFuture.java \
         sun/nio/ch/AbstractPollArrayWrapper.java \
 	sun/nio/ch/AllocatedNativeObject.java \
 	sun/nio/ch/AsynchronousChannelGroupImpl.java \

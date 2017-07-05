@@ -39,8 +39,7 @@ import java.util.Collections;
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
  *
- * <p> {@note revised}
- * A file channel is a {@link SeekableByteChannel} that is connected to
+ * <p> A file channel is a {@link SeekableByteChannel} that is connected to
  * a file. It has a current <i>position</i> within its file which can
  * be both {@link #position() <i>queried</i>} and {@link #position(long)
  * <i>modified</i>}.  The file itself contains a variable-length sequence
@@ -151,7 +150,6 @@ import java.util.Collections;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
- * @updated 1.7
  */
 
 public abstract class FileChannel
@@ -164,7 +162,6 @@ public abstract class FileChannel
     protected FileChannel() { }
 
     /**
-     * {@note new}
      * Opens or creates a file, returning a file channel to access the file.
      *
      * <p> The {@code options} parameter determines how the file is opened.
@@ -293,7 +290,6 @@ public abstract class FileChannel
     private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute[0];
 
     /**
-     * {@note new}
      * Opens or creates a file, returning a file channel to access the file.
      *
      * <p> An invocation of this method behaves in exactly the same way as the
