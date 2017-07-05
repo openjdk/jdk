@@ -301,6 +301,9 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             List frameMonitors = frame.getMonitors();  // List<MonitorInfo>
             for (Iterator miItr = frameMonitors.iterator(); miItr.hasNext(); ) {
                 sun.jvm.hotspot.runtime.MonitorInfo mi = (sun.jvm.hotspot.runtime.MonitorInfo) miItr.next();
+                if (mi.eliminated() && frame.isCompiledFrame()) {
+                  continue; // skip eliminated monitor
+                }
                 OopHandle obj = mi.owner();
                 if (obj == null) {
                     // this monitor doesn't have an owning object so skip it

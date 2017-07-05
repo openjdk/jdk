@@ -6885,8 +6885,9 @@ instruct loadB(xRegI dst, memory mem) %{
 %}
 
 // Load Byte (8bit signed) into Long Register
-instruct loadB2L(eRegL dst, memory mem) %{
+instruct loadB2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (ConvI2L (LoadB mem)));
+  effect(KILL cr);
 
   ins_cost(375);
   format %{ "MOVSX8 $dst.lo,$mem\t# byte -> long\n\t"
@@ -6917,19 +6918,37 @@ instruct loadUB(xRegI dst, memory mem) %{
 %}
 
 // Load Unsigned Byte (8 bit UNsigned) into Long Register
-instruct loadUB2L(eRegL dst, memory mem)
-%{
+instruct loadUB2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (ConvI2L (LoadUB mem)));
+  effect(KILL cr);
 
   ins_cost(250);
   format %{ "MOVZX8 $dst.lo,$mem\t# ubyte -> long\n\t"
             "XOR    $dst.hi,$dst.hi" %}
 
   ins_encode %{
-    __ movzbl($dst$$Register, $mem$$Address);
-    __ xorl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register));
+    Register Rdst = $dst$$Register;
+    __ movzbl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
   %}
 
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Byte (8 bit UNsigned) with mask into Long Register
+instruct loadUB2L_immI8(eRegL dst, memory mem, immI8 mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadUB mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOVZX8 $dst.lo,$mem\t# ubyte & 8-bit mask -> long\n\t"
+            "XOR    $dst.hi,$dst.hi\n\t"
+            "AND    $dst.lo,$mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzbl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+    __ andl(Rdst, $mask$$constant);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -6960,8 +6979,9 @@ instruct loadS2B(eRegI dst, memory mem, immI_24 twentyfour) %{
 %}
 
 // Load Short (16bit signed) into Long Register
-instruct loadS2L(eRegL dst, memory mem) %{
+instruct loadS2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (ConvI2L (LoadS mem)));
+  effect(KILL cr);
 
   ins_cost(375);
   format %{ "MOVSX  $dst.lo,$mem\t# short -> long\n\t"
@@ -7004,8 +7024,9 @@ instruct loadUS2B(eRegI dst, memory mem, immI_24 twentyfour) %{
 %}
 
 // Load Unsigned Short/Char (16 bit UNsigned) into Long Register
-instruct loadUS2L(eRegL dst, memory mem) %{
+instruct loadUS2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (ConvI2L (LoadUS mem)));
+  effect(KILL cr);
 
   ins_cost(250);
   format %{ "MOVZX  $dst.lo,$mem\t# ushort/char -> long\n\t"
@@ -7016,6 +7037,38 @@ instruct loadUS2L(eRegL dst, memory mem) %{
     __ xorl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register));
   %}
 
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Short/Char (16 bit UNsigned) with mask 0xFF into Long Register
+instruct loadUS2L_immI_255(eRegL dst, memory mem, immI_255 mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOVZX8 $dst.lo,$mem\t# ushort/char & 0xFF -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzbl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Short/Char (16 bit UNsigned) with a 16-bit mask into Long Register
+instruct loadUS2L_immI16(eRegL dst, memory mem, immI16 mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOVZX  $dst.lo, $mem\t# ushort/char & 16-bit mask -> long\n\t"
+            "XOR    $dst.hi,$dst.hi\n\t"
+            "AND    $dst.lo,$mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzwl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+    __ andl(Rdst, $mask$$constant);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -7082,8 +7135,9 @@ instruct loadI2US(eRegI dst, memory mem, immI_65535 mask) %{
 %}
 
 // Load Integer into Long Register
-instruct loadI2L(eRegL dst, memory mem) %{
+instruct loadI2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (ConvI2L (LoadI mem)));
+  effect(KILL cr);
 
   ins_cost(375);
   format %{ "MOV    $dst.lo,$mem\t# int -> long\n\t"
@@ -7099,9 +7153,57 @@ instruct loadI2L(eRegL dst, memory mem) %{
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Integer with mask 0xFF into Long Register
+instruct loadI2L_immI_255(eRegL dst, memory mem, immI_255 mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOVZX8 $dst.lo,$mem\t# int & 0xFF -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzbl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer with mask 0xFFFF into Long Register
+instruct loadI2L_immI_65535(eRegL dst, memory mem, immI_65535 mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOVZX  $dst.lo,$mem\t# int & 0xFFFF -> long\n\t"
+            "XOR    $dst.hi,$dst.hi" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movzwl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer with 32-bit mask into Long Register
+instruct loadI2L_immI(eRegL dst, memory mem, immI mask, eFlagsReg cr) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  effect(KILL cr);
+
+  format %{ "MOV    $dst.lo,$mem\t# int & 32-bit mask -> long\n\t"
+            "XOR    $dst.hi,$dst.hi\n\t"
+            "AND    $dst.lo,$mask" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ movl(Rdst, $mem$$Address);
+    __ xorl(HIGH_FROM_LOW(Rdst), HIGH_FROM_LOW(Rdst));
+    __ andl(Rdst, $mask$$constant);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Unsigned Integer into Long Register
-instruct loadUI2L(eRegL dst, memory mem) %{
+instruct loadUI2L(eRegL dst, memory mem, eFlagsReg cr) %{
   match(Set dst (LoadUI2L mem));
+  effect(KILL cr);
 
   ins_cost(250);
   format %{ "MOV    $dst.lo,$mem\t# uint -> long\n\t"
@@ -7693,6 +7795,17 @@ instruct storeL(long_memory mem, eRegL src) %{
   opcode(0x89, 0x89);
   ins_encode( OpcP, RegMem( src, mem ), OpcS, RegMem_Hi( src, mem ) );
   ins_pipe( ialu_mem_long_reg );
+%}
+
+// Store Long to Integer
+instruct storeL2I(memory mem, eRegL src) %{
+  match(Set mem (StoreI mem (ConvL2I src)));
+
+  format %{ "MOV    $mem,$src.lo\t# long -> int" %}
+  ins_encode %{
+    __ movl($mem$$Address, $src$$Register);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 // Volatile Store Long.  Must be atomic, so move it into

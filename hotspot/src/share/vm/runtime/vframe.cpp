@@ -106,6 +106,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
+    if (monitor->eliminated() && is_compiled_frame()) continue; // skip eliminated monitor
     oop obj = monitor->owner();
     if (obj == NULL) continue; // skip unowned monitor
     //
@@ -162,6 +163,18 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
     bool found_first_monitor = false;
     for (int index = (mons->length()-1); index >= 0; index--) {
       MonitorInfo* monitor = mons->at(index);
+      if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
+        if (monitor->owner_is_scalar_replaced()) {
+          Klass* k = Klass::cast(monitor->owner_klass());
+          st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
+        } else {
+          oop obj = monitor->owner();
+          if (obj != NULL) {
+            print_locked_object_class_name(st, obj, "eliminated");
+          }
+        }
+        continue;
+      }
       if (monitor->owner() != NULL) {
 
         // First, assume we have the monitor locked. If we haven't found an
@@ -171,11 +184,11 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
 
         const char *lock_state = "locked"; // assume we have the monitor locked
         if (!found_first_monitor && frame_count == 0) {
-         markOop mark = monitor->owner()->mark();
-         if (mark->has_monitor() &&
-             mark->monitor() == thread()->current_pending_monitor()) {
+          markOop mark = monitor->owner()->mark();
+          if (mark->has_monitor() &&
+              mark->monitor() == thread()->current_pending_monitor()) {
             lock_state = "waiting to lock";
-         }
+          }
         }
 
         found_first_monitor = true;
@@ -206,7 +219,7 @@ GrowableArray<MonitorInfo*>* interpretedVFrame::monitors() const {
   for (BasicObjectLock* current = (fr().previous_monitor_in_interpreter_frame(fr().interpreter_frame_monitor_begin()));
        current >= fr().interpreter_frame_monitor_end();
        current = fr().previous_monitor_in_interpreter_frame(current)) {
-    result->push(new MonitorInfo(current->obj(), current->lock(), false));
+    result->push(new MonitorInfo(current->obj(), current->lock(), false, false));
   }
   return result;
 }
@@ -531,8 +544,18 @@ void javaVFrame::print() {
   tty->print_cr("\tmonitor list:");
   for (int index = (list->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = list->at(index);
-    tty->print("\t  obj\t"); monitor->owner()->print_value();
-    tty->print("(" INTPTR_FORMAT ")", (address)monitor->owner());
+    tty->print("\t  obj\t");
+    if (monitor->owner_is_scalar_replaced()) {
+      Klass* k = Klass::cast(monitor->owner_klass());
+      tty->print("( is scalar replaced %s)", k->external_name());
+    } else if (monitor->owner() == NULL) {
+      tty->print("( null )");
+    } else {
+      monitor->owner()->print_value();
+      tty->print("(" INTPTR_FORMAT ")", (address)monitor->owner());
+    }
+    if (monitor->eliminated() && is_compiled_frame())
+      tty->print(" ( lock is eliminated )");
     tty->cr();
     tty->print("\t  ");
     monitor->lock()->print_on(tty);

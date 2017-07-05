@@ -1372,6 +1372,8 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
+    set_mdp_flag_at(mdp, BitData::null_seen_byte_constant());
+
     // The method data pointer needs to be updated.
     int mdp_delta = in_bytes(BitData::bit_data_size());
     if (TypeProfileCasts) {
