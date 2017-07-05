@@ -33,8 +33,6 @@ import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 

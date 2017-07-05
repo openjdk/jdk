@@ -582,14 +582,12 @@ public class SyncFactory {
              * there.
              **/
             c = Class.forName(providerID, true, cl);
-            return (SyncProvider) c.newInstance();
+            @SuppressWarnings("deprecation")
+            Object result =  c.newInstance();
+            return (SyncProvider)result;
 
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new SyncFactoryException("IllegalAccessException: " + e.getMessage());
-        } catch (InstantiationException e) {
-            throw new SyncFactoryException("InstantiationException: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            throw new SyncFactoryException("ClassNotFoundException: " + e.getMessage());
         }
     }
 

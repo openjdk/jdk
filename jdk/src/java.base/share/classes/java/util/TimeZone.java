@@ -42,6 +42,7 @@ import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZoneId;
+import java.util.Properties;
 import sun.security.action.GetPropertyAction;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
@@ -660,12 +661,13 @@ public abstract class TimeZone implements Serializable, Cloneable {
     private static synchronized TimeZone setDefaultZone() {
         TimeZone tz;
         // get the time zone ID from the system properties
-        String zoneID = GetPropertyAction.getProperty("user.timezone");
+        Properties props = GetPropertyAction.privilegedGetProperties();
+        String zoneID = props.getProperty("user.timezone");
 
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = GetPropertyAction.getProperty("java.home");
+            String javaHome = props.getProperty("java.home");
             try {
                 zoneID = getSystemTimeZoneID(javaHome);
                 if (zoneID == null) {
@@ -693,13 +695,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
         assert tz != null;
 
         final String id = zoneID;
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-                public Void run() {
-                    System.setProperty("user.timezone", id);
-                    return null;
-                }
-            });
+        props.setProperty("user.timezone", id);
 
         defaultTimeZone = tz;
         return tz;

@@ -1,8 +1,7 @@
 // Policy 4
 grant {
     // permissions common to all tests
-    permission java.util.PropertyPermission "test.src", "read";
-    permission java.util.PropertyPermission "test.classes", "read";
+    permission java.util.PropertyPermission "*", "read";
     permission java.io.FilePermission "${test.classes}${/}-", "read,write,delete";
     permission java.net.NetPermission "getDefaultHttpClient";
     permission java.lang.RuntimePermission "modifyThread";

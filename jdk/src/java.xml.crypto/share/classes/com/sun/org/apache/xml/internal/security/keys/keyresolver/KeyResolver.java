@@ -182,6 +182,7 @@ public class KeyResolver {
     public static void register(String className, boolean globalResolver)
         throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         JavaUtils.checkRegisterPermission();
+        @SuppressWarnings("deprecation")
         KeyResolverSpi keyResolverSpi =
             (KeyResolverSpi) Class.forName(className).newInstance();
         keyResolverSpi.setGlobalResolver(globalResolver);
@@ -207,7 +208,9 @@ public class KeyResolver {
         KeyResolverSpi keyResolverSpi = null;
         Exception ex = null;
         try {
-            keyResolverSpi = (KeyResolverSpi) Class.forName(className).newInstance();
+            @SuppressWarnings("deprecation")
+            Object tmp = Class.forName(className).newInstance();
+            keyResolverSpi = (KeyResolverSpi) tmp;
         } catch (ClassNotFoundException e) {
             ex = e;
         } catch (IllegalAccessException e) {
@@ -272,6 +275,7 @@ public class KeyResolver {
         JavaUtils.checkRegisterPermission();
         List<KeyResolver> keyResolverList = new ArrayList<KeyResolver>(classNames.size());
         for (String className : classNames) {
+            @SuppressWarnings("deprecation")
             KeyResolverSpi keyResolverSpi =
                 (KeyResolverSpi) Class.forName(className).newInstance();
             keyResolverSpi.setGlobalResolver(false);

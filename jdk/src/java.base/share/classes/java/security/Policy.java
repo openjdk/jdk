@@ -222,8 +222,9 @@ public abstract class Policy {
             public Policy run() {
                 try {
                     ClassLoader scl = ClassLoader.getSystemClassLoader();
-                    Class<?> c = Class.forName(policyProvider, true, scl);
-                    return (Policy)c.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object o = Class.forName(policyProvider, true, scl).newInstance();
+                    return (Policy)o;
                 } catch (Exception e) {
                     if (debug != null) {
                         debug.println("policy provider " + policyProvider +

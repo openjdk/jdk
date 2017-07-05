@@ -145,7 +145,7 @@ public class HttpClient extends NetworkClient {
     }
 
     static {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
 

@@ -59,6 +59,7 @@ public class StrongSeedReader {
             System.setProperty("java.security.egd", file.toURI().toString());
             testSeed("NativePRNG");
             testSeed("SHA1PRNG");
+            testSeed("DRBG");
         } finally {
             if (file != null) {
                 file.delete();

@@ -541,7 +541,7 @@ public class Shell implements PartialParser {
             @Override
             protected Expression assignmentExpression(final boolean noIn) {
                 exprStart[0] = this.start;
-                return super.expression();
+                return super.assignmentExpression(noIn);
             }
         };
 

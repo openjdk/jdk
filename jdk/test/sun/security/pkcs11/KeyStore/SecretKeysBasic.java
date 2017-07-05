@@ -26,7 +26,6 @@ import java.util.*;
 import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import javax.xml.bind.DatatypeConverter;
 
 public class SecretKeysBasic extends PKCS11Test {
 
@@ -131,8 +130,11 @@ public class SecretKeysBasic extends PKCS11Test {
         System.out.println(info + "> " + key);
         System.out.println("\tALGO=" + key.getAlgorithm());
         if (key.getFormat() != null) {
-            System.out.println("\t[" + key.getFormat() + "] VALUE=" +
-                    DatatypeConverter.printHexBinary(key.getEncoded()));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : key.getEncoded()) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            System.out.println("\t[" + key.getFormat() + "] VALUE=" + sb);
         } else {
             System.out.println("\tVALUE=n/a");
         }

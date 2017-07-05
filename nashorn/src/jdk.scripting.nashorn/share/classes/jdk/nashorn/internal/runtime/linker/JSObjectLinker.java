@@ -71,6 +71,9 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final Object self = request.getReceiver();
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+        if (self == null || !canLinkTypeStatic(self.getClass())) {
+            return null;
+        }
 
         GuardedInvocation inv;
         if (self instanceof JSObject) {
@@ -82,7 +85,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
             inv = new GuardedInvocation(beanInv.getInvocation(),
                 NashornGuards.combineGuards(beanInv.getGuard(), NashornGuards.getNotJSObjectGuard()));
         } else {
-            throw new AssertionError(); // Should never reach here.
+            throw new AssertionError("got instanceof: " + self.getClass()); // Should never reach here.
         }
 
         return Bootstrap.asTypeSafeReturn(inv, linkerServices, desc);

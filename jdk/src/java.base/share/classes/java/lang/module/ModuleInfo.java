@@ -37,11 +37,12 @@ import java.nio.BufferUnderflowException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import jdk.internal.module.Hasher.DependencyHashes;
+import jdk.internal.module.ModuleHashes;
 
 import static jdk.internal.module.ClassFileConstants.*;
 
@@ -337,7 +338,7 @@ final class ModuleInfo {
                 // computeIfAbsent
                 Set<String> providers = pm.get(sn);
                 if (providers == null) {
-                    providers = new HashSet<>();
+                    providers = new LinkedHashSet<>(); // preserve order
                     pm.put(sn, providers);
                 }
                 providers.add(cn);
@@ -425,7 +426,7 @@ final class ModuleInfo {
             map.put(dn, hash);
         }
 
-        builder.hashes(new DependencyHashes(algorithm, map));
+        builder.hashes(new ModuleHashes(algorithm, map));
     }
 
 

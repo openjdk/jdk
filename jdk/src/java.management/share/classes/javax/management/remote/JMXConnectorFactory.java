@@ -531,7 +531,9 @@ public class JMXConnectorFactory {
             // We have just proved that this cast is correct
             Class<? extends T> providerClassT = Util.cast(providerClass);
             try {
-                return providerClassT.newInstance();
+                @SuppressWarnings("deprecation")
+                T result = providerClassT.newInstance();
+                return result;
             } catch (Exception e) {
                 final String msg =
                     "Exception when instantiating provider [" + className +

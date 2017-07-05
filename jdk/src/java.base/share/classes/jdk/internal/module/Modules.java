@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class Modules {
      * Creates a new Module. The module has the given ModuleDescriptor and
      * is defined to the given class loader.
      *
-     * The resulting Module is in a larva state in that it does not not read
+     * The resulting Module is in a larval state in that it does not not read
      * any other module and does not have any exports.
      *
      * The URI is for information purposes only.
@@ -74,7 +74,7 @@ public class Modules {
      * Define a new module to the VM. The module has the given set of
      * concealed packages and is defined to the given class loader.
      *
-     * The resulting Module is in a larva state in that it does not not read
+     * The resulting Module is in a larval state in that it does not not read
      * any other module and does not have any exports.
      */
     public static Module defineModule(ClassLoader loader,
@@ -93,6 +93,13 @@ public class Modules {
      */
     public static void addReads(Module m1, Module m2) {
         JLRMA.addReads(m1, m2);
+    }
+
+    /**
+     * Update module {@code m} to read all unnamed modules.
+     */
+    public static void addReadsAllUnnamed(Module m) {
+        JLRMA.addReadsAllUnnamed(m);
     }
 
     /**

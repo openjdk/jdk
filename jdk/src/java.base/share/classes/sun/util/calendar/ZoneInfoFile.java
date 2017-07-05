@@ -246,7 +246,7 @@ public final class ZoneInfoFile {
 
     static {
         String oldmapping = GetPropertyAction
-                .getProperty("sun.timezone.ids.oldmapping", "false")
+                .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
                 .toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

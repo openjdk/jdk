@@ -115,7 +115,9 @@ public class Canonicalizer {
             Class<? extends CanonicalizerSpi> implementingClass =
                 canonicalizerHash.get(algorithmURI);
 
-            canonicalizerSpi = implementingClass.newInstance();
+            @SuppressWarnings("deprecation")
+            CanonicalizerSpi tmp = implementingClass.newInstance();
+            canonicalizerSpi = tmp;
             canonicalizerSpi.reset = true;
         } catch (Exception e) {
             Object exArgs[] = { algorithmURI };

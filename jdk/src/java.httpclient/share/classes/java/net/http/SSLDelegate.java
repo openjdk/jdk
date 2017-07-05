@@ -66,8 +66,6 @@ class SSLDelegate {
             Log.logSSL("No application protocols proposed");
         }
         engine.setSSLParameters(sslParameters);
-        engine.setEnabledCipherSuites(sslp.getCipherSuites());
-        engine.setEnabledProtocols(sslp.getProtocols());
         wrapper = new EngineWrapper(chan, engine);
         this.chan = chan;
         this.client = client;

@@ -525,6 +525,8 @@ public class WsimportTool {
             String classpathString = createClasspathString();
             boolean bootCP = useBootClasspath(EndpointContext.class) || useBootClasspath(JAXBPermission.class);
             List<String> args = new ArrayList<String>();
+            args.add("-addmods");
+            args.add("java.xml.ws");
             args.add("-d");
             args.add(classDir);
             args.add("-classpath");
