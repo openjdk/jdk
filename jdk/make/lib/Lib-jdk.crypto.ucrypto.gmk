@@ -35,7 +35,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       LIBRARY := j2ucrypto, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJ2UCRYPTO_SRC), \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(addprefix -I, $(LIBJ2UCRYPTO_SRC)), \

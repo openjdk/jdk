@@ -26,6 +26,7 @@ package javax.swing.text;
 
 import java.util.Vector;
 import sun.awt.AppContext;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * A queue of text layout tasks.
@@ -80,7 +81,22 @@ public class LayoutQueue {
      */
     public synchronized void addTask(Runnable task) {
         if (worker == null) {
-            worker = new LayoutThread();
+            Runnable workerRunnable = () -> {
+                Runnable work;
+                do {
+                    work = waitForWork();
+                    if (work != null) {
+                        work.run();
+                    }
+                } while (work != null);
+            };
+            String name =  "text-layout";
+            if (System.getSecurityManager() == null) {
+                worker = new Thread(workerRunnable, name);
+            } else {
+                worker = new ManagedLocalsThread(workerRunnable, name);
+            }
+            worker.setPriority(Thread.MIN_PRIORITY);
             worker.start();
         }
         tasks.addElement(task);
@@ -102,28 +118,4 @@ public class LayoutQueue {
         tasks.removeElementAt(0);
         return work;
     }
-
-    /**
-     * low priority thread to perform layout work forever
-     */
-    class LayoutThread extends Thread {
-
-        LayoutThread() {
-            super("text-layout");
-            setPriority(Thread.MIN_PRIORITY);
-        }
-
-        public void run() {
-            Runnable work;
-            do {
-                work = waitForWork();
-                if (work != null) {
-                    work.run();
-                }
-            } while (work != null);
-        }
-
-
-    }
-
 }

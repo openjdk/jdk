@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,11 +120,17 @@ import java.util.TreeMap;
  */
 public final class NimbusStyle extends SynthStyle {
     /* Keys and scales for large/small/mini components, based on Apples sizes */
+    /** Large key */
     public static final String LARGE_KEY = "large";
+    /** Small key */
     public static final String SMALL_KEY = "small";
+    /** Mini key */
     public static final String MINI_KEY = "mini";
+    /** Large scale */
     public static final double LARGE_SCALE = 1.15;
+    /** Small scale */
     public static final double SMALL_SCALE = 0.857;
+    /** Mini scale */
     public static final double MINI_SCALE = 0.714;
 
     /**

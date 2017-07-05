@@ -34,7 +34,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
     LIBRARY := j2pkcs11, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJ2PKCS11_SRC), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \

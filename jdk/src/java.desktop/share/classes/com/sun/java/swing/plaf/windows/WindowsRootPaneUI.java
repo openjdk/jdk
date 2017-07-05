@@ -197,6 +197,10 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
                 root = null;
                 winAncestor = null;
             } else {
+                if (WindowsLookAndFeel.isMnemonicHidden() && ev.isAltDown()) {
+                    WindowsLookAndFeel.setMnemonicHidden(false);
+                    WindowsGraphicsUtils.repaintMnemonicsInWindow(winAncestor);
+                }
                 altKeyPressed = false;
             }
             return false;

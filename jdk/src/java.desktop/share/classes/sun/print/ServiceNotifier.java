@@ -25,6 +25,8 @@
 
 package sun.print;
 
+import sun.misc.ManagedLocalsThread;
+
 import java.util.Vector;
 
 import javax.print.PrintService;
@@ -40,7 +42,7 @@ import javax.print.event.PrintServiceAttributeListener;
  * to obtain the state of the attributes and notifies the listeners of
  * any changes.
  */
-class ServiceNotifier extends Thread {
+class ServiceNotifier extends ManagedLocalsThread {
 
     private PrintService service;
     private Vector<PrintServiceAttributeListener> listeners;
@@ -48,7 +50,7 @@ class ServiceNotifier extends Thread {
     private PrintServiceAttributeSet lastSet;
 
     ServiceNotifier(PrintService service) {
-        super(service.getName() + " notifier");
+        super((Runnable) null, service.getName() + " notifier");
         this.service = service;
         listeners = new Vector<>();
         try {

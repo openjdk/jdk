@@ -25,6 +25,9 @@
 
 package com.sun.media.sound;
 
+import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
+
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.File;
@@ -144,7 +147,13 @@ final class JSSecurityManager {
                                final String threadName,
                                final boolean isDaemon, final int priority,
                                final boolean doStart) {
-        Thread thread = new Thread(runnable);
+        Thread thread;
+        if (System.getSecurityManager() == null) {
+            thread = new Thread(runnable);
+        } else {
+            thread = new ManagedLocalsThread(runnable);
+        }
+
         if (threadName != null) {
             thread.setName(threadName);
         }

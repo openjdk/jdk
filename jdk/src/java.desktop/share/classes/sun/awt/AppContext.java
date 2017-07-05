@@ -43,6 +43,8 @@ import java.util.HashSet;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
+
+import sun.misc.InnocuousThread;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -589,7 +591,12 @@ public final class AppContext {
         }
 
         public Thread run() {
-            Thread t = new Thread(appContext.getThreadGroup(), runnable);
+            Thread t;
+            if (System.getSecurityManager() == null) {
+                t = new Thread(appContext.getThreadGroup(), runnable);
+            } else {
+                t = new InnocuousThread(appContext.getThreadGroup(), runnable, "AppContext Disposer");
+            }
             t.setContextClassLoader(appContext.getContextClassLoader());
             t.setPriority(Thread.NORM_PRIORITY + 1);
             t.setDaemon(true);

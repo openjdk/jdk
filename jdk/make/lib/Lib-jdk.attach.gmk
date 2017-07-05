@@ -32,7 +32,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     LIBRARY := attach, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(call FindSrcDirsForLib, jdk.attach, attach), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.attach \
