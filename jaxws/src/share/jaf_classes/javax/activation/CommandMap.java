@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,10 +93,11 @@ public abstract class CommandMap {
                 // otherwise, we also allow it if this code and the
                 // factory come from the same (non-system) class loader (e.g.,
                 // the JAF classes were loaded with the applet classes).
-                if (CommandMap.class.getClassLoader() == null ||
-                    CommandMap.class.getClassLoader() !=
-                            commandMap.getClass().getClassLoader())
+                ClassLoader cl = CommandMap.class.getClassLoader();
+                if (cl == null || cl.getParent() == null ||
+                    cl != commandMap.getClass().getClassLoader()) {
                     throw ex;
+                }
             }
         }
         // remove any per-thread-context-class-loader CommandMap

@@ -64,6 +64,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   jobject      _hot_method_holder;
   int          _hot_count;    // information about its invocation counter
   const char*  _comment;      // more info about the task
+  const char*  _failure_reason;
 
  public:
   CompileTask() {
@@ -138,6 +139,10 @@ public:
   void         log_task_queued();
   void         log_task_start(CompileLog* log);
   void         log_task_done(CompileLog* log);
+
+  void         set_failure_reason(const char* reason) {
+    _failure_reason = reason;
+  }
 };
 
 // CompilerCounters

@@ -23,7 +23,7 @@
 
 /*
     @test
-    @bug 4217441 4533872 4900935 8020037 8032012 8041791
+    @bug 4217441 4533872 4900935 8020037 8032012 8041791 8042589
     @summary toLowerCase should lower-case Greek Sigma correctly depending
              on the context (final/non-final).  Also it should handle
              Locale specific (lt, tr, and az) lowercasings and supplementary
@@ -105,6 +105,12 @@ public class ToLowerCase {
         test("\uD801\uDC00A\uD801\uDC01B\uD801\uDC02C", Locale.US, "\uD801\uDC28a\uD801\uDC29b\uD801\uDC2Ac");
         // invalid code point tests:
         test("\uD800\uD800\uD801A\uDC00\uDC00\uDC00B", Locale.US, "\uD800\uD800\uD801a\uDC00\uDC00\uDC00b");
+
+        // lower/uppercase + surrogates
+        test("a\uD801\uDC1c", Locale.ROOT, "a\uD801\uDC44");
+        test("A\uD801\uDC1c", Locale.ROOT, "a\uD801\uDC44");
+        test("a\uD801\uDC00\uD801\uDC01\uD801\uDC02", Locale.US, "a\uD801\uDC28\uD801\uDC29\uD801\uDC2A");
+        test("A\uD801\uDC00\uD801\uDC01\uD801\uDC02", Locale.US, "a\uD801\uDC28\uD801\uDC29\uD801\uDC2A");
 
         // test bmp + supp1
         StringBuilder src = new StringBuilder(0x20000);
