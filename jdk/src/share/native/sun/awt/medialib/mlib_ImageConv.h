@@ -31,6 +31,16 @@
 extern "C" {
 #endif /* __cplusplus */
 
+// Shared macro defined for cleanup of allocated memory.
+#ifndef FREE_AND_RETURN_STATUS
+#define FREE_AND_RETURN_STATUS \
+{ \
+if (pbuff != buff) mlib_free(pbuff); \
+if (k != akernel) mlib_free(k); \
+return status; \
+}
+#endif /* FREE_AND_RETURN_STATUS */
+
 void mlib_ImageXor80_aa(mlib_u8  *dl,
                         mlib_s32 wid,
                         mlib_s32 hgt,

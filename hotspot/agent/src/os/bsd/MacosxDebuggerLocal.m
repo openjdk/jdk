@@ -97,7 +97,8 @@ static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
  * Method:    init0
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls) {
+JNIEXPORT void JNICALL 
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls) {
   symbolicatorID = (*env)->GetFieldID(env, cls, "symbolicator", "J");
   taskID = (*env)->GetFieldID(env, cls, "task", "J");
   CHECK_EXCEPTION;
@@ -108,7 +109,11 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(
  * Method:    lookupByName0
  * Signature: (Ljava/lang/String;Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(JNIEnv *env, jobject this_obj, jstring objectName, jstring symbolName) {
+JNIEXPORT jlong JNICALL 
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
+  JNIEnv *env, jobject this_obj, 
+  jstring objectName, jstring symbolName) 
+{
   jlong address = 0;
 
 JNF_COCOA_ENTER(env);
@@ -137,7 +142,11 @@ JNF_COCOA_EXIT(env);
  * Method:    readBytesFromProcess0
  * Signature: (JJ)Lsun/jvm/hotspot/debugger/ReadResult;
  */
-JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(JNIEnv *env, jobject this_obj, jlong addr, jlong numBytes) {
+JNIEXPORT jbyteArray JNICALL
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
+  JNIEnv *env, jobject this_obj, 
+  jlong addr, jlong numBytes) 
+{
   if (debug) printf("readBytesFromProcess called. addr = %llx numBytes = %lld\n", addr, numBytes);
 
   // must allocate storage instead of using former parameter buf
@@ -209,12 +218,74 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_
   return array;
 }
 
+
 /*
- * Class:     sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal
- * Method:    getThreadIntegerRegisterSet0
- * Signature: (I)[J
+ * Lookup the thread_t that corresponds to the given thread_id.
+ * The thread_id should be the result from calling thread_info() with THREAD_IDENTIFIER_INFO
+ * and reading the m_ident_info.thread_id returned.
+ * The returned thread_t is the mach send right to the kernel port for the corresponding thread.
+ *
+ * We cannot simply use the OSThread._thread_id field in the JVM. This is set to ::mach_thread_self()
+ * in the VM, but that thread port is not valid for a remote debugger to access the thread.
  */
-JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(JNIEnv *env, jobject this_obj, jint lwp_id) {
+thread_t
+lookupThreadFromThreadId(task_t task, jlong thread_id) {
+  if (debug) {
+    printf("lookupThreadFromThreadId thread_id=0x%llx\n", thread_id);
+  }
+  
+  thread_array_t thread_list = NULL;
+  mach_msg_type_number_t thread_list_count = 0;
+  thread_t result_thread = 0;
+  int i;
+  
+  // get the list of all the send rights
+  kern_return_t result = task_threads(task, &thread_list, &thread_list_count);
+  if (result != KERN_SUCCESS) {
+    if (debug) {
+      printf("task_threads returned 0x%x\n", result);
+    }
+    return 0;
+  }
+  
+  for(i = 0 ; i < thread_list_count; i++) {
+    thread_identifier_info_data_t m_ident_info;
+    mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
+
+    // get the THREAD_IDENTIFIER_INFO for the send right
+    result = thread_info(thread_list[i], THREAD_IDENTIFIER_INFO, (thread_info_t) &m_ident_info, &count);
+    if (result != KERN_SUCCESS) {
+      if (debug) {
+        printf("thread_info returned 0x%x\n", result);
+      }
+      break;
+    }
+    
+    // if this is the one we're looking for, return the send right
+    if (thread_id == m_ident_info.thread_id)
+    {
+      result_thread = thread_list[i];
+      break;
+    }
+  }
+  
+  vm_size_t thread_list_size = (vm_size_t) (thread_list_count * sizeof (thread_t));
+  vm_deallocate(mach_task_self(), (vm_address_t) thread_list, thread_list_count);
+  
+  return result_thread;
+}
+
+
+/*
+ * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
+ * Method:    getThreadIntegerRegisterSet0
+ * Signature: (J)[J
+ */
+JNIEXPORT jlongArray JNICALL 
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
+  JNIEnv *env, jobject this_obj, 
+  jlong thread_id) 
+{
   if (debug)
     printf("getThreadRegisterSet0 called\n");
 
@@ -226,8 +297,9 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_
   int i;
   jlongArray registerArray;
   jlong *primitiveArray;
+  task_t gTask = getTask(env, this_obj);
 
-  tid = lwp_id;
+  tid = lookupThreadFromThreadId(gTask, thread_id);
 
   result = thread_get_state(tid, HSDB_THREAD_STATE, (thread_state_t)&state, &count);
 
@@ -328,19 +400,21 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_
 }
 
 /*
- * Class:     sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal
+ * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    translateTID0
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(JNIEnv *env, jobject this_obj, jint tid) {
+Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(
+  JNIEnv *env, jobject this_obj, jint tid) 
+{
   if (debug)
     printf("translateTID0 called on tid = 0x%x\n", (int)tid);
 
   kern_return_t result;
   thread_t foreign_tid, usable_tid;
   mach_msg_type_name_t type;
-    
+  
   foreign_tid = tid;
     
   task_t gTask = getTask(env, this_obj);
@@ -361,7 +435,10 @@ Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(JNIEnv *e
  * Method:    attach0
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(JNIEnv *env, jobject this_obj, jint jpid) {
+JNIEXPORT void JNICALL 
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
+  JNIEnv *env, jobject this_obj, jint jpid) 
+{
 JNF_COCOA_ENTER(env);
   if (getenv("JAVA_SAPROC_DEBUG") != NULL)
     debug = JNI_TRUE;
@@ -401,7 +478,10 @@ JNF_COCOA_EXIT(env);
  * Method:    detach0
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(JNIEnv *env, jobject this_obj) {
+JNIEXPORT void JNICALL 
+Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
+  JNIEnv *env, jobject this_obj) 
+{
 JNF_COCOA_ENTER(env);
   if (debug) printf("detach0 called\n");
 
@@ -419,10 +499,13 @@ JNF_COCOA_EXIT(env);
  * Method:    load_library
  * Signature: (Ljava/lang/String;)L
  */
-JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIEnv * env,
-                                                                           jclass disclass,
-                                                                           jstring jrepath_s,
-                                                                           jstring libname_s) {
+JNIEXPORT jlong JNICALL
+Java_sun_jvm_hotspot_asm_Disassembler_load_1library(
+  JNIEnv * env, 
+  jclass disclass,
+  jstring jrepath_s,
+  jstring libname_s) 
+{
   uintptr_t func = 0;
   const char* error_message = NULL;
   const char* java_home;
@@ -533,13 +616,16 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
  * Method:    decode
  * Signature: (Lsun/jvm/hotspot/asm/InstructionVisitor;J[BLjava/lang/String;J)V
  */
-JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env,
-                                                                    jobject dis,
-                                                                    jobject visitor,
-                                                                    jlong startPc,
-                                                                    jbyteArray code,
-                                                                    jstring options_s,
-                                                                    jlong decode_instructions_virtual) {
+JNIEXPORT void JNICALL
+Java_sun_jvm_hotspot_asm_Disassembler_decode(
+   JNIEnv * env,
+   jobject dis,
+   jobject visitor,
+   jlong startPc,
+   jbyteArray code,
+   jstring options_s,
+   jlong decode_instructions_virtual) 
+{
   jboolean isCopy;
   jbyte* start = (*env)->GetByteArrayElements(env, code, &isCopy);
   jbyte* end = start + (*env)->GetArrayLength(env, code);

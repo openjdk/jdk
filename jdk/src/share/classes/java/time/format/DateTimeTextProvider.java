@@ -63,12 +63,13 @@ package java.time.format;
 
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 
-import java.time.temporal.Chrono;
-import java.time.temporal.ISOChrono;
-import java.time.calendar.JapaneseChrono;
-import java.time.calendar.ThaiBuddhistChrono;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -83,9 +84,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.spi.CalendarNameProvider;
 
-import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.CalendarDataUtility;
 
 /**
@@ -122,7 +121,7 @@ class DateTimeTextProvider {
 
     /**
      * Gets the text for the specified field, locale and style
-     * for the purpose of printing.
+     * for the purpose of formatting.
      * <p>
      * The text associated with the value is returned.
      * The null return value should be used if there is no applicable text, or
@@ -152,37 +151,57 @@ class DateTimeTextProvider {
     }
 
     /**
-     * Gets the era text for the specified chrono, value, style and locale
-     * for the purpose of printing.
+     * Gets the text for the specified chrono, field, locale and style
+     * for the purpose of formatting.
      * <p>
-     * The era text associated with the value is returned.
+     * The text associated with the value is returned.
      * The null return value should be used if there is no applicable text, or
      * if the text would be a numeric representation of the value.
      *
-     * @param chrono the chrono to get text for, not null
+     * @param chrono the Chronology to get text for, not null
+     * @param field  the field to get text for, not null
      * @param value  the field value to get text for, not null
      * @param style  the style to get text for, not null
      * @param locale  the locale to get text for, not null
-     * @return the era text for the value, null if no text found
+     * @return the text for the field value, null if no text found
      */
-    public String getEraText(Chrono chrono, long value, TextStyle style, Locale locale) {
-        String type = null;
-        if (chrono == ISOChrono.INSTANCE) {
-            type = "gregory";
-        } else if (chrono == JapaneseChrono.INSTANCE) {
-            type = "japanese";
-            if (value == -999) {
-                value = 0;
+    public String getText(Chronology chrono, TemporalField field, long value,
+                                    TextStyle style, Locale locale) {
+        if (chrono == IsoChronology.INSTANCE
+                || !(field instanceof ChronoField)) {
+            return getText(field, value, style, locale);
+        }
+
+        int fieldIndex;
+        int fieldValue;
+        if (field == ERA) {
+            fieldIndex = Calendar.ERA;
+            if (chrono == JapaneseChronology.INSTANCE) {
+                if (value == -999) {
+                    fieldValue = 0;
+                } else {
+                    fieldValue = (int) value + 2;
+                }
             } else {
-                value += 2;
+                fieldValue = (int) value;
             }
-        } else if (chrono == ThaiBuddhistChrono.INSTANCE) {
-            type = "buddhist";
+        } else if (field == MONTH_OF_YEAR) {
+            fieldIndex = Calendar.MONTH;
+            fieldValue = (int) value - 1;
+        } else if (field == DAY_OF_WEEK) {
+            fieldIndex = Calendar.DAY_OF_WEEK;
+            fieldValue = (int) value + 1;
+            if (fieldValue > 7) {
+                fieldValue = Calendar.SUNDAY;
+            }
+        } else if (field == AMPM_OF_DAY) {
+            fieldIndex = Calendar.AM_PM;
+            fieldValue = (int) value;
         } else {
             return null;
         }
-        return CalendarDataUtility.retrieveFieldValueName(
-            type, Calendar.ERA, (int)value, toStyle(style), locale);
+        return CalendarDataUtility.retrieveCldrFieldValueName(
+                chrono.getCalendarType(), fieldIndex, fieldValue, toStyle(style), locale);
     }
 
     /**
@@ -209,6 +228,88 @@ class DateTimeTextProvider {
         return null;
     }
 
+    /**
+     * Gets an iterator of text to field for the specified chrono, field, locale and style
+     * for the purpose of parsing.
+     * <p>
+     * The iterator must be returned in order from the longest text to the shortest.
+     * <p>
+     * The null return value should be used if there is no applicable parsable text, or
+     * if the text would be a numeric representation of the value.
+     * Text can only be parsed if all the values for that field-style-locale combination are unique.
+     *
+     * @param chrono the Chronology to get text for, not null
+     * @param field  the field to get text for, not null
+     * @param style  the style to get text for, null for all parsable text
+     * @param locale  the locale to get text for, not null
+     * @return the iterator of text to field pairs, in order from longest text to shortest text,
+     *  null if the field or style is not parsable
+     */
+    public Iterator<Entry<String, Long>> getTextIterator(Chronology chrono, TemporalField field,
+                                                         TextStyle style, Locale locale) {
+        if (chrono == IsoChronology.INSTANCE
+                || !(field instanceof ChronoField)) {
+            return getTextIterator(field, style, locale);
+        }
+
+        int fieldIndex;
+        switch ((ChronoField)field) {
+        case ERA:
+            fieldIndex = Calendar.ERA;
+            break;
+        case MONTH_OF_YEAR:
+            fieldIndex = Calendar.MONTH;
+            break;
+        case DAY_OF_WEEK:
+            fieldIndex = Calendar.DAY_OF_WEEK;
+            break;
+        case AMPM_OF_DAY:
+            fieldIndex = Calendar.AM_PM;
+            break;
+        default:
+            return null;
+        }
+
+        Map<String, Integer> map = CalendarDataUtility.retrieveCldrFieldValueNames(
+                chrono.getCalendarType(), fieldIndex, toStyle(style), locale);
+        if (map == null) {
+            return null;
+        }
+
+        List<Entry<String, Long>> list = new ArrayList<>(map.size());
+        switch (fieldIndex) {
+        case Calendar.ERA:
+            for (String key : map.keySet()) {
+                int era = map.get(key);
+                if (chrono == JapaneseChronology.INSTANCE) {
+                    if (era == 0) {
+                        era = -999;
+                    } else {
+                        era -= 2;
+                    }
+                }
+                list.add(createEntry(key, (long) era));
+            }
+            break;
+        case Calendar.MONTH:
+            for (String key : map.keySet()) {
+                list.add(createEntry(key, (long)(map.get(key) + 1)));
+            }
+            break;
+        case Calendar.DAY_OF_WEEK:
+            for (String key : map.keySet()) {
+                list.add(createEntry(key, (long)toWeekDay(map.get(key))));
+            }
+            break;
+        default:
+            for (String key : map.keySet()) {
+                list.add(createEntry(key, (long)map.get(key)));
+            }
+            break;
+        }
+        return list.iterator();
+    }
+
     private Object findStore(TemporalField field, Locale locale) {
         Entry<TemporalField, Locale> key = createEntry(field, locale);
         Object store = CACHE.get(key);
@@ -229,67 +330,91 @@ class DateTimeTextProvider {
     }
 
     private Object createStore(TemporalField field, Locale locale) {
-        CalendarNameProvider provider = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, locale)
-                                                             .getCalendarNameProvider();
         Map<TextStyle, Map<Long, String>> styleMap = new HashMap<>();
+        if (field == ERA) {
+            for (TextStyle textStyle : TextStyle.values()) {
+                Map<Long, String> map = new HashMap<>();
+                for (Entry<String, Integer> entry :
+                        CalendarDataUtility.retrieveCldrFieldValueNames(
+                        "gregory", Calendar.ERA, toStyle(textStyle), locale).entrySet()) {
+                    map.put((long) entry.getValue(), entry.getKey());
+                }
+                if (!map.isEmpty()) {
+                    styleMap.put(textStyle, map);
+                }
+            }
+            return new LocaleStore(styleMap);
+        }
+
         if (field == MONTH_OF_YEAR) {
             Map<Long, String> map = new HashMap<>();
             for (Entry<String, Integer> entry :
-                 provider.getDisplayNames("gregory", Calendar.MONTH, Calendar.LONG_FORMAT, locale).entrySet()) {
-                map.put((long)(entry.getValue() + 1), entry.getKey());
+                    CalendarDataUtility.retrieveCldrFieldValueNames(
+                    "gregory", Calendar.MONTH, Calendar.LONG_FORMAT, locale).entrySet()) {
+                map.put((long) (entry.getValue() + 1), entry.getKey());
             }
             styleMap.put(TextStyle.FULL, map);
 
             map = new HashMap<>();
             for (Entry<String, Integer> entry :
-                 provider.getDisplayNames("gregory", Calendar.MONTH, Calendar.SHORT_FORMAT, locale).entrySet()) {
-                map.put((long)(entry.getValue() + 1), entry.getKey());
+                    CalendarDataUtility.retrieveCldrFieldValueNames(
+                    "gregory", Calendar.MONTH, Calendar.SHORT_FORMAT, locale).entrySet()) {
+                map.put((long) (entry.getValue() + 1), entry.getKey());
             }
             styleMap.put(TextStyle.SHORT, map);
 
             map = new HashMap<>();
             for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
-                String name = provider.getDisplayName("gregory", Calendar.MONTH, month, Calendar.NARROW_STANDALONE, locale);
+                String name;
+                name = CalendarDataUtility.retrieveCldrFieldValueName(
+                        "gregory", Calendar.MONTH, month, Calendar.NARROW_STANDALONE, locale);
                 if (name != null) {
                     map.put((long)(month + 1), name);
                 }
             }
-            if (map.size() != 0) {
+            if (!map.isEmpty()) {
                 styleMap.put(TextStyle.NARROW, map);
             }
             return new LocaleStore(styleMap);
         }
+
         if (field == DAY_OF_WEEK) {
             Map<Long, String> map = new HashMap<>();
             for (Entry<String, Integer> entry :
-                 provider.getDisplayNames("gregory", Calendar.DAY_OF_WEEK, Calendar.LONG_FORMAT, locale).entrySet()) {
+                 CalendarDataUtility.retrieveCldrFieldValueNames(
+                    "gregory", Calendar.DAY_OF_WEEK, Calendar.LONG_FORMAT, locale).entrySet()) {
                 map.put((long)toWeekDay(entry.getValue()), entry.getKey());
             }
             styleMap.put(TextStyle.FULL, map);
             map = new HashMap<>();
             for (Entry<String, Integer> entry :
-                 provider.getDisplayNames("gregory", Calendar.DAY_OF_WEEK, Calendar.SHORT_FORMAT, locale).entrySet()) {
-                map.put((long)toWeekDay(entry.getValue()), entry.getKey());
+                    CalendarDataUtility.retrieveCldrFieldValueNames(
+                    "gregory", Calendar.DAY_OF_WEEK, Calendar.SHORT_FORMAT, locale).entrySet()) {
+                map.put((long) toWeekDay(entry.getValue()), entry.getKey());
             }
             styleMap.put(TextStyle.SHORT, map);
             map = new HashMap<>();
             for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
-                map.put((long)toWeekDay(wday),
-                        provider.getDisplayName("gregory", Calendar.DAY_OF_WEEK, wday, Calendar.NARROW_FORMAT, locale));
+                map.put((long) toWeekDay(wday),
+                        CalendarDataUtility.retrieveCldrFieldValueName(
+                        "gregory", Calendar.DAY_OF_WEEK, wday, Calendar.NARROW_FORMAT, locale));
             }
             styleMap.put(TextStyle.NARROW, map);
             return new LocaleStore(styleMap);
         }
+
         if (field == AMPM_OF_DAY) {
             Map<Long, String> map = new HashMap<>();
             for (Entry<String, Integer> entry :
-                 provider.getDisplayNames("gregory", Calendar.AM_PM, Calendar.LONG_FORMAT, locale).entrySet()) {
-                map.put((long)entry.getValue(), entry.getKey());
+                    CalendarDataUtility.retrieveCldrFieldValueNames(
+                    "gregory", Calendar.AM_PM, Calendar.LONG_FORMAT, locale).entrySet()) {
+                map.put((long) entry.getValue(), entry.getKey());
             }
             styleMap.put(TextStyle.FULL, map);
             styleMap.put(TextStyle.SHORT, map);  // re-use, as we don't have different data
             return new LocaleStore(styleMap);
         }
+
         return "";  // null marker for map
     }
 

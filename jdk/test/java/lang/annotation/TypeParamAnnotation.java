@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004698
+ * @bug 8004698 8007278
  * @summary Unit test for annotations on TypeVariables
  */
 
@@ -93,7 +93,7 @@ public class TypeParamAnnotation {
     private static void testGetAnnos() throws Exception {
         TypeVariable<?>[] ts = TypeParam.class.getDeclaredMethod("foo").getTypeParameters();
         ParamAnno2[] as;
-        as = ts[0].getAnnotations(ParamAnno2.class);
+        as = ts[0].getAnnotationsByType(ParamAnno2.class);
         check(as.length == 1);
         check(as[0].value() == 3);
     }

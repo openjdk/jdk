@@ -477,9 +477,9 @@ void *mlib_ImageCreateRowTable(mlib_image *img)
   im_height = mlib_ImageGetHeight(img);
   im_stride = mlib_ImageGetStride(img);
   tline     = mlib_ImageGetData(img);
+  if (tline == NULL) return NULL;
   rtable    = mlib_malloc((3 + im_height)*sizeof(mlib_u8 *));
-
-  if (rtable == NULL || tline == NULL) return NULL;
+  if (rtable == NULL) return NULL;
 
   rtable[0] = 0;
   rtable[1] = (mlib_u8*)((void **)rtable + 1);

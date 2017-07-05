@@ -76,23 +76,17 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.time.format.DateTimeBuilder;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatters;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoLocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.ChronoZonedDateTime;
-import java.time.temporal.OffsetTime;
 import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalAdder;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
-import java.time.temporal.TemporalSubtractor;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
@@ -129,7 +123,7 @@ public final class LocalTime
      */
     public static final LocalTime MIN;
     /**
-     * The minimum supported {@code LocalTime}, '23:59:59.999999999'.
+     * The maximum supported {@code LocalTime}, '23:59:59.999999999'.
      * This is the time just before midnight at the end of the day.
      */
     public static final LocalTime MAX;
@@ -273,21 +267,17 @@ public final class LocalTime
         // inline OffsetTime factory to avoid creating object and InstantProvider checks
         final Instant now = clock.instant();  // called once
         ZoneOffset offset = clock.getZone().getRules().getOffset(now);
-        long secsOfDay = now.getEpochSecond() % SECONDS_PER_DAY;
-        secsOfDay = (secsOfDay + offset.getTotalSeconds()) % SECONDS_PER_DAY;
-        if (secsOfDay < 0) {
-            secsOfDay += SECONDS_PER_DAY;
-        }
-        return LocalTime.ofSecondOfDay(secsOfDay, now.getNano());
+        long localSecond = now.getEpochSecond() + offset.getTotalSeconds();  // overflow caught later
+        int secsOfDay = (int) Math.floorMod(localSecond, SECONDS_PER_DAY);
+        return ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + now.getNano());
     }
 
     //------------------------get-----------------------------------------------
     /**
      * Obtains an instance of {@code LocalTime} from an hour and minute.
      * <p>
-     * The second and nanosecond fields will be set to zero by this factory method.
-     * <p>
-     * This factory may return a cached value, but applications must not rely on this.
+     * This returns a {@code LocalTime} with the specified hour and minute.
+     * The second and nanosecond fields will be set to zero.
      *
      * @param hour  the hour-of-day to represent, from 0 to 23
      * @param minute  the minute-of-hour to represent, from 0 to 59
@@ -306,9 +296,8 @@ public final class LocalTime
     /**
      * Obtains an instance of {@code LocalTime} from an hour, minute and second.
      * <p>
-     * The nanosecond field will be set to zero by this factory method.
-     * <p>
-     * This factory may return a cached value, but applications must not rely on this.
+     * This returns a {@code LocalTime} with the specified hour, minute and second.
+     * The nanosecond field will be set to zero.
      *
      * @param hour  the hour-of-day to represent, from 0 to 23
      * @param minute  the minute-of-hour to represent, from 0 to 59
@@ -329,7 +318,7 @@ public final class LocalTime
     /**
      * Obtains an instance of {@code LocalTime} from an hour, minute, second and nanosecond.
      * <p>
-     * This factory may return a cached value, but applications must not rely on this.
+     * This returns a {@code LocalTime} with the specified hour, minute, second and nanosecond.
      *
      * @param hour  the hour-of-day to represent, from 0 to 23
      * @param minute  the minute-of-hour to represent, from 0 to 59
@@ -350,7 +339,8 @@ public final class LocalTime
     /**
      * Obtains an instance of {@code LocalTime} from a second-of-day value.
      * <p>
-     * This factory may return a cached value, but applications must not rely on this.
+     * This returns a {@code LocalTime} with the specified second-of-day.
+     * The nanosecond field will be set to zero.
      *
      * @param secondOfDay  the second-of-day, from {@code 0} to {@code 24 * 60 * 60 - 1}
      * @return the local time, not null
@@ -366,30 +356,9 @@ public final class LocalTime
     }
 
     /**
-     * Obtains an instance of {@code LocalTime} from a second-of-day value, with
-     * associated nanos of second.
-     * <p>
-     * This factory may return a cached value, but applications must not rely on this.
-     *
-     * @param secondOfDay  the second-of-day, from {@code 0} to {@code 24 * 60 * 60 - 1}
-     * @param nanoOfSecond  the nano-of-second, from 0 to 999,999,999
-     * @return the local time, not null
-     * @throws DateTimeException if the either input value is invalid
-     */
-    public static LocalTime ofSecondOfDay(long secondOfDay, int nanoOfSecond) {
-        SECOND_OF_DAY.checkValidValue(secondOfDay);
-        NANO_OF_SECOND.checkValidValue(nanoOfSecond);
-        int hours = (int) (secondOfDay / SECONDS_PER_HOUR);
-        secondOfDay -= hours * SECONDS_PER_HOUR;
-        int minutes = (int) (secondOfDay / SECONDS_PER_MINUTE);
-        secondOfDay -= minutes * SECONDS_PER_MINUTE;
-        return create(hours, minutes, (int) secondOfDay, nanoOfSecond);
-    }
-
-    /**
      * Obtains an instance of {@code LocalTime} from a nanos-of-day value.
      * <p>
-     * This factory may return a cached value, but applications must not rely on this.
+     * This returns a {@code LocalTime} with the specified nanosecond-of-day.
      *
      * @param nanoOfDay  the nano of day, from {@code 0} to {@code 24 * 60 * 60 * 1,000,000,000 - 1}
      * @return the local time, not null
@@ -410,10 +379,12 @@ public final class LocalTime
     /**
      * Obtains an instance of {@code LocalTime} from a temporal object.
      * <p>
-     * A {@code TemporalAccessor} represents some form of date and time information.
-     * This factory converts the arbitrary temporal object to an instance of {@code LocalTime}.
+     * This obtains a local time based on the specified temporal.
+     * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
+     * which this factory converts to an instance of {@code LocalTime}.
      * <p>
-     * The conversion extracts the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
+     * The conversion uses the {@link Queries#localTime()} query, which relies
+     * on extracting the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used in queries via method reference, {@code LocalTime::from}.
@@ -423,26 +394,11 @@ public final class LocalTime
      * @throws DateTimeException if unable to convert to a {@code LocalTime}
      */
     public static LocalTime from(TemporalAccessor temporal) {
-        if (temporal instanceof LocalTime) {
-            return (LocalTime) temporal;
-        } else if (temporal instanceof ChronoLocalDateTime) {
-            return ((ChronoLocalDateTime) temporal).getTime();
-        } else if (temporal instanceof ChronoZonedDateTime) {
-            return ((ChronoZonedDateTime) temporal).getTime();
+        LocalTime time = temporal.query(Queries.localTime());
+        if (time == null) {
+            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " + temporal.getClass());
         }
-        // handle builder as a special case
-        if (temporal instanceof DateTimeBuilder) {
-            DateTimeBuilder builder = (DateTimeBuilder) temporal;
-            LocalTime time = builder.extract(LocalTime.class);
-            if (time != null) {
-                return time;
-            }
-        }
-        try {
-            return ofNanoOfDay(temporal.getLong(NANO_OF_DAY));
-        } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " + temporal.getClass(), ex);
-        }
+        return time;
     }
 
     //-----------------------------------------------------------------------
@@ -450,14 +406,14 @@ public final class LocalTime
      * Obtains an instance of {@code LocalTime} from a text string such as {@code 10:15}.
      * <p>
      * The string must represent a valid time and is parsed using
-     * {@link java.time.format.DateTimeFormatters#isoLocalTime()}.
+     * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME}.
      *
      * @param text the text to parse such as "10:15:30", not null
      * @return the parsed local time, not null
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static LocalTime parse(CharSequence text) {
-        return parse(text, DateTimeFormatters.isoLocalTime());
+        return parse(text, DateTimeFormatter.ISO_LOCAL_TIME);
     }
 
     /**
@@ -539,7 +495,7 @@ public final class LocalTime
      * All other {@code ChronoField} instances will return false.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doIsSupported(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.isSupportedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * Whether the field is supported is determined by the field.
      *
@@ -551,7 +507,7 @@ public final class LocalTime
         if (field instanceof ChronoField) {
             return ((ChronoField) field).isTimeField();
         }
-        return field != null && field.doIsSupported(this);
+        return field != null && field.isSupportedBy(this);
     }
 
     /**
@@ -568,7 +524,7 @@ public final class LocalTime
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doRange(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * Whether the range can be obtained is determined by the field.
      *
@@ -596,7 +552,7 @@ public final class LocalTime
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument. Whether the value can be obtained,
      * and what the value represents, is determined by the field.
      *
@@ -626,7 +582,7 @@ public final class LocalTime
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doGet(TemporalAccessor)}
+     * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument. Whether the value can be obtained,
      * and what the value represents, is determined by the field.
      *
@@ -646,7 +602,7 @@ public final class LocalTime
             }
             return get0(field);
         }
-        return field.doGet(this);
+        return field.getFrom(this);
     }
 
     private int get0(TemporalField field) {
@@ -711,7 +667,7 @@ public final class LocalTime
     /**
      * Returns an adjusted copy of this time.
      * <p>
-     * This returns a new {@code LocalTime}, based on this one, with the time adjusted.
+     * This returns a {@code LocalTime}, based on this one, with the time adjusted.
      * The adjustment takes place using the specified adjuster strategy object.
      * Read the documentation of the adjuster to understand what adjustment will be made.
      * <p>
@@ -741,7 +697,7 @@ public final class LocalTime
     /**
      * Returns a copy of this time with the specified field set to a new value.
      * <p>
-     * This returns a new {@code LocalTime}, based on this one, with the value
+     * This returns a {@code LocalTime}, based on this one, with the value
      * for the specified field changed.
      * This can be used to change any supported field, such as the hour, minute or second.
      * If it is not possible to set the value, because the field is not supported or for
@@ -807,7 +763,7 @@ public final class LocalTime
      * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
-     * is obtained by invoking {@code TemporalField.doWith(Temporal, long)}
+     * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
      * passing {@code this} as the argument. In this case, the field determines
      * whether and how to adjust the instant.
      * <p>
@@ -843,7 +799,7 @@ public final class LocalTime
             }
             throw new DateTimeException("Unsupported field: " + field.getName());
         }
-        return field.doWith(this, newValue);
+        return field.adjustInto(this, newValue);
     }
 
     //-----------------------------------------------------------------------
@@ -924,8 +880,10 @@ public final class LocalTime
      * For example, truncating with the {@link ChronoUnit#MINUTES minutes} unit
      * will set the second-of-minute and nano-of-second field to zero.
      * <p>
-     * Not all units are accepted. The {@link ChronoUnit#DAYS days} unit and time
-     * units with an exact duration can be used, other units throw an exception.
+     * The unit must have a {@linkplain TemporalUnit#getDuration() duration}
+     * that divides into the length of a standard day without remainder.
+     * This includes all supplied time units on {@link ChronoUnit} and
+     * {@link ChronoUnit#DAYS DAYS}. Other units throw an exception.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -936,56 +894,98 @@ public final class LocalTime
     public LocalTime truncatedTo(TemporalUnit unit) {
         if (unit == ChronoUnit.NANOS) {
             return this;
-        } else if (unit == ChronoUnit.DAYS) {
-            return MIDNIGHT;
-        } else if (unit.isDurationEstimated()) {
-            throw new DateTimeException("Unit must not have an estimated duration");
+        }
+        Duration unitDur = unit.getDuration();
+        if (unitDur.getSeconds() > SECONDS_PER_DAY) {
+            throw new DateTimeException("Unit is too large to be used for truncation");
+        }
+        long dur = unitDur.toNanos();
+        if ((NANOS_PER_DAY % dur) != 0) {
+            throw new DateTimeException("Unit must divide into a standard day without remainder");
         }
         long nod = toNanoOfDay();
-        long dur = unit.getDuration().toNanos();
-        if (dur >= NANOS_PER_DAY) {
-            throw new DateTimeException("Unit must not be a date unit");
-        }
-        nod = (nod / dur) * dur;
-        return ofNanoOfDay(nod);
+        return ofNanoOfDay((nod / dur) * dur);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this date with the specified period added.
+     * Returns a copy of this time with the specified amount added.
      * <p>
-     * This method returns a new time based on this time with the specified period added.
-     * The adder is typically {@link Period} but may be any other type implementing
-     * the {@link TemporalAdder} interface.
-     * The calculation is delegated to the specified adjuster, which typically calls
-     * back to {@link #plus(long, TemporalUnit)}.
+     * This returns a {@code LocalTime}, based on this one, with the specified amount added.
+     * The amount is typically {@link Duration} but may be any other type implementing
+     * the {@link TemporalAmount} interface.
+     * <p>
+     * The calculation is delegated to the amount object by calling
+     * {@link TemporalAmount#addTo(Temporal)}. The amount implementation is free
+     * to implement the addition in any way it wishes, however it typically
+     * calls back to {@link #plus(long, TemporalUnit)}. Consult the documentation
+     * of the amount implementation to determine if it can be successfully added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param adder  the adder to use, not null
+     * @param amountToAdd  the amount to add, not null
      * @return a {@code LocalTime} based on this time with the addition made, not null
      * @throws DateTimeException if the addition cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public LocalTime plus(TemporalAdder adder) {
-        return (LocalTime) adder.addTo(this);
+    public LocalTime plus(TemporalAmount amountToAdd) {
+        return (LocalTime) amountToAdd.addTo(this);
     }
 
     /**
-     * Returns a copy of this time with the specified period added.
+     * Returns a copy of this time with the specified amount added.
      * <p>
-     * This method returns a new time based on this time with the specified period added.
-     * This can be used to add any period that is defined by a unit, for example to add hours, minutes or seconds.
-     * The unit is responsible for the details of the calculation, including the resolution
-     * of any edge cases in the calculation.
+     * This returns a {@code LocalTime}, based on this one, with the amount
+     * in terms of the unit added. If it is not possible to add the amount, because the
+     * unit is not supported or for some other reason, an exception is thrown.
+     * <p>
+     * If the field is a {@link ChronoUnit} then the addition is implemented here.
+     * The supported fields behave as follows:
+     * <ul>
+     * <li>{@code NANOS} -
+     *  Returns a {@code LocalTime} with the specified number of nanoseconds added.
+     *  This is equivalent to {@link #plusNanos(long)}.
+     * <li>{@code MICROS} -
+     *  Returns a {@code LocalTime} with the specified number of microseconds added.
+     *  This is equivalent to {@link #plusNanos(long)} with the amount
+     *  multiplied by 1,000.
+     * <li>{@code MILLIS} -
+     *  Returns a {@code LocalTime} with the specified number of milliseconds added.
+     *  This is equivalent to {@link #plusNanos(long)} with the amount
+     *  multiplied by 1,000,000.
+     * <li>{@code SECONDS} -
+     *  Returns a {@code LocalTime} with the specified number of seconds added.
+     *  This is equivalent to {@link #plusSeconds(long)}.
+     * <li>{@code MINUTES} -
+     *  Returns a {@code LocalTime} with the specified number of minutes added.
+     *  This is equivalent to {@link #plusMinutes(long)}.
+     * <li>{@code HOURS} -
+     *  Returns a {@code LocalTime} with the specified number of hours added.
+     *  This is equivalent to {@link #plusHours(long)}.
+     * <li>{@code HALF_DAYS} -
+     *  Returns a {@code LocalTime} with the specified number of half-days added.
+     *  This is equivalent to {@link #plusHours(long)} with the amount
+     *  multiplied by 12.
+     * <li>{@code DAYS} -
+     *  Returns a {@code LocalTime} with the specified number of days added.
+     *  This returns {@code this} time.
+     * </ul>
+     * <p>
+     * All other {@code ChronoUnit} instances will throw a {@code DateTimeException}.
+     * <p>
+     * If the field is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
+     * passing {@code this} as the argument. In this case, the unit determines
+     * whether and how to perform the addition.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param amountToAdd  the amount of the unit to add to the result, may be negative
-     * @param unit  the unit of the period to add, not null
-     * @return a {@code LocalTime} based on this time with the specified period added, not null
-     * @throws DateTimeException if the unit cannot be added to this type
+     * @param unit  the unit of the amount to add, not null
+     * @return a {@code LocalTime} based on this time with the specified amount added, not null
+     * @throws DateTimeException if the addition cannot be made
+     * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public LocalTime plus(long amountToAdd, TemporalUnit unit) {
@@ -1003,7 +1003,7 @@ public final class LocalTime
             }
             throw new DateTimeException("Unsupported unit: " + unit.getName());
         }
-        return unit.doPlus(this, amountToAdd);
+        return unit.addTo(this, amountToAdd);
     }
 
     //-----------------------------------------------------------------------
@@ -1107,40 +1107,47 @@ public final class LocalTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this time with the specified period subtracted.
+     * Returns a copy of this time with the specified amount subtracted.
      * <p>
-     * This method returns a new time based on this time with the specified period subtracted.
-     * The subtractor is typically {@link Period} but may be any other type implementing
-     * the {@link TemporalSubtractor} interface.
-     * The calculation is delegated to the specified adjuster, which typically calls
-     * back to {@link #minus(long, TemporalUnit)}.
+     * This returns a {@code LocalTime}, based on this one, with the specified amount subtracted.
+     * The amount is typically {@link Duration} but may be any other type implementing
+     * the {@link TemporalAmount} interface.
+     * <p>
+     * The calculation is delegated to the amount object by calling
+     * {@link TemporalAmount#subtractFrom(Temporal)}. The amount implementation is free
+     * to implement the subtraction in any way it wishes, however it typically
+     * calls back to {@link #minus(long, TemporalUnit)}. Consult the documentation
+     * of the amount implementation to determine if it can be successfully subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param subtractor  the subtractor to use, not null
+     * @param amountToSubtract  the amount to subtract, not null
      * @return a {@code LocalTime} based on this time with the subtraction made, not null
      * @throws DateTimeException if the subtraction cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public LocalTime minus(TemporalSubtractor subtractor) {
-        return (LocalTime) subtractor.subtractFrom(this);
+    public LocalTime minus(TemporalAmount amountToSubtract) {
+        return (LocalTime) amountToSubtract.subtractFrom(this);
     }
 
     /**
-     * Returns a copy of this time with the specified period subtracted.
+     * Returns a copy of this time with the specified amount subtracted.
      * <p>
-     * This method returns a new time based on this time with the specified period subtracted.
-     * This can be used to subtract any period that is defined by a unit, for example to subtract hours, minutes or seconds.
-     * The unit is responsible for the details of the calculation, including the resolution
-     * of any edge cases in the calculation.
+     * This returns a {@code LocalTime}, based on this one, with the amount
+     * in terms of the unit subtracted. If it is not possible to subtract the amount,
+     * because the unit is not supported or for some other reason, an exception is thrown.
+     * <p>
+     * This method is equivalent to {@link #plus(long, TemporalUnit)} with the amount negated.
+     * See that method for a full description of how addition, and thus subtraction, works.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param amountToSubtract  the amount of the unit to subtract from the result, may be negative
-     * @param unit  the unit of the period to subtract, not null
-     * @return a {@code LocalTime} based on this time with the specified period subtracted, not null
-     * @throws DateTimeException if the unit cannot be added to this type
+     * @param unit  the unit of the amount to subtract, not null
+     * @return a {@code LocalTime} based on this time with the specified amount subtracted, not null
+     * @throws DateTimeException if the subtraction cannot be made
+     * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
     public LocalTime minus(long amountToSubtract, TemporalUnit unit) {
@@ -1230,13 +1237,17 @@ public final class LocalTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.precision()) {
+        if (query == Queries.chronology() || query == Queries.zoneId() || query == Queries.zone() || query == Queries.offset()) {
+            return null;
+        } else if (query == Queries.localTime()) {
+            return (R) this;
+        } else if (query == Queries.localDate()) {
+            return null;
+        } else if (query == Queries.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
-        if (query == Queries.chrono() || query == Queries.zoneId() || query == Queries.zone() || query == Queries.offset()) {
-            return null;
-        }
+        // non-JDK classes are not permitted to make this optimization
         return query.queryFrom(this);
     }
 
@@ -1285,14 +1296,15 @@ public final class LocalTime
      * For example, the period in hours between 11:30 and 13:29 will only
      * be one hour as it is one minute short of two hours.
      * <p>
-     * This method operates in association with {@link TemporalUnit#between}.
-     * The result of this method is a {@code long} representing the amount of
-     * the specified unit. By contrast, the result of {@code between} is an
-     * object that can be used directly in addition/subtraction:
+     * There are two equivalent ways of using this method.
+     * The first is to invoke this method.
+     * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
-     *   long period = start.periodUntil(end, HOURS);   // this method
-     *   dateTime.plus(HOURS.between(start, end));      // use in plus/minus
+     *   // these two lines are equivalent
+     *   amount = start.periodUntil(end, MINUTES);
+     *   amount = MINUTES.between(start, end);
      * </pre>
+     * The choice should be made based on which makes the code more readable.
      * <p>
      * The calculation is implemented in this method for {@link ChronoUnit}.
      * The units {@code NANOS}, {@code MICROS}, {@code MILLIS}, {@code SECONDS},
@@ -1332,17 +1344,15 @@ public final class LocalTime
             }
             throw new DateTimeException("Unsupported unit: " + unit.getName());
         }
-        return unit.between(this, endTime).getAmount();
+        return unit.between(this, endTime);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a local date-time formed from this time at the specified date.
+     * Combines this time with a date to create a {@code LocalDateTime}.
      * <p>
-     * This combines this time with the specified date to form a {@code LocalDateTime}.
+     * This returns a {@code LocalDateTime} formed from this time at the specified date.
      * All possible combinations of date and time are valid.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
      *
      * @param date  the date to combine with, not null
      * @return the local date-time formed from this time and the specified date, not null
@@ -1352,12 +1362,10 @@ public final class LocalTime
     }
 
     /**
-     * Returns an offset time formed from this time and the specified offset.
+     * Combines this time with a date to create an {@code OffsetTime}.
      * <p>
-     * This combines this time with the specified offset to form an {@code OffsetTime}.
+     * This returns an {@code OffsetTime} formed from this time at the specified offset.
      * All possible combinations of time and offset are valid.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
      *
      * @param offset  the offset to combine with, not null
      * @return the offset time formed from this time and the specified offset, not null
@@ -1529,7 +1537,7 @@ public final class LocalTime
      * Outputs this time as a {@code String} using the formatter.
      * <p>
      * This time will be passed to the formatter
-     * {@link DateTimeFormatter#print(TemporalAccessor) print method}.
+     * {@link DateTimeFormatter#format(TemporalAccessor) format method}.
      *
      * @param formatter  the formatter to use, not null
      * @return the formatted time string, not null
@@ -1537,7 +1545,7 @@ public final class LocalTime
      */
     public String toString(DateTimeFormatter formatter) {
         Objects.requireNonNull(formatter, "formatter");
-        return formatter.print(this);
+        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------

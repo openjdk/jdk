@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,14 @@ public final class Sun extends Provider {
 
     private static final String INFO = "SUN " +
     "(DSA key/parameter generation; DSA signing; SHA-1, MD5 digests; " +
-    "SecureRandom; X.509 certificates; JKS keystore; PKIX CertPathValidator; " +
+    "SecureRandom; X.509 certificates; JKS & DKS keystores; " +
+    "PKIX CertPathValidator; " +
     "PKIX CertPathBuilder; LDAP, Collection CertStores, JavaPolicy Policy; " +
     "JavaLoginConfig Configuration)";
 
     public Sun() {
         /* We are the SUN provider */
-        super("SUN", 1.7, INFO);
+        super("SUN", 1.8, INFO);
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

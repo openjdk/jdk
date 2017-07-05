@@ -52,16 +52,19 @@ import sun.misc.HexDumpEncoder;
  * principal set and private credentials set are updated only when
  * <code>commit</code> is called.
  * When <code>commit</code> is called, the <code>KerberosPrincipal</code>
- * is added to the  <code>Subject</code>'s
- * principal set and <code>KerberosTicket</code> is
+ * is added to the <code>Subject</code>'s principal set (unless the
+ * <code>principal</code> is specified as "*"). If <code>isInitiator</code>
+ * is true, the <code>KerberosTicket</code> is
  * added to the <code>Subject</code>'s private credentials.
  *
  * <p> If the configuration entry for <code>KerberosLoginModule</code>
  * has the option <code>storeKey</code> set to true, then
- * <code>KerberosKey</code> will also be added to the
+ * <code>KerberosKey</code> or <code>KeyTab</code> will also be added to the
  * subject's private credentials. <code>KerberosKey</code>, the principal's
- * key will be either obtained from the keytab or
- * derived from user's password.
+ * key(s) will be derived from user's password, and <code>KeyTab</code> is
+ * the keytab used when <code>useKeyTab</code> is set to true. The
+ * <code>KeyTab</code> object is restricted to be used by the specified
+ * principal unless the principal value is "*".
  *
  * <p> This <code>LoginModule</code> recognizes the <code>doNotPrompt</code>
  * option. If set to true the user will not be prompted for the password.
@@ -75,8 +78,8 @@ import sun.misc.HexDumpEncoder;
  *
  * <p> The principal name can be specified in the configuration entry
  * by using the option <code>principal</code>. The principal name
- * can either be a simple user name or a service name such as
- * <code>host/mission.eng.sun.com</code>. The principal can also
+ * can either be a simple user name, a service name such as
+ * <code>host/mission.eng.sun.com</code>, or "*". The principal can also
  * be set using the system property <code>sun.security.krb5.principal</code>.
  * This property is checked during login. If this property is not set, then
  * the principal name from the configuration is used. In the
@@ -87,11 +90,10 @@ import sun.misc.HexDumpEncoder;
  *
  * <p> The following is a list of configuration options supported
  * for <code>Krb5LoginModule</code>:
- * <dl>
- * <blockquote><dt><b><code>refreshKrb5Config</code></b>:</dt>
+ * <blockquote><dl>
+ * <dt><b><code>refreshKrb5Config</code></b>:</dt>
  * <dd> Set this to true, if you want the configuration
  * to be refreshed before the <code>login</code> method is called.</dd>
- * <P>
  * <dt><b><code>useTicketCache</code></b>:</dt>
  * <dd>Set this to true, if you want the
  * TGT to be obtained
@@ -112,19 +114,16 @@ import sun.misc.HexDumpEncoder;
  * <code>ticketCache</code>.
  * For Windows, if a ticket cannot be retrieved from the file ticket cache,
  * it will use Local Security Authority (LSA) API to get the TGT.
- * <P>
  * <dt><b><code>ticketCache</code></b>:</dt>
  * <dd>Set this to the name of the ticket
  * cache that  contains user's TGT.
  * If this is set,  <code>useTicketCache</code>
  * must also be set to true; Otherwise a configuration error will
  * be returned.</dd>
- *  <P>
  * <dt><b><code>renewTGT</code></b>:</dt>
  * <dd>Set this to true, if you want to renew
  * the TGT. If this is set, <code>useTicketCache</code> must also be
  * set to true; otherwise a configuration error will be returned.</dd>
- * <p>
  * <dt><b><code>doNotPrompt</code></b>:</dt>
  * <dd>Set this to true if you do not want to be
  * prompted for the password
@@ -132,7 +131,6 @@ import sun.misc.HexDumpEncoder;
  * or through shared state.(Default is false)
  * If set to true, credential must be obtained through cache, keytab,
  * or shared state. Otherwise, authentication will fail.</dd>
- * <P>
  * <dt><b><code>useKeyTab</code></b>:</dt>
  * <dd>Set this to true if you
  * want the module to get the principal's key from the
@@ -144,15 +142,15 @@ import sun.misc.HexDumpEncoder;
  * If it is not specified in the Kerberos configuration file
  * then it will look for the file
  * <code>{user.home}{file.separator}</code>krb5.keytab.</dd>
- * <P>
  * <dt><b><code>keyTab</code></b>:</dt>
  * <dd>Set this to the file name of the
  * keytab to get principal's secret key.</dd>
- * <P>
  * <dt><b><code>storeKey</code></b>:</dt>
- * <dd>Set this to true to if you want the
- * principal's key to be stored in the Subject's private credentials. </dd>
- * <p>
+ * <dd>Set this to true to if you want the keytab or the
+ * principal's key to be stored in the Subject's private credentials.
+ * For <code>isInitiator</code> being false, if <code>principal</code>
+ * is "*", the {@link KeyTab} stored can be used by anyone, otherwise,
+ * it's restricted to be used by the specified principal only.</dd>
  * <dt><b><code>principal</code></b>:</dt>
  * <dd>The name of the principal that should
  * be used. The principal can be a simple username such as
@@ -165,8 +163,13 @@ import sun.misc.HexDumpEncoder;
  * <code>sun.security.krb5.principal</code>. In addition, if this
  * system property is defined, then it will be used. If this property
  * is not set, then the principal name from the configuration will be
- * used.</dd>
- * <P>
+ * used.
+ * The principal name can be set to "*" when <code>isInitiator</code> is false.
+ * In this case, the acceptor is not bound to a single principal. It can
+ * act as any principal an initiator requests if keys for that principal
+ * can be found. When <code>isInitiator</code> is true, the principal name
+ * cannot be set to "*".
+ * </dd>
  * <dt><b><code>isInitiator</code></b>:</dt>
  * <dd>Set this to true, if initiator. Set this to false, if acceptor only.
  * (Default is true).
@@ -177,18 +180,20 @@ import sun.misc.HexDumpEncoder;
  * <code>Configuration</code>
  * options that enable you to share username and passwords across different
  * authentication modules:
- * <pre>
+ * <blockquote><dl>
  *
- *    useFirstPass   if, true, this LoginModule retrieves the
+ *    <dt><b><code>useFirstPass</code></b>:</dt>
+ *                   <dd>if, true, this LoginModule retrieves the
  *                   username and password from the module's shared state,
  *                   using "javax.security.auth.login.name" and
  *                   "javax.security.auth.login.password" as the respective
  *                   keys. The retrieved values are used for authentication.
  *                   If authentication fails, no attempt for a retry
  *                   is made, and the failure is reported back to the
- *                   calling application.
+ *                   calling application.</dd>
  *
- *    tryFirstPass   if, true, this LoginModule retrieves the
+ *    <dt><b><code>tryFirstPass</code></b>:</dt>
+ *                   <dd>if, true, this LoginModule retrieves the
  *                   the username and password from the module's shared
  *                   state using "javax.security.auth.login.name" and
  *                   "javax.security.auth.login.password" as the respective
@@ -198,26 +203,28 @@ import sun.misc.HexDumpEncoder;
  *                   CallbackHandler to retrieve a new username
  *                   and password, and another attempt to authenticate
  *                   is made. If the authentication fails,
- *                   the failure is reported back to the calling application
+ *                   the failure is reported back to the calling application</dd>
  *
- *    storePass      if, true, this LoginModule stores the username and
+ *    <dt><b><code>storePass</code></b>:</dt>
+ *                   <dd>if, true, this LoginModule stores the username and
  *                   password obtained from the CallbackHandler in the
  *                   modules shared state, using
  *                   "javax.security.auth.login.name" and
  *                   "javax.security.auth.login.password" as the respective
  *                   keys.  This is not performed if existing values already
  *                   exist for the username and password in the shared
- *                   state, or if authentication fails.
+ *                   state, or if authentication fails.</dd>
  *
- *    clearPass      if, true, this LoginModule clears the
+ *    <dt><b><code>clearPass</code></b>:</dt>
+ *                   <dd>if, true, this LoginModule clears the
  *                   username and password stored in the module's shared
  *                   state  after both phases of authentication
- *                   (login and commit) have completed.
- * </pre>
+ *                   (login and commit) have completed.</dd>
+ * </dl></blockquote>
  * <p>If the principal system property or key is already provided, the value of
  * "javax.security.auth.login.name" in the shared state is ignored.
  * <p>When multiple mechanisms to retrieve a ticket or key is provided, the
- * preference order looks like this:
+ * preference order is:
  * <ol>
  * <li>ticket cache
  * <li>keytab
@@ -225,7 +232,7 @@ import sun.misc.HexDumpEncoder;
  * <li>user prompt
  * </ol>
  * <p>Note that if any step fails, it will fallback to the next step.
- * There's only one exception, it the shared state step fails and
+ * There's only one exception, if the shared state step fails and
  * <code>useFirstPass</code>=true, no user prompt is made.
  * <p>Examples of some configuration values for Krb5LoginModule in
  * JAAS config file and the results are:
@@ -318,7 +325,7 @@ import sun.misc.HexDumpEncoder;
  * <p> <code>useKeyTab</code> = true
  * <code>keyTab</code>=&lt;keytabname&gt;
  * <code>storeKey</code>=true
- * <code>doNotPrompt</code>=true;
+ * <code>doNotPrompt</code>=false;
  *</ul>
  * <p>The user will be prompted for the service principal name.
  * If the principal's
@@ -328,6 +335,14 @@ import sun.misc.HexDumpEncoder;
  * If successful the TGT will be added to the
  * Subject's private credentials set. Otherwise the authentication will
  * fail.
+ * <ul>
+ * <p> <code>isInitiator</code> = false <code>useKeyTab</code> = true
+ * <code>keyTab</code>=&lt;keytabname&gt;
+ * <code>storeKey</code>=true
+ * <code>principal</code>=*;
+ *</ul>
+ * <p>The acceptor will be an unbound acceptor and it can act as any principal
+ * as long that principal has keys in the keytab.
  *<ul>
  * <p>
  * <code>useTicketCache</code>=true
@@ -409,6 +424,7 @@ public class Krb5LoginModule implements LoginModule {
     private KerberosTicket kerbTicket = null;
     private KerberosKey[] kerbKeys = null;
     private StringBuffer krb5PrincName = null;
+    private boolean unboundServer = false;
     private char[] password = null;
 
     private static final String NAME = "javax.security.auth.login.name";
@@ -520,8 +536,6 @@ public class Krb5LoginModule implements LoginModule {
      */
     public boolean login() throws LoginException {
 
-        int len;
-        validateConfiguration();
         if (refreshKrb5Config) {
             try {
                 if (debug) {
@@ -542,6 +556,12 @@ public class Krb5LoginModule implements LoginModule {
             if (princName != null) {
                 krb5PrincName = new StringBuffer(princName);
             }
+        }
+
+        validateConfiguration();
+
+        if (krb5PrincName != null && krb5PrincName.toString().equals("*")) {
+            unboundServer = true;
         }
 
         if (tryFirstPass) {
@@ -698,9 +718,17 @@ public class Krb5LoginModule implements LoginModule {
                  * (encKeys == null) to check.
                  */
                 if (useKeyTab) {
-                    ktab = (keyTabName == null)
-                                ? KeyTab.getInstance()
-                                : KeyTab.getInstance(new File(keyTabName));
+                    if (!unboundServer) {
+                        KerberosPrincipal kp =
+                                new KerberosPrincipal(principal.getName());
+                        ktab = (keyTabName == null)
+                                ? KeyTab.getInstance(kp)
+                                : KeyTab.getInstance(kp, new File(keyTabName));
+                    } else {
+                        ktab = (keyTabName == null)
+                                ? KeyTab.getUnboundInstance()
+                                : KeyTab.getUnboundInstance(new File(keyTabName));
+                    }
                     if (isInitiator) {
                         if (Krb5Util.keysFromJavaxKeyTab(ktab, principal).length
                                 == 0) {
@@ -939,6 +967,13 @@ public class Krb5LoginModule implements LoginModule {
                 ("Configuration Error"
                  + " - either useTicketCache should be "
                  + " true or renewTGT should be false");
+        if (krb5PrincName != null && krb5PrincName.toString().equals("*")) {
+            if (isInitiator) {
+                throw new LoginException
+                    ("Configuration Error"
+                    + " - principal cannot be * when isInitiator is true");
+            }
+        }
     }
 
     private boolean isCurrent(Credentials creds)
@@ -1052,7 +1087,10 @@ public class Krb5LoginModule implements LoginModule {
             }
             // Let us add the kerbClientPrinc,kerbTicket and KeyTab/KerbKey (if
             // storeKey is true)
-            if (!princSet.contains(kerbClientPrinc)) {
+
+            // We won't add "*" as a KerberosPrincipal
+            if (!unboundServer &&
+                    !princSet.contains(kerbClientPrinc)) {
                 princSet.add(kerbClientPrinc);
             }
 

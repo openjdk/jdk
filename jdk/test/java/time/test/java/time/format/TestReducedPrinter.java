@@ -86,13 +86,13 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=DateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
-        getFormatter0(YEAR, 2, 2010).printTo(EMPTY_DTA, buf);
+        getFormatter0(YEAR, 2, 2010).formatTo(EMPTY_DTA, buf);
     }
 
     //-----------------------------------------------------------------------
     public void test_print_append() throws Exception {
         buf.append("EXISTING");
-        getFormatter0(YEAR, 2, 2010).printTo(LocalDate.of(2012, 1, 1), buf);
+        getFormatter0(YEAR, 2, 2010).formatTo(LocalDate.of(2012, 1, 1), buf);
         assertEquals(buf.toString(), "EXISTING12");
     }
 
@@ -159,12 +159,12 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pivot")
     public void test_pivot(int width, int baseValue, int value, String result) throws Exception {
         try {
-            getFormatter0(YEAR, width, baseValue).printTo(new MockFieldValue(YEAR, value), buf);
+            getFormatter0(YEAR, width, baseValue).formatTo(new MockFieldValue(YEAR, value), buf);
             if (result == null) {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), result);
-        } catch (DateTimePrintException ex) {
+        } catch (DateTimeException ex) {
             if (result == null || value < 0) {
                 assertEquals(ex.getMessage().contains(YEAR.getName()), true);
             } else {

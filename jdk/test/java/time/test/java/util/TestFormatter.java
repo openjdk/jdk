@@ -23,7 +23,7 @@
 package test.java.util;
 
 import java.time.Instant;
-import java.time.temporal.OffsetDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 
@@ -129,10 +129,9 @@ public class TestFormatter {
         printFmtStr(locale, fmtStr);
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt));
-        test(fmtStr, locale, expected, zdt.getDateTime());
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt).toOffsetDate());
-        test(fmtStr, locale, expected, zdt.getDate());
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
+        test(fmtStr, locale, expected, zdt.toLocalDateTime());
+        test(fmtStr, locale, expected, zdt.toLocalDate());
     }
 
     private void testTime(String fmtStr, Locale locale,
@@ -140,30 +139,34 @@ public class TestFormatter {
         printFmtStr(locale, fmtStr);
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt));
-        test(fmtStr, locale, expected, zdt.getDateTime());
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt).toOffsetTime());
-        test(fmtStr, locale, expected, zdt.getTime());
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
+        test(fmtStr, locale, expected, zdt.toLocalDateTime());
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime().toOffsetTime());
+        test(fmtStr, locale, expected, zdt.toLocalTime());
+    }
+
+    private String toZoneIdStr(String expected) {
+        return expected.replaceAll("(?:GMT|UTC)(?<off>[+\\-]?[0-9]{2}:[0-9]{2})", "${off}")
+                       .replaceAll("GMT|UTC|UT", "Z");
     }
 
     private void testZoneId(Locale locale, ZonedDateTime zdt, Calendar cal) {
         String fmtStr = "z:[%tz] z:[%1$Tz] Z:[%1$tZ] Z:[%1$TZ]";
         printFmtStr(locale, fmtStr);
-        String expected = test(fmtStr, locale, null, cal);
+        String expected = toZoneIdStr(test(fmtStr, locale, null, cal));
         test(fmtStr, locale, expected, zdt);
         // get a new cal with fixed tz
         Calendar cal0 = Calendar.getInstance();
         cal0.setTimeInMillis(zdt.toInstant().toEpochMilli());
         cal0.setTimeZone(TimeZone.getTimeZone("GMT" + zdt.getOffset().getId()));
-        expected = test(fmtStr, locale, null, cal0).replaceAll("GMT", "");
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt));
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt).toOffsetDate());
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt).toOffsetTime());
+        expected = toZoneIdStr(test(fmtStr, locale, null, cal0));
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime().toOffsetTime());
 
         // datetime + zid
         fmtStr = "c:[%tc] c:[%1$Tc]";
         printFmtStr(locale, fmtStr);
-        expected = test(fmtStr, locale, null, cal);
+        expected = toZoneIdStr(test(fmtStr, locale, null, cal));
         test(fmtStr, locale, expected, zdt);
     }
 
@@ -174,6 +177,6 @@ public class TestFormatter {
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, instant);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, OffsetDateTime.of(zdt));
+        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
     }
 }

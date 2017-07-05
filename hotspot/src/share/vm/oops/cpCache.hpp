@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,16 +337,18 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   static ByteSize f2_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f2); }
   static ByteSize flags_offset()                 { return byte_offset_of(ConstantPoolCacheEntry, _flags); }
 
+#if INCLUDE_JVMTI
   // RedefineClasses() API support:
-  // If this constantPoolCacheEntry refers to old_method then update it
+  // If this ConstantPoolCacheEntry refers to old_method then update it
   // to refer to new_method.
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
   bool adjust_method_entry(Method* old_method, Method* new_method,
          bool * trace_name_printed);
-  NOT_PRODUCT(bool check_no_old_entries();)
+  bool check_no_old_or_obsolete_entries();
   bool is_interesting_method_entry(Klass* k);
+#endif // INCLUDE_JVMTI
 
   // Debugging & Printing
   void print (outputStream* st, int index) const;
@@ -423,15 +425,18 @@ class ConstantPoolCache: public MetaspaceObj {
     return (base_offset() + ConstantPoolCacheEntry::size_in_bytes() * index);
   }
 
+#if INCLUDE_JVMTI
   // RedefineClasses() API support:
-  // If any entry of this constantPoolCache points to any of
+  // If any entry of this ConstantPoolCache points to any of
   // old_methods, replace it with the corresponding new_method.
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
   void adjust_method_entries(Method** old_methods, Method** new_methods,
                              int methods_length, bool * trace_name_printed);
-  NOT_PRODUCT(bool check_no_old_entries();)
+  bool check_no_old_or_obsolete_entries();
+  void dump_cache();
+#endif // INCLUDE_JVMTI
 
   // Deallocate - no fields to deallocate
   DEBUG_ONLY(bool on_stack() { return false; })
