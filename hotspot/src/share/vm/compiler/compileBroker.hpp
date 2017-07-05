@@ -40,6 +40,11 @@ class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
 
  private:
+  static CompileTask* _task_free_list;
+#ifdef ASSERT
+  static int          _num_allocated_tasks;
+#endif
+
   Monitor*     _lock;
   uint         _compile_id;
   Method*      _method;
@@ -52,7 +57,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          _num_inlined_bytecodes;
   nmethodLocker* _code_handle;  // holder of eventual result
   CompileTask* _next, *_prev;
-
+  bool         _is_free;
   // Fields used for logging why the compilation was initiated:
   jlong        _time_queued;  // in units of os::elapsed_counter()
   Method*      _hot_method;   // which method actually triggered this task
@@ -69,7 +74,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
                   methodHandle hot_method, int hot_count, const char* comment,
                   bool is_blocking);
 
-  void free();
+  static CompileTask* allocate();
+  static void         free(CompileTask* task);
 
   int          compile_id() const                { return _compile_id; }
   Method*      method() const                    { return _method; }
@@ -98,6 +104,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_next(CompileTask* next)       { _next = next; }
   CompileTask* prev() const                      { return _prev; }
   void         set_prev(CompileTask* prev)       { _prev = prev; }
+  bool         is_free() const                   { return _is_free; }
+  void         set_is_free(bool val)             { _is_free = val; }
 
 private:
   static void  print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
@@ -213,8 +221,8 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   // Redefine Classes support
   void mark_on_stack();
-  void delete_all();
-  void         print();
+  void free_all();
+  NOT_PRODUCT (void print();)
 
   ~CompileQueue() {
     assert (is_empty(), " Compile Queue must be empty");
@@ -267,9 +275,8 @@ class CompileBroker: AllStatic {
   static int  _last_compile_level;
   static char _last_method_compiled[name_buffer_length];
 
-  static CompileQueue* _c2_method_queue;
-  static CompileQueue* _c1_method_queue;
-  static CompileTask* _task_free_list;
+  static CompileQueue* _c2_compile_queue;
+  static CompileQueue* _c1_compile_queue;
 
   static GrowableArray<CompilerThread*>* _compiler_threads;
 
@@ -322,7 +329,7 @@ class CompileBroker: AllStatic {
   static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
   static bool compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level);
-  static bool is_compile_blocking      (methodHandle method, int osr_bci);
+  static bool is_compile_blocking      ();
   static void preload_classes          (methodHandle method, TRAPS);
 
   static CompileTask* create_compile_task(CompileQueue* queue,
@@ -334,8 +341,6 @@ class CompileBroker: AllStatic {
                                           int           hot_count,
                                           const char*   comment,
                                           bool          blocking);
-  static CompileTask* allocate_task();
-  static void free_task(CompileTask* task);
   static void wait_for_completion(CompileTask* task);
 
   static void invoke_compiler_on_method(CompileTask* task);
@@ -353,8 +358,8 @@ class CompileBroker: AllStatic {
                                   const char* comment,
                                   Thread* thread);
   static CompileQueue* compile_queue(int comp_level) {
-    if (is_c2_compile(comp_level)) return _c2_method_queue;
-    if (is_c1_compile(comp_level)) return _c1_method_queue;
+    if (is_c2_compile(comp_level)) return _c2_compile_queue;
+    if (is_c1_compile(comp_level)) return _c1_compile_queue;
     return NULL;
   }
   static bool init_compiler_runtime();
@@ -372,7 +377,7 @@ class CompileBroker: AllStatic {
     return NULL;
   }
 
-  static bool compilation_is_in_queue(methodHandle method, int osr_bci);
+  static bool compilation_is_in_queue(methodHandle method);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;

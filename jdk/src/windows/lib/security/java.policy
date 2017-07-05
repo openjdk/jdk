@@ -1,0 +1,3 @@
+grant codeBase "file:${java.home}/lib/ext/sunmscapi.jar" {
+        permission java.security.AllPermission;
+};

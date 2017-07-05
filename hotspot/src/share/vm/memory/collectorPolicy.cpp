@@ -200,6 +200,9 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _initial_gen0_size(0),
     _max_gen0_size(0),
     _gen_alignment(0),
+    _min_gen1_size(0),
+    _initial_gen1_size(0),
+    _max_gen1_size(0),
     _generations(NULL)
 {}
 
@@ -238,10 +241,6 @@ void GenCollectorPolicy::assert_flags() {
   assert(FLAG_IS_DEFAULT(MaxNewSize) || MaxNewSize < MaxHeapSize, "Ergonomics decided on incompatible maximum young gen and heap sizes");
   assert(NewSize % _gen_alignment == 0, "NewSize alignment");
   assert(FLAG_IS_DEFAULT(MaxNewSize) || MaxNewSize % _gen_alignment == 0, "MaxNewSize alignment");
-}
-
-void TwoGenerationCollectorPolicy::assert_flags() {
-  GenCollectorPolicy::assert_flags();
   assert(OldSize + NewSize <= MaxHeapSize, "Ergonomics decided on incompatible generation and heap sizes");
   assert(OldSize % _gen_alignment == 0, "OldSize alignment");
 }
@@ -252,6 +251,7 @@ void GenCollectorPolicy::assert_size_info() {
   assert(MaxNewSize < MaxHeapSize, "Ergonomics decided on incompatible maximum young and heap sizes");
   assert(NewSize == _initial_gen0_size, "Discrepancy between NewSize flag and local storage");
   assert(MaxNewSize == _max_gen0_size, "Discrepancy between MaxNewSize flag and local storage");
+  assert(OldSize == _initial_gen1_size, "Discrepancy between OldSize flag and local storage");
   assert(_min_gen0_size <= _initial_gen0_size, "Ergonomics decided on incompatible minimum and initial young gen sizes");
   assert(_initial_gen0_size <= _max_gen0_size, "Ergonomics decided on incompatible initial and maximum young gen sizes");
   assert(_min_gen0_size % _gen_alignment == 0, "_min_gen0_size alignment");
@@ -263,11 +263,6 @@ void GenCollectorPolicy::assert_size_info() {
       "Ergonomics made initial young generation larger than initial heap");
   assert(_max_gen0_size <= bound_minus_alignment(_max_gen0_size, _max_heap_byte_size),
       "Ergonomics made maximum young generation lager than maximum heap");
-}
-
-void TwoGenerationCollectorPolicy::assert_size_info() {
-  GenCollectorPolicy::assert_size_info();
-  assert(OldSize == _initial_gen1_size, "Discrepancy between OldSize flag and local storage");
   assert(_min_gen1_size <= _initial_gen1_size, "Ergonomics decided on incompatible minimum and initial old gen sizes");
   assert(_initial_gen1_size <= _max_gen1_size, "Ergonomics decided on incompatible initial and maximum old gen sizes");
   assert(_max_gen1_size % _gen_alignment == 0, "_max_gen1_size alignment");
@@ -369,12 +364,6 @@ void GenCollectorPolicy::initialize_flags() {
     vm_exit_during_initialization("Invalid young gen ratio specified");
   }
 
-  DEBUG_ONLY(GenCollectorPolicy::assert_flags();)
-}
-
-void TwoGenerationCollectorPolicy::initialize_flags() {
-  GenCollectorPolicy::initialize_flags();
-
   if (!is_size_aligned(OldSize, _gen_alignment)) {
     // Setting OldSize directly to preserve information about the possible
     // setting of OldSize on the command line.
@@ -433,7 +422,7 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
 
   always_do_update_barrier = UseConcMarkSweepGC;
 
-  DEBUG_ONLY(TwoGenerationCollectorPolicy::assert_flags();)
+  DEBUG_ONLY(GenCollectorPolicy::assert_flags();)
 }
 
 // Values set on the command line win over any ergonomically
@@ -445,6 +434,13 @@ void TwoGenerationCollectorPolicy::initialize_flags() {
 // themselves and with overall heap sizings.
 // In the absence of explicitly set command line flags, policies
 // such as the use of NewRatio are used to size the generation.
+
+// Minimum sizes of the generations may be different than
+// the initial sizes.  An inconsistency is permitted here
+// in the total size that can be specified explicitly by
+// command line specification of OldSize and NewSize and
+// also a command line specification of -Xms.  Issue a warning
+// but allow the values to pass.
 void GenCollectorPolicy::initialize_size_info() {
   CollectorPolicy::initialize_size_info();
 
@@ -519,19 +515,6 @@ void GenCollectorPolicy::initialize_size_info() {
       SIZE_FORMAT "  Maximum gen0 " SIZE_FORMAT,
       _min_gen0_size, _initial_gen0_size, _max_gen0_size);
   }
-
-  DEBUG_ONLY(GenCollectorPolicy::assert_size_info();)
-}
-
-// Minimum sizes of the generations may be different than
-// the initial sizes.  An inconsistency is permitted here
-// in the total size that can be specified explicitly by
-// command line specification of OldSize and NewSize and
-// also a command line specification of -Xms.  Issue a warning
-// but allow the values to pass.
-
-void TwoGenerationCollectorPolicy::initialize_size_info() {
-  GenCollectorPolicy::initialize_size_info();
 
   // At this point the minimum, initial and maximum sizes
   // of the overall heap and of gen0 have been determined.
@@ -625,7 +608,7 @@ void TwoGenerationCollectorPolicy::initialize_size_info() {
       _min_gen1_size, _initial_gen1_size, _max_gen1_size);
   }
 
-  DEBUG_ONLY(TwoGenerationCollectorPolicy::assert_size_info();)
+  DEBUG_ONLY(GenCollectorPolicy::assert_size_info();)
 }
 
 HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,

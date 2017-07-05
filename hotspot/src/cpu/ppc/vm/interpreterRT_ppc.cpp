@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"

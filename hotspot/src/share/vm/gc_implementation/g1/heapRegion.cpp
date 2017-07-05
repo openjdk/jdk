@@ -33,6 +33,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;
 int    HeapRegion::LogOfHRGrainWords = 0;
