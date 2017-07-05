@@ -25,11 +25,13 @@
 package java.lang;
 
 import jdk.internal.reflect.MethodAccessor;
+import jdk.internal.reflect.ConstructorAccessor;
 import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
 
 import java.lang.annotation.Native;
 import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -684,7 +686,7 @@ final class StackStreamFactory {
                 frames[n++] = caller;
             }
             if (frames[1] == null) {
-                throw new IllegalStateException("no caller frame");
+                throw new IllegalCallerException("no caller frame");
             }
             return n;
         }
@@ -922,7 +924,8 @@ final class StackStreamFactory {
          */
         final void setBatch(int depth, int startIndex, int endIndex) {
             if (startIndex <= 0 || endIndex <= 0)
-                throw new IllegalArgumentException("startIndex=" + startIndex + " endIndex=" + endIndex);
+                throw new IllegalArgumentException("startIndex=" + startIndex
+                        + " endIndex=" + endIndex);
 
             this.origin = startIndex;
             this.fence = endIndex;
@@ -980,13 +983,18 @@ final class StackStreamFactory {
 
     private static boolean isReflectionFrame(Class<?> c) {
         if (c.getName().startsWith("jdk.internal.reflect") &&
-                !MethodAccessor.class.isAssignableFrom(c)) {
-            throw new InternalError("Not jdk.internal.reflect.MethodAccessor: " + c.toString());
+                !MethodAccessor.class.isAssignableFrom(c) &&
+                !ConstructorAccessor.class.isAssignableFrom(c)) {
+            throw new InternalError("Not jdk.internal.reflect.MethodAccessor"
+                    + " or jdk.internal.reflect.ConstructorAccessor: "
+                    + c.toString());
         }
         // ## should filter all @Hidden frames?
         return c == Method.class ||
-                MethodAccessor.class.isAssignableFrom(c) ||
-                c.getName().startsWith("java.lang.invoke.LambdaForm");
+               c == Constructor.class ||
+               MethodAccessor.class.isAssignableFrom(c) ||
+               ConstructorAccessor.class.isAssignableFrom(c) ||
+               c.getName().startsWith("java.lang.invoke.LambdaForm");
     }
 
 }
