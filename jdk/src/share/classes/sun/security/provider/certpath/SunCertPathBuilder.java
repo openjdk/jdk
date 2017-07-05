@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.security.cert.*;
+import java.security.cert.PKIXReason;
+import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,10 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
-
-import java.security.cert.*;
-import java.security.interfaces.DSAPublicKey;
-
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.x509.X500Name;
@@ -565,8 +564,9 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                             (PKIXExtensions.ExtendedKeyUsage_Id.toString());
 
                         if (!unresCritExts.isEmpty()) {
-                            throw new CertPathValidatorException("unrecognized "
-                                + "critical extension(s)");
+                            throw new CertPathValidatorException
+                                ("unrecognized critical extension(s)", null,
+                                 null, -1, PKIXReason.UNRECOGNIZED_CRIT_EXT);
                         }
                     }
                 }

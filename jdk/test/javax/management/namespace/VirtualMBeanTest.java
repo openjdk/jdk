@@ -23,7 +23,7 @@
 
 /*
  * @test VirtualMBeanTest.java
- * @bug 5108776
+ * @bug 5108776 5072476
  * @summary Test that Virtual MBeans can be implemented and emit notifs.
  * @author Eamonn McManus
  */

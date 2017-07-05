@@ -118,6 +118,6 @@ class Logging implements LoggingMXBean {
     }
 
     public ObjectName getObjectName() {
-        return com.sun.jmx.mbeanserver.Util.newObjectName(LogManager.LOGGING_MXBEAN_NAME);
+        return ObjectName.valueOf(LogManager.LOGGING_MXBEAN_NAME);
     }
 }

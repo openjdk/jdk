@@ -23,6 +23,7 @@
 /*
  *
  * @test LazyDomainTest.java
+ * @bug 5072476
  * @summary Basic test for Lazy Domains.
  * @author Daniel Fuchs
  * @run clean LazyDomainTest Wombat WombatMBean

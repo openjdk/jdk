@@ -25,6 +25,7 @@
  * @test NamespaceCreationTest.java
  * @summary General JMXNamespace test.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean NamespaceCreationTest Wombat WombatMBean
  * @run build NamespaceCreationTest Wombat WombatMBean
  * @run main NamespaceCreationTest

@@ -75,6 +75,7 @@ public final class HttpCookie implements Cloneable {
     private String path;        // Path=VALUE ... URLs that see the cookie
     private String portlist;    // Port[="portlist"] ... the port cookie may be returned to
     private boolean secure;     // Secure ... e.g. use SSL
+    private boolean httpOnly;   // HttpOnly ... i.e. not accessible to scripts
     private int version = 1;    // Version=1 ... RFC 2965 style
 
     //
@@ -656,6 +657,32 @@ public final class HttpCookie implements Cloneable {
         version = v;
     }
 
+    /**
+     * Returns {@code true} if this cookie contains the <i>HttpOnly</i>
+     * attribute. This means that the cookie should not be accessible to
+     * scripting engines, like javascript.
+     *
+     * @return {@code true} if this cookie should be considered http only.
+     * @see #setHttpOnly(boolean)
+     */
+    public boolean isHttpOnly()
+    {
+        return httpOnly;
+    }
+
+    /**
+     * Indicates whether the cookie should be considered HTTP Only. If set to
+     * {@code true} it means the cookie should not be accessible to scripting
+     * engines like javascript.
+     *
+     * @param httpOnly if {@code true} make the cookie HTTP only, i.e.
+     *                 only visible as part of an HTTP request.
+     * @see #isHttpOnly()
+     */
+    public void setHttpOnly(boolean httpOnly)
+    {
+        this.httpOnly = httpOnly;
+    }
 
     /**
      * The utility method to check whether a host name is in a domain
@@ -877,6 +904,7 @@ public final class HttpCookie implements Cloneable {
             || name.equalsIgnoreCase("Port")            // rfc2965 only
             || name.equalsIgnoreCase("Secure")
             || name.equalsIgnoreCase("Version")
+            || name.equalsIgnoreCase("HttpOnly")
             || name.charAt(0) == '$')
         {
             return true;
@@ -994,6 +1022,11 @@ public final class HttpCookie implements Cloneable {
         assignors.put("secure", new CookieAttributeAssignor(){
                 public void assign(HttpCookie cookie, String attrName, String attrValue) {
                     cookie.setSecure(true);
+                }
+            });
+        assignors.put("httponly", new CookieAttributeAssignor(){
+                public void assign(HttpCookie cookie, String attrName, String attrValue) {
+                    cookie.setHttpOnly(true);
                 }
             });
         assignors.put("version", new CookieAttributeAssignor(){

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Unit test for java.net.HttpCookie
- * @bug 6244040 6277796 6277801 6277808 6294071
+ * @bug 6244040 6277796 6277801 6277808 6294071 6692802
  * @author Edward Wang
  */
 
@@ -177,6 +177,19 @@ public class TestHttpCookie {
         return this;
     }
     TestHttpCookie port(String p) { return port(0, p); }
+
+    // check http only
+    TestHttpCookie httpOnly(int index, boolean b) {
+        HttpCookie cookie = cookies.get(index);
+        if (cookie == null || b != cookie.isHttpOnly()) {
+            raiseError("HttpOnly", String.valueOf(cookie.isHttpOnly()), String.valueOf(b));
+        }
+        return this;
+    }
+
+    TestHttpCookie httpOnly(boolean b) {
+        return httpOnly(0, b);
+    }
 
     // check equality
     static void eq(HttpCookie ck1, HttpCookie ck2, boolean same) {
@@ -362,6 +375,10 @@ public class TestHttpCookie {
         } catch (IllegalArgumentException ignored) {
             // expected exception; no-op
         }
+
+        // CR 6692802: HttpOnly flag
+        test("set-cookie: CUSTOMER=WILE_E_COYOTE;HttpOnly").httpOnly(true);
+        test("set-cookie: CUSTOMER=WILE_E_COYOTE").httpOnly(false);
     }
 
     static void header(String prompt) {
