@@ -62,7 +62,6 @@
 package java.time.format;
 
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
@@ -138,7 +137,7 @@ public final class DecimalStyle {
      *     of(Locale.getDefault(Locale.Category.FORMAT))}.
      *
      * @see java.util.Locale.Category#FORMAT
-     * @return the info, not null
+     * @return the decimal style, not null
      */
     public static DecimalStyle ofDefaultLocale() {
         return of(Locale.getDefault(Locale.Category.FORMAT));
@@ -150,7 +149,7 @@ public final class DecimalStyle {
      * This method provides access to locale sensitive decimal style symbols.
      *
      * @param locale  the locale, not null
-     * @return the info, not null
+     * @return the decimal style, not null
      */
     public static DecimalStyle of(Locale locale) {
         Objects.requireNonNull(locale, "locale");
@@ -340,7 +339,7 @@ public final class DecimalStyle {
 
     //-----------------------------------------------------------------------
     /**
-     * Checks if this DecimalStyle is equal another DecimalStyle.
+     * Checks if this DecimalStyle is equal to another DecimalStyle.
      *
      * @param obj  the object to check, null returns false
      * @return true if this is equal to the other date

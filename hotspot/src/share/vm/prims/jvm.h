@@ -1485,6 +1485,9 @@ JVM_GetManagement(jint version);
 JNIEXPORT jobject JNICALL
 JVM_InitAgentProperties(JNIEnv *env, jobject agent_props);
 
+JNIEXPORT jstring JNICALL
+JVM_GetTemporaryDirectory(JNIEnv *env);
+
 /* Generics reflection support.
  *
  * Returns information about the given class's EnclosingMethod
@@ -1553,12 +1556,10 @@ JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values);
  * ==========================================================================
  */
 typedef struct {
-    /* HotSpot Express VM version string:
-     * <major>.<minor>-bxx[-<identifier>][-<debug_flavor>]
-     */
-    unsigned int jvm_version; /* Consists of major.minor.0.build */
-    unsigned int update_version : 8;         /* 0 in HotSpot Express VM */
-    unsigned int special_update_version : 8; /* 0 in HotSpot Express VM */
+    /* VM version string: follows the JDK release version naming convention    */
+    unsigned int jvm_version; /* <major_ver>.<minor_ver>.<micro_ver>[-<identifier>][-<debug_target>][-b<nn>]  */
+    unsigned int update_version : 8;
+    unsigned int special_update_version : 8;
     unsigned int reserved1 : 16;
     unsigned int reserved2;
 
@@ -1577,11 +1578,7 @@ typedef struct {
 
 #define JVM_VERSION_MAJOR(version) ((version & 0xFF000000) >> 24)
 #define JVM_VERSION_MINOR(version) ((version & 0x00FF0000) >> 16)
-// Micro version is 0 in HotSpot Express VM (set in jvm.cpp).
 #define JVM_VERSION_MICRO(version) ((version & 0x0000FF00) >> 8)
-/* Build number is available in all HotSpot Express VM builds.
- * It is defined in make/hotspot_version file.
- */
 #define JVM_VERSION_BUILD(version) ((version & 0x000000FF))
 
 JNIEXPORT void JNICALL

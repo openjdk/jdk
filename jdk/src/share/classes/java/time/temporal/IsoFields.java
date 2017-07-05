@@ -638,7 +638,7 @@ public final class IsoFields {
 
     //-----------------------------------------------------------------------
     /**
-     * Implementation of the period unit.
+     * Implementation of the unit.
      */
     private static enum Unit implements TemporalUnit {
 

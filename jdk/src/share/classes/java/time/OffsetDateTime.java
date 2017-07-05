@@ -199,7 +199,7 @@ public final class OffsetDateTime
     /**
      * Obtains the current date-time from the system clock in the default time-zone.
      * <p>
-     * This will query the {@link java.time.Clock#systemDefaultZone() system clock} in the default
+     * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current date-time.
      * The offset will be calculated from the time-zone in the clock.
      * <p>
@@ -215,7 +215,7 @@ public final class OffsetDateTime
     /**
      * Obtains the current date-time from the system clock in the specified time-zone.
      * <p>
-     * This will query the {@link Clock#system(java.time.ZoneId) system clock} to obtain the current date-time.
+     * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current date-time.
      * Specifying the time-zone avoids dependence on the default time-zone.
      * The offset will be calculated from the specified time-zone.
      * <p>
@@ -345,7 +345,7 @@ public final class OffsetDateTime
      * those fields that are equivalent to the relevant objects.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code OffsetDateTime::from}.
+     * allowing it to be used as a query via method reference, {@code OffsetDateTime::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the offset date-time, not null
@@ -566,7 +566,7 @@ public final class OffsetDateTime
     /**
      * Gets the value of the specified field from this date-time as an {@code int}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -575,7 +575,7 @@ public final class OffsetDateTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
      * {@code EPOCH_DAY}, {@code PROLEPTIC_MONTH} and {@code INSTANT_SECONDS} which are too
-     * large to fit in an {@code int} and throw a {@code DateTimeException}.
+     * large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -608,7 +608,7 @@ public final class OffsetDateTime
     /**
      * Gets the value of the specified field from this date-time as a {@code long}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -703,7 +703,7 @@ public final class OffsetDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Gets the {@code LocalDateTime} part of this offset date-time.
+     * Gets the {@code LocalDateTime} part of this date-time.
      * <p>
      * This returns a {@code LocalDateTime} with the same year, month, day and time
      * as this date-time.
@@ -795,10 +795,10 @@ public final class OffsetDateTime
     /**
      * Gets the day-of-week field, which is an enum {@code DayOfWeek}.
      * <p>
-     * This method returns the enum {@link java.time.DayOfWeek} for the day-of-week.
+     * This method returns the enum {@link DayOfWeek} for the day-of-week.
      * This avoids confusion as to what {@code int} values mean.
      * If you need access to the primitive {@code int} value then the enum
-     * provides the {@link java.time.DayOfWeek#getValue() int value}.
+     * provides the {@link DayOfWeek#getValue() int value}.
      * <p>
      * Additional information can be obtained from the {@code DayOfWeek}.
      * This includes textual names of the values.
@@ -868,7 +868,8 @@ public final class OffsetDateTime
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
+     * A selection of common adjustments is provided in
+     * {@link java.time.temporal.TemporalAdjusters TemporalAdjusters}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -878,7 +879,7 @@ public final class OffsetDateTime
      * For example this code returns a date on the last day of July:
      * <pre>
      *  import static java.time.Month.*;
-     *  import static java.time.temporal.Adjusters.*;
+     *  import static java.time.temporal.TemporalAdjusters.*;
      *
      *  result = offsetDateTime.with(JULY).with(lastDayOfMonth());
      * </pre>
@@ -920,7 +921,7 @@ public final class OffsetDateTime
     /**
      * Returns a copy of this date-time with the specified field set to a new value.
      * <p>
-     * TThis returns an {@code OffsetDateTime}, based on this one, with the value
+     * This returns an {@code OffsetDateTime}, based on this one, with the value
      * for the specified field changed.
      * This can be used to change any supported field, such as the year, month or day-of-month.
      * If it is not possible to set the value, because the field is not supported or for
@@ -979,7 +980,8 @@ public final class OffsetDateTime
     //-----------------------------------------------------------------------
     /**
      * Returns a copy of this {@code OffsetDateTime} with the year altered.
-     * The offset does not affect the calculation and will be the same in the result.
+     * <p>
+     * The time and offset do not affect the calculation and will be the same in the result.
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -994,7 +996,8 @@ public final class OffsetDateTime
 
     /**
      * Returns a copy of this {@code OffsetDateTime} with the month-of-year altered.
-     * The offset does not affect the calculation and will be the same in the result.
+     * <p>
+     * The time and offset do not affect the calculation and will be the same in the result.
      * If the day-of-month is invalid for the year, it will be changed to the last valid day of the month.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1009,8 +1012,9 @@ public final class OffsetDateTime
 
     /**
      * Returns a copy of this {@code OffsetDateTime} with the day-of-month altered.
+     * <p>
      * If the resulting {@code OffsetDateTime} is invalid, an exception is thrown.
-     * The offset does not affect the calculation and will be the same in the result.
+     * The time and offset do not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1025,6 +1029,8 @@ public final class OffsetDateTime
 
     /**
      * Returns a copy of this {@code OffsetDateTime} with the day-of-year altered.
+     * <p>
+     * The time and offset do not affect the calculation and will be the same in the result.
      * If the resulting {@code OffsetDateTime} is invalid, an exception is thrown.
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1040,9 +1046,9 @@ public final class OffsetDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the hour-of-day value altered.
+     * Returns a copy of this {@code OffsetDateTime} with the hour-of-day altered.
      * <p>
-     * The offset does not affect the calculation and will be the same in the result.
+     * The date and offset do not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1055,9 +1061,9 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the minute-of-hour value altered.
+     * Returns a copy of this {@code OffsetDateTime} with the minute-of-hour altered.
      * <p>
-     * The offset does not affect the calculation and will be the same in the result.
+     * The date and offset do not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1070,9 +1076,9 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the second-of-minute value altered.
+     * Returns a copy of this {@code OffsetDateTime} with the second-of-minute altered.
      * <p>
-     * The offset does not affect the calculation and will be the same in the result.
+     * The date and offset do not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1085,15 +1091,15 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the nano-of-second value altered.
+     * Returns a copy of this {@code OffsetDateTime} with the nano-of-second altered.
      * <p>
-     * The offset does not affect the calculation and will be the same in the result.
+     * The date and offset do not affect the calculation and will be the same in the result.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
      * @param nanoOfSecond  the nano-of-second to set in the result, from 0 to 999,999,999
      * @return an {@code OffsetDateTime} based on this date-time with the requested nanosecond, not null
-     * @throws DateTimeException if the nanos value is invalid
+     * @throws DateTimeException if the nano value is invalid
      */
     public OffsetDateTime withNano(int nanoOfSecond) {
         return with(dateTime.withNano(nanoOfSecond), offset);
@@ -1187,7 +1193,7 @@ public final class OffsetDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in years added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of years added.
      * <p>
      * This method adds the specified amount to the years field in three steps:
      * <ol>
@@ -1211,7 +1217,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in months added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of months added.
      * <p>
      * This method adds the specified amount to the months field in three steps:
      * <ol>
@@ -1235,13 +1241,13 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this OffsetDateTime with the specified period in weeks added.
+     * Returns a copy of this OffsetDateTime with the specified number of weeks added.
      * <p>
      * This method adds the specified amount in weeks to the days field incrementing
      * the month and year fields as necessary to ensure the result remains valid.
      * The result is only invalid if the maximum/minimum year is exceeded.
      * <p>
-     * For example, 2008-12-31 plus one week would result in the 2009-01-07.
+     * For example, 2008-12-31 plus one week would result in 2009-01-07.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1254,13 +1260,13 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this OffsetDateTime with the specified period in days added.
+     * Returns a copy of this OffsetDateTime with the specified number of days added.
      * <p>
      * This method adds the specified amount to the days field incrementing the
      * month and year fields as necessary to ensure the result remains valid.
      * The result is only invalid if the maximum/minimum year is exceeded.
      * <p>
-     * For example, 2008-12-31 plus one day would result in the 2009-01-01.
+     * For example, 2008-12-31 plus one day would result in 2009-01-01.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1273,7 +1279,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in hours added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of hours added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1286,7 +1292,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in minutes added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of minutes added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1299,7 +1305,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in seconds added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of seconds added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1312,7 +1318,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in nanoseconds added.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of nanoseconds added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1376,11 +1382,11 @@ public final class OffsetDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in years subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of years subtracted.
      * <p>
      * This method subtracts the specified amount from the years field in three steps:
      * <ol>
-     * <li>Subtract the input years to the year field</li>
+     * <li>Subtract the input years from the year field</li>
      * <li>Check if the resulting date would be invalid</li>
      * <li>Adjust the day-of-month to the last valid day if necessary</li>
      * </ol>
@@ -1400,11 +1406,11 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in months subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of months subtracted.
      * <p>
      * This method subtracts the specified amount from the months field in three steps:
      * <ol>
-     * <li>Subtract the input months to the month-of-year field</li>
+     * <li>Subtract the input months from the month-of-year field</li>
      * <li>Check if the resulting date would be invalid</li>
      * <li>Adjust the day-of-month to the last valid day if necessary</li>
      * </ol>
@@ -1424,13 +1430,13 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in weeks subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of weeks subtracted.
      * <p>
      * This method subtracts the specified amount in weeks from the days field decrementing
      * the month and year fields as necessary to ensure the result remains valid.
      * The result is only invalid if the maximum/minimum year is exceeded.
      * <p>
-     * For example, 2008-12-31 minus one week would result in the 2009-01-07.
+     * For example, 2008-12-31 minus one week would result in 2009-01-07.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1443,13 +1449,13 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in days subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of days subtracted.
      * <p>
-     * This method subtracts the specified amount from the days field incrementing the
+     * This method subtracts the specified amount from the days field decrementing the
      * month and year fields as necessary to ensure the result remains valid.
      * The result is only invalid if the maximum/minimum year is exceeded.
      * <p>
-     * For example, 2008-12-31 minus one day would result in the 2009-01-01.
+     * For example, 2008-12-31 minus one day would result in 2009-01-01.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1462,7 +1468,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in hours subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of hours subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1475,7 +1481,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in minutes subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of minutes subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1488,7 +1494,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in seconds subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of seconds subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1501,7 +1507,7 @@ public final class OffsetDateTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetDateTime} with the specified period in nanoseconds subtracted.
+     * Returns a copy of this {@code OffsetDateTime} with the specified number of nanoseconds subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1598,7 +1604,7 @@ public final class OffsetDateTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
-     * For example, the period in days between two date-times can be calculated
+     * For example, the amount in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
      * The {@code Temporal} passed to this method is converted to a
@@ -1608,7 +1614,7 @@ public final class OffsetDateTime
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two date-times.
-     * For example, the period in months between 2012-06-15T00:00Z and 2012-08-14T23:59Z
+     * For example, the amount in months between 2012-06-15T00:00Z and 2012-08-14T23:59Z
      * will only be one month as it is one minute short of two months.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1769,7 +1775,7 @@ public final class OffsetDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Compares this {@code OffsetDateTime} to another date-time.
+     * Compares this date-time to another date-time.
      * <p>
      * The comparison is based on the instant then on the local date-time.
      * It is "consistent with equals", as defined by {@link Comparable}.

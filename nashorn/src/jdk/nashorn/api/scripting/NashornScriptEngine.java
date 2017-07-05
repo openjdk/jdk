@@ -525,6 +525,31 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         return evalImpl(script, ctxt, getNashornGlobalFrom(ctxt));
     }
 
+    private Object evalImpl(final Context.MultiGlobalCompiledScript mgcs, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
+        final Global oldGlobal = Context.getGlobal();
+        final boolean globalChanged = (oldGlobal != ctxtGlobal);
+        try {
+            if (globalChanged) {
+                Context.setGlobal(ctxtGlobal);
+            }
+
+            final ScriptFunction script = mgcs.getFunction(ctxtGlobal);
+
+            // set ScriptContext variables if ctxt is non-null
+            if (ctxt != null) {
+                setContextVariables(ctxtGlobal, ctxt);
+            }
+            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
+        } catch (final Exception e) {
+            throwAsScriptException(e, ctxtGlobal);
+            throw new AssertionError("should not reach here");
+        } finally {
+            if (globalChanged) {
+                Context.setGlobal(oldGlobal);
+            }
+        }
+    }
+
     private Object evalImpl(final ScriptFunction script, final ScriptContext ctxt, final Global ctxtGlobal) throws ScriptException {
         if (script == null) {
             return null;
@@ -571,18 +596,38 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private CompiledScript asCompiledScript(final Source source) throws ScriptException {
-        final ScriptFunction func = compileImpl(source, context);
+        final Context.MultiGlobalCompiledScript mgcs;
+        final ScriptFunction func;
+        final Global oldGlobal = Context.getGlobal();
+        final Global newGlobal = getNashornGlobalFrom(context);
+        final boolean globalChanged = (oldGlobal != newGlobal);
+        try {
+            if (globalChanged) {
+                Context.setGlobal(newGlobal);
+            }
+
+            mgcs = nashornContext.compileScript(source);
+            func = mgcs.getFunction(newGlobal);
+        } catch (final Exception e) {
+            throwAsScriptException(e, newGlobal);
+            throw new AssertionError("should not reach here");
+        } finally {
+            if (globalChanged) {
+                Context.setGlobal(oldGlobal);
+            }
+        }
+
         return new CompiledScript() {
             @Override
             public Object eval(final ScriptContext ctxt) throws ScriptException {
                 final Global globalObject = getNashornGlobalFrom(ctxt);
-                // Are we running the script in the correct global?
+                // Are we running the script in the same global in which it was compiled?
                 if (func.getScope() == globalObject) {
                     return evalImpl(func, ctxt, globalObject);
                 }
-                // ScriptContext with a different global. Compile again!
-                // Note that we may still hit per-global compilation cache.
-                return evalImpl(compileImpl(source, ctxt), ctxt, globalObject);
+
+                // different global
+                return evalImpl(mgcs, ctxt, globalObject);
             }
             @Override
             public ScriptEngine getEngine() {

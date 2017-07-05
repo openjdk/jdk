@@ -129,39 +129,39 @@ public class SolarisLoginModule implements LoginModule {
 
         long[] solarisGroups = null;
 
-        ss = new SolarisSystem();
-
-        if (ss == null) {
+        try {
+            ss = new SolarisSystem();
+        } catch (UnsatisfiedLinkError ule) {
             succeeded = false;
             throw new FailedLoginException
                                 ("Failed in attempt to import " +
-                                "the underlying system identity information");
-        } else {
-            userPrincipal = new SolarisPrincipal(ss.getUsername());
-            UIDPrincipal = new SolarisNumericUserPrincipal(ss.getUid());
-            GIDPrincipal = new SolarisNumericGroupPrincipal(ss.getGid(), true);
-            if (ss.getGroups() != null && ss.getGroups().length > 0)
-                solarisGroups = ss.getGroups();
-                for (int i = 0; i < solarisGroups.length; i++) {
-                    SolarisNumericGroupPrincipal ngp =
-                        new SolarisNumericGroupPrincipal
-                        (solarisGroups[i], false);
-                    if (!ngp.getName().equals(GIDPrincipal.getName()))
-                        supplementaryGroups.add(ngp);
-                }
-            if (debug) {
-                System.out.println("\t\t[SolarisLoginModule]: " +
-                        "succeeded importing info: ");
-                System.out.println("\t\t\tuid = " + ss.getUid());
-                System.out.println("\t\t\tgid = " + ss.getGid());
-                solarisGroups = ss.getGroups();
-                for (int i = 0; i < solarisGroups.length; i++) {
-                    System.out.println("\t\t\tsupp gid = " + solarisGroups[i]);
-                }
-            }
-            succeeded = true;
-            return true;
+                                "the underlying system identity information" +
+                                " on " + System.getProperty("os.name"));
         }
+        userPrincipal = new SolarisPrincipal(ss.getUsername());
+        UIDPrincipal = new SolarisNumericUserPrincipal(ss.getUid());
+        GIDPrincipal = new SolarisNumericGroupPrincipal(ss.getGid(), true);
+        if (ss.getGroups() != null && ss.getGroups().length > 0)
+            solarisGroups = ss.getGroups();
+            for (int i = 0; i < solarisGroups.length; i++) {
+                SolarisNumericGroupPrincipal ngp =
+                    new SolarisNumericGroupPrincipal
+                    (solarisGroups[i], false);
+                if (!ngp.getName().equals(GIDPrincipal.getName()))
+                    supplementaryGroups.add(ngp);
+            }
+        if (debug) {
+            System.out.println("\t\t[SolarisLoginModule]: " +
+                    "succeeded importing info: ");
+            System.out.println("\t\t\tuid = " + ss.getUid());
+            System.out.println("\t\t\tgid = " + ss.getGid());
+            solarisGroups = ss.getGroups();
+            for (int i = 0; i < solarisGroups.length; i++) {
+                System.out.println("\t\t\tsupp gid = " + solarisGroups[i]);
+            }
+        }
+        succeeded = true;
+        return true;
     }
 
     /**

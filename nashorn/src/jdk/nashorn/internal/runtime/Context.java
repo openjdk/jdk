@@ -490,6 +490,39 @@ public final class Context {
     }
 
     /**
+     * Interface to represent compiled code that can be re-used across many
+     * global scope instances
+     */
+    public static interface MultiGlobalCompiledScript {
+        /**
+         * Obtain script function object for a specific global scope object.
+         *
+         * @param newGlobal global scope for which function object is obtained
+         * @return script function for script level expressions
+         */
+        public ScriptFunction getFunction(final Global newGlobal);
+    }
+
+    /**
+     * Compile a top level script.
+     *
+     * @param source the script source
+     * @return reusable compiled script across many global scopes.
+     */
+    public MultiGlobalCompiledScript compileScript(final Source source) {
+        final Class<?> clazz = compile(source, this.errors, this._strict);
+        final MethodHandle runMethodHandle = getRunScriptHandle(clazz);
+        final boolean strict = isStrict(clazz);
+
+        return new MultiGlobalCompiledScript() {
+            @Override
+            public ScriptFunction getFunction(final Global newGlobal) {
+                return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, newGlobal, strict);
+            }
+        };
+    }
+
+    /**
      * Entry point for {@code eval}
      *
      * @param initialScope The scope of this eval call
@@ -949,14 +982,8 @@ public final class Context {
         return ScriptRuntime.apply(script, thiz);
     }
 
-    private static ScriptFunction getRunScriptFunction(final Class<?> script, final ScriptObject scope) {
-        if (script == null) {
-            return null;
-        }
-
-        // Get run method - the entry point to the script
-        final MethodHandle runMethodHandle =
-                MH.findStatic(
+    private static MethodHandle getRunScriptHandle(final Class<?> script) {
+        return MH.findStatic(
                     MethodHandles.lookup(),
                     script,
                     RUN_SCRIPT.symbolName(),
@@ -964,14 +991,24 @@ public final class Context {
                         Object.class,
                         ScriptFunction.class,
                         Object.class));
+    }
 
-        boolean strict;
-
+    private static boolean isStrict(final Class<?> script) {
         try {
-            strict = script.getField(STRICT_MODE.symbolName()).getBoolean(null);
+            return script.getField(STRICT_MODE.symbolName()).getBoolean(null);
         } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            strict = false;
+            return false;
         }
+    }
+
+    private static ScriptFunction getRunScriptFunction(final Class<?> script, final ScriptObject scope) {
+        if (script == null) {
+            return null;
+        }
+
+        // Get run method - the entry point to the script
+        final MethodHandle runMethodHandle = getRunScriptHandle(script);
+        boolean strict = isStrict(script);
 
         // Package as a JavaScript function and pass function back to shell.
         return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
