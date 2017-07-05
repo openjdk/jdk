@@ -397,10 +397,15 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
 #endif
   // See if the cloned def kills any flags, and copy those kills as well
   uint i = insidx+1;
-  if( clone_projs( b, i, def, spill, maxlrg) ) {
+  int found_projs = clone_projs( b, i, def, spill, maxlrg);
+  if (found_projs > 0) {
     // Adjust the point where we go hi-pressure
-    if( i <= b->_ihrp_index ) b->_ihrp_index++;
-    if( i <= b->_fhrp_index ) b->_fhrp_index++;
+    if (i <= b->_ihrp_index) {
+      b->_ihrp_index += found_projs;
+    }
+    if (i <= b->_fhrp_index) {
+      b->_fhrp_index += found_projs;
+    }
   }
 
   return spill;
@@ -529,13 +534,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // a Def is UP or DOWN.  UP means that it should get a register (ie -
   // it is always in LRP regions), and DOWN means that it is probably
   // on the stack (ie - it crosses HRP regions).
-  Node ***Reaches     = NEW_SPLIT_ARRAY( Node**, _cfg._num_blocks+1 );
-  bool  **UP          = NEW_SPLIT_ARRAY( bool*, _cfg._num_blocks+1 );
+  Node ***Reaches     = NEW_SPLIT_ARRAY( Node**, _cfg.number_of_blocks() + 1);
+  bool  **UP          = NEW_SPLIT_ARRAY( bool*, _cfg.number_of_blocks() + 1);
   Node  **debug_defs  = NEW_SPLIT_ARRAY( Node*, spill_cnt );
   VectorSet **UP_entry= NEW_SPLIT_ARRAY( VectorSet*, spill_cnt );
 
   // Initialize Reaches & UP
-  for( bidx = 0; bidx < _cfg._num_blocks+1; bidx++ ) {
+  for (bidx = 0; bidx < _cfg.number_of_blocks() + 1; bidx++) {
     Reaches[bidx]     = NEW_SPLIT_ARRAY( Node*, spill_cnt );
     UP[bidx]          = NEW_SPLIT_ARRAY( bool, spill_cnt );
     Node **Reachblock = Reaches[bidx];
@@ -555,13 +560,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
   // Walk the Blocks in RPO for DEF & USE info
-  for( bidx = 0; bidx < _cfg._num_blocks; bidx++ ) {
+  for( bidx = 0; bidx < _cfg.number_of_blocks(); bidx++ ) {
 
     if (C->check_node_count(spill_cnt, out_of_nodes)) {
       return 0;
     }
 
-    b  = _cfg._blocks[bidx];
+    b  = _cfg.get_block(bidx);
     // Reaches & UP arrays for this block
     Reachblock = Reaches[b->_pre_order];
     UPblock    = UP[b->_pre_order];
@@ -1394,8 +1399,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // DEBUG
 #ifdef ASSERT
   // Validate all live range index assignments
-  for (bidx = 0; bidx < _cfg._num_blocks; bidx++) {
-    b  = _cfg._blocks[bidx];
+  for (bidx = 0; bidx < _cfg.number_of_blocks(); bidx++) {
+    b  = _cfg.get_block(bidx);
     for (insidx = 0; insidx <= b->end_idx(); insidx++) {
       Node *n = b->_nodes[insidx];
       uint defidx = _lrg_map.find(n);

@@ -210,9 +210,7 @@ clienttest: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
 	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes.jsa
-	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes_g.jsa
 	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes.jsa
-	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes_g.jsa
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
 
 PHONY_LIST += clienttest

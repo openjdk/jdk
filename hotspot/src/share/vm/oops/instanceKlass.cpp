@@ -269,7 +269,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_fields(NULL, 0);
   set_constants(NULL);
   set_class_loader_data(NULL);
-  set_source_file_name(NULL);
+  set_source_file_name_index(0);
   set_source_debug_extension(NULL, 0);
   set_array_name(NULL);
   set_inner_classes(NULL);
@@ -284,7 +284,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_osr_nmethods_head(NULL);
   set_breakpoints(NULL);
   init_previous_versions();
-  set_generic_signature(NULL);
+  set_generic_signature_index(0);
   release_set_methods_jmethod_ids(NULL);
   release_set_methods_cached_itable_indices(NULL);
   set_annotations(NULL);
@@ -2368,16 +2368,10 @@ void InstanceKlass::release_C_heap_structures() {
   // unreference array name derived from this class name (arrays of an unloaded
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
-  if (_source_file_name != NULL) _source_file_name->decrement_refcount();
   if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension, mtClass);
 
   assert(_total_instanceKlass_count >= 1, "Sanity check");
   Atomic::dec(&_total_instanceKlass_count);
-}
-
-void InstanceKlass::set_source_file_name(Symbol* n) {
-  _source_file_name = n;
-  if (_source_file_name != NULL) _source_file_name->increment_refcount();
 }
 
 void InstanceKlass::set_source_debug_extension(char* array, int length) {

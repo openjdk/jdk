@@ -64,6 +64,7 @@ address InterpreterGenerator::generate_math_entry(
     return NULL;
 
   Unimplemented();
+  return NULL;
 }
 
 address InterpreterGenerator::generate_abstract_entry() {
