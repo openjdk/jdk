@@ -437,9 +437,3 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WRobotPeer_keyRelease(
 
     CATCH_BAD_ALLOC;
 }
-
-JNIEXPORT jint JNICALL Java_sun_awt_windows_WRobotPeer_getNumberOfButtons(
-  JNIEnv *, jobject self)
-{
-    return GetSystemMetrics(SM_CMOUSEBUTTONS);
-}

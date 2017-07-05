@@ -175,42 +175,11 @@ Java_sun_awt_X11GraphicsDevice_initIDs (JNIEnv *env, jclass cls)
 }
 
 #ifndef HEADLESS
+
 /*
- * error handlers
+ * XIOErrorHandler
  */
-
-int
-xerror_handler(Display * disp, XErrorEvent * err)
-{
-/* #ifdef DEBUG */
-    char msg[128];
-    char buf[128];
-    char *ev = getenv("NOISY_AWT");
-
-    if (!ev || !ev[0])
-        return 0;
-    XGetErrorText(disp, err->error_code, msg, sizeof(msg));
-    jio_fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid, err->serial);
-    jio_snprintf(buf, sizeof(buf), "%d", err->request_code);
-    XGetErrorDatabaseText(disp, "XRequest", buf, "Unknown", msg, sizeof(msg));
-    jio_fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
-    if (err->request_code > 128) {
-        jio_fprintf(stderr, "Minor opcode %d\n", err->minor_code);
-    }
-    if (awtLockInited) {
-        /*SignalError(lockedee->lastpc, lockedee, "fp/ade/gui/GUIException", msg); */
-    }
-    if (strcasecmp(ev, "abort") == 0) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
-        (*env)->FatalError(env, "xerror_handler abort");
-    }
-/* #endif */
-    return 0;
-}
-
-static int
-xioerror_handler(Display * disp)
+static int xioerror_handler(Display *disp)
 {
     if (awtLockInited) {
         if (errno == EPIPE) {
@@ -354,48 +323,6 @@ makeDefaultConfig(JNIEnv *env, int screen) {
     return NULL;
 }
 
-/* Note: until we include the <X11/extensions/Xrender.h> explicitly
- * we have to define a couple of things ourselves.
- */
-typedef unsigned long   PictFormat;
-#define PictTypeIndexed             0
-#define PictTypeDirect              1
-
-typedef struct {
-    short   red;
-    short   redMask;
-    short   green;
-    short   greenMask;
-    short   blue;
-    short   blueMask;
-    short   alpha;
-    short   alphaMask;
-} XRenderDirectFormat;
-
-typedef struct {
-    PictFormat      id;
-    int         type;
-    int         depth;
-    XRenderDirectFormat direct;
-    Colormap        colormap;
-} XRenderPictFormat;
-
-#define PictFormatID        (1 << 0)
-#define PictFormatType      (1 << 1)
-#define PictFormatDepth     (1 << 2)
-#define PictFormatRed       (1 << 3)
-#define PictFormatRedMask   (1 << 4)
-#define PictFormatGreen     (1 << 5)
-#define PictFormatGreenMask (1 << 6)
-#define PictFormatBlue      (1 << 7)
-#define PictFormatBlueMask  (1 << 8)
-#define PictFormatAlpha     (1 << 9)
-#define PictFormatAlphaMask (1 << 10)
-#define PictFormatColormap  (1 << 11)
-
-typedef XRenderPictFormat *
-XRenderFindVisualFormatFunc (Display *dpy, _Xconst Visual *visual);
-
 static void
 getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
@@ -535,6 +462,8 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
                 format->direct.alphaMask)
             {
                 graphicsConfigs [ind]->isTranslucencySupported = 1;
+                memcpy(&graphicsConfigs [ind]->renderPictFormat, format,
+                        sizeof(*format));
             }
         }
     }
@@ -886,7 +815,6 @@ awt_init_Display(JNIEnv *env, jobject this)
         return NULL;
     }
 
-    XSetErrorHandler(xerror_handler);
     XSetIOErrorHandler(xioerror_handler);
 
     /* set awt_numScreens, and whether or not we're using Xinerama */

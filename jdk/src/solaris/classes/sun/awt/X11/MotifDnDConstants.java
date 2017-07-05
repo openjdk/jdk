@@ -120,7 +120,7 @@ class MotifDnDConstants {
                                                             false,
                                                             XConstants.AnyPropertyType);
         try {
-            int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
+            int status = wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             if (status == XConstants.Success &&
                 wpg.getData() != 0 &&
@@ -190,7 +190,7 @@ class MotifDnDConstants {
                 try {
                     Native.putLong(data, motifWindow);
 
-                    XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+                    XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                     XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                                 defaultRootWindow,
                                                 XA_MOTIF_DRAG_WINDOW.getAtom(),
@@ -280,7 +280,7 @@ class MotifDnDConstants {
                                                             false,
                                                             XA_MOTIF_DRAG_TARGETS.getAtom());
         try {
-            int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
+            int status = wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             if (status != XConstants.Success
                 || wpg.getActualType() != XA_MOTIF_DRAG_TARGETS.getAtom()
@@ -394,7 +394,7 @@ class MotifDnDConstants {
                 }
             }
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                         motifWindow,
                                         XA_MOTIF_DRAG_TARGETS.getAtom(),
@@ -410,7 +410,7 @@ class MotifDnDConstants {
                 // Create a new motif window and retry.
                 motifWindow = createMotifWindow();
 
-                XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                 XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
                                             motifWindow,
                                             XA_MOTIF_DRAG_TARGETS.getAtom(),
@@ -534,7 +534,7 @@ class MotifDnDConstants {
             // CARD32 icc_handle
             unsafe.putInt(structData + 4, (int)XA_MOTIF_ATOM_0.getAtom());
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
                                         XA_MOTIF_ATOM_0.getAtom(),
                                         XA_MOTIF_DRAG_INITIATOR_INFO.getAtom(),
@@ -567,7 +567,7 @@ class MotifDnDConstants {
             unsafe.putShort(data + 10, (short)0); /* pad */
             unsafe.putInt(data + 12, dataSize);
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XlibWrapper.XChangeProperty(XToolkit.getDisplay(), window,
                                         XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
                                         XA_MOTIF_DRAG_RECEIVER_INFO.getAtom(),
