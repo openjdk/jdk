@@ -352,18 +352,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         components.add("ECDH_ANON");
                     }
                     break;
-                case K_KRB5:
-                    if (!forCertPathOnly) {
-                        components.add("KRB5");
-                    }
-                    break;
-                case K_KRB5_EXPORT:
-                    if (!forCertPathOnly) {
-                        components.add("KRB5_EXPORT");
-                    }
-                    break;
                 default:
-                    // ignore
+                    if (ClientKeyExchangeService.find(keyExchange.name) != null) {
+                        if (!forCertPathOnly) {
+                            components.add(keyExchange.name);
+                        }
+                    }
+                    // otherwise ignore
             }
 
             return components;

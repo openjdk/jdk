@@ -186,7 +186,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // it's optoregs.
 
     number_of_registers = (2 * RegisterImpl::number_of_registers +
-                           2 * FloatRegisterImpl::number_of_registers +
+                           4 * FloatRegisterImpl::number_of_registers +
                            1) // flags
   };
 

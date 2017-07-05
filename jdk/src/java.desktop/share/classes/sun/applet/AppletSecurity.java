@@ -270,10 +270,10 @@ class AppletSecurity extends AWTSecurityManager {
      * The <code>checkPackageAccess</code> method for class
      * <code>SecurityManager</code>  calls
      * <code>checkPermission</code> with the
-     * <code>RuntimePermission("accessClassInPackage."+pkg)</code>
+     * <code>RuntimePermission("accessClassInPackage."+ pkgname)</code>
      * permission.
      *
-     * @param      pkg   the package name.
+     * @param      pkgname   the package name.
      * @exception  SecurityException  if the caller does not have
      *             permission to access the specified package.
      * @see        java.lang.ClassLoader#loadClass(java.lang.String, boolean)

@@ -141,34 +141,9 @@ int InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, 
 
 // Macro to define InstanceRefKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.
-
-#define InstanceRefKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
-                                                                                      \
-int InstanceRefKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                       \
-}
-
-#if INCLUDE_ALL_GCS
-#define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-                                                                                                \
-int InstanceRefKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                         \
-}
-#else
-#define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-
-#define InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
-                                                                                                        \
-int InstanceRefKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                             \
-}
-
 #define ALL_INSTANCE_REF_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  InstanceRefKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)    \
-  InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)    \
-  InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-
+  OOP_OOP_ITERATE_DEFN(          InstanceRefKlass, OopClosureType, nv_suffix)   \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceRefKlass, OopClosureType, nv_suffix)   \
+  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceRefKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCEREFKLASS_INLINE_HPP

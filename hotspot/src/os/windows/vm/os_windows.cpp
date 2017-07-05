@@ -3768,7 +3768,7 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
-#define EXIT_TIMEOUT     PRODUCT_ONLY(1000) NOT_PRODUCT(4000) /* 1 sec in product, 4 sec in debug */
+#define EXIT_TIMEOUT 300000 /* 5 minutes */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   InitializeCriticalSection((CRITICAL_SECTION*)pcrit_sect);

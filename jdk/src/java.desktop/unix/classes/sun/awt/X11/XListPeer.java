@@ -1952,7 +1952,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
          * Paint the horizontal scrollbar to the screen
          *
          * @param g the graphics context to draw into
-         * @param colors the colors used to draw the scrollbar
          * @param paintAll paint the whole scrollbar if true, just the thumb if false
          */
         void paintHorScrollbar(Graphics g, boolean paintAll) {
@@ -1964,7 +1963,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
          * Paint the vertical scrollbar to the screen
          *
          * @param g the graphics context to draw into
-         * @param colors the colors used to draw the scrollbar
          * @param paintAll paint the whole scrollbar if true, just the thumb if false
          */
         void paintVerScrollbar(Graphics g, boolean paintAll) {

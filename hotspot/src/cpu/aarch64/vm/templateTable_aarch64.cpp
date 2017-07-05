@@ -513,23 +513,61 @@ void TemplateTable::nofast_iload() {
 void TemplateTable::iload_internal(RewriteControl rc) {
   transition(vtos, itos);
   if (RewriteFrequentPairs && rc == may_rewrite) {
-    // TODO : check x86 code for what to do here
-    __ call_Unimplemented();
-  } else {
-    locals_index(r1);
-    __ ldr(r0, iaddress(r1));
+    Label rewrite, done;
+    Register bc = r4;
+
+    // get next bytecode
+    __ load_unsigned_byte(r1, at_bcp(Bytecodes::length_for(Bytecodes::_iload)));
+
+    // if _iload, wait to rewrite to iload2.  We only want to rewrite the
+    // last two iloads in a pair.  Comparing against fast_iload means that
+    // the next bytecode is neither an iload or a caload, and therefore
+    // an iload pair.
+    __ cmpw(r1, Bytecodes::_iload);
+    __ br(Assembler::EQ, done);
+
+    // if _fast_iload rewrite to _fast_iload2
+    __ cmpw(r1, Bytecodes::_fast_iload);
+    __ movw(bc, Bytecodes::_fast_iload2);
+    __ br(Assembler::EQ, rewrite);
+
+    // if _caload rewrite to _fast_icaload
+    __ cmpw(r1, Bytecodes::_caload);
+    __ movw(bc, Bytecodes::_fast_icaload);
+    __ br(Assembler::EQ, rewrite);
+
+    // else rewrite to _fast_iload
+    __ movw(bc, Bytecodes::_fast_iload);
+
+    // rewrite
+    // bc: new bytecode
+    __ bind(rewrite);
+    patch_bytecode(Bytecodes::_iload, bc, r1, false);
+    __ bind(done);
+
   }
+
+  // do iload, get the local value into tos
+  locals_index(r1);
+  __ ldr(r0, iaddress(r1));
 
 }
 
 void TemplateTable::fast_iload2()
 {
-  __ call_Unimplemented();
+  transition(vtos, itos);
+  locals_index(r1);
+  __ ldr(r0, iaddress(r1));
+  __ push(itos);
+  locals_index(r1, 3);
+  __ ldr(r0, iaddress(r1));
 }
 
 void TemplateTable::fast_iload()
 {
-  __ call_Unimplemented();
+  transition(vtos, itos);
+  locals_index(r1);
+  __ ldr(r0, iaddress(r1));
 }
 
 void TemplateTable::lload()
@@ -721,7 +759,18 @@ void TemplateTable::caload()
 // iload followed by caload frequent pair
 void TemplateTable::fast_icaload()
 {
-  __ call_Unimplemented();
+  transition(vtos, itos);
+  // load index out of locals
+  locals_index(r2);
+  __ ldr(r1, iaddress(r2));
+
+  __ pop_ptr(r0);
+
+  // r0: array
+  // r1: index
+  index_check(r0, r1); // leaves index in r1, kills rscratch1
+  __ lea(r1,  Address(r0, r1, Address::uxtw(1)));
+  __ load_unsigned_short(r0, Address(r1,  arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 }
 
 void TemplateTable::saload()
@@ -797,7 +846,47 @@ void TemplateTable::aload_0_internal(RewriteControl rc) {
   // These bytecodes with a small amount of code are most profitable
   // to rewrite
   if (RewriteFrequentPairs && rc == may_rewrite) {
-    __ call_Unimplemented();
+    Label rewrite, done;
+    const Register bc = r4;
+
+    // get next bytecode
+    __ load_unsigned_byte(r1, at_bcp(Bytecodes::length_for(Bytecodes::_aload_0)));
+
+    // do actual aload_0
+    aload(0);
+
+    // if _getfield then wait with rewrite
+    __ cmpw(r1, Bytecodes::Bytecodes::_getfield);
+    __ br(Assembler::EQ, done);
+
+    // if _igetfield then reqrite to _fast_iaccess_0
+    assert(Bytecodes::java_code(Bytecodes::_fast_iaccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
+    __ cmpw(r1, Bytecodes::_fast_igetfield);
+    __ movw(bc, Bytecodes::_fast_iaccess_0);
+    __ br(Assembler::EQ, rewrite);
+
+    // if _agetfield then reqrite to _fast_aaccess_0
+    assert(Bytecodes::java_code(Bytecodes::_fast_aaccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
+    __ cmpw(r1, Bytecodes::_fast_agetfield);
+    __ movw(bc, Bytecodes::_fast_aaccess_0);
+    __ br(Assembler::EQ, rewrite);
+
+    // if _fgetfield then reqrite to _fast_faccess_0
+    assert(Bytecodes::java_code(Bytecodes::_fast_faccess_0) == Bytecodes::_aload_0, "fix bytecode definition");
+    __ cmpw(r1, Bytecodes::_fast_fgetfield);
+    __ movw(bc, Bytecodes::_fast_faccess_0);
+    __ br(Assembler::EQ, rewrite);
+
+    // else rewrite to _fast_aload0
+    assert(Bytecodes::java_code(Bytecodes::_fast_aload_0) == Bytecodes::_aload_0, "fix bytecode definition");
+    __ movw(bc, Bytecodes::Bytecodes::_fast_aload_0);
+
+    // rewrite
+    // bc: new bytecode
+    __ bind(rewrite);
+    patch_bytecode(Bytecodes::_aload_0, bc, r1, false);
+
+    __ bind(done);
   } else {
     aload(0);
   }

@@ -239,6 +239,7 @@ AwtMenuItem* AwtMenu::GetItem(jobject target, jint index)
     }
     jobject menuItem = env->CallObjectMethod(target, AwtMenu::getItemMID,
                                              index);
+    if (!menuItem) return NULL; // menu item was removed concurrently
     DASSERT(!safe_ExceptionOccurred(env));
 
     jobject wMenuItemPeer = GetPeerForTarget(env, menuItem);
@@ -264,9 +265,9 @@ void AwtMenu::DrawItems(DRAWITEMSTRUCT& drawInfo)
     }
     /* target is a java.awt.Menu */
     jobject target = GetTarget(env);
-
+    if(!target || env->ExceptionCheck()) return;
     int nCount = CountItem(target);
-    for (int i = 0; i < nCount; i++) {
+    for (int i = 0; i < nCount && !env->ExceptionCheck(); i++) {
         AwtMenuItem* awtMenuItem = GetItem(target, i);
         if (awtMenuItem != NULL) {
             SendDrawItem(awtMenuItem, drawInfo);
@@ -294,8 +295,9 @@ void AwtMenu::MeasureItems(HDC hDC, MEASUREITEMSTRUCT& measureInfo)
     }
    /* target is a java.awt.Menu */
     jobject target = GetTarget(env);
+    if(!target || env->ExceptionCheck()) return;
     int nCount = CountItem(target);
-    for (int i = 0; i < nCount; i++) {
+    for (int i = 0; i < nCount && !env->ExceptionCheck(); i++) {
         AwtMenuItem* awtMenuItem = GetItem(target, i);
         if (awtMenuItem != NULL) {
             SendMeasureItem(awtMenuItem, hDC, measureInfo);
