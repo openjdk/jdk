@@ -56,6 +56,22 @@ import sun.misc.DoubleConsts;
  * {@code sinh}, {@code cosh}, {@code tanh},
  * {@code hypot}, {@code expm1}, and {@code log1p}.
  *
+ * <p>
+ * The platform uses signed two's complement integer arithmetic with
+ * int and long primitive types.  The developer should choose
+ * the primitive type to ensure that arithmetic operations consistently
+ * produce correct results, which in some cases means the operations
+ * will not overflow the range of values of the computation.
+ * The best practice is to choose the primitive type and algorithm to avoid
+ * overflow. In cases where the size is {@code int} or {@code long} and
+ * overflow errors need to be detected, the methods {@code addExact},
+ * {@code subtractExact}, {@code multiplyExact}, and {@code toIntExact}
+ * throw an {@code ArithmeticException} when the results overflow.
+ * For other arithmetic operations such as divide, absolute value,
+ * increment, decrement, and negation overflow occurs only with
+ * a specific minimum or maximum value and should be checked against
+ * the minimum or maximum as appropriate.
+ *
  * @author  unascribed
  * @author  Joseph D. Darcy
  * @since   1.3
@@ -699,7 +715,111 @@ public final class StrictMath {
     }
 
     /**
-     * Returns the absolute value of an {@code int} value..
+     * Returns the sum of its arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#addExact(int,int)
+     * @since 1.8
+     */
+    public static int addExact(int x, int y) {
+        return Math.addExact(x, y);
+    }
+
+    /**
+     * Returns the sum of its arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#addExact(long,long)
+     * @since 1.8
+     */
+    public static long addExact(long x, long y) {
+        return Math.addExact(x, y);
+    }
+
+    /**
+     * Return the difference of the arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value to subtract from the first
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#subtractExact(int,int)
+     * @since 1.8
+     */
+    public static int subtractExact(int x, int y) {
+        return Math.subtractExact(x, y);
+    }
+
+    /**
+     * Return the difference of the arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value to subtract from the first
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#subtractExact(long,long)
+     * @since 1.8
+     */
+    public static long subtractExact(long x, long y) {
+        return Math.subtractExact(x, y);
+    }
+
+    /**
+     * Return the product of the arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     * @see Math#multiplyExact(int,int)
+     * @since 1.8
+     */
+    public static int multiplyExact(int x, int y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    /**
+     * Return the product of the arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @see Math#multiplyExact(long,long)
+     * @since 1.8
+     */
+    public static long multiplyExact(long x, long y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    /**
+     * Return the value of the {@code long} argument;
+     * throwing an exception if the value overflows an {@code int}.
+     *
+     * @param value the long value
+     * @return the argument as an int
+     * @throws ArithmeticException if the {@code argument} overflows an int
+     * @see Math#toIntExact(int)
+     * @since 1.8
+     */
+    public static int toIntExact(long value) {
+        return Math.toIntExact(value);
+    }
+
+    /**
+     * Returns the absolute value of an {@code int} value.
      * If the argument is not negative, the argument is returned.
      * If the argument is negative, the negation of the argument is returned.
      *
