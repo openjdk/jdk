@@ -4360,7 +4360,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t info_size))
 {
-  memset(info, 0, sizeof(info_size));
+  memset(info, 0, info_size);
 
   info->jvm_version = Abstract_VM_Version::jvm_version();
   info->update_version = 0;          /* 0 in HotSpot Express VM */

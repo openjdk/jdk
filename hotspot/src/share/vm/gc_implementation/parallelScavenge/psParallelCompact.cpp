@@ -43,6 +43,7 @@
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
 #include "gc_interface/gcCause.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/referencePolicy.hpp"
@@ -2115,6 +2116,16 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
       if (UseAdaptiveGenerationSizePolicyAtMajorCollection &&
           ((gc_cause != GCCause::_java_lang_system_gc) ||
             UseAdaptiveSizePolicyWithSystemGC)) {
+        // Swap the survivor spaces if from_space is empty. The
+        // resize_young_gen() called below is normally used after
+        // a successful young GC and swapping of survivor spaces;
+        // otherwise, it will fail to resize the young gen with
+        // the current implementation.
+        if (young_gen->from_space()->is_empty()) {
+          young_gen->from_space()->clear(SpaceDecorator::Mangle);
+          young_gen->swap_spaces();
+        }
+
         // Calculate optimal free space amounts
         assert(young_gen->max_size() >
           young_gen->from_space()->capacity_in_bytes() +
@@ -2154,12 +2165,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
         heap->resize_old_gen(
           size_policy->calculated_old_free_size_in_bytes());
 
-        // Don't resize the young generation at an major collection.  A
-        // desired young generation size may have been calculated but
-        // resizing the young generation complicates the code because the
-        // resizing of the old generation may have moved the boundary
-        // between the young generation and the old generation.  Let the
-        // young generation resizing happen at the minor collections.
+        heap->resize_young_gen(size_policy->calculated_eden_size_in_bytes(),
+                               size_policy->calculated_survivor_size_in_bytes());
       }
       if (PrintAdaptiveSizePolicy) {
         gclog_or_tty->print_cr("AdaptiveSizeStop: collection: %d ",
