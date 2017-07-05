@@ -29,7 +29,7 @@ public class Symbol {
 
     public String name;
     public Type type;
-    public TypeKlass klass;
+    public TypeKlass owner;
     public static final int NONE = 0x00;
     public static final int PRIVATE = 0x01;
     public static final int DEFAULT = 0x02;
@@ -47,16 +47,16 @@ public class Symbol {
         this.name = name;
     }
 
-    public Symbol(String name, TypeKlass klass, Type type, int flags) {
+    public Symbol(String name, TypeKlass owner, Type type, int flags) {
         this.name = name;
-        this.klass = klass;
+        this.owner = owner;
         this.type = type;
         this.flags = flags;
     }
 
     protected Symbol(Symbol value) {
         this.name = value.name;
-        this.klass = value.klass;
+        this.owner = value.owner;
         this.type = value.type;
         this.flags = value.flags;
     }
@@ -71,7 +71,7 @@ public class Symbol {
         }
         try {
             Symbol s = (Symbol) o;
-            return klass.equals(s.klass) && name.equals(s.name);
+            return owner.equals(s.owner) && name.equals(s.name);
         } catch (Exception e) {
             return false;
         }
@@ -109,5 +109,10 @@ public class Symbol {
 
     public Symbol deepCopy() {
         return new Symbol(this);
+    }
+
+
+    public TypeKlass getOwner() {
+        return owner;
     }
 }

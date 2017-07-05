@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,8 @@ package jdk.test.lib.jittester;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class UnaryOperator extends Operator {
-    protected OperatorKind opKind;
-    protected Type resultType;
-
     public UnaryOperator(OperatorKind opKind, IRNode expression) {
-        super(opKind.priority);
-        this.opKind = opKind;
+        super(opKind, expression.getResultType());
         addChild(expression);
     }
 
@@ -48,9 +44,5 @@ public class UnaryOperator extends Operator {
 
     public boolean isPrefix() {
         return opKind.isPrefix;
-    }
-
-    public String getOperatorText() {
-        return opKind.text;
     }
 }

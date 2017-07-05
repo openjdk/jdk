@@ -52,12 +52,11 @@ import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.meta.TrustedInterface;
 
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes.
  */
-final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implements HotSpotResolvedObjectType, HotSpotProxified, MetaspaceWrapperObject {
+final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implements HotSpotResolvedObjectType, MetaspaceWrapperObject {
 
     /**
      * The Java class this type represents.
@@ -128,9 +127,9 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      */
     long getMetaspaceKlass() {
         if (HotSpotJVMCIRuntime.getHostWordKind() == JavaKind.Long) {
-            return UNSAFE.getLong(javaClass, (long) config().klassOffset);
+            return UNSAFE.getLong(javaClass, config().klassOffset);
         }
-        return UNSAFE.getInt(javaClass, (long) config().klassOffset) & 0xFFFFFFFFL;
+        return UNSAFE.getInt(javaClass, config().klassOffset) & 0xFFFFFFFFL;
     }
 
     public long getMetaspacePointer() {
@@ -167,9 +166,25 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public AssumptionResult<ResolvedJavaType> findLeafConcreteSubtype() {
+        if (isLeaf()) {
+            // No assumptions are required.
+            return new AssumptionResult<>(this);
+        }
         HotSpotVMConfig config = config();
         if (isArray()) {
-            return getElementalType().isLeaf() ? new AssumptionResult<>(this) : null;
+            ResolvedJavaType elementalType = getElementalType();
+            AssumptionResult<ResolvedJavaType> elementType = elementalType.findLeafConcreteSubtype();
+            if (elementType != null && elementType.getResult().equals(elementalType)) {
+                /*
+                 * If the elementType is leaf then the array is leaf under the same assumptions but
+                 * only if the element type is exactly the leaf type. The element type can be
+                 * abstract even if there is only one implementor of the abstract type.
+                 */
+                AssumptionResult<ResolvedJavaType> result = new AssumptionResult<>(this);
+                result.add(elementType);
+                return result;
+            }
+            return null;
         } else if (isInterface()) {
             HotSpotResolvedObjectTypeImpl implementor = getSingleImplementor();
             /*
@@ -192,8 +207,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 }
                 return null;
             }
-
-            return new AssumptionResult<>(implementor, new LeafType(implementor), new ConcreteSubtype(this, implementor));
+            return concreteSubtype(implementor);
         } else {
             HotSpotResolvedObjectTypeImpl type = this;
             while (type.isAbstract()) {
@@ -207,11 +221,19 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 return null;
             }
             if (this.isAbstract()) {
-                return new AssumptionResult<>(type, new LeafType(type), new ConcreteSubtype(this, type));
+                return concreteSubtype(type);
             } else {
                 assert this.equals(type);
                 return new AssumptionResult<>(type, new LeafType(type));
             }
+        }
+    }
+
+    private AssumptionResult<ResolvedJavaType> concreteSubtype(HotSpotResolvedObjectTypeImpl type) {
+        if (type.isLeaf()) {
+            return new AssumptionResult<>(type, new ConcreteSubtype(this, type));
+        } else {
+            return new AssumptionResult<>(type, new LeafType(type), new ConcreteSubtype(this, type));
         }
     }
 
@@ -294,11 +316,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
                 t2 = t2.getSupertype();
             }
         }
-    }
-
-    @Override
-    public HotSpotResolvedObjectType asExactType() {
-        return isLeaf() ? this : null;
     }
 
     @Override
@@ -470,7 +487,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return result;
     }
 
-    public synchronized HotSpotResolvedJavaField createField(String fieldName, JavaType type, long offset, int rawFlags) {
+    synchronized HotSpotResolvedJavaField createField(String fieldName, JavaType type, long offset, int rawFlags) {
         HotSpotResolvedJavaField result = null;
 
         final int flags = rawFlags & ModifiersProvider.jvmFieldModifiers();
@@ -490,7 +507,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             fieldCache.put(id, result);
         } else {
             assert result.getName().equals(fieldName);
-            // assert result.getType().equals(type);
+            /*
+             * Comparing the types directly is too strict, because the type in the cache could be
+             * resolved while the incoming type is unresolved. The name comparison is sufficient
+             * because the type will always be resolved in the context of the holder.
+             */
+            assert result.getType().getName().equals(type.getName());
             assert result.offset() == offset;
             assert result.getModifiers() == flags;
         }
@@ -745,6 +767,11 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public Annotation[] getDeclaredAnnotations() {
+        return mirror().getDeclaredAnnotations();
+    }
+
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         return mirror().getAnnotation(annotationClass);
     }
@@ -876,11 +903,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public String toString() {
         return "HotSpotType<" + getName() + ", resolved>";
-    }
-
-    @Override
-    public boolean isTrustedInterfaceType() {
-        return TrustedInterface.class.isAssignableFrom(mirror());
     }
 
     @Override

@@ -34,7 +34,7 @@ import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class NonStaticMemberVariableFactory extends Factory {
+class NonStaticMemberVariableFactory extends Factory<NonStaticMemberVariable> {
     private final Type type;
     private final int flags;
     private final long complexityLimit;
@@ -53,7 +53,7 @@ class NonStaticMemberVariableFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public NonStaticMemberVariable produce() throws ProductionFailedException {
         // Get the variables of the requested type from SymbolTable
         ArrayList<Symbol> variables = new ArrayList<>(SymbolTable.get(type, VariableInfo.class));
         if (!variables.isEmpty()) {
@@ -70,7 +70,7 @@ class NonStaticMemberVariableFactory extends Factory {
                         && (varInfo.flags & VariableInfo.STATIC) == 0
                         && (varInfo.flags & VariableInfo.LOCAL) == 0) {
                     try {
-                        IRNode object = builder.setResultType(varInfo.klass)
+                        IRNode object = builder.setResultType(varInfo.owner)
                                 .getExpressionFactory().produce();
                         return new NonStaticMemberVariable(object, varInfo);
                     } catch (ProductionFailedException e) {

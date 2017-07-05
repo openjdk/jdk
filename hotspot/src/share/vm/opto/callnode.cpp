@@ -256,6 +256,7 @@ uint TailJumpNode::match_edge(uint idx) const {
 JVMState::JVMState(ciMethod* method, JVMState* caller) :
   _method(method) {
   assert(method != NULL, "must be valid call site");
+  _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
   debug_only(_bci = -99);  // random garbage value
   debug_only(_map = (SafePointNode*)-1);

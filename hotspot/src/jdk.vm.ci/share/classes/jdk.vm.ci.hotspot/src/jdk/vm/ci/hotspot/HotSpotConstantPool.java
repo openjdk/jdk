@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.Signature;
 /**
  * Implementation of {@link ConstantPool} for HotSpot.
  */
-final class HotSpotConstantPool implements ConstantPool, HotSpotProxified, MetaspaceWrapperObject {
+final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapperObject {
 
     /**
      * Subset of JVM bytecode opcodes used by {@link HotSpotConstantPool}.

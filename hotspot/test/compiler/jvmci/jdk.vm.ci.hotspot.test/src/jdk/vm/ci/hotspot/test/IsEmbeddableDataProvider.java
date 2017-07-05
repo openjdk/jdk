@@ -33,14 +33,14 @@ public class IsEmbeddableDataProvider {
     @DataProvider(name = "isEmbeddableDataProvider")
     public static Object[][] isEmbeddableDataProvider() {
         return new Object[][]{{JavaConstant.forBoolean(DUMMY_CLASS_INSTANCE.booleanField), true},
-                {JavaConstant.forByte(DUMMY_CLASS_INSTANCE.byteField), true},
-                {JavaConstant.forShort(DUMMY_CLASS_INSTANCE.shortField), true},
-                {JavaConstant.forInt(DUMMY_CLASS_INSTANCE.intField), true},
-                {JavaConstant.forLong(DUMMY_CLASS_INSTANCE.longField), true},
-                {JavaConstant.forChar(DUMMY_CLASS_INSTANCE.charField), true},
-                {JavaConstant.forFloat(DUMMY_CLASS_INSTANCE.floatField), true},
-                {JavaConstant.forDouble(DUMMY_CLASS_INSTANCE.doubleField), true},
-                {CONSTANT_REFLECTION_PROVIDER.forObject(DUMMY_CLASS_INSTANCE.objectField), true},
-                {JavaConstant.NULL_POINTER, true}, {null, true}};
+                        {JavaConstant.forByte(DUMMY_CLASS_INSTANCE.byteField), true},
+                        {JavaConstant.forShort(DUMMY_CLASS_INSTANCE.shortField), true},
+                        {JavaConstant.forInt(DUMMY_CLASS_INSTANCE.intField), true},
+                        {JavaConstant.forLong(DUMMY_CLASS_INSTANCE.longField), true},
+                        {JavaConstant.forChar(DUMMY_CLASS_INSTANCE.charField), true},
+                        {JavaConstant.forFloat(DUMMY_CLASS_INSTANCE.floatField), true},
+                        {JavaConstant.forDouble(DUMMY_CLASS_INSTANCE.doubleField), true},
+                        {CONSTANT_REFLECTION_PROVIDER.forObject(DUMMY_CLASS_INSTANCE.objectField), true},
+                        {JavaConstant.NULL_POINTER, true}, {null, true}};
     }
 }

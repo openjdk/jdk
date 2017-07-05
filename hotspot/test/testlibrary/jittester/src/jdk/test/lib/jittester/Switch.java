@@ -30,6 +30,7 @@ public class Switch extends IRNode {
     private final int caseBlockIdx;
 
     public Switch(int level, List<IRNode> chldrn, int caseBlockIdx) {
+        super(chldrn.get(caseBlockIdx).getResultType());
         this.level = level;
         addChildren(chldrn);
         this.caseBlockIdx = caseBlockIdx;

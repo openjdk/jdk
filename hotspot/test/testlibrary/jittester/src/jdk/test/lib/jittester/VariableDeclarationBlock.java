@@ -24,10 +24,12 @@
 package jdk.test.lib.jittester;
 
 import java.util.ArrayList;
+
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class VariableDeclarationBlock extends IRNode {
-    public VariableDeclarationBlock(ArrayList<IRNode> content, int level) {
+    public VariableDeclarationBlock(ArrayList<? extends Declaration> content, int level) {
+        super(TypeList.VOID);
         addChildren(content);
         this.level = level;
     }
@@ -38,10 +40,6 @@ public class VariableDeclarationBlock extends IRNode {
                 .stream()
                 .mapToLong(IRNode::complexity)
                 .sum();
-    }
-
-    protected int size() {
-        return getChildren() != null ? getChildren().size() : 0;
     }
 
     @Override

@@ -5521,7 +5521,8 @@ int LinearScanWalker::find_locked_double_reg(int reg_needed_until, int interval_
     }
   }
 
-  if (_block_pos[max_reg] <= interval_to || _block_pos[max_reg + 1] <= interval_to) {
+  if (max_reg != any_reg &&
+      (_block_pos[max_reg] <= interval_to || _block_pos[max_reg + 1] <= interval_to)) {
     *need_split = true;
   }
 
@@ -6497,8 +6498,9 @@ void LinearScanStatistic::print(const char* title) {
       if (_counters_sum[i] > 0 || _counters_max[i] >= 0) {
         tty->print("%25s: %8d", counter_name(i), _counters_sum[i]);
 
-        if (base_counter(i) != invalid_counter) {
-          tty->print("  (%5.1f%%) ", _counters_sum[i] * 100.0 / _counters_sum[base_counter(i)]);
+        LinearScanStatistic::Counter cntr = base_counter(i);
+        if (cntr != invalid_counter) {
+          tty->print("  (%5.1f%%) ", _counters_sum[i] * 100.0 / _counters_sum[cntr]);
         } else {
           tty->print("           ");
         }
