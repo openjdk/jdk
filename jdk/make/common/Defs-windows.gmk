@@ -68,11 +68,24 @@ PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 
 # The following DLL's are considered MS runtime libraries and should
 #     not to be REBASEd, see deploy/make/common/Release.gmk.
-#     msvcrt.dll, msvcr71.dll: Microsoft runtimes
+#     msvcrt.dll, msvcrnn.dll [msvcr71 or msvcr80 or msvcr90] : Microsoft runtimes
 MS_RUNTIME_LIBRARIES = msvcrt.dll
+MSVCRNN_DLL =
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(COMPILER_VERSION), VS2003)
-    MS_RUNTIME_LIBRARIES += msvcr71.dll
+    MSVCRNN_DLL = msvcr71.dll
+    MSVCPNN_DLL = msvcp71.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
+  ifeq ($(COMPILER_VERSION), VS2005)
+    MSVCRNN_DLL = msvcr80.dll
+    MSVCPNN_DLL = msvcp80.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
+  ifeq ($(COMPILER_VERSION), VS2008)
+    MSVCRNN_DLL = msvcr90.dll
+    MSVCPNN_DLL = msvcp90.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
   endif
 endif
 
@@ -178,9 +191,22 @@ ifeq ($(CC_VERSION),msvc)
       CC_OPT/LOWER   = -O1
     endif
   endif
+  ifeq ($(COMPILER_VERSION), VS2008)
+    # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
+    AUTOMATIC_PCH_OPTION =
+    GX_OPTION = -EHsc
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
+    else
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
+    endif
+  endif
 
 else # CC_VERSION
-  
   # GCC not supported, but left for historical reference...
   CC_OPT/NONE     =
   CC_OPT/LOWER    = -O2
@@ -200,10 +226,13 @@ CC_OPT = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 #   -MTd       Use static debug version (better than -MDd, no runtime issues)
 #   -D_DEBUG   Change use of malloc/free/etc to use special debug ones (-MTd)
 #
-#      NOTE: We also will use /D _STATIC_CPPLIB  so we don't need msvcp71.dll
+#      NOTE: We also will use /D _STATIC_CPPLIB  so we don't need msvcpnn.dll
 #
+# If MS_RUNTIME_STATIC is requested, use -MT only with VS2003.
 ifeq ($(MS_RUNTIME_STATIC),true)
-  MS_RUNTIME_OPTION=-MT
+  ifeq ($(COMPILER_VERSION), VS2003)
+    MS_RUNTIME_OPTION=-MT
+  endif
 else
   MS_RUNTIME_OPTION=-MD
 endif
@@ -238,7 +267,7 @@ ifeq ($(CC_VERSION),msvc)
   #   -YX -Fp/.../foobar.pch   Use precompiled headers (try someday?)
   #   -nologo  Don't print out startup message
   #   /D _STATIC_CPPLIB  
-  #            Use static link for the C++ runtime (so msvcp71.dll not needed)
+  #            Use static link for the C++ runtime (so msvcpnn.dll not needed)
   #   
   CFLAGS_COMMON  += -Zi -nologo
   CFLAGS_OPT      = $(CC_OPT)
@@ -277,8 +306,16 @@ ifeq ($(CC_VERSION),msvc)
   # Always add bufferoverflowU.lib to VS2005 link commands (pack uses LDDFLAGS)
   LFLAGS_VS2005 = $(BUFFEROVERFLOWLIB)
 
+  # VS2008 has bufferoverflow baked in:
+  LFLAGS_VS2008 = 
+
   # LFLAGS are the flags given to $(LINK) and used to build the actual DLL file
   BASELFLAGS = -nologo /opt:REF /incremental:no
+ifdef MT
+    # VS2005, VS2008, and beyond: ask LINK to generate manifests for .dll & .exe
+    BASELFLAGS += /manifest
+endif
+
   LFLAGS = $(BASELFLAGS) $(LDEBUG) $(EXTRA_LFLAGS) $(LFLAGS_$(COMPILER_VERSION))
   LDDFLAGS += $(LFLAGS_$(COMPILER_VERSION))
   

@@ -153,6 +153,9 @@ else
   STACK_SIZE=1048576
 endif
 
+# In VS2005 or VS2008 the link command creates a .manifest file that we want
+# to insert into the linked artifact so we do not need to track it separately.
+# Use ";#2" for .dll and ";#1" for .exe in the MT command below:
 $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o) $(JLI_LCF) 
 	@$(prep-target)
 	@set -- $?; \
@@ -160,6 +163,9 @@ $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o) $(JLI_LC
 	$(LINK) -out:$@ /STACK:$(STACK_SIZE) \
 	    -map:$(OBJDIR)/$(PROGRAM).map $(LFLAGS) $(LDFLAGS) \
 	    @$(OBJDIR)/$(PROGRAM).lcf $(LDLIBS)
+ifdef MT
+	$(MT) /manifest $(OBJDIR)/$(PROGRAM).exe.manifest /outputresource:$@;#1
+endif
 
 else # PLATFORM
 

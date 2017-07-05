@@ -142,8 +142,10 @@ endif
 $(UNPACK_EXE): $(UNPACK_EXE_FILES_o) winres 
 	$(prep-target)
 	$(LINKER)  $(LDDFLAGS) $(UNPACK_EXE_FILES_o) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
+ifdef MT
+	$(MT) /manifest $(TEMPDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
+endif
 	$(CP) $(TEMPDIR)/unpack200$(EXE_SUFFIX) $(UNPACK_EXE)
-
 
 ifeq ($(PLATFORM), windows) 
 $(RES):: $(VERSIONINFO_RESOURCE)
