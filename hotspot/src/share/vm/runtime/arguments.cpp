@@ -109,8 +109,6 @@ SystemProperty *Arguments::_java_home = NULL;
 SystemProperty *Arguments::_java_class_path = NULL;
 SystemProperty *Arguments::_sun_boot_class_path = NULL;
 
-char* Arguments::_meta_index_path = NULL;
-char* Arguments::_meta_index_dir = NULL;
 char* Arguments::_ext_dirs = NULL;
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,17 @@
 //     - VM_G1CollectForAllocation
 //     - VM_G1IncCollectionPause
 
-class VM_G1OperationWithAllocRequest: public VM_GC_Operation {
+class VM_G1OperationWithAllocRequest : public VM_CollectForAllocation {
 protected:
-  size_t    _word_size;
-  HeapWord* _result;
   bool      _pause_succeeded;
   AllocationContext_t _allocation_context;
 
 public:
-  VM_G1OperationWithAllocRequest(unsigned int gc_count_before,
-                                 size_t       word_size,
+  VM_G1OperationWithAllocRequest(uint           gc_count_before,
+                                 size_t         word_size,
                                  GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, gc_cause),
-      _word_size(word_size), _result(NULL), _pause_succeeded(false) { }
-  HeapWord* result() { return _result; }
+    : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+      _pause_succeeded(false) {}
   bool pause_succeeded() { return _pause_succeeded; }
   void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
   AllocationContext_t  allocation_context() { return _allocation_context; }
@@ -57,8 +54,8 @@ public:
 
 class VM_G1CollectFull: public VM_GC_Operation {
 public:
-  VM_G1CollectFull(unsigned int gc_count_before,
-                   unsigned int full_gc_count_before,
+  VM_G1CollectFull(uint gc_count_before,
+                   uint full_gc_count_before,
                    GCCause::Cause cause)
     : VM_GC_Operation(gc_count_before, cause, full_gc_count_before, true) { }
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
@@ -70,7 +67,7 @@ public:
 
 class VM_G1CollectForAllocation: public VM_G1OperationWithAllocRequest {
 public:
-  VM_G1CollectForAllocation(unsigned int gc_count_before,
+  VM_G1CollectForAllocation(uint         gc_count_before,
                             size_t       word_size);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();
@@ -84,9 +81,9 @@ private:
   bool         _should_initiate_conc_mark;
   bool         _should_retry_gc;
   double       _target_pause_time_ms;
-  unsigned int _old_marking_cycles_completed_before;
+  uint         _old_marking_cycles_completed_before;
 public:
-  VM_G1IncCollectionPause(unsigned int   gc_count_before,
+  VM_G1IncCollectionPause(uint           gc_count_before,
                           size_t         word_size,
                           bool           should_initiate_conc_mark,
                           double         target_pause_time_ms,

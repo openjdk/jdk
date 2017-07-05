@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package sun.util.logging;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Date;
+import java.time.ZonedDateTime;
 
 /**
  * Internal API to support JRE implementation to detect if the java.util.logging
@@ -145,6 +145,11 @@ public class LoggingSupport {
         return proxy.getLevelValue(level);
     }
 
+    // Since JDK 9, logging uses java.time to get more precise time stamps.
+    // It is possible to configure the simple format to print nano seconds (.%1$tN)
+    // by specifying:
+    // java.util.logging.SimpleFormatter.format=%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tN %1$Tp %2$s%n%4$s: %5$s%6$s%n
+    // in the logging configuration
     private static final String DEFAULT_FORMAT =
         "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%6$s%n";
 
@@ -171,7 +176,7 @@ public class LoggingSupport {
         if (format != null) {
             try {
                 // validate the user-defined format string
-                String.format(format, new Date(), "", "", "", "", "");
+                String.format(format, ZonedDateTime.now(), "", "", "", "", "");
             } catch (IllegalArgumentException e) {
                 // illegal syntax; fall back to the default format
                 format = DEFAULT_FORMAT;

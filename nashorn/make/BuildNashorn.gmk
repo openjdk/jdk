@@ -44,11 +44,11 @@ ifdef MILESTONE
   endif
 endif
 
-# Need to use source and target 7 for nasgen to work.
+# Need to use source and target 8 for nasgen to work.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -g -source 7 -target 7 -bootclasspath "$(JDK_CLASSES)", \
+    FLAGS := -g -source 8 -target 8 -bootclasspath "$(JDK_CLASSES)", \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 

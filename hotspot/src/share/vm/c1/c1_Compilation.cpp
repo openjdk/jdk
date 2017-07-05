@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_RangeCheckElimination.hpp"
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileLog.hpp"
-#include "c1/c1_RangeCheckElimination.hpp"
-
+#include "runtime/sharedRuntime.hpp"
 
 typedef enum {
   _t_compile,

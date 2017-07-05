@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
 #include "memory/resourceArea.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 
 int InlineCacheBuffer::ic_stub_code_size() {
   // NB set this once the functions below are implemented
