@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import jdk.internal.util.xml.PropertiesDefaultHandler;
 
@@ -311,9 +309,11 @@ class Properties extends Hashtable<Object,Object> {
      *          input stream.
      * @throws  IllegalArgumentException if a malformed Unicode escape
      *          appears in the input.
+     * @throws NullPointerException if {@code reader} is null.
      * @since   1.6
      */
     public synchronized void load(Reader reader) throws IOException {
+        Objects.requireNonNull(reader, "reader parameter is null");
         load0(new LineReader(reader));
     }
 
@@ -335,9 +335,11 @@ class Properties extends Hashtable<Object,Object> {
      *             input stream.
      * @throws     IllegalArgumentException if the input stream contains a
      *             malformed Unicode escape sequence.
+     * @throws NullPointerException if {@code inStream} is null.
      * @since 1.2
      */
     public synchronized void load(InputStream inStream) throws IOException {
+        Objects.requireNonNull(inStream, "inStream parameter is null");
         load0(new LineReader(inStream));
     }
 

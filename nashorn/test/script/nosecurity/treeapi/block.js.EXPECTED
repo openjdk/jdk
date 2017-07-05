@@ -1,0 +1,68 @@
+[
+  {
+    "endPosition": "2",
+    "kind": "BLOCK",
+    "statements": [],
+    "startPosition": "0"
+  },
+  {
+    "endPosition": "22",
+    "kind": "BLOCK",
+    "statements": [
+      {
+        "expression": {
+          "endPosition": "19",
+          "kind": "FUNCTION_INVOCATION",
+          "functionSelect": {
+            "endPosition": "10",
+            "kind": "IDENTIFIER",
+            "name": "print",
+            "startPosition": "5"
+          },
+          "arguments": [
+            {
+              "endPosition": "17",
+              "kind": "STRING_LITERAL",
+              "value": "hello",
+              "startPosition": "12"
+            }
+          ],
+          "startPosition": "5"
+        },
+        "endPosition": "19",
+        "kind": "EXPRESSION_STATEMENT",
+        "startPosition": "5"
+      }
+    ],
+    "startPosition": "3"
+  },
+  {
+    "endPosition": "56",
+    "kind": "BLOCK",
+    "statements": [
+      {
+        "expression": {
+          "leftOperand": {
+            "endPosition": "51",
+            "kind": "NUMBER_LITERAL",
+            "value": "2",
+            "startPosition": "50"
+          },
+          "endPosition": "55",
+          "kind": "PLUS",
+          "rightOperand": {
+            "endPosition": "55",
+            "kind": "NUMBER_LITERAL",
+            "value": "1",
+            "startPosition": "54"
+          },
+          "startPosition": "50"
+        },
+        "endPosition": "56",
+        "kind": "RETURN",
+        "startPosition": "43"
+      }
+    ],
+    "startPosition": "37"
+  }
+]

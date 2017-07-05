@@ -1,0 +1,255 @@
+[
+  {
+    "endPosition": "8",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "6",
+      "kind": "IDENTIFIER",
+      "name": "func1",
+      "startPosition": "1"
+    },
+    "arguments": [],
+    "startPosition": "1"
+  },
+  {
+    "endPosition": "23",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "14",
+      "kind": "IDENTIFIER",
+      "name": "func2",
+      "startPosition": "9"
+    },
+    "arguments": [
+      {
+        "endPosition": "16",
+        "kind": "IDENTIFIER",
+        "name": "a",
+        "startPosition": "15"
+      },
+      {
+        "endPosition": "19",
+        "kind": "IDENTIFIER",
+        "name": "b",
+        "startPosition": "18"
+      },
+      {
+        "endPosition": "22",
+        "kind": "IDENTIFIER",
+        "name": "c",
+        "startPosition": "21"
+      }
+    ],
+    "startPosition": "9"
+  },
+  {
+    "endPosition": "39",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "29",
+      "kind": "IDENTIFIER",
+      "name": "func3",
+      "startPosition": "24"
+    },
+    "arguments": [
+      {
+        "endPosition": "31",
+        "kind": "NUMBER_LITERAL",
+        "value": "4",
+        "startPosition": "30"
+      },
+      {
+        "leftOperand": {
+          "endPosition": "34",
+          "kind": "IDENTIFIER",
+          "name": "n",
+          "startPosition": "33"
+        },
+        "endPosition": "38",
+        "kind": "MULTIPLY",
+        "rightOperand": {
+          "endPosition": "38",
+          "kind": "IDENTIFIER",
+          "name": "m",
+          "startPosition": "37"
+        },
+        "startPosition": "33"
+      }
+    ],
+    "startPosition": "24"
+  },
+  {
+    "endPosition": "51",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "identifier": "call",
+      "expression": {
+        "endPosition": "44",
+        "kind": "IDENTIFIER",
+        "name": "obj",
+        "startPosition": "41"
+      },
+      "endPosition": "49",
+      "kind": "MEMBER_SELECT",
+      "startPosition": "41"
+    },
+    "arguments": [],
+    "startPosition": "41"
+  },
+  {
+    "endPosition": "69",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "identifier": "call",
+      "expression": {
+        "endPosition": "56",
+        "kind": "IDENTIFIER",
+        "name": "obj",
+        "startPosition": "53"
+      },
+      "endPosition": "61",
+      "kind": "MEMBER_SELECT",
+      "startPosition": "53"
+    },
+    "arguments": [
+      {
+        "endPosition": "63",
+        "kind": "IDENTIFIER",
+        "name": "x",
+        "startPosition": "62"
+      },
+      {
+        "endPosition": "68",
+        "kind": "FUNCTION_INVOCATION",
+        "functionSelect": {
+          "endPosition": "66",
+          "kind": "IDENTIFIER",
+          "name": "b",
+          "startPosition": "65"
+        },
+        "arguments": [],
+        "startPosition": "65"
+      }
+    ],
+    "startPosition": "53"
+  },
+  {
+    "endPosition": "87",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "82",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "endPosition": "83",
+        "kind": "BLOCK",
+        "statements": [],
+        "startPosition": "82"
+      },
+      "strict": "false",
+      "startPosition": "82",
+      "parameters": []
+    },
+    "arguments": [],
+    "startPosition": "71"
+  },
+  {
+    "endPosition": "118",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "100",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "endPosition": "114",
+        "kind": "BLOCK",
+        "statements": [
+          {
+            "expression": {
+              "endPosition": "112",
+              "kind": "STRING_LITERAL",
+              "value": "use strict",
+              "startPosition": "102"
+            },
+            "endPosition": "112",
+            "kind": "EXPRESSION_STATEMENT",
+            "startPosition": "102"
+          }
+        ],
+        "startPosition": "100"
+      },
+      "strict": "true",
+      "startPosition": "100",
+      "parameters": []
+    },
+    "arguments": [],
+    "startPosition": "89"
+  },
+  {
+    "endPosition": "137",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "131",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "endPosition": "132",
+        "kind": "BLOCK",
+        "statements": [],
+        "startPosition": "131"
+      },
+      "strict": "false",
+      "startPosition": "131",
+      "parameters": []
+    },
+    "arguments": [
+      {
+        "endPosition": "136",
+        "kind": "NUMBER_LITERAL",
+        "value": "2",
+        "startPosition": "135"
+      }
+    ],
+    "startPosition": "120"
+  },
+  {
+    "endPosition": "160",
+    "kind": "FUNCTION_INVOCATION",
+    "functionSelect": {
+      "endPosition": "154",
+      "kind": "FUNCTION_EXPRESSION",
+      "name": "null",
+      "body": {
+        "endPosition": "155",
+        "kind": "BLOCK",
+        "statements": [],
+        "startPosition": "154"
+      },
+      "strict": "false",
+      "startPosition": "154",
+      "parameters": [
+        {
+          "endPosition": "150",
+          "kind": "IDENTIFIER",
+          "name": "a",
+          "startPosition": "149"
+        },
+        {
+          "endPosition": "153",
+          "kind": "IDENTIFIER",
+          "name": "b",
+          "startPosition": "152"
+        }
+      ]
+    },
+    "arguments": [
+      {
+        "endPosition": "159",
+        "kind": "NUMBER_LITERAL",
+        "value": "2",
+        "startPosition": "158"
+      }
+    ],
+    "startPosition": "139"
+  }
+]

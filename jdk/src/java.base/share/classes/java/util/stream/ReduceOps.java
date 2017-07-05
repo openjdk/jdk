@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,40 @@ final class ReduceOps {
     }
 
     /**
+     * Constructs a {@code TerminalOp} that counts the number of stream
+     * elements.  If the size of the pipeline is known then count is the size
+     * and there is no need to evaluate the pipeline.  If the size of the
+     * pipeline is non known then count is produced, via reduction, using a
+     * {@link CountingSink}.
+     *
+     * @param <T> the type of the input elements
+     * @return a {@code TerminalOp} implementing the counting
+     */
+    public static <T> TerminalOp<T, Long>
+    makeRefCounting() {
+        return new ReduceOp<T, Long, CountingSink<T>>(StreamShape.REFERENCE) {
+            @Override
+            public CountingSink<T> makeSink() { return new CountingSink.OfRef<>(); }
+
+            @Override
+            public <P_IN> Long evaluateSequential(PipelineHelper<T> helper,
+                                                  Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateSequential(helper, spliterator);
+            }
+
+            @Override
+            public <P_IN> Long evaluateParallel(PipelineHelper<T> helper,
+                                                Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateParallel(helper, spliterator);
+            }
+        };
+    }
+
+    /**
      * Constructs a {@code TerminalOp} that implements a functional reduce on
      * {@code int} values.
      *
@@ -365,6 +399,39 @@ final class ReduceOps {
             @Override
             public ReducingSink makeSink() {
                 return new ReducingSink();
+            }
+        };
+    }
+
+    /**
+     * Constructs a {@code TerminalOp} that counts the number of stream
+     * elements.  If the size of the pipeline is known then count is the size
+     * and there is no need to evaluate the pipeline.  If the size of the
+     * pipeline is non known then count is produced, via reduction, using a
+     * {@link CountingSink}.
+     *
+     * @return a {@code TerminalOp} implementing the counting
+     */
+    public static TerminalOp<Integer, Long>
+    makeIntCounting() {
+        return new ReduceOp<Integer, Long, CountingSink<Integer>>(StreamShape.INT_VALUE) {
+            @Override
+            public CountingSink<Integer> makeSink() { return new CountingSink.OfInt(); }
+
+            @Override
+            public <P_IN> Long evaluateSequential(PipelineHelper<Integer> helper,
+                                                  Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateSequential(helper, spliterator);
+            }
+
+            @Override
+            public <P_IN> Long evaluateParallel(PipelineHelper<Integer> helper,
+                                                Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateParallel(helper, spliterator);
             }
         };
     }
@@ -506,6 +573,39 @@ final class ReduceOps {
     }
 
     /**
+     * Constructs a {@code TerminalOp} that counts the number of stream
+     * elements.  If the size of the pipeline is known then count is the size
+     * and there is no need to evaluate the pipeline.  If the size of the
+     * pipeline is non known then count is produced, via reduction, using a
+     * {@link CountingSink}.
+     *
+     * @return a {@code TerminalOp} implementing the counting
+     */
+    public static TerminalOp<Long, Long>
+    makeLongCounting() {
+        return new ReduceOp<Long, Long, CountingSink<Long>>(StreamShape.LONG_VALUE) {
+            @Override
+            public CountingSink<Long> makeSink() { return new CountingSink.OfLong(); }
+
+            @Override
+            public <P_IN> Long evaluateSequential(PipelineHelper<Long> helper,
+                                                  Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateSequential(helper, spliterator);
+            }
+
+            @Override
+            public <P_IN> Long evaluateParallel(PipelineHelper<Long> helper,
+                                                Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateParallel(helper, spliterator);
+            }
+        };
+    }
+
+    /**
      * Constructs a {@code TerminalOp} that implements a functional reduce on
      * {@code double} values.
      *
@@ -642,6 +742,91 @@ final class ReduceOps {
     }
 
     /**
+     * Constructs a {@code TerminalOp} that counts the number of stream
+     * elements.  If the size of the pipeline is known then count is the size
+     * and there is no need to evaluate the pipeline.  If the size of the
+     * pipeline is non known then count is produced, via reduction, using a
+     * {@link CountingSink}.
+     *
+     * @return a {@code TerminalOp} implementing the counting
+     */
+    public static TerminalOp<Double, Long>
+    makeDoubleCounting() {
+        return new ReduceOp<Double, Long, CountingSink<Double>>(StreamShape.DOUBLE_VALUE) {
+            @Override
+            public CountingSink<Double> makeSink() { return new CountingSink.OfDouble(); }
+
+            @Override
+            public <P_IN> Long evaluateSequential(PipelineHelper<Double> helper,
+                                                  Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateSequential(helper, spliterator);
+            }
+
+            @Override
+            public <P_IN> Long evaluateParallel(PipelineHelper<Double> helper,
+                                                Spliterator<P_IN> spliterator) {
+                if (StreamOpFlag.SIZED.isKnown(helper.getStreamAndOpFlags()))
+                    return spliterator.getExactSizeIfKnown();
+                return super.evaluateParallel(helper, spliterator);
+            }
+        };
+    }
+
+    /**
+     * A sink that counts elements
+     */
+    static abstract class CountingSink<T>
+            extends Box<Long>
+            implements AccumulatingSink<T, Long, CountingSink<T>> {
+        long count;
+
+        @Override
+        public void begin(long size) {
+            count = 0L;
+        }
+
+        @Override
+        public Long get() {
+            return count;
+        }
+
+        @Override
+        public void combine(CountingSink<T> other) {
+            count += other.count;
+        }
+
+        static final class OfRef<T> extends CountingSink<T> {
+            @Override
+            public void accept(T t) {
+                count++;
+            }
+        }
+
+        static final class OfInt extends CountingSink<Integer> implements Sink.OfInt {
+            @Override
+            public void accept(int t) {
+                count++;
+            }
+        }
+
+        static final class OfLong extends CountingSink<Long> implements Sink.OfLong {
+            @Override
+            public void accept(long t) {
+                count++;
+            }
+        }
+
+        static final class OfDouble extends CountingSink<Double> implements Sink.OfDouble {
+            @Override
+            public void accept(double t) {
+                count++;
+            }
+        }
+    }
+
+    /**
      * A type of {@code TerminalSink} that implements an associative reducing
      * operation on elements of type {@code T} and producing a result of type
      * {@code R}.
@@ -652,7 +837,7 @@ final class ReduceOps {
      */
     private interface AccumulatingSink<T, R, K extends AccumulatingSink<T, R, K>>
             extends TerminalSink<T, R> {
-        public void combine(K other);
+        void combine(K other);
     }
 
     /**

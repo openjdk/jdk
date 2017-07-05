@@ -430,11 +430,11 @@ Java_sun_security_jgss_wrapper_GSSLibStub_canonicalizeName(JNIEnv *env,
 
     checkStatus(env, jobj, major, minor, "[GSSLibStub_canonicalizeName]");
     if ((*env)->ExceptionCheck(env)) {
-      return (jlong) GSS_C_NO_NAME;
+      return ptr_to_jlong(GSS_C_NO_NAME);
     }
     return ptr_to_jlong(mnNameHdl);
   }
-  return (jlong) GSS_C_NO_NAME;
+  return ptr_to_jlong(GSS_C_NO_NAME);
 }
 
 /*

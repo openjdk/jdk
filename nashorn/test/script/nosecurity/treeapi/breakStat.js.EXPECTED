@@ -1,0 +1,38 @@
+[
+  {
+    "endPosition": "21",
+    "kind": "BREAK",
+    "label": "null",
+    "startPosition": "15"
+  },
+  {
+    "endPosition": "58",
+    "kind": "BREAK",
+    "label": "loop",
+    "startPosition": "48"
+  },
+  {
+    "endPosition": "93",
+    "kind": "BREAK",
+    "label": "loop",
+    "startPosition": "83"
+  },
+  {
+    "endPosition": "108",
+    "kind": "BREAK",
+    "label": "null",
+    "startPosition": "102"
+  },
+  {
+    "endPosition": "170",
+    "kind": "BREAK",
+    "label": "null",
+    "startPosition": "165"
+  },
+  {
+    "endPosition": "198",
+    "kind": "BREAK",
+    "label": "null",
+    "startPosition": "192"
+  }
+]

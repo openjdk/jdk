@@ -139,7 +139,7 @@ final class ParserImpl implements Parser {
         }
     }
 
-    private CompilationUnitTree translate(final FunctionNode node) {
+    private static CompilationUnitTree translate(final FunctionNode node) {
         return new IRTranslator().translate(node);
     }
 }

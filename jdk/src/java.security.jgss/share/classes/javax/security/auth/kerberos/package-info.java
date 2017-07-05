@@ -52,7 +52,7 @@
  * which contains a series of relations grouped into different sections.
  * Each relation contains a key and a value, the value can be an arbitrary
  * string or a boolean value. A boolean value can be one of "true", "false",
- * "yes", or "no", case-insensitive.<p>
+ * "yes", or "no", and values are case-insensitive.
  *
  * @since 1.4
  */

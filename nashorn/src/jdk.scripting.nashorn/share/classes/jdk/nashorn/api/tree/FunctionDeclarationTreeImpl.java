@@ -43,7 +43,7 @@ final class FunctionDeclarationTreeImpl extends StatementTreeImpl
         assert node.getInit() instanceof FunctionNode : "function expected";
         funcNode = (FunctionNode)node.getInit();
         assert funcNode.isDeclared() : "function declaration expected";
-        funcName = node.getName().getName();
+        funcName = funcNode.isAnonymous()? null : node.getName().getName();
         this.params = params;
         this.body = body;
     }

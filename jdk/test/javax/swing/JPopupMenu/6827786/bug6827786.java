@@ -27,9 +27,12 @@
  * @summary Tests duplicate mnemonics
  * @author Peter Zhelezniakov
  * @library ../../regtesthelpers
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @build Util
  * @run main bug6827786
  */
+import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
@@ -63,7 +66,7 @@ public class bug6827786 {
         checkfocus();
 
         // select menu
-        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_F);
         } else {
             Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_F);

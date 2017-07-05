@@ -843,7 +843,7 @@ public final class LWCToolkit extends LWToolkit {
     /**
      * Just spin a single empty block synchronously.
      */
-    private static native void flushNativeSelectors();
+    static native void flushNativeSelectors();
 
     @Override
     public Clipboard createPlatformClipboard() {

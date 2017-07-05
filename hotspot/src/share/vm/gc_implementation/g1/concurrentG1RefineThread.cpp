@@ -61,7 +61,7 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   create_and_start();
 
   // set name
-  set_name("G1 Concurrent Refinement Thread#%d", worker_id);
+  set_name("G1 Refine#%d", worker_id);
 }
 
 void ConcurrentG1RefineThread::initialize() {

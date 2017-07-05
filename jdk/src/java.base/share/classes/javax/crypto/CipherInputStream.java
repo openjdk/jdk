@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,6 @@ public class CipherInputStream extends FilterInputStream {
      * <code>-1</code> is returned. This method blocks until input data
      * is available, the end of the stream is detected, or an exception
      * is thrown.
-     * <p>
      *
      * @return  the next byte of data, or <code>-1</code> if the end of the
      *          stream is reached.
