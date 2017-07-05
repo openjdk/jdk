@@ -25,12 +25,11 @@
 
 package jdk.nashorn.internal.objects;
 
-import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -41,8 +40,8 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -147,8 +146,7 @@ public final class NativeError extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object captureStackTrace(final Object self, final Object errorObj) {
-        Global.checkObject(errorObj);
-        final ScriptObject sobj = (ScriptObject)errorObj;
+        final ScriptObject sobj = Global.checkObject(errorObj);
         initException(sobj);
         sobj.delete(STACK, false);
         if (! sobj.has("stack")) {
@@ -184,8 +182,7 @@ public final class NativeError extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object printStackTrace(final Object self) {
-        Global.checkObject(self);
-        return ECMAException.printStackTrace((ScriptObject)self);
+        return ECMAException.printStackTrace(Global.checkObject(self));
     }
 
     /**
@@ -199,8 +196,7 @@ public final class NativeError extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object getStackTrace(final Object self) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         final Object exception = ECMAException.getException(sobj);
         Object[] res;
         if (exception instanceof Throwable) {
@@ -220,8 +216,7 @@ public final class NativeError extends ScriptObject {
      * @return line number from which error was thrown
      */
     public static Object getLineNumber(final Object self) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         return sobj.has(LINENUMBER) ? sobj.get(LINENUMBER) : ECMAException.getLineNumber(sobj);
     }
 
@@ -234,8 +229,7 @@ public final class NativeError extends ScriptObject {
      * @return value that was set
      */
     public static Object setLineNumber(final Object self, final Object value) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         if (sobj.hasOwnProperty(LINENUMBER)) {
             sobj.put(LINENUMBER, value, false);
         } else {
@@ -252,8 +246,7 @@ public final class NativeError extends ScriptObject {
      * @return column number from which error was thrown
      */
     public static Object getColumnNumber(final Object self) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         return sobj.has(COLUMNNUMBER) ? sobj.get(COLUMNNUMBER) : ECMAException.getColumnNumber((ScriptObject)self);
     }
 
@@ -266,8 +259,7 @@ public final class NativeError extends ScriptObject {
      * @return value that was set
      */
     public static Object setColumnNumber(final Object self, final Object value) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         if (sobj.hasOwnProperty(COLUMNNUMBER)) {
             sobj.put(COLUMNNUMBER, value, false);
         } else {
@@ -284,8 +276,7 @@ public final class NativeError extends ScriptObject {
      * @return file name from which error was thrown
      */
     public static Object getFileName(final Object self) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         return sobj.has(FILENAME) ? sobj.get(FILENAME) : ECMAException.getFileName((ScriptObject)self);
     }
 
@@ -298,8 +289,7 @@ public final class NativeError extends ScriptObject {
      * @return value that was set
      */
     public static Object setFileName(final Object self, final Object value) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         if (sobj.hasOwnProperty(FILENAME)) {
             sobj.put(FILENAME, value, false);
         } else {
@@ -318,16 +308,20 @@ public final class NativeError extends ScriptObject {
      * @return      value of "stack" property
      */
     public static Object getStack(final Object self) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
         if (sobj.has(STACK)) {
             return sobj.get(STACK);
         }
 
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
-            Object value = getScriptStackString(sobj, (Throwable)exception);
-            sobj.put(STACK, value, false);
+            final Object value = getScriptStackString(sobj, (Throwable)exception);
+            if (sobj.hasOwnProperty(STACK)) {
+                sobj.put(STACK, value, false);
+            } else {
+                sobj.addOwnProperty(STACK, Attribute.NOT_ENUMERABLE, value);
+            }
+
             return value;
         }
 
@@ -344,9 +338,12 @@ public final class NativeError extends ScriptObject {
      * @return value that was set
      */
     public static Object setStack(final Object self, final Object value) {
-        Global.checkObject(self);
-        final ScriptObject sobj = (ScriptObject)self;
-        sobj.set(STACK, value, false);
+        final ScriptObject sobj = Global.checkObject(self);
+        if (sobj.hasOwnProperty(STACK)) {
+            sobj.put(STACK, value, false);
+        } else {
+            sobj.addOwnProperty(STACK, Attribute.NOT_ENUMERABLE, value);
+        }
         return value;
     }
 
@@ -360,9 +357,7 @@ public final class NativeError extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object toString(final Object self) {
         // Step 1 and 2 : check if 'self' is object it not throw TypeError
-        Global.checkObject(self);
-
-        final ScriptObject sobj = (ScriptObject)self;
+        final ScriptObject sobj = Global.checkObject(self);
 
         // Step 3 & 4 : get "name" and convert to String.
         // But if message is undefined make it "Error".

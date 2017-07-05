@@ -336,7 +336,7 @@ public class RegistryContext implements Context, Referenceable {
         String url = "rmi://";
 
         // Enclose IPv6 literal address in '[' and ']'
-        url = (host.indexOf(":") > -1) ? url + "[" + host + "]" :
+        url = (host.indexOf(':') > -1) ? url + "[" + host + "]" :
                                          url + host;
         if (port > 0) {
             url += ":" + Integer.toString(port);

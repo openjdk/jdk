@@ -36,6 +36,8 @@ abstract class BreakableStatement extends LexicalContextStatement implements Bre
     /** break label. */
     protected final Label breakLabel;
 
+    final LocalVariableConversion conversion;
+
     /**
      * Constructor
      *
@@ -47,16 +49,19 @@ abstract class BreakableStatement extends LexicalContextStatement implements Bre
     protected BreakableStatement(final int lineNumber, final long token, final int finish, final Label breakLabel) {
         super(lineNumber, token, finish);
         this.breakLabel = breakLabel;
+        this.conversion = null;
     }
 
     /**
      * Copy constructor
      *
      * @param breakableNode source node
+     * @param conversion the potentially new local variable conversion
      */
-    protected BreakableStatement(final BreakableStatement breakableNode) {
+    protected BreakableStatement(final BreakableStatement breakableNode, final LocalVariableConversion conversion) {
         super(breakableNode);
         this.breakLabel = new Label(breakableNode.getBreakLabel());
+        this.conversion = conversion;
     }
 
     /**
@@ -86,6 +91,21 @@ abstract class BreakableStatement extends LexicalContextStatement implements Bre
      */
     @Override
     public List<Label> getLabels() {
-        return Collections.singletonList(breakLabel);
+        return Collections.unmodifiableList(Collections.singletonList(breakLabel));
     }
+
+    @Override
+    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
+        if(this.conversion == conversion) {
+            return this;
+        }
+        return setLocalVariableConversionChanged(lc, conversion);
+    }
+
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return conversion;
+    }
+
+    abstract JoinPredecessor setLocalVariableConversionChanged(LexicalContext lc, LocalVariableConversion conversion);
 }

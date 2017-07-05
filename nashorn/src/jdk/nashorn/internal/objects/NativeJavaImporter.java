@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -37,6 +39,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
  * This is "JavaImporter" constructor. This constructor allows you to use Java types omitting explicit package names.
@@ -131,8 +134,12 @@ public final class NativeJavaImporter extends ScriptObject {
     }
 
     @Override
-    protected Object invokeNoSuchProperty(final String name) {
-        return createProperty(name);
+    protected Object invokeNoSuchProperty(final String name, final int programPoint) {
+        final Object retval = createProperty(name);
+        if (isValid(programPoint)) {
+            throw new UnwarrantedOptimismException(retval, programPoint);
+        }
+        return retval;
     }
 
     private boolean createAndSetProperty(final CallSiteDescriptor desc) {

@@ -42,12 +42,12 @@ import jdk.internal.dynalink.support.Guards;
  */
 final class BoundDynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
     @Override
-    public boolean canLinkType(Class<?> type) {
+    public boolean canLinkType(final Class<?> type) {
         return type == BoundDynamicMethod.class;
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, LinkerServices linkerServices) throws Exception {
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
         final Object objBoundDynamicMethod = linkRequest.getReceiver();
         if(!(objBoundDynamicMethod instanceof BoundDynamicMethod)) {
             return null;

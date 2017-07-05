@@ -607,7 +607,7 @@ class LambdaForm {
                 assert(m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
                 LambdaForm form = new LambdaForm(sig);
                 form.vmentry = m;
-                mt.form().setCachedLambdaForm(MethodTypeForm.LF_COUNTER, form);
+                form = mt.form().setCachedLambdaForm(MethodTypeForm.LF_COUNTER, form);
                 // FIXME: get rid of PREPARED_FORMS; use MethodTypeForm cache only
                 forms.put(sig, form);
             }

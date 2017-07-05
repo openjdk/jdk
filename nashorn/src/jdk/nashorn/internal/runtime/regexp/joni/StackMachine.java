@@ -22,7 +22,6 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAt;
 
 import java.lang.ref.WeakReference;
-
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackPopLevel;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackType;
 
@@ -35,11 +34,11 @@ abstract class StackMachine extends Matcher implements StackType {
     protected final int[]repeatStk;
     protected final int memStartStk, memEndStk;
 
-    protected StackMachine(Regex regex, char[] chars, int p , int end) {
+    protected StackMachine(final Regex regex, final char[] chars, final int p , final int end) {
         super(regex, chars, p, end);
 
         this.stack = regex.stackNeeded ? fetchStack() : null;
-        int n = regex.numRepeat + (regex.numMem << 1);
+        final int n = regex.numRepeat + (regex.numMem << 1);
         this.repeatStk = n > 0 ? new int[n] : null;
 
         memStartStk = regex.numRepeat - 1;
@@ -49,13 +48,13 @@ abstract class StackMachine extends Matcher implements StackType {
     }
 
     private static StackEntry[] allocateStack() {
-        StackEntry[]stack = new StackEntry[Config.INIT_MATCH_STACK_SIZE];
+        final StackEntry[]stack = new StackEntry[Config.INIT_MATCH_STACK_SIZE];
         stack[0] = new StackEntry();
         return stack;
     }
 
     private void doubleStack() {
-        StackEntry[] newStack = new StackEntry[stack.length << 1];
+        final StackEntry[] newStack = new StackEntry[stack.length << 1];
         System.arraycopy(stack, 0, newStack, 0, stack.length);
         stack = newStack;
     }
@@ -94,13 +93,13 @@ abstract class StackMachine extends Matcher implements StackType {
         return e;
     }
 
-    protected final void pushType(int type) {
+    protected final void pushType(final int type) {
         ensure1().type = type;
         stk++;
     }
 
-    private void push(int type, int pat, int s, int prev) {
-        StackEntry e = ensure1();
+    private void push(final int type, final int pat, final int s, final int prev) {
+        final StackEntry e = ensure1();
         e.type = type;
         e.setStatePCode(pat);
         e.setStatePStr(s);
@@ -108,22 +107,22 @@ abstract class StackMachine extends Matcher implements StackType {
         stk++;
     }
 
-    protected final void pushEnsured(int type, int pat) {
-        StackEntry e = stack[stk];
+    protected final void pushEnsured(final int type, final int pat) {
+        final StackEntry e = stack[stk];
         e.type = type;
         e.setStatePCode(pat);
         stk++;
     }
 
-    protected final void pushAlt(int pat, int s, int prev) {
+    protected final void pushAlt(final int pat, final int s, final int prev) {
         push(ALT, pat, s, prev);
     }
 
-    protected final void pushPos(int s, int prev) {
+    protected final void pushPos(final int s, final int prev) {
         push(POS, -1 /*NULL_UCHARP*/, s, prev);
     }
 
-    protected final void pushPosNot(int pat, int s, int prev) {
+    protected final void pushPosNot(final int pat, final int s, final int prev) {
         push(POS_NOT, pat, s, prev);
     }
 
@@ -131,12 +130,12 @@ abstract class StackMachine extends Matcher implements StackType {
         pushType(STOP_BT);
     }
 
-    protected final void pushLookBehindNot(int pat, int s, int sprev) {
+    protected final void pushLookBehindNot(final int pat, final int s, final int sprev) {
         push(LOOK_BEHIND_NOT, pat, s, sprev);
     }
 
-    protected final void pushRepeat(int id, int pat) {
-        StackEntry e = ensure1();
+    protected final void pushRepeat(final int id, final int pat) {
+        final StackEntry e = ensure1();
         e.type = REPEAT;
         e.setRepeatNum(id);
         e.setRepeatPCode(pat);
@@ -144,15 +143,15 @@ abstract class StackMachine extends Matcher implements StackType {
         stk++;
     }
 
-    protected final void pushRepeatInc(int sindex) {
-        StackEntry e = ensure1();
+    protected final void pushRepeatInc(final int sindex) {
+        final StackEntry e = ensure1();
         e.type = REPEAT_INC;
         e.setSi(sindex);
         stk++;
     }
 
-    protected final void pushMemStart(int mnum, int s) {
-        StackEntry e = ensure1();
+    protected final void pushMemStart(final int mnum, final int s) {
+        final StackEntry e = ensure1();
         e.type = MEM_START;
         e.setMemNum(mnum);
         e.setMemPstr(s);
@@ -163,8 +162,8 @@ abstract class StackMachine extends Matcher implements StackType {
         stk++;
     }
 
-    protected final void pushMemEnd(int mnum, int s) {
-        StackEntry e = ensure1();
+    protected final void pushMemEnd(final int mnum, final int s) {
+        final StackEntry e = ensure1();
         e.type = MEM_END;
         e.setMemNum(mnum);
         e.setMemPstr(s);
@@ -174,20 +173,20 @@ abstract class StackMachine extends Matcher implements StackType {
         stk++;
     }
 
-    protected final void pushMemEndMark(int mnum) {
-        StackEntry e = ensure1();
+    protected final void pushMemEndMark(final int mnum) {
+        final StackEntry e = ensure1();
         e.type = MEM_END_MARK;
         e.setMemNum(mnum);
         stk++;
     }
 
-    protected final int getMemStart(int mnum) {
+    protected final int getMemStart(final int mnum) {
         int level = 0;
         int stkp = stk;
 
         while (stkp > 0) {
             stkp--;
-            StackEntry e = stack[stkp];
+            final StackEntry e = stack[stkp];
             if ((e.type & MASK_MEM_END_OR_MARK) != 0 && e.getMemNum() == mnum) {
                 level++;
             } else if (e.type == MEM_START && e.getMemNum() == mnum) {
@@ -198,16 +197,16 @@ abstract class StackMachine extends Matcher implements StackType {
         return stkp;
     }
 
-    protected final void pushNullCheckStart(int cnum, int s) {
-        StackEntry e = ensure1();
+    protected final void pushNullCheckStart(final int cnum, final int s) {
+        final StackEntry e = ensure1();
         e.type = NULL_CHECK_START;
         e.setNullCheckNum(cnum);
         e.setNullCheckPStr(s);
         stk++;
     }
 
-    protected final void pushNullCheckEnd(int cnum) {
-        StackEntry e = ensure1();
+    protected final void pushNullCheckEnd(final int cnum) {
+        final StackEntry e = ensure1();
         e.type = NULL_CHECK_END;
         e.setNullCheckNum(cnum);
         stk++;
@@ -233,7 +232,7 @@ abstract class StackMachine extends Matcher implements StackType {
 
     private StackEntry popFree() {
         while (true) {
-            StackEntry e = stack[--stk];
+            final StackEntry e = stack[--stk];
 
             if ((e.type & MASK_POP_USED) != 0) {
                 return e;
@@ -243,7 +242,7 @@ abstract class StackMachine extends Matcher implements StackType {
 
     private StackEntry popMemStart() {
         while (true) {
-            StackEntry e = stack[--stk];
+            final StackEntry e = stack[--stk];
 
             if ((e.type & MASK_POP_USED) != 0) {
                 return e;
@@ -256,7 +255,7 @@ abstract class StackMachine extends Matcher implements StackType {
 
     private StackEntry popDefault() {
         while (true) {
-            StackEntry e = stack[--stk];
+            final StackEntry e = stack[--stk];
 
             if ((e.type & MASK_POP_USED) != 0) {
                 return e;
@@ -277,7 +276,7 @@ abstract class StackMachine extends Matcher implements StackType {
     protected final void popTilPosNot() {
         while (true) {
             stk--;
-            StackEntry e = stack[stk];
+            final StackEntry e = stack[stk];
 
             if (e.type == POS_NOT) {
                 break;
@@ -298,7 +297,7 @@ abstract class StackMachine extends Matcher implements StackType {
     protected final void popTilLookBehindNot() {
         while (true) {
             stk--;
-            StackEntry e = stack[stk];
+            final StackEntry e = stack[stk];
 
             if (e.type == LOOK_BEHIND_NOT) {
                 break;
@@ -320,7 +319,7 @@ abstract class StackMachine extends Matcher implements StackType {
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
             if ((e.type & MASK_TO_VOID_TARGET) != 0) {
                 e.type = VOID;
             } else if (e.type == POS) {
@@ -335,7 +334,7 @@ abstract class StackMachine extends Matcher implements StackType {
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
 
             if ((e.type & MASK_TO_VOID_TARGET) != 0) {
                 e.type = VOID;
@@ -347,11 +346,11 @@ abstract class StackMachine extends Matcher implements StackType {
     }
 
     // int for consistency with other null check routines
-    protected final int nullCheck(int id, int s) {
+    protected final int nullCheck(final int id, final int s) {
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
 
             if (e.type == NULL_CHECK_START) {
                 if (e.getNullCheckNum() == id) {
@@ -361,12 +360,12 @@ abstract class StackMachine extends Matcher implements StackType {
         }
     }
 
-    protected final int nullCheckRec(int id, int s) {
+    protected final int nullCheckRec(final int id, final int s) {
         int level = 0;
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
 
             if (e.type == NULL_CHECK_START) {
                 if (e.getNullCheckNum() == id) {
@@ -382,7 +381,7 @@ abstract class StackMachine extends Matcher implements StackType {
         }
     }
 
-    protected final int nullCheckMemSt(int id, int s) {
+    protected final int nullCheckMemSt(final int id, final int s) {
         int k = stk;
         int isNull;
         while (true) {
@@ -426,7 +425,7 @@ abstract class StackMachine extends Matcher implements StackType {
         return isNull;
     }
 
-    protected final int nullCheckMemStRec(int id, int s) {
+    protected final int nullCheckMemStRec(final int id, final int s) {
         int level = 0;
         int k = stk;
         int isNull;
@@ -477,12 +476,12 @@ abstract class StackMachine extends Matcher implements StackType {
         return isNull;
     }
 
-    protected final int getRepeat(int id) {
+    protected final int getRepeat(final int id) {
         int level = 0;
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
 
             if (e.type == REPEAT) {
                 if (level == 0) {
@@ -501,7 +500,7 @@ abstract class StackMachine extends Matcher implements StackType {
         int k = stk;
         while (true) {
             k--;
-            StackEntry e = stack[k];
+            final StackEntry e = stack[k];
 
             if (e.type == CALL_FRAME) {
                 if (level == 0) {

@@ -36,7 +36,7 @@ abstract class Compiler implements ErrorMessages {
     protected final Analyser analyser;
     protected final Regex regex;
 
-    protected Compiler(Analyser analyser) {
+    protected Compiler(final Analyser analyser) {
         this.analyser = analyser;
         this.regex = analyser.regex;
     }
@@ -52,21 +52,21 @@ abstract class Compiler implements ErrorMessages {
 
     protected abstract void compileAltNode(ConsAltNode node);
 
-    private void compileStringRawNode(StringNode sn) {
+    private void compileStringRawNode(final StringNode sn) {
         if (sn.length() <= 0) return;
         addCompileString(sn.chars, sn.p, sn.length(), false);
     }
 
-    private void compileStringNode(StringNode node) {
-        StringNode sn = node;
+    private void compileStringNode(final StringNode node) {
+        final StringNode sn = node;
         if (sn.length() <= 0) return;
 
-        boolean ambig = sn.isAmbig();
+        final boolean ambig = sn.isAmbig();
 
         int p, prev;
         p = prev = sn.p;
-        int end = sn.end;
-        char[] chars = sn.chars;
+        final int end = sn.end;
+        final char[] chars = sn.chars;
         p++;
         int slen = 1;
 
@@ -87,7 +87,7 @@ abstract class Compiler implements ErrorMessages {
     protected abstract void compileEncloseNode(EncloseNode node);
     protected abstract void compileAnchorNode(AnchorNode node);
 
-    protected final void compileTree(Node node) {
+    protected final void compileTree(final Node node) {
         switch (node.getType()) {
         case NodeType.LIST:
             ConsAltNode lin = (ConsAltNode)node;
@@ -101,7 +101,7 @@ abstract class Compiler implements ErrorMessages {
             break;
 
         case NodeType.STR:
-            StringNode sn = (StringNode)node;
+            final StringNode sn = (StringNode)node;
             if (sn.isRaw()) {
                 compileStringRawNode(sn);
             } else {
@@ -126,7 +126,7 @@ abstract class Compiler implements ErrorMessages {
             break;
 
         case NodeType.ENCLOSE:
-            EncloseNode enode = (EncloseNode)node;
+            final EncloseNode enode = (EncloseNode)node;
             if (enode.isOption()) {
                 compileOptionNode(enode);
             } else {
@@ -144,15 +144,15 @@ abstract class Compiler implements ErrorMessages {
         } // switch
     }
 
-    protected final void compileTreeNTimes(Node node, int n) {
+    protected final void compileTreeNTimes(final Node node, final int n) {
         for (int i=0; i<n; i++) compileTree(node);
     }
 
-    protected void newSyntaxException(String message) {
+    protected void newSyntaxException(final String message) {
         throw new SyntaxException(message);
     }
 
-    protected void newInternalException(String message) {
+    protected void newInternalException(final String message) {
         throw new InternalException(message);
     }
 }

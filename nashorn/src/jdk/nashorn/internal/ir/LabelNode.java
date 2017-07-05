@@ -29,15 +29,19 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 /**
- * IR representation for a labeled statement.
+ * IR representation for a labeled statement. It implements JoinPredecessor to hold conversions that need to be effected
+ * when the block exits normally, but is also targeted by a break statement that might bring different local variable
+ * types to the join at the break point.
  */
 @Immutable
-public final class LabelNode extends LexicalContextStatement {
+public final class LabelNode extends LexicalContextStatement implements JoinPredecessor {
     /** Label ident. */
-    private final IdentNode label;
+    private final String labelName;
 
     /** Statements. */
     private final Block body;
+
+    private final LocalVariableConversion localVariableConversion;
 
     /**
      * Constructor
@@ -45,20 +49,22 @@ public final class LabelNode extends LexicalContextStatement {
      * @param lineNumber line number
      * @param token      token
      * @param finish     finish
-     * @param label      label identifier
+     * @param labelName  label name
      * @param body       body of label node
      */
-    public LabelNode(final int lineNumber, final long token, final int finish, final IdentNode label, final Block body) {
+    public LabelNode(final int lineNumber, final long token, final int finish, final String labelName, final Block body) {
         super(lineNumber, token, finish);
 
-        this.label = label;
+        this.labelName = labelName;
         this.body  = body;
+        this.localVariableConversion = null;
     }
 
-    private LabelNode(final LabelNode labelNode, final IdentNode label, final Block body) {
+    private LabelNode(final LabelNode labelNode, final String labelName, final Block body, final LocalVariableConversion localVariableConversion) {
         super(labelNode);
-        this.label = label;
-        this.body  = body;
+        this.labelName = labelName;
+        this.body = body;
+        this.localVariableConversion = localVariableConversion;
     }
 
     @Override
@@ -69,18 +75,15 @@ public final class LabelNode extends LexicalContextStatement {
     @Override
     public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterLabelNode(this)) {
-            return visitor.leaveLabelNode(
-                setLabel(lc, (IdentNode)label.accept(visitor)).
-                setBody(lc, (Block)body.accept(visitor)));
+            return visitor.leaveLabelNode(setBody(lc, (Block)body.accept(visitor)));
         }
 
         return this;
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
-        label.toString(sb);
-        sb.append(':');
+    public void toString(final StringBuilder sb, final boolean printType) {
+        sb.append(labelName).append(':');
     }
 
     /**
@@ -101,22 +104,27 @@ public final class LabelNode extends LexicalContextStatement {
         if (this.body == body) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, label, body));
+        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, labelName, body, localVariableConversion));
     }
 
     /**
-     * Get the identifier representing the label name
+     * Get the label name
      * @return the label
      */
-    public IdentNode getLabel() {
-        return label;
+    public String getLabelName() {
+        return labelName;
     }
 
-    private LabelNode setLabel(final LexicalContext lc, final IdentNode label) {
-        if (this.label == label) {
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return localVariableConversion;
+    }
+
+    @Override
+    public LabelNode setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion localVariableConversion) {
+        if(this.localVariableConversion == localVariableConversion) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, label, body));
+        return Node.replaceInLexicalContext(lc, this, new LabelNode(this, labelName, body, localVariableConversion));
     }
-
 }

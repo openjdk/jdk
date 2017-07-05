@@ -54,12 +54,12 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
     private static final GuardingDynamicLinker staticClassLinker = BeansLinker.getLinkerForClass(StaticClass.class);
 
     @Override
-    public boolean canLinkType(Class<?> type) {
+    public boolean canLinkType(final Class<?> type) {
         return type == StaticClass.class;
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, LinkerServices linkerServices) throws Exception {
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
         final LinkRequest request = linkRequest.withoutRuntimeContext(); // Nashorn has no runtime context
         final Object self = request.getReceiver();
         if (self.getClass() != StaticClass.class) {
@@ -99,7 +99,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
         return delegate(linkerServices, request);
     }
 
-    private static GuardedInvocation delegate(LinkerServices linkerServices, final LinkRequest request) throws Exception {
+    private static GuardedInvocation delegate(final LinkerServices linkerServices, final LinkRequest request) throws Exception {
         return NashornBeansLinker.getGuardedInvocation(staticClassLinker, request, linkerServices);
     }
 

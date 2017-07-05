@@ -50,17 +50,20 @@
 
 package jdk.nashorn.internal.codegen.types;
 
+import static jdk.internal.org.objectweb.asm.Opcodes.I2D;
+import static jdk.internal.org.objectweb.asm.Opcodes.I2L;
+import static jdk.internal.org.objectweb.asm.Opcodes.IADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
-import jdk.nashorn.internal.runtime.JSType;
 
 /**
  * The boolean type class
@@ -68,6 +71,7 @@ import jdk.nashorn.internal.runtime.JSType;
 public final class BooleanType extends Type {
 
     private static final CompilerConstants.Call VALUE_OF = staticCallNoLookup(Boolean.class, "valueOf", Boolean.class, boolean.class);
+    private static final CompilerConstants.Call TO_STRING = staticCallNoLookup(Boolean.class, "toString", String.class, boolean.class);
 
     /**
      * Constructor
@@ -87,8 +91,19 @@ public final class BooleanType extends Type {
     }
 
     @Override
+    public char getBytecodeStackType() {
+        return 'I';
+    }
+
+    @Override
     public Type loadUndefined(final MethodVisitor method) {
-        method.visitLdcInsn(ObjectClassGenerator.UNDEFINED_INT);
+        method.visitLdcInsn(UNDEFINED_INT);
+        return BOOLEAN;
+    }
+
+    @Override
+    public Type loadForcedInitializer(final MethodVisitor method) {
+        method.visitInsn(ICONST_0);
         return BOOLEAN;
     }
 
@@ -124,31 +139,30 @@ public final class BooleanType extends Type {
         }
 
         if (to.isNumber()) {
-            convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_NUMBER);
+            method.visitInsn(I2D);
+        } else if (to.isLong()) {
+            method.visitInsn(I2L);
         } else if (to.isInteger()) {
-            return to; // do nothing.
-        } else if (to.isLong()) {
-            convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_UINT32);
-        } else if (to.isLong()) {
-            convert(method, OBJECT);
-            invokeStatic(method, JSType.TO_LONG);
+            //nop
         } else if (to.isString()) {
-            invokeStatic(method, VALUE_OF);
-            invokeStatic(method, JSType.TO_PRIMITIVE_TO_STRING);
+            invokestatic(method, TO_STRING);
         } else if (to.isObject()) {
-            invokeStatic(method, VALUE_OF);
+            invokestatic(method, VALUE_OF);
         } else {
-            assert false : "Illegal conversion " + this + " -> " + to;
+            throw new UnsupportedOperationException("Illegal conversion " + this + " -> " + to);
         }
 
         return to;
     }
 
     @Override
-    public Type add(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
+    public Type add(final MethodVisitor method, final int programPoint) {
+        // Adding booleans in JavaScript is perfectly valid, they add as if false=0 and true=1
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(IADD);
+        } else {
+            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
+        return INT;
     }
 }

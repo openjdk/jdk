@@ -23,7 +23,7 @@
 
 /**
  * JDK-8017768: Allow use of dot notation for inner class names.
- * 
+ *
  * @test
  * @run
  */

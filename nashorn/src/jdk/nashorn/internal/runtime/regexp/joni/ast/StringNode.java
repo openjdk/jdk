@@ -38,14 +38,14 @@ public final class StringNode extends Node implements StringType {
         this.chars = new char[NODE_STR_BUF_SIZE];
     }
 
-    public StringNode(char[] chars, int p, int end) {
+    public StringNode(final char[] chars, final int p, final int end) {
         this.chars = chars;
         this.p = p;
         this.end = end;
         setShared();
     }
 
-    public StringNode(char c) {
+    public StringNode(final char c) {
         this();
         chars[end++] = c;
     }
@@ -53,10 +53,10 @@ public final class StringNode extends Node implements StringType {
     /* Ensure there is ahead bytes available in node's buffer
      * (assumes that the node is not shared)
      */
-    public void ensure(int ahead) {
-        int len = (end - p) + ahead;
+    public void ensure(final int ahead) {
+        final int len = (end - p) + ahead;
         if (len >= chars.length) {
-            char[] tmp = new char[len + NODE_STR_MARGIN];
+            final char[] tmp = new char[len + NODE_STR_MARGIN];
             System.arraycopy(chars, p, tmp, 0, end - p);
             chars = tmp;
         }
@@ -64,10 +64,10 @@ public final class StringNode extends Node implements StringType {
 
     /* COW and/or ensure there is ahead bytes available in node's buffer
      */
-    private void modifyEnsure(int ahead) {
+    private void modifyEnsure(final int ahead) {
         if (isShared()) {
-            int len = (end - p) + ahead;
-            char[] tmp = new char[len + NODE_STR_MARGIN];
+            final int len = (end - p) + ahead;
+            final char[] tmp = new char[len + NODE_STR_MARGIN];
             System.arraycopy(chars, p, tmp, 0, end - p);
             chars = tmp;
             end = end - p;
@@ -89,8 +89,8 @@ public final class StringNode extends Node implements StringType {
     }
 
     @Override
-    public String toString(int level) {
-        StringBuilder value = new StringBuilder();
+    public String toString(final int level) {
+        final StringBuilder value = new StringBuilder();
         value.append("\n  bytes: '");
         for (int i=p; i<end; i++) {
             if (chars[i] >= 0x20 && chars[i] < 0x7f) {
@@ -111,7 +111,7 @@ public final class StringNode extends Node implements StringType {
         StringNode n = null;
 
         if (end > p) {
-            int prev = EncodingHelper.prevCharHead(p, end);
+            final int prev = EncodingHelper.prevCharHead(p, end);
             if (prev != -1 && prev > p) { /* can be splitted. */
                 n = new StringNode(chars, prev, end);
                 if (isRaw()) n.setRaw();
@@ -125,26 +125,26 @@ public final class StringNode extends Node implements StringType {
         return end > p && 1 < (end - p);
     }
 
-    public void set(char[] chars, int p, int end) {
+    public void set(final char[] chars, final int p, final int end) {
         this.chars = chars;
         this.p = p;
         this.end = end;
         setShared();
     }
 
-    public void cat(char[] cat, int catP, int catEnd) {
-        int len = catEnd - catP;
+    public void cat(final char[] cat, final int catP, final int catEnd) {
+        final int len = catEnd - catP;
         modifyEnsure(len);
         System.arraycopy(cat, catP, chars, end, len);
         end += len;
     }
 
-    public void cat(char c) {
+    public void cat(final char c) {
         modifyEnsure(1);
         chars[end++] = c;
     }
 
-    public void catCode(int code) {
+    public void catCode(final int code) {
         cat((char)code);
     }
 

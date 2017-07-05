@@ -672,6 +672,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_list(NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
+                  _print_inlining_output(NULL),
                   _preserve_jvm_state(0),
                   _interpreter_frame_size(0) {
   C = this;
@@ -978,6 +979,7 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_list(NULL),
     _print_inlining_stream(NULL),
     _print_inlining_idx(0),
+    _print_inlining_output(NULL),
     _preserve_jvm_state(0),
     _allowed_reasons(0),
     _interpreter_frame_size(0) {
@@ -2207,7 +2209,7 @@ void Compile::Optimize() {
 
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
-  dump_inlining();
+  process_print_inlining();
   // A method with only infinite loops has no edges entering loops from root
   {
     NOT_PRODUCT( TracePhase t2("graphReshape", &_t_graphReshaping, TimeCompiler); )
@@ -3868,7 +3870,7 @@ void Compile::print_inlining_assert_ready() {
   assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
 }
 
-void Compile::dump_inlining() {
+void Compile::process_print_inlining() {
   bool do_print_inlining = print_inlining() || print_intrinsics();
   if (do_print_inlining || log() != NULL) {
     // Print inlining message for candidates that we couldn't inline
@@ -3885,9 +3887,21 @@ void Compile::dump_inlining() {
     }
   }
   if (do_print_inlining) {
+    ResourceMark rm;
+    stringStream ss;
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      tty->print("%s", _print_inlining_list->adr_at(i)->ss()->as_string());
+      ss.print("%s", _print_inlining_list->adr_at(i)->ss()->as_string());
     }
+    size_t end = ss.size();
+    _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
+    strncpy(_print_inlining_output, ss.base(), end+1);
+    _print_inlining_output[end] = 0;
+  }
+}
+
+void Compile::dump_print_inlining() {
+  if (_print_inlining_output != NULL) {
+    tty->print_raw(_print_inlining_output);
   }
 }
 

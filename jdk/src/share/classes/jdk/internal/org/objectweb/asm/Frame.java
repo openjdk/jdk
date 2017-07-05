@@ -1455,16 +1455,20 @@ final class Frame {
                             | cw.getMergedType(t & BASE_VALUE, u & BASE_VALUE);
                 } else {
                     // if u and t are array types, but not with the same element
-                    // type, merge(u,t)=java/lang/Object
-                    v = OBJECT | cw.addType("java/lang/Object");
+                    // type, merge(u,t) = dim(u) - 1 | java/lang/Object
+                    int vdim = ELEMENT_OF + (u & DIM);
+                    v = vdim | OBJECT | cw.addType("java/lang/Object");
                 }
             } else if ((t & BASE_KIND) == OBJECT || (t & DIM) != 0) {
                 // if t is any other reference or array type, the merged type
-                // is Object, or min(dim(u), dim(t)) | java/lang/Object is u
-                // and t have different array dimensions
-                int tdim = t & DIM;
-                int udim = u & DIM;
-                v = (udim != tdim ? Math.min(tdim, udim) : 0) | OBJECT
+                // is min(udim, tdim) | java/lang/Object, where udim is the
+                // array dimension of u, minus 1 if u is an array type with a
+                // primitive element type (and similarly for tdim).
+                int tdim = (((t & DIM) == 0 || (t & BASE_KIND) == OBJECT) ? 0
+                        : ELEMENT_OF) + (t & DIM);
+                int udim = (((u & DIM) == 0 || (u & BASE_KIND) == OBJECT) ? 0
+                        : ELEMENT_OF) + (u & DIM);
+                v = Math.min(tdim, udim) | OBJECT
                         | cw.addType("java/lang/Object");
             } else {
                 // if t is any other type, merge(u,t)=TOP

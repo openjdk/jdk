@@ -1079,7 +1079,7 @@ class Commands {
                 }
             } else {
                 // Try stripping method from class.method token.
-                int idot = token.lastIndexOf(".");
+                int idot = token.lastIndexOf('.');
                 if ( (idot <= 0) ||                     /* No dot or dot in first char */
                      (idot >= token.length() - 1) ) { /* dot in last char */
                     printBreakpointCommandUsage(atForm, inForm);

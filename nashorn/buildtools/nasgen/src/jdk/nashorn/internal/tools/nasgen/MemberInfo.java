@@ -319,7 +319,7 @@ public final class MemberInfo implements Cloneable {
             break;
             case FUNCTION: {
                 final Type returnType = Type.getReturnType(javaDesc);
-                if (!isValidJSType(returnType)) {
+                if (!(isValidJSType(returnType) || Type.VOID_TYPE == returnType)) {
                     error("return value of a @Function method should be a valid JS type, found " + returnType);
                 }
                 final Type[] argTypes = Type.getArgumentTypes(javaDesc);
@@ -351,7 +351,7 @@ public final class MemberInfo implements Cloneable {
             break;
             case SPECIALIZED_FUNCTION: {
                 final Type returnType = Type.getReturnType(javaDesc);
-                if (!isValidJSType(returnType)) {
+                if (!(isValidJSType(returnType) || Type.VOID_TYPE == returnType)) {
                     error("return value of a @SpecializedFunction method should be a valid JS type, found " + returnType);
                 }
                 final Type[] argTypes = Type.getArgumentTypes(javaDesc);
@@ -371,9 +371,8 @@ public final class MemberInfo implements Cloneable {
                     error("first argument of a @Getter method should be of Object type, found: " + argTypes[0]);
                 }
 
-                final Type returnType = Type.getReturnType(javaDesc);
-                if (!isJavaLangObject(returnType)) {
-                    error("return type of a @Getter method should be Object, found: " + javaDesc);
+                if (Type.getReturnType(javaDesc).equals(Type.VOID_TYPE)) {
+                    error("return type of getter should not be void");
                 }
             }
             break;
