@@ -37,8 +37,9 @@ import java.util.List;
  * @author James McIlree
  * @since  1.3
  */
-public interface ThreadGroupReference extends ObjectReference
-{
+@jdk.Exported
+public interface ThreadGroupReference extends ObjectReference {
+
     /**
      * Returns the name of this thread group.
      *

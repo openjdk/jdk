@@ -57,7 +57,7 @@ import java.util.Date;
  * attempt to open a connection, the caller must possess either:-
  * <ul><li>a "connect" {@link SocketPermission} to the host/port combination of the
  * destination URL or</li>
- * <li>a {@link HttpURLPermission} that permits this request.</li>
+ * <li>a {@link URLPermission} that permits this request.</li>
  * </ul><p>
  * If automatic redirection is enabled, and this request is redirected to another
  * destination, then the caller must also have permission to connect to the

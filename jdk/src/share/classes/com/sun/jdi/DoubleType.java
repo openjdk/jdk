@@ -35,6 +35,6 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface DoubleType extends PrimitiveType
-{
+@jdk.Exported
+public interface DoubleType extends PrimitiveType {
 }

@@ -170,11 +170,13 @@ public class InstrumentationImpl implements Instrumentation {
         redefineClasses0(mNativeAgent, definitions);
     }
 
+    @SuppressWarnings("rawtypes")
     public Class[]
     getAllLoadedClasses() {
         return getAllLoadedClasses0(mNativeAgent);
     }
 
+    @SuppressWarnings("rawtypes")
     public Class[]
     getInitiatedClasses(ClassLoader loader) {
         return getInitiatedClasses0(mNativeAgent, loader);
@@ -255,9 +257,11 @@ public class InstrumentationImpl implements Instrumentation {
     redefineClasses0(long nativeAgent, ClassDefinition[]  definitions)
         throws  ClassNotFoundException;
 
+    @SuppressWarnings("rawtypes")
     private native Class[]
     getAllLoadedClasses0(long nativeAgent);
 
+    @SuppressWarnings("rawtypes")
     private native Class[]
     getInitiatedClasses0(long nativeAgent, ClassLoader loader);
 

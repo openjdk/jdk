@@ -508,7 +508,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -517,7 +517,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * Thus, for any given local date-time there can be zero, one or two valid offsets.
      * This method returns the single offset in the Normal case, and in the Gap or Overlap
      * case it returns the offset before the transition.
@@ -544,7 +544,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -553,7 +553,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * Thus, for any given local date-time there can be zero, one or two valid offsets.
      * This method returns that list of valid offsets, which is a list of size 0, 1 or 2.
      * In the case where there are two offsets, the earlier offset is returned at index 0
@@ -595,7 +595,7 @@ public final class ZoneRules implements Serializable {
      * <p>
      * The mapping from a local date-time to an offset is not straightforward.
      * There are three cases:
-     * <p><ul>
+     * <ul>
      * <li>Normal, with one valid offset. For the vast majority of the year, the normal
      *  case applies, where there is a single valid offset for the local date-time.</li>
      * <li>Gap, with zero valid offsets. This is when clocks jump forward typically
@@ -604,7 +604,7 @@ public final class ZoneRules implements Serializable {
      * <li>Overlap, with two valid offsets. This is when clocks are set back typically
      *  due to the autumn daylight savings change from "summer" to "winter".
      *  In an overlap there are local date-time values with two valid offsets.</li>
-     * </ul><p>
+     * </ul>
      * A transition is used to model the cases of a Gap or Overlap.
      * The Normal case will return null.
      * <p>

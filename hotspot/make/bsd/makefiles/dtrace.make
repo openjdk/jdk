@@ -39,8 +39,14 @@ DtraceOutDir = $(GENERATED)/dtracefiles
 JVM_DB = libjvm_db
 LIBJVM_DB = libjvm_db.dylib
 
+LIBJVM_DB_DEBUGINFO   = libjvm_db.dylib.dSYM
+LIBJVM_DB_DIZ         = libjvm_db.diz
+
 JVM_DTRACE = jvm_dtrace
 LIBJVM_DTRACE = libjvm_dtrace.dylib
+
+LIBJVM_DTRACE_DEBUGINFO   = libjvm_dtrace.dylib.dSYM
+LIBJVM_DTRACE_DIZ         = libjvm_dtrace.diz
 
 JVMOFFS = JvmOffsets
 JVMOFFS.o = $(JVMOFFS).o
@@ -76,21 +82,87 @@ ISA = $(subst i386,i486,$(BUILDARCH))
 # Making 64/libjvm_db.so: 64-bit version of libjvm_db.so which handles 32-bit libjvm.so
 ifneq ("${ISA}","${BUILDARCH}")
 
-XLIBJVM_DB = 64/$(LIBJVM_DB)
-XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
+XLIBJVM_DIR = 64
+XLIBJVM_DB = $(XLIBJVM_DIR)/$(LIBJVM_DB)
+XLIBJVM_DTRACE = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE)
 XARCH = $(subst sparcv9,v9,$(shell echo $(ISA)))
+
+XLIBJVM_DB_DEBUGINFO       = $(XLIBJVM_DIR)/$(LIBJVM_DB_DEBUGINFO)
+XLIBJVM_DB_DIZ             = $(XLIBJVM_DIR)/$(LIBJVM_DB_DIZ)
+XLIBJVM_DTRACE_DEBUGINFO   = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DEBUGINFO)
+XLIBJVM_DTRACE_DIZ         = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DIZ)
 
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
-	$(QUIETLY) mkdir -p 64/ ; \
+	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c #-lc
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_VENDOR), Darwin)
+	$(DSYMUTIL) $@
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -r -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) )
+	$(RM) -r $(XLIBJVM_DB_DEBUGINFO)
+    endif
+  else
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DB_DEBUGINFO)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the link name:
+        $(QUIETLY) ( cd $(XLIBJVM_DIR) && $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB) )
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+      # implied else here is no stripping at all
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) )
+	$(RM) $(XLIBJVM_DB_DEBUGINFO)
+    endif
+  endif
+endif
 
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
-	$(QUIETLY) mkdir -p 64/ ; \
+	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c #-lc -lthread -ldoor
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_VENDOR), Darwin)
+	$(DSYMUTIL) $@
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -r -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) )
+	$(RM) -r $(XLIBJVM_DTRACE_DEBUGINFO)
+    endif
+  else
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DTRACE_DEBUGINFO)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the link name:
+	( cd $(XLIBJVM_DIR) && $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE) )
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+      # implied else here is no stripping at all
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR)
+        # is not in the archived name:
+	( cd $(XLIBJVM_DIR) && $(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) )
+	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO)
+    endif
+  endif
+endif
 
 endif # ifneq ("${ISA}","${BUILDARCH}")
 
@@ -134,11 +206,59 @@ $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_D
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -Wall # -lc
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_VENDOR), Darwin)
+	$(DSYMUTIL) $@
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -r -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO)
+	$(RM) -r $(LIBJVM_DB_DEBUGINFO)
+    endif
+  else
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DB_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $@
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+      # implied else here is no stripping at all
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO)
+	$(RM) $(LIBJVM_DB_DEBUGINFO)
+    endif
+  endif
+endif
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c #-lc -lthread -ldoor
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(OS_VENDOR), Darwin)
+	$(DSYMUTIL) $@
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -r -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) 
+	$(RM) -r $(LIBJVM_DTRACE_DEBUGINFO)
+    endif
+  else
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DTRACE_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+      # implied else here is no stripping at all
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) 
+	$(RM) $(LIBJVM_DTRACE_DEBUGINFO)
+    endif
+  endif
+endif
 
 #$(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
 #             $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d

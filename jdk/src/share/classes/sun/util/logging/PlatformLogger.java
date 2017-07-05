@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,22 +85,18 @@ import sun.misc.SharedSecrets;
  * @since 1.7
  */
 public class PlatformLogger {
-    /*
-     * These constants should be shortcuts to Level enum constants that
-     * the clients of sun.util.logging.PlatformLogger require no source
-     * modification and avoid the conversion from int to Level enum.
-     *
-     * This can be done when JavaFX is converted to use the new PlatformLogger.Level API.
-     */
-    public static final int OFF     = Integer.MAX_VALUE;
-    public static final int SEVERE  = 1000;
-    public static final int WARNING = 900;
-    public static final int INFO    = 800;
-    public static final int CONFIG  = 700;
-    public static final int FINE    = 500;
-    public static final int FINER   = 400;
-    public static final int FINEST  = 300;
-    public static final int ALL     = Integer.MIN_VALUE;
+
+    // The integer values must match that of {@code java.util.logging.Level}
+    // objects.
+    private static final int OFF     = Integer.MAX_VALUE;
+    private static final int SEVERE  = 1000;
+    private static final int WARNING = 900;
+    private static final int INFO    = 800;
+    private static final int CONFIG  = 700;
+    private static final int FINE    = 500;
+    private static final int FINER   = 400;
+    private static final int FINEST  = 300;
+    private static final int ALL     = Integer.MIN_VALUE;
 
     /**
      * PlatformLogger logging levels.
@@ -127,14 +123,14 @@ public class PlatformLogger {
         /* java.util.logging.Level */ Object javaLevel;
 
         // ascending order for binary search matching the list of enum constants
-        private static final int[] levelValues = new int[] {
+        private static final int[] LEVEL_VALUES = new int[] {
             PlatformLogger.ALL, PlatformLogger.FINEST, PlatformLogger.FINER,
             PlatformLogger.FINE, PlatformLogger.CONFIG, PlatformLogger.INFO,
             PlatformLogger.WARNING, PlatformLogger.SEVERE, PlatformLogger.OFF
         };
 
         public int intValue() {
-            return levelValues[this.ordinal()];
+            return LEVEL_VALUES[this.ordinal()];
         }
 
         static Level valueOf(int level) {
@@ -153,7 +149,7 @@ public class PlatformLogger {
             }
             // return the nearest Level value >= the given level,
             // for level > SEVERE, return SEVERE and exclude OFF
-            int i = Arrays.binarySearch(levelValues, 0, levelValues.length-2, level);
+            int i = Arrays.binarySearch(LEVEL_VALUES, 0, LEVEL_VALUES.length-2, level);
             return values()[i >= 0 ? i : (-i-1)];
         }
     }
@@ -259,39 +255,6 @@ public class PlatformLogger {
      */
     public String getName() {
         return loggerProxy.name;
-    }
-
-    /**
-     * Returns true if a message of the given level would actually
-     * be logged by this logger.
-     *
-     * @deprecated Use isLoggable(Level) instead.
-     */
-    @Deprecated
-    public boolean isLoggable(int levelValue) {
-        return isLoggable(Level.valueOf(levelValue));
-    }
-
-    /**
-     * Gets the current log level. Returns 0 if the current effective level is
-     * not set (equivalent to Logger.getLevel() returns null).
-     *
-     * @deprecated Use level() instead
-     */
-    @Deprecated
-    public int getLevel() {
-        Level level = loggerProxy.getLevel();
-        return level != null ? level.intValue() : 0;
-    }
-
-    /**
-     * Sets the log level.
-     *
-     * @deprecated Use setLevel(Level) instead
-     */
-    @Deprecated
-    public void setLevel(int newLevel) {
-        loggerProxy.setLevel(newLevel == 0 ? null : Level.valueOf(newLevel));
     }
 
     /**

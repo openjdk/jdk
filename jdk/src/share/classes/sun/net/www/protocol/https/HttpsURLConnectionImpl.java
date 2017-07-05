@@ -434,6 +434,7 @@ public class HttpsURLConnectionImpl
         return delegate.getContent();
     }
 
+    @SuppressWarnings("rawtypes")
     public Object getContent(Class[] classes) throws IOException {
         return delegate.getContent(classes);
     }

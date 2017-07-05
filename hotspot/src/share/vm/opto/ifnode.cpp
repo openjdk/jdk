@@ -689,6 +689,7 @@ Node* IfNode::fold_compares(PhaseGVN* phase) {
         ctrl->in(0)->in(1)->is_Bool() &&
         ctrl->in(0)->in(1)->in(1)->Opcode() == Op_CmpI &&
         ctrl->in(0)->in(1)->in(1)->in(2)->is_Con() &&
+        ctrl->in(0)->in(1)->in(1)->in(2) != phase->C->top() &&
         ctrl->in(0)->in(1)->in(1)->in(1) == n) {
       IfNode* dom_iff = ctrl->in(0)->as_If();
       Node* otherproj = dom_iff->proj_out(!ctrl->as_Proj()->_con);

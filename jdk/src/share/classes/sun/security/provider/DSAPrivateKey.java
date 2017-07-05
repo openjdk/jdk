@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,11 +140,6 @@ implements java.security.interfaces.DSAPrivateKey, Serializable {
                 this.key[i] = (byte)0x00;
             }
         }
-    }
-
-    public String toString() {
-        return "Sun DSA Private Key \nparameters:" + algid + "\nx: " +
-            Debug.toHexString(x) + "\n";
     }
 
     protected void parseKeyBits() throws InvalidKeyException {
