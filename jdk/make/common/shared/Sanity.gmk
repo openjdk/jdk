@@ -1555,60 +1555,6 @@ ifeq ($(PLATFORM), windows)
   endif
 endif
 
-
-######################################################
-# SECURITY_BASELINE_131 test
-######################################################
-security_baseline_131:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(SECURITY_BASELINE_131)" ]; then \
-	    $(ECHO) "WARNING: Your SECURITY_BASELINE_131 setting is empty.\n" \
-		"        Setting it to the default value of 1.3.1_20.\n" \
-		"        It is recommended to set SECURITY_BASELINE_131.\n" \
-		"" >> $(WARNING_FILE) ; \
-	fi
-endif
-
-######################################################
-# SECURITY_BASELINE_142 test
-######################################################
-security_baseline_142:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(SECURITY_BASELINE_142)" ]; then \
-	    $(ECHO) "WARNING: Your SECURITY_BASELINE_142 setting is empty.\n" \
-		"        Setting it to the default value of 1.4.2_10.\n" \
-		"        It is recommended to set SECURITY_BASELINE_142.\n" \
-		"" >> $(WARNING_FILE) ; \
-	fi
-endif
-
-######################################################
-# SECURITY_BASELINE_150 test
-######################################################
-security_baseline_150:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(SECURITY_BASELINE_150)" ]; then \
-	    $(ECHO) "WARNING: Your SECURITY_BASELINE_150 setting is empty.\n" \
-		"        Setting it to the default value of 1.5.0_07.\n" \
-		"        It is recommended to set SECURITY_BASELINE_150.\n" \
-		"" >> $(WARNING_FILE) ; \
-	fi
-endif
-
-######################################################
-# SECURITY_BASELINE_160 test
-######################################################
-security_baseline_160:
-ifeq ($(PLATFORM), windows)
-	@if [ -z "$(SECURITY_BASELINE_160)" ]; then \
-	    $(ECHO) "WARNING: Your SECURITY_BASELINE_160 setting is empty.\n" \
-		"        Setting it to the default value of 1.6.0_11.\n" \
-		"        It is recommended to set SECURITY_BASELINE_160.\n" \
-		"" >> $(WARNING_FILE) ; \
-	fi
-endif
-
-
 ######################################################
 # this should be the last rule in any target's sanity rule.
 ######################################################

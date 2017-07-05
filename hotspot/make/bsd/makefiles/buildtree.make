@@ -55,6 +55,9 @@
 # The makefiles are split this way so that "make foo" will run faster by not
 # having to read the dependency files for the vm.
 
+# needs to be set here since this Makefile doesn't include defs.make
+OS_VENDOR:=$(shell uname -s)
+
 include $(GAMMADIR)/make/scm.make
 include $(GAMMADIR)/make/altsrc.make
 
@@ -159,8 +162,15 @@ ifndef HOTSPOT_VM_DISTRO
   endif
 endif
 
-# MACOSX FIXME: we should be able to run test_gamma (see MACOSX_PORT-214)
-ifdef ALWAYS_PASS_TEST_GAMMA
+ifeq ($(OS_VENDOR), Darwin)
+  # MACOSX FIXME: we should be able to run test_gamma (see MACOSX_PORT-214)
+  ifeq ($(ALWAYS_PASS_TEST_GAMMA),)
+    # ALWAYS_PASS_TEST_GAMMA wasn't set so we default to true on MacOS X
+    # until MACOSX_PORT-214 is fixed
+    ALWAYS_PASS_TEST_GAMMA=true
+  endif
+endif
+ifeq ($(ALWAYS_PASS_TEST_GAMMA), true)
   TEST_GAMMA_STATUS= echo 'exit 0';
 else
   TEST_GAMMA_STATUS=

@@ -295,12 +295,6 @@ class ciMethod : public ciObject {
   // Print the name of this method in various incarnations.
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
-
-  methodOop get_method_handle_target() {
-    KlassHandle receiver_limit; int flags = 0;
-    methodHandle m = MethodHandles::decode_method(get_oop(), receiver_limit, flags);
-    return m();
-  }
 };
 
 #endif // SHARE_VM_CI_CIMETHOD_HPP
