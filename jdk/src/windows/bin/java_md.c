@@ -70,7 +70,11 @@ static void EnsureJreInstallation(const char *jrepath);
  */
 #undef ENABLE_AWT_PRELOAD
 #ifndef JAVA_ARGS /* turn off AWT preloading for javac, jar, etc */
-    #define ENABLE_AWT_PRELOAD
+    /* CR6999872: fastdebug crashes if awt library is loaded before JVM is
+     * initialized*/
+    #if !defined(DEBUG)
+        #define ENABLE_AWT_PRELOAD
+    #endif
 #endif
 
 #ifdef ENABLE_AWT_PRELOAD

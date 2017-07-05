@@ -129,7 +129,7 @@ public class Ktab {
             ktab.deleteEntry();
             break;
         default:
-            ktab.printHelp();
+            ktab.error("A command must be provided");
         }
     }
 
@@ -232,7 +232,7 @@ public class Ktab {
                         append = true;
                         break;
                     default:
-                        printHelp();
+                        error("Unknown command: " + args[i]);
                         break;
                 }
             } else {    // optional standalone arguments

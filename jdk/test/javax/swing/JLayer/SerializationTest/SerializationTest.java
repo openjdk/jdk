@@ -54,9 +54,6 @@ public class SerializationTest {
 
         JLayer newLayer = (JLayer) inputStream.readObject();
 
-        if (newLayer.getLayout() == null) {
-            throw new RuntimeException("JLayer's layout is null");
-        }
         if (newLayer.getGlassPane() == null) {
             throw new RuntimeException("JLayer's glassPane is null");
         }

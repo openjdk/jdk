@@ -55,9 +55,14 @@ class HttpConnection {
     SelectionKey selectionKey;
     String protocol;
     long time;
+    volatile long creationTime; // time this connection was created
+    volatile long rspStartedTime; // time we started writing the response
     int remaining;
     boolean closed = false;
     Logger logger;
+
+    public enum State {IDLE, REQUEST, RESPONSE};
+    volatile State state;
 
     public String toString() {
         String s = null;
@@ -76,6 +81,14 @@ class HttpConnection {
 
     void setContext (HttpContextImpl ctx) {
         context = ctx;
+    }
+
+    State getState() {
+        return state;
+    }
+
+    void setState (State s) {
+        state = s;
     }
 
     void setParameters (

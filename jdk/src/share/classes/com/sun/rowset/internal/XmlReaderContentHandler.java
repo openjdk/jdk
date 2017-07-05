@@ -738,7 +738,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
                     // columnValue now need to be reset to the empty string
                     columnValue = "";
                 } catch (SQLException ex) {
-                    throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsert").toString(), ex.getMessage()));
+                    throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errinsertval").toString(), ex.getMessage()));
                 }
                 break;
             case RowTag:

@@ -51,6 +51,7 @@ import javax.accessibility.*;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
 import sun.awt.CausedFocusEvent;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
@@ -247,6 +248,13 @@ public class Container extends Component {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+
+        AWTAccessor.setContainerAccessor(new AWTAccessor.ContainerAccessor() {
+            @Override
+            public void validateUnconditionally(Container cont) {
+                cont.validateUnconditionally();
+            }
+        });
     }
 
     /**
