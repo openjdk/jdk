@@ -29,6 +29,10 @@ case "$OS" in
   SunOS | Linux )
     exit 0
     ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
+    ;;
   Windows* )
     PS=";"
     FS="\\"

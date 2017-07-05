@@ -25,10 +25,10 @@
 
 package sun.security.jgss.spnego;
 
+import com.sun.security.jgss.ExtendedGSSContext;
+import com.sun.security.jgss.InquireType;
 import java.io.*;
 import java.security.Provider;
-import java.util.List;
-import java.util.ArrayList;
 import org.ietf.jgss.*;
 import sun.security.jgss.*;
 import sun.security.jgss.spi.*;
@@ -1185,4 +1185,22 @@ public class SpNegoContext implements GSSContextSpi {
                 return ("Unknown state " + state);
         }
     }
+
+    /**
+     * Retrieve attribute of the context for {@code type}.
+     */
+    public Object inquireSecContext(InquireType type)
+            throws GSSException {
+        if (mechContext == null) {
+            throw new GSSException(GSSException.NO_CONTEXT, -1,
+                    "Underlying mech not established.");
+        }
+        if (mechContext instanceof ExtendedGSSContext) {
+            return ((ExtendedGSSContext)mechContext).inquireSecContext(type);
+        } else {
+            throw new GSSException(GSSException.BAD_MECH, -1,
+                    "inquireSecContext not supported by underlying mech.");
+        }
+    }
+
 }

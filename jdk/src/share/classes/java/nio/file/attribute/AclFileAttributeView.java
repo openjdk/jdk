@@ -75,7 +75,7 @@ import java.io.IOException;
  *         .lookupPrincipalByName("joe");
  *
  *     // get view
- *     AclFileAttributeView view = file.newFileAttributeView(AclFileAttributeView.class);
+ *     AclFileAttributeView view = file.getFileAttributeView(AclFileAttributeView.class);
  *
  *     // create ACE to give "joe" read access
  *     AclEntry entry = AclEntry.newBuilder()

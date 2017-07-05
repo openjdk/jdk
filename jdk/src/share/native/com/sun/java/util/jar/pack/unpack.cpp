@@ -908,10 +908,12 @@ void cpool::init(unpacker* u_, int counts[NUM_COUNTS]) {
 
   // place a limit on future CP growth:
   int generous = 0;
-  generous += u->ic_count*3; // implicit name, outer, outer.utf8
-  generous += 40;  // WKUs, misc
-  generous += u->class_count;  // implicit SourceFile strings
-  maxentries = nentries + generous;
+  generous = add_size(generous, u->ic_count); // implicit name
+  generous = add_size(generous, u->ic_count); // outer
+  generous = add_size(generous, u->ic_count); // outer.utf8
+  generous = add_size(generous, 40); // WKUs, misc
+  generous = add_size(generous, u->class_count); // implicit SourceFile strings
+  maxentries = add_size(nentries, generous);
 
   // Note that this CP does not include "empty" entries
   // for longs and doubles.  Those are introduced when

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
 
 /**
  * @test
- * @bug 4635230
- * @bug 6365103
- * @bug 6366054
+ * @bug 4635230 6365103 6366054 6824440
  * @summary Basic unit tests for validating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
@@ -42,6 +40,7 @@ import javax.xml.crypto.URIDereferencer;
 import javax.xml.crypto.URIReference;
 import javax.xml.crypto.URIReferenceException;
 import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 
 /**
@@ -68,7 +67,6 @@ public class ValidationTests {
         "signature-enveloping-dsa.xml",
         "signature-enveloping-rsa.xml",
         "signature-enveloping-hmac-sha1.xml",
-        "signature-enveloping-hmac-sha1-40.xml",
         "signature-external-dsa.xml",
         "signature-external-b64-dsa.xml",
         "signature-retrievalmethod-rawx509crt.xml",
@@ -105,7 +103,6 @@ public class ValidationTests {
         KVKS,
         KVKS,
         KVKS,
-        SKKS,
         SKKS,
         KVKS,
         KVKS,
@@ -144,6 +141,36 @@ public class ValidationTests {
         } else {
             System.out.println("FAILED");
             atLeastOneFailed = true;
+        }
+
+        System.out.println("Validating signature-enveloping-hmac-sha1-40.xml");
+        try {
+            test_signature("signature-enveloping-hmac-sha1-40.xml", SKKS, false);
+            System.out.println("FAILED");
+            atLeastOneFailed = true;
+        } catch (XMLSignatureException xse) {
+            System.out.println(xse.getMessage());
+            System.out.println("PASSED");
+        }
+
+        System.out.println("Validating signature-enveloping-hmac-sha1-trunclen-0-attack.xml");
+        try {
+            test_signature("signature-enveloping-hmac-sha1-trunclen-0-attack.xml", SKKS, false);
+            System.out.println("FAILED");
+            atLeastOneFailed = true;
+        } catch (XMLSignatureException xse) {
+            System.out.println(xse.getMessage());
+            System.out.println("PASSED");
+        }
+
+        System.out.println("Validating signature-enveloping-hmac-sha1-trunclen-8-attack.xml");
+        try {
+            test_signature("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", SKKS, false);
+            System.out.println("FAILED");
+            atLeastOneFailed = true;
+        } catch (XMLSignatureException xse) {
+            System.out.println(xse.getMessage());
+            System.out.println("PASSED");
         }
 
         if (atLeastOneFailed) {

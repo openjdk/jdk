@@ -578,12 +578,20 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses = new MessageHeader();
         this.handler = handler;
         instProxy = p;
-        cookieHandler = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CookieHandler>() {
+        if (instProxy instanceof sun.net.ApplicationProxy) {
+            /* Application set Proxies should not have access to cookies
+             * in a secure environment unless explicitly allowed. */
+            try {
+                cookieHandler = CookieHandler.getDefault();
+            } catch (SecurityException se) { /* swallow exception */ }
+        } else {
+            cookieHandler = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<CookieHandler>() {
                 public CookieHandler run() {
-                return CookieHandler.getDefault();
-            }
-        });
+                    return CookieHandler.getDefault();
+                }
+            });
+        }
         cacheHandler = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<ResponseCache>() {
                 public ResponseCache run() {

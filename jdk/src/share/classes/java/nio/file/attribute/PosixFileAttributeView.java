@@ -61,7 +61,7 @@ import java.io.IOException;
  * Suppose we need to print out the owner and access permissions of a file:
  * <pre>
  *     FileRef file = ...
- *     PosixFileAttributes attrs = file.newFileAttributeView(PosixFileAttributeView.class)
+ *     PosixFileAttributes attrs = file.getFileAttributeView(PosixFileAttributeView.class)
  *         .readAttributes();
  *     System.out.format("%s %s%n",
  *         attrs.owner().getName(),
