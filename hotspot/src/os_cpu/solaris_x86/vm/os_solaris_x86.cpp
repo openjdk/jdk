@@ -203,10 +203,10 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-extern "C" intptr_t *_get_previous_fp();  // in .il file.
+extern "C" intptr_t *_get_current_fp();  // in .il file
 
 frame os::current_frame() {
-  intptr_t* fp = _get_previous_fp();
+  intptr_t* fp = _get_current_fp();  // it's inlined so want current fp
   frame myframe((intptr_t*)os::current_stack_pointer(),
                 (intptr_t*)fp,
                 CAST_FROM_FN_PTR(address, os::current_frame));
@@ -576,10 +576,11 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
       if (addr != last_addr &&
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
-        // Unguard and retry
+        // Make memory rwx and retry
         address page_start =
           (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
-        bool res = os::unguard_memory((char*) page_start, page_size);
+        bool res = os::protect_memory((char*) page_start, page_size,
+                                      os::MEM_PROT_RWX);
 
         if (PrintMiscellaneous && Verbose) {
           char buf[256];

@@ -68,6 +68,7 @@ struct _D3DSDOps {
 #define ST_USHORT_555_RGB  sun_java2d_d3d_D3DSurfaceData_ST_USHORT_555_RGB
 #define ST_BYTE_INDEXED    sun_java2d_d3d_D3DSurfaceData_ST_BYTE_INDEXED
 #define ST_BYTE_INDEXED_BM sun_java2d_d3d_D3DSurfaceData_ST_BYTE_INDEXED_BM
+#define ST_3BYTE_BGR       sun_java2d_d3d_D3DSurfaceData_ST_3BYTE_BGR
 
 /**
  * These are defined to be the same as ExtendedBufferCapabilities.VSyncType

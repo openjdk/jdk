@@ -1165,9 +1165,10 @@ public class MLet extends java.net.URLClassLoader
                      file.deleteOnExit();
                      FileOutputStream fileOutput = new FileOutputStream(file);
                      try {
-                         int c;
-                         while ((c = is.read()) != -1) {
-                             fileOutput.write(c);
+                         byte[] buf = new byte[4096];
+                         int n;
+                         while ((n = is.read(buf)) >= 0) {
+                            fileOutput.write(buf, 0, n);
                          }
                      } finally {
                          fileOutput.close();

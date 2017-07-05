@@ -2020,10 +2020,11 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (UnguardOnExecutionViolation > 0 && addr != last_addr &&
             (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
-          // Unguard and retry
+          // Set memory to RWX and retry
           address page_start =
             (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
-          bool res = os::unguard_memory((char*) page_start, page_size);
+          bool res = os::protect_memory((char*) page_start, page_size,
+                                        os::MEM_PROT_RWX);
 
           if (PrintMiscellaneous && Verbose) {
             char buf[256];
@@ -2755,12 +2756,12 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_READWRITE, &old_status) != 0;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }

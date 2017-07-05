@@ -47,6 +47,7 @@ extern "C" BlitFunc IntArgbToIntArgbPreConvert;
 extern "C" BlitFunc IntArgbPreToIntArgbConvert;
 extern "C" BlitFunc IntArgbBmToIntArgbConvert;
 extern "C" BlitFunc IntRgbToIntArgbConvert;
+extern "C" BlitFunc ThreeByteBgrToIntArgbConvert;
 extern "C" BlitFunc Ushort565RgbToIntArgbConvert;
 extern "C" BlitFunc Ushort555RgbToIntArgbConvert;
 extern "C" BlitFunc IntBgrToIntArgbConvert;
@@ -220,12 +221,17 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
                 " srctype=%d rect={%-4d, %-4d, %-4d, %-4d}",
                 srctype, r.left, r.top, r.right, r.bottom);
 
-    if (pDesc->Usage == D3DUSAGE_DYNAMIC &&
-        dstx == 0 && dstx == 0 &&
-        srcWidth == pDesc->Width && srcHeight == pDesc->Height)
-    {
+    if (pDesc->Usage == D3DUSAGE_DYNAMIC) {
+        // it is safe to lock with discard because we don't care about the
+        // contents of dynamic textures, and some drivers are happier if
+        // dynamic textures are always locked with DISCARD
         dwLockFlags |= D3DLOCK_DISCARD;
         pR = NULL;
+    } else {
+        // in non-DYNAMIC case we lock the exact rect so there's no need to
+        // offset the destination pointer
+        dstx = 0;
+        dsty = 0;
     }
 
     res = pDstSurface->LockRect(&lockedRect, pR, dwLockFlags);
@@ -242,7 +248,9 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
     void *pSrcBase = PtrCoord(pSrcInfo->rasBase,
                               srcx, pSrcInfo->pixelStride,
                               srcy, pSrcInfo->scanStride);
-    void *pDstBase = lockedRect.pBits;
+    void *pDstBase = PtrCoord(lockedRect.pBits,
+                              dstx, dstInfo.pixelStride,
+                              dsty, dstInfo.scanStride);
 
     switch (srctype) {
         case ST_INT_ARGB:
@@ -251,10 +259,14 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
                                        pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_INT_ARGB_PRE:
-        case ST_INT_RGB:
             AnyIntIsomorphicCopy(pSrcBase, pDstBase,
                                  srcWidth, srcHeight,
                                  pSrcInfo, &dstInfo, NULL, NULL);
+            break;
+        case ST_INT_RGB:
+            IntRgbToIntArgbConvert(pSrcBase, pDstBase,
+                                   srcWidth, srcHeight,
+                                   pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_INT_ARGB_BM:
             // REMIND: we don't have such sw loop
@@ -267,6 +279,11 @@ D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
             IntBgrToIntArgbConvert(pSrcBase, pDstBase,
                                    srcWidth, srcHeight,
                                    pSrcInfo, &dstInfo, NULL, NULL);
+            break;
+        case ST_3BYTE_BGR:
+            ThreeByteBgrToIntArgbConvert(pSrcBase, pDstBase,
+                                         srcWidth, srcHeight,
+                                         pSrcInfo, &dstInfo, NULL, NULL);
             break;
         case ST_USHORT_555_RGB:
             Ushort555RgbToIntArgbConvert(pSrcBase, pDstBase,
