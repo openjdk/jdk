@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,11 @@ bool Bytecodes::check_must_rewrite(Bytecodes::Code code) {
   case Bytecodes::_new:
     // (Could actually look at the class here, but the profit would be small.)
     return false;  // the rewrite is not always done
-  }
 
-  // No other special cases.
-  return true;
+  default:
+    // No other special cases.
+    return true;
+  }
 }
 
 Bytecodes::Code Bytecodes::code_at(Method* method, int bci) {
@@ -119,9 +120,10 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
       // return -1 otherwise
       return (len > 0 && len == (int)len) ? len : -1;
     }
+  default:
+    // Note: Length functions must return <=0 for invalid bytecodes.
+    return 0;
   }
-  // Note: Length functions must return <=0 for invalid bytecodes.
-  return 0;
 }
 
 // At a breakpoint instruction, this returns the breakpoint's length,

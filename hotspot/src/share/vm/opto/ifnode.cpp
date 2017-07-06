@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -671,6 +671,8 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node *val, Node* if_proj
             case BoolTest::ge:
               // lo unchanged
               hi = TypeInt::INT->_hi;
+              break;
+            default:
               break;
             }
             const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,18 +87,20 @@ const char* InvocationCounter::state_as_string(State state) {
   switch (state) {
     case wait_for_nothing            : return "wait_for_nothing";
     case wait_for_compile            : return "wait_for_compile";
+    default:
+      ShouldNotReachHere();
+      return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 const char* InvocationCounter::state_as_short_string(State state) {
   switch (state) {
     case wait_for_nothing            : return "not comp.";
     case wait_for_compile            : return "compileable";
+    default:
+      ShouldNotReachHere();
+      return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 

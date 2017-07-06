@@ -1078,7 +1078,7 @@ Method* InstanceKlass::class_initializer() const {
 void InstanceKlass::call_class_initializer(TRAPS) {
   if (ReplayCompiles &&
       (ReplaySuppressInitializers == 1 ||
-       ReplaySuppressInitializers >= 2 && class_loader() != NULL)) {
+       (ReplaySuppressInitializers >= 2 && class_loader() != NULL))) {
     // Hide the existence of the initializer for the purpose of replaying the compile
     return;
   }

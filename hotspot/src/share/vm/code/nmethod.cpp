@@ -987,6 +987,8 @@ void nmethod::verify_clean_inline_caches() {
         }
         break;
       }
+      default:
+        break;
     }
   }
 }
@@ -2187,11 +2189,14 @@ void nmethod::verify_scopes() {
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
-      case relocInfo::runtime_call_w_cp_type:
+      case relocInfo::runtime_call_w_cp_type: {
         address destination = iter.reloc()->value();
         // Right now there is no way to find out which entries support
         // an interrupt point.  It would be nice if we had this
         // information in a table.
+        break;
+      }
+      default:
         break;
     }
     assert(stub == NULL || stub_contains(stub), "static call stub outside stub section");
@@ -2489,6 +2494,9 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
         case relocInfo::type_mask:             return "type_bit_mask";
+
+        default:
+          break;
     }
   }
   return have_one ? "other" : NULL;
@@ -2674,6 +2682,8 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
             else
               st->print("<UNKNOWN>");
           }
+        default:
+          break;
         }
       }
       st->print(" {reexecute=%d rethrow=%d return_oop=%d}", sd->should_reexecute(), sd->rethrow_exception(), sd->return_oop());
@@ -2842,6 +2852,8 @@ void nmethod::print_calls(outputStream* st) {
       st->print_cr("Static call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
       CompiledDirectStaticCall::at(iter.reloc())->print();
       break;
+    default:
+      break;
     }
   }
 }
@@ -2981,4 +2993,3 @@ char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   return buf;
 }
 #endif
-

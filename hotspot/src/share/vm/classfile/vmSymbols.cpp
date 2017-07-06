@@ -892,6 +892,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;
   case F_RNY:fname = "native synchronized "; break;
+  default:   break;
   }
   const char* kptr = strrchr(kname, '/');
   if (kptr != NULL)  kname = kptr + 1;
@@ -989,6 +990,8 @@ void vmIntrinsics::verify_method(ID actual_id, Method* m) {
       declared_id = match_method_with_klass(m, vmSymbols::java_lang_Math());
       if (declared_id == actual_id)  return; // acceptable alias
       break;
+    default:
+        break;
     }
   }
 

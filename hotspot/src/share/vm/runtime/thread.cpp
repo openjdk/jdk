@@ -2892,7 +2892,7 @@ void JavaThread::print_on(outputStream *st) const {
   st->print_raw("\" ");
   oop thread_oop = threadObj();
   if (thread_oop != NULL) {
-    st->print("#" INT64_FORMAT " ", java_lang_Thread::thread_id(thread_oop));
+    st->print("#" INT64_FORMAT " ", (int64_t)java_lang_Thread::thread_id(thread_oop));
     if (java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
     st->print("prio=%d ", java_lang_Thread::priority(thread_oop));
   }

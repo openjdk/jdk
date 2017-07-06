@@ -599,9 +599,13 @@ C2V_VMENTRY(jbyteArray, getBytecode, (JNIEnv *, jobject, jobject jvmci_method))
           break;
         }
 
-        case Bytecodes::_invokedynamic:
+        case Bytecodes::_invokedynamic: {
           int cp_index = Bytes::get_native_u4((address) reconstituted_code->byte_at_addr(bci + 1));
           Bytes::put_Java_u4((address) reconstituted_code->byte_at_addr(bci + 1), (u4) cp_index);
+          break;
+        }
+
+        default:
           break;
       }
 
@@ -622,6 +626,9 @@ C2V_VMENTRY(jbyteArray, getBytecode, (JNIEnv *, jobject, jobject jvmci_method))
           Bytes::put_Java_u2((address) reconstituted_code->byte_at_addr(bci + 1), (u2) cp_index);
           break;
         }
+
+        default:
+          break;
       }
     }
   }
@@ -964,7 +971,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
   // Only do exact lookup if receiver klass has been linked.  Otherwise,
   // the vtable has not been setup, and the LinkResolver will fail.
   if (recv_klass->is_array_klass() ||
-      InstanceKlass::cast(recv_klass)->is_linked() && !recv_klass->is_interface()) {
+      (InstanceKlass::cast(recv_klass)->is_linked() && !recv_klass->is_interface())) {
     if (resolved->is_interface()) {
       m = LinkResolver::resolve_interface_call_or_null(recv_klass, link_info);
     } else {
@@ -1239,7 +1246,9 @@ C2V_VMENTRY(jobject, executeInstalledCode, (JNIEnv*, jobject, jobject args, jobj
       case T_SHORT:
        value->s = (jshort) value->i;
        break;
-     }
+      default:
+        break;
+    }
     oop o = java_lang_boxing_object::create(jap.get_ret_type(), value, CHECK_NULL);
     return JNIHandles::make_local(THREAD, o);
   }

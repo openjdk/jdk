@@ -757,7 +757,7 @@ class CompileReplay : public StackObj {
     InstanceKlass* k = (InstanceKlass *)parse_klass(CHECK);
 
     if (k == NULL || ReplaySuppressInitializers == 0 ||
-        ReplaySuppressInitializers == 2 && k->class_loader() == NULL) {
+        (ReplaySuppressInitializers == 2 && k->class_loader() == NULL)) {
       return;
     }
 

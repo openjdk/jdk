@@ -3045,7 +3045,7 @@ void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream*
   case T_BYTE:      st->print("%d", value->b);                      break;
   case T_SHORT:     st->print("%d", value->s);                      break;
   case T_INT:       st->print("%d", value->i);                      break;
-  case T_LONG:      st->print(INT64_FORMAT, value->j);              break;
+  case T_LONG:      st->print(JLONG_FORMAT, value->j);              break;
   case T_FLOAT:     st->print("%f", value->f);                      break;
   case T_DOUBLE:    st->print("%lf", value->d);                     break;
   default:          st->print("type %d?", type);                    break;

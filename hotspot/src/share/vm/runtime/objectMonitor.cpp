@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1673,7 +1673,7 @@ void ObjectMonitor::INotify(Thread * Self) {
         // the EntryList.  We can make tail access constant-time by converting to
         // a CDLL instead of using our current DLL.
         ObjectWaiter * tail;
-        for (tail = list; tail->_next != NULL; tail = tail->_next) /* empty */;
+        for (tail = list; tail->_next != NULL; tail = tail->_next) {}
         assert(tail != NULL && tail->_next == NULL, "invariant");
         tail->_next = iterator;
         iterator->_prev = tail;

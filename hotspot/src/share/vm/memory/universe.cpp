@@ -874,10 +874,10 @@ const char* Universe::narrow_oop_mode_to_string(Universe::NARROW_OOP_MODE mode) 
       return "Non-zero disjoint base";
     case HeapBasedNarrowOop:
       return "Non-zero based";
+    default:
+      ShouldNotReachHere();
+      return "";
   }
-
-  ShouldNotReachHere();
-  return "";
 }
 
 

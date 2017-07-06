@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,8 +385,8 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // Phi must be of loop header; backedge must wrap to increment
   if (phi->region() != x)
     return false;
-  if (trunc1 == NULL && phi->in(LoopNode::LoopBackControl) != incr ||
-      trunc1 != NULL && phi->in(LoopNode::LoopBackControl) != trunc1) {
+  if ((trunc1 == NULL && phi->in(LoopNode::LoopBackControl) != incr) ||
+      (trunc1 != NULL && phi->in(LoopNode::LoopBackControl) != trunc1)) {
     return false;
   }
   Node *init_trip = phi->in(LoopNode::EntryControl);
@@ -430,11 +430,11 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // through MININT to MAXINT, then bail out.
   if (bt == BoolTest::eq || // Bail out, but this loop trips at most twice!
       // Odd stride
-      bt == BoolTest::ne && stride_con != 1 && stride_con != -1 ||
+      (bt == BoolTest::ne && stride_con != 1 && stride_con != -1) ||
       // Count down loop rolls through MAXINT
-      (bt == BoolTest::le || bt == BoolTest::lt) && stride_con < 0 ||
+      ((bt == BoolTest::le || bt == BoolTest::lt) && stride_con < 0) ||
       // Count up loop rolls through MININT
-      (bt == BoolTest::ge || bt == BoolTest::gt) && stride_con > 0) {
+      ((bt == BoolTest::ge || bt == BoolTest::gt) && stride_con > 0)) {
     return false; // Bail out
   }
 

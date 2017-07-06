@@ -126,6 +126,8 @@ void Reflection::widen(jvalue* value, BasicType current_type, BasicType wide_typ
         case T_BYTE:
           value->s = (jshort) value->b;
           return;
+        default:
+          break;
       }
       break;  // fail
     case T_INT:
@@ -139,6 +141,8 @@ void Reflection::widen(jvalue* value, BasicType current_type, BasicType wide_typ
         case T_SHORT:
           value->i = (jint) value->s;
           return;
+        default:
+          break;
       }
       break;  // fail
     case T_LONG:
@@ -155,6 +159,8 @@ void Reflection::widen(jvalue* value, BasicType current_type, BasicType wide_typ
         case T_INT:
           value->j = (jlong) value->i;
           return;
+        default:
+          break;
       }
       break;  // fail
     case T_FLOAT:
@@ -174,6 +180,8 @@ void Reflection::widen(jvalue* value, BasicType current_type, BasicType wide_typ
         case T_LONG:
           value->f = (jfloat) value->j;
           return;
+        default:
+          break;
       }
       break;  // fail
     case T_DOUBLE:
@@ -196,6 +204,8 @@ void Reflection::widen(jvalue* value, BasicType current_type, BasicType wide_typ
         case T_LONG:
           value->d = (jdouble) value->j;
           return;
+        default:
+          break;
       }
       break;  // fail
     default:

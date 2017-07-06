@@ -800,7 +800,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    // the vtable has not been setup, and the LinkResolver will fail.
    if (recv->is_array_klass()
         ||
-       InstanceKlass::cast(recv)->is_linked() && !exact_receiver->is_interface()) {
+       (InstanceKlass::cast(recv)->is_linked() && !exact_receiver->is_interface())) {
      if (holder()->is_interface()) {
        m = LinkResolver::resolve_interface_call_or_null(recv, link_info);
      } else {
@@ -1493,6 +1493,8 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
       }
       break;
     }
+    default:
+      break;
   }
   assert(target_sig->count() - rbase == linker_sig->count() - sbase - has_appendix, "argument count mismatch");
   int arg_count = target_sig->count() - rbase;

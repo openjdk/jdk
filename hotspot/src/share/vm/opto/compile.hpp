@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +95,13 @@ class NodeCloneInfo {
  public:
 
   void set_idx(node_idx_t idx) {
-    _idx_clone_orig = _idx_clone_orig & CONST64(0xFFFFFFFF00000000) | idx;
+    _idx_clone_orig = (_idx_clone_orig & CONST64(0xFFFFFFFF00000000)) | idx;
   }
   node_idx_t idx() const { return (node_idx_t)(_idx_clone_orig & 0xFFFFFFFF); }
 
   void set_gen(int generation) {
     uint64_t g = (uint64_t)generation << 32;
-    _idx_clone_orig = _idx_clone_orig & 0xFFFFFFFF | g;
+    _idx_clone_orig = (_idx_clone_orig & 0xFFFFFFFF) | g;
   }
   int gen() const { return (int)(_idx_clone_orig >> 32); }
 

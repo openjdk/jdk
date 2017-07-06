@@ -269,9 +269,10 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
       // Invalid ciConstant returned due to OutOfMemoryError in the CI
       assert(Compile::current()->env()->failing(), "otherwise should not see this");
       return NULL;
+    default:
+      // Fall through to failure
+      return NULL;
   }
-  // Fall through to failure
-  return NULL;
 }
 
 static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool is_unsigned) {
@@ -279,12 +280,14 @@ static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool
   switch (conbt) {
     case T_BOOLEAN: conbt = T_BYTE;   break;
     case T_ARRAY:   conbt = T_OBJECT; break;
+    default:                          break;
   }
   switch (loadbt) {
     case T_BOOLEAN:   loadbt = T_BYTE;   break;
     case T_NARROWOOP: loadbt = T_OBJECT; break;
     case T_ARRAY:     loadbt = T_OBJECT; break;
     case T_ADDRESS:   loadbt = T_OBJECT; break;
+    default:                             break;
   }
   if (conbt == loadbt) {
     if (is_unsigned && conbt == T_BYTE) {
@@ -1048,10 +1051,11 @@ bool Type::empty(void) const {
   case FloatBot:
   case DoubleBot:
     return false;  // never a singleton, therefore never empty
-  }
 
-  ShouldNotReachHere();
-  return false;
+  default:
+    ShouldNotReachHere();
+    return false;
+  }
 }
 
 //------------------------------dump_stats-------------------------------------
@@ -3964,6 +3968,8 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
     break;
+  default:
+    break;
   }
 
   if( _offset ) {               // Dump offset, if any
@@ -4080,6 +4086,9 @@ static jint max_array_length(BasicType etype) {
     case T_ILLEGAL:
     case T_VOID:
       etype = T_BYTE;           // will produce conservatively high value
+      break;
+    default:
+      break;
     }
     cache = res = arrayOopDesc::max_array_length(etype);
   }
@@ -4429,6 +4438,8 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   case NotNull:
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
+    break;
+  default:
     break;
   }
 
@@ -5194,6 +5205,8 @@ void TypeKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   case AnyNull:
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
+    break;
+  default:
     break;
   }
 

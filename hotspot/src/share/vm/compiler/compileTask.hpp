@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
       case Reason_InvocationCount:
       case Reason_Tiered:
         return !_is_blocking;
+      default:
+        return false;
     }
-    return false;
   }
 #if INCLUDE_JVMCI
   bool         has_waiter() const                { return _has_waiter; }

@@ -96,6 +96,8 @@ TEST_VM_F(LogMessageTest, level_inclusion) {
       break;
 LOG_LEVEL_LIST
 #undef LOG_LEVEL
+    default:
+      break;
     }
   }
 

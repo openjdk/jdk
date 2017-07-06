@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,9 @@ ValueType* as_ValueType(BasicType type) {
     case T_OBJECT : return objectType;
     case T_ADDRESS: return addressType;
     case T_ILLEGAL: return illegalType;
+    default       : ShouldNotReachHere();
+                    return illegalType;
   }
-  ShouldNotReachHere();
-  return illegalType;
 }
 
 
@@ -167,9 +167,9 @@ ValueType* as_ValueType(ciConstant value) {
       }
       return new ObjectConstant(obj);
     }
+    default       : ShouldNotReachHere();
+                    return illegalType;
   }
-  ShouldNotReachHere();
-  return illegalType;
 }
 
 
@@ -184,7 +184,7 @@ BasicType as_BasicType(ValueType* type) {
     case metaDataTag:return T_METADATA;
     case addressTag: return T_ADDRESS;
     case illegalTag: return T_ILLEGAL;
+    default        : ShouldNotReachHere();
+                     return T_ILLEGAL;
   }
-  ShouldNotReachHere();
-  return T_ILLEGAL;
 }

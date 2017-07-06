@@ -88,6 +88,9 @@
 #define PTR_FORMAT    "0x%08"  PRIxPTR
 #endif  // _LP64
 
+// Format pointers without leading zeros
+#define INTPTRNZ_FORMAT "0x%"  PRIxPTR
+
 #define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
 
 #define SSIZE_FORMAT             "%"   PRIdPTR
@@ -781,8 +784,8 @@ inline TosState as_TosState(BasicType type) {
     case T_VOID   : return vtos;
     case T_ARRAY  : // fall through
     case T_OBJECT : return atos;
+    default       : return ilgl;
   }
-  return ilgl;
 }
 
 inline BasicType as_BasicType(TosState state) {
@@ -797,8 +800,8 @@ inline BasicType as_BasicType(TosState state) {
     case dtos : return T_DOUBLE;
     case atos : return T_OBJECT;
     case vtos : return T_VOID;
+    default   : return T_ILLEGAL;
   }
-  return T_ILLEGAL;
 }
 
 

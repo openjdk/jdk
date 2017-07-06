@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2719,7 +2719,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
     // Kill projections on a branch should appear to occur on the
     // branch, not afterwards, so grab the masks from the projections
     // and process them.
-    if (n->is_MachBranch() || n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_Jump) {
+    if (n->is_MachBranch() || (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_Jump)) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_Proj()) {

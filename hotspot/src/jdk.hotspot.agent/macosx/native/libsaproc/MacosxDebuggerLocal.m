@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,8 +689,8 @@ static bool ptrace_waitpid(pid_t pid) {
 // attach to a process/thread specified by "pid"
 static bool ptrace_attach(pid_t pid) {
   int res;
-  if ((res = ptrace(PT_ATTACH, pid, 0, 0)) < 0) {
-    print_error("ptrace(PT_ATTACH, %d) failed with %d\n", pid, res);
+  if ((res = ptrace(PT_ATTACHEXC, pid, 0, 0)) < 0) {
+    print_error("ptrace(PT_ATTACHEXC, %d) failed with %d\n", pid, res);
     return false;
   } else {
     return ptrace_waitpid(pid);
