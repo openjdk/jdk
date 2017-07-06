@@ -344,25 +344,22 @@ G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state
   _ct_bs = _g1h->g1_barrier_set();
 }
 
-void G1ScanRSForRegionClosure::scan_card(size_t index, HeapWord* card_start, HeapRegion *r) {
-  MemRegion card_region(card_start, BOTConstants::N_words);
-  MemRegion pre_gc_allocated(r->bottom(), _scan_state->scan_top(r->hrm_index()));
-  MemRegion mr = pre_gc_allocated.intersection(card_region);
-  if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
-    // We make the card as "claimed" lazily (so races are possible
-    // but they're benign), which reduces the number of duplicate
-    // scans (the rsets of the regions in the cset can intersect).
-    _ct_bs->set_card_claimed(index);
-    _scan_objs_on_card_cl->set_region(r);
-    r->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
-    _cards_scanned++;
-  }
+void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card) {
+  HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
+  _scan_objs_on_card_cl->set_region(card_region);
+  card_region->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
+  _cards_scanned++;
 }
 
 void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
   double scan_start = os::elapsedTime();
   r->strong_code_roots_do(_code_root_cl);
   _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
+}
+
+void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_idx_for_card){
+  _ct_bs->set_card_claimed(card_index);
+  _scan_state->add_dirty_region(region_idx_for_card);
 }
 
 bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
@@ -394,18 +391,34 @@ bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
       _cards_skipped++;
       continue;
     }
-    HeapWord* card_start = _g1h->bot()->address_for_index(card_index);
-
-    HeapRegion* card_region = _g1h->heap_region_containing(card_start);
     _cards_claimed++;
 
-    _scan_state->add_dirty_region(card_region->hrm_index());
-
-    // If the card is dirty, then we will scan it during updateRS.
-    if (!card_region->in_collection_set() &&
-        !_ct_bs->is_card_dirty(card_index)) {
-      scan_card(card_index, card_start, card_region);
+    // If the card is dirty, then G1 will scan it during Update RS.
+    if (_ct_bs->is_card_claimed(card_index) || _ct_bs->is_card_dirty(card_index)) {
+      continue;
     }
+
+    HeapWord* const card_start = _g1h->bot()->address_for_index(card_index);
+    uint const region_idx_for_card = _g1h->addr_to_region(card_start);
+
+    assert(_g1h->region_at(region_idx_for_card)->is_in_reserved(card_start),
+           "Card start " PTR_FORMAT " to scan outside of region %u", p2i(card_start), _g1h->region_at(region_idx_for_card)->hrm_index());
+    HeapWord* const top = _scan_state->scan_top(region_idx_for_card);
+    if (card_start >= top) {
+      continue;
+    }
+
+    // We claim lazily (so races are possible but they're benign), which reduces the
+    // number of duplicate scans (the rsets of the regions in the cset can intersect).
+    // Claim the card after checking bounds above: the remembered set may contain
+    // random cards into current survivor, and we would then have an incorrectly
+    // claimed card in survivor space. Card table clear does not reset the card table
+    // of survivor space regions.
+    claim_card(card_index, region_idx_for_card);
+
+    MemRegion const mr(card_start, MIN2(card_start + BOTConstants::N_words, top));
+
+    scan_card(mr, region_idx_for_card);
   }
   if (_scan_state->set_iter_complete(region_idx)) {
     // Scan the strong code root list attached to the current region
