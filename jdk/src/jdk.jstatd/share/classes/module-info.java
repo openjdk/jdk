@@ -42,5 +42,6 @@ module jdk.jstatd {
     // RMI needs to serialize types in this package
     exports sun.jvmstat.monitor.remote to java.rmi;
 
-    provides sun.jvmstat.monitor.MonitoredHostService with sun.jvmstat.perfdata.monitor.protocol.rmi.MonitoredHostRmiService;
+    provides sun.jvmstat.monitor.MonitoredHostService with
+        sun.jvmstat.perfdata.monitor.protocol.rmi.MonitoredHostRmiService;
 }

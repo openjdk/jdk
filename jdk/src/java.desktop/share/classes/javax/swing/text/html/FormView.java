@@ -46,11 +46,16 @@ import javax.swing.text.*;
  * <p>
  * The following table shows what components get built
  * by this view.
- * <table summary="shows what components get built by this view">
+ *
+ * <table class="striped">
+ * <caption>Shows what components get built by this view</caption>
+ * <thead>
  * <tr>
  *   <th>Element Type</th>
  *   <th>Component built</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  *   <td>input, type button</td>
  *   <td>JButton</td>
@@ -99,6 +104,7 @@ import javax.swing.text.*;
  *   <td>input, type file</td>
  *   <td>JTextField</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @author Timothy Prinzing

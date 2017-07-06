@@ -630,6 +630,13 @@ public class Annotate {
             }
         }
 
+        // Class literals look like field accesses of a field named class
+        // at the tree level
+        if (TreeInfo.name(tree) != names._class) {
+            log.error(tree.pos(), Errors.AnnotationValueMustBeClassLiteral);
+            return new Attribute.Error(syms.errType);
+        }
+
         return new Attribute.Class(types,
                 (((JCFieldAccess) tree).selected).type);
     }

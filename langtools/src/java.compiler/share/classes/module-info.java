@@ -23,16 +23,18 @@
  * questions.
  */
 
- /**
-  * Defines the Language Model, Annotation Processing, and Java Compiler APIs.
-  * <P>
-  * These APIs model declarations and types of the Java programming language,
-  * and define interfaces for tools such as compilers which can be invoked
-  * from a program.
-  *
-  * @moduleGraph
-  * @since 9
-  */
+/**
+ * Defines the Language Model, Annotation Processing, and Java Compiler APIs.
+ * <p>
+ * These APIs model declarations and types of the Java programming language,
+ * and define interfaces for tools such as compilers which can be invoked
+ * from a program.
+ * <p>
+ * This module is upgradeble.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module java.compiler {
     exports javax.annotation.processing;
     exports javax.lang.model;

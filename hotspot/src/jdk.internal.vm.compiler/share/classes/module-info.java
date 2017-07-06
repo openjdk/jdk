@@ -26,11 +26,9 @@
 module jdk.internal.vm.compiler {
     requires java.instrument;
     requires java.management;
-    requires jdk.management;
     requires jdk.internal.vm.ci;
-
-    // sun.misc.Unsafe is used
-    requires jdk.unsupported;
+    requires jdk.management;
+    requires jdk.unsupported;   // sun.misc.Unsafe is used
 
     uses org.graalvm.compiler.code.DisassemblerProvider;
     uses org.graalvm.compiler.core.match.MatchStatementSet;

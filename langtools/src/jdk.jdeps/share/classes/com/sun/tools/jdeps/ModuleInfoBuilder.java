@@ -203,21 +203,43 @@ public class ModuleInfoBuilder {
         writer.format("%smodule %s {%n", open ? "open " : "", md.name());
 
         Map<String, Module> modules = configuration.getModules();
-        // first print the JDK modules
-        md.requires().stream()
-          .filter(req -> !req.name().equals("java.base"))   // implicit requires
-          .sorted(Comparator.comparing(Requires::name))
-          .forEach(req -> writer.format("    requires %s;%n",
-                                        toString(req.modifiers(), req.name())));
+
+        // first print requires
+        Set<Requires> reqs = md.requires().stream()
+            .filter(req -> !req.name().equals("java.base") && req.modifiers().isEmpty())
+            .collect(Collectors.toSet());
+        reqs.stream()
+            .sorted(Comparator.comparing(Requires::name))
+            .forEach(req -> writer.format("    requires %s;%n",
+                                          toString(req.modifiers(), req.name())));
+        if (!reqs.isEmpty()) {
+            writer.println();
+        }
+
+        // requires transitive
+        reqs = md.requires().stream()
+                 .filter(req -> !req.name().equals("java.base") && !req.modifiers().isEmpty())
+                 .collect(Collectors.toSet());
+        reqs.stream()
+            .sorted(Comparator.comparing(Requires::name))
+            .forEach(req -> writer.format("    requires %s;%n",
+                                          toString(req.modifiers(), req.name())));
+        if (!reqs.isEmpty()) {
+            writer.println();
+        }
 
         if (!open) {
             md.exports().stream()
               .peek(exp -> {
                   if (exp.isQualified())
                       throw new InternalError(md.name() + " qualified exports: " + exp);
-              })
+                  })
               .sorted(Comparator.comparing(Exports::source))
               .forEach(exp -> writer.format("    exports %s;%n", exp.source()));
+
+            if (!md.exports().isEmpty()) {
+                writer.println();
+            }
         }
 
         md.provides().stream()
@@ -228,8 +250,11 @@ public class ModuleInfoBuilder {
                                       String.format("    provides %s with%n",
                                                     p.service().replace('$', '.')),
                                       ";")))
-          .forEach(writer::println);
+                     .forEach(writer::println);
 
+        if (!md.provides().isEmpty()) {
+            writer.println();
+        }
         writer.println("}");
     }
 

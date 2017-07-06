@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,11 @@ package javax.sound.sampled;
  * <p>
  * The following table shows what parameter values an implementation might use
  * for a representative set of reverberation settings.
- * <p>
  *
- * <b>Reverberation Types and Parameters</b>
- *
- * <table border=1 cellpadding=5 summary="reverb types and params: decay time, late intensity, late delay, early intensity, and early delay">
- *
+ * <table class="striped">
+ * <caption>Reverb types and params: decay time, late intensity, late delay,
+ * early intensity, and early delay</caption>
+ * <thead>
  * <tr>
  *  <th>Type</th>
  *  <th>Decay Time (ms)</th>
@@ -83,7 +82,8 @@ package javax.sound.sampled;
  *  <th>Early Intensity (dB)</th>
  *  <th>Early Delay(ms)</th>
  * </tr>
- *
+ * </thead>
+ * <tbody>
  * <tr>
  *  <td>Cavern</td>
  *  <td>2250</td>
@@ -128,7 +128,7 @@ package javax.sound.sampled;
  *  <td>-7.0</td>
  *  <td>0.6</td>
  * </tr>
- *
+ * </tbody>
  * </table>
  *
  * @author Kara Kytle
