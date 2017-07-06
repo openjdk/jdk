@@ -981,6 +981,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   /************/                                                                                                                     \
                                                                                                                                      \
   volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
+  volatile_nonstatic_field(OSThread,           _state,                                        ThreadState)                           \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* OopMap and OopMapSet */                                                                                                         \
@@ -2186,6 +2187,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
    declare_integer_type(Generation::Name)                                 \
    declare_integer_type(InstanceKlass::ClassState)                        \
    declare_integer_type(JavaThreadState)                                  \
+   declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
    declare_integer_type(Flag::Flags)                                      \
@@ -2442,6 +2444,20 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
+                                                                          \
+  /*******************/                                                   \
+  /* JavaThreadState */                                                   \
+  /*******************/                                                   \
+                                                                          \
+  declare_constant(ALLOCATED)                                             \
+  declare_constant(INITIALIZED)                                           \
+  declare_constant(RUNNABLE)                                              \
+  declare_constant(MONITOR_WAIT)                                          \
+  declare_constant(CONDVAR_WAIT)                                          \
+  declare_constant(OBJECT_WAIT)                                           \
+  declare_constant(BREAKPOINTED)                                          \
+  declare_constant(SLEEPING)                                              \
+  declare_constant(ZOMBIE)                                                \
                                                                           \
   /******************************/                                        \
   /* Klass misc. enum constants */                                        \
