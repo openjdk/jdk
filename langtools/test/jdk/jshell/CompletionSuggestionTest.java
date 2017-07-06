@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -180,7 +180,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("list.add(0, |", true, "ccTest3");
         assertCompletion("new String(|", true, "ccTest3");
         assertCompletion("new String(new char[0], |", true, "ccTest1", "ccTest2");
-        assertCompletionIncludesExcludes("new jav|", new HashSet<>(Arrays.asList("java", "javax")), Collections.emptySet());
+        assertCompletionIncludesExcludes("new jav|", new HashSet<>(Arrays.asList("java.", "javax.")), Collections.emptySet());
         assertCompletion("Class<String> clazz = String.c|", true, "class");
 
         Snippet klass = classKey(assertEval("class Klass {void method(int n) {} private void method(String str) {}}"));
@@ -241,14 +241,14 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     public void testFullyQualified() {
-        assertCompletion("Optional<String> opt = java.u|", "util");
+        assertCompletion("Optional<String> opt = java.u|", "util.");
         assertCompletionIncludesExcludes("Optional<Strings> opt = java.util.O|", new HashSet<>(Collections.singletonList("Optional")), Collections.emptySet());
 
         assertEval("void method(java.util.Optional<String> opt) {}");
-        assertCompletion("method(java.u|", "util");
+        assertCompletion("method(java.u|", "util.");
 
         assertCompletion("Object.notElement.|");
-        assertCompletion("Object o = com.su|", "sun");
+        assertCompletion("Object o = com.su|", "sun.");
 
         Path p1 = outDir.resolve("dir1");
         compiler.compile(p1,
@@ -262,8 +262,8 @@ public class CompletionSuggestionTest extends KullaTesting {
         compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
         addToClasspath(compiler.getPath(p1.resolve(jarName)));
 
-        assertCompletionIncludesExcludes("|", new HashSet<>(Collections.singletonList("p1")), Collections.emptySet());
-        assertCompletion("p1.|", "p2", "p3");
+        assertCompletionIncludesExcludes("|", new HashSet<>(Collections.singletonList("p1.")), Collections.emptySet());
+        assertCompletion("p1.|", "p2.", "p3.");
         assertCompletion("p1.p2.|", "Test");
         assertCompletion("p1.p3.|", "Test");
     }
@@ -273,15 +273,15 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     public void testCompletePackages() {
-        assertCompletion("java.u|", "util");
-        assertCompletionIncludesExcludes("jav|", new HashSet<>(Arrays.asList("java", "javax")), Collections.emptySet());
+        assertCompletion("java.u|", "util.");
+        assertCompletionIncludesExcludes("jav|", new HashSet<>(Arrays.asList("java.", "javax.")), Collections.emptySet());
     }
 
     public void testImports() {
-        assertCompletion("import java.u|", "util");
-        assertCompletionIncludesExcludes("import jav|", new HashSet<>(Arrays.asList("java", "javax")), Collections.emptySet());
-        assertCompletion("import static java.u|", "util");
-        assertCompletionIncludesExcludes("import static jav|", new HashSet<>(Arrays.asList("java", "javax")), Collections.emptySet());
+        assertCompletion("import java.u|", "util.");
+        assertCompletionIncludesExcludes("import jav|", new HashSet<>(Arrays.asList("java.", "javax.")), Collections.emptySet());
+        assertCompletion("import static java.u|", "util.");
+        assertCompletionIncludesExcludes("import static jav|", new HashSet<>(Arrays.asList("java.", "javax.")), Collections.emptySet());
         assertCompletion("import static java.lang.Boolean.g|", "getBoolean");
         assertCompletion("import java.util.*|");
         assertCompletionIncludesExcludes("import java.lang.String.|",
@@ -296,7 +296,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     }
 
     public void testImportStart() {
-        assertCompletionIncludesExcludes("import c|", Set.of("com"), Set.of());
+        assertCompletionIncludesExcludes("import c|", Set.of("com."), Set.of());
     }
 
     public void testBrokenClassFile() throws Exception {

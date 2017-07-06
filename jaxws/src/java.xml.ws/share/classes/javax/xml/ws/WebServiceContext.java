@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,7 @@ public interface WebServiceContext {
      * Returns the {@code EndpointReference} associated with
      * this endpoint.
      *
+     * @param <T> The type of {@code EndpointReference}.
      * @param clazz The type of {@code EndpointReference} that
      * MUST be returned.
      * @param referenceParameters Reference parameters to be associated with the
