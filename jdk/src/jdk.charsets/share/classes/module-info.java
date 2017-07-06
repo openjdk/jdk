@@ -33,6 +33,6 @@
  * @since 9
  */
 module jdk.charsets {
-    provides java.nio.charset.spi.CharsetProvider
-        with sun.nio.cs.ext.ExtendedCharsets;
+    provides java.nio.charset.spi.CharsetProvider with
+        sun.nio.cs.ext.ExtendedCharsets;
 }

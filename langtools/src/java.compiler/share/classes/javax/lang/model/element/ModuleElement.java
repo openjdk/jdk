@@ -42,8 +42,16 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * Returns the fully qualified name of this module.  For an
      * {@linkplain #isUnnamed() unnamed module}, an empty name is returned.
      *
+     * @apiNote If the module name consists of one identifier, then
+     * this method returns that identifier, which is deemed to be
+     * module's fully qualified name despite not being in qualified
+     * form.  If the module name consists of more than one identifier,
+     * then this method returns the entire name.
+     *
      * @return the fully qualified name of this module, or an
      * empty name if this is an unnamed module
+     *
+     * @jls 6.2 Names and Identifiers
      */
     @Override
     Name getQualifiedName();
@@ -52,8 +60,16 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * Returns the simple name of this module.  For an {@linkplain
      * #isUnnamed() unnamed module}, an empty name is returned.
      *
+     * @apiNote If the module name consists of one identifier, then
+     * this method returns that identifier.  If the module name
+     * consists of more than one identifier, then this method returns
+     * the rightmost such identifier, which is deemed to be the
+     * module's simple name.
+     *
      * @return the simple name of this module or an empty name if
      * this is an unnamed module
+     *
+     * @jls 6.2 Names and Identifiers
      */
     @Override
     Name getSimpleName();

@@ -39,5 +39,6 @@ module java.sql.rowset {
     exports javax.sql.rowset;
     exports javax.sql.rowset.serial;
     exports javax.sql.rowset.spi;
+
     uses javax.sql.rowset.RowSetFactory;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class MimeType implements Externalizable {
      * Constructor that builds a MimeType from a String.
      *
      * @param rawdata   the MIME type string
+     * @exception       MimeTypeParseException  if the MIME type can't be parsed
      */
     public MimeType(String rawdata) throws MimeTypeParseException {
         parse(rawdata);
@@ -258,6 +259,7 @@ public class MimeType implements Externalizable {
      *
      * @param rawdata   the MIME type string to compare with
      * @return          true if they match
+     * @exception       MimeTypeParseException  if the MIME type can't be parsed
      */
     public boolean match(String rawdata) throws MimeTypeParseException {
         return match(new MimeType(rawdata));

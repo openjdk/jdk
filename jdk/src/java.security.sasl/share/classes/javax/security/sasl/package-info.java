@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,8 @@
  * <h2>Related Documentation</h2>
  *
  * Please refer to the
- * <a href="../../../../technotes/guides/security/sasl/sasl-refguide.html">Java
- * SASL Programming Guide</a> for information on how to use this API.
+ * {@extLink security_guide_sasl Java SASL Programming Guide}
+ * for information on how to use this API.
  *
  * @since 1.5
  */

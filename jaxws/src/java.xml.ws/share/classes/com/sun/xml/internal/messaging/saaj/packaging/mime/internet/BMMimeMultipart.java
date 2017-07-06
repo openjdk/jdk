@@ -28,18 +28,20 @@
  */
 
 
-
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
-import java.io.*;
-import java.util.BitSet;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.ASCIIUtility;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.OutputUtil;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 
 import javax.activation.DataSource;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.*;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.util.*;
-
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.BitSet;
 
 /**
  * The MimeMultipart class is an implementation of the abstract Multipart
@@ -67,11 +69,10 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
  * subtype by using the <code>MimeMultipart(String subtype)</code>
  * constructor.  For example, to create a "multipart/alternative" object,
  * use <code>new MimeMultipart("alternative")</code>.
- *
  */
 
 //TODO: cleanup the SharedInputStream handling
-public  class BMMimeMultipart extends MimeMultipart {
+public class BMMimeMultipart extends MimeMultipart {
 
     /*
      * When true it indicates parsing hasnt been done at all
@@ -120,12 +121,12 @@ public  class BMMimeMultipart extends MimeMultipart {
      */
     public BMMimeMultipart(String subtype) {
         super(subtype);
-        /*
-         * Compute a boundary string.
-        String boundary = UniqueValue.getUniqueBoundaryValue();
-        ContentType cType = new ContentType("multipart", subtype, null);
+    /*
+     * Compute a boundary string.
+    String boundary = UniqueValue.getUniqueBoundaryValue();
+    ContentType cType = new ContentType("multipart", subtype, null);
         contentType.setParameter("boundary", boundary);
-         */
+     */
     }
 
     /**
@@ -144,25 +145,25 @@ public  class BMMimeMultipart extends MimeMultipart {
      * skips the 'preamble' and reads bytes till the terminating
      * boundary and creates MimeBodyParts for each part of the stream.
      *
-     * @param   ds      DataSource, can be a MultipartDataSource.
-     * @param   ct      content type.
-     * @exception MessagingException in case of error.
+     * @param   ct  content type.
+     * @param   ds  DataSource, can be a MultipartDataSource.
+     * @throws  MessagingException in case of error.
      */
     public BMMimeMultipart(DataSource ds, ContentType ct)
-        throws MessagingException {
-        super(ds,ct);
+            throws MessagingException {
+        super(ds, ct);
         boundary = ct.getParameter("boundary");
         /*
-        if (ds instanceof MultipartDataSource) {
-            // ask super to do this for us.
-            setMultipartDataSource((MultipartDataSource)ds);
-            return;
-        }
+    if (ds instanceof MultipartDataSource) {
+        // ask super to do this for us.
+        setMultipartDataSource((MultipartDataSource)ds);
+        return;
+    }
 
-        // 'ds' was not a MultipartDataSource, we have
-        // to parse this ourself.
-        parsed = false;
-        this.ds = ds;
+    // 'ds' was not a MultipartDataSource, we have
+    // to parse this ourself.
+    parsed = false;
+    this.ds = ds;
         if (ct==null)
             contentType = new ContentType(ds.getContentType());
         else
@@ -177,8 +178,8 @@ public  class BMMimeMultipart extends MimeMultipart {
             try {
                 in = ds.getInputStream();
                 if (!(in instanceof ByteArrayInputStream) &&
-                    !(in instanceof BufferedInputStream) &&
-                    !(in instanceof SharedInputStream))
+                        !(in instanceof BufferedInputStream) &&
+                        !(in instanceof SharedInputStream))
                     in = new BufferedInputStream(in);
             } catch (Exception ex) {
                 throw new MessagingException("No inputstream from datasource");
@@ -186,7 +187,7 @@ public  class BMMimeMultipart extends MimeMultipart {
 
             if (!in.markSupported()) {
                 throw new MessagingException(
-                    "InputStream does not support Marking");
+                        "InputStream does not support Marking");
             }
         }
         return in;
@@ -199,10 +200,10 @@ public  class BMMimeMultipart extends MimeMultipart {
      * method is called by all other methods that need data for
      * the body parts, to make sure the data has been parsed.
      *
-     * @since   JavaMail 1.2
+     * @since JavaMail 1.2
      */
     @Override
-    protected  void parse() throws  MessagingException {
+    protected void parse() throws MessagingException {
         if (parsed)
             return;
 
@@ -210,7 +211,7 @@ public  class BMMimeMultipart extends MimeMultipart {
 
         SharedInputStream sin = null;
         if (in instanceof SharedInputStream) {
-            sin = (SharedInputStream)in;
+            sin = (SharedInputStream) in;
         }
 
         String bnd = "--" + boundary;
@@ -231,8 +232,8 @@ public  class BMMimeMultipart extends MimeMultipart {
     }
 
     public MimeBodyPart getNextPart(
-        InputStream stream, byte[] pattern, SharedInputStream sin)
-        throws Exception {
+            InputStream stream, byte[] pattern, SharedInputStream sin)
+            throws Exception {
 
         if (!stream.markSupported()) {
             throw new Exception("InputStream does not support Marking");
@@ -242,7 +243,7 @@ public  class BMMimeMultipart extends MimeMultipart {
             compile(pattern);
             if (!skipPreamble(stream, pattern, sin)) {
                 throw new Exception(
-                    "Missing Start Boundary, or boundary does not start on a new line");
+                        "Missing Start Boundary, or boundary does not start on a new line");
             }
             begining = false;
         }
@@ -256,7 +257,7 @@ public  class BMMimeMultipart extends MimeMultipart {
             b = readHeaders(stream);
             if (b == -1) {
                 throw new Exception(
-                    "End of Stream encountered while reading part headers");
+                        "End of Stream encountered while reading part headers");
             }
             long[] v = new long[1];
             v[0] = -1; // just to ensure the code later sets it correctly
@@ -276,7 +277,7 @@ public  class BMMimeMultipart extends MimeMultipart {
         } else {
             InternetHeaders headers = createInternetHeaders(stream);
             ByteOutputStream baos = new ByteOutputStream();
-            b = readBody(stream, pattern, null,baos, null);
+            b = readBody(stream, pattern, null, baos, null);
             // looks like this check has to be disabled
             // in the old impl it is allowed to have Mime Package
             // without closing boundary
@@ -286,7 +287,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 }
             }
             MimeBodyPart mbp = createMimeBodyPart(
-                headers, baos.getBytes(), baos.getCount());
+                    headers, baos.getBytes(), baos.getCount());
             addBodyPart(mbp);
             return mbp;
         }
@@ -294,11 +295,11 @@ public  class BMMimeMultipart extends MimeMultipart {
     }
 
     public boolean parse(
-        InputStream stream, byte[] pattern, SharedInputStream sin)
-        throws Exception {
+            InputStream stream, byte[] pattern, SharedInputStream sin)
+            throws Exception {
 
         while (!lastPartFound.get(0) && (b != -1)) {
-           getNextPart(stream, pattern, sin);
+            getNextPart(stream, pattern, sin);
         }
         return true;
     }
@@ -307,7 +308,7 @@ public  class BMMimeMultipart extends MimeMultipart {
         // if the headers are to end properly then there has to be CRLF
         // actually we just need to mark the start and end positions
         int b = is.read();
-        while(b != -1) {
+        while (b != -1) {
             // when it is a shared input stream no need to copy
             if (b == '\r') {
                 b = is.read();
@@ -316,7 +317,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                     if (b == '\r') {
                         b = is.read();
                         if (b == '\n') {
-                           return b;
+                            return b;
                         } else {
                             continue;
                         }
@@ -331,43 +332,43 @@ public  class BMMimeMultipart extends MimeMultipart {
         }
         if (b == -1) {
             throw new Exception(
-            "End of inputstream while reading Mime-Part Headers");
+                    "End of inputstream while reading Mime-Part Headers");
         }
         return b;
     }
 
     private int readBody(
-        InputStream is, byte[] pattern, long[] posVector,
-        ByteOutputStream baos, SharedInputStream sin)
-        throws Exception {
+            InputStream is, byte[] pattern, long[] posVector,
+            ByteOutputStream baos, SharedInputStream sin)
+            throws Exception {
         if (!find(is, pattern, posVector, baos, sin)) {
             throw new Exception(
-            "Missing boundary delimitier while reading Body Part");
+                    "Missing boundary delimitier while reading Body Part");
         }
         return b;
     }
 
     private boolean skipPreamble(
-        InputStream is, byte[] pattern, SharedInputStream sin)
-        throws Exception {
+            InputStream is, byte[] pattern, SharedInputStream sin)
+            throws Exception {
         if (!find(is, pattern, sin)) {
             return false;
         }
         if (lastPartFound.get(0)) {
             throw new Exception(
-            "Found closing boundary delimiter while trying to skip preamble");
+                    "Found closing boundary delimiter while trying to skip preamble");
         }
         return true;
     }
 
 
-    public int  readNext(InputStream is, byte[] buff, int patternLength,
-        BitSet eof, long[] posVector, SharedInputStream sin)
-        throws Exception {
+    public int readNext(InputStream is, byte[] buff, int patternLength,
+                        BitSet eof, long[] posVector, SharedInputStream sin)
+            throws Exception {
 
         int bufferLength = is.read(buffer, 0, patternLength);
         if (bufferLength == -1) {
-           eof.flip(0);
+            eof.flip(0);
         } else if (bufferLength < patternLength) {
             //repeatedly read patternLength - bufferLength
             int temp = 0;
@@ -385,18 +386,18 @@ public  class BMMimeMultipart extends MimeMultipart {
                     }
                     break;
                 }
-                buffer[i] = (byte)temp;
+                buffer[i] = (byte) temp;
             }
-            bufferLength=i;
+            bufferLength = i;
         }
         return bufferLength;
     }
 
     public boolean find(InputStream is, byte[] pattern, SharedInputStream sin)
-        throws Exception {
+            throws Exception {
         int i;
         int l = pattern.length;
-        int lx = l -1;
+        int lx = l - 1;
         BitSet eof = new BitSet(1);
         long[] posVector = new long[1];
 
@@ -409,12 +410,12 @@ public  class BMMimeMultipart extends MimeMultipart {
             }
 
             /*
-            if (bufferLength < l) {
-                //is.reset();
-                return false;
-            }*/
+        if (bufferLength < l) {
+            //is.reset();
+        return false;
+        }*/
 
-            for(i = lx; i >= 0; i--) {
+            for (i = lx; i >= 0; i--) {
                 if (buffer[i] != pattern[i]) {
                     break;
                 }
@@ -435,11 +436,11 @@ public  class BMMimeMultipart extends MimeMultipart {
     }
 
     public boolean find(
-        InputStream is, byte[] pattern, long[] posVector,
-        ByteOutputStream out, SharedInputStream sin) throws Exception {
+            InputStream is, byte[] pattern, long[] posVector,
+            ByteOutputStream out, SharedInputStream sin) throws Exception {
         int i;
         int l = pattern.length;
-        int lx = l -1;
+        int lx = l - 1;
         int bufferLength = 0;
         int s = 0;
         long endPos = -1;
@@ -466,7 +467,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 // looks like it is allowed to not have a closing boundary
                 //return false;
                 //if (sin != null) {
-                 //   posVector[0] = endPos;
+                //   posVector[0] = endPos;
                 //}
                 b = -1;
                 if ((s == l) && (sin == null)) {
@@ -482,7 +483,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 } else {
                     // looks like it is allowed to not have a closing boundary
                     // in the old implementation
-                        out.write(buffer, 0, bufferLength);
+                    out.write(buffer, 0, bufferLength);
                 }
                 // looks like it is allowed to not have a closing boundary
                 // in the old implementation
@@ -491,7 +492,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 return true;
             }
 
-            for(i = lx; i >= 0; i--) {
+            for (i = lx; i >= 0; i--) {
                 if (buffer[i] != pattern[i]) {
                     break;
                 }
@@ -507,7 +508,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                         if (s == 2) {
                             if (prevBuffer[1] == '\n') {
                                 if (prevBuffer[0] != '\r' && prevBuffer[0] != '\n') {
-                                    out.write(prevBuffer,0,1);
+                                    out.write(prevBuffer, 0, 1);
                                 }
                                 if (sin != null) {
                                     posVector[0] = endPos;
@@ -516,15 +517,15 @@ public  class BMMimeMultipart extends MimeMultipart {
                             } else {
                                 throw new Exception(
                                         "Boundary characters encountered in part Body " +
-                                        "without a preceeding CRLF");
+                                                "without a preceeding CRLF");
                             }
 
-                        } else if (s==1) {
+                        } else if (s == 1) {
                             if (prevBuffer[0] != '\n') {
                                 throw new Exception(
                                         "Boundary characters encountered in part Body " +
-                                        "without a preceeding CRLF");
-                            }else {
+                                                "without a preceeding CRLF");
+                            } else {
                                 if (sin != null) {
                                     posVector[0] = endPos;
                                 }
@@ -532,13 +533,13 @@ public  class BMMimeMultipart extends MimeMultipart {
                         }
 
                     } else if (s > 2) {
-                        if ((prevBuffer[s-2] == '\r') && (prevBuffer[s-1] == '\n')) {
+                        if ((prevBuffer[s - 2] == '\r') && (prevBuffer[s - 1] == '\n')) {
                             if (sin != null) {
                                 posVector[0] = endPos - 2;
                             } else {
                                 out.write(prevBuffer, 0, s - 2);
                             }
-                        } else if (prevBuffer[s-1] == '\n') {
+                        } else if (prevBuffer[s - 1] == '\n') {
                             //old impl allowed just a \n
                             if (sin != null) {
                                 posVector[0] = endPos - 1;
@@ -547,8 +548,8 @@ public  class BMMimeMultipart extends MimeMultipart {
                             }
                         } else {
                             throw new Exception(
-                                "Boundary characters encountered in part Body " +
-                                "without a preceeding CRLF");
+                                    "Boundary characters encountered in part Body " +
+                                            "without a preceeding CRLF");
                         }
                     }
                 }
@@ -561,22 +562,22 @@ public  class BMMimeMultipart extends MimeMultipart {
             }
 
             if ((s > 0) && (sin == null)) {
-                if (prevBuffer[s-1] == (byte)13) {
+                if (prevBuffer[s - 1] == (byte) 13) {
                     // if buffer[0] == (byte)10
-                    if (buffer[0] == (byte)10) {
+                    if (buffer[0] == (byte) 10) {
                         int j;
-                        for(j = lx-1; j > 0; j--) {
-                            if (buffer[j+1] != pattern[j]) {
+                        for (j = lx - 1; j > 0; j--) {
+                            if (buffer[j + 1] != pattern[j]) {
                                 break;
-                             }
-                         }
-                         if (j == 0) {
-                             // matched the pattern excluding the last char of the pattern
-                             // so dont write the CR into stream
-                             out.write(prevBuffer,0,s-1);
-                         } else {
-                             out.write(prevBuffer,0,s);
-                         }
+                            }
+                        }
+                        if (j == 0) {
+                            // matched the pattern excluding the last char of the pattern
+                            // so dont write the CR into stream
+                            out.write(prevBuffer, 0, s - 1);
+                        } else {
+                            out.write(prevBuffer, 0, s);
+                        }
                     } else {
                         out.write(prevBuffer, 0, s);
                     }
@@ -612,20 +613,20 @@ public  class BMMimeMultipart extends MimeMultipart {
                 return true;
             } else {
                 throw new Exception(
-                    "transport padding after a Mime Boundary  should end in a CRLF, found CR only");
+                        "transport padding after a Mime Boundary  should end in a CRLF, found CR only");
             }
         }
 
         if (b == '-') {
             b = is.read();
             if (b != '-') {
-               throw new Exception(
-                   "Unexpected singular '-' character after Mime Boundary");
+                throw new Exception(
+                        "Unexpected singular '-' character after Mime Boundary");
             } else {
                 //System.out.println("Last Part Found");
                 lastPartFound.flip(0);
                 // read the next char
-                b  = is.read();
+                b = is.read();
             }
         }
 
@@ -641,7 +642,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                     b = is.read();
                 }
                 if (b == '\n') {
-                   return true;
+                    return true;
                 }
             }
         }
@@ -673,7 +674,8 @@ public  class BMMimeMultipart extends MimeMultipart {
 
         // Initialise Good Suffix Shift table
         gss = new int[l];
-  NEXT: for (i = l; i > 0; i--) {
+        NEXT:
+        for (i = l; i > 0; i--) {
             // j is the beginning index of suffix being considered
             for (j = l - 1; j >= i; j--) {
                 // Testing for good suffix
@@ -681,9 +683,9 @@ public  class BMMimeMultipart extends MimeMultipart {
                     // pattern[j..len] is a good suffix
                     gss[j - 1] = i;
                 } else {
-                   // No match. The array has already been
-                   // filled up with correct values before.
-                   continue NEXT;
+                    // No match. The array has already been
+                    // filled up with correct values before.
+                    continue NEXT;
                 }
             }
             while (j > 0) {
@@ -756,6 +758,7 @@ public  class BMMimeMultipart extends MimeMultipart {
             this.contentType.setParameter("boundary", bnd);
         }
     }
+
     public String getBoundary() {
         return this.boundary;
     }

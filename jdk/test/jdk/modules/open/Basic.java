@@ -25,7 +25,7 @@
  * @test
  * @library modules
  * @build m1/* m2/*
- * @run testng/othervm --add-modules=m1,m2 Basic
+ * @run testng/othervm --add-modules=m1,m2 --illegal-access=deny Basic
  * @summary Basic test of open modules and open packages
  */
 

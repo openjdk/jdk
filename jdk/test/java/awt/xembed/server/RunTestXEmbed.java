@@ -28,9 +28,9 @@
  * @summary Tests XEmbed server/client functionality
  * @author Denis Mikhalkin: area=awt.xembed
  * @requires (!(os.family=="mac") & !(os.family=="windows"))
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.desktop/sun.awt
- * @build jdk.testlibrary.Platform
+ * @build jdk.test.lib.Platform
  * @compile JavaClient.java TesterClient.java TestXEmbedServer.java
  * @run main/timeout=6000 RunTestXEmbed
  */
@@ -40,7 +40,7 @@ import java.lang.reflect.Method;
 import java.util.logging.*;
 import java.util.*;
 import java.io.*;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class RunTestXEmbed extends TestXEmbedServer {
     private static final Logger log = Logger.getLogger("test.xembed");

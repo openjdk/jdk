@@ -38,10 +38,7 @@ questions.
 
 The standard classes and interfaces that a third party vendor has to
 use in its implementation of a synchronization provider. These classes and
-interfaces are referred to as the Service Provider Interface (SPI). A vendor may
-have its implementation included on the JDBC web page that lists available
-<code>SyncProvider</code> implementations by sending email to <code>jdbc@sun.com</code>.
-Doing this helps make developers aware of the implementation. To make it possible
+interfaces are referred to as the Service Provider Interface (SPI).  To make it possible
 for a <code>RowSet</code> object to use an implementation, the vendor must register
 it with the <code>SyncFactory</code> singleton. (See the class comment for
 <code>SyncProvider</code> for a full explanation of the registration process and
@@ -108,19 +105,14 @@ occur.
 <P>
 The lowest level of synchronization is simply writing any changes made to the
 <code>RowSet</code> object to its underlying data source.  The writer does
-nothing to check for conflicts. 
+nothing to check for conflicts.
 If there is a conflict and the data
 source values are overwritten, the changes other parties have made by to the data
-source are lost. 
+source are lost.
 <P>
-The <code>RIXMLProvider</code> implementation uses the lowest level 
+The <code>RIXMLProvider</code> implementation uses the lowest level
 of synchronization and just writes <code>RowSet</code> changes to the data source.
-This is true because  typically XML data sources do not enable transaction
-techniques for maintaining the integrity of data. However, specific standards
-groups have considered offering XML-based synchronization.  For details, see
-<PRE>
-     <a href="http://www.syncml.org">http://www.syncml.org</a>
-</PRE>
+
 <P>
 For the next level up, the
 writer checks to see if there are any conflicts, and if there are,
@@ -141,7 +133,7 @@ synchronized.
 It is a requirement that all disconnected <code>RowSet</code> objects
 (<code>CachedRowSet</code>, <code>FilteredRowSet</code>, <code>JoinRowSet</code>,
 and <code>WebRowSet</code> objects) obtain their <code>SyncProvider</code> objects
-from the <code>SyncFactory</code> mechanism.  
+from the <code>SyncFactory</code> mechanism.
 <P>
 The reference implementation (RI) provides two synchronization providers.
     <UL>
@@ -164,7 +156,7 @@ The reference implementation (RI) provides two synchronization providers.
             <code>RIXMLProvider</code> implementation does no checking at all for
             conflicts and simply writes any updated data in the
             <code>WebRowSet</code> object to the underlying data source.
-            <code>WebRowSet</code> objects use this provider when they are 
+            <code>WebRowSet</code> objects use this provider when they are
             dealing with XML data.
     </UL>
 
@@ -198,9 +190,7 @@ specification for further details.
 <p>
 Vendors may develop a <code>SyncProvider</code> implementation with any one of the possible
 levels of synchronization, thus giving <code>RowSet</code> objects a choice of
-synchronization mechanisms.  A vendor can make its implementation available by
-registering the fully qualified class name with Oracle Corporation at
-<code>jdbc@sun.com</code>. This process is discussed in further detail below.
+synchronization mechanisms.
 
 <h3><a id="arch">2.0 Service Provider Interface Architecture</a></h3>
 <b>2.1 Overview</b>
@@ -274,7 +264,7 @@ These policies are explored in more detail in the <a href="SyncFactory.html">
 A compliant <code>SyncProvider</code> implementation that is fully pluggable
 into the <code>SyncFactory</code> <b>must</b> extend and implement all
 abstract methods in the <a href="SyncProvider.html"><code>SyncProvider</code></a>
-class. In addition, an implementation <b>must</b> determine the 
+class. In addition, an implementation <b>must</b> determine the
 grade, locking and updatable view capabilities defined in the
 <code>SyncProvider</code> class definition. One or more of the
 <code>SyncProvider</code> description criteria <b>must</b> be supported. It
@@ -405,7 +395,7 @@ synchronization.  These operation are shown in the following code fragment.
     case: SyncProvider.GRADE_LOCK_WHEN_MODIFIED
          // A pessimistic synchronization grade
     break;
-    case: SyncProvider.GRADE_NONE 
+    case: SyncProvider.GRADE_NONE
       // No synchronization with the originating data source provided
     break;
     }
@@ -413,7 +403,7 @@ synchronization.  These operation are shown in the following code fragment.
     switch (sync.getDataSourcLock() {
       case: SyncProvider.DATASOURCE_DB_LOCK
        // A lock is placed on the entire datasource that is used by the
-       // <code>RowSet</code> object 
+       // <code>RowSet</code> object
        break;
 
       case: SyncProvider.DATASOURCE_NO_LOCK
@@ -490,14 +480,11 @@ The comment for the <code>SyncResolver</code> interface has more detail.
 <h3><a id="relspec">5.0 Related Specifications</a></h3>
 <ul>
 <li><a href="http://docs.oracle.com/javase/jndi/tutorial/index.html">JNDI</a>
-<li><a href="{@docRoot}/../technotes/guides/logging/index.html">Java Logging
+<li><a href="{@docRoot}/java/util/logging/package-summary.html">Java Logging
 APIs</a>
 </ul>
 <h3><a id="reldocs">6.0 Related Documentation</a></h3>
 <ul>
-<li><a href="{@docRoot}/../technotes/tools/index.html#basic">System
-properties</a>
-<li>Resource Files
 <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/">DataSource for JDBC
 Connections</a>
 </ul>

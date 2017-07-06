@@ -26,6 +26,9 @@
 package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * SystemModules class will be generated at link time to create
@@ -57,8 +60,7 @@ public final class SystemModules {
     public static int PACKAGES_IN_BOOT_LAYER = 1024;
 
     /**
-     * @return {@code false} if there are no split packages in the run-time
-     *         image, {@code true} if there are or if it's not been checked.
+     * Return true if there are no split packages in the run-time image.
      */
     public static boolean hasSplitPackages() {
         return true;
@@ -97,5 +99,21 @@ public final class SystemModules {
      */
     public static ModuleResolution[] moduleResolutions() {
         throw new InternalError("expected to be overridden at link time");
+    }
+
+    /**
+     * Returns the map of module concealed packages to open. The map key is the
+     * module name, the value is the set of concealed packages to open.
+     */
+    public static Map<String, Set<String>> concealedPackagesToOpen() {
+        return Collections.emptyMap();
+    }
+
+    /**
+     * Returns the map of module exported packages to open. The map key is the
+     * module name, the value is the set of exported packages to open.
+     */
+    public static Map<String, Set<String>> exportedPackagesToOpen() {
+        return Collections.emptyMap();
     }
 }

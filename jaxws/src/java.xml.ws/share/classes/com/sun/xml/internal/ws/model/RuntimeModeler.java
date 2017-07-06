@@ -1180,7 +1180,7 @@ public class RuntimeModeler {
                     if(p == null)
                         resRpcParams.put(resRpcParams.size()+10000, param);
                     else
-                        resRpcParams.put(param.getIndex(), param);
+                        resRpcParams.put(p.getIndex(), param);
                 }
             }else{
                 javaMethod.addParameter(param);

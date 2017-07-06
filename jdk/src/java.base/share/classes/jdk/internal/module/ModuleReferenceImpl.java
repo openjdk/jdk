@@ -41,6 +41,10 @@ import java.util.function.Supplier;
 
 public class ModuleReferenceImpl extends ModuleReference {
 
+    // location of module
+    private final URI location;
+
+    // the module reader
     private final Supplier<ModuleReader> readerSupplier;
 
     // non-null if the module is patched
@@ -74,6 +78,7 @@ public class ModuleReferenceImpl extends ModuleReference {
                         ModuleResolution moduleResolution)
     {
         super(descriptor, Objects.requireNonNull(location));
+        this.location = location;
         this.readerSupplier = readerSupplier;
         this.patcher = patcher;
         this.target = target;
@@ -148,7 +153,7 @@ public class ModuleReferenceImpl extends ModuleReference {
         int hc = hash;
         if (hc == 0) {
             hc = descriptor().hashCode();
-            hc = 43 * hc + Objects.hashCode(location());
+            hc = 43 * hc + Objects.hashCode(location);
             hc = 43 * hc + Objects.hashCode(patcher);
             if (hc == 0)
                 hc = -1;
@@ -169,7 +174,7 @@ public class ModuleReferenceImpl extends ModuleReference {
         // when the modules have equal module descriptors, are at the
         // same location, and are patched by the same patcher.
         return Objects.equals(this.descriptor(), that.descriptor())
-                && Objects.equals(this.location(), that.location())
+                && Objects.equals(this.location, that.location)
                 && Objects.equals(this.patcher, that.patcher);
     }
 
@@ -179,7 +184,7 @@ public class ModuleReferenceImpl extends ModuleReference {
         sb.append("[module ");
         sb.append(descriptor().name());
         sb.append(", location=");
-        sb.append(location().orElseThrow(() -> new InternalError()));
+        sb.append(location);
         if (isPatched()) sb.append(" (patched)");
         sb.append("]");
         return sb.toString();

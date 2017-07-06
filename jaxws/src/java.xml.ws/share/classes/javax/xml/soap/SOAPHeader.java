@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public interface SOAPHeader extends SOAPElement {
      *
      * @since 1.6, SAAJ 1.2
      */
-    public Iterator examineMustUnderstandHeaderElements(String actor);
+    public Iterator<SOAPHeaderElement> examineMustUnderstandHeaderElements(String actor);
 
     /**
      * Returns an {@code Iterator} over all the {@code SOAPHeaderElement} objects
@@ -144,7 +144,7 @@ public interface SOAPHeader extends SOAPElement {
      * @see #extractHeaderElements
      * @see SOAPConstants#URI_SOAP_ACTOR_NEXT
      */
-    public Iterator examineHeaderElements(String actor);
+    public Iterator<SOAPHeaderElement> examineHeaderElements(String actor);
 
     /**
      * Returns an {@code Iterator} over all the {@code SOAPHeaderElement} objects
@@ -168,7 +168,7 @@ public interface SOAPHeader extends SOAPElement {
      * @see #examineHeaderElements
      * @see SOAPConstants#URI_SOAP_ACTOR_NEXT
      */
-    public Iterator extractHeaderElements(String actor);
+    public Iterator<SOAPHeaderElement> extractHeaderElements(String actor);
 
     /**
      * Creates a new NotUnderstood {@code SOAPHeaderElement} object initialized
@@ -188,18 +188,18 @@ public interface SOAPHeader extends SOAPElement {
 
     /**
      * Creates a new Upgrade {@code SOAPHeaderElement} object initialized
-     * with the specified List of supported SOAP URIs and adds it to this
-     * {@code SOAPHeader} object.
+     * with the specified String Iterator of supported SOAP URIs and adds
+     * it to this {@code SOAPHeader} object.
      * This operation is supported on both SOAP 1.1 and SOAP 1.2 header.
      *
-     * @param supportedSOAPURIs an {@code Iterator} object with the URIs of SOAP
+     * @param supportedSOAPURIs an URI Strings {@code Iterator} of SOAP
      *          versions supported.
      * @return the new {@code SOAPHeaderElement} object that was
      *          inserted into this {@code SOAPHeader} object
      * @exception SOAPException if a SOAP error occurs.
      * @since 1.6, SAAJ 1.3
      */
-    public SOAPHeaderElement addUpgradeHeaderElement(Iterator supportedSOAPURIs)
+    public SOAPHeaderElement addUpgradeHeaderElement(Iterator<String> supportedSOAPURIs)
         throws SOAPException;
 
     /**
@@ -243,7 +243,7 @@ public interface SOAPHeader extends SOAPElement {
      *
      * @since 1.6, SAAJ 1.2
      */
-    public Iterator examineAllHeaderElements();
+    public Iterator<SOAPHeaderElement> examineAllHeaderElements();
 
     /**
      * Returns an {@code Iterator} over all the {@code SOAPHeaderElement} objects
@@ -258,6 +258,6 @@ public interface SOAPHeader extends SOAPElement {
      *
      * @since 1.6, SAAJ 1.2
      */
-    public Iterator extractAllHeaderElements();
+    public Iterator<SOAPHeaderElement> extractAllHeaderElements();
 
 }

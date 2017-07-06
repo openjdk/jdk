@@ -59,12 +59,14 @@ public class Detail1_2Impl extends DetailImpl {
         super(ownerDoc, domElement);
     }
 
+    @Override
     protected DetailEntry createDetailEntry(Name name) {
         return new DetailEntry1_2Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
             name);
     }
 
+    @Override
     protected DetailEntry createDetailEntry(QName name) {
         return new DetailEntry1_2Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
@@ -75,11 +77,13 @@ public class Detail1_2Impl extends DetailImpl {
      * Override setEncodingStyle of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Detail (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public void setEncodingStyle(String encodingStyle) throws SOAPException {
         log.severe("SAAJ0403.ver1_2.no.encodingStyle.in.detail");
         throw new SOAPExceptionImpl("EncodingStyle attribute cannot appear in Detail");
     }
 
+    @Override
     public SOAPElement addAttribute(Name name, String value)
         throws SOAPException {
         if (name.getLocalName().equals("encodingStyle")
@@ -89,6 +93,7 @@ public class Detail1_2Impl extends DetailImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     public SOAPElement addAttribute(QName name, String value)
         throws SOAPException {
         if (name.getLocalPart().equals("encodingStyle")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class MimeTypeParameterList {
      * Constructs a new MimeTypeParameterList with the passed in data.
      *
      * @param parameterList an RFC 2045, 2046 compliant parameter list.
+     * @exception       MimeTypeParseException  if the MIME type can't be parsed
      */
     public MimeTypeParameterList(String parameterList)
                                         throws MimeTypeParseException {
@@ -71,6 +72,7 @@ public class MimeTypeParameterList {
      * A routine for parsing the parameter list out of a String.
      *
      * @param parameterList an RFC 2045, 2046 compliant parameter list.
+     * @exception       MimeTypeParseException  if the MIME type can't be parsed
      */
     protected void parse(String parameterList) throws MimeTypeParseException {
         if (parameterList == null)

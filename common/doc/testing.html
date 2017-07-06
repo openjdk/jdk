@@ -18,14 +18,16 @@
 </header>
 <nav id="TOC">
 <ul>
-<li><a href="#using-the-run-test-framework">Using the run-test framework</a></li>
+<li><a href="#using-the-run-test-framework">Using the run-test framework</a><ul>
+<li><a href="#configuration">Configuration</a></li>
+</ul></li>
 <li><a href="#test-selection">Test selection</a><ul>
-<li><a href="#jtreg">JTreg</a></li>
+<li><a href="#jtreg">JTReg</a></li>
 <li><a href="#gtest">Gtest</a></li>
 </ul></li>
 <li><a href="#test-results-and-summary">Test results and summary</a></li>
 <li><a href="#test-suite-control">Test suite control</a><ul>
-<li><a href="#jtreg-keywords">JTreg keywords</a></li>
+<li><a href="#jtreg-keywords">JTReg keywords</a></li>
 <li><a href="#gtest-keywords">Gtest keywords</a></li>
 </ul></li>
 </ul>
@@ -41,14 +43,17 @@ $ make run-test-only TEST=&quot;gtest:LogTagSet gtest:LogTagSetDescriptions&quot
 $ make run-test TEST=&quot;hotspot/test:hotspot_gc&quot; JTREG=&quot;JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;
 $ make run-test TEST=&quot;jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java&quot;
 $ make exploded-run-test TEST=hotspot_tier1</code></pre>
+
+<h3 id="configuration">Configuration</h3>
+<p>To be able to run JTReg tests, <code>configure</code> needs to know where to find the JTReg test framework. If it is not picked up automatically by configure, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc. (An alternative is to set the <code>JT_HOME</code> environment variable to point to the JTReg home before running <code>configure</code>.)</p>
 <h2 id="test-selection">Test selection</h2>
 <p>All functionality is available using the run-test make target. In this use case, the test or tests to be executed is controlled using the <code>TEST</code> variable. To speed up subsequent test runs with no source code changes, run-test-only can be used instead, which do not depend on the source and test image build.</p>
-<p>For some common top-level tests, direct make targets have been generated. This includes all JTreg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make run-test-tier1</code> is equivalent to <code>make run-test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>run-test TEST=&quot;x&quot;</code> solution needs to be used.</p>
+<p>For some common top-level tests, direct make targets have been generated. This includes all JTReg test groups, the hotspot gtest, and custom tests (if present). This means that <code>make run-test-tier1</code> is equivalent to <code>make run-test TEST=&quot;tier1&quot;</code>, but the latter is more tab-completion friendly. For more complex test runs, the <code>run-test TEST=&quot;x&quot;</code> solution needs to be used.</p>
 <p>The test specifications given in <code>TEST</code> is parsed into fully qualified test descriptors, which clearly and unambigously show which tests will be run. As an example, <code>:tier1</code> will expand to <code>jtreg:jdk/test:tier1 jtreg:langtools/test:tier1 jtreg:nashorn/test:tier1 jtreg:jaxp/test:tier1</code>. You can always submit a list of fully qualified test descriptors in the <code>TEST</code> variable if you want to shortcut the parser.</p>
-<h3 id="jtreg">JTreg</h3>
-<p>JTreg test groups can be specified either without a test root, e.g. <code>:tier1</code> (or <code>tier1</code>, the initial colon is optional), or with, e.g. <code>hotspot/test:tier1</code>, <code>jdk/test:jdk_util</code>.</p>
+<h3 id="jtreg">JTReg</h3>
+<p>JTReg test groups can be specified either without a test root, e.g. <code>:tier1</code> (or <code>tier1</code>, the initial colon is optional), or with, e.g. <code>hotspot/test:tier1</code>, <code>jdk/test:jdk_util</code>.</p>
 <p>When specified without a test root, all matching groups from all tests roots will be added. Otherwise, only the group from the specified test root will be added.</p>
-<p>Individual JTreg tests or directories containing JTreg tests can also be specified, like <code>hotspot/test/native_sanity/JniVersion.java</code> or <code>hotspot/test/native_sanity</code>. You can also specify an absolute path, to point to a JTreg test outside the source tree.</p>
+<p>Individual JTReg tests or directories containing JTReg tests can also be specified, like <code>hotspot/test/native_sanity/JniVersion.java</code> or <code>hotspot/test/native_sanity</code>. You can also specify an absolute path, to point to a JTReg test outside the source tree.</p>
 <p>As long as the test groups or test paths can be uniquely resolved, you do not need to enter the <code>jtreg:</code> prefix. If this is not possible, or if you want to use a fully qualified test descriptor, add <code>jtreg:</code>, e.g. <code>jtreg:hotspot/test/native_sanity</code>.</p>
 <h3 id="gtest">Gtest</h3>
 <p>Since the Hotspot Gtest suite is so quick, the default is to run all tests. This is specified by just <code>gtest</code>, or as a fully qualified test descriptor <code>gtest:all</code>.</p>
@@ -67,15 +72,15 @@ TEST FAILURE</code></pre>
 <p>Tests where the number of TOTAL tests does not equal the number of PASSed tests will be considered a test failure. These are marked with the <code>&gt;&gt; ... &lt;&lt;</code> marker for easy identification.</p>
 <p>The classification of non-passed tests differs a bit between test suites. In the summary, ERROR is used as a catch-all for tests that neither passed nor are classified as failed by the framework. This might indicate test framework error, timeout or other problems.</p>
 <p>In case of test failures, <code>make run-test</code> will exit with a non-zero exit value.</p>
-<p>All tests have their result stored in <code>build/$BUILD/test-result/$TEST_ID</code>, where TEST_ID is a path-safe conversion from the fully qualified test descriptor, e.g. for <code>jtreg:jdk/test:tier1</code> the TEST_ID is <code>jtreg_jdk_test_tier1</code>. This path is also printed in the log at the end of the test run.</p>
+<p>All tests have their result stored in <code>build/$BUILD/test-results/$TEST_ID</code>, where TEST_ID is a path-safe conversion from the fully qualified test descriptor, e.g. for <code>jtreg:jdk/test:tier1</code> the TEST_ID is <code>jtreg_jdk_test_tier1</code>. This path is also printed in the log at the end of the test run.</p>
 <p>Additional work data is stored in <code>build/$BUILD/test-support/$TEST_ID</code>. For some frameworks, this directory might contain information that is useful in determining the cause of a failed test.</p>
 <h2 id="test-suite-control">Test suite control</h2>
 <p>It is possible to control various aspects of the test suites using make control variables.</p>
-<p>These variables use a keyword=value approach to allow multiple values to be set. So, for instance, <code>JTREG=&quot;JOBS=1;TIMEOUT=8&quot;</code> will set the JTreg concurrency level to 1 and the timeout factor to 8. This is equivalent to setting <code>JTREG_JOBS=1 JTREG_TIMEOUT=8</code>, but using the keyword format means that the <code>JTREG</code> variable is parsed and verified for correctness, so <code>JTREG=&quot;TMIEOUT=8&quot;</code> would give an error, while <code>JTREG_TMIEOUT=8</code> would just pass unnoticed.</p>
+<p>These variables use a keyword=value approach to allow multiple values to be set. So, for instance, <code>JTREG=&quot;JOBS=1;TIMEOUT=8&quot;</code> will set the JTReg concurrency level to 1 and the timeout factor to 8. This is equivalent to setting <code>JTREG_JOBS=1 JTREG_TIMEOUT=8</code>, but using the keyword format means that the <code>JTREG</code> variable is parsed and verified for correctness, so <code>JTREG=&quot;TMIEOUT=8&quot;</code> would give an error, while <code>JTREG_TMIEOUT=8</code> would just pass unnoticed.</p>
 <p>To separate multiple keyword=value pairs, use <code>;</code> (semicolon). Since the shell normally eats <code>;</code>, the recommended usage is to write the assignment inside qoutes, e.g. <code>JTREG=&quot;...;...&quot;</code>. This will also make sure spaces are preserved, as in <code>JTREG=&quot;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;</code>.</p>
 <p>(Other ways are possible, e.g. using backslash: <code>JTREG=JOBS=1\;TIMEOUT=8</code>. Also, as a special technique, the string <code>%20</code> will be replaced with space for certain options, e.g. <code>JTREG=VM_OTIONS=-XshowSettings%20-Xlog:gc+ref=debug</code>. This can be useful if you have layers of scripts and have trouble getting proper quoting of command line arguments through.)</p>
 <p>As far as possible, the names of the keywords have been standardized between test suites.</p>
-<h3 id="jtreg-keywords">JTreg keywords</h3>
+<h3 id="jtreg-keywords">JTReg keywords</h3>
 <h4 id="jobs">JOBS</h4>
 <p>The test concurrency (<code>-concurrency</code>).</p>
 <p>Defaults to TEST_JOBS (if set by <code>--with-test-jobs=</code>), otherwise it defaults to JOBS, except for Hotspot, where the default is <em>number of CPU cores/2</em>, but never more than 12.</p>
@@ -96,15 +101,15 @@ TEST FAILURE</code></pre>
 <p>Defaults to <code>fail,error</code>.</p>
 <h4 id="max_mem">MAX_MEM</h4>
 <p>Limit memory consumption (<code>-Xmx</code> and <code>-vmoption:-Xmx</code>, or none).</p>
-<p>Limit memory consumption for JTreg test framework and VM under test. Set to 0 to disable the limits.</p>
+<p>Limit memory consumption for JTReg test framework and VM under test. Set to 0 to disable the limits.</p>
 <p>Defaults to 512m, except for hotspot, where it defaults to 0 (no limit).</p>
 <h4 id="options">OPTIONS</h4>
-<p>Additional options to the JTreg test framework.</p>
-<p>Use <code>JTREG=&quot;OPTIONS=--help all&quot;</code> to see all available JTreg options.</p>
+<p>Additional options to the JTReg test framework.</p>
+<p>Use <code>JTREG=&quot;OPTIONS=--help all&quot;</code> to see all available JTReg options.</p>
 <h4 id="java_options">JAVA_OPTIONS</h4>
-<p>Additional Java options to JTreg (<code>-javaoption</code>).</p>
+<p>Additional Java options to JTReg (<code>-javaoption</code>).</p>
 <h4 id="vm_options">VM_OPTIONS</h4>
-<p>Additional VM options to JTreg (<code>-vmoption</code>).</p>
+<p>Additional VM options to JTReg (<code>-vmoption</code>).</p>
 <h3 id="gtest-keywords">Gtest keywords</h3>
 <h4 id="repeat">REPEAT</h4>
 <p>The number of times to repeat the tests (<code>--gtest_repeat</code>).</p>

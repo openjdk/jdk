@@ -303,6 +303,8 @@ sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
+com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-all
+
 ############################################################################
 
 # jdk_other

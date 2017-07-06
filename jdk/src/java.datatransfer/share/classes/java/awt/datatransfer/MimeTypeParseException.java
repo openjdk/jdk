@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package java.awt.datatransfer;
 
-
 /**
- *    A class to encapsulate MimeType parsing related exceptions
+ * A class to encapsulate MimeType parsing related exceptions.
  *
- * @serial exclude
  * @since 1.3
+ * @serial exclude
  */
 public class MimeTypeParseException extends Exception {
 
@@ -47,7 +46,7 @@ public class MimeTypeParseException extends Exception {
     /**
      * Constructs a MimeTypeParseException with the specified detail message.
      *
-     * @param   s   the detail message.
+     * @param  s the detail message
      */
     public MimeTypeParseException(String s) {
         super(s);

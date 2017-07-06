@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package javax.xml.ws.handler;
 
 import javax.xml.ws.ProtocolException;
-import javax.xml.ws.handler.MessageContext;
 
 /** The {@code Handler} interface
  *  is the base interface for JAX-WS handlers.
  *
+ * @param <C> message context
  *  @since 1.6, JAX-WS 2.0
 **/
 public interface Handler<C extends MessageContext> {

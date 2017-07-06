@@ -40,8 +40,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
  * See the Keysize Restriction sections of the
- * <a href="{@docRoot}/../technotes/guides/security/SunProviders.html">
- * JDK Providers</a>
+ * {@extLink security_guide_jdk_providers JDK Providers}
  * document for information on the KeyPairGenerator defaults used by
  * JDK providers.
  * However, note that defaults may vary across different providers.

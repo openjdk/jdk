@@ -48,6 +48,7 @@ module jdk.xml.ws {
     requires jdk.xml.bind;
 
     uses com.sun.tools.internal.ws.wscompile.Plugin;
+
     provides com.sun.tools.internal.ws.wscompile.Plugin with
         com.sun.tools.internal.ws.wscompile.plugin.at_generated.PluginImpl;
 }

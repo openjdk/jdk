@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,19 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 /**
  * Represents methods which have changed when the class was redefined.
  */
 public class ObsoleteMethodImpl extends NonConcreteMethodImpl {
 
-    private Location location = null;
-
-    ObsoleteMethodImpl(VirtualMachine vm,
-                          ReferenceTypeImpl declaringType) {
+    ObsoleteMethodImpl(VirtualMachine vm, ReferenceTypeImpl declaringType) {
         super(vm, declaringType, 0, "<obsolete>", "", null, 0);
     }
 
@@ -55,11 +54,11 @@ public class ObsoleteMethodImpl extends NonConcreteMethodImpl {
     }
 
     public List<String> argumentTypeNames() {
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     public List<String> argumentSignatures() {
-        return new ArrayList<String>();
+        return new ArrayList<>();
     }
 
     Type argumentType(int index) throws ClassNotLoadedException {
@@ -67,7 +66,6 @@ public class ObsoleteMethodImpl extends NonConcreteMethodImpl {
     }
 
     public List<Type> argumentTypes() throws ClassNotLoadedException {
-        return new ArrayList<Type>();
+        return new ArrayList<>();
     }
-
 }

@@ -22,8 +22,8 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.Platform;
 import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.Platform;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

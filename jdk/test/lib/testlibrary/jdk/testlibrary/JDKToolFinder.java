@@ -99,7 +99,7 @@ public final class JDKToolFinder {
                     + "When running test separately, set this property using '-D" + property + "=/path/to/jdk'.");
         }
 
-        Path toolName = Paths.get("bin", tool + (Platform.isWindows() ? ".exe" : ""));
+        Path toolName = Paths.get("bin", tool + (isWindows() ? ".exe" : ""));
 
         Path jdkTool = Paths.get(jdkPath, toolName.toString());
         if (!jdkTool.toFile().exists()) {
@@ -107,5 +107,9 @@ public final class JDKToolFinder {
         }
 
         return jdkTool.toAbsolutePath().toString();
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().startsWith("win");
     }
 }

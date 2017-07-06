@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package com.sun.tools.internal.ws.resources;
 
-import com.sun.istack.internal.localization.LocalizableMessageFactory;
-import com.sun.istack.internal.localization.Localizer;
-
 import java.util.Locale;
 import java.util.ResourceBundle;
+import com.sun.istack.internal.localization.LocalizableMessageFactory;
+import com.sun.istack.internal.localization.LocalizableMessageFactory.ResourceBundleSupplier;
+import com.sun.istack.internal.localization.Localizer;
 
 
 /**
@@ -37,12 +37,20 @@ import java.util.ResourceBundle;
  *
  */
 public final class ProcessorMessages {
-    private final static String BUNDLE_NAME = "com.sun.tools.internal.ws.resources.processor";
-    private final static LocalizableMessageFactory messageFactory =
-        new LocalizableMessageFactory(BUNDLE_NAME, ProcessorMessages::getResourceBundle);
-    private final static Localizer localizer = new Localizer();
 
-    private static ResourceBundle getResourceBundle(Locale locale) {
-        return ResourceBundle.getBundle(BUNDLE_NAME, locale);
+    private final static String BUNDLE_NAME = "com.sun.tools.internal.ws.resources.processor";
+    private final static LocalizableMessageFactory MESSAGE_FACTORY = new LocalizableMessageFactory(BUNDLE_NAME, new ProcessorMessages.BundleSupplier());
+    private final static Localizer LOCALIZER = new Localizer();
+
+    private static class BundleSupplier
+        implements ResourceBundleSupplier
+    {
+
+
+        public ResourceBundle getResourceBundle(Locale locale) {
+            return ResourceBundle.getBundle(BUNDLE_NAME, locale);
+        }
+
     }
+
 }

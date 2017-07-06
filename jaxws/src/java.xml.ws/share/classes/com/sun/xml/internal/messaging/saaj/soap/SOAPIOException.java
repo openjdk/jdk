@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public class SOAPIOException extends IOException {
         soapException.fillInStackTrace();
     }
 
+    @Override
     public Throwable fillInStackTrace() {
         if (soapException != null) {
             soapException.fillInStackTrace();
@@ -71,26 +72,32 @@ public class SOAPIOException extends IOException {
         return this;
     }
 
+    @Override
     public String getLocalizedMessage() {
         return soapException.getLocalizedMessage();
     }
 
+    @Override
     public String getMessage() {
         return soapException.getMessage();
     }
 
+    @Override
     public void printStackTrace() {
         soapException.printStackTrace();
     }
 
+    @Override
     public void printStackTrace(PrintStream s) {
         soapException.printStackTrace(s);
     }
 
+    @Override
     public void printStackTrace(PrintWriter s) {
         soapException.printStackTrace(s);
     }
 
+    @Override
     public String toString() {
         return soapException.toString();
     }

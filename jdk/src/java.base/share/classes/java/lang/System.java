@@ -47,6 +47,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -2069,8 +2071,8 @@ public final class System {
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         SharedSecrets.setJavaLangAccess(new JavaLangAccess() {
-            public Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes) {
-                return klass.getMethodOrNull(name, parameterTypes);
+            public List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes) {
+                return klass.getDeclaredPublicMethods(name, parameterTypes);
             }
             public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
@@ -2094,7 +2096,7 @@ public final class System {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
             public <E extends Enum<E>>
-                    E[] getEnumConstantsShared(Class<E> klass) {
+            E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
             public void blockedOn(Thread t, Interruptible b) {
@@ -2121,9 +2123,6 @@ public final class System {
             }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
-            }
-            public Stream<Package> packages(ClassLoader cl) {
-                return cl.packages();
             }
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);
@@ -2163,8 +2162,17 @@ public final class System {
             public void addOpensToAllUnnamed(Module m, String pn) {
                 m.implAddOpensToAllUnnamed(pn);
             }
+            public void addOpensToAllUnnamed(Module m, Iterator<String> packages) {
+                m.implAddOpensToAllUnnamed(packages);
+            }
             public void addUses(Module m, Class<?> service) {
                 m.implAddUses(service);
+            }
+            public boolean isReflectivelyExported(Module m, String pn, Module other) {
+                return m.isReflectivelyExported(pn, other);
+            }
+            public boolean isReflectivelyOpened(Module m, String pn, Module other) {
+                return m.isReflectivelyOpened(pn, other);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();

@@ -26,13 +26,16 @@
 /**
  * Defines the JavaBeans Activation Framework (JAF) API.
  *
+ * <p> This module is upgradeble.
+ *
  * @moduleGraph
  * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
 module java.activation {
-    requires transitive java.datatransfer;
     requires java.logging;
+
+    requires transitive java.datatransfer;
 
     exports javax.activation;
 }

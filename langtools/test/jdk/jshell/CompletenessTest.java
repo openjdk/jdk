@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842
+ * @bug 8149524 8131024 8165211 8080071 8130454 8167343 8129559 8114842 8182268
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -208,8 +208,11 @@ public class CompletenessTest extends KullaTesting {
                 break;
 
             case DEFINITELY_INCOMPLETE:
-            case CONSIDERED_INCOMPLETE:
                 augSrc = null;
+                break;
+
+            case CONSIDERED_INCOMPLETE:
+                augSrc = source + ";";
                 break;
 
             case EMPTY:

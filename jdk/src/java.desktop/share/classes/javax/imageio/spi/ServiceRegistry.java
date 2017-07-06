@@ -104,9 +104,8 @@ import java.util.ServiceLoader;
  * sees fit, so long as it has the appropriate runtime permission.
  *
  * <p> For more details on declaring service providers, and the JAR
- * format in general, see the <a
- * href="../../../../technotes/guides/jar/jar.html">
- * JAR File Specification</a>.
+ * format in general, see the
+ * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>.
  *
  * @see RegisterableService
  * @see java.util.ServiceLoader

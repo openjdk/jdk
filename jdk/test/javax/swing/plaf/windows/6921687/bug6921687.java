@@ -27,8 +27,8 @@
  * @summary Mnemonic disappears after repeated attempts to open menu items using
  *          mnemonics
  * @author Semyon Sadetsky
- * @library /lib/testlibrary
- * @build jdk.testlibrary.Platform
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires (os.family == "windows")
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @run main bug6921687
@@ -41,7 +41,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class bug6921687 {
 

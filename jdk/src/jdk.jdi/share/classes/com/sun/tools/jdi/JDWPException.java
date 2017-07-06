@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,20 @@
  */
 
 package com.sun.tools.jdi;
-import com.sun.jdi.*;
+
+import com.sun.jdi.ClassNotPreparedException;
+import com.sun.jdi.InconsistentDebugInfoException;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidModuleException;
+import com.sun.jdi.InvalidStackFrameException;
+import com.sun.jdi.ObjectCollectedException;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VMOutOfMemoryException;
 
 class JDWPException extends Exception {
+
     private static final long serialVersionUID = -6321344442751299874L;
+
     short errorCode;
 
     JDWPException(short errorCode) {

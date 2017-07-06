@@ -27,6 +27,7 @@ package java.io;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.BitSet;
 import java.util.Locale;
 import java.util.Properties;
 import sun.security.action.GetPropertyAction;
@@ -586,24 +587,12 @@ class WinNTFileSystem extends FileSystem {
 
     @Override
     public File[] listRoots() {
-        int ds = listRoots0();
-        int n = 0;
-        for (int i = 0; i < 26; i++) {
-            if (((ds >> i) & 1) != 0) {
-                if (!access((char)('A' + i) + ":" + slash))
-                    ds &= ~(1 << i);
-                else
-                    n++;
-            }
-        }
-        File[] fs = new File[n];
-        int j = 0;
-        char slash = this.slash;
-        for (int i = 0; i < 26; i++) {
-            if (((ds >> i) & 1) != 0)
-                fs[j++] = new File((char)('A' + i) + ":" + slash);
-        }
-        return fs;
+        return BitSet
+            .valueOf(new long[] {listRoots0()})
+            .stream()
+            .mapToObj(i -> new File((char)('A' + i) + ":" + slash))
+            .filter(f -> access(f.getPath()) && f.exists())
+            .toArray(File[]::new);
     }
 
     private static native int listRoots0();

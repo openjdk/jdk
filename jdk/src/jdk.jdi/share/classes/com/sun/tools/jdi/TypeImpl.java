@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
-public abstract class TypeImpl extends MirrorImpl implements Type
-{
+public abstract class TypeImpl extends MirrorImpl implements Type {
     private String myName = null;
 
-    TypeImpl(VirtualMachine vm)
-    {
+    TypeImpl(VirtualMachine vm) {
         super(vm);
     }
 
@@ -49,8 +48,7 @@ public abstract class TypeImpl extends MirrorImpl implements Type
     public boolean equals(Object obj) {
         if ((obj != null) && (obj instanceof Type)) {
             Type other = (Type)obj;
-            return signature().equals(other.signature()) &&
-                   super.equals(obj);
+            return signature().equals(other.signature()) && super.equals(obj);
         } else {
             return false;
         }

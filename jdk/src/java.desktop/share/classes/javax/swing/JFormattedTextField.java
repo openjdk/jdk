@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,15 @@ import javax.swing.text.*;
  * <code>JFormattedTextField</code> allows
  * configuring what action should be taken when focus is lost. The possible
  * configurations are:
- * <table summary="Possible JFormattedTextField configurations and their descriptions">
- * <tr><th><p style="text-align:left">Value</p></th><th><p style="text-align:left">Description</p></th></tr>
+ *
+ * <table class="striped">
+ * <caption>Possible JFormattedTextField configurations and their descriptions
+ * </caption>
+ * <thead>
+ * <tr><th>Value</th>
+ * <th>Description</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>JFormattedTextField.REVERT
  *            <td>Revert the display to match that of <code>getValue</code>,
  *                possibly losing the current edit.
@@ -71,6 +78,7 @@ import javax.swing.text.*;
  *        <tr><td>JFormattedTextField.PERSIST
  *            <td>Do nothing, don't obtain a new
  *                <code>AbstractFormatter</code>, and don't update the value.
+ * </tbody>
  * </table>
  * The default is <code>JFormattedTextField.COMMIT_OR_REVERT</code>,
  * refer to {@link #setFocusLostBehavior} for more information on this.

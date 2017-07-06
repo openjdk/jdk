@@ -31,6 +31,8 @@
  */
 module java.datatransfer {
     exports java.awt.datatransfer;
+
     exports sun.datatransfer to java.desktop;
+
     uses sun.datatransfer.DesktopDatatransferService;
 }

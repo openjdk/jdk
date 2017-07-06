@@ -23,10 +23,9 @@
 
 package jdk.test.lib;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.RandomAccessFile;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -208,12 +207,13 @@ public class Platform {
      * Return a boolean for whether we expect to be able to attach
      * the SA to our own processes on this system.
      */
-    public static boolean shouldSAAttach() throws Exception {
-
+    public static boolean shouldSAAttach() throws IOException {
         if (isAix()) {
-            return false;   // SA not implemented.
+            return false; // SA not implemented.
         } else if (isLinux()) {
-            if (isS390x()) { return false; }   // SA not implemented.
+            if (isS390x()) {
+                return false; // SA not implemented.
+            }
             return canPtraceAttachLinux();
         } else if (isOSX()) {
             return canAttachOSX();
@@ -229,13 +229,15 @@ public class Platform {
      * if we are root, so return true.  Then return false for an expected denial
      * if "ptrace_scope" is 1, and true otherwise.
      */
-    public static boolean canPtraceAttachLinux() throws Exception {
-
+    private static boolean canPtraceAttachLinux() throws IOException {
         // SELinux deny_ptrace:
-        String deny_ptrace = fileAsString("/sys/fs/selinux/booleans/deny_ptrace");
-        if (deny_ptrace != null && deny_ptrace.contains("1")) {
-            // ptrace will be denied:
-            return false;
+        File deny_ptrace = new File("/sys/fs/selinux/booleans/deny_ptrace");
+        if (deny_ptrace.exists()) {
+            try (RandomAccessFile file = new RandomAccessFile(deny_ptrace, "r")) {
+                if (file.readByte() != '0') {
+                    return false;
+                }
+            }
         }
 
         // YAMA enhanced security ptrace_scope:
@@ -243,14 +245,17 @@ public class Platform {
         // 1 - restricted ptrace: a process must be a children of the inferior or user is root
         // 2 - only processes with CAP_SYS_PTRACE may use ptrace or user is root
         // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
-        String ptrace_scope = fileAsString("/proc/sys/kernel/yama/ptrace_scope");
-        if (ptrace_scope != null) {
-            if (ptrace_scope.startsWith("3")) {
-                return false;
-            }
-            if (!userName.equals("root") && !ptrace_scope.startsWith("0")) {
-                // ptrace will be denied:
-                return false;
+        File ptrace_scope = new File("/proc/sys/kernel/yama/ptrace_scope");
+        if (ptrace_scope.exists()) {
+            try (RandomAccessFile file = new RandomAccessFile(ptrace_scope, "r")) {
+                byte yama_scope = file.readByte();
+                if (yama_scope == '3') {
+                    return false;
+                }
+
+                if (!userName.equals("root") && yama_scope != '0') {
+                    return false;
+                }
             }
         }
         // Otherwise expect to be permitted:
@@ -260,7 +265,7 @@ public class Platform {
     /**
      * On OSX, expect permission to attach only if we are root.
      */
-    public static boolean canAttachOSX() throws Exception {
+    private static boolean canAttachOSX() {
         return userName.equals("root");
     }
 
@@ -268,11 +273,5 @@ public class Platform {
         return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
                       .matcher(osArch)
                       .matches();
-    }
-
-    private static String fileAsString(String filename) throws IOException {
-        Path filePath = Paths.get(filename);
-        if (!Files.exists(filePath)) return null;
-        return new String(Files.readAllBytes(filePath));
     }
 }

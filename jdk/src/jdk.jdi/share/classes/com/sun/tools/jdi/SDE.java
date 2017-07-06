@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 class SDE {
     private static final int INIT_SIZE_FILE = 3;
@@ -78,6 +77,7 @@ class SDE {
         int jplsEnd;
         int jplsLineInc;
         int njplsStart;
+        @SuppressWarnings("unused")
         int njplsEnd;
         int fileId;
     }
@@ -115,7 +115,7 @@ class SDE {
             int fileIndexStart = stratumTable[sti].fileIndex;
             /* one past end */
             int fileIndexEnd = stratumTable[sti+1].fileIndex;
-            List<String> result = new ArrayList<String>(fileIndexEnd - fileIndexStart);
+            List<String> result = new ArrayList<>(fileIndexEnd - fileIndexStart);
             for (i = fileIndexStart; i < fileIndexEnd; ++i) {
                 result.add(fileTable[i].sourceName);
             }
@@ -134,7 +134,7 @@ class SDE {
             int fileIndexStart = stratumTable[sti].fileIndex;
             /* one past end */
             int fileIndexEnd = stratumTable[sti+1].fileIndex;
-            List<String> result = new ArrayList<String>(fileIndexEnd - fileIndexStart);
+            List<String> result = new ArrayList<>(fileIndexEnd - fileIndexStart);
             for (i = fileIndexStart; i < fileIndexEnd; ++i) {
                 result.add(fileTable[i].getSourcePath(refType));
             }
@@ -370,7 +370,7 @@ class SDE {
     }
 
     List<String> availableStrata() {
-        List<String> strata = new ArrayList<String>();
+        List<String> strata = new ArrayList<>();
 
         for (int i = 0; i < (stratumIndex-1); ++i) {
             StratumTableRecord rec = stratumTable[i];
@@ -470,7 +470,7 @@ class SDE {
     }
 
     void storeLine(int jplsStart, int jplsEnd, int jplsLineInc,
-                  int njplsStart, int njplsEnd, int fileId) {
+                   int njplsStart, int njplsEnd, int fileId) {
         assureLineTableSize();
         lineTable[lineIndex].jplsStart = jplsStart;
         lineTable[lineIndex].jplsEnd = jplsEnd;

@@ -72,8 +72,11 @@ BOOT_MODULES += \
     jdk.naming.rmi \
     #
 
+# Modules that directly or indirectly requiring upgradeable modules
+# should carefully be considered if it should be upgradeable or not.
 UPGRADEABLE_MODULES += \
     java.activation \
+    java.compiler \
     java.corba \
     java.transaction \
     java.xml.bind \
@@ -82,10 +85,9 @@ UPGRADEABLE_MODULES += \
     jdk.internal.vm.compiler \
     #
 
-# Modules explicitly declared as not being upgradeable even though they require
-# an upgradeable module.
-NON_UPGRADEABLE_MODULES += \
-    jdk.aot \
+UPGRADEABLE_TOOL_MODULES += \
+    jdk.xml.bind \
+    jdk.xml.ws \
     #
 
 AGGREGATOR_MODULES += \
@@ -99,7 +101,6 @@ PLATFORM_MODULES += \
     #
 
 PLATFORM_MODULES += \
-    java.compiler \
     java.scripting \
     java.security.jgss \
     java.smartcardio \
@@ -175,13 +176,10 @@ DOCS_MODULES += \
     jdk.policytool \
     jdk.rmic \
     jdk.scripting.nashorn \
-    jdk.scripting.nashorn.shell \
     jdk.sctp \
     jdk.security.auth \
     jdk.security.jgss \
-    jdk.xml.bind \
     jdk.xml.dom \
-    jdk.xml.ws \
     jdk.zipfs \
     #
 
@@ -384,15 +382,8 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(filter-out $(MODULES_FILTER) $(NON_UPGRADEABLE_MODULES), \
-        $(sort $(UPGRADEABLE_MODULES) $(foreach m, \
-            $(filter-out $(UPGRADEABLE_MODULES), $(call FindAllModules)), \
-          $(if $(filter $(UPGRADEABLE_MODULES), \
-              $(call FindTransitiveDepsForModule, $m)), \
-            $m \
-          ) \
-        )) \
-    )
+    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES) $(UPGRADEABLE_TOOL_MODULES)))
+
 
 ################################################################################
 

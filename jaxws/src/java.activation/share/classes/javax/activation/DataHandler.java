@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,7 @@ public class DataHandler implements Transferable {
      * Otherwise, {@code null} is returned.
      *
      * @return the OutputStream
+     * @exception       IOException     for failures creating the OutputStream
      *
      * @see javax.activation.DataSource#getOutputStream
      * @see javax.activation.URLDataSource

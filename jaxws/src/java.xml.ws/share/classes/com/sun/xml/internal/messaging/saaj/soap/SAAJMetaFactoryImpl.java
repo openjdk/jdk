@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class SAAJMetaFactoryImpl extends SAAJMetaFactory {
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
+    @Override
     protected  MessageFactory newMessageFactory(String protocol)
         throws SOAPException {
         if (SOAPConstants.SOAP_1_1_PROTOCOL.equals(protocol)) {
@@ -60,6 +61,7 @@ public class SAAJMetaFactoryImpl extends SAAJMetaFactory {
         }
     }
 
+    @Override
     protected  SOAPFactory newSOAPFactory(String protocol)
         throws SOAPException {
         if (SOAPConstants.SOAP_1_1_PROTOCOL.equals(protocol)) {

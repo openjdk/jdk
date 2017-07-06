@@ -1560,7 +1560,7 @@ void CompileBroker::compiler_thread_loop() {
 
   // First thread to get here will initialize the compiler interface
 
-  if (!ciObjectFactory::is_initialized()) {
+  {
     ASSERT_IN_VM;
     MutexLocker only_one (CompileThread_lock, thread);
     if (!ciObjectFactory::is_initialized()) {
