@@ -595,12 +595,12 @@ public class EdgeCases extends ModuleTestBase {
 
                 System.out.println("from directives:");
                 for (RequiresDirective rd : ElementFilter.requiresIn(testE.getDirectives())) {
-                    System.out.println(rd.getDependency().getSimpleName());
+                    System.out.println(rd.getDependency().getQualifiedName());
                 }
 
                 System.out.println("from requires:");
                 for (RequiresDirective rd : ((ModuleSymbol) testE).requires) {
-                    System.out.println(rd.getDependency().getSimpleName());
+                    System.out.println(rd.getDependency().getQualifiedName());
                 }
             }
 

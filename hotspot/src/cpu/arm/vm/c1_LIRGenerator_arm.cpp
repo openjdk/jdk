@@ -923,8 +923,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   } else {
     left_arg->load_item();
     if (x->op() == Bytecodes::_imul && right_arg->is_constant()) {
-      int c = right_arg->get_jint_constant();
-      if (c > 0 && (is_power_of_2(c) || is_power_of_2(c - 1) || is_power_of_2(c + 1))) {
+      jint c = right_arg->get_jint_constant();
+      if (c > 0 && c < max_jint && (is_power_of_2(c) || is_power_of_2(c - 1) || is_power_of_2(c + 1))) {
         right_arg->dont_load_item();
       } else {
         right_arg->load_item();

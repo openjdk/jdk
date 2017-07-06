@@ -320,15 +320,15 @@ public final class InternetHeaders {
      * @return list of header lines.
      */
     public List<String> getAllHeaderLines() {
-        if(headerValueView==null)
+        if (headerValueView == null)
             headerValueView = new AbstractList<String>() {
                 @Override
-                                public String get(int index) {
+                public String get(int index) {
                     return headers.get(index).line;
                 }
 
                 @Override
-                                public int size() {
+                public int size() {
                     return headers.size();
                 }
             };

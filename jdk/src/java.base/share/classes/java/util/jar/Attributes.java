@@ -44,7 +44,7 @@ import java.util.Comparator;
  * the ASCII characters in the set [0-9a-zA-Z_-], and cannot exceed 70
  * characters in length. Attribute values can contain any characters and
  * will be UTF8-encoded when written to the output stream.  See the
- * <a href="../../../../technotes/guides/jar/jar.html">JAR File Specification</a>
+ * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>
  * for more information about valid attribute names and values.
  *
  * <p>This map and its views have a predictable iteration order, namely the
@@ -443,7 +443,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * to the ASCII characters in the set [0-9a-zA-Z_-], and cannot exceed
      * 70 characters in length. Attribute values can contain any characters
      * and will be UTF8-encoded when written to the output stream.  See the
-     * <a href="../../../../technotes/guides/jar/jar.html">JAR File Specification</a>
+     * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>
      * for more information about valid attribute names and values.
      */
     public static class Name {
@@ -529,7 +529,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * {@code Name} object for {@code Manifest-Version}
          * manifest attribute. This attribute indicates the version number
          * of the manifest standard to which a JAR file's manifest conforms.
-         * @see <a href="../../../../technotes/guides/jar/jar.html#JAR_Manifest">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#JAR_Manifest">
          *      Manifest and Signature Specification</a>
          */
         public static final Name MANIFEST_VERSION = new Name("Manifest-Version");
@@ -537,7 +537,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Signature-Version}
          * manifest attribute used when signing JAR files.
-         * @see <a href="../../../../technotes/guides/jar/jar.html#JAR_Manifest">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#JAR_Manifest">
          *      Manifest and Signature Specification</a>
          */
         public static final Name SIGNATURE_VERSION = new Name("Signature-Version");
@@ -551,7 +551,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Class-Path}
          * manifest attribute.
-         * @see <a href="../../../../technotes/guides/jar/jar.html#classpath">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#classpath">
          *      JAR file specification</a>
          */
         public static final Name CLASS_PATH = new Name("Class-Path");
@@ -568,7 +568,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         /**
          * {@code Name} object for {@code Sealed} manifest attribute
          * used for sealing.
-         * @see <a href="../../../../technotes/guides/jar/jar.html#sealing">
+         * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
          *      Package Sealing</a>
          */
         public static final Name SEALED = new Name("Sealed");

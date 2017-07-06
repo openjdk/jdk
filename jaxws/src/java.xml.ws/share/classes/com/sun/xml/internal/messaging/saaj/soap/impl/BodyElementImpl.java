@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
+import org.w3c.dom.Element;
 
 /**
  * All elements of the SOAP-ENV:BODY.
@@ -47,6 +48,11 @@ public abstract class BodyElementImpl
         super(ownerDoc, qname);
     }
 
+    public BodyElementImpl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
+    @Override
     public void setParentElement(SOAPElement element) throws SOAPException {
         if (! (element instanceof SOAPBody)) {
             log.severe("SAAJ0101.impl.parent.of.body.elem.mustbe.body");

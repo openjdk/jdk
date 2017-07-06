@@ -46,63 +46,36 @@
  * <h2>Package Specification</h2>
  *
  * <ul>
- *   <li><a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *     <b>Java&trade;
- *     Cryptography Architecture (JCA) Reference Guide</b></a></li>
+ *   <li> {@extLink security_guide_jca
+ *     Java Cryptography Architecture (JCA) Reference Guide}</li>
  *
  *   <li>PKCS #8: Private-Key Information Syntax Standard, Version 1.2,
  *     November 1993</li>
  *
  *   <li><a href="{@docRoot}/../specs/security/standard-names.html">
- *     <b>Java&trade; Security Standard Algorithm Names Specification
- *     </b></a></li>
+ *     Java Security Standard Algorithm Names Specification
+ *     </a></li>
  * </ul>
  *
  * <h2>Related Documentation</h2>
  *
  * For further documentation, please see:
  * <ul>
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/spec/security-spec.doc.html">
- *     <b>Java&trade;
- *     SE Platform Security Architecture</b></a></li>
+ *   <li> {@extLink security_guide_overview
+ *     Java Security Overview} </li>
  *
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
- *     <b>How to Implement a Provider in the
- *     Java&trade; Cryptography Architecture
- *     </b></a></li>
+ *   <li> {@extLink security_guide_impl_provider
+ *     How to Implement a Provider in the Java Cryptography Architecture}</li>
  *
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/PolicyFiles.html"><b>
- *     Default Policy Implementation and Policy File Syntax
- *     </b></a></li>
+ *   <li> {@extLink security_guide_default_policy
+ *     Default Policy Implementation and Policy File Syntax}</li>
  *
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/permissions.html"><b>
- *     Permissions in the
- *     Java&trade; SE Development Kit (JDK)
- *     </b></a></li>
+ *   <li> {@extLink security_guide_permissions
+ *     Permissions in the Java Development Kit (JDK)}</li>
  *
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/SecurityToolsSummary.html"><b>
- *     Summary of Tools for
- *     Java&trade; Platform Security
- *     </b></a></li>
- *
- *   <li><b>keytool</b>
- *     (<a href="{@docRoot}/../technotes/tools/unix/keytool.html">
- *       for Solaris/Linux</a>)
- *     (<a href="{@docRoot}/../technotes/tools/windows/keytool.html">
- *       for Windows</a>)
- *     </li>
- *
- *   <li><b>jarsigner</b>
- *     (<a href="{@docRoot}/../technotes/tools/unix/jarsigner.html">
- *       for Solaris/Linux</a>)
- *     (<a href="{@docRoot}/../technotes/tools/windows/jarsigner.html">
- *       for Windows</a>)
- *     </li>
+ *   <li> {@extLink security_guide_tools
+ *     Summary of Tools for Java Platform Security}
+ *     (for example {@code keytool} and {@code jarsigner}),</li>
  *
  * </ul>
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ package javax.xml.ws;
 
 import java.util.concurrent.Future;
 
+
 /** The {@code Dispatch} interface provides support
  *  for the dynamic invocation of a service endpoint operations. The
  *  {@code javax.xml.ws.Service}
  *  class acts as a factory for the creation of {@code Dispatch}
  *  instances.
  *
+ * @param <T> The type of the message or payload
  *  @since 1.6, JAX-WS 2.0
 **/
 public interface Dispatch<T> extends BindingProvider {

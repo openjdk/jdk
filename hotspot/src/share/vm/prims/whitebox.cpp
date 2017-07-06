@@ -1522,15 +1522,6 @@ WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jo
   Modules::add_reads_module(from_module, source_module, CHECK);
 WB_END
 
-WB_ENTRY(void, WB_AddModulePackage(JNIEnv* env, jobject o, jclass module, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  Modules::add_module_package(module, package_name, CHECK);
-WB_END
-
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
   if (inc < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1966,8 +1957,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExports },
   {CC"AddReadsModule",     CC"(Ljava/lang/Object;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddReadsModule },
-  {CC"AddModulePackage",   CC"(Ljava/lang/Object;Ljava/lang/String;)V",
-                                                      (void*)&WB_AddModulePackage },
   {CC"AddModuleExportsToAllUnnamed", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModuleExportsToAllUnnamed },
   {CC"AddModuleExportsToAll", CC"(Ljava/lang/Object;Ljava/lang/String;)V",

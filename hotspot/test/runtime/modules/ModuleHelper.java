@@ -49,12 +49,6 @@ public class ModuleHelper {
         java.lang.ModuleHelper.addReadsNoSync((Module)from, (Module)to);
     }
 
-    public static void AddModulePackage(Object m, String pkg) throws Throwable {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        wb.AddModulePackage(m, pkg);
-        java.lang.ModuleHelper.addPackageNoSync((Module)m, pkg);
-    }
-
     public static void AddModuleExportsToAllUnnamed(Object m, String pkg) throws Throwable {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.AddModuleExportsToAllUnnamed(m, pkg);

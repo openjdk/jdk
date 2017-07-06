@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
  */
 package com.sun.tools.jdi;
 
-import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Map;
+
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
 
 /*
  * An AttachingConnector that uses the SocketTransportService
@@ -66,7 +65,6 @@ public class SocketAttachingConnector extends GenericAttachingConnector {
                 return "dt_socket";     // for compatibility reasons
             }
         };
-
     }
 
     /*
@@ -74,7 +72,7 @@ public class SocketAttachingConnector extends GenericAttachingConnector {
      * arguments and attach to the target VM.
      */
     public VirtualMachine
-        attach(Map<String,? extends Connector.Argument> arguments)
+        attach(Map<String, ? extends Connector.Argument> arguments)
         throws IOException, IllegalConnectorArgumentsException
     {
         String host = argument(ARG_HOST, arguments).value();

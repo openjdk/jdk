@@ -59,9 +59,9 @@ import java.io.IOException;
  * {@link java.lang.instrument} for a detailed description on how these agents
  * are loaded and started). The {@link #loadAgentLibrary loadAgentLibrary} and
  * {@link #loadAgentPath loadAgentPath} methods are used to load agents that
- * are deployed either in a dynamic library or statically linked into the VM and make use of the <a
- * href="../../../../../../../../technotes/guides/jvmti/index.html">JVM Tools
- * Interface</a>. </p>
+ * are deployed either in a dynamic library or statically linked into the VM and
+ * make use of the <a href="{@docRoot}/../specs/jvmti.html">JVM Tools Interface</a>.
+ * </p>
  *
  * <p> In addition to loading agents a VirtualMachine provides read access to the
  * {@link java.lang.System#getProperties() system properties} in the target VM.
@@ -289,8 +289,8 @@ public abstract class VirtualMachine {
     /**
      * Loads an agent library.
      *
-     * <p> A <a href="../../../../../../../../technotes/guides/jvmti/index.html">JVM
-     * TI</a> client is called an <i>agent</i>. It is developed in a native language.
+     * <p> A <a href="{@docRoot}/../specs/jvmti.html">JVM TI</a>
+     * client is called an <i>agent</i>. It is developed in a native language.
      * A JVM TI agent is deployed in a platform specific manner but it is typically the
      * platform equivalent of a dynamic library. Alternatively, it may be statically linked into the VM.
      * This method causes the given agent library to be loaded into the target
@@ -298,8 +298,8 @@ public abstract class VirtualMachine {
      * It then causes the target VM to invoke the {@code Agent_OnAttach} function
      * or, for a statically linked agent named 'L', the {@code Agent_OnAttach_L} function
      * as specified in the
-     * <a href="../../../../../../../../technotes/guides/jvmti/index.html"> JVM Tools
-     * Interface</a> specification. Note that the {@code Agent_OnAttach[_L]}
+     * <a href="{@docRoot}/../specs/jvmti.html">JVM Tools Interface</a> specification.
+     * Note that the {@code Agent_OnAttach[_L]}
      * function is invoked even if the agent library was loaded prior to invoking
      * this method.
      *
@@ -380,8 +380,8 @@ public abstract class VirtualMachine {
     /**
      * Load a native agent library by full pathname.
      *
-     * <p> A <a href="../../../../../../../../technotes/guides/jvmti/index.html">JVM
-     * TI</a> client is called an <i>agent</i>. It is developed in a native language.
+     * <p> A <a href="{@docRoot}/../specs/jvmti.html">JVM TI</a>
+     * client is called an <i>agent</i>. It is developed in a native language.
      * A JVM TI agent is deployed in a platform specific manner but it is typically the
      * platform equivalent of a dynamic library. Alternatively, the native
      * library specified by the agentPath parameter may be statically
@@ -397,8 +397,7 @@ public abstract class VirtualMachine {
      * It then causes the target VM to invoke the {@code Agent_OnAttach}
      * function or, for a statically linked agent named 'L', the
      * {@code Agent_OnAttach_L} function as specified in the
-     * <a href="../../../../../../../../technotes/guides/jvmti/index.html"> JVM Tools
-     * Interface</a> specification.
+     * <a href="{@docRoot}/../specs/jvmti.html">JVM Tools Interface</a> specification.
      * Note that the {@code Agent_OnAttach[_L]}
      * function is invoked even if the agent library was loaded prior to invoking
      * this method.
@@ -611,9 +610,9 @@ public abstract class VirtualMachine {
      * way as on the command line, you need to specify at least the
      * {@code com.sun.management.jmxremote.port} property.
      *
-     * <p> See the online documentation for <a
-     * href="../../../../../../../../technotes/guides/management/agent.html">
-     * Monitoring and Management Using JMX Technology</a> for further details.
+     * <p> See the online documentation for
+     * {@extLink monitoring_and_management_using_jmx_technology
+     * Monitoring and Management Using JMX Technology} for further details.
      *
      * @param   agentProperties
      *          A Properties object containing the configuration properties
@@ -642,9 +641,9 @@ public abstract class VirtualMachine {
     /**
      * Starts the local JMX management agent in the target virtual machine.
      *
-     * <p> See the online documentation for <a
-     * href="../../../../../../../../technotes/guides/management/agent.html">
-     * Monitoring and Management Using JMX Technology</a> for further details.
+     * <p> See the online documentation for
+     * {@extLink monitoring_and_management_using_jmx_technology
+     * Monitoring and Management Using JMX Technology} for further details.
      *
      * @return  The String representation of the local connector's service address.
      *          The value can be parsed by the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,14 @@ import java.io.Serializable;
  * constructor can be used to create an arbitrary doc flavor.
  * <UL>
  * <LI>Preformatted text
- * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
+ * <table class="striped">
+ * <caption>MIME-Types and their descriptions</caption>
+ * <thead>
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
  * </TR>
+ * </thead>
+ * <tbody>
  * <TR>
  * <TD>{@code "text/plain"}</TD>
  * <TD>Plain text in the default character set (US-ASCII)</TD>
@@ -214,6 +218,7 @@ import java.io.Serializable;
  * <TD><code>"text/html; charset=<I>xxx</I>"</code></TD>
  * <TD>HyperText Markup Language in character set <I>xxx</I></TD>
  * </TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * In general, preformatted text print data is provided either in a character
@@ -222,11 +227,15 @@ import java.io.Serializable;
  *
  *  <LI>Preformatted page description language (PDL) documents
  *
- * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
+ * <table class="striped">
+ * <caption>MIME-Types and their descriptions</caption>
+ * <thead>
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
  * </TR>
- *<TR>
+ * </thead>
+ * <tbody>
+ * <TR>
  * <TD>{@code "application/pdf"}</TD>
  * <TD>Portable Document Format document</TD>
  * </TR>
@@ -238,6 +247,7 @@ import java.io.Serializable;
  * <TD>{@code "application/vnd.hp-PCL"}</TD>
  * <TD>Printer Control Language document</TD>
  * </TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * In general, preformatted PDL print data is provided in a byte oriented
@@ -245,11 +255,14 @@ import java.io.Serializable;
  *
  *  <LI>Preformatted images
  *
- * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
+ * <table class="striped">
+ * <caption>MIME-Types and their descriptions</caption>
+ * <thead>
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
  * </TR>
- *
+ * </thead>
+ * <tbody>
  * <TR>
  * <TD>{@code "image/gif"}</TD>
  * <TD>Graphics Interchange Format image</TD>
@@ -262,6 +275,7 @@ import java.io.Serializable;
  * <TD>{@code "image/png"}</TD>
  * <TD>Portable Network Graphics image</TD>
  * </TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * In general, preformatted image print data is provided in a byte oriented
@@ -269,14 +283,19 @@ import java.io.Serializable;
  *
  *  <LI>Preformatted autosense print data
  *
- * <TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 SUMMARY="MIME-Types and their descriptions">
+ * <table class="striped">
+ * <caption>MIME-Types and their descriptions</caption>
+ * <thead>
  * <TR>
  *  <TH>MIME-Type</TH><TH>Description</TH>
  * </TR>
- *
+ * </thead>
+ * <tbody>
  * <TR>
  * <TD>{@code "application/octet-stream"}</TD>
  * <TD>The print data format is unspecified (just an octet stream)</TD>
+ * </TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * The printer decides how to interpret the print data; the way this

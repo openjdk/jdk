@@ -26,7 +26,6 @@
 package jdk.incubator.http;
 
 import java.io.IOException;
-import jdk.incubator.http.RequestProcessors.ProcessorBase;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import jdk.incubator.http.internal.common.MinimalFuture;
@@ -50,11 +49,8 @@ abstract class ExchangeImpl<T> {
     final Exchange<T> exchange;
 
     ExchangeImpl(Exchange<T> e) {
+        // e == null means a http/2 pushed stream
         this.exchange = e;
-        if (e != null) {
-            // e == null means a http/2 pushed stream, therefore no request
-            setClientForRequest(e.requestProcessor);
-        }
     }
 
     final Exchange<T> getExchange() {
@@ -133,22 +129,6 @@ abstract class ExchangeImpl<T> {
     abstract CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
                                                 boolean returnConnectionToPool,
                                                 Executor executor);
-
-    // Builtin processors need access to HttpClientImpl
-    final void setClientForResponse(HttpResponse.BodyProcessor<T> proc) {
-        if (proc instanceof ResponseProcessors.AbstractProcessor) {
-            ResponseProcessors.AbstractProcessor<T> abProc =
-                    (ResponseProcessors.AbstractProcessor<T>)proc;
-            abProc.setClient(exchange.client());
-        }
-    }
-
-    final void setClientForRequest(HttpRequest.BodyProcessor proc) {
-        if (proc instanceof ProcessorBase) {
-            ProcessorBase abProc = (ProcessorBase)proc;
-            abProc.setClient(exchange.client());
-        }
-    }
 
     /**
      * Async version of getResponse. Completes before body is read.

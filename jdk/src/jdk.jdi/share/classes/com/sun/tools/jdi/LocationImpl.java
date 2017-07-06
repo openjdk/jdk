@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.*;
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.VirtualMachine;
 
 public class LocationImpl extends MirrorImpl implements Location {
     private final ReferenceTypeImpl declaringType;
@@ -37,10 +39,8 @@ public class LocationImpl extends MirrorImpl implements Location {
     private LineInfo baseLineInfo = null;
     private LineInfo otherLineInfo = null;
 
-    LocationImpl(VirtualMachine vm,
-                 Method method, long codeIndex) {
+    LocationImpl(VirtualMachine vm, Method method, long codeIndex) {
         super(vm);
-
         this.method = method;
         this.codeIndex = method.isNative()? -1 : codeIndex;
         this.declaringType = (ReferenceTypeImpl)method.declaringType();
@@ -123,8 +123,7 @@ public class LocationImpl extends MirrorImpl implements Location {
 
         /* compute the line info */
         MethodImpl methodImpl = (MethodImpl)method();
-        lineInfo = methodImpl.codeIndexToLineInfo(stratum,
-                                                  codeIndex());
+        lineInfo = methodImpl.codeIndexToLineInfo(stratum, codeIndex());
 
         /* cache it */
         addBaseLineInfo(lineInfo);
@@ -142,8 +141,7 @@ public class LocationImpl extends MirrorImpl implements Location {
 
         /* check if there is cached info to use */
         lineInfo = otherLineInfo; // copy because of concurrency
-        if (lineInfo != null &&
-                           stratum.id().equals(lineInfo.liStratum())) {
+        if (lineInfo != null && stratum.id().equals(lineInfo.liStratum())) {
             return lineInfo;
         }
 
@@ -159,8 +157,7 @@ public class LocationImpl extends MirrorImpl implements Location {
         } else {
             /* find best match */
             MethodImpl methodImpl = (MethodImpl)method();
-            lineInfo = methodImpl.codeIndexToLineInfo(stratum,
-                                                      codeIndex());
+            lineInfo = methodImpl.codeIndexToLineInfo(stratum, codeIndex());
         }
 
         /* cache it */

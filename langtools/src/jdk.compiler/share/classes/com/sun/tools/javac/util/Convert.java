@@ -303,15 +303,26 @@ public class Convert {
 
 /* Conversion routines for qualified name splitting
  */
-    /** Return the last part of a class name.
+    /** Return the last part of a qualified name.
+     *  @param name the qualified name
+     *  @return the last part of the qualified name
      */
-    public static Name shortName(Name classname) {
-        return classname.subName(
-            classname.lastIndexOf((byte)'.') + 1, classname.getByteLength());
+    public static Name shortName(Name name) {
+        int start = name.lastIndexOf((byte)'.') + 1;
+        int end = name.getByteLength();
+        if (start == 0 && end == name.length()) {
+            return name;
+        }
+        return name.subName(
+            name.lastIndexOf((byte)'.') + 1, name.getByteLength());
     }
 
-    public static String shortName(String classname) {
-        return classname.substring(classname.lastIndexOf('.') + 1);
+    /** Return the last part of a qualified name from its string representation
+     *  @param name the string representation of the qualified name
+     *  @return the last part of the qualified name
+     */
+    public static String shortName(String name) {
+        return name.substring(name.lastIndexOf('.') + 1);
     }
 
     /** Return the package name of a class name, excluding the trailing '.',

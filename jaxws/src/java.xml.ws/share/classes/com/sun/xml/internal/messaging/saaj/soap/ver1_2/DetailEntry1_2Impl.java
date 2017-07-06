@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.soap.SOAPElement;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.DetailEntryImpl;
+import org.w3c.dom.Element;
 
 public class DetailEntry1_2Impl extends DetailEntryImpl {
 
@@ -47,6 +48,11 @@ public class DetailEntry1_2Impl extends DetailEntryImpl {
         super(ownerDoc, qname);
     }
 
+    public DetailEntry1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
+    @Override
     public SOAPElement setElementQName(QName newName) throws SOAPException {
         DetailEntryImpl copy =
             new DetailEntry1_2Impl((SOAPDocumentImpl) getOwnerDocument(), newName);

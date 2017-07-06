@@ -1,2 +1,2 @@
-Parens1.java:12:20: compiler.err.illegal.start.of.type
+Parens1.java:12:20: compiler.err.illegal.parenthesized.expression
 1 error

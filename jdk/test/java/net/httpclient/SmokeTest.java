@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8087112
+ * @bug 8087112 8178699
  * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver

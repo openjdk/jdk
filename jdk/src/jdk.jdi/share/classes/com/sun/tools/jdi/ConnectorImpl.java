@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,30 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.tools.jdi.*;
-import com.sun.jdi.*;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.InternalException;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.io.Serializable;
+
+import com.sun.jdi.InternalException;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.LaunchingConnector;
 
 abstract class ConnectorImpl implements Connector {
-    Map<String,Argument> defaultArguments = new java.util.LinkedHashMap<String,Argument>();
+
+    Map<String, Argument> defaultArguments = new LinkedHashMap<>();
 
     // Used by BooleanArgument
     static String trueString = null;
     static String falseString;
 
     public Map<String,Argument> defaultArguments() {
-        Map<String,Argument> defaults = new java.util.LinkedHashMap<String,Argument>();
+        Map<String,Argument> defaults = new LinkedHashMap<>();
         Collection<Argument> values = defaultArguments.values();
 
         Iterator<Argument> iter = values.iterator();
@@ -145,7 +147,7 @@ abstract class ConnectorImpl implements Connector {
     }
 
     @SuppressWarnings("serial") // JDK implementation class
-    abstract class ArgumentImpl implements Connector.Argument, Cloneable, Serializable {
+    abstract class ArgumentImpl implements Connector.Argument, Cloneable {
         private String name;
         private String label;
         private String description;
@@ -153,8 +155,7 @@ abstract class ConnectorImpl implements Connector {
         private boolean mustSpecify;
 
         ArgumentImpl(String name, String label, String description,
-                     String value,
-                     boolean mustSpecify) {
+                     String value, boolean mustSpecify) {
             this.name = name;
             this.label = label;
             this.description = description;
@@ -312,7 +313,7 @@ abstract class ConnectorImpl implements Connector {
             }
             try {
                 return isValid(Integer.decode(value).intValue());
-            } catch(NumberFormatException exc) {
+            } catch (NumberFormatException exc) {
                 return false;
             }
         }
@@ -378,11 +379,10 @@ abstract class ConnectorImpl implements Connector {
     }
 
     class StringArgumentImpl extends ConnectorImpl.ArgumentImpl
-                              implements Connector.StringArgument {
+                             implements Connector.StringArgument {
         private static final long serialVersionUID = 7500484902692107464L;
         StringArgumentImpl(String name, String label, String description,
-                           String value,
-                           boolean mustSpecify) {
+                           String value, boolean mustSpecify) {
             super(name, label, description, value, mustSpecify);
         }
 
@@ -404,7 +404,7 @@ abstract class ConnectorImpl implements Connector {
                              String value,
                              boolean mustSpecify, List<String> choices) {
             super(name, label, description, value, mustSpecify);
-            this.choices = Collections.unmodifiableList(new ArrayList<String>(choices));
+            this.choices = Collections.unmodifiableList(new ArrayList<>(choices));
         }
 
         /**

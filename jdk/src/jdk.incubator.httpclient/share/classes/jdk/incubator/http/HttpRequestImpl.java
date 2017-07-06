@@ -58,7 +58,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
      * Creates an HttpRequestImpl from the given builder.
      */
     public HttpRequestImpl(HttpRequestBuilderImpl builder) {
-        this.method = builder.method();
+        String method = builder.method();
+        this.method = method == null? "GET" : method;
         this.userHeaders = ImmutableHeaders.of(builder.headers().map(), ALLOWED_HEADERS);
         this.systemHeaders = new HttpHeadersImpl();
         this.uri = builder.uri();
@@ -77,7 +78,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
      * Creates an HttpRequestImpl from the given request.
      */
     public HttpRequestImpl(HttpRequest request) {
-        this.method = request.method();
+        String method = request.method();
+        this.method = method == null? "GET" : method;
         this.userHeaders = request.headers();
         if (request instanceof HttpRequestImpl) {
             this.systemHeaders = ((HttpRequestImpl) request).systemHeaders;

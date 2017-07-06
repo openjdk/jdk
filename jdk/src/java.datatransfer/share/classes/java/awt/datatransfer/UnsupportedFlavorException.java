@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@ package java.awt.datatransfer;
 
 /**
  * Signals that the requested data is not supported in this flavor.
- * @see Transferable#getTransferData
  *
- * @author      Amy Fowler
+ * @author Amy Fowler
+ * @see Transferable#getTransferData
  * @since 1.1
  */
 public class UnsupportedFlavorException extends Exception {
@@ -42,8 +42,8 @@ public class UnsupportedFlavorException extends Exception {
     /**
      * Constructs an UnsupportedFlavorException.
      *
-     * @param flavor the flavor object which caused the exception. May
-     *        be <code>null</code>.
+     * @param  flavor the flavor object which caused the exception. May be
+     *         {@code null}.
      */
     public UnsupportedFlavorException(DataFlavor flavor) {
         super((flavor != null) ? flavor.getHumanPresentableName() : null);

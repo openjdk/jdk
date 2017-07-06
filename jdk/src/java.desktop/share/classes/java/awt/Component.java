@@ -7237,12 +7237,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * recommendations for Windows and Unix are listed below. These
      * recommendations are used in the Sun AWT implementations.
      *
-     * <table border=1 summary="Recommended default values for a Component's focus traversal keys">
+     * <table class="striped">
+     * <caption>Recommended default values for a Component's focus traversal
+     * keys</caption>
+     * <thead>
      * <tr>
      *    <th>Identifier</th>
      *    <th>Meaning</th>
      *    <th>Default</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *    <td>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</td>
      *    <td>Normal forward keyboard traversal</td>
@@ -7258,6 +7263,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *    <td>Go up one focus traversal cycle</td>
      *    <td>none</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * To disable a traversal key, use an empty Set; Collections.EMPTY_SET is

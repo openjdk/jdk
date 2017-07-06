@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,8 +280,9 @@ public class Sasl {
      * Creates a {@code SaslClient} using the parameters supplied.
      *
      * This method uses the
-<a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#Provider">JCA Security Provider Framework</a>, described in the
-     * "Java Cryptography Architecture API Specification &amp; Reference", for
+     * {@extLink security_guide_jca JCA Security Provider Framework},
+     * described in the
+     * "Java Cryptography Architecture (JCA) Reference Guide", for
      * locating and selecting a {@code SaslClient} implementation.
      *
      * First, it
@@ -429,10 +430,10 @@ public class Sasl {
      * Creates a {@code SaslServer} for the specified mechanism.
      *
      * This method uses the
-<a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#Provider">JCA Security Provider Framework</a>,
+     * {@extLink security_guide_jca JCA Security Provider Framework},
      * described in the
-     * "Java Cryptography Architecture API Specification &amp; Reference", for
-     * locating and selecting a {@code SaslServer} implementation.
+     * "Java Cryptography Architecture (JCA) Reference Guide", for
+     * locating and selecting a {@code SaslClient} implementation.
      *
      * First, it
      * obtains an ordered list of {@code SaslServerFactory} instances from
