@@ -27,6 +27,8 @@
  * Defines a subset of the Common Annotations API to support programs running
  * on the Java SE Platform.
  *
+ * <p> This module is upgradeble.
+ *
  * @moduleGraph
  * @since 9
  */

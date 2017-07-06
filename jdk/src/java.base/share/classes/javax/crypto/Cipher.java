@@ -2616,11 +2616,9 @@ public class Cipher {
      * according to the installed JCE jurisdiction policy files. If
      * JCE unlimited strength jurisdiction policy files are installed,
      * Integer.MAX_VALUE will be returned.
-     * For more information on default key size in JCE jurisdiction
-     * policy files, please see Appendix E in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppC">
-     * Java Cryptography Architecture Reference Guide</a>.
+     * For more information on the default key sizes and the JCE jurisdiction
+     * policy files, please see the Cryptographic defaults and limitations in
+     * the {@extLink security_guide_jdk_providers JDK Providers Documentation}.
      *
      * @param transformation the cipher transformation.
      * @return the maximum key length in bits or Integer.MAX_VALUE.

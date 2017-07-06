@@ -54,32 +54,38 @@ public class Body1_1Impl extends BodyImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     protected NameImpl getFaultName(String name) {
         // Ignore name
         return NameImpl.createFault1_1Name(null);
     }
 
+    @Override
     protected SOAPBodyElement createBodyElement(Name name) {
         return new BodyElement1_1Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
             name);
     }
 
+    @Override
     protected SOAPBodyElement createBodyElement(QName name) {
         return new BodyElement1_1Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
             name);
     }
 
+    @Override
     protected QName getDefaultFaultCode() {
         return new QName(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, "Server");
     }
 
+    @Override
     protected boolean isFault(SOAPElement child) {
         // SOAP 1.1 faults always use the default name
         return child.getElementName().equals(getFaultName(null));
     }
 
+    @Override
     protected SOAPFault createFaultElement() {
         return new Fault1_1Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(), getPrefix());

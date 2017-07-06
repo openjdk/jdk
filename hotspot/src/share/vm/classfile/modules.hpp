@@ -113,14 +113,6 @@ public:
   // Returns NULL if package is invalid or not defined by loader.
   static jobject get_module(Symbol* package_name, Handle h_loader, TRAPS);
 
-  // This adds package to module.
-  // It throws IllegalArgumentException if:
-  // * Module is bad
-  // * Module is unnamed
-  // * Package is not syntactically correct
-  // * Package is already defined for module's class loader.
-  static void add_module_package(jobject module, const char* package, TRAPS);
-
   // Marks the specified package as exported to all unnamed modules.
   // If either module or package is null then NullPointerException is thrown.
   // If module or package is bad, or module is unnamed, or package is not in

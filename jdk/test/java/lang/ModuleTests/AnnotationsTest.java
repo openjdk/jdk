@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +63,7 @@ public class AnnotationsTest {
     public void testUnnamedModule() {
         Module module = this.getClass().getModule();
         assertTrue(module.getAnnotations().length == 0);
+        assertTrue(module.getDeclaredAnnotations().length == 0);
     }
 
     /**
@@ -73,7 +75,7 @@ public class AnnotationsTest {
     public void testNamedModule() throws IOException {
 
         // "deprecate" java.xml
-        Path dir = Files.createTempDirectory("mods");
+        Path dir = Files.createTempDirectory(Paths.get(""), "mods");
         deprecateModule("java.xml", true, "9", dir);
 
         // "load" the cloned java.xml
@@ -88,6 +90,7 @@ public class AnnotationsTest {
         Annotation[] a = module.getAnnotations();
         assertTrue(a.length == 1);
         assertTrue(a[0] instanceof Deprecated);
+        assertEquals(module.getDeclaredAnnotations(), a);
     }
 
 

@@ -26,19 +26,22 @@
 /**
  * Defines the Java Architecture for XML Binding (JAXB) API.
  *
+ * <p> This module is upgradeble.
+ *
+ * @uses javax.xml.bind.JAXBContextFactory
+ *
  * @moduleGraph
  * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
 module java.xml.bind {
-    requires transitive java.activation;
-    requires transitive java.xml;
     requires java.compiler;
     requires java.desktop;
     requires java.logging;
     requires jdk.unsupported;
 
-    uses javax.xml.bind.JAXBContextFactory;
+    requires transitive java.activation;
+    requires transitive java.xml;
 
     exports javax.xml.bind;
     exports javax.xml.bind.annotation;
@@ -46,6 +49,7 @@ module java.xml.bind {
     exports javax.xml.bind.attachment;
     exports javax.xml.bind.helpers;
     exports javax.xml.bind.util;
+
     exports com.sun.istack.internal to
         java.xml.ws,
         jdk.xml.bind,
@@ -145,4 +149,7 @@ module java.xml.bind {
         java.xml.ws,
         jdk.xml.bind,
         jdk.xml.ws;
+
+    uses javax.xml.bind.JAXBContextFactory;
+
 }

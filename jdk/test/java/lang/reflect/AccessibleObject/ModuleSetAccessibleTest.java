@@ -26,7 +26,7 @@
  * @build ModuleSetAccessibleTest
  * @modules java.base/java.lang:open
  *          java.base/jdk.internal.misc:+open
- * @run testng ModuleSetAccessibleTest
+ * @run testng/othervm --illegal-access=deny ModuleSetAccessibleTest
  * @summary Test java.lang.reflect.AccessibleObject with modules
  */
 

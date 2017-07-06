@@ -644,4 +644,9 @@ final class CompilerToVM {
      *         {@link Long}
      */
     native Object getFlagValue(String name);
+
+    /**
+     * Gets the host class for {@code type}.
+     */
+    native HotSpotResolvedObjectTypeImpl getHostClass(HotSpotResolvedObjectTypeImpl type);
 }

@@ -141,8 +141,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @return the new {@code TrustManagerFactory} object
@@ -179,8 +179,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -223,8 +223,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @param provider an instance of the provider.

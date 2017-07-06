@@ -50,6 +50,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2067,25 +2068,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns a {@code Method} object that reflects the specified public
-     * member method of the class or interface represented by this
-     * {@code Class} object.
-     *
-     * @param name the name of the method
-     * @param parameterTypes the list of parameters
-     * @return the {@code Method} object that matches the specified
-     *         {@code name} and {@code parameterTypes}; {@code null}
-     *         if the method is not found or the name is
-     *         "&lt;init&gt;"or "&lt;clinit&gt;".
-     */
-    Method getMethodOrNull(String name, Class<?>... parameterTypes) {
-        Objects.requireNonNull(name);
-        Method method = getMethod0(name, parameterTypes);
-        return method == null ? null : getReflectionFactory().copyMethod(method);
-    }
-
-
-    /**
      * Returns a {@code Constructor} object that reflects the specified
      * public constructor of the class represented by this {@code Class}
      * object. The {@code parameterTypes} parameter is an array of
@@ -2225,7 +2207,6 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     *
      * Returns an array containing {@code Method} objects reflecting all the
      * declared methods of the class or interface represented by this {@code
      * Class} object, including public, protected, default (package)
@@ -2453,6 +2434,30 @@ public final class Class<T> implements java.io.Serializable,
         return getReflectionFactory().copyMethod(method);
     }
 
+    /**
+     * Returns the list of {@code Method} objects for the declared public
+     * methods of this class or interface that have the specified method name
+     * and parameter types.
+     *
+     * @param name the name of the method
+     * @param parameterTypes the parameter array
+     * @return the list of {@code Method} objects for the public methods of
+     *         this class matching the specified name and parameters
+     */
+    List<Method> getDeclaredPublicMethods(String name, Class<?>... parameterTypes) {
+        Method[] methods = privateGetDeclaredMethods(/* publicOnly */ true);
+        ReflectionFactory factory = getReflectionFactory();
+        List<Method> result = new ArrayList<>();
+        for (Method method : methods) {
+            if (method.getName().equals(name)
+                && Arrays.equals(
+                    factory.getExecutableSharedParameterTypes(method),
+                    parameterTypes)) {
+                result.add(factory.copyMethod(method));
+            }
+        }
+        return result;
+    }
 
     /**
      * Returns a {@code Constructor} object that reflects the specified

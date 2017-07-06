@@ -1706,9 +1706,13 @@ public class JShellTool implements MessageHandler {
         // Documentation pseudo-commands
         registerCommand(new Command("/<id>",
                 "help.id",
+                arg -> cmdHelp("rerun"),
+                EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HELP_ONLY));
         registerCommand(new Command("/-<n>",
                 "help.previous",
+                arg -> cmdHelp("rerun"),
+                EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HELP_ONLY));
         registerCommand(new Command("intro",
                 "help.intro",
