@@ -58,10 +58,12 @@ public class Envelope1_1Impl extends EnvelopeImpl {
         super(ownerDoc, domElement);
     }
 
+    @Override
     protected NameImpl getBodyName(String prefix) {
         return NameImpl.createBody1_1Name(prefix);
     }
 
+    @Override
     protected NameImpl getHeaderName(String prefix) {
         return NameImpl.createHeader1_1Name(prefix);
     }

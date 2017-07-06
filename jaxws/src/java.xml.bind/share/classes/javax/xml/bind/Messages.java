@@ -91,4 +91,10 @@ class Messages
 
     static final String ILLEGAL_CAST = // 2 args
         "JAXBContext.IllegalCast";
+
+    static final String ERROR_LOAD_CLASS = // 2 args
+            "ContextFinder.ErrorLoadClass";
+
+    static final String JAXB_CLASSES_NOT_OPEN = // 1 arg
+            "JAXBClasses.notOpen";
 }

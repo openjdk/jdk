@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
  * @test
  * @bug 8000612
  * @summary need test program to validate javadoc resource bundles
- * @modules jdk.javadoc/com.sun.tools.doclets.formats.html.resources:open
- *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit.resources:open
- *          jdk.javadoc/com.sun.tools.javadoc.resources:open
+ * @modules jdk.javadoc/com.sun.tools.javadoc.resources:open
  *          jdk.jdeps/com.sun.tools.classfile
  */
 
@@ -147,7 +145,6 @@ public class CheckResourceKeys {
         try (JavaFileManager fm = c.getStandardFileManager(null, null, null)) {
             JavaFileManager.Location javadocLoc = findJavadocLocation(fm);
             String[] pkgs = {
-                "com.sun.tools.doclets",
                 "com.sun.tools.javadoc"
             };
             for (String pkg: pkgs) {
@@ -229,8 +226,6 @@ public class CheckResourceKeys {
     Set<String> getResourceKeys() {
         Module jdk_javadoc = ModuleLayer.boot().findModule("jdk.javadoc").get();
         String[] names = {
-                "com.sun.tools.doclets.formats.html.resources.standard",
-                "com.sun.tools.doclets.internal.toolkit.resources.doclets",
                 "com.sun.tools.javadoc.resources.javadoc",
         };
         Set<String> results = new TreeSet<String>();

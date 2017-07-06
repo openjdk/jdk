@@ -49,7 +49,4 @@ TOOL_ADD_PACKAGES_ATTRIBUTE := $(BUILD_JAVA) $(JAVA_FLAGS_SMALL) \
     --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
     build.tools.jigsaw.AddPackagesAttribute
 
-TOOL_GEN_DOCS_BUNDLE_PAGE := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
-    build.tools.docs.GenDocsBundlePage
-
 endif # _MODULE_TOOLS_GMK

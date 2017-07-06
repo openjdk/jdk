@@ -25,12 +25,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+import java.net.InetAddress;
+import javax.net.ssl.*;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +80,9 @@ public class Http2TestServerConnection {
     final static byte[] clientPreface = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes();
 
     Http2TestServerConnection(Http2TestServer server, Socket socket) throws IOException {
+        if (socket instanceof SSLSocket) {
+            handshake(server.serverName(), (SSLSocket)socket);
+        }
         System.err.println("TestServer: New connection from " + socket);
         this.server = server;
         this.streams = Collections.synchronizedMap(new HashMap<>());
@@ -90,6 +94,42 @@ public class Http2TestServerConnection {
         this.pushStreams = new HashSet<>();
         is = new BufferedInputStream(socket.getInputStream());
         os = new BufferedOutputStream(socket.getOutputStream());
+    }
+
+    private static boolean compareIPAddrs(InetAddress addr1, String host) {
+        try {
+            InetAddress addr2 = InetAddress.getByName(host);
+            return addr1.equals(addr2);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void handshake(String name, SSLSocket sock) throws IOException {
+        if (name == null) {
+            // no name set. No need to check
+            return;
+        } else if (name.equals("127.0.0.1")) {
+            name = "localhost";
+        }
+        final String fname = name;
+        final InetAddress addr1 = InetAddress.getByName(name);
+        SSLParameters params = sock.getSSLParameters();
+        SNIMatcher matcher = new SNIMatcher(StandardConstants.SNI_HOST_NAME) {
+            public boolean matches (SNIServerName n) {
+                String host = ((SNIHostName)n).getAsciiName();
+                if (host.equals("127.0.0.1"))
+                    host = "localhost";
+                boolean cmp = host.equalsIgnoreCase(fname);
+                if (cmp)
+                    return true;
+                return compareIPAddrs(addr1, host);
+            }
+        };
+        List<SNIMatcher> list = List.of(matcher);
+        params.setSNIMatchers(list);
+        sock.setSSLParameters(params);
+        sock.getSession(); // blocks until handshake done
     }
 
     void close() {

@@ -28,21 +28,21 @@
  */
 
 
-
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
-import java.io.*;
-import java.net.UnknownServiceException;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
 
 import javax.activation.DataSource;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.UnknownServiceException;
 
 /**
  * A utility class that implements a DataSource out of
  * a MimeBodyPart. This class is primarily meant for service providers.
  *
- * @author      John Mani
+ * @author John Mani
  */
 
 public final class MimePartDataSource implements DataSource {
@@ -68,13 +68,13 @@ public final class MimePartDataSource implements DataSource {
      * using the <code>getContentStream()</code> method and decodes
      * it using the <code>MimeUtility.decode()</code> method.
      *
-     * @return  decoded input stream
+     * @return decoded input stream
      */
     @Override
     public InputStream getInputStream() throws IOException {
 
         try {
-        InputStream is = part.getContentStream();
+            InputStream is = part.getContentStream();
 
             String encoding = part.getEncoding();
             if (encoding != null)
@@ -92,7 +92,7 @@ public final class MimePartDataSource implements DataSource {
      * This implementation throws the UnknownServiceException.
      */
     @Override
-        public OutputStream getOutputStream() throws IOException {
+    public OutputStream getOutputStream() throws IOException {
         throw new UnknownServiceException();
     }
 
@@ -113,11 +113,11 @@ public final class MimePartDataSource implements DataSource {
      * This implementation just returns an empty string.
      */
     @Override
-        public String getName() {
+    public String getName() {
         try {
-                return part.getFileName();
+            return part.getFileName();
         } catch (MessagingException mex) {
-        return "";
+            return "";
         }
     }
 }

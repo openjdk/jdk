@@ -46,11 +46,12 @@ class SSLTunnelConnection extends HttpConnection {
     final PlainTunnelingConnection delegate;
     protected SSLDelegate sslDelegate;
     private volatile boolean connected;
+    final String serverName;
 
     @Override
     public void connect() throws IOException, InterruptedException {
         delegate.connect();
-        this.sslDelegate = new SSLDelegate(delegate.channel(), client, null);
+        this.sslDelegate = new SSLDelegate(delegate.channel(), client, null, serverName);
         connected = true;
     }
 
@@ -67,7 +68,7 @@ class SSLTunnelConnection extends HttpConnection {
                     // can this block?
                     this.sslDelegate = new SSLDelegate(delegate.channel(),
                                                        client,
-                                                       null);
+                                                       null, serverName);
                     connected = true;
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -80,6 +81,7 @@ class SSLTunnelConnection extends HttpConnection {
                         InetSocketAddress proxy)
     {
         super(addr, client);
+        this.serverName = Utils.getServerName(addr);
         delegate = new PlainTunnelingConnection(addr, proxy, client);
     }
 
