@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,8 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all/*=false*/) {
           }
         break;
       }
+      default:
+        break;
     }
   }
 }
@@ -316,6 +318,7 @@ Method* CompiledMethod::attached_method(address call_instr) {
         case relocInfo::static_call_type:      return iter.static_call_reloc()->method_value();
         case relocInfo::opt_virtual_call_type: return iter.opt_virtual_call_reloc()->method_value();
         case relocInfo::virtual_call_type:     return iter.virtual_call_reloc()->method_value();
+        default:                               break;
       }
     }
   }
@@ -626,6 +629,9 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
 
     case relocInfo::metadata_type:
       break; // nothing to do.
+
+    default:
+      break;
     }
   }
 
@@ -678,6 +684,9 @@ void CompiledMethod::do_unloading_parallel_postponed(BoolObjectClosure* is_alive
 
     case relocInfo::static_call_type:
       clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      break;
+
+    default:
       break;
     }
   }

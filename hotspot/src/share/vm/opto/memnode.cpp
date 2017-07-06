@@ -205,10 +205,10 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
     if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
-        t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-        t->is_oopptr()->cast_to_exactness(true)
-         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
-         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
+        (t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
+         t->is_oopptr()->cast_to_exactness(true)
+           ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+            ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop)) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
@@ -321,7 +321,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (can_reshape && igvn != NULL &&
       (igvn->_worklist.member(address) ||
-       igvn->_worklist.size() > 0 && (t_adr != adr_type())) ) {
+       (igvn->_worklist.size() > 0 && t_adr != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
@@ -821,6 +821,9 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
       load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency);
     }
     break;
+  default:
+    // ShouldNotReachHere(); ???
+    break;
   }
   assert(load != NULL, "LoadNode should have been created");
   if (unaligned) {
@@ -1203,7 +1206,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
     // of the original value. It is done in split_through_phi().
     return NULL;
   } else if (base->is_Load() ||
-             base->is_DecodeN() && base->in(1)->is_Load()) {
+             (base->is_DecodeN() && base->in(1)->is_Load())) {
     // Eliminate the load of boxed value for integer types from the cache
     // array by deriving the value from the index into the array.
     // Capture the offset of the load and then reverse the computation.
@@ -1227,10 +1230,10 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
         Node* elements[4];
         int shift = exact_log2(type2aelembytes(T_OBJECT));
         int count = address->unpack_offsets(elements, ARRAY_SIZE(elements));
-        if ((count >  0) && elements[0]->is_Con() &&
-            ((count == 1) ||
-             (count == 2) && elements[1]->Opcode() == Op_LShiftX &&
-                             elements[1]->in(2) == phase->intcon(shift))) {
+        if (count > 0 && elements[0]->is_Con() &&
+            (count == 1 ||
+             (count == 2 && elements[1]->Opcode() == Op_LShiftX &&
+                            elements[1]->in(2) == phase->intcon(shift)))) {
           ciObjArray* array = base_type->const_oop()->as_obj_array();
           // Fetch the box object cache[0] at the base of the array and get its value
           ciInstance* box = array->obj_at(0)->as_instance();
@@ -2364,9 +2367,10 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
     {
       return new StorePNode(ctl, mem, adr, adr_type, val, mo);
     }
+  default:
+    ShouldNotReachHere();
+    return (StoreNode*)NULL;
   }
-  ShouldNotReachHere();
-  return (StoreNode*)NULL;
 }
 
 StoreLNode* StoreLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
@@ -4306,8 +4310,9 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( base_memory()->is_MergeMem() ) {
     MergeMemNode *new_mbase = base_memory()->as_MergeMem();
     Node *m = phase->transform(new_mbase);  // Rollup any cycles
-    if( m != NULL && (m->is_top() ||
-        m->is_MergeMem() && m->as_MergeMem()->base_memory() == empty_mem) ) {
+    if( m != NULL &&
+        (m->is_top() ||
+         (m->is_MergeMem() && m->as_MergeMem()->base_memory() == empty_mem)) ) {
       // propagate rollup of dead cycle to self
       set_req(Compile::AliasIdxBot, empty_mem);
     }

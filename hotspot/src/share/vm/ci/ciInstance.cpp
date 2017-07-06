@@ -86,9 +86,10 @@ ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
         return ciConstant(field_btype, CURRENT_ENV->get_object(o));
       }
     }
+    default:
+      fatal("no field value: %s", type2name(field_btype));
+      return ciConstant();
   }
-  fatal("no field value: %s", type2name(field_btype));
-  return ciConstant();
 }
 
 // ------------------------------------------------------------------

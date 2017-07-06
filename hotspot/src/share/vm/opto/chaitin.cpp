@@ -1301,7 +1301,7 @@ void PhaseChaitin::Simplify( ) {
       if( iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
-           ( (ibound && !bound) || ibound == bound && (icost < cost) )) ) {
+           ( (ibound && !bound) || (ibound == bound && (icost < cost)) )) ) {
         lo_score = i;
         score = iscore;
         area = iarea;

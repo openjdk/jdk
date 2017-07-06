@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,9 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Check for dead loop
     int   op1 = mul1->Opcode();
     if( phase->eqv( mul1, this ) || phase->eqv( in(2), this ) ||
-        ( op1 == mul_opcode() || op1 == add_opcode() ) &&
-        ( phase->eqv( mul1->in(1), this ) || phase->eqv( mul1->in(2), this ) ||
-          phase->eqv( mul1->in(1), mul1 ) || phase->eqv( mul1->in(2), mul1 ) ) )
+        ( ( op1 == mul_opcode() || op1 == add_opcode() ) &&
+          ( phase->eqv( mul1->in(1), this ) || phase->eqv( mul1->in(2), this ) ||
+            phase->eqv( mul1->in(1), mul1 ) || phase->eqv( mul1->in(2), mul1 ) ) ) )
       assert(false, "dead loop in MulNode::Ideal");
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,8 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
     next_level = CompLevel_simple;
   } else {
     switch(cur_level) {
-    case CompLevel_aot: {
+      default: break;
+      case CompLevel_aot: {
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,18 +347,18 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
                     }
                   }
                 } else if( check->bottom_type()->is_ptr()->_offset == 0 ) {
-                  if(check->is_Proj() || check->is_Mach() &&
+                  if(check->is_Proj() || (check->is_Mach() &&
                      (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
                       check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
                       check->as_Mach()->ideal_Opcode() == Op_CMoveP ||
                       check->as_Mach()->ideal_Opcode() == Op_CheckCastPP ||
 #ifdef _LP64
-                      UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP ||
-                      UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN ||
-                      UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass ||
+                      (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP) ||
+                      (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN) ||
+                      (UseCompressedClassPointers && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
 #endif
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
-                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass)) {
+                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass))) {
                     // Valid nodes
                   } else {
                     check->dump();

@@ -56,6 +56,7 @@ public:
   ClassPathEntry* next() const {
     return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
   }
+  virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so ensure visibility.
     OrderAccess::release_store_ptr(&_next, next);
@@ -82,6 +83,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
   ClassPathDirEntry(const char* dir);
+  virtual ~ClassPathDirEntry() {}
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
@@ -120,7 +122,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append);
-  ~ClassPathZipEntry();
+  virtual ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
   u1* open_versioned_entry(const char* name, jint* filesize, TRAPS) NOT_CDS_RETURN_(NULL);
   ClassFileStream* open_stream(const char* name, TRAPS);
@@ -143,7 +145,7 @@ public:
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const { return _jimage; }
   ClassPathImageEntry(JImageFile* jimage, const char* name);
-  ~ClassPathImageEntry();
+  virtual ~ClassPathImageEntry();
   ClassFileStream* open_stream(const char* name, TRAPS);
 
   // Debugging

@@ -241,7 +241,11 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 // Formatting.
 #ifdef _LP64
-#define FORMAT64_MODIFIER "l"
+# ifdef __APPLE__
+# define FORMAT64_MODIFIER "ll"
+# else
+# define FORMAT64_MODIFIER "l"
+# endif
 #else // !_LP64
 #define FORMAT64_MODIFIER "ll"
 #endif // _LP64

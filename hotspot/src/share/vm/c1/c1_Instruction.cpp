@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,8 +239,8 @@ bool ArithmeticOp::is_commutative() const {
     case Bytecodes::_lmul: // fall through
     case Bytecodes::_fmul: // fall through
     case Bytecodes::_dmul: return true;
+    default              : return false;
   }
-  return false;
 }
 
 
@@ -250,8 +250,8 @@ bool ArithmeticOp::can_trap() const {
     case Bytecodes::_ldiv: // fall through
     case Bytecodes::_irem: // fall through
     case Bytecodes::_lrem: return true;
+    default              : return false;
   }
-  return false;
 }
 
 
@@ -266,7 +266,7 @@ bool LogicOp::is_commutative() const {
     case Bytecodes::_lor : // fall through
     case Bytecodes::_ixor: // fall through
     case Bytecodes::_lxor: break;
-    default              : ShouldNotReachHere();
+    default              : ShouldNotReachHere(); break;
   }
 #endif
   // all LogicOps are commutative
@@ -447,8 +447,9 @@ bool Constant::is_equal(Value v) const {
                 t1->is_loaded() && t2->is_loaded() &&
                 t1->constant_value() == t2->constant_value());
       }
+    default:
+      return false;
   }
-  return false;
 }
 
 Constant::CompareResult Constant::compare(Instruction::Condition cond, Value right) const {
@@ -471,6 +472,7 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
     case If::leq: return x <= y ? cond_true : cond_false;
     case If::gtr: return x >  y ? cond_true : cond_false;
     case If::geq: return x >= y ? cond_true : cond_false;
+    default     : break;
     }
     break;
   }
@@ -484,6 +486,7 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
     case If::leq: return x <= y ? cond_true : cond_false;
     case If::gtr: return x >  y ? cond_true : cond_false;
     case If::geq: return x >= y ? cond_true : cond_false;
+    default     : break;
     }
     break;
   }
@@ -495,6 +498,7 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
       switch (cond) {
       case If::eql: return xvalue == yvalue ? cond_true : cond_false;
       case If::neq: return xvalue != yvalue ? cond_true : cond_false;
+      default     : break;
       }
     }
     break;
@@ -507,10 +511,13 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
       switch (cond) {
       case If::eql: return xvalue == yvalue ? cond_true : cond_false;
       case If::neq: return xvalue != yvalue ? cond_true : cond_false;
+      default     : break;
       }
     }
     break;
   }
+  default:
+    break;
   }
   return not_comparable;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,8 +779,9 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
   case Bytecodes::_lookupswitch:
   case Bytecodes::_tableswitch:
     return variable_cell_count;
+  default:
+    return no_profile_data;
   }
-  return no_profile_data;
 }
 
 // Compute the size of the profiling information corresponding to
@@ -1047,6 +1048,8 @@ int MethodData::initialize_data(BytecodeStream* stream,
   case Bytecodes::_tableswitch:
     cell_count = MultiBranchData::compute_cell_count(stream);
     tag = DataLayout::multi_branch_data_tag;
+    break;
+  default:
     break;
   }
   assert(tag == DataLayout::multi_branch_data_tag ||

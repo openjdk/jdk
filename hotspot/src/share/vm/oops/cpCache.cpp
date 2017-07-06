@@ -389,6 +389,8 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       case Bytecodes::_invokedynamic:
         assert(f1->is_method(), "");
         return (Method*)f1;
+      default:
+        break;
       }
     }
   }
@@ -408,6 +410,8 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
           return klass->method_at_vtable(f2_as_index());
         }
       }
+      break;
+    default:
       break;
     }
   }

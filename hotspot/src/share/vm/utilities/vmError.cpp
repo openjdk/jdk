@@ -297,6 +297,8 @@ static void print_oom_reasons(outputStream* st) {
         st->print_cr("#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress");
         st->print_cr("#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.");
         break;
+      default:
+        break;
     }
   }
   st->print_cr("# This output file may be truncated or incomplete.");
@@ -1332,12 +1334,14 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
         st->print_cr("\"] after " INT64_FORMAT " s.",
-          (get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR);
+                     (int64_t)
+                     ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
       } else if (_reporting_did_timeout) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
         st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
-          (get_current_timestamp() - _reporting_start_time) / TIMESTAMP_TO_SECONDS_FACTOR);
+                     (int64_t)
+                     ((get_current_timestamp() - _reporting_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
         st->flush();
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();

@@ -219,11 +219,12 @@ void CallInfo::verify() {
 #ifndef PRODUCT
 void CallInfo::print() {
   ResourceMark rm;
-  const char* kindstr = "unknown";
+  const char* kindstr;
   switch (_call_kind) {
-  case direct_call: kindstr = "direct"; break;
-  case vtable_call: kindstr = "vtable"; break;
-  case itable_call: kindstr = "itable"; break;
+  case direct_call: kindstr = "direct";  break;
+  case vtable_call: kindstr = "vtable";  break;
+  case itable_call: kindstr = "itable";  break;
+  default         : kindstr = "unknown"; break;
   }
   tty->print_cr("Call %s@%d %s", kindstr, _call_index,
                 _resolved_method.is_null() ? "(none)" : _resolved_method->name_and_sig_as_C_string());
@@ -1570,6 +1571,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantP
     case Bytecodes::_invokehandle   : resolve_invokehandle   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index, CHECK); break;
     case Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index, CHECK); break;
+    default                         :                                                            break;
   }
   return;
 }
@@ -1598,6 +1600,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
       break;
     default:
       fatal("bad call: %s", Bytecodes::name(byte));
+      break;
   }
 }
 

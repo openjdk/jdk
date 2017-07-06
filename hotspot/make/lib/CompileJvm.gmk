@@ -218,9 +218,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
-    DISABLED_WARNINGS_clang := delete-non-virtual-dtor dynamic-class-memaccess \
-        empty-body format logical-op-parentheses parentheses \
-        parentheses-equality switch tautological-compare, \
+    DISABLED_WARNINGS_clang := tautological-compare, \
     DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 \
         1540-1088 1500-010, \
     ASFLAGS := $(JVM_ASFLAGS), \

@@ -301,8 +301,8 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
 
   // Function to move these elements into the new table.
   void move_to(RehashableHashtable<T, F>* new_table);
-  static bool use_alternate_hashcode()  { return _seed != 0; }
-  static juint seed()                    { return _seed; }
+  static bool use_alternate_hashcode();
+  static juint seed();
 
   static int literal_size(Symbol *symbol);
   static int literal_size(oop oop);
@@ -320,6 +320,9 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
   static juint _seed;
 };
 
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::seed() { return _seed; };
+template <class T, MEMFLAGS F> bool  RehashableHashtable<T, F>::use_alternate_hashcode() { return _seed != 0; };
 
 // Versions of hashtable where two handles are used to compute the index.
 

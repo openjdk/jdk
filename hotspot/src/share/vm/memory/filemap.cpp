@@ -151,7 +151,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 FileMapInfo::FileMapInfo() {
   assert(_current_info == NULL, "must be singleton"); // not thread safe
   _current_info = this;
-  memset(this, 0, sizeof(FileMapInfo));
+  memset((void*)this, 0, sizeof(FileMapInfo));
   _file_offset = 0;
   _file_open = false;
   _header = SharedClassUtil::allocate_file_map_header();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,15 +163,17 @@ class TreeChunk : public Chunk_t {
   Chunk_t* prev() const { return Chunk_t::prev(); }
   size_t size() const volatile { return Chunk_t::size(); }
 
-  static size_t min_size() {
-    return _min_tree_chunk_size;
-  }
+  static size_t min_size();
 
   // debugging
   void verify_tree_chunk_list() const;
   void assert_is_mangled() const;
 };
 
+template <class Chunk_t, class FreeList_t>
+size_t TreeChunk<Chunk_t, FreeList_t>::_min_tree_chunk_size = sizeof(TreeChunk<Chunk_t, FreeList_t>)/HeapWordSize;
+template <class Chunk_t, class FreeList_t>
+size_t TreeChunk<Chunk_t, FreeList_t>::min_size() { return _min_tree_chunk_size; }
 
 template <class Chunk_t, class FreeList_t>
 class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {

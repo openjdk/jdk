@@ -197,13 +197,13 @@ bool JavaAssertions::enabled(const char* classname, bool systemClass) {
 
   // First check options that apply to classes.  If we find a match we're done.
   OptionList* p;
-  if (p = match_class(classname)) {
+  if ((p = match_class(classname))) {
     trace(classname, "class", p->name(), p->enabled());
     return p->enabled();
   }
 
   // Now check packages, from most specific to least.
-  if (p = match_package(classname)) {
+  if ((p = match_package(classname))) {
     trace(classname, "package", p->name(), p->enabled());
     return p->enabled();
   }

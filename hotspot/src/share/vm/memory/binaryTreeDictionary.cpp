@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@
 // A binary tree based search structure for free blocks.
 // This is currently used in the Concurrent Mark&Sweep implementation.
 ////////////////////////////////////////////////////////////////////////////////
-
-template <class Chunk_t, class FreeList_t>
-size_t TreeChunk<Chunk_t, FreeList_t>::_min_tree_chunk_size = sizeof(TreeChunk<Chunk_t,  FreeList_t>)/HeapWordSize;
 
 template <class Chunk_t, class FreeList_t>
 TreeChunk<Chunk_t, FreeList_t>* TreeChunk<Chunk_t, FreeList_t>::as_TreeChunk(Chunk_t* fc) {

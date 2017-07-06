@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1104,6 +1104,8 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
             return shouldHaveRegister;
           }
         }
+        default:
+          break;
       }
     } else {
       // FPU stack float instruction
@@ -1120,6 +1122,8 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
             return shouldHaveRegister;
           }
         }
+        default:
+          break;
       }
     }
     // We want to sometimes use logical operations on pointers, in particular in GC barriers.
@@ -1142,6 +1146,8 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
           return shouldHaveRegister;
         }
       }
+      default:
+        break;
     }
   }
 #endif // X86 S390
@@ -1247,6 +1253,8 @@ void LinearScan::add_register_hints(LIR_Op* op) {
       }
       break;
     }
+    default:
+      break;
   }
 }
 
@@ -2373,6 +2381,8 @@ void check_stack_depth(CodeEmitInfo* info, int stack_end) {
       case Bytecodes::_if_acmpne :
         assert(stack_end >= -Bytecodes::depth(code), "must have non-empty expression stack at if bytecode");
         break;
+      default:
+        break;
     }
   }
 }
@@ -3027,8 +3037,8 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
       LIR_Opr src = move->in_opr();
       LIR_Opr dst = move->result_opr();
       if (dst == src ||
-          !dst->is_pointer() && !src->is_pointer() &&
-          src->is_same_register(dst)) {
+          (!dst->is_pointer() && !src->is_pointer() &&
+           src->is_same_register(dst))) {
         instructions->at_put(j, NULL);
         has_dead = true;
       }

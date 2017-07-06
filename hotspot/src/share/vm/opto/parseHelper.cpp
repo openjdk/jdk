@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ void Parse::do_new() {
   assert(will_link, "_new: typeflow responsibility");
 
   // Should initialize, or throw an InstantiationError?
-  if (!klass->is_initialized() && !klass->is_being_initialized() ||
+  if ((!klass->is_initialized() && !klass->is_being_initialized()) ||
       klass->is_abstract() || klass->is_interface() ||
       klass->name() == ciSymbol::java_lang_Class() ||
       iter().is_unresolved_klass()) {

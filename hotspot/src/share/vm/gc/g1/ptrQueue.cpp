@@ -238,8 +238,9 @@ void PtrQueue::handle_zero_index() {
 bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
   if (Thread::current()->is_Java_thread()) {
     // We don't lock. It is fine to be epsilon-precise here.
-    if (_max_completed_queue == 0 || _max_completed_queue > 0 &&
-        _n_completed_buffers >= _max_completed_queue + _completed_queue_padding) {
+    if (_max_completed_queue == 0 ||
+        (_max_completed_queue > 0 &&
+          _n_completed_buffers >= _max_completed_queue + _completed_queue_padding)) {
       bool b = mut_process_buffer(node);
       if (b) {
         // True here means that the buffer hasn't been deallocated and the caller may reuse it.

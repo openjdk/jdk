@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp),
   _size = 16;                   // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
-  memset(_bin,0,sizeof(bucket)*_size);
+  memset((void*)_bin,0,sizeof(bucket)*_size);
 }
 
 Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
@@ -91,7 +91,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
   _size = i;                    // Size is a power of 2
   _cnt = 0;                     // Dictionary is empty
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
-  memset(_bin,0,sizeof(bucket)*_size);
+  memset((void*)_bin,0,sizeof(bucket)*_size);
 }
 
 //------------------------------~Dict------------------------------------------
@@ -127,7 +127,7 @@ void Dict::doubhash(void) {
   uint oldsize = _size;
   _size <<= 1;                  // Double in size
   _bin = (bucket*)_arena->Arealloc(_bin, sizeof(bucket) * oldsize, sizeof(bucket) * _size);
-  memset(&_bin[oldsize], 0, oldsize * sizeof(bucket));
+  memset((void*)(&_bin[oldsize]), 0, oldsize * sizeof(bucket));
   // Rehash things to spread into new table
   for (uint i = 0; i < oldsize; i++) { // For complete OLD table do
     bucket *b = &_bin[i];              // Handy shortcut for _bin[i]
@@ -163,7 +163,7 @@ void Dict::doubhash(void) {
 // Deep copy a dictionary.
 Dict::Dict( const Dict &d ) : _size(d._size), _cnt(d._cnt), _hash(d._hash),_cmp(d._cmp), _arena(d._arena) {
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
-  memcpy( _bin, d._bin, sizeof(bucket)*_size );
+  memcpy( (void*)_bin, (void*)d._bin, sizeof(bucket)*_size );
   for( uint i=0; i<_size; i++ ) {
     if( !_bin[i]._keyvals ) continue;
     _bin[i]._keyvals=(void**)_arena->Amalloc_4( sizeof(void *)*_bin[i]._max*2);
@@ -177,7 +177,7 @@ Dict &Dict::operator =( const Dict &d ) {
   if( _size < d._size ) {       // If must have more buckets
     _arena = d._arena;
     _bin = (bucket*)_arena->Arealloc( _bin, sizeof(bucket)*_size, sizeof(bucket)*d._size );
-    memset( &_bin[_size], 0, (d._size-_size)*sizeof(bucket) );
+    memset( (void*)(&_bin[_size]), 0, (d._size-_size)*sizeof(bucket) );
     _size = d._size;
   }
   uint i;
