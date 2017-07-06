@@ -116,9 +116,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
-  product(intx, UseAVX, 99,                                                 \
+  product(intx, UseAVX, 2,                                                  \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
+          constraint(UseAVXConstraintFunc, AtParse)                         \
                                                                             \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \
