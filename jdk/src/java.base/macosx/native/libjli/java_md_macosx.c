@@ -290,8 +290,6 @@ static int (*main_fptr)(int argc, char **argv) = NULL;
  */
 static void *apple_main (void *arg)
 {
-    objc_registerThreadWithCollector();
-
     if (main_fptr == NULL) {
 #ifdef STATIC_BUILD
         extern int main(int argc, char **argv);
@@ -772,7 +770,7 @@ JLI_GetJavaVMInstance()
 void
 RegisterThread()
 {
-    objc_registerThreadWithCollector();
+    // stubbed out for windows and *nixes.
 }
 
 static void
