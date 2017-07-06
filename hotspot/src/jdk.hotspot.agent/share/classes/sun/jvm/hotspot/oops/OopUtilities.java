@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,20 +59,20 @@ public class OopUtilities {
   // parkBlocker field is new since 1.6
   private static OopField threadParkBlockerField;
 
+  private static IntField threadPriorityField;
+  private static BooleanField threadDaemonField;
+
   // possible values of java_lang_Thread::ThreadStatus
   private static int THREAD_STATUS_NEW;
-  /*
-    Other enum constants are not needed as of now. Uncomment these as and when needed.
 
-    private static int THREAD_STATUS_RUNNABLE;
-    private static int THREAD_STATUS_SLEEPING;
-    private static int THREAD_STATUS_IN_OBJECT_WAIT;
-    private static int THREAD_STATUS_IN_OBJECT_WAIT_TIMED;
-    private static int THREAD_STATUS_PARKED;
-    private static int THREAD_STATUS_PARKED_TIMED;
-    private static int THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER;
-    private static int THREAD_STATUS_TERMINATED;
-  */
+  private static int THREAD_STATUS_RUNNABLE;
+  private static int THREAD_STATUS_SLEEPING;
+  private static int THREAD_STATUS_IN_OBJECT_WAIT;
+  private static int THREAD_STATUS_IN_OBJECT_WAIT_TIMED;
+  private static int THREAD_STATUS_PARKED;
+  private static int THREAD_STATUS_PARKED_TIMED;
+  private static int THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER;
+  private static int THREAD_STATUS_TERMINATED;
 
   // java.util.concurrent.locks.AbstractOwnableSynchronizer fields
   private static OopField absOwnSyncOwnerThreadField;
@@ -229,20 +229,19 @@ public class OopUtilities {
       threadStatusField = (IntField) k.findField("threadStatus", "I");
       threadParkBlockerField = (OopField) k.findField("parkBlocker",
                                      "Ljava/lang/Object;");
+      threadPriorityField = (IntField) k.findField("priority", "I");
+      threadDaemonField = (BooleanField) k.findField("daemon", "Z");
       TypeDataBase db = VM.getVM().getTypeDataBase();
       THREAD_STATUS_NEW = db.lookupIntConstant("java_lang_Thread::NEW").intValue();
-      /*
-        Other enum constants are not needed as of now. Uncomment these as and when needed.
 
-        THREAD_STATUS_RUNNABLE = db.lookupIntConstant("java_lang_Thread::RUNNABLE").intValue();
-        THREAD_STATUS_SLEEPING = db.lookupIntConstant("java_lang_Thread::SLEEPING").intValue();
-        THREAD_STATUS_IN_OBJECT_WAIT = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT").intValue();
-        THREAD_STATUS_IN_OBJECT_WAIT_TIMED = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT_TIMED").intValue();
-        THREAD_STATUS_PARKED = db.lookupIntConstant("java_lang_Thread::PARKED").intValue();
-        THREAD_STATUS_PARKED_TIMED = db.lookupIntConstant("java_lang_Thread::PARKED_TIMED").intValue();
-        THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER = db.lookupIntConstant("java_lang_Thread::BLOCKED_ON_MONITOR_ENTER").intValue();
-        THREAD_STATUS_TERMINATED = db.lookupIntConstant("java_lang_Thread::TERMINATED").intValue();
-      */
+      THREAD_STATUS_RUNNABLE = db.lookupIntConstant("java_lang_Thread::RUNNABLE").intValue();
+      THREAD_STATUS_SLEEPING = db.lookupIntConstant("java_lang_Thread::SLEEPING").intValue();
+      THREAD_STATUS_IN_OBJECT_WAIT = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT").intValue();
+      THREAD_STATUS_IN_OBJECT_WAIT_TIMED = db.lookupIntConstant("java_lang_Thread::IN_OBJECT_WAIT_TIMED").intValue();
+      THREAD_STATUS_PARKED = db.lookupIntConstant("java_lang_Thread::PARKED").intValue();
+      THREAD_STATUS_PARKED_TIMED = db.lookupIntConstant("java_lang_Thread::PARKED_TIMED").intValue();
+      THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER = db.lookupIntConstant("java_lang_Thread::BLOCKED_ON_MONITOR_ENTER").intValue();
+      THREAD_STATUS_TERMINATED = db.lookupIntConstant("java_lang_Thread::TERMINATED").intValue();
 
       if (Assert.ASSERTS_ENABLED) {
         // it is okay to miss threadStatusField, because this was
@@ -330,5 +329,47 @@ public class OopUtilities {
     } else {
       return absOwnSyncOwnerThreadField.getValue(oop);
     }
+  }
+
+  public static int threadOopGetPriority(Oop threadOop) {
+    initThreadFields();
+    if (threadPriorityField != null) {
+      return threadPriorityField.getValue(threadOop);
+    } else {
+      return 0;
+    }
+  }
+
+  public static boolean threadOopGetDaemon(Oop threadOop) {
+    initThreadFields();
+    if (threadDaemonField != null) {
+      return threadDaemonField.getValue(threadOop);
+    } else {
+      return false;
+    }
+  }
+
+  public static String threadOopGetThreadStatusName(Oop threadOop) {
+    int status = OopUtilities.threadOopGetThreadStatus(threadOop);
+    if(status == THREAD_STATUS_NEW){
+      return "NEW";
+    }else if(status == THREAD_STATUS_RUNNABLE){
+      return "RUNNABLE";
+    }else if(status == THREAD_STATUS_SLEEPING){
+      return "TIMED_WAITING (sleeping)";
+    }else if(status == THREAD_STATUS_IN_OBJECT_WAIT){
+      return "WAITING (on object monitor)";
+    }else if(status == THREAD_STATUS_IN_OBJECT_WAIT_TIMED){
+      return "TIMED_WAITING (on object monitor)";
+    }else if(status == THREAD_STATUS_PARKED){
+      return "WAITING (parking)";
+    }else if(status == THREAD_STATUS_PARKED_TIMED){
+      return "TIMED_WAITING (parking)";
+    }else if(status == THREAD_STATUS_BLOCKED_ON_MONITOR_ENTER){
+      return "BLOCKED (on object monitor)";
+    }else if(status == THREAD_STATUS_TERMINATED){
+      return "TERMINATED";
+    }
+    return "UNKNOWN";
   }
 }

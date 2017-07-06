@@ -70,6 +70,8 @@ public class JavaThread extends Thread {
   private static int           NOT_TERMINATED;
   private static int           EXITING;
 
+  private static final String  ADDRESS_FORMAT = VM.getVM().isLP64() ? "0x%016x" : "0x%08x";
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -475,4 +477,34 @@ public class JavaThread extends Thread {
     return access.getLastSP(addr);
   }
 
+
+  public void printThreadInfoOn(PrintStream out){
+    Oop threadOop = this.getThreadObj();
+
+    out.print("\"");
+    out.print(this.getThreadName());
+    out.print("\" #");
+    out.print(OopUtilities.threadOopGetTID(threadOop));
+    if(OopUtilities.threadOopGetDaemon(threadOop)){
+      out.print(" daemon");
+    }
+    out.print(" prio=");
+    out.print(OopUtilities.threadOopGetPriority(threadOop));
+    out.print(" tid=");
+    out.print(this.getAddress());
+    out.print(" nid=");
+    out.print(String.format("0x%x ",this.getOSThread().threadId()));
+    out.print(getOSThread().getThreadState().getPrintVal());
+    out.print(" [");
+    if(this.getLastJavaSP() == null){
+      out.print(String.format(ADDRESS_FORMAT,0L));
+    } else {
+      out.print(this.getLastJavaSP().andWithMask(~0xFFF));
+    }
+    out.println("]");
+    out.print("   java.lang.Thread.State: ");
+    out.println(OopUtilities.threadOopGetThreadStatusName(threadOop));
+    out.print("   JavaThread state: _thread_");
+    out.println(this.getThreadState().toString().toLowerCase());
+  }
 }

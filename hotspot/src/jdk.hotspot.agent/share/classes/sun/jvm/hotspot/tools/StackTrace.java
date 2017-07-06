@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,14 +74,7 @@ public class StackTrace extends Tool {
             int i = 1;
             for (JavaThread cur = threads.first(); cur != null; cur = cur.next(), i++) {
                 if (cur.isJavaThread()) {
-                    Address sp = cur.getLastJavaSP();
-                    tty.print("Thread ");
-                    cur.printThreadIDOn(tty);
-                    tty.print(": (state = " + cur.getThreadState());
-                    if (verbose) {
-                        tty.println(", current Java SP = " + sp);
-                    }
-                    tty.println(')');
+                    cur.printThreadInfoOn(tty);
                     try {
                         for (JavaVFrame vf = cur.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
                             Method method = vf.getMethod();
