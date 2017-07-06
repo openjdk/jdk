@@ -46,25 +46,30 @@ module java.management {
     exports javax.management.relation;
     exports javax.management.remote;
     exports javax.management.timer;
+
     exports com.sun.jmx.remote.internal to
-            java.management.rmi,
-            jdk.management.agent;
+        java.management.rmi,
+        jdk.management.agent;
     exports com.sun.jmx.remote.security to
-            java.management.rmi,
-            jdk.management.agent;
-    exports com.sun.jmx.remote.util to java.management.rmi;
+        java.management.rmi,
+        jdk.management.agent;
+    exports com.sun.jmx.remote.util to
+        java.management.rmi;
     exports sun.management to
         jdk.jconsole,
         jdk.management,
         jdk.management.agent;
-    exports sun.management.counter to jdk.management.agent;
-    exports sun.management.counter.perf to jdk.management.agent;
-    exports sun.management.spi to jdk.management;
+    exports sun.management.counter to
+        jdk.management.agent;
+    exports sun.management.counter.perf to
+        jdk.management.agent;
+    exports sun.management.spi to
+        jdk.management;
 
     uses javax.management.remote.JMXConnectorProvider;
     uses javax.management.remote.JMXConnectorServerProvider;
     uses sun.management.spi.PlatformMBeanProvider;
 
-    provides javax.security.auth.spi.LoginModule
-        with com.sun.jmx.remote.security.FileLoginModule;
+    provides javax.security.auth.spi.LoginModule with
+        com.sun.jmx.remote.security.FileLoginModule;
 }

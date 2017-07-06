@@ -33,144 +33,238 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import static java.util.Collections.*;
 
-import jdk.internal.loader.BootLoader;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
- * Supports logging of access to members of API packages that are exported or
- * opened via backdoor mechanisms to code in unnamed modules.
+ * Supports logging of access to members of exported and concealed packages
+ * that are opened to code in unnamed modules for illegal access.
  */
 
 public final class IllegalAccessLogger {
 
     /**
-     * Holder class to lazily create the StackWalker object and determine
-     * if the stack trace should be printed
+     * Logger modes
      */
-    static class Holder {
-        static final StackWalker STACK_WALKER;
-        static final boolean PRINT_STACK_TRACE;
+    public static enum Mode {
+        /**
+         * Prints a warning when an illegal access succeeds and then
+         * discards the logger so that there is no further output.
+         */
+        ONESHOT,
+        /**
+         * Print warnings when illegal access succeeds
+         */
+        WARN,
+        /**
+         * Prints warnings and a stack trace when illegal access succeeds
+         */
+        DEBUG,
+    }
 
-        static {
-            PrivilegedAction<StackWalker> pa = () ->
-                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            STACK_WALKER = AccessController.doPrivileged(pa);
+    /**
+     * A builder for IllegalAccessLogger objects.
+     */
+    public static class Builder {
+        private final Mode mode;
+        private final PrintStream warningStream;
+        private final Map<Module, Set<String>> moduleToConcealedPackages;
+        private final Map<Module, Set<String>> moduleToExportedPackages;
+        private boolean complete;
 
-            String name = "sun.reflect.debugModuleAccessChecks";
-            String value = GetPropertyAction.privilegedGetProperty(name, null);
-            PRINT_STACK_TRACE = "access" .equals(value);
+        private void ensureNotComplete() {
+            if (complete) throw new IllegalStateException();
+        }
+
+        /**
+         * Creates a builder.
+         */
+        public Builder(Mode mode, PrintStream warningStream) {
+            this.mode = mode;
+            this.warningStream = warningStream;
+            this.moduleToConcealedPackages = new HashMap<>();
+            this.moduleToExportedPackages = new HashMap<>();
+        }
+
+        /**
+         * Adding logging of reflective-access to any member of a type in
+         * otherwise concealed packages.
+         */
+        public Builder logAccessToConcealedPackages(Module m, Set<String> packages) {
+            ensureNotComplete();
+            moduleToConcealedPackages.put(m, unmodifiableSet(packages));
+            return this;
+        }
+
+        /**
+         * Adding logging of reflective-access to non-public members/types in
+         * otherwise exported (not open) packages.
+         */
+        public Builder logAccessToExportedPackages(Module m, Set<String> packages) {
+            ensureNotComplete();
+            moduleToExportedPackages.put(m, unmodifiableSet(packages));
+            return this;
+        }
+
+        /**
+         * Builds the IllegalAccessLogger and sets it as the system-wise logger.
+         */
+        public void complete() {
+            Map<Module, Set<String>> map1 = unmodifiableMap(moduleToConcealedPackages);
+            Map<Module, Set<String>> map2 = unmodifiableMap(moduleToExportedPackages);
+            logger = new IllegalAccessLogger(mode, warningStream, map1, map2);
+            complete = true;
         }
     }
 
-    // the maximum number of frames to capture
-    private static final int MAX_STACK_FRAMES = 32;
+    // need access to java.lang.Module
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
-    // lock to avoid interference when printing stack traces
-    private static final Object OUTPUT_LOCK = new Object();
+    // system-wide IllegalAccessLogger
+    private static volatile IllegalAccessLogger logger;
 
-    // caller -> usages
-    private final Map<Class<?>, Set<Usage>> callerToUsages = new WeakHashMap<>();
-
-    // module -> (package name -> CLI option)
-    private final Map<Module, Map<String, String>> exported;
-    private final Map<Module, Map<String, String>> opened;
+    // logger mode
+    private final Mode mode;
 
     // the print stream to send the warnings
     private final PrintStream warningStream;
 
-    private IllegalAccessLogger(Map<Module, Map<String, String>> exported,
-                                Map<Module, Map<String, String>> opened,
-                                PrintStream warningStream) {
-        this.exported = deepCopy(exported);
-        this.opened = deepCopy(opened);
+    // module -> packages open for illegal access
+    private final Map<Module, Set<String>> moduleToConcealedPackages;
+    private final Map<Module, Set<String>> moduleToExportedPackages;
+
+    // caller -> usages
+    private final Map<Class<?>, Usages> callerToUsages = new WeakHashMap<>();
+
+    private IllegalAccessLogger(Mode mode,
+                                PrintStream warningStream,
+                                Map<Module, Set<String>> moduleToConcealedPackages,
+                                Map<Module, Set<String>> moduleToExportedPackages)
+    {
+        this.mode = mode;
         this.warningStream = warningStream;
+        this.moduleToConcealedPackages = moduleToConcealedPackages;
+        this.moduleToExportedPackages = moduleToExportedPackages;
     }
 
     /**
-     * Returns that a Builder that is seeded with the packages known to this logger.
+     * Returns the system-wide IllegalAccessLogger or {@code null} if there is
+     * no logger.
      */
-    public Builder toBuilder() {
-        return new Builder(exported, opened);
+    public static IllegalAccessLogger illegalAccessLogger() {
+        return logger;
+    }
+
+    /**
+     * Returns true if the module exports a concealed package for illegal
+     * access.
+     */
+    public boolean isExportedForIllegalAccess(Module module, String pn) {
+        Set<String> packages = moduleToConcealedPackages.get(module);
+        if (packages != null && packages.contains(pn))
+            return true;
+        return false;
+    }
+
+    /**
+     * Returns true if the module opens a concealed or exported package for
+     * illegal access.
+     */
+    public boolean isOpenForIllegalAccess(Module module, String pn) {
+        if (isExportedForIllegalAccess(module, pn))
+            return true;
+        Set<String> packages = moduleToExportedPackages.get(module);
+        if (packages != null && packages.contains(pn))
+            return true;
+        return false;
     }
 
     /**
      * Logs access to the member of a target class by a caller class if the class
-     * is in a package that is exported via a backdoor mechanism.
+     * is in a package that is exported for illegal access.
      *
      * The {@code whatSupplier} supplies the message that describes the member.
      */
-    public void logIfExportedByBackdoor(Class<?> caller,
-                                        Class<?> target,
-                                        Supplier<String> whatSupplier) {
-        Map<String, String> packages = exported.get(target.getModule());
-        if (packages != null) {
-            String how = packages.get(target.getPackageName());
-            if (how != null) {
-                log(caller, whatSupplier.get(), how);
+    public void logIfExportedForIllegalAccess(Class<?> caller,
+                                              Class<?> target,
+                                              Supplier<String> whatSupplier) {
+        Module targetModule = target.getModule();
+        String targetPackage = target.getPackageName();
+        if (isExportedForIllegalAccess(targetModule, targetPackage)) {
+            Module callerModule = caller.getModule();
+            if (!JLA.isReflectivelyExported(targetModule, targetPackage, callerModule)) {
+                log(caller, whatSupplier.get());
             }
         }
     }
 
     /**
      * Logs access to the member of a target class by a caller class if the class
-     * is in a package that is opened via a backdoor mechanism.
+     * is in a package that is opened for illegal access.
      *
      * The {@code what} parameter supplies the message that describes the member.
      */
-    public void logIfOpenedByBackdoor(Class<?> caller,
-                                      Class<?> target,
-                                      Supplier<String> whatSupplier) {
-        Map<String, String> packages = opened.get(target.getModule());
-        if (packages != null) {
-            String how = packages.get(target.getPackageName());
-            if (how != null) {
-                log(caller, whatSupplier.get(), how);
+    public void logIfOpenedForIllegalAccess(Class<?> caller,
+                                            Class<?> target,
+                                            Supplier<String> whatSupplier) {
+        Module targetModule = target.getModule();
+        String targetPackage = target.getPackageName();
+        if (isOpenForIllegalAccess(targetModule, targetPackage)) {
+            Module callerModule = caller.getModule();
+            if (!JLA.isReflectivelyOpened(targetModule, targetPackage, callerModule)) {
+                log(caller, whatSupplier.get());
+            }
+        }
+    }
+
+    /**
+     * Logs access by caller lookup if the target class is in a package that is
+     * opened for illegal access.
+     */
+    public void logIfOpenedForIllegalAccess(MethodHandles.Lookup caller, Class<?> target) {
+        Module targetModule = target.getModule();
+        String targetPackage = target.getPackageName();
+        if (isOpenForIllegalAccess(targetModule, targetPackage)) {
+            Class<?> callerClass = caller.lookupClass();
+            Module callerModule = callerClass.getModule();
+            if (!JLA.isReflectivelyOpened(targetModule, targetPackage, callerModule)) {
+                URL url = codeSource(callerClass);
+                final String source;
+                if (url == null) {
+                    source = callerClass.getName();
+                } else {
+                    source = callerClass.getName() + " (" + url + ")";
+                }
+                log(callerClass, target.getName(), () ->
+                    "WARNING: Illegal reflective access using Lookup on " + source
+                    + " to " + target);
             }
         }
     }
 
     /**
      * Logs access by a caller class. The {@code what} parameter describes
-     * the member is accessed, the {@code how} parameter is the means by which
-     * access is allocated (CLI option for example).
+     * the member being accessed.
      */
-    private void log(Class<?> caller, String what, String how) {
+    private void log(Class<?> caller, String what) {
         log(caller, what, () -> {
-            PrivilegedAction<ProtectionDomain> pa = caller::getProtectionDomain;
-            CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
-            URL url = (cs != null) ? cs.getLocation() : null;
+            URL url = codeSource(caller);
             String source = caller.getName();
             if (url != null)
                 source += " (" + url + ")";
-            return "WARNING: Illegal access by " + source + " to " + what
-                    + " (permitted by " + how + ")";
+            return "WARNING: Illegal reflective access by " + source + " to " + what;
         });
-    }
-
-
-    /**
-     * Logs access to caller class if the class is in a package that is opened via
-     * a backdoor mechanism.
-     */
-    public void logIfOpenedByBackdoor(MethodHandles.Lookup caller, Class<?> target) {
-        Map<String, String> packages = opened.get(target.getModule());
-        if (packages != null) {
-            String how = packages.get(target.getPackageName());
-            if (how != null) {
-                log(caller.lookupClass(), target.getName(), () ->
-                    "WARNING: Illegal access using Lookup on " + caller.lookupClass()
-                    + " to " + target + " (permitted by " + how + ")");
-            }
-        }
     }
 
     /**
@@ -184,53 +278,73 @@ public final class IllegalAccessLogger {
      * keys so it can be expunged when the caller is GC'ed/unloaded.
      */
     private void log(Class<?> caller, String what, Supplier<String> msgSupplier) {
+        if (mode == Mode.ONESHOT) {
+            synchronized (IllegalAccessLogger.class) {
+                // discard the system wide logger
+                if (logger == null)
+                    return;
+                logger = null;
+            }
+            warningStream.println(loudWarning(caller, msgSupplier));
+            return;
+        }
+
         // stack trace without the top-most frames in java.base
-        List<StackWalker.StackFrame> stack = Holder.STACK_WALKER.walk(s ->
+        List<StackWalker.StackFrame> stack = StackWalkerHolder.INSTANCE.walk(s ->
             s.dropWhile(this::isJavaBase)
-             .limit(MAX_STACK_FRAMES)
+             .limit(32)
              .collect(Collectors.toList())
         );
 
-        // check if the access has already been recorded
+        // record usage if this is the first (or not recently recorded)
         Usage u = new Usage(what, hash(stack));
-        boolean firstUsage;
+        boolean added;
         synchronized (this) {
-            firstUsage = callerToUsages.computeIfAbsent(caller, k -> new HashSet<>()).add(u);
+            added = callerToUsages.computeIfAbsent(caller, k -> new Usages()).add(u);
         }
 
-        // log message if first usage
-        if (firstUsage) {
+        // print warning if this is the first (or not a recent) usage
+        if (added) {
             String msg = msgSupplier.get();
-            if (Holder.PRINT_STACK_TRACE) {
-                synchronized (OUTPUT_LOCK) {
-                    warningStream.println(msg);
-                    stack.forEach(f -> warningStream.println("\tat " + f));
-                }
-            } else {
-                warningStream.println(msg);
+            if (mode == Mode.DEBUG) {
+                StringBuilder sb = new StringBuilder(msg);
+                stack.forEach(f ->
+                    sb.append(System.lineSeparator()).append("\tat " + f)
+                );
+                msg = sb.toString();
             }
+            warningStream.println(msg);
         }
     }
 
-    private static class Usage {
-        private final String what;
-        private final int stack;
-        Usage(String what, int stack) {
-            this.what = what;
-            this.stack = stack;
-        }
-        @Override
-        public int hashCode() {
-            return what.hashCode() ^ stack;
-        }
-        @Override
-        public boolean equals(Object ob) {
-            if (ob instanceof Usage) {
-                Usage that = (Usage)ob;
-                return what.equals(that.what) && stack == (that.stack);
-            } else {
-                return false;
-            }
+    /**
+     * Returns the code source for the given class or null if there is no code source
+     */
+    private URL codeSource(Class<?> clazz) {
+        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
+        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        return (cs != null) ? cs.getLocation() : null;
+    }
+
+    private String loudWarning(Class<?> caller,  Supplier<String> msgSupplier) {
+        StringJoiner sj = new StringJoiner(System.lineSeparator());
+        sj.add("WARNING: An illegal reflective access operation has occurred");
+        sj.add(msgSupplier.get());
+        sj.add("WARNING: Please consider reporting this to the maintainers of "
+                + caller.getName());
+        sj.add("WARNING: Use --illegal-access=warn to enable warnings of further"
+                + " illegal reflective access operations");
+        sj.add("WARNING: All illegal access operations will be denied in a"
+                + " future release");
+        return sj.toString();
+    }
+
+    private static class StackWalkerHolder {
+        static final StackWalker INSTANCE;
+        static {
+            PrivilegedAction<StackWalker> pa = () ->
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            INSTANCE = AccessController.doPrivileged(pa);
         }
     }
 
@@ -256,89 +370,39 @@ public final class IllegalAccessLogger {
         return hash;
     }
 
-    // system-wide IllegalAccessLogger
-    private static volatile IllegalAccessLogger logger;
-
-    /**
-     * Sets the system-wide IllegalAccessLogger
-     */
-    public static void setIllegalAccessLogger(IllegalAccessLogger l) {
-        if (l.exported.isEmpty() && l.opened.isEmpty()) {
-            logger = null;
-        } else {
-            logger = l;
+    private static class Usage {
+        private final String what;
+        private final int stack;
+        Usage(String what, int stack) {
+            this.what = what;
+            this.stack = stack;
+        }
+        @Override
+        public int hashCode() {
+            return what.hashCode() ^ stack;
+        }
+        @Override
+        public boolean equals(Object ob) {
+            if (ob instanceof Usage) {
+                Usage that = (Usage)ob;
+                return what.equals(that.what) && stack == (that.stack);
+            } else {
+                return false;
+            }
         }
     }
 
-    /**
-     * Returns the system-wide IllegalAccessLogger or {@code null} if there is
-     * no logger.
-     */
-    public static IllegalAccessLogger illegalAccessLogger() {
-        return logger;
-    }
-
-    /**
-     * A builder for IllegalAccessLogger objects.
-     */
-    public static class Builder {
-        private final Module UNNAMED = BootLoader.getUnnamedModule();
-        private Map<Module, Map<String, String>> exported;
-        private Map<Module, Map<String, String>> opened;
-        private PrintStream warningStream = System.err;
-
-        public Builder() { }
-
-        public Builder(Map<Module, Map<String, String>> exported,
-                       Map<Module, Map<String, String>> opened) {
-            this.exported = deepCopy(exported);
-            this.opened = deepCopy(opened);
+    @SuppressWarnings("serial")
+    private static class Usages extends LinkedHashMap<Usage, Boolean> {
+        Usages() { }
+        boolean add(Usage u) {
+            return (putIfAbsent(u, Boolean.TRUE) == null);
         }
-
-        public Builder logAccessToExportedPackage(Module m, String pn, String how) {
-            if (!m.isExported(pn, UNNAMED)) {
-                if (exported == null)
-                    exported = new HashMap<>();
-                exported.computeIfAbsent(m, k -> new HashMap<>()).putIfAbsent(pn, how);
-            }
-            return this;
-        }
-
-        public Builder logAccessToOpenPackage(Module m, String pn, String how) {
-            // opens implies exported at run-time.
-            logAccessToExportedPackage(m, pn, how);
-
-            if (!m.isOpen(pn, UNNAMED)) {
-                if (opened == null)
-                    opened = new HashMap<>();
-                opened.computeIfAbsent(m, k -> new HashMap<>()).putIfAbsent(pn, how);
-            }
-            return this;
-        }
-
-        public Builder warningStream(PrintStream warningStream) {
-            this.warningStream = Objects.requireNonNull(warningStream);
-            return this;
-        }
-
-        /**
-         * Builds the logger.
-         */
-        public IllegalAccessLogger build() {
-            return new IllegalAccessLogger(exported, opened, warningStream);
-        }
-    }
-
-
-    static Map<Module, Map<String, String>> deepCopy(Map<Module, Map<String, String>> map) {
-        if (map == null || map.isEmpty()) {
-            return new HashMap<>();
-        } else {
-            Map<Module, Map<String, String>> newMap = new HashMap<>();
-            for (Map.Entry<Module, Map<String, String>> e : map.entrySet()) {
-                newMap.put(e.getKey(), new HashMap<>(e.getValue()));
-            }
-            return newMap;
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Usage, Boolean> oldest) {
+            // prevent map growing too big, say where a utility class
+            // is used by generated code to do illegal access
+            return size() > 16;
         }
     }
 }

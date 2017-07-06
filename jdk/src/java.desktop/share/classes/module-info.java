@@ -49,9 +49,10 @@
  * @since 9
  */
 module java.desktop {
+    requires java.prefs;
+
     requires transitive java.datatransfer;
     requires transitive java.xml;
-    requires java.prefs;
 
     exports java.applet;
     exports java.awt;

@@ -109,7 +109,7 @@ import jdk.internal.reflect.Reflection;
  * and have no specification and implementation versioning information.
  *
  * @jvms 5.3 Run-time package
- * @see <a href="../../../technotes/guides/jar/jar.html#sealing">
+ * @see <a href="{@docRoot}/../specs/jar/jar.html#sealing">
  * The JAR File Specification: Package Sealing</a>
  * @see ClassLoader#definePackage(String, String, String, String, String, String, String, URL)
  *

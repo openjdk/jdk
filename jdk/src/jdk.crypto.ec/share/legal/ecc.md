@@ -1,7 +1,6 @@
 ## Mozilla Elliptic Curve Cryptography (ECC)
 
 ### Mozilla ECC Notice
-<pre>
 
 This notice is provided with respect to Elliptic Curve Cryptography,
 which is included with JRE, JDK, and OpenJDK.
@@ -10,7 +9,7 @@ You are receiving a [copy](http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src
 of the Elliptic Curve Cryptography library in source
 form with the JDK and OpenJDK source distributions, and as object code in
 the JRE & JDK runtimes.
-
+<pre>
 In the case of the JRE & JDK runtimes, the terms of the Oracle license do
 NOT apply to the Elliptic Curve Cryptography library; it is licensed under the
 following license, separately from Oracle's JDK & JRE.  If you do not wish to
@@ -19,6 +18,54 @@ Elliptic Curve Cryptography library:
    - On Solaris and Linux systems: delete $(JAVA_HOME)/lib/libsunec.so
    - On Mac OSX systems: delete $(JAVA_HOME)/lib/libsunec.dylib
    - On Windows systems: delete $(JAVA_HOME)\bin\sunec.dll
+
+</pre>
+
+### Written Offer for Source Code
+<pre>
+
+For third party technology that you receive from Oracle in binary form 
+which is licensed under an open source license that gives you the right
+to receive the source code for that binary, you can obtain a copy of 
+the applicable source code from this page:
+    http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.crypto.ec/share/native/libsunec/impl
+
+If the source code for the technology was not provided to you with the 
+binary, you can also receive a copy of the source code on physical 
+media by submitting a written request to:
+
+   Oracle America, Inc.
+   Attn: Associate General Counsel,
+   Development and Engineering Legal
+   500 Oracle Parkway, 10th Floor
+   Redwood Shores, CA 94065
+
+Or, you may send an email to Oracle using the form at:
+
+http://www.oracle.com/goto/opensourcecode/request
+
+Your request should include:
+
+  - The name of the component or binary file(s) for which you are requesting the source code
+
+  - The name and version number of the Oracle product containing the binary
+
+  - The date you received the Oracle product
+
+  - Your name
+
+  - Your company name (if applicable)
+
+  - Your return mailing address and email and
+
+  - A telephone number in the event we need to reach you.
+
+We may charge you a fee to cover the cost of physical media and processing. 
+Your request must be sent (i) within three (3) years of the date you 
+received the Oracle product that included the component or binary 
+file(s) that are the subject of your request, or (ii) in the case of 
+code licensed under the GPL v3, for as long as Oracle offers spare 
+parts or customer support for that product model.
 
 </pre>
 

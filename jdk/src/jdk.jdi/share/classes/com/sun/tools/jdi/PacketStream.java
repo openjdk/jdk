@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,27 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import java.util.*;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sun.jdi.BooleanValue;
+import com.sun.jdi.ByteValue;
+import com.sun.jdi.CharValue;
+import com.sun.jdi.ClassType;
+import com.sun.jdi.DoubleValue;
+import com.sun.jdi.Field;
+import com.sun.jdi.FloatValue;
+import com.sun.jdi.IntegerValue;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Location;
+import com.sun.jdi.LongValue;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.PrimitiveValue;
+import com.sun.jdi.ShortValue;
+import com.sun.jdi.Value;
 
 class PacketStream {
     final VirtualMachineImpl vm;
@@ -292,8 +310,6 @@ class PacketStream {
         }
     }
 
-
-
     /**
      * Read byte represented as one bytes.
      */
@@ -407,9 +423,9 @@ class PacketStream {
           case 8:
               return readLong();
           case 4:
-              return (long)readInt();
+              return readInt();
           case 2:
-              return (long)readShort();
+              return readShort();
           default:
               throw new UnsupportedOperationException("JDWP: ID size not supported: " + size);
         }
@@ -596,7 +612,7 @@ class PacketStream {
     List<Value> readArrayRegion() {
         byte typeKey = readByte();
         int length = readInt();
-        List<Value> list = new ArrayList<Value>(length);
+        List<Value> list = new ArrayList<>(length);
         boolean gettingObjects = isObjectTag(typeKey);
         for (int i = 0; i < length; i++) {
             /*

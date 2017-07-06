@@ -69,15 +69,16 @@ module jdk.xml.bind {
         jdk.xml.ws;
     exports com.sun.xml.internal.xsom.parser to
         jdk.xml.ws;
+    // com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BindInfo uses JAXBContext
+    exports com.sun.tools.internal.xjc.generator.bean to
+       java.xml.bind;
 
     // XML document content needs to be exported
     opens com.sun.tools.internal.xjc.reader.xmlschema.bindinfo to
         java.xml.bind;
 
-    // com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BindInfo uses JAXBContext
-    exports com.sun.tools.internal.xjc.generator.bean to java.xml.bind;
-
     uses com.sun.tools.internal.xjc.Plugin;
+
     provides com.sun.tools.internal.xjc.Plugin with
         com.sun.tools.internal.xjc.addon.accessors.PluginImpl,
         com.sun.tools.internal.xjc.addon.at_generated.PluginImpl,

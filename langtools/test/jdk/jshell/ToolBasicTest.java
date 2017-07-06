@@ -325,12 +325,12 @@ public class ToolBasicTest extends ReplToolTesting {
         String tilde = "~" + File.separator;
         test(
                 (a) -> assertCommand(a, "/env --class-path " + tilde + "forblato",
-                        "|  File '" + System.getProperty("user.home") + File.separator
-                                + "forblato' for '--class-path' is not found."),
+                        "|  File '" + Paths.get(System.getProperty("user.home"), "forblato").toString()
+                                + "' for '--class-path' is not found."),
                 (a) -> assertCommand(a, "/env --class-path " + jarPath + File.pathSeparator
                                                             + tilde + "forblato",
-                        "|  File '" + System.getProperty("user.home") + File.separator
-                                + "forblato' for '--class-path' is not found.")
+                        "|  File '" + Paths.get(System.getProperty("user.home"), "forblato").toString()
+                                + "' for '--class-path' is not found.")
         );
     }
 
@@ -370,8 +370,8 @@ public class ToolBasicTest extends ReplToolTesting {
         String tilde = "~" + File.separatorChar;
         test(
                 (a) -> assertCommand(a, "/env --module-path " + tilde + "snardugol",
-                        "|  File '" + System.getProperty("user.home")
-                                + File.separatorChar + "snardugol' for '--module-path' is not found.")
+                        "|  File '" + Paths.get(System.getProperty("user.home"), "snardugol").toString()
+                                + "' for '--module-path' is not found.")
         );
     }
 

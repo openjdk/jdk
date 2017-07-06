@@ -1244,7 +1244,7 @@ static int getMacAddress
   (JNIEnv *env, const char *ifname, const struct in_addr *addr,
    unsigned char *buf)
 {
-    static struct ifreq ifr;
+    struct ifreq ifr;
     int i, sock;
 
     if ((sock = openSocketWithFallback(env, ifname)) < 0) {

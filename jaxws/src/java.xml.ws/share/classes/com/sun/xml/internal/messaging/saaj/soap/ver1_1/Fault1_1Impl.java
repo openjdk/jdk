@@ -60,37 +60,48 @@ public class Fault1_1Impl extends FaultImpl {
        super(ownerDocument, NameImpl.createFault1_1Name(prefix));
     }
 
-    public Fault1_1Impl(Element domElement, SOAPDocumentImpl ownerDoc) {
+    public Fault1_1Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
         super(ownerDoc, domElement);
     }
 
+    public Fault1_1Impl(SOAPDocumentImpl ownerDoc) {
+        super(ownerDoc, NameImpl.createFault1_1Name(null));
+    }
+
+    @Override
     protected NameImpl getDetailName() {
         return NameImpl.createDetail1_1Name();
     }
 
+    @Override
     protected NameImpl getFaultCodeName() {
         return NameImpl.createFromUnqualifiedName("faultcode");
     }
 
+    @Override
     protected NameImpl getFaultStringName() {
         return NameImpl.createFromUnqualifiedName("faultstring");
     }
 
+    @Override
     protected NameImpl getFaultActorName() {
         return NameImpl.createFromUnqualifiedName("faultactor");
     }
 
+    @Override
     protected DetailImpl createDetail() {
         return new Detail1_1Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument());
     }
 
+    @Override
     protected FaultElementImpl createSOAPFaultElement(String localName) {
         return new FaultElement1_1Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        localName);
     }
 
+    @Override
     protected void checkIfStandardFaultCode(String faultCode, String uri)
         throws SOAPException {
         // SOAP 1.1 doesn't seem to mandate using faultcode from a particular
@@ -98,16 +109,19 @@ public class Fault1_1Impl extends FaultImpl {
         // Also need to be backward compatible.
     }
 
+    @Override
     protected void finallySetFaultCode(String faultcode) throws SOAPException {
         this.faultCodeElement.addTextNode(faultcode);
     }
 
+    @Override
     public String getFaultCode() {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
         return this.faultCodeElement.getValue();
     }
 
+    @Override
     public Name getFaultCodeAsName() {
 
         String faultcodeString = getFaultCode();
@@ -132,6 +146,7 @@ public class Fault1_1Impl extends FaultImpl {
         return NameImpl.createFromQualifiedName(faultcodeString, nsName);
     }
 
+    @Override
     public QName getFaultCodeAsQName() {
         String faultcodeString = getFaultCode();
         if (faultcodeString == null) {
@@ -142,6 +157,7 @@ public class Fault1_1Impl extends FaultImpl {
         return convertCodeToQName(faultcodeString, this.faultCodeElement);
     }
 
+    @Override
     public void setFaultString(String faultString) throws SOAPException {
 
         if (this.faultStringElement == null)
@@ -158,6 +174,7 @@ public class Fault1_1Impl extends FaultImpl {
         this.faultStringElement.addTextNode(faultString);
     }
 
+    @Override
     public String getFaultString() {
         if (this.faultStringElement == null)
             findFaultStringElement();
@@ -165,6 +182,7 @@ public class Fault1_1Impl extends FaultImpl {
 
     }
 
+    @Override
     public Locale getFaultStringLocale() {
         if (this.faultStringElement == null)
             findFaultStringElement();
@@ -178,6 +196,7 @@ public class Fault1_1Impl extends FaultImpl {
         return null;
     }
 
+    @Override
     public void setFaultString(String faultString, Locale locale)
         throws SOAPException {
         setFaultString(faultString);
@@ -186,6 +205,7 @@ public class Fault1_1Impl extends FaultImpl {
             localeToXmlLang(locale));
     }
 
+    @Override
     protected boolean isStandardFaultElement(String localName) {
         if (localName.equalsIgnoreCase("detail") ||
             localName.equalsIgnoreCase("faultcode") ||
@@ -196,6 +216,7 @@ public class Fault1_1Impl extends FaultImpl {
         return false;
     }
 
+    @Override
     public void appendFaultSubcode(QName subcode) {
         log.log(
             Level.SEVERE,
@@ -204,6 +225,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public void removeAllFaultSubcodes() {
         log.log(
             Level.SEVERE,
@@ -212,7 +234,8 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
-    public Iterator getFaultSubcodes() {
+    @Override
+    public Iterator<QName> getFaultSubcodes() {
         log.log(
             Level.SEVERE,
             "SAAJ0303.ver1_1.msg.op.unsupported.in.SOAP1.1",
@@ -220,6 +243,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public String getFaultReasonText(Locale locale) {
         log.log(
             Level.SEVERE,
@@ -228,7 +252,8 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
-    public Iterator getFaultReasonTexts() {
+    @Override
+    public Iterator<String> getFaultReasonTexts() {
         log.log(
             Level.SEVERE,
             "SAAJ0303.ver1_1.msg.op.unsupported.in.SOAP1.1",
@@ -236,7 +261,8 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
-    public Iterator getFaultReasonLocales() {
+    @Override
+    public Iterator<Locale> getFaultReasonLocales() {
         log.log(
             Level.SEVERE,
             "SAAJ0303.ver1_1.msg.op.unsupported.in.SOAP1.1",
@@ -244,6 +270,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public void addFaultReasonText(String text, java.util.Locale locale)
         throws SOAPException {
         log.log(
@@ -253,6 +280,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public String getFaultRole() {
         log.log(
             Level.SEVERE,
@@ -261,6 +289,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public void setFaultRole(String uri) {
         log.log(
             Level.SEVERE,
@@ -269,6 +298,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public String getFaultNode() {
         log.log(
             Level.SEVERE,
@@ -277,6 +307,7 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     public void setFaultNode(String uri) {
         log.log(
             Level.SEVERE,
@@ -285,10 +316,12 @@ public class Fault1_1Impl extends FaultImpl {
         throw new UnsupportedOperationException("Not supported in SOAP 1.1");
     }
 
+    @Override
     protected QName getDefaultFaultCode() {
         return new QName(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, "Server");
     }
 
+    @Override
     public SOAPElement addChildElement(SOAPElement element)
         throws SOAPException {
         String localName = element.getLocalName();
@@ -301,18 +334,21 @@ public class Fault1_1Impl extends FaultImpl {
         return super.addChildElement(element);
     }
 
+    @Override
     protected FaultElementImpl createSOAPFaultElement(QName qname) {
          return new FaultElement1_1Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        qname);
     }
 
+    @Override
     protected FaultElementImpl createSOAPFaultElement(Name qname) {
          return new FaultElement1_1Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        (NameImpl)qname);
     }
 
+    @Override
     public void setFaultCode(String faultCode, String prefix, String uri)
         throws SOAPException {
         if (prefix == null || "".equals(prefix)) {
@@ -370,6 +406,7 @@ public class Fault1_1Impl extends FaultImpl {
         return false;
     }
 
+    @Override
      public void setFaultActor(String faultActor) throws SOAPException {
         if (this.faultActorElement == null)
             findFaultActorElement();

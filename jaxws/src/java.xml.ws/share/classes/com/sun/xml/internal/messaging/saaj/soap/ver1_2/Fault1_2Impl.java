@@ -29,12 +29,10 @@
 */
 package com.sun.xml.internal.messaging.saaj.soap.ver1_2;
 
-import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.*;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocument;
@@ -42,6 +40,14 @@ import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.*;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPConstants;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPException;
 import org.w3c.dom.Element;
 
 
@@ -69,22 +75,30 @@ public class Fault1_2Impl extends FaultImpl {
         super(ownerDocument, NameImpl.createFault1_2Name(null, prefix));
     }
 
-    public Fault1_2Impl(Element domElement, SOAPDocumentImpl ownerDoc) {
+    public Fault1_2Impl(SOAPDocumentImpl ownerDocument) {
+        super(ownerDocument, NameImpl.createFault1_2Name(null, null));
+    }
+
+    public Fault1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
         super(ownerDoc, domElement);
     }
 
+    @Override
     protected NameImpl getDetailName() {
         return NameImpl.createSOAP12Name("Detail", getPrefix());
     }
 
+    @Override
     protected NameImpl getFaultCodeName() {
         return NameImpl.createSOAP12Name("Code", getPrefix());
     }
 
+    @Override
     protected NameImpl getFaultStringName() {
         return getFaultReasonName();
     }
 
+    @Override
     protected NameImpl getFaultActorName() {
         return getFaultRoleName();
     }
@@ -109,17 +123,20 @@ public class Fault1_2Impl extends FaultImpl {
         return NameImpl.createXmlName("lang");
     }
 
+    @Override
     protected DetailImpl createDetail() {
         return new Detail1_2Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument());
     }
 
+    @Override
     protected FaultElementImpl createSOAPFaultElement(String localName) {
         return new FaultElement1_2Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        localName);
     }
 
+    @Override
     protected void checkIfStandardFaultCode(String faultCode, String uri)
         throws SOAPException {
         QName qname = new QName(uri, faultCode);
@@ -136,6 +153,7 @@ public class Fault1_2Impl extends FaultImpl {
         throw new SOAPExceptionImpl(qname + " is not a standard Code value");
     }
 
+    @Override
     protected void finallySetFaultCode(String faultcode) throws SOAPException {
         SOAPElement value = this.faultCodeElement.addChildElement(valueName);
         value.addTextNode(faultcode);
@@ -145,13 +163,14 @@ public class Fault1_2Impl extends FaultImpl {
         findFaultStringElement();
     }
 
-    public Iterator getFaultReasonTexts() throws SOAPException {
+    @Override
+    public Iterator<String> getFaultReasonTexts() throws SOAPException {
         // Fault Reason has similar semantics as faultstring
         if (this.faultStringElement == null)
             findReasonElement();
         Iterator eachTextElement =
             this.faultStringElement.getChildElements(textName);
-        List<String> texts = new ArrayList<String>();
+        List<String> texts = new ArrayList<>();
         while (eachTextElement.hasNext()) {
             SOAPElement textElement = (SOAPElement) eachTextElement.next();
             Locale thisLocale = getLocale(textElement);
@@ -168,6 +187,7 @@ public class Fault1_2Impl extends FaultImpl {
         return texts.iterator();
     }
 
+    @Override
     public void addFaultReasonText(String text, java.util.Locale locale)
         throws SOAPException {
 
@@ -214,6 +234,7 @@ public class Fault1_2Impl extends FaultImpl {
         }
     }
 
+    @Override
     public String getFaultReasonText(Locale locale) throws SOAPException {
 
         if (locale == null)
@@ -234,13 +255,14 @@ public class Fault1_2Impl extends FaultImpl {
         return null;
     }
 
-    public Iterator getFaultReasonLocales() throws SOAPException {
+    @Override
+    public Iterator<Locale> getFaultReasonLocales() throws SOAPException {
         // Fault Reason has similar semantics as faultstring
         if (this.faultStringElement == null)
             findReasonElement();
         Iterator eachTextElement =
             this.faultStringElement.getChildElements(textName);
-        List<Locale> localeSet = new ArrayList<Locale>();
+        List<Locale> localeSet = new ArrayList<>();
         while (eachTextElement.hasNext()) {
             SOAPElement textElement = (SOAPElement) eachTextElement.next();
             Locale thisLocale = getLocale(textElement);
@@ -257,6 +279,7 @@ public class Fault1_2Impl extends FaultImpl {
         return localeSet.iterator();
     }
 
+    @Override
     public Locale getFaultStringLocale() {
         Locale locale = null;
         try {
@@ -288,6 +311,7 @@ public class Fault1_2Impl extends FaultImpl {
         return null;
     }
 
+    @Override
     public String getFaultNode() {
         SOAPElement faultNode = findAndConvertChildElement(getFaultNodeName());
         if (faultNode == null) {
@@ -296,6 +320,7 @@ public class Fault1_2Impl extends FaultImpl {
         return faultNode.getValue();
     }
 
+    @Override
     public void setFaultNode(String uri) throws SOAPException {
         SOAPElement faultNode = findAndConvertChildElement(getFaultNodeName());
         if (faultNode != null) {
@@ -314,10 +339,12 @@ public class Fault1_2Impl extends FaultImpl {
         addNode(faultNode);
     }
 
+    @Override
     public String getFaultRole() {
         return getFaultActor();
     }
 
+    @Override
     public void setFaultRole(String uri) throws SOAPException {
         if (this.faultActorElement == null)
             findFaultActorElement();
@@ -333,6 +360,7 @@ public class Fault1_2Impl extends FaultImpl {
         addNode(this.faultActorElement);
     }
 
+    @Override
     public String getFaultCode() {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
@@ -341,6 +369,7 @@ public class Fault1_2Impl extends FaultImpl {
         return ((SOAPElement) codeValues.next()).getValue();
     }
 
+    @Override
     public QName getFaultCodeAsQName() {
         String faultcode = getFaultCode();
         if (faultcode == null) {
@@ -355,6 +384,7 @@ public class Fault1_2Impl extends FaultImpl {
             (SOAPElement) valueElements.next());
     }
 
+    @Override
     public Name getFaultCodeAsName() {
         String faultcode = getFaultCode();
         if (faultcode == null) {
@@ -370,6 +400,7 @@ public class Fault1_2Impl extends FaultImpl {
                 (SOAPElement) valueElements.next()));
     }
 
+    @Override
     public String getFaultString() {
         String reason = null;
         try {
@@ -380,10 +411,12 @@ public class Fault1_2Impl extends FaultImpl {
         return reason;
     }
 
+    @Override
     public void setFaultString(String faultString) throws SOAPException {
         addFaultReasonText(faultString, Locale.getDefault());
     }
 
+    @Override
     public void setFaultString(
         String faultString,
         Locale locale)
@@ -391,6 +424,7 @@ public class Fault1_2Impl extends FaultImpl {
         addFaultReasonText(faultString, locale);
     }
 
+    @Override
     public void appendFaultSubcode(QName subcode) throws SOAPException {
         if (subcode == null) {
             return;
@@ -426,6 +460,7 @@ public class Fault1_2Impl extends FaultImpl {
         subcodeValueElement.addTextNode(prefix + ":" + subcode.getLocalPart());
     }
 
+    @Override
     public void removeAllFaultSubcodes() {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
@@ -437,10 +472,11 @@ public class Fault1_2Impl extends FaultImpl {
         }
     }
 
-    public Iterator getFaultSubcodes() {
+    @Override
+    public Iterator<QName> getFaultSubcodes() {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
-        final List<QName> subcodeList = new ArrayList<QName>();
+        final List<QName> subcodeList = new ArrayList<>();
         SOAPElement currentCodeElement = this.faultCodeElement;
         Iterator subcodeElements =
             currentCodeElement.getChildElements(subcodeName);
@@ -457,14 +493,17 @@ public class Fault1_2Impl extends FaultImpl {
         return new Iterator<QName>() {
             Iterator<QName> subCodeIter = subcodeList.iterator();
 
+            @Override
             public boolean hasNext() {
                 return subCodeIter.hasNext();
             }
 
+            @Override
             public QName next() {
                 return subCodeIter.next();
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException(
                     "Method remove() not supported on SubCodes Iterator");
@@ -480,11 +519,13 @@ public class Fault1_2Impl extends FaultImpl {
      * Override setEncodingStyle of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Fault (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public void setEncodingStyle(String encodingStyle) throws SOAPException {
         log.severe("SAAJ0407.ver1_2.no.encodingStyle.in.fault");
         throw new SOAPExceptionImpl("encodingStyle attribute cannot appear on Fault");
     }
 
+    @Override
     public SOAPElement addAttribute(Name name, String value)
         throws SOAPException {
         if (name.getLocalName().equals("encodingStyle")
@@ -494,6 +535,7 @@ public class Fault1_2Impl extends FaultImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     public SOAPElement addAttribute(QName name, String value)
         throws SOAPException {
         if (name.getLocalPart().equals("encodingStyle")
@@ -503,6 +545,7 @@ public class Fault1_2Impl extends FaultImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     public SOAPElement addTextNode(String text) throws SOAPException {
         log.log(
             Level.SEVERE,
@@ -511,6 +554,7 @@ public class Fault1_2Impl extends FaultImpl {
         throw new SOAPExceptionImpl("Adding text to SOAP 1.2 Fault is not legal");
     }
 
+    @Override
     public SOAPElement addChildElement(SOAPElement element)
         throws SOAPException {
         String localName = element.getLocalName();
@@ -533,6 +577,7 @@ public class Fault1_2Impl extends FaultImpl {
             return super.addChildElement(element);
     }
 
+    @Override
     protected boolean isStandardFaultElement(String localName) {
         if (localName.equalsIgnoreCase("code") ||
             localName.equalsIgnoreCase("reason") ||
@@ -544,22 +589,26 @@ public class Fault1_2Impl extends FaultImpl {
         return false;
     }
 
+    @Override
     protected QName getDefaultFaultCode() {
         return SOAPConstants.SOAP_SENDER_FAULT;
     }
 
+    @Override
      protected FaultElementImpl createSOAPFaultElement(QName qname) {
          return new FaultElement1_2Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        qname);
     }
 
+    @Override
     protected FaultElementImpl createSOAPFaultElement(Name qname) {
          return new FaultElement1_2Impl(
                        ((SOAPDocument) getOwnerDocument()).getDocument(),
                        (NameImpl)qname);
     }
 
+    @Override
      public void setFaultActor(String faultActor) throws SOAPException {
         this.setFaultRole(faultActor);
     }

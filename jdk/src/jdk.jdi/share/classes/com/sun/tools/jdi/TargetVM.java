@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,24 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
 
-import java.util.*;
-import java.io.IOException;
-
 public class TargetVM implements Runnable {
-    private Map<String, Packet> waitingQueue = new HashMap<String, Packet>(32,0.75f);
+    private Map<String, Packet> waitingQueue = new HashMap<>(32,0.75f);
     private boolean shouldListen = true;
-    private List<EventQueue> eventQueues = Collections.synchronizedList(new ArrayList<EventQueue>(2));
+    private List<EventQueue> eventQueues = Collections.synchronizedList(new ArrayList<>(2));
     private VirtualMachineImpl vm;
     private Connection connection;
     private Thread readerThread;
@@ -111,7 +117,7 @@ public class TargetVM implements Runnable {
         Packet p=null,p2;
         String idString;
 
-        while(shouldListen) {
+        while (shouldListen) {
 
             boolean done = false;
             try {
@@ -136,7 +142,7 @@ public class TargetVM implements Runnable {
                 dumpPacket(p, false);
             }
 
-            if((p.flags & Packet.Reply) == 0) {
+            if ((p.flags & Packet.Reply) == 0) {
                 // It's a command
                 handleVMCommand(p);
             } else {
@@ -154,7 +160,7 @@ public class TargetVM implements Runnable {
                         waitingQueue.remove(idString);
                 }
 
-                if(p2 == null) {
+                if (p2 == null) {
                     // Whoa! a reply without a sender. Problem.
                     // FIX ME! Need to post an error.
 
@@ -226,10 +232,7 @@ public class TargetVM implements Runnable {
      */
     protected void handleEventCmdSet(Packet p) {
         EventSet eventSet = new EventSetImpl(vm, p);
-
-        if (eventSet != null) {
-            queueEventSet(eventSet);
-        }
+        queueEventSet(eventSet);
     }
 
     private EventController eventController() {
@@ -371,5 +374,4 @@ public class TargetVM implements Runnable {
             }
         }
     }
-
 }
