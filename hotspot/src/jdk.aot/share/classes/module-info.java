@@ -23,8 +23,15 @@
  * questions.
  */
 
+/**
+ * Defines the Ahead-of-Time (AOT) compiler, <em>{@index jaotc jaotc tool}</em>,
+ * for compiling Java classes into AOT library.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.aot {
-    requires jdk.management;
     requires jdk.internal.vm.ci;
     requires jdk.internal.vm.compiler;
+    requires jdk.management;
 }

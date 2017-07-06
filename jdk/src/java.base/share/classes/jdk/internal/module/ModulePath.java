@@ -35,6 +35,7 @@ import java.io.UncheckedIOException;
 import java.lang.module.FindException;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Builder;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.net.URI;
@@ -404,6 +405,9 @@ public class ModulePath implements ModuleFinder {
 
     private static final String SERVICES_PREFIX = "META-INF/services/";
 
+    private static final Attributes.Name AUTOMATIC_MODULE_NAME
+        = new Attributes.Name("Automatic-Module-Name");
+
     /**
      * Returns the service type corresponding to the name of a services
      * configuration file if it is a legal type name.
@@ -445,48 +449,68 @@ public class ModulePath implements ModuleFinder {
     /**
      * Treat the given JAR file as a module as follows:
      *
-     * 1. The module name (and optionally the version) is derived from the file
-     *    name of the JAR file
-     * 2. All packages are derived from the .class files in the JAR file
-     * 3. The contents of any META-INF/services configuration files are mapped
+     * 1. The value of the Automatic-Module-Name attribute is the module name
+     * 2. The version, and the module name when the  Automatic-Module-Name
+     *    attribute is not present, is derived from the file ame of the JAR file
+     * 3. All packages are derived from the .class files in the JAR file
+     * 4. The contents of any META-INF/services configuration files are mapped
      *    to "provides" declarations
-     * 4. The Main-Class attribute in the main attributes of the JAR manifest
+     * 5. The Main-Class attribute in the main attributes of the JAR manifest
      *    is mapped to the module descriptor mainClass if possible
      */
     private ModuleDescriptor deriveModuleDescriptor(JarFile jf)
         throws IOException
     {
-        // Derive module name and version from JAR file name
+        // Read Automatic-Module-Name attribute if present
+        Manifest man = jf.getManifest();
+        Attributes attrs = null;
+        String moduleName = null;
+        if (man != null) {
+            attrs = man.getMainAttributes();
+            if (attrs != null) {
+                moduleName = attrs.getValue(AUTOMATIC_MODULE_NAME);
+            }
+        }
 
+        // Derive the version, and the module name if needed, from JAR file name
         String fn = jf.getName();
         int i = fn.lastIndexOf(File.separator);
         if (i != -1)
-            fn = fn.substring(i+1);
+            fn = fn.substring(i + 1);
 
-        // drop .jar
-        String mn = fn.substring(0, fn.length()-4);
+        // drop ".jar"
+        String name = fn.substring(0, fn.length() - 4);
         String vs = null;
 
         // find first occurrence of -${NUMBER}. or -${NUMBER}$
-        Matcher matcher = Patterns.DASH_VERSION.matcher(mn);
+        Matcher matcher = Patterns.DASH_VERSION.matcher(name);
         if (matcher.find()) {
             int start = matcher.start();
 
             // attempt to parse the tail as a version string
             try {
-                String tail = mn.substring(start+1);
+                String tail = name.substring(start + 1);
                 ModuleDescriptor.Version.parse(tail);
                 vs = tail;
             } catch (IllegalArgumentException ignore) { }
 
-            mn = mn.substring(0, start);
+            name = name.substring(0, start);
         }
 
-        // finally clean up the module name
-        mn = cleanModuleName(mn);
+        // Create builder, using the name derived from file name when
+        // Automatic-Module-Name not present
+        Builder builder;
+        if (moduleName != null) {
+            try {
+                builder = ModuleDescriptor.newAutomaticModule(moduleName);
+            } catch (IllegalArgumentException e) {
+                throw new FindException(AUTOMATIC_MODULE_NAME + ": " + e.getMessage());
+            }
+        } else {
+            builder = ModuleDescriptor.newAutomaticModule(cleanModuleName(name));
+        }
 
-        // Builder throws IAE if module name is empty or invalid
-        ModuleDescriptor.Builder builder = ModuleDescriptor.newAutomaticModule(mn);
+        // module version if present
         if (vs != null)
             builder.version(vs);
 
@@ -541,9 +565,7 @@ public class ModulePath implements ModuleFinder {
         }
 
         // Main-Class attribute if it exists
-        Manifest man = jf.getManifest();
-        if (man != null) {
-            Attributes attrs = man.getMainAttributes();
+        if (attrs != null) {
             String mainClass = attrs.getValue(Attributes.Name.MAIN_CLASS);
             if (mainClass != null) {
                 mainClass = mainClass.replace("/", ".");

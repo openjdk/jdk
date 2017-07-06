@@ -294,9 +294,10 @@ public class SSLParameters {
      * SSL/TLS/DTLS handshaking.  This is to prevent man-in-the-middle attacks.
      *
      * @param algorithm The standard string name of the endpoint
-     *     identification algorithm (or null).  See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     *     Java Cryptography Architecture API Specification &amp; Reference </a>
+     *     identification algorithm (or null).
+     *     See the <a href=
+     *     "{@docRoot}/../specs/security/standard-names.html">
+     *     Java Security Standard Algorithm Names</a> document
      *     for information about standard algorithm names.
      *
      * @see X509ExtendedTrustManager

@@ -962,9 +962,13 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * <p>
      * A description of these layouts follows:
      *
-     * <table border="1"
-     *  summary="Describes layouts VERTICAL, HORIZONTAL_WRAP, and VERTICAL_WRAP">
-     *   <tr><th><p style="text-align:left">Value</p></th><th><p style="text-align:left">Description</p></th></tr>
+     * <table class="striped">
+     * <caption>Describes layouts VERTICAL,HORIZONTAL_WRAP, and VERTICAL_WRAP
+     * </caption>
+     * <thead>
+     *   <tr><th>Value</th><th>Description</th></tr>
+     * </thead>
+     * <tbody>
      *   <tr><td><code>VERTICAL</code>
      *       <td>Cells are layed out vertically in a single column.
      *   <tr><td><code>HORIZONTAL_WRAP</code>
@@ -978,7 +982,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *           necessary. If the {@code visibleRowCount} property is less than
      *           or equal to zero, wrapping is determined by the height of the
      *           list; otherwise wrapping is done at {@code visibleRowCount} rows.
-     *  </table>
+     * </tbody>
+     * </table>
      * <p>
      * The default value of this property is <code>VERTICAL</code>.
      *

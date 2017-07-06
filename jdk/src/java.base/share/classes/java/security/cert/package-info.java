@@ -32,15 +32,14 @@
  * <h2>Package Specification</h2>
  *
  * <ul>
- *   <li><a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *     <b>Java&trade;
- *     Cryptography Architecture (JCA) Reference Guide</b></a>
+ *   <li>{@extLink security_guide_jca
+ *     Java Cryptography Architecture (JCA) Reference Guide}
  *   <li>RFC 5280: Internet X.509 Public Key Infrastructure Certificate and
  *     Certificate Revocation List (CRL) Profile
  *   <li>RFC 2560: X.509 Internet Public Key Infrastructure Online Certificate
  *     Status Protocol - OCSP
  *   <li><a href="{@docRoot}/../specs/security/standard-names.html">
- *     <b>Java&trade; Security Standard Algorithm Names Specification
+ *     <b>Java Security Standard Algorithm Names Specification
  *     </b></a></li>
  * </ul>
  *
@@ -50,12 +49,7 @@
  * <ul>
  *   <li><a href="http://www.ietf.org/rfc/rfc5280.txt">
  *     http://www.ietf.org/rfc/rfc5280.txt</a>
- *   <li><a href=
- *     "{@docRoot}/../technotes/guides/security/certpath/CertPathProgGuide.html">
- *     <b>Java&trade;
- *     PKI Programmer's Guide</b></a>
- *   <li><a href="{@docRoot}/../technotes/guides/security/cert3.html">
- *     <b>X.509 Certificates and Certificate Revocation Lists (CRLs)</b></a>
+ *   <li> {@extLink security_guide_pki Java PKI Programmer's Guide}
  * </ul>
  *
  * @since 1.2

@@ -55,7 +55,8 @@ package java.awt;
  * If the container's {@code ComponentOrientation} property is horizontal
  * and right-to-left, the example produces the output shown in Figure 2.
  *
- * <table style="float:center;width:600" summary="layout">
+ * <table style="float:center;width:600">
+ * <caption style="display:none">Figures</caption>
  * <tr style="text-align:center">
  * <td><img SRC="doc-files/GridLayout-1.gif"
  *      alt="Shows 6 buttons in rows of 2. Row 1 shows buttons 1 then 2.

@@ -349,8 +349,6 @@ public class AccessorProperty extends Property {
         setType(hasDualFields() ? JSType.unboxedFieldType(initialValue) : Object.class);
         if (initialValue instanceof Integer) {
             invokeSetter(owner, ((Integer)initialValue).intValue());
-        } else if (initialValue instanceof Long) {
-            invokeSetter(owner, ((Long)initialValue).longValue());
         } else if (initialValue instanceof Double) {
             invokeSetter(owner, ((Double)initialValue).doubleValue());
         } else {
