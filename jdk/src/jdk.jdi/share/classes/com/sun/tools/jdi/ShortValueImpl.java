@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.ShortValue;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class ShortValueImpl extends PrimitiveValueImpl
                             implements ShortValue {
     private short value;
 
-    ShortValueImpl(VirtualMachine aVm,short aValue) {
+    ShortValueImpl(VirtualMachine aVm, short aValue) {
         super(aVm);
-
         value = aValue;
     }
 
@@ -67,15 +69,15 @@ public class ShortValueImpl extends PrimitiveValueImpl
     }
 
     public boolean booleanValue() {
-        return(value == 0)?false:true;
+        return (value == 0 ? false : true);
     }
 
     public byte byteValue() {
-        return(byte)value;
+        return (byte)value;
     }
 
     public char charValue() {
-        return(char)value;
+        return (char)value;
     }
 
     public short shortValue() {
@@ -83,19 +85,19 @@ public class ShortValueImpl extends PrimitiveValueImpl
     }
 
     public int intValue() {
-        return(int)value;
+        return value;
     }
 
     public long longValue() {
-        return(long)value;
+        return value;
     }
 
     public float floatValue() {
-        return(float)value;
+        return value;
     }
 
     public double doubleValue() {
-        return(double)value;
+        return value;
     }
 
     byte checkedByteValue() throws InvalidTypeException {

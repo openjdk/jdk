@@ -41,6 +41,16 @@ import jdk.jshell.tool.JavaShellToolBuilder;
 
 public class UITesting {
 
+    private final boolean laxLineEndings;
+
+    public UITesting() {
+        this(false);
+    }
+
+    public UITesting(boolean laxLineEndings) {
+        this.laxLineEndings = laxLineEndings;
+    }
+
     protected void doRunTest(Test test) throws Exception {
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
@@ -120,7 +130,7 @@ public class UITesting {
     }
 
     protected void waitOutput(StringBuilder out, String expected) {
-        expected = expected.replaceAll("\n", System.getProperty("line.separator"));
+        expected = expected.replaceAll("\n", laxLineEndings ? "\r?\n" : System.getProperty("line.separator"));
         Pattern expectedPattern = Pattern.compile(expected, Pattern.DOTALL);
         synchronized (out) {
             long s = System.currentTimeMillis();

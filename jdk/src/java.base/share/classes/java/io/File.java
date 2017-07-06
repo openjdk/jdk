@@ -916,23 +916,28 @@ public class File
      * Returns the time that the file denoted by this abstract pathname was
      * last modified.
      *
+     * @apiNote
+     * While the unit of time of the return value is milliseconds, the
+     * granularity of the value depends on the underlying file system and may
+     * be larger.  For example, some file systems use time stamps in units of
+     * seconds.
+     *
      * <p> Where it is required to distinguish an I/O exception from the case
      * where {@code 0L} is returned, or where several attributes of the
      * same file are required at the same time, or where the time of last
      * access or the creation time are required, then the {@link
      * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
-     * Files.readAttributes} method may be used.
-     *
-     * @apiNote
-     * While the unit of time of the return value is milliseconds,
-     * the granularity of the value depends on the underlying
-     * file system and may be larger.  For example, some
-     * file systems use time stamps in units of seconds.
+     * Files.readAttributes} method may be used.  If however only the
+     * time of last modification is required, then the
+     * {@link java.nio.file.Files#getLastModifiedTime(Path,LinkOption[])
+     * Files.getLastModifiedTime} method may be used instead.
      *
      * @return  A <code>long</code> value representing the time the file was
      *          last modified, measured in milliseconds since the epoch
      *          (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
-     *          file does not exist or if an I/O error occurs
+     *          file does not exist or if an I/O error occurs.  The value may
+     *          be negative indicating the number of milliseconds before the
+     *          epoch
      *
      * @throws  SecurityException
      *          If a security manager exists and its {@link

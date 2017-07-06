@@ -39,14 +39,17 @@
  * @since 9
  */
 module jdk.jconsole {
-    requires transitive java.desktop;
-    requires transitive java.management;
     requires java.management.rmi;
     requires java.rmi;
     requires jdk.attach;
     requires jdk.internal.jvmstat;
     requires jdk.management;
     requires jdk.management.agent;
+
+    requires transitive java.desktop;
+    requires transitive java.management;
+
     exports com.sun.tools.jconsole;
+
     uses com.sun.tools.jconsole.JConsolePlugin;
 }

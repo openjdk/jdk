@@ -53,6 +53,7 @@ module java.rmi {
     exports java.rmi.registry;
     exports java.rmi.server;
     exports javax.rmi.ssl;
+
     // com.sun.rmi.rmid contains permissions classes that must be
     // accessible to the security manager at initialization time
     exports com.sun.rmi.rmid to java.base;
@@ -66,5 +67,6 @@ module java.rmi {
         java.management.rmi,
         jdk.management.agent,
         jdk.jconsole;
+
     uses java.rmi.server.RMIClassLoaderSpi;
 }

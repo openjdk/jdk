@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
@@ -65,6 +66,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.JavaFileManager;
@@ -1341,6 +1344,24 @@ public class Locations {
                             String moduleName = readModuleName(moduleInfoClass);
                             return new Pair<>(moduleName, p);
                         }
+                        Path mf = fs.getPath("META-INF/MANIFEST.MF");
+                        if (Files.exists(mf)) {
+                            try (InputStream in = Files.newInputStream(mf)) {
+                                Manifest man = new Manifest(in);
+                                Attributes attrs = man.getMainAttributes();
+                                if (attrs != null) {
+                                    String moduleName = attrs.getValue(new Attributes.Name("Automatic-Module-Name"));
+                                    if (moduleName != null) {
+                                        if (isModuleName(moduleName)) {
+                                            return new Pair<>(moduleName, p);
+                                        } else {
+                                            log.error(Errors.LocnCantGetModuleNameForJar(p));
+                                            return null;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     } catch (ModuleNameReader.BadClassFile e) {
                         log.error(Errors.LocnBadModuleInfo(p));
                         return null;
@@ -1428,6 +1449,22 @@ public class Locations {
             }
         }
 
+        //from jdk.internal.module.Checks:
+        /**
+         * Returns {@code true} if the given name is a legal module name.
+         */
+        private boolean isModuleName(String name) {
+            int next;
+            int off = 0;
+            while ((next = name.indexOf('.', off)) != -1) {
+                String id = name.substring(off, next);
+                if (!SourceVersion.isName(id))
+                    return false;
+                off = next+1;
+            }
+            String last = name.substring(off);
+            return SourceVersion.isName(last);
+        }
     }
 
     private class ModuleSourcePathLocationHandler extends BasicLocationHandler {

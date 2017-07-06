@@ -25,7 +25,7 @@
 
 /**
 <p style="font-style: italic; font-size:larger">
-<b>Note:</b> The declarations in this package have been superseded by those
+<b>Note:</b> The declarations in this package have been replaced by those
 in the new package {@link jdk.javadoc.doclet}.
 </p>
 */

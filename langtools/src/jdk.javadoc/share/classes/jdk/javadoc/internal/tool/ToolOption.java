@@ -359,15 +359,6 @@ public enum ToolOption {
         public void process(Helper helper) {
             throw new AssertionError("the -J flag should be caught by the launcher.");
         }
-    },
-
-    // This option exists only for the purpose of documenting itself.
-    // It's actually implemented ahead of the normal option decoding loop.
-    Xold("-Xold", EXTENDED) {
-        @Override
-        public void process(Helper helper) {
-            throw new AssertionError("the -Xold flag should be handled earlier.");
-        }
     };
 
     public final String primaryName;
