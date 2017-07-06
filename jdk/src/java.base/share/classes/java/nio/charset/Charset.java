@@ -281,19 +281,6 @@ public abstract class Charset
 
     /* -- Static methods -- */
 
-    private static volatile String bugLevel;
-
-    static boolean atBugLevel(String bl) {              // package-private
-        String level = bugLevel;
-        if (level == null) {
-            if (!VM.isBooted())
-                return false;
-            bugLevel = level = GetPropertyAction
-                    .privilegedGetProperty("sun.nio.cs.bugLevel", "");
-        }
-        return level.equals(bl);
-    }
-
     /**
      * Checks that the given string is a legal charset name. </p>
      *
@@ -305,7 +292,7 @@ public abstract class Charset
      */
     private static void checkName(String s) {
         int n = s.length();
-        if (n == 0 && !atBugLevel("1.4")) {
+        if (n == 0) {
             throw new IllegalCharsetNameException(s);
         }
         for (int i = 0; i < n; i++) {

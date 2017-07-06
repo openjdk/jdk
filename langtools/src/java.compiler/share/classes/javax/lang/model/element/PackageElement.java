@@ -44,6 +44,13 @@ public interface PackageElement extends Element, QualifiedNameable {
      * This is also known as the package's <i>canonical</i> name.
      * For an {@linkplain #isUnnamed() unnamed package}, an empty name is returned.
      *
+     * @apiNote The fully qualified name of a named package that is
+     * not a subpackage of a named package is its simple name. The
+     * fully qualified name of a named package that is a subpackage of
+     * another named package consists of the fully qualified name of
+     * the containing package, followed by "{@code .}", followed by the simple
+     * (member) name of the subpackage.
+     *
      * @return the fully qualified name of this package, or an
      * empty name if this is an unnamed package
      * @jls 6.7 Fully Qualified Names and Canonical Names

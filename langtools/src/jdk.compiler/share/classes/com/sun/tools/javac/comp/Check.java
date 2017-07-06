@@ -1568,6 +1568,10 @@ public class Check {
             exc.hasTag(BOT);
     }
 
+    boolean isChecked(Type exc) {
+        return !isUnchecked(exc);
+    }
+
     /** Same, but handling completion failures.
      */
     boolean isUnchecked(DiagnosticPosition pos, Type exc) {
@@ -2048,7 +2052,7 @@ public class Check {
                 }
             }
             log.error(pos,
-                      explicitOverride ? Errors.MethodDoesNotOverrideSuperclass :
+                      explicitOverride ? (m.isStatic() ? Errors.StaticMethodsCannotBeAnnotatedWithOverride : Errors.MethodDoesNotOverrideSuperclass) :
                                 Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
         }
     }
