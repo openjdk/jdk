@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.util.IOUtils;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.InvalidityDateExtension;
 
@@ -230,17 +231,17 @@ public class CertificateRevokedException extends CertificateException {
         int size = ois.readInt();
         if (size == 0) {
             extensions = Collections.emptyMap();
+        } else if (size < 0) {
+            throw new IOException("size cannot be negative");
         } else {
-            extensions = new HashMap<>(size);
+            extensions = new HashMap<>(size > 20 ? 20 : size);
         }
 
         // Read in the extensions and put the mappings in the extensions map
         for (int i = 0; i < size; i++) {
             String oid = (String) ois.readObject();
             boolean critical = ois.readBoolean();
-            int length = ois.readInt();
-            byte[] extVal = new byte[length];
-            ois.readFully(extVal);
+            byte[] extVal = IOUtils.readNBytes(ois, ois.readInt());
             Extension ext = sun.security.x509.Extension.newExtension
                 (new ObjectIdentifier(oid), critical, extVal);
             extensions.put(oid, ext);
