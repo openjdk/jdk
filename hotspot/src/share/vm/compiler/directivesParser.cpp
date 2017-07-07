@@ -283,17 +283,18 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
       break;
 
     case JSON_NUMBER_INT:
-      if (option_key->flag_type != intxFlag) {
-        if (option_key->flag_type == doubleFlag) {
-          double dval = (double)v->int_value;
-          (set->*test)((void *)&dval);
-          break;
-        }
-        error(VALUE_ERROR, "Cannot use int value for an %s flag", flag_type_names[option_key->flag_type]);
-        return false;
-      } else {
+      if (option_key->flag_type == intxFlag) {
         intx ival = v->int_value;
         (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == uintxFlag) {
+        uintx ival = v->uint_value;
+        (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == doubleFlag) {
+        double dval = (double)v->int_value;
+        (set->*test)((void *)&dval);
+      } else {
+        error(VALUE_ERROR, "Cannot use int value for an %s flag", flag_type_names[option_key->flag_type]);
+        return false;
       }
       break;
 
@@ -627,6 +628,8 @@ void DirectivesParser::test() {
     "    match: \"foo/bar.*\"," "\n"
     "    c2: {" "\n"
     "      PrintInlining: false," "\n"
+    "      VectorizeDebug: 1," "\n"
+    "      VectorizeDebug: -1," "\n"
     "    }" "\n"
     "  }" "\n"
     "]" "\n", true);
