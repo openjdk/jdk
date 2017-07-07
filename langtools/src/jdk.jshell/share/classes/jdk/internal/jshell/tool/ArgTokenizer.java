@@ -121,6 +121,17 @@ class ArgTokenizer {
     }
 
     /**
+     * Is the specified option allowed.
+     *
+     * @param opt the option to check
+     * @return true if the option is allowed
+     */
+    boolean isAllowedOption(String opt) {
+        Boolean has = options.get(opt);
+        return has != null;
+    }
+
+    /**
      * Has the specified option been encountered.
      *
      * @param opt the option to check

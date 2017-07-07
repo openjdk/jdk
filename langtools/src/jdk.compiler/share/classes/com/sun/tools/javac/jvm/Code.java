@@ -28,6 +28,7 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Types.UniqueType;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -95,15 +96,15 @@ public class Code {
      */
     public boolean checkLimits(DiagnosticPosition pos, Log log) {
         if (cp > ClassFile.MAX_CODE) {
-            log.error(pos, "limit.code");
+            log.error(pos, Errors.LimitCode);
             return true;
         }
         if (max_locals > ClassFile.MAX_LOCALS) {
-            log.error(pos, "limit.locals");
+            log.error(pos, Errors.LimitLocals);
             return true;
         }
         if (max_stack > ClassFile.MAX_STACK) {
-            log.error(pos, "limit.stack");
+            log.error(pos, Errors.LimitStack);
             return true;
         }
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,60 @@
  * questions.
  */
 
-import java.nio.file.*;
-import static java.nio.file.StandardOpenOption.*;
-import java.io.*;
-import java.util.*;
+/*
+ * @test
+ * @bug 4313887
+ * @summary Unit test for DELETE_ON_CLOSE open option
+ * @library /test/lib ..
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ * @run main DeleteOnClose
+ */
+
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SecureDirectoryStream;
+import java.util.HashSet;
+import java.util.Set;
+
+import jdk.test.lib.process.ProcessTools;
+
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
 
 public class DeleteOnClose {
 
-    public static void main(String[] args) throws IOException {
-        // open file but do not close it. Its existance will be checked by
-        // the calling script.
-        Files.newByteChannel(Paths.get(args[0]), READ, WRITE, DELETE_ON_CLOSE);
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            Path file = Files.createTempFile("blah", "tmp");
+            ProcessTools.executeTestJava(DeleteOnClose.class.getName(),
+                                         file.toAbsolutePath().toString())
+                        .shouldHaveExitValue(0);
+            runTest(file);
+        } else {
+            // open file but do not close it. Its existance will be checked by
+            // the caller.
+            Files.newByteChannel(Paths.get(args[0]), READ, WRITE, DELETE_ON_CLOSE);
+        }
+    }
+
+    public static void runTest(Path path) throws Exception {
+        // check temporary file has been deleted after jvm termination
+        if (Files.exists(path)) {
+            throw new RuntimeException("Temporary file was not deleted");
+        }
 
         // check temporary file has been deleted after closing it
-        Path file = Files.createTempFile("blah", "tmp");
+        Path file = Files.createTempFile("blep", "tmp");
         Files.newByteChannel(file, READ, WRITE, DELETE_ON_CLOSE).close();
         if (Files.exists(file))
             throw new RuntimeException("Temporary file was not deleted");

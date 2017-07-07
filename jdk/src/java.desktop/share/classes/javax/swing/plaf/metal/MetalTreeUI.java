@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,11 @@ import javax.swing.plaf.basic.*;
  * visually render the spacing and delineation between nodes. The following
  * hints are supported:
  *
- * <table summary="Descriptions of supported hints: Angled, Horizontal, and None">
+ * <table class="striped">
+ * <caption>Descriptions of supported hints: Angled, Horizontal, and None
+ * </caption>
  *  <tr>
- *    <th><p style="text-align:left">Angled</p></th>
+ *    <th>Angled</th>
  *    <td>A line is drawn connecting the child to the parent. For handling
  *          of the root node refer to
  *          {@link javax.swing.JTree#setRootVisible} and
@@ -54,11 +56,11 @@ import javax.swing.plaf.basic.*;
  *    </td>
  *  </tr>
  *  <tr>
- *     <th><p style="text-align:left">Horizontal</p></th>
+ *     <th>Horizontal</th>
  *     <td>A horizontal line is drawn dividing the children of the root node.</td>
  *  </tr>
  *  <tr>
- *      <th><p style="text-align:left">None</p></th>
+ *      <th>None</th>
  *      <td>Do not draw any visual indication between nodes.</td>
  *  </tr>
  * </table>

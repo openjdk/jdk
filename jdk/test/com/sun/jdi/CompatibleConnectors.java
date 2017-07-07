@@ -27,7 +27,6 @@
  *
  * This test checks that VirtualMachineManager creates Connectors that
  * are "compatible" those created by 1.4 or earilier releases.
- * @modules jdk.jdi
  */
 
 import com.sun.jdi.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,10 @@ public enum Target {
     JDK1_8("1.8", 52, 0),
 
     /** JDK 9. */
-    JDK1_9("1.9", 53, 0);
+    JDK1_9("1.9", 53, 0),
+
+    /** JDK 10, initially an alias for 9 */
+    JDK1_10("1.10", 53, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 
@@ -91,6 +94,7 @@ public enum Target {
         tab.put("7", JDK1_7);
         tab.put("8", JDK1_8);
         tab.put("9", JDK1_9);
+        tab.put("10", JDK1_10);
     }
 
     public final String name;
@@ -102,7 +106,7 @@ public enum Target {
         this.minorVersion = minorVersion;
     }
 
-    public static final Target DEFAULT = JDK1_9;
+    public static final Target DEFAULT = values()[values().length - 1];
 
     public static Target lookup(String name) {
         return tab.get(name);
@@ -146,5 +150,4 @@ public enum Target {
     public String multiReleaseValue() {
         return Integer.toString(this.ordinal() - Target.JDK1_1.ordinal() + 1);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,17 @@ import java.security.*;
  * and a discussion of the risks of granting code the permission.
  *
  *
- * <table border=1 cellpadding=5 summary="permission target name, what the permission allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">permission target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>
  * <th>Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
  *
+ * <tbody>
  * <tr>
  *   <td>setLog</td>
  *   <td>Setting of the logging stream</td>
@@ -103,6 +107,7 @@ import java.security.*;
  *   <td>Permits an application to remove a JDBC driver from the list of
  * registered Drivers and release its resources.</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @since 1.3

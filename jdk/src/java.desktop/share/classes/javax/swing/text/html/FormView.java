@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,16 @@ import javax.swing.text.*;
  * <p>
  * The following table shows what components get built
  * by this view.
- * <table summary="shows what components get built by this view">
+ *
+ * <table class="striped">
+ * <caption>Shows what components get built by this view</caption>
+ * <thead>
  * <tr>
  *   <th>Element Type</th>
  *   <th>Component built</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  *   <td>input, type button</td>
  *   <td>JButton</td>
@@ -99,6 +104,7 @@ import javax.swing.text.*;
  *   <td>input, type file</td>
  *   <td>JTextField</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * @author Timothy Prinzing
@@ -209,7 +215,7 @@ public class FormView extends ComponentView implements ActionListener {
      * Creates a component for an &lt;INPUT&gt; element based on the
      * value of the "type" attribute.
      *
-     * @param set of attributes associated with the &lt;INPUT&gt; element.
+     * @param attr set of attributes associated with the &lt;INPUT&gt; element.
      * @param model the value of the StyleConstants.ModelAttribute
      * @return the component.
      */
@@ -653,8 +659,6 @@ public class FormView extends ComponentView implements ActionListener {
      * action.
      *
      * @param buffer        the buffer that contains that data to submit
-     * @param targetElement the element that triggered the
-     *                      form submission
      */
     private void getFormData(StringBuilder buffer) {
         Element formE = getFormElement();

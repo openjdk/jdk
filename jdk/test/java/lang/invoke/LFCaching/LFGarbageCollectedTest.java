@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,16 @@
  * @ignore 8078602
  * @summary Test verifies that lambda forms are garbage collected
  * @author kshefov
- * @library /lib/testlibrary/jsr292 /lib/testlibrary
+ * @library /lib/testlibrary /java/lang/invoke/common
+ * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFGarbageCollectedTest
- * @run main/othervm -Xmx64m -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+HeapDumpOnOutOfMemoryError -DHEAP_DUMP=false LFGarbageCollectedTest
+ * @run main/othervm -Xmx64m
+ *                   -XX:SoftRefLRUPolicyMSPerMB=0
+ *                   -XX:+HeapDumpOnOutOfMemoryError
+ *                   -DHEAP_DUMP=false
+ *                   LFGarbageCollectedTest
  */
 
 import java.lang.invoke.MethodHandle;
@@ -82,9 +87,9 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
                 throw new Error("Unexpected error: Lambda form of the method handle is null");
             }
 
-            String debugName = (String)DEBUG_NAME.get(lambdaForm);
-            if (debugName != null && debugName.startsWith("identity_")) {
-                // Ignore identity_* LambdaForms.
+            String kind = KIND_FIELD.get(lambdaForm).toString();
+            if (kind.equals("IDENTITY")) {
+                // Ignore identity LambdaForms.
                 return;
             }
 

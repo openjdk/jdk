@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Set;
  *  to provide typesafety for the message context parameter and add a method
  *  to obtain access to the headers that may be processed by the handler.
  *
+ * @param <T> message context
  *  @since 1.6, JAX-WS 2.0
 **/
 public interface SOAPHandler<T extends SOAPMessageContext>

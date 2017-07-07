@@ -26,7 +26,7 @@
  * @bug 5072174
  * @summary Test CompositeDataSupport.equals with ArrayType
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean EqualsTest
  * @run build EqualsTest
  * @run main EqualsTest
