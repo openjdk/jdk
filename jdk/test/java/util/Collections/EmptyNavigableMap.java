@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,12 @@ import java.util.Iterator;
 import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import org.testng.Assert;
+import org.testng.Assert.ThrowingRunnable;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import static org.testng.Assert.fail;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 
@@ -65,26 +67,27 @@ public class EmptyNavigableMap {
             ((null != message) ? message : "") + " Not empty. ");
     }
 
-    public interface Thrower<T extends Throwable> {
-
-        public void run() throws T;
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable) {
-        assertThrows(thrower, throwable, null);
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable, String message) {
-        Throwable result;
+    private <T extends Throwable> void assertThrows(Class<T> throwableClass,
+                                                    ThrowingRunnable runnable,
+                                                    String message) {
         try {
-            thrower.run();
-            fail(((null != message) ? message : "") + "Failed to throw " + throwable.getCanonicalName() + ". ");
-            return;
-        } catch (Throwable caught) {
-            result = caught;
+            Assert.assertThrows(throwableClass, runnable);
+        } catch (AssertionError e) {
+            throw new AssertionError(String.format("%s%n%s",
+                    ((null != message) ? message : ""), e.getMessage()), e);
         }
+    }
 
-        assertInstance(result, throwable, ((null != message) ? message : "") + "Failed to throw " + throwable.getCanonicalName() + ". ");
+    private void assertThrowsCCE(ThrowingRunnable r, String s) {
+        assertThrows(ClassCastException.class, r, s);
+    }
+
+    private void assertThrowsNPE(ThrowingRunnable r, String s) {
+        assertThrows(NullPointerException.class, r, s);
+    }
+
+    private void assertThrowsIAE(ThrowingRunnable r, String s) {
+        assertThrows(IllegalArgumentException.class, r, s);
     }
 
     public static final boolean isDescending(SortedMap<?,?> set) {
@@ -121,10 +124,9 @@ public class EmptyNavigableMap {
      */
     @Test(dataProvider = "NavigableMap<?,?>", dataProviderClass = EmptyNavigableMap.class)
     public void testContainsRequiresComparable(String description, NavigableMap<?,?> navigableMap) {
-        assertThrows(() -> {
+        assertThrowsCCE(() -> {
             navigableMap.containsKey(new Object());
         },
-            ClassCastException.class,
             description + ": Compareable should be required");
     }
 
@@ -175,14 +177,12 @@ public class EmptyNavigableMap {
      */
     @Test(dataProvider = "NavigableMap<?,?>", dataProviderClass = EmptyNavigableMap.class)
     public void testHeadMap(String description, NavigableMap navigableMap) {
-        assertThrows(
+        assertThrowsNPE(
             () -> { NavigableMap ss = navigableMap.headMap(null, false); },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> { NavigableMap ss = navigableMap.headMap(new Object(), true); },
-            ClassCastException.class,
             description + ": Must throw ClassCastException for non-Comparable element");
 
         NavigableMap ss = navigableMap.headMap("1", false);
@@ -203,50 +203,44 @@ public class EmptyNavigableMap {
      */
     @Test(dataProvider = "NavigableMap<?,?>", dataProviderClass = EmptyNavigableMap.class)
     public void testSubMap(String description, NavigableMap navigableMap) {
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedMap ss = navigableMap.subMap(null, BigInteger.TEN);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedMap ss = navigableMap.subMap(BigInteger.ZERO, null);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedMap ss = navigableMap.subMap(null, null);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
         Object obj1 = new Object();
         Object obj2 = new Object();
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedMap ss = navigableMap.subMap(obj1, BigInteger.TEN);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedMap ss = navigableMap.subMap(BigInteger.ZERO, obj2);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedMap ss = navigableMap.subMap(obj1, obj2);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
         // minimal range
         navigableMap.subMap(BigInteger.ZERO, false, BigInteger.ZERO, false);
@@ -257,12 +251,11 @@ public class EmptyNavigableMap {
         Object first = isDescending(navigableMap) ? BigInteger.TEN : BigInteger.ZERO;
         Object last = (BigInteger.ZERO == first) ? BigInteger.TEN : BigInteger.ZERO;
 
-            assertThrows(
+            assertThrowsIAE(
                 () -> {
                     navigableMap.subMap(last, true, first, false);
                 },
-                IllegalArgumentException.class, description
-                + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
+                description + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
 
         navigableMap.subMap(first, true, last, false);
     }
@@ -280,10 +273,9 @@ public class EmptyNavigableMap {
         // slightly smaller
         NavigableMap ns = subMap.subMap(first, false, last, false);
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.subMap(first, true, last, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -301,10 +293,9 @@ public class EmptyNavigableMap {
         NavigableMap ns = subMap.headMap(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.headMap(BigInteger.ONE, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -322,10 +313,9 @@ public class EmptyNavigableMap {
         NavigableMap ns = subMap.tailMap(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.tailMap(BigInteger.ONE, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -337,15 +327,15 @@ public class EmptyNavigableMap {
      */
     @Test(dataProvider = "NavigableMap<?,?>", dataProviderClass = EmptyNavigableMap.class)
     public void testTailMap(String description, NavigableMap navigableMap) {
-        assertThrows(() -> {
+        assertThrowsNPE(() -> {
             navigableMap.tailMap(null);
         },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(() -> {
+        assertThrowsCCE(() -> {
             navigableMap.tailMap(new Object());
-        }, ClassCastException.class);
+        },
+            description);
 
         NavigableMap ss = navigableMap.tailMap("1", true);
 

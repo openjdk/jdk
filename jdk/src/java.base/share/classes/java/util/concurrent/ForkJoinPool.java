@@ -109,12 +109,12 @@ import java.util.concurrent.locks.LockSupport;
  * async event-style tasks that are not usually joined, in which case
  * there is little difference among choice of methods.
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of task execution methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER> <b>Call from non-fork/join clients</b></td>
- *    <td ALIGN=CENTER> <b>Call from within fork/join computations</b></td>
+ *    <td style="text-align:center"> <b>Call from non-fork/join clients</b></td>
+ *    <td style="text-align:center"> <b>Call from within fork/join computations</b></td>
  *  </tr>
  *  <tr>
  *    <td> <b>Arrange async execution</b></td>
@@ -2354,7 +2354,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         checkPermission();
     }
 
-    private Object newInstanceFromSystemProperty(String property)
+    private static Object newInstanceFromSystemProperty(String property)
         throws ReflectiveOperationException {
         String className = System.getProperty(property);
         return (className == null)
@@ -2524,15 +2524,13 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      */
+    @SuppressWarnings("unchecked")
     public ForkJoinTask<?> submit(Runnable task) {
         if (task == null)
             throw new NullPointerException();
-        ForkJoinTask<?> job;
-        if (task instanceof ForkJoinTask<?>) // avoid re-wrap
-            job = (ForkJoinTask<?>) task;
-        else
-            job = new ForkJoinTask.AdaptedRunnableAction(task);
-        return externalSubmit(job);
+        return externalSubmit((task instanceof ForkJoinTask<?>)
+            ? (ForkJoinTask<Void>) task // avoid re-wrap
+            : new ForkJoinTask.AdaptedRunnableAction(task));
     }
 
     /**

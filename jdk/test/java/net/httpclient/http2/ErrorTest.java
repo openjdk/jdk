@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  *          java.security.jgss
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,errors ErrorTest
+ * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -76,11 +76,14 @@ public class ErrorTest {
 
         Http2TestServer httpsServer = null;
         try {
+            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLParameters p = serverContext.getSupportedSSLParameters();
+            p.setApplicationProtocols(new String[]{"h2"});
             httpsServer = new Http2TestServer(true,
                                               0,
                                               exec,
-                                              sslContext);
-            httpsServer.addHandler(new EchoHandler(), "/");
+                                              serverContext);
+            httpsServer.addHandler(new Http2EchoHandler(), "/");
             int httpsPort = httpsServer.getAddress().getPort();
             String httpsURIString = "https://127.0.0.1:" + httpsPort + "/bar/";
 

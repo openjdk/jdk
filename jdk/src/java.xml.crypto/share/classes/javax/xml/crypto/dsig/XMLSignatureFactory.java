@@ -66,11 +66,10 @@ import java.util.List;
  *
  * <p>The objects that this factory produces will be based
  * on DOM and abide by the DOM interoperability requirements as defined in the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#DOM%20Mechanism%20Requirements">
- * DOM Mechanism Requirements</a> section of the API overview. See the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
- * Service Providers</a> section of the API overview for a list of standard
- * mechanism types.
+ * {@extLink security_guide_xmldsig_rqmts DOM Mechanism Requirements} section
+ * of the API overview. See the
+ * {@extLink security_guide_xmldsig_provider Service Providers} section of
+ * the API overview for a list of standard mechanism types.
  *
  * <p><code>XMLSignatureFactory</code> implementations are registered and loaded
  * using the {@link java.security.Provider} mechanism.
@@ -181,9 +180,8 @@ public abstract class XMLSignatureFactory {
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the <a
-     *    href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
-     *    Service Providers</a> section of the API overview for a list of
+     *    representation. See the {@extLink security_guide_xmldsig_provider
+     *    Service Providers} section of the API overview for a list of
      *    standard mechanism types.
      * @return a new <code>XMLSignatureFactory</code>
      * @throws NullPointerException if <code>mechanismType</code> is
@@ -227,9 +225,8 @@ public abstract class XMLSignatureFactory {
      * provider list.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the <a
-     *    href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
-     *    Service Providers</a> section of the API overview for a list of
+     *    representation. See the {@extLink security_guide_xmldsig_provider
+     *    Service Providers} section of the API overview for a list of
      *    standard mechanism types.
      * @param provider the <code>Provider</code> object
      * @return a new <code>XMLSignatureFactory</code>
@@ -279,9 +276,8 @@ public abstract class XMLSignatureFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param mechanismType the type of the XML processing mechanism and
-     *    representation. See the <a
-     *    href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
-     *    Service Providers</a> section of the API overview for a list of
+     *    representation. See the {@extLink security_guide_xmldsig_provider
+     *    Service Providers} section of the API overview for a list of
      *    standard mechanism types.
      * @param provider the string name of the provider
      * @return a new <code>XMLSignatureFactory</code>

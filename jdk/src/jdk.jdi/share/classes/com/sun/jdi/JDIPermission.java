@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ package com.sun.jdi;
  * permission allows, and discusses the risks of granting code the
  * permission.
  *
- * <table border=1 cellpadding=5 summary="Table shows permission
- * target name, what the permission allows, and associated risks">
+ * <table class="plain">
+ * <caption style="display:none">Table shows permission target name, what the
+ * permission allows, and associated risks</caption>
  * <tr>
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>
@@ -69,7 +70,7 @@ package com.sun.jdi;
  * @author  Tim Bell
  * @since   1.5
  *
- * @see com.sun.jdi.Bootstrap
+ * @see Bootstrap
  * @see java.security.BasicPermission
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -79,7 +80,9 @@ package com.sun.jdi;
  */
 
 public final class JDIPermission extends java.security.BasicPermission {
+
     private static final long serialVersionUID = -6988461416938786271L;
+
     /**
      * The {@code JDIPermission} class represents access rights to the
      * {@code VirtualMachineManager}

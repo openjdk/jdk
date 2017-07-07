@@ -30,7 +30,6 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -211,11 +210,11 @@ public class KullaTesting {
 
     public ClassLoader createAndRunFromModule(String moduleName, Path modPath) {
         ModuleFinder finder = ModuleFinder.of(modPath);
-        Layer parent = Layer.boot();
+        ModuleLayer parent = ModuleLayer.boot();
         Configuration cf = parent.configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of(moduleName));
+                .resolve(finder, ModuleFinder.of(), Set.of(moduleName));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = parent.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = parent.defineModulesWithOneLoader(cf, scl);
         ClassLoader loader = layer.findLoader(moduleName);
         ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(loader);
@@ -794,7 +793,7 @@ public class KullaTesting {
     public void assertAnalyze(String input, Completeness status, String source, String remaining, Boolean isComplete) {
         CompletionInfo ci = getAnalysis().analyzeCompletion(input);
         if (status != null) assertEquals(ci.completeness(), status, "Input : " + input + ", status: ");
-        if (source != null) assertEquals(ci.source(), source, "Input : " + input + ", source: ");
+        assertEquals(ci.source(), source, "Input : " + input + ", source: ");
         if (remaining != null) assertEquals(ci.remaining(), remaining, "Input : " + input + ", remaining: ");
         if (isComplete != null) {
             boolean isExpectedComplete = isComplete;
