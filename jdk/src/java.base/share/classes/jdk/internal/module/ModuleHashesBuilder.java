@@ -138,7 +138,7 @@ public class ModuleHashesBuilder {
     }
 
     /*
-     * Utilty class
+     * Utility class
      */
     static class Graph<T> {
         private final Set<T> nodes;

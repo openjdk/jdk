@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,30 @@
  */
 
 /*
- *
- * run from MarkResetTest.sh
+ * @test
+ * @bug 4673103
+ * @run main/othervm/timeout=140 MarkResetTest
+ * @summary URLConnection.getContent() hangs over FTP for DOC, PPT, XLS files
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.regex.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class MarkResetTest {
+    private static final String FILE_NAME = "EncDec.doc";
 
     /**
      * A class that simulates, on a separate, an FTP server.
@@ -388,7 +403,9 @@ public class MarkResetTest {
     }
 
     public static void main(String[] args) throws Exception {
-        MarkResetTest test = new MarkResetTest();
+        Files.copy(Paths.get(System.getProperty("test.src"), FILE_NAME),
+                Paths.get(".", FILE_NAME));
+        new MarkResetTest();
     }
 
     public MarkResetTest() {
@@ -402,9 +419,8 @@ public class MarkResetTest {
                 port = server.getPort();
             }
 
-            String filename = "EncDec.doc";
-            URL url = new URL("ftp://localhost:" + port + "/" +
-                                filename);
+
+            URL url = new URL("ftp://localhost:" + port + "/" + FILE_NAME);
 
             URLConnection con = url.openConnection();
             System.out.println("getContent: " + con.getContent());
@@ -438,7 +454,7 @@ public class MarkResetTest {
             server.interrupt();
 
             // Did we pass ?
-            if (len != (new File(filename)).length()) {
+            if (len != (new File(FILE_NAME)).length()) {
                 throw new Exception("Failed to read the file correctly");
             }
             System.out.println("PASSED: File read correctly");

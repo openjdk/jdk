@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      *
      * @param filename Name of the package index file to be generated.
      */
-    public PackageIndexFrameWriter(ConfigurationImpl configuration, DocPath filename) {
+    public PackageIndexFrameWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
     }
 
@@ -68,7 +68,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * Generate the package index file named "overview-frame.html".
      * @throws DocFileIOException
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.OVERVIEW_FRAME;
         PackageIndexFrameWriter packgen = new PackageIndexFrameWriter(configuration, filename);
         packgen.buildPackageIndexFile("doclet.Window_Overview", false);

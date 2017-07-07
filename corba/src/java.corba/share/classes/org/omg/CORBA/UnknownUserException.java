@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ package org.omg.CORBA;
  * <code>UnknownUserException</code> object. This is available from the
  * <code>Environment</code> object returned by the method <code>Request.env</code>.
  *
- * @see <A href="../../../../technotes/guides/idl/jidlExceptions.html">documentation on
- * Java&nbsp;IDL exceptions</A>
+ * <p>See also {@extLink jidlexception documentation on Java&nbsp;IDL exceptions}.
+ * </p>
  * @see Request
  */
 

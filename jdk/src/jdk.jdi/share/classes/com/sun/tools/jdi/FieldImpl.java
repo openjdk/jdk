@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.Field;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class FieldImpl extends TypeComponentImpl
                        implements Field, ValueContainer {
 
     FieldImpl(VirtualMachine vm, ReferenceTypeImpl declaringType,
-              long ref,
-              String name, String signature,
+              long ref, String name, String signature,
               String genericSignature, int modifiers) {
         super(vm, declaringType, ref, name, signature,
               genericSignature, modifiers);

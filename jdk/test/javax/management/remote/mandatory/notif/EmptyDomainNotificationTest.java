@@ -27,7 +27,7 @@
  * @summary Check that the expected notification is received by the JMX
  *          client even when the domain in the ObjectName is not specified
  * @author Shanliang JIANG
- * @modules java.management.rmi
+ *
  * @run clean EmptyDomainNotificationTest
  * @run build EmptyDomainNotificationTest
  * @run main EmptyDomainNotificationTest

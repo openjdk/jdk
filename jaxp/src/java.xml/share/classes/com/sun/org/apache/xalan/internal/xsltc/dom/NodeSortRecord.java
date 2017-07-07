@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +48,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     private static final Collator DEFAULT_COLLATOR = Collator.getInstance();
 
     /**
@@ -56,6 +56,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     protected Collator _collator = DEFAULT_COLLATOR;
     protected Collator[] _collators;
 
@@ -64,6 +65,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     protected Locale _locale;
 
     protected CollatorFactory _collatorFactory;

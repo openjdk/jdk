@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +27,7 @@ import com.sun.org.apache.xpath.internal.objects.XObject;
  * The 'quo' operation expression executer. (no longer supported by XPath).
  * @deprecated
  */
+@Deprecated
 public class Quo extends Operation
 {
     static final long serialVersionUID = 693765299196169905L;

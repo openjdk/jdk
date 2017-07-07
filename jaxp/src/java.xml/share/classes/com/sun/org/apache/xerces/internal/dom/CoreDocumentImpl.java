@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -832,6 +832,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public void setEncoding(String value) {
         setXmlEncoding(value);
     }
@@ -849,6 +850,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public String getEncoding() {
         return getXmlEncoding();
     }
@@ -890,6 +892,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public void setVersion(String value) {
         setXmlVersion(value);
     }
@@ -908,6 +911,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public String getVersion() {
         return getXmlVersion();
     }
@@ -932,6 +936,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public void setStandalone(boolean value) {
         setXmlStandalone(value);
     }
@@ -950,6 +955,7 @@ public class CoreDocumentImpl
      * compatibility with older applications. New applications
      * should never call this method.
      */
+    @Deprecated
     public boolean getStandalone() {
         return getXmlStandalone();
     }

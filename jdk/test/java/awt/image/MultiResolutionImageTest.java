@@ -36,15 +36,15 @@ import java.awt.MediaTracker;
 import java.awt.RenderingHints;
 import java.awt.image.ImageObserver;
 import javax.swing.JPanel;
-import jdk.testlibrary.Platform;
+import jdk.test.lib.Platform;
 import java.awt.image.MultiResolutionImage;
 
 /**
  * @test @bug 8011059
  * @author Alexander Scherbatiy
  * @summary [macosx] Make JDK demos look perfect on retina displays
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.Platform
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @requires (os.family == "mac")
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.image

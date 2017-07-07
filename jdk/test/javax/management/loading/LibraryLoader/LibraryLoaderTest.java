@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test that the same native library coming from the same jar file can
  * be loaded twice by two different MLets on the same JVM without conflict.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean LibraryLoaderTest
  * @run build LibraryLoaderTest
  * @run main/othervm LibraryLoaderTest

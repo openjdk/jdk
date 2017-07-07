@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6449798 6399404 8173776
+ * @bug 6449798 6399404 8173776 8163989
  * @summary Test basic workings of PackageElement
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
@@ -54,8 +54,7 @@ public class TestPackageElement extends JavacTestingAbstractProcessor {
         if (!roundEnv.processingOver()) {
             PackageElement unnamedPkg = eltUtils.getPackageElement("");
 
-            if (!unnamedPkg.getQualifiedName().contentEquals(""))
-                throw new RuntimeException("The unnamed package is named!");
+            testNames(unnamedPkg, "", "");
 
             // The next line tests an implementation detail upon which
             // some diagnostics depend.
@@ -70,9 +69,21 @@ public class TestPackageElement extends JavacTestingAbstractProcessor {
             if (javaLang.isUnnamed())
                 throw new RuntimeException("Package java.lang is unnamed!");
 
+            testNames(javaLang, "java.lang", "lang");
+
             testEnclosingElement(javaLang);
         }
         return true;
+    }
+
+    void testNames(PackageElement pkg, String expectedQualified, String expectedSimple) {
+        String tmp = pkg.getQualifiedName().toString();
+        if (!tmp.equals(expectedQualified))
+            throw new RuntimeException("Unexpected qualifed name ``" + tmp + "''.");
+
+        tmp = pkg.getSimpleName().toString();
+        if (!tmp.equals(expectedSimple))
+            throw new RuntimeException("Unexpected simple name ``" + tmp + "''.");
     }
 
     void testEnclosingElement(PackageElement javaLang) {

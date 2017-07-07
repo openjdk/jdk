@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@
  * having to add or rewrite code.
  *
  * <ul>
- *   <li><a href="{@docRoot}/../technotes/guides/security/StandardNames.html">
- *     <b>Java&trade; Cryptography Architecture Standard Algorithm Name
- *     Documentation</b></a></li>
+ *   <li><a href="{@docRoot}/../specs/security/standard-names.html">
+ *     <b>Java Security Standard Algorithm Names Specification
+ *     </b></a></li>
  * </ul>
  *
  * <h2>Related Documentation</h2>
@@ -52,15 +52,11 @@
  * For further documentation, please see:
  * <ul>
  *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *       <b>Java&trade; Cryptography Architecture (JCA) Reference Guide
- *       </b></a></li>
+ *     {@extLink security_guide_jca
+ *       Java Cryptography Architecture (JCA) Reference Guide}</li>
  *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
- *       <b>How to Implement a Provider in the Java&trade; Cryptography
- *          Architecture </b></a></li>
+ *     {@extLink security_guide_impl_provider
+ *       How to Implement a Provider in the Java Cryptography Architecture}</li>
  * </ul>
  *
  * @since 1.4

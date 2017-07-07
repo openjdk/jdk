@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,8 @@ class LibraryCallKit : public GraphKit {
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
                                                 RegionNode* slow_region);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
-  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp);
+  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
+                                      uint new_idx);
 
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
   MemNode::MemOrd access_kind_to_memord_LS(AccessKind access_kind, bool is_store);
@@ -648,46 +649,46 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_putFloatOpaque:           return inline_unsafe_access( is_store, T_FLOAT,    Opaque, false);
   case vmIntrinsics::_putDoubleOpaque:          return inline_unsafe_access( is_store, T_DOUBLE,   Opaque, false);
 
-  case vmIntrinsics::_compareAndSwapObject:             return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSwapByte:               return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSwapShort:              return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSwapInt:                return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
-  case vmIntrinsics::_compareAndSwapLong:               return inline_unsafe_load_store(T_LONG,   LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSetObject:              return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSetByte:                return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSetShort:               return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSetInt:                 return inline_unsafe_load_store(T_INT,    LS_cmp_swap,      Volatile);
+  case vmIntrinsics::_compareAndSetLong:                return inline_unsafe_load_store(T_LONG,   LS_cmp_swap,      Volatile);
 
-  case vmIntrinsics::_weakCompareAndSwapObject:         return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSwapObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSwapObjectRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSwapObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSwapByte:           return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSwapByteAcquire:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSwapByteRelease:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSwapByteVolatile:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSwapShort:          return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSwapShortAcquire:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSwapShortRelease:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSwapShortVolatile:  return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSwapInt:            return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSwapIntAcquire:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSwapIntRelease:     return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSwapIntVolatile:    return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Volatile);
-  case vmIntrinsics::_weakCompareAndSwapLong:           return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Relaxed);
-  case vmIntrinsics::_weakCompareAndSwapLongAcquire:    return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Acquire);
-  case vmIntrinsics::_weakCompareAndSwapLongRelease:    return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Release);
-  case vmIntrinsics::_weakCompareAndSwapLongVolatile:   return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSetObjectPlain:     return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSetObjectAcquire:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSetObjectRelease:   return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSetObject:          return inline_unsafe_load_store(T_OBJECT, LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSetBytePlain:       return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSetByteAcquire:     return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSetByteRelease:     return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSetByte:            return inline_unsafe_load_store(T_BYTE,   LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSetShortPlain:      return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSetShortAcquire:    return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSetShortRelease:    return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSetShort:           return inline_unsafe_load_store(T_SHORT,  LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSetIntPlain:        return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSetIntAcquire:      return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSetIntRelease:      return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSetInt:             return inline_unsafe_load_store(T_INT,    LS_cmp_swap_weak, Volatile);
+  case vmIntrinsics::_weakCompareAndSetLongPlain:       return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Relaxed);
+  case vmIntrinsics::_weakCompareAndSetLongAcquire:     return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Acquire);
+  case vmIntrinsics::_weakCompareAndSetLongRelease:     return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Release);
+  case vmIntrinsics::_weakCompareAndSetLong:            return inline_unsafe_load_store(T_LONG,   LS_cmp_swap_weak, Volatile);
 
-  case vmIntrinsics::_compareAndExchangeObjectVolatile: return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeObject:         return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeObjectAcquire:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeObjectRelease:  return inline_unsafe_load_store(T_OBJECT, LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeByteVolatile:   return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeByte:           return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeByteAcquire:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeByteRelease:    return inline_unsafe_load_store(T_BYTE,   LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeShortVolatile:  return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeShort:          return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeShortAcquire:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeShortRelease:   return inline_unsafe_load_store(T_SHORT,  LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeIntVolatile:    return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeInt:            return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeIntAcquire:     return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeIntRelease:     return inline_unsafe_load_store(T_INT,    LS_cmp_exchange,  Release);
-  case vmIntrinsics::_compareAndExchangeLongVolatile:   return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Volatile);
+  case vmIntrinsics::_compareAndExchangeLong:           return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Volatile);
   case vmIntrinsics::_compareAndExchangeLongAcquire:    return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Acquire);
   case vmIntrinsics::_compareAndExchangeLongRelease:    return inline_unsafe_load_store(T_LONG,   LS_cmp_exchange,  Release);
 
@@ -1667,6 +1668,9 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   }
 
   Node* adr = array_element_address(value, index, T_CHAR);
+  if (adr->is_top()) {
+    return false;
+  }
   if (is_store) {
     (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                            false, false, true /* mismatched */);
@@ -2371,10 +2375,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // the barriers get omitted and the unsafe reference begins to "pollute"
   // the alias analysis of the rest of the graph, either Compile::can_alias
   // or Compile::must_alias will throw a diagnostic assert.)
-  bool need_mem_bar;
+  bool need_mem_bar = false;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = mismatched || can_access_non_heap;
+          need_mem_bar = mismatched && !adr_type->isa_aryptr();
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -2583,23 +2587,26 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
 //
 // LS_cmp_swap:
 //
-//   boolean compareAndSwapObject(Object o, long offset, Object expected, Object x);
-//   boolean compareAndSwapInt(   Object o, long offset, int    expected, int    x);
-//   boolean compareAndSwapLong(  Object o, long offset, long   expected, long   x);
+//   boolean compareAndSetObject(Object o, long offset, Object expected, Object x);
+//   boolean compareAndSetInt(   Object o, long offset, int    expected, int    x);
+//   boolean compareAndSetLong(  Object o, long offset, long   expected, long   x);
 //
 // LS_cmp_swap_weak:
 //
-//   boolean weakCompareAndSwapObject(       Object o, long offset, Object expected, Object x);
-//   boolean weakCompareAndSwapObjectAcquire(Object o, long offset, Object expected, Object x);
-//   boolean weakCompareAndSwapObjectRelease(Object o, long offset, Object expected, Object x);
+//   boolean weakCompareAndSetObject(       Object o, long offset, Object expected, Object x);
+//   boolean weakCompareAndSetObjectPlain(  Object o, long offset, Object expected, Object x);
+//   boolean weakCompareAndSetObjectAcquire(Object o, long offset, Object expected, Object x);
+//   boolean weakCompareAndSetObjectRelease(Object o, long offset, Object expected, Object x);
 //
-//   boolean weakCompareAndSwapInt(          Object o, long offset, int    expected, int    x);
-//   boolean weakCompareAndSwapIntAcquire(   Object o, long offset, int    expected, int    x);
-//   boolean weakCompareAndSwapIntRelease(   Object o, long offset, int    expected, int    x);
+//   boolean weakCompareAndSetInt(          Object o, long offset, int    expected, int    x);
+//   boolean weakCompareAndSetIntPlain(     Object o, long offset, int    expected, int    x);
+//   boolean weakCompareAndSetIntAcquire(   Object o, long offset, int    expected, int    x);
+//   boolean weakCompareAndSetIntRelease(   Object o, long offset, int    expected, int    x);
 //
-//   boolean weakCompareAndSwapLong(         Object o, long offset, long   expected, long   x);
-//   boolean weakCompareAndSwapLongAcquire(  Object o, long offset, long   expected, long   x);
-//   boolean weakCompareAndSwapLongRelease(  Object o, long offset, long   expected, long   x);
+//   boolean weakCompareAndSetLong(         Object o, long offset, long   expected, long   x);
+//   boolean weakCompareAndSetLongPlain(    Object o, long offset, long   expected, long   x);
+//   boolean weakCompareAndSetLongAcquire(  Object o, long offset, long   expected, long   x);
+//   boolean weakCompareAndSetLongRelease(  Object o, long offset, long   expected, long   x);
 //
 // LS_cmp_exchange:
 //
@@ -3017,7 +3024,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
       load_store = _gvn.transform(new DecodeNNode(load_store, load_store->get_ptr_type()));
     }
 #endif
-    if (can_move_pre_barrier()) {
+    if (can_move_pre_barrier() && kind == LS_get_set) {
       // Don't need to load pre_val. The old value is returned by load_store.
       // The pre_barrier can execute after the xchg as long as no safepoint
       // gets inserted between them.
@@ -4882,7 +4889,8 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // deoptimize. This is possible because tightly_coupled_allocation()
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
-void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp) {
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms,
+                                                    int saved_reexecute_sp, uint new_idx) {
   if (saved_jvms != NULL && !stopped()) {
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
@@ -4891,7 +4899,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
     // If we've improved the types of some nodes (null check) while
     // emitting the guards, propagate them to the current state
-    map()->replaced_nodes().apply(saved_jvms->map());
+    map()->replaced_nodes().apply(saved_jvms->map(), new_idx);
     set_jvms(saved_jvms);
     _reexecute_sp = saved_reexecute_sp;
 
@@ -4949,6 +4957,7 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
 
+  uint new_idx = C->unique();
 
   // Check for allocation before we add nodes that would confuse
   // tightly_coupled_allocation()
@@ -4959,7 +4968,7 @@ bool LibraryCallKit::inline_arraycopy() {
   // See arraycopy_restore_alloc_state() comment
   // if alloc == NULL we don't have to worry about a tightly coupled allocation so we can emit all needed guards
   // if saved_jvms != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
-  // if saved_jvms == NULL and alloc != NULL, we can’t emit any guards
+  // if saved_jvms == NULL and alloc != NULL, we can't emit any guards
   bool can_emit_guards = (alloc == NULL || saved_jvms != NULL);
 
   // The following tests must be performed
@@ -5164,7 +5173,7 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp);
+  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);
 
   if (stopped()) {
     return true;
