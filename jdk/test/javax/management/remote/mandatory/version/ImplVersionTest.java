@@ -29,7 +29,7 @@
  * test codebase has the java permission to read the "java.runtime.version"
  * system property.
  * @author Luis-Miguel Alventosa, Joel Feraud
- * @modules java.management
+ *
  * @run clean ImplVersionTest ImplVersionCommand
  * @run build ImplVersionTest ImplVersionCommand ImplVersionReader
  * @run main ImplVersionTest

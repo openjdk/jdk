@@ -719,47 +719,73 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  address generate_zero_longs(Register base, Register cnt) {
-    Register tmp = rscratch1;
-    Register tmp2 = rscratch2;
-    int zva_length = VM_Version::zva_length();
-    Label initial_table_end, loop_zva;
-    Label fini;
+  // The inner part of zero_words().  This is the bulk operation,
+  // zeroing words in blocks, possibly using DC ZVA to do it.  The
+  // caller is responsible for zeroing the last few words.
+  //
+  // Inputs:
+  // r10: the HeapWord-aligned base address of an array to zero.
+  // r11: the count in HeapWords, r11 > 0.
+  //
+  // Returns r10 and r11, adjusted for the caller to clear.
+  // r10: the base address of the tail of words left to clear.
+  // r11: the number of words in the tail.
+  //      r11 < MacroAssembler::zero_words_block_size.
+
+  address generate_zero_blocks() {
+    Label store_pair, loop_store_pair, done;
+    Label base_aligned;
+
+    Register base = r10, cnt = r11;
 
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "zero_longs");
+    StubCodeMark mark(this, "StubRoutines", "zero_blocks");
     address start = __ pc();
 
-    // Base must be 16 byte aligned. If not just return and let caller handle it
-    __ tst(base, 0x0f);
-    __ br(Assembler::NE, fini);
-    // Align base with ZVA length.
-    __ neg(tmp, base);
-    __ andr(tmp, tmp, zva_length - 1);
+    if (UseBlockZeroing) {
+      int zva_length = VM_Version::zva_length();
 
-    // tmp: the number of bytes to be filled to align the base with ZVA length.
-    __ add(base, base, tmp);
-    __ sub(cnt, cnt, tmp, Assembler::ASR, 3);
-    __ adr(tmp2, initial_table_end);
-    __ sub(tmp2, tmp2, tmp, Assembler::LSR, 2);
-    __ br(tmp2);
+      // Ensure ZVA length can be divided by 16. This is required by
+      // the subsequent operations.
+      assert (zva_length % 16 == 0, "Unexpected ZVA Length");
 
-    for (int i = -zva_length + 16; i < 0; i += 16)
-      __ stp(zr, zr, Address(base, i));
-    __ bind(initial_table_end);
+      __ tbz(base, 3, base_aligned);
+      __ str(zr, Address(__ post(base, 8)));
+      __ sub(cnt, cnt, 1);
+      __ bind(base_aligned);
 
-    __ sub(cnt, cnt, zva_length >> 3);
-    __ bind(loop_zva);
-    __ dc(Assembler::ZVA, base);
-    __ subs(cnt, cnt, zva_length >> 3);
-    __ add(base, base, zva_length);
-    __ br(Assembler::GE, loop_zva);
-    __ add(cnt, cnt, zva_length >> 3); // count not zeroed by DC ZVA
-    __ bind(fini);
+      // Ensure count >= zva_length * 2 so that it still deserves a zva after
+      // alignment.
+      Label small;
+      int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
+      __ cmp(cnt, low_limit >> 3);
+      __ br(Assembler::LT, small);
+      __ zero_dcache_blocks(base, cnt);
+      __ bind(small);
+    }
+
+    {
+      // Number of stp instructions we'll unroll
+      const int unroll =
+        MacroAssembler::zero_words_block_size / 2;
+      // Clear the remaining blocks.
+      Label loop;
+      __ subs(cnt, cnt, unroll * 2);
+      __ br(Assembler::LT, done);
+      __ bind(loop);
+      for (int i = 0; i < unroll; i++)
+        __ stp(zr, zr, __ post(base, 16));
+      __ subs(cnt, cnt, unroll * 2);
+      __ br(Assembler::GE, loop);
+      __ bind(done);
+      __ add(cnt, cnt, unroll * 2);
+    }
+
     __ ret(lr);
 
     return start;
   }
+
 
   typedef enum {
     copy_forwards = 1,
@@ -2346,20 +2372,16 @@ class StubGenerator: public StubCodeGenerator {
     __ subw(count, count, cnt_words, Assembler::LSL, 3 - shift);
     if (UseBlockZeroing) {
       Label non_block_zeroing, rest;
-      Register tmp = rscratch1;
-      // count >= BlockZeroingLowLimit && value == 0
-      __ subs(tmp, cnt_words, BlockZeroingLowLimit >> 3);
-      __ ccmp(value, 0 /* comparing value */, 0 /* NZCV */, Assembler::GE);
-      __ br(Assembler::NE, non_block_zeroing);
+      // If the fill value is zero we can use the fast zero_words().
+      __ cbnz(value, non_block_zeroing);
       __ mov(bz_base, to);
-      __ block_zero(bz_base, cnt_words, true);
-      __ mov(to, bz_base);
+      __ add(to, to, cnt_words, Assembler::LSL, LogBytesPerWord);
+      __ zero_words(bz_base, cnt_words);
       __ b(rest);
       __ bind(non_block_zeroing);
       __ fill_words(to, cnt_words, value);
       __ bind(rest);
-    }
-    else {
+    } else {
       __ fill_words(to, cnt_words, value);
     }
 
@@ -2420,7 +2442,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_copy_longs(copy_f, r0, r1, rscratch2, copy_forwards);
     generate_copy_longs(copy_b, r0, r1, rscratch2, copy_backwards);
 
-    StubRoutines::aarch64::_zero_longs = generate_zero_longs(r10, r11);
+    StubRoutines::aarch64::_zero_blocks = generate_zero_blocks();
 
     //*** jbyte
     // Always need aligned and unaligned versions
@@ -4769,6 +4791,7 @@ class StubGenerator: public StubCodeGenerator {
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
 #endif
+    StubRoutines::aarch64::set_completed();
   }
 
  public:

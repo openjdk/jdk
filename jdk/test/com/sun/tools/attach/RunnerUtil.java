@@ -48,7 +48,10 @@ public class RunnerUtil {
      */
     public static ProcessThread startApplication(String... additionalOpts) throws Throwable {
         String classpath = System.getProperty("test.class.path", ".");
-        String[] myArgs = concat(additionalOpts, new String [] { "-XX:+UsePerfData", "-Dattach.test=true", "-classpath", classpath, "Application" });
+        String[] myArgs = concat(additionalOpts, new String [] {
+            "-XX:+UsePerfData", "-XX:+EnableDynamicAgentLoading",
+            "-Dattach.test=true", "-classpath", classpath, "Application"
+        });
         String[] args = Utils.addTestJavaOpts(myArgs);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
         ProcessThread pt = new ProcessThread("runApplication", (line) -> line.equals(Application.READY_MSG), pb);

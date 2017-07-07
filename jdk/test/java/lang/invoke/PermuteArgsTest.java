@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
- * @library /lib/testlibrary/jsr292 /lib/testlibrary
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
+
 /* Examples of manual runs:
  * java -DPermuteArgsTest.{DRY_RUN=true,MAX_ARITY=253} test.java.lang.invoke.PermuteArgsTest
  * java -DPermuteArgsTest.{VERBOSE=true,MAX_ARITY=5} test.java.lang.invoke.PermuteArgsTest
@@ -34,17 +35,23 @@
 
 package test.java.lang.invoke;
 
-import org.testng.*;
-import org.testng.annotations.*;
+import org.testng.annotations.Test;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import java.util.*;
-import java.lang.reflect.*;
-
-import java.lang.invoke.*;
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
+import static java.lang.invoke.MethodHandles.Lookup;
+import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodHandles.permuteArguments;
+import static java.lang.invoke.MethodType.methodType;
 
 public class PermuteArgsTest {
     private static final Class<?> CLASS = PermuteArgsTest.class;
@@ -205,7 +212,8 @@ public class PermuteArgsTest {
             throw new IllegalArgumentException("cannot convert to type "+mt1+" from "+mh, ex);
         }
     }
-    static MethodHandle findTestMH(String name, int[] perm) throws ReflectiveOperationException {
+    static MethodHandle findTestMH(String name, int[] perm)
+            throws ReflectiveOperationException {
         int arity = perm.length;
         Lookup lookup = lookup();
         for (Method m : lookup.lookupClass().getDeclaredMethods()) {
@@ -259,7 +267,8 @@ public class PermuteArgsTest {
         }
     }
 
-    static void testPermutations(MethodHandle mh, int[] perm, int start, int end, Set<String> done) throws Throwable {
+    static void testPermutations(MethodHandle mh, int[] perm, int start, int end,
+                                 Set<String> done) throws Throwable {
         if (end - start <= 1)  return;
         for (int j = 0; j <= 1; j++) {
             testRotations(mh, perm, start, end, done);
@@ -283,7 +292,8 @@ public class PermuteArgsTest {
         }
     }
 
-    static void testRotations(MethodHandle mh, int[] perm, int start, int end, Set<String> done) throws Throwable {
+    static void testRotations(MethodHandle mh, int[] perm, int start, int end,
+                              Set<String> done) throws Throwable {
         Object[] args = junkArgs(mh.type().parameterArray());
         for (int i = start; i < end; i++) {
             if (done.add(Arrays.toString(perm)))
@@ -292,9 +302,11 @@ public class PermuteArgsTest {
         }
     }
 
-    static void testOnePermutation(MethodHandle mh, int[] perm, Object[] args) throws Throwable {
+    static void testOnePermutation(MethodHandle mh, int[] perm, Object[] args)
+            throws Throwable {
         MethodType mt = mh.type();
-        MethodType pmt = methodType(mt.returnType(), unpermuteArgs(perm, mt.parameterArray(), Class[].class));
+        MethodType pmt = methodType(mt.returnType(),
+                unpermuteArgs(perm, mt.parameterArray(), Class[].class));
         if (VERBOSE)
             System.out.println(Arrays.toString(perm));
         testCases += 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,13 @@ class Feedback {
                     FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
                     String name, String type, String value, String unresolved, List<String> errorLines) {
         return mode.format(fc, fa, fw, fr, fu, fe,
+                name, type, value, unresolved, errorLines);
+    }
+
+    public String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
+        return mode.format(field, fc, fa, fw, fr, fu, fe,
                 name, type, value, unresolved, errorLines);
     }
 
@@ -463,6 +470,14 @@ class Feedback {
         String format(FormatCase fc, FormatAction fa, FormatWhen fw,
                     FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
                     String name, String type, String value, String unresolved, List<String> errorLines) {
+            return format("display", fc, fa, fw, fr, fu, fe,
+                name, type, value, unresolved, errorLines);
+        }
+
+        // Compute the display output given full context and values
+        String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
             // Convert the context into a bit representation used as selectors for store field formats
             long bits = bits(fc, fa, fw, fr, fu, fe);
             String fname = name==null? "" : name;
@@ -476,7 +491,7 @@ class Feedback {
                             fname, ftype, fvalue, funresolved, "*cannot-use-errors-here*", el))
                     .collect(joining());
             return String.format(
-                    format("display", bits),
+                    format(field, bits),
                     fname, ftype, fvalue, funresolved, errors, "*cannot-use-err-here*");
         }
 
@@ -1007,7 +1022,9 @@ class Feedback {
                     // Note: delete, for safety reasons, does NOT do name matching
                     if (commandOption || quietOption) {
                         errorat("jshell.err.conflicting.options");
-                    } else if (!(retainOption ? retainedMap : modeMap).containsKey(umode)) {
+                    } else if (retainOption
+                            ? !retainedMap.containsKey(umode) && !modeMap.containsKey(umode)
+                            : !modeMap.containsKey(umode)) {
                         // Cannot delete a mode that does not exist
                         errorat("jshell.err.mode.unknown", umode);
                     } else if (omode != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.concurrent.Executor;
+import java.util.function.UnaryOperator;
+
 import jdk.incubator.http.internal.common.Log;
 import jdk.incubator.http.internal.common.MinimalFuture;
 import jdk.incubator.http.internal.common.Pair;
@@ -150,8 +152,7 @@ class MultiExchange<U,T> {
                 Exchange<T> currExchange = getExchange();
                 requestFilters(r);
                 Response response = currExchange.response();
-                Pair<Response, HttpRequestImpl> filterResult = responseFilters(response);
-                HttpRequestImpl newreq = filterResult.second;
+                HttpRequestImpl newreq = responseFilters(response);
                 if (newreq == null) {
                     if (attempts > 1) {
                         Log.logError("Succeeded on attempt: " + attempts);
@@ -191,7 +192,7 @@ class MultiExchange<U,T> {
     }
 
     HttpClient.Version version() {
-        return client.version();
+        return request.version().orElse(client.version());
     }
 
     private synchronized void setExchange(Exchange<T> exchange) {
@@ -213,23 +214,7 @@ class MultiExchange<U,T> {
         Log.logTrace("All filters applied");
     }
 
-    // Filters are assumed to be non-blocking so the async
-    // versions of these methods just call the blocking ones
-
-    private CompletableFuture<Void> requestFiltersAsync(HttpRequestImpl r) {
-        CompletableFuture<Void> cf = new MinimalFuture<>();
-        try {
-            requestFilters(r);
-            cf.complete(null);
-        } catch(Throwable e) {
-            cf.completeExceptionally(e);
-        }
-        return cf;
-    }
-
-
-    private Pair<Response,HttpRequestImpl>
-    responseFilters(Response response) throws IOException
+    private HttpRequestImpl responseFilters(Response response) throws IOException
     {
         Log.logTrace("Applying response filters");
         for (HeaderFilter filter : filters) {
@@ -237,24 +222,11 @@ class MultiExchange<U,T> {
             HttpRequestImpl newreq = filter.response(response);
             if (newreq != null) {
                 Log.logTrace("New request: stopping filters");
-                return pair(null, newreq);
+                return newreq;
             }
         }
         Log.logTrace("All filters applied");
-        return pair(response, null);
-    }
-
-    private CompletableFuture<Pair<Response,HttpRequestImpl>>
-    responseFiltersAsync(Response response)
-    {
-        CompletableFuture<Pair<Response,HttpRequestImpl>> cf = new MinimalFuture<>();
-        try {
-            Pair<Response,HttpRequestImpl> n = responseFilters(response); // assumed to be fast
-            cf.complete(n);
-        } catch (Throwable e) {
-            cf.completeExceptionally(e);
-        }
-        return cf;
+        return null;
     }
 
     public void cancel() {
@@ -267,24 +239,27 @@ class MultiExchange<U,T> {
         getExchange().cancel(cause);
     }
 
-    public CompletableFuture<HttpResponseImpl<T>> responseAsync(Void v) {
-        return responseAsync1(null)
+    public CompletableFuture<HttpResponseImpl<T>> responseAsync() {
+        CompletableFuture<Void> start = new MinimalFuture<>();
+        CompletableFuture<HttpResponseImpl<T>> cf = responseAsync0(start);
+        start.completeAsync( () -> null, executor); // trigger execution
+        return cf;
+    }
+
+    private CompletableFuture<HttpResponseImpl<T>> responseAsync0(CompletableFuture<Void> start) {
+        return start.thenCompose( v -> responseAsyncImpl())
             .thenCompose((Response r) -> {
                 Exchange<T> exch = getExchange();
                 return exch.readBodyAsync(responseHandler)
-                        .thenApply((T body) -> {
-                            Pair<Response,T> result = new Pair<>(r, body);
-                            return result;
-                        });
-            })
-            .thenApply((Pair<Response,T> result) -> {
-                return new HttpResponseImpl<>(userRequest, result.first, result.second, getExchange());
+                        .thenApply((T body) ->  new HttpResponseImpl<>(userRequest, r, body, exch));
             });
     }
 
     CompletableFuture<U> multiResponseAsync() {
-        CompletableFuture<HttpResponse<T>> mainResponse = responseAsync(null)
-                  .thenApply((HttpResponseImpl<T> b) -> {
+        CompletableFuture<Void> start = new MinimalFuture<>();
+        CompletableFuture<HttpResponseImpl<T>> cf = responseAsync0(start);
+        CompletableFuture<HttpResponse<T>> mainResponse =
+                cf.thenApply((HttpResponseImpl<T> b) -> {
                       multiResponseHandler.onResponse(b);
                       return (HttpResponse<T>)b;
                    });
@@ -295,10 +270,12 @@ class MultiExchange<U,T> {
             // All push promises received by now.
             pushGroup.noMorePushes(true);
         });
-        return multiResponseHandler.completion(pushGroup.groupResult(), pushGroup.pushesCF());
+        CompletableFuture<U> res = multiResponseHandler.completion(pushGroup.groupResult(), pushGroup.pushesCF());
+        start.completeAsync( () -> null, executor); // trigger execution
+        return res;
     }
 
-    private CompletableFuture<Response> responseAsync1(Void v) {
+    private CompletableFuture<Response> responseAsyncImpl() {
         CompletableFuture<Response> cf;
         if (++attempts > max_attempts) {
             cf = MinimalFuture.failedFuture(new IOException("Too many retries"));
@@ -307,48 +284,52 @@ class MultiExchange<U,T> {
                 timedEvent = new TimedEvent(currentreq.duration());
                 client.registerTimer(timedEvent);
             }
+            try {
+                // 1. Apply request filters
+                requestFilters(currentreq);
+            } catch (IOException e) {
+                return MinimalFuture.failedFuture(e);
+            }
             Exchange<T> exch = getExchange();
-            // 1. Apply request filters
-            cf = requestFiltersAsync(currentreq)
-                // 2. get response
-                .thenCompose((v1) -> {
-                    return exch.responseAsync();
-                })
-                // 3. Apply response filters
-                .thenCompose(this::responseFiltersAsync)
-                // 4. Check filter result and repeat or continue
-                .thenCompose((Pair<Response,HttpRequestImpl> pair) -> {
-                    Response resp = pair.first;
-                    if (resp != null) {
+            // 2. get response
+            cf = exch.responseAsync()
+                .thenCompose((Response response) -> {
+                    HttpRequestImpl newrequest = null;
+                    try {
+                        // 3. Apply response filters
+                        newrequest = responseFilters(response);
+                    } catch (IOException e) {
+                        return MinimalFuture.failedFuture(e);
+                    }
+                    // 4. Check filter result and repeat or continue
+                    if (newrequest == null) {
                         if (attempts > 1) {
                             Log.logError("Succeeded on attempt: " + attempts);
                         }
-                        return MinimalFuture.completedFuture(resp);
+                        return MinimalFuture.completedFuture(response);
                     } else {
-                        currentreq = pair.second;
-                        Exchange<T> previous = exch;
+                        currentreq = newrequest;
                         setExchange(new Exchange<>(currentreq, this, acc));
                         //reads body off previous, and then waits for next response
-                        return responseAsync1(null);
+                        return responseAsyncImpl();
                     }
                 })
-            // 5. Convert result to Pair
-            .handle((BiFunction<Response, Throwable, Pair<Response, Throwable>>) Pair::new)
-            // 6. Handle errors and cancel any timer set
-            .thenCompose((Pair<Response,Throwable> obj) -> {
-                Response response = obj.first;
-                if (response != null) {
+            // 5. Handle errors and cancel any timer set
+            .handle((response, ex) -> {
+                cancelTimer();
+                if (ex == null) {
+                    assert response != null;
                     return MinimalFuture.completedFuture(response);
                 }
                 // all exceptions thrown are handled here
-                CompletableFuture<Response> error = getExceptionalCF(obj.second);
+                CompletableFuture<Response> error = getExceptionalCF(ex);
                 if (error == null) {
-                    cancelTimer();
-                    return responseAsync1(null);
+                    return responseAsyncImpl();
                 } else {
                     return error;
                 }
-            });
+            })
+            .thenCompose(UnaryOperator.identity());
         }
         return cf;
     }
@@ -376,10 +357,6 @@ class MultiExchange<U,T> {
         @Override
         public void handle() {
             cancel(new HttpTimeoutException("request timed out"));
-        }
-        @Override
-        public String toString() {
-            return "[deadline = " + deadline() + "]";
         }
     }
 }

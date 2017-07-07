@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-import javax.sound.sampled.*;
-
-import com.sun.media.sound.*;
+import com.sun.media.sound.RIFFReader;
+import com.sun.media.sound.RIFFWriter;
 
 public class ReadByteArrayIntInt {
 
@@ -63,8 +64,6 @@ public class ReadByteArrayIntInt {
             assertEquals(readchunk.read(), 3);
             fis.close();
             reader = null;
-
-
         }
         finally
         {
@@ -72,10 +71,7 @@ public class ReadByteArrayIntInt {
                 writer.close();
             if(reader != null)
                 reader.close();
-
-            if(tempfile.exists())
-                if(!tempfile.delete())
-                    tempfile.deleteOnExit();
+            Files.delete(Paths.get(tempfile.getAbsolutePath()));
         }
     }
 }

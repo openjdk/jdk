@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,8 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
         int status;
         while (waitpid(pid, &status, 0) < 0) {
             switch (errno) {
-                case ECHILD: return 0;
+                case ECHILD:
+                    return java_lang_ProcessHandleImpl_NOT_A_CHILD; // No child
                 case EINTR: break;
                 default: return -1;
             }
@@ -269,9 +270,10 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
         memset(&siginfo, 0, sizeof siginfo);
         while (waitid(P_PID, pid, &siginfo, options) < 0) {
             switch (errno) {
-            case ECHILD: return 0;
-            case EINTR: break;
-            default: return -1;
+                case ECHILD:
+                    return java_lang_ProcessHandleImpl_NOT_A_CHILD; // No child
+                case EINTR: break;
+                default: return -1;
             }
         }
 

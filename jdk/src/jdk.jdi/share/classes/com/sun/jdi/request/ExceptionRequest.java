@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,25 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
 
 /**
  * Request for notification when an exception occurs in the target VM.
  * When an enabled ExceptionRequest is satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing an
- * {@link com.sun.jdi.event.ExceptionEvent ExceptionEvent} will be placed
- * on the {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * {@link EventSet event set} containing an
+ * {@link ExceptionEvent ExceptionEvent} will be placed
+ * on the {@link EventQueue EventQueue}.
  * The collection of existing ExceptionRequests is
  * managed by the {@link EventRequestManager}
  *
- * @see com.sun.jdi.event.ExceptionEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see ExceptionEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Robert Field
@@ -60,7 +66,7 @@ public interface ExceptionRequest extends EventRequest {
      * <p>
      * Note that at the time an exception is thrown, it is not always
      * possible to determine whether it is truly caught. See
-     * {@link com.sun.jdi.event.ExceptionEvent#catchLocation} for
+     * {@link ExceptionEvent#catchLocation} for
      * details.
      * @return
      * boolean true if caught exceptions will be reported, false
@@ -74,7 +80,7 @@ public interface ExceptionRequest extends EventRequest {
      * <p>
      * Note that at the time an exception is thrown, it is not always
      * possible to determine whether it is truly uncaught. See
-     * {@link com.sun.jdi.event.ExceptionEvent#catchLocation} for
+     * {@link ExceptionEvent#catchLocation} for
      * details.
      * @return
      * boolean true if caught exceptions will be reported, false

@@ -23,9 +23,6 @@
 
 package test;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
-
 import http.HttpServer;
 
 /**
@@ -47,8 +44,8 @@ public class Main {
         cl = ClassLoader.getSystemClassLoader();
         assertTrue(httpModule.canRead(cl.getUnnamedModule()));
 
-        // and read all modules in the boot Layer
-        Layer layer = Layer.boot();
+        // and read all modules in the boot layer
+        ModuleLayer layer = ModuleLayer.boot();
         layer.modules().forEach(m -> assertTrue(httpModule.canRead(m)));
 
         // run code in the automatic modue, ensures access is allowed
