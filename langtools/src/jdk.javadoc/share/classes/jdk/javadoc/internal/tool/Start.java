@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,8 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
  */
 public class Start extends ToolOption.Helper {
 
-    @SuppressWarnings("deprecation")
-    private static final Class<?> OldStdDoclet =
-            com.sun.tools.doclets.standard.Standard.class;
-
     private static final Class<?> StdDoclet =
-            jdk.javadoc.doclets.StandardDoclet.class;
+            jdk.javadoc.doclet.StandardDoclet.class;
     /** Context for this invocation. */
     private final Context context;
 
@@ -302,43 +298,23 @@ public class Start extends ToolOption.Helper {
 
     /**
      * Main program - external wrapper. In order to maintain backward
-     * CLI  compatibility, we dispatch to the old tool or the old doclet's
-     * Start mechanism, based on the options present on the command line
-     * with the following precedence:
-     *   1. presence of -Xold, dispatch to old tool
-     *   2. doclet variant, if old, dispatch to old Start
-     *   3. taglet variant, if old, dispatch to old Start
+     * CLI compatibility, the execution is dispatched to the appropriate
+     * Start mechanism, depending on the doclet variant.
      *
-     * Thus the presence of -Xold switches the tool, soon after command files
-     * if any, are expanded, this is performed here, noting that the messager
-     * is available at this point in time.
-     * The doclet/taglet tests are performed in the begin method, further on,
+     * The doclet tests are performed in the begin method, further on,
      * this is to minimize argument processing and most importantly the impact
-     * of class loader creation, needed to detect the doclet/taglet class variants.
+     * of class loader creation, needed to detect the doclet class variants.
      */
     @SuppressWarnings("deprecation")
     Result begin(String... argv) {
         // Preprocess @file arguments
         try {
             argv = CommandLine.parse(argv);
+            return begin(Arrays.asList(argv), Collections.emptySet());
         } catch (IOException e) {
             error("main.cant.read", e.getMessage());
             return ERROR;
         }
-
-        if (argv.length > 0 && "-Xold".equals(argv[0])) {
-            warn("main.legacy_api");
-            String[] nargv = Arrays.copyOfRange(argv, 1, argv.length);
-            int rc = com.sun.tools.javadoc.Main.execute(
-                    messager.programName,
-                    messager.getWriter(WriterKind.ERROR),
-                    messager.getWriter(WriterKind.WARNING),
-                    messager.getWriter(WriterKind.NOTICE),
-                    "com.sun.tools.doclets.standard.Standard",
-                    nargv);
-            return (rc == 0) ? OK : ERROR;
-        }
-        return begin(Arrays.asList(argv), Collections.emptySet());
     }
 
     // Called by 199 API.
@@ -414,16 +390,14 @@ public class Start extends ToolOption.Helper {
                     messager.getWriter(WriterKind.ERROR),
                     messager.getWriter(WriterKind.WARNING),
                     messager.getWriter(WriterKind.NOTICE),
-                    "com.sun.tools.doclets.standard.Standard",
+                    docletClass.getName(),
                     array);
             return (rc == 0) ? OK : ERROR;
         }
 
         Result result = OK;
         try {
-            result = parseAndExecute(options, fileObjects)
-                    ? OK
-                    : ERROR;
+            result = parseAndExecute(options, fileObjects);
         } catch (com.sun.tools.javac.main.Option.InvalidValueException e) {
             messager.printError(e.getMessage());
             Throwable t = e.getCause();
@@ -501,7 +475,7 @@ public class Start extends ToolOption.Helper {
      * Main program - internal
      */
     @SuppressWarnings("unchecked")
-    private boolean parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
+    private Result parseAndExecute(List<String> argList, Iterable<? extends JavaFileObject> fileObjects)
             throws ToolException, OptionException, com.sun.tools.javac.main.Option.InvalidValueException {
         long tm = System.currentTimeMillis();
 
@@ -515,59 +489,33 @@ public class Start extends ToolOption.Helper {
         } catch (com.sun.tools.javac.main.Option.InvalidValueException ignore) {
         }
 
-        doclet.init(locale, messager);
-        parseArgs(argList, javaNames);
-
         Arguments arguments = Arguments.instance(context);
         arguments.init(ProgramName);
         arguments.allowEmpty();
-        arguments.validate();
+
+        doclet.init(locale, messager);
+        parseArgs(argList, javaNames);
+
+        if (!arguments.handleReleaseOptions(extra -> true)) {
+            // Arguments does not always increase the error count in the
+            // case of errors, so increment the error count only if it has
+            // not been updated previously, preventing complaints by callers
+            if (!messager.hasErrors() && !messager.hasWarnings())
+                messager.nerrors++;
+            return CMDERR;
+        }
+
+        if (!arguments.validate()) {
+            // Arguments does not always increase the error count in the
+            // case of errors, so increment the error count only if it has
+            // not been updated previously, preventing complaints by callers
+            if (!messager.hasErrors() && !messager.hasWarnings())
+                messager.nerrors++;
+            return CMDERR;
+        }
 
         if (fileManager instanceof BaseFileManager) {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
-        }
-
-        String platformString = compOpts.get("--release");
-
-        if (platformString != null) {
-            if (compOpts.isSet("-source")) {
-                String text = messager.getText("main.release.bootclasspath.conflict", "-source");
-                throw new ToolException(CMDERR, text);
-            }
-            if (fileManagerOpts.containsKey(BOOT_CLASS_PATH)) {
-                String text = messager.getText("main.release.bootclasspath.conflict",
-                        BOOT_CLASS_PATH.getPrimaryName());
-                throw new ToolException(CMDERR, text);
-            }
-
-            PlatformDescription platformDescription =
-                    PlatformUtils.lookupPlatformDescription(platformString);
-
-            if (platformDescription == null) {
-                String text = messager.getText("main.unsupported.release.version", platformString);
-                throw new IllegalArgumentException(text);
-            }
-
-            compOpts.put(SOURCE, platformDescription.getSourceVersion());
-
-            context.put(PlatformDescription.class, platformDescription);
-
-            Collection<Path> platformCP = platformDescription.getPlatformPath();
-
-            if (platformCP != null) {
-                if (fileManager instanceof StandardJavaFileManager) {
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-                    try {
-                        sfm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, platformCP);
-                    } catch (IOException ioe) {
-                        throw new ToolException(SYSERR, ioe.getMessage(), ioe);
-                    }
-                } else {
-                    String text = messager.getText("main.release.not.standard.file.manager",
-                                                    platformString);
-                    throw new ToolException(ABNORMAL, text);
-                }
-            }
         }
 
         compOpts.notifyListeners();
@@ -586,7 +534,7 @@ public class Start extends ToolOption.Helper {
         }
 
         JavadocTool comp = JavadocTool.make0(context);
-        if (comp == null) return false;
+        if (comp == null) return ABNORMAL;
 
         DocletEnvironment docEnv = comp.getEnvironment(jdtoolOpts,
                 javaNames,
@@ -600,8 +548,9 @@ public class Start extends ToolOption.Helper {
             trees.setBreakIterator(BreakIterator.getSentenceInstance(locale));
         }
         // pass off control to the doclet
-        boolean ok = docEnv != null;
-        if (ok) ok = doclet.run(docEnv);
+        Result returnStatus = docEnv != null && doclet.run(docEnv)
+                ? OK
+                : ERROR;
 
         // We're done.
         if (compOpts.get("-verbose") != null) {
@@ -609,7 +558,7 @@ public class Start extends ToolOption.Helper {
             messager.notice("main.done_in", Long.toString(tm));
         }
 
-        return ok;
+        return returnStatus;
     }
 
     boolean matches(List<String> names, String arg) {
@@ -777,8 +726,7 @@ public class Start extends ToolOption.Helper {
                 }
             }
             try {
-                Class<?> klass = cl.loadClass(userDocletName);
-                return klass;
+                return cl.loadClass(userDocletName);
             } catch (ClassNotFoundException cnfe) {
                 if (apiMode) {
                     throw new IllegalArgumentException("Cannot find doclet class " + userDocletName,
@@ -791,60 +739,23 @@ public class Start extends ToolOption.Helper {
 
         // Step 4: we have a doclet, try loading it
         if (docletName != null) {
-            try {
-                return Class.forName(docletName, true, getClass().getClassLoader());
-            } catch (ClassNotFoundException cnfe) {
-                if (apiMode) {
-                    throw new IllegalArgumentException("Cannot find doclet class " + userDocletName);
-                }
-                String text = messager.getText("main.doclet_class_not_found", userDocletName);
-                throw new ToolException(CMDERR, text, cnfe);
-            }
-        }
-
-        // Step 5: we don't have a doclet specified, do we have taglets ?
-        if (!userTagletNames.isEmpty() && hasOldTaglet(userTagletNames, userTagletPath)) {
-            // found a bogey, return the old doclet
-            return OldStdDoclet;
+            return loadDocletClass(docletName);
         }
 
         // finally
         return StdDoclet;
     }
 
-    /*
-     * This method returns true iff it finds a legacy taglet, but for
-     * all other conditions including errors it returns false, allowing
-     * nature to take its own course.
-     */
-    @SuppressWarnings("deprecation")
-    private boolean hasOldTaglet(List<String> tagletNames, List<File> tagletPaths) throws ToolException {
-        if (!fileManager.hasLocation(TAGLET_PATH)) {
-            try {
-                ((StandardJavaFileManager) fileManager).setLocation(TAGLET_PATH, tagletPaths);
-            } catch (IOException ioe) {
-                String text = messager.getText("main.doclet_could_not_set_location", tagletPaths);
-                throw new ToolException(CMDERR, text, ioe);
+    private Class<?> loadDocletClass(String docletName) throws ToolException {
+        try {
+            return Class.forName(docletName, true, getClass().getClassLoader());
+        } catch (ClassNotFoundException cnfe) {
+            if (apiMode) {
+                throw new IllegalArgumentException("Cannot find doclet class " + docletName);
             }
+            String text = messager.getText("main.doclet_class_not_found", docletName);
+            throw new ToolException(CMDERR, text, cnfe);
         }
-        ClassLoader cl = fileManager.getClassLoader(TAGLET_PATH);
-        if (cl == null) {
-            // no classloader found!
-            String text = messager.getText("main.doclet_no_classloader_found", tagletNames.get(0));
-            throw new ToolException(CMDERR, text);
-        }
-        for (String tagletName : tagletNames) {
-            try {
-                Class<?> klass = cl.loadClass(tagletName);
-                if (com.sun.tools.doclets.Taglet.class.isAssignableFrom(klass)) {
-                    return true;
-                }
-            } catch (ClassNotFoundException cnfe) {
-                String text = messager.getText("main.doclet_class_not_found", tagletName);
-                throw new ToolException(CMDERR, text, cnfe);
-            }
-        }
-        return false;
     }
 
     private void parseArgs(List<String> args, List<String> javaNames) throws ToolException,

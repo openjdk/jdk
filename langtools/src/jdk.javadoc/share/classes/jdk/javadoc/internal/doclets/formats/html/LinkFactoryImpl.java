@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,12 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
-
-import static jdk.javadoc.internal.doclets.formats.html.LinkInfoImpl.Kind.MEMBER_TYPE_PARAMS;
 
 /**
  * A factory that returns a link given the information about it.
@@ -73,7 +71,7 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     @Override
     protected Content getClassLink(LinkInfo linkInfo) {
-        Configuration configuration = m_writer.configuration;
+        BaseConfiguration configuration = m_writer.configuration;
         Utils utils = configuration.utils;
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
         boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
@@ -198,7 +196,7 @@ public class LinkFactoryImpl extends LinkFactory {
      * @return the tool tip for the appropriate class.
      */
     private String getClassToolTip(TypeElement typeElement, boolean isTypeLink) {
-        Configuration configuration = m_writer.configuration;
+        BaseConfiguration configuration = m_writer.configuration;
         Utils utils = configuration.utils;
         if (isTypeLink) {
             return configuration.getText("doclet.Href_Type_Param_Title",

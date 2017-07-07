@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,8 @@ class AppletSecurity extends AWTSecurityManager {
     /**
      * get the current (first) instance of an AppletClassLoader on the stack.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation",
+                       "removal"}) // SecurityManager.currentClassLoader()
     private AppletClassLoader currentAppletClassLoader()
     {
         // try currentClassLoader first
@@ -298,7 +299,8 @@ class AppletSecurity extends AWTSecurityManager {
      * @exception  SecurityException  if the caller does not have
      *             permission to access the AWT event queue.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation",
+                       "removal"}) //  SecurityManager.checkAwtEventQueueAccess
     public void checkAwtEventQueueAccess() {
         AppContext appContext = AppContext.getAppContext();
         AppletClassLoader appletClassLoader = currentAppletClassLoader();

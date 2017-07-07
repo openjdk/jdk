@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Optional;
 
 
 /**
@@ -49,10 +49,10 @@ import java.util.Optional;
 final class ServerMgr {
 
     private static final ServerMgr serverMgr = new ServerMgr();
-    private static final Logger logger =
+    private static final Logger LOGGER =
         Logger.getLogger(
             com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".server.http");
-    private final Map<InetSocketAddress,ServerState> servers = new HashMap<InetSocketAddress,ServerState>();
+    private final Map<InetSocketAddress,ServerState> servers = new HashMap<>();
 
     private ServerMgr() {}
 
@@ -83,25 +83,26 @@ final class ServerMgr {
             synchronized(servers) {
                 state = servers.get(inetAddress);
                 if (state == null) {
-                    final int finalPortNum = port;
-                    Optional<ServerState> stateOpt =
-                               servers.values()
-                                       .stream()
-                                       .filter(s -> s.getServer()
-                                                     .getAddress()
-                                                     .getPort() == finalPortNum)
-                                       .findAny();
-
-                    if (inetAddress.getAddress().isAnyLocalAddress() &&
-                        stateOpt.isPresent()) {
-                        state = stateOpt.get();
+                    ServerState free = null;
+                    for (ServerState ss : servers.values()) {
+                        if (port == ss.getServer().getAddress().getPort()) {
+                            free = ss;
+                            break;
+                        }
+                    }
+                    if (inetAddress.getAddress().isAnyLocalAddress() && free != null) {
+                        state = free;
                     } else {
-                        logger.fine("Creating new HTTP Server at "+inetAddress);
+                        if (LOGGER.isLoggable(Level.FINE)) {
+                            LOGGER.fine("Creating new HTTP Server at "+inetAddress);
+                        }
                         // Creates server with default socket backlog
                         server = HttpServer.create(inetAddress, 0);
                         server.setExecutor(Executors.newCachedThreadPool());
                         String path = url.toURI().getPath();
-                        logger.fine("Creating HTTP Context at = "+path);
+                        if (LOGGER.isLoggable(Level.FINE)) {
+                            LOGGER.fine("Creating HTTP Context at = "+path);
+                        }
                         HttpContext context = server.createContext(path);
                         server.start();
 
@@ -110,7 +111,9 @@ final class ServerMgr {
                         // or IP: 0.0.0.0 - which is used to monitor network traffic from any valid IP address
                         inetAddress = server.getAddress();
 
-                        logger.fine("HTTP server started = "+inetAddress);
+                        if (LOGGER.isLoggable(Level.FINE)) {
+                            LOGGER.fine("HTTP server started = "+inetAddress);
+                        }
                         state = new ServerState(server, path);
                         servers.put(inetAddress, state);
                         return context;
@@ -121,11 +124,15 @@ final class ServerMgr {
 
             if (state.getPaths().contains(url.getPath())) {
               String err = "Context with URL path "+url.getPath()+ " already exists on the server "+server.getAddress();
-              logger.fine(err);
+              if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine(err);
+              }
               throw new IllegalArgumentException(err);
             }
 
-            logger.fine("Creating HTTP Context at = "+url.getPath());
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Creating HTTP Context at = "+url.getPath());
+            }
             HttpContext context = server.createContext(url.getPath());
             state.oneMoreContext(url.getPath());
             return context;
@@ -157,7 +164,7 @@ final class ServerMgr {
     private static final class ServerState {
         private final HttpServer server;
         private int instances;
-        private Set<String> paths = new HashSet<String>();
+        private final Set<String> paths = new HashSet<>();
 
         ServerState(HttpServer server, String path) {
             this.server = server;

@@ -29,7 +29,6 @@
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @modules java.management
  * @build ResetPeakThreadCount
  * @build ThreadDump
  * @run main/othervm ResetPeakThreadCount

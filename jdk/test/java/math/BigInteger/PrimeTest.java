@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 /*
  * @test
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main PrimeTest
  * @bug 8026236 8074460 8078672
  * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)
@@ -40,7 +40,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.TreeSet;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 

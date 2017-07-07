@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+
+import jdk.internal.misc.VM;
 
 /**
  * Factory methods for file systems. This class defines the {@link #getDefault
@@ -120,8 +122,8 @@ public final class FileSystems {
 
             // if the property java.nio.file.spi.DefaultFileSystemProvider is
             // set then its value is the name of the default provider (or a list)
-            String propValue = System
-                .getProperty("java.nio.file.spi.DefaultFileSystemProvider");
+            String prop = "java.nio.file.spi.DefaultFileSystemProvider";
+            String propValue = System.getProperty(prop);
             if (propValue != null) {
                 for (String cn: propValue.split(",")) {
                     try {
@@ -184,7 +186,7 @@ public final class FileSystems {
      * @return  the default file system
      */
     public static FileSystem getDefault() {
-        if (jdk.internal.misc.VM.isBooted()) {
+        if (VM.isModuleSystemInited()) {
             return DefaultFileSystemHolder.defaultFileSystem;
         } else {
             return BuiltinFileSystemHolder.builtinFileSystem;

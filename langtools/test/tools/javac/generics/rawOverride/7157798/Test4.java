@@ -1,6 +1,6 @@
 /**
  * @test     /nodynamiccopyright/
- * @bug      7062745 7157798
+ * @bug      7062745 7157798 7170058
  * @summary  Negative test of conflicting same-name methods inherited from multiple interfaces when parameter types not compatible
  * @compile/fail/ref=Test4.out -Werror -Xlint:unchecked -XDrawDiagnostics Test4.java
  */
