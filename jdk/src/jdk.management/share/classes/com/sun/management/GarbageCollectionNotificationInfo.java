@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,10 +181,10 @@ public class GarbageCollectionNotificationInfo implements  CompositeDataView {
      * The given {@code CompositeData} must contain
      * the following attributes:
      * <blockquote>
-     * <table border>
+     * <table class="striped"><caption style="display:none">description</caption>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th style="text-align:left">Attribute Name</th>
+     *   <th style="text-align:left">Type</th>
      * </tr>
      * <tr>
      *   <td>gcName</td>

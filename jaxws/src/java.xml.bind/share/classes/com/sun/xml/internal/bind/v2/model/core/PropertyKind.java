@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public enum PropertyKind {
     public final boolean isOrdered;
 
     /**
-     * {@link com.sun.xml.internal.bind.v2.runtime.property.PropertyFactory} benefits from having index numbers assigned to
+     * {@code com.sun.xml.internal.bind.v2.runtime.property.PropertyFactory} benefits from having index numbers assigned to
      * {@link #ELEMENT}, {@link #REFERENCE}, and {@link #MAP} in this order.
      */
     public final int propertyIndex;

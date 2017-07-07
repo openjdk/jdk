@@ -120,7 +120,9 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
               if (XToolkit.isLeftMouseButton(e)) {
                   if (armed)
                   {
-                      action(e.getWhen(),e.getModifiers());
+                      @SuppressWarnings("deprecation")
+                      final int modifiers = e.getModifiers();
+                      action(e.getWhen(), modifiers);
                   }
                   pressed = false;
                   armed = false;
@@ -168,7 +170,9 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
                   pressed=true;
                   armed=true;
                   repaint();
-                  action(e.getWhen(),e.getModifiers());
+                  @SuppressWarnings("deprecation")
+                  final int modifiers = e.getModifiers();
+                  action(e.getWhen(), modifiers);
               }
 
               break;

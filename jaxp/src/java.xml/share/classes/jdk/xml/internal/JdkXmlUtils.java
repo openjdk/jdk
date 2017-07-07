@@ -52,6 +52,12 @@ public class JdkXmlUtils {
     public final static String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
     /**
+     * Reset SymbolTable feature
+     * System property name is identical to feature name
+     */
+    public final static String RESET_SYMBOL_TABLE = "jdk.xml.resetSymbolTable";
+
+    /**
      * Values for a feature
      */
     public static final String FEATURE_TRUE = "true";
@@ -62,6 +68,13 @@ public class JdkXmlUtils {
      */
     public static final boolean USE_CATALOG_DEFAULT
             = SecuritySupport.getJAXPSystemProperty(Boolean.class, SP_USE_CATALOG, "true");
+
+    /**
+     * Default value of RESET_SYMBOL_TABLE. This will read the System property
+     */
+    public static final boolean RESET_SYMBOL_TABLE_DEFAULT
+            = SecuritySupport.getJAXPSystemProperty(Boolean.class, RESET_SYMBOL_TABLE, "false");
+
 
     /**
      * JDK features (will be consolidated in the next major feature revamp

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
@@ -390,7 +391,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log.error("error.reading.file", userPath, getMessage(ex));
+                log.error(Errors.ErrorReadingFile(userPath, getMessage(ex)));
             }
         }
 
@@ -473,10 +474,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     }
                 } else {
                     if (isValidFile(fname, fileKinds)) {
-                        RelativeFile file = new RelativeFile(subdirectory, fname);
-                        JavaFileObject fe = PathFileObject.forDirectoryPath(JavacFileManager.this,
-                                file.resolveAgainst(directory), userPath, file);
-                        resultList.append(fe);
+                        try {
+                            RelativeFile file = new RelativeFile(subdirectory, fname);
+                            JavaFileObject fe = PathFileObject.forDirectoryPath(JavacFileManager.this,
+                                    file.resolveAgainst(directory), userPath, file);
+                            resultList.append(fe);
+                        } catch (InvalidPathException e) {
+                            throw new IOException("error accessing directory " + directory + e);
+                        }
                     }
                 }
             }
@@ -942,6 +947,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return locations.getLocation(location);
     }
 
+    @Override @DefinedBy(Api.COMPILER)
+    public boolean contains(Location location, FileObject fo) throws IOException {
+        nullCheck(location);
+        nullCheck(fo);
+        Path p = asPath(fo);
+        return locations.contains(location, p);
+    }
+
     private Path getClassOutDir() {
         return locations.getOutputLocation(CLASS_OUTPUT);
     }
@@ -968,7 +981,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             Collection<Path> paths = locations.getLocation(location);
             ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));
             Layer bootLayer = Layer.boot();
-            Configuration cf = bootLayer.configuration().resolveRequiresAndUses(ModuleFinder.of(), finder, Collections.emptySet());
+            Configuration cf = bootLayer.configuration().resolveAndBind(ModuleFinder.of(), finder, Collections.emptySet());
             Layer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
             return ServiceLoaderHelper.load(layer, service);
         } else {
@@ -977,31 +990,21 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     @Override @DefinedBy(Api.COMPILER)
-    public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+    public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
         checkModuleOrientedOrOutputLocation(location);
         if (!(fo instanceof PathFileObject))
-            throw new IllegalArgumentException(fo.getName());
-        int depth = 1; // allow 1 for filename
-        if (pkgName != null && !pkgName.isEmpty()) {
-            depth += 1;
-            for (int i = 0; i < pkgName.length(); i++) {
-                switch (pkgName.charAt(i)) {
-                    case '/': case '.':
-                        depth++;
-                }
-            }
-        }
-        Path p = Locations.normalize(((PathFileObject) fo).path);
-        int fc = p.getNameCount();
-        if (depth < fc) {
-            Path root = p.getRoot();
-            Path subpath = p.subpath(0, fc - depth);
-            Path dir = (root == null) ? subpath : root.resolve(subpath);
-            // need to find dir in location
-            return locations.getLocationForModule(location, dir);
-        } else {
             return null;
-        }
+        Path p = Locations.normalize(((PathFileObject) fo).path);
+            // need to find p in location
+        return locations.getLocationForModule(location, p);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public void setLocationForModule(Location location, String moduleName, Collection<? extends Path> paths)
+            throws IOException {
+        nullCheck(location);
+        checkModuleOrientedOrOutputLocation(location);
+        locations.setLocationForModule(location, nullCheck(moduleName), nullCheck(paths));
     }
 
     @Override @DefinedBy(Api.COMPILER)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,20 @@
 
 package jdk.internal.misc;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
-import java.net.URL;
+import java.net.URI;
 import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -44,13 +46,15 @@ import sun.nio.ch.Interruptible;
 public interface JavaLangAccess {
 
     /**
-     * Returns a {@code Method} object that reflects the specified public
-     * member method of the given class. Returns {@code null} if the
-     * method is not defined.
+     * Returns the list of {@code Method} objects for the declared public
+     * methods of this class or interface that have the specified method name
+     * and parameter types.
      */
-    Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes);
+    List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
 
-    /** Return the constant pool for a class. */
+    /**
+     * Return the constant pool for a class.
+     */
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
@@ -95,7 +99,9 @@ public interface JavaLangAccess {
      */
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
-    /** Set thread's blocker field. */
+    /**
+     * Set thread's blocker field.
+     */
     void blockedOn(Thread t, Interruptible b);
 
     /**
@@ -139,31 +145,20 @@ public interface JavaLangAccess {
     void invokeFinalize(Object o) throws Throwable;
 
     /**
-     * Returns the boot Layer
-     */
-    Layer getBootLayer();
-
-    /**
      * Returns the ConcurrentHashMap used as a storage for ClassLoaderValue(s)
      * associated with the given class loader, creating it if it doesn't already exist.
      */
     ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl);
 
     /**
+     * Defines a class with the given name to a class loader.
+     */
+    Class<?> defineClass(ClassLoader cl, String name, byte[] b, ProtectionDomain pd, String source);
+
+    /**
      * Returns a class loaded by the bootstrap class loader.
      */
     Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
-
-    /**
-     * Returns a URL to a resource with the given name in a module that is
-     * defined to the given class loader.
-     */
-    URL findResource(ClassLoader cl, String moduleName, String name) throws IOException;
-
-    /**
-     * Returns the Packages for the given class loader.
-     */
-    Stream<Package> packages(ClassLoader cl);
 
     /**
      * Define a Package of the given name and module by the given class loader.
@@ -174,4 +169,99 @@ public interface JavaLangAccess {
      * Invokes Long.fastUUID
      */
     String fastUUID(long lsb, long msb);
+
+    /**
+     * Record the non-exported packages of the modules in the given layer
+     */
+    void addNonExportedPackages(ModuleLayer layer);
+
+    /**
+     * Invalidate package access cache
+     */
+    void invalidatePackageAccessCache();
+
+    /**
+     * Defines a new module to the Java virtual machine. The module
+     * is defined to the given class loader.
+     *
+     * The URI is for information purposes only, it can be {@code null}.
+     */
+    Module defineModule(ClassLoader loader, ModuleDescriptor descriptor, URI uri);
+
+    /**
+     * Defines the unnamed module for the given class loader.
+     */
+    Module defineUnnamedModule(ClassLoader loader);
+
+    /**
+     * Updates the readability so that module m1 reads m2. The new read edge
+     * does not result in a strong reference to m2 (m2 can be GC'ed).
+     *
+     * This method is the same as m1.addReads(m2) but without a permission check.
+     */
+    void addReads(Module m1, Module m2);
+
+    /**
+     * Updates module m to read all unnamed modules.
+     */
+    void addReadsAllUnnamed(Module m);
+
+    /**
+     * Updates module m1 to export a package to module m2. The export does
+     * not result in a strong reference to m2 (m2 can be GC'ed).
+     */
+    void addExports(Module m1, String pkg, Module m2);
+
+    /**
+     * Updates a module m to export a package to all unnamed modules.
+     */
+    void addExportsToAllUnnamed(Module m, String pkg);
+
+    /**
+     * Updates module m1 to open a package to module m2. Opening the
+     * package does not result in a strong reference to m2 (m2 can be GC'ed).
+     */
+    void addOpens(Module m1, String pkg, Module m2);
+
+    /**
+     * Updates module m to open a package to all unnamed modules.
+     */
+    void addOpensToAllUnnamed(Module m, String pkg);
+
+    /**
+     * Updates module m to open all packages returned by the given iterator.
+     */
+    void addOpensToAllUnnamed(Module m, Iterator<String> packages);
+
+    /**
+     * Updates module m to use a service.
+     */
+    void addUses(Module m, Class<?> service);
+
+    /**
+     * Returns true if module m reflectively exports a package to other
+     */
+    boolean isReflectivelyExported(Module module, String pn, Module other);
+
+    /**
+     * Returns true if module m reflectively opens a package to other
+     */
+    boolean isReflectivelyOpened(Module module, String pn, Module other);
+
+    /**
+     * Returns the ServicesCatalog for the given Layer.
+     */
+    ServicesCatalog getServicesCatalog(ModuleLayer layer);
+
+    /**
+     * Returns an ordered stream of layers. The first element is is the
+     * given layer, the remaining elements are its parents, in DFS order.
+     */
+    Stream<ModuleLayer> layers(ModuleLayer layer);
+
+    /**
+     * Returns a stream of the layers that have modules defined to the
+     * given class loader.
+     */
+    Stream<ModuleLayer> layers(ClassLoader loader);
 }

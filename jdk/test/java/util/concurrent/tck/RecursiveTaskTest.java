@@ -210,10 +210,10 @@ public class RecursiveTaskTest extends JSR166TestCase {
         public FJException() { super(); }
     }
 
-    // An invalid return value for Fib
+    /** An invalid return value for Fib. */
     static final Integer NoResult = Integer.valueOf(-17);
 
-    // A simple recursive task for testing
+    /** A simple recursive task for testing. */
     final class FibTask extends CheckedRecursiveTask<Integer> {
         final int number;
         FibTask(int n) { number = n; }
@@ -231,7 +231,7 @@ public class RecursiveTaskTest extends JSR166TestCase {
         }
     }
 
-    // A recursive action failing in base case
+    /** A recursive action failing in base case. */
     final class FailingFibTask extends RecursiveTask<Integer> {
         final int number;
         int result;

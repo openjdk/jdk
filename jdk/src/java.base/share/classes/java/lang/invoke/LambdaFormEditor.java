@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -532,7 +532,8 @@ class LambdaFormEditor {
         assert(pos > 0);  // cannot spread the MH arg itself
 
         Name spreadParam = new Name(L_TYPE);
-        Name checkSpread = new Name(MethodHandleImpl.NF_checkSpreadArgument, spreadParam, arrayLength);
+        Name checkSpread = new Name(MethodHandleImpl.getFunction(MethodHandleImpl.NF_checkSpreadArgument),
+                spreadParam, arrayLength);
 
         // insert the new expressions
         int exprPos = lambdaForm.arity();
@@ -540,7 +541,7 @@ class LambdaFormEditor {
         // adjust the arguments
         MethodHandle aload = MethodHandles.arrayElementGetter(erasedArrayType);
         for (int i = 0; i < arrayLength; i++) {
-            Name loadArgument = new Name(aload, spreadParam, i);
+            Name loadArgument = new Name(new NamedFunction(aload, Intrinsic.ARRAY_LOAD), spreadParam, i);
             buf.insertExpression(exprPos + i, loadArgument);
             buf.replaceParameterByCopy(pos + i, exprPos + i);
         }
@@ -603,7 +604,8 @@ class LambdaFormEditor {
         for (int i = 0; i < collectorArity; i++) {
             newParams[i] = new Name(pos + i, argType);
         }
-        Name callCombiner = new Name(arrayCollector, (Object[]) /*...*/ newParams);
+        Name callCombiner = new Name(new NamedFunction(arrayCollector, Intrinsic.NEW_ARRAY),
+                                        (Object[]) /*...*/ newParams);
 
         // insert the new expression
         int exprPos = lambdaForm.arity();
@@ -915,7 +917,7 @@ class LambdaFormEditor {
             }
         }
 
-        form = new LambdaForm(lambdaForm.debugName, arity2, names2, result2);
+        form = new LambdaForm(arity2, names2, result2);
         return putInCache(key, form);
     }
 
@@ -932,14 +934,14 @@ class LambdaFormEditor {
 
         // replace the null entry in the MHImpl.loop invocation with localTypes
         Name invokeLoop = lambdaForm.names[pos + 1];
-        assert(invokeLoop.function == NF_loop);
+        assert(invokeLoop.function.equals(MethodHandleImpl.getFunction(NF_loop)));
         Object[] args = Arrays.copyOf(invokeLoop.arguments, invokeLoop.arguments.length);
         assert(args[0] == null);
         args[0] = localTypes;
 
         LambdaFormBuffer buf = buffer();
         buf.startEdit();
-        buf.changeName(pos + 1, new Name(NF_loop, args));
+        buf.changeName(pos + 1, new Name(MethodHandleImpl.getFunction(NF_loop), args));
         form = buf.endEdit();
 
         return putInCache(key, form);

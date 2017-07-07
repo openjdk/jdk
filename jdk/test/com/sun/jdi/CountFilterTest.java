@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4321339
- *  @summary Check correct processing of filters after a count filter
+ * @test
+ * @bug 4321339
+ * @summary Check correct processing of filters after a count filter
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g CountFilterTest.java
- *  @run driver CountFilterTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g CountFilterTest.java
+ * @run driver CountFilterTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

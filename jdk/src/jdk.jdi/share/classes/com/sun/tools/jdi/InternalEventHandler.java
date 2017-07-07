@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,24 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.event.*;
-import java.util.*;
+import com.sun.jdi.ClassNotPreparedException;
+import com.sun.jdi.InconsistentDebugInfoException;
+import com.sun.jdi.ObjectCollectedException;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VMOutOfMemoryException;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.ClassPrepareEvent;
+import com.sun.jdi.event.ClassUnloadEvent;
+import com.sun.jdi.event.Event;
+import com.sun.jdi.event.EventIterator;
+import com.sun.jdi.event.EventSet;
 
 public class InternalEventHandler implements Runnable
 {
     EventQueueImpl queue;
     VirtualMachineImpl vm;
 
-    InternalEventHandler(VirtualMachineImpl vm, EventQueueImpl queue)
-    {
+    InternalEventHandler(VirtualMachineImpl vm, EventQueueImpl queue) {
         this.vm = vm;
         this.queue = queue;
         Thread thread = new Thread(vm.threadGroupForJDI(), this,
@@ -73,7 +80,6 @@ public class InternalEventHandler implements Runnable
                                               cpEvent.referenceType().name());
                             }
                         }
-
                     }
 
                 /*
