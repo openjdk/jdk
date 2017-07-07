@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,6 +54,7 @@ public interface XSAttributeDeclaration extends XSObject {
      *
      * @deprecated Use getValueConstraintValue().getNormalizedValue() instead
      */
+    @Deprecated
     public String getConstraintValue();
 
     /**
@@ -67,6 +67,7 @@ public interface XSAttributeDeclaration extends XSObject {
      *
      *  @deprecated Use getValueConstraintValue().getActualValue() instead
      */
+    @Deprecated
     public Object getActualVC()
                                                         throws XSException;
 
@@ -86,6 +87,7 @@ public interface XSAttributeDeclaration extends XSObject {
      *
      *  @deprecated Use getValueConstraintValue().getActualValueType() instead
      */
+    @Deprecated
     public short getActualVCType()
                                                         throws XSException;
 
@@ -104,6 +106,7 @@ public interface XSAttributeDeclaration extends XSObject {
      *
      *  @deprecated Use getValueConstraintValue().getListValueTypes() instead
      */
+    @Deprecated
     public ShortList getItemValueTypes()
                                                         throws XSException;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ class SharkIntrinsics : public SharkTargetInvariants {
   void do_Object_getClass();
   void do_System_currentTimeMillis();
   void do_Thread_currentThread();
-  void do_Unsafe_compareAndSwapInt();
+  void do_Unsafe_compareAndSetInt();
 };
 
 #endif // SHARE_VM_SHARK_SHARKINTRINSICS_HPP

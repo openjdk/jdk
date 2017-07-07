@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 
@@ -89,7 +89,7 @@ public class CommentHelper {
 
     public static final String SPACER = " ";
 
-    public CommentHelper(Configuration configuration, Element element, TreePath path, DocCommentTree dctree) {
+    public CommentHelper(BaseConfiguration configuration, Element element, TreePath path, DocCommentTree dctree) {
         //this.configuration = configuration;
         this.element = element;
         this.path = path;
@@ -143,7 +143,7 @@ public class CommentHelper {
         }
     }
 
-    Element getElement(Configuration c, ReferenceTree rtree) {
+    Element getElement(BaseConfiguration c, ReferenceTree rtree) {
         // likely a synthesized tree
         if (path == null) {
             TypeMirror symbol = c.utils.getSymbol(rtree.getSignature());
@@ -178,7 +178,7 @@ public class CommentHelper {
         return doctrees.getElement(docTreePath);
     }
 
-    public Element getException(Configuration c, DocTree dtree) {
+    public Element getException(BaseConfiguration c, DocTree dtree) {
         if (dtree.getKind() == THROWS || dtree.getKind() == EXCEPTION) {
             ThrowsTree tt = (ThrowsTree)dtree;
             ReferenceTree exceptionName = tt.getExceptionName();
@@ -187,7 +187,7 @@ public class CommentHelper {
         return null;
     }
 
-    public List<? extends DocTree> getDescription(Configuration c, DocTree dtree) {
+    public List<? extends DocTree> getDescription(BaseConfiguration c, DocTree dtree) {
         return getTags(c, dtree);
     }
 
@@ -334,7 +334,7 @@ public class CommentHelper {
         return sb;
     }
 
-    public String getLabel(Configuration c, DocTree dtree) {
+    public String getLabel(BaseConfiguration c, DocTree dtree) {
         return new SimpleDocTreeVisitor<String, Void>() {
             @Override
             public String visitLink(LinkTree node, Void p) {
@@ -361,7 +361,7 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public TypeElement getReferencedClass(Configuration c, DocTree dtree) {
+    public TypeElement getReferencedClass(BaseConfiguration c, DocTree dtree) {
         Element e = getReferencedElement(c, dtree);
         if (e == null) {
             return null;
@@ -373,7 +373,7 @@ public class CommentHelper {
         return null;
     }
 
-    public String getReferencedClassName(Configuration c, DocTree dtree) {
+    public String getReferencedClassName(BaseConfiguration c, DocTree dtree) {
         Element e = getReferencedClass(c, dtree);
         if (e != null) {
             return c.utils.isTypeElement(e) ? c.utils.getSimpleName(e) : null;
@@ -386,7 +386,7 @@ public class CommentHelper {
         return (n == -1) ? s : s.substring(0, n);
     }
 
-    public Element getReferencedMember(Configuration c, DocTree dtree) {
+    public Element getReferencedMember(BaseConfiguration c, DocTree dtree) {
         Element e = getReferencedElement(c, dtree);
         if (e == null) {
             return null;
@@ -403,7 +403,7 @@ public class CommentHelper {
         return (n == -1) ? null : s.substring(n + 1);
     }
 
-    public String getReferencedMemberName(Configuration c, Element e) {
+    public String getReferencedMemberName(BaseConfiguration c, Element e) {
         if (e == null) {
             return null;
         }
@@ -412,7 +412,7 @@ public class CommentHelper {
                 : c.utils.getSimpleName(e);
     }
 
-    public PackageElement getReferencedPackage(Configuration c, DocTree dtree) {
+    public PackageElement getReferencedPackage(BaseConfiguration c, DocTree dtree) {
         Element e = getReferencedElement(c, dtree);
         if (e != null) {
             return c.utils.containingPackage(e);
@@ -420,16 +420,16 @@ public class CommentHelper {
         return null;
     }
 
-    public List<? extends DocTree> getFirstSentenceTrees(Configuration c, List<? extends DocTree> body) {
+    public List<? extends DocTree> getFirstSentenceTrees(BaseConfiguration c, List<? extends DocTree> body) {
         List<DocTree> firstSentence = c.docEnv.getDocTrees().getFirstSentence(body);
         return firstSentence;
     }
 
-    public List<? extends DocTree> getFirstSentenceTrees(Configuration c, DocTree dtree) {
+    public List<? extends DocTree> getFirstSentenceTrees(BaseConfiguration c, DocTree dtree) {
         return getFirstSentenceTrees(c, getBody(c, dtree));
     }
 
-    private Element getReferencedElement(Configuration c, DocTree dtree) {
+    private Element getReferencedElement(BaseConfiguration c, DocTree dtree) {
         return new SimpleDocTreeVisitor<Element, Void>() {
             @Override
             public Element visitSee(SeeTree node, Void p) {
@@ -476,7 +476,7 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public TypeElement getServiceType(Configuration c, DocTree dtree) {
+    public TypeElement getServiceType(BaseConfiguration c, DocTree dtree) {
         Element e = getReferencedElement(c, dtree);
         if (e != null) {
             return c.utils.isTypeElement(e) ? (TypeElement) e : null;
@@ -542,7 +542,7 @@ public class CommentHelper {
             }
     }
 
-    public List<? extends DocTree> getTags(Configuration c, DocTree dtree) {
+    public List<? extends DocTree> getTags(BaseConfiguration c, DocTree dtree) {
         return new SimpleDocTreeVisitor<List<? extends DocTree>, Void>() {
             List<? extends DocTree> asList(String content) {
                 List<DocTree> out = new ArrayList<>();
@@ -647,7 +647,7 @@ public class CommentHelper {
         }.visit(dtree, null);
     }
 
-    public List<? extends DocTree> getBody(Configuration c, DocTree dtree) {
+    public List<? extends DocTree> getBody(BaseConfiguration c, DocTree dtree) {
         return getTags(c, dtree);
     }
 

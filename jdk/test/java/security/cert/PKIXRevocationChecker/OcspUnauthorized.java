@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@
 /**
  * @test
  * @bug 8023362
+ * @run main/othervm OcspUnauthorized
  * @summary Make sure Ocsp UNAUTHORIZED response is treated as failure when
  *          SOFT_FAIL option is set
  */
 
 import java.io.ByteArrayInputStream;
+import java.security.Security;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.*;
 import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.Base64;
@@ -69,6 +72,8 @@ public class OcspUnauthorized {
     private static Base64.Decoder base64Decoder = Base64.getDecoder();
 
     public static void main(String[] args) throws Exception {
+        // EE_CERT is signed with MD5withRSA
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
         cf = CertificateFactory.getInstance("X.509");
         X509Certificate taCert = getX509Cert(TRUST_ANCHOR);
         X509Certificate eeCert = getX509Cert(EE_CERT);
@@ -92,6 +97,11 @@ public class OcspUnauthorized {
             throw new Exception("FAILED: expected CertPathValidatorException");
         } catch (CertPathValidatorException cpve) {
             cpve.printStackTrace();
+            if (cpve.getReason() != BasicReason.UNSPECIFIED &&
+                !cpve.getMessage().contains("OCSP response error: UNAUTHORIZED")) {
+                throw new Exception("FAILED: unexpected " +
+                                    "CertPathValidatorException reason");
+            }
         }
     }
 

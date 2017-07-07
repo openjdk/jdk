@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,26 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidStackFrameException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.LocalVariable;
+import com.sun.jdi.Location;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class StackFrameImpl extends MirrorImpl
                             implements StackFrame, ThreadListener
@@ -157,7 +168,7 @@ public class StackFrameImpl extends MirrorImpl
     private void createVisibleVariables() throws AbsentInformationException {
         if (visibleVariables == null) {
             List<LocalVariable> allVariables = location.method().variables();
-            Map<String, LocalVariable> map = new HashMap<String, LocalVariable>(allVariables.size());
+            Map<String, LocalVariable> map = new HashMap<>(allVariables.size());
 
             for (LocalVariable variable : allVariables) {
                 String name = variable.name();
@@ -180,7 +191,7 @@ public class StackFrameImpl extends MirrorImpl
     public List<LocalVariable> visibleVariables() throws AbsentInformationException {
         validateStackFrame();
         createVisibleVariables();
-        List<LocalVariable> mapAsList = new ArrayList<LocalVariable>(visibleVariables.values());
+        List<LocalVariable> mapAsList = new ArrayList<>(visibleVariables.values());
         Collections.sort(mapAsList);
         return mapAsList;
     }
@@ -196,7 +207,7 @@ public class StackFrameImpl extends MirrorImpl
     }
 
     public Value getValue(LocalVariable variable) {
-        List<LocalVariable> list = new ArrayList<LocalVariable>(1);
+        List<LocalVariable> list = new ArrayList<>(1);
         list.add(variable);
         return getValues(list).get(variable);
     }
@@ -246,8 +257,8 @@ public class StackFrameImpl extends MirrorImpl
             throw new InternalException(
                       "Wrong number of values returned from target VM");
         }
-        Map<LocalVariable, Value> map = new HashMap<LocalVariable, Value>(count);
-        for (int i=0; i<count; ++i) {
+        Map<LocalVariable, Value> map = new HashMap<>(count);
+        for (int i = 0; i < count; ++i) {
             LocalVariableImpl variable = (LocalVariableImpl)variables.get(i);
             map.put(variable, values[i]);
         }

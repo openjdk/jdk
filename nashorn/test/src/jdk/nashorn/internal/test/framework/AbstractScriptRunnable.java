@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ public abstract class AbstractScriptRunnable {
         try {
             return getEvaluator().run(out, err, args);
         } catch (final IOException e) {
-            throw new UnsupportedOperationException("I/O error in initializing shell - cannot redirect output to file");
+            throw new UnsupportedOperationException("I/O error in initializing shell - cannot redirect output to file", e);
         }
     }
 

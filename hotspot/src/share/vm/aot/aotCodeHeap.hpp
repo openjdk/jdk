@@ -240,6 +240,11 @@ public:
     assert(result == CodeHeap::contains(p), "");
     return result;
   }
+
+  bool contains_blob(const CodeBlob* blob) const {
+    return CodeHeap::contains(blob->code_begin());
+  }
+
   AOTCompiledMethod* find_aot(address p) const;
 
   virtual void* find_start(void* p)     const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,19 @@
 
 package com.sun.tools.jdi;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.ListeningConnector;
+import com.sun.jdi.connect.Transport;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.connect.spi.TransportService;
 
 /*
  * A ListeningConnector to listen for connections from target VM
@@ -81,7 +85,7 @@ public class GenericListeningConnector
                 false,
                 0, Integer.MAX_VALUE);
 
-        listenMap = new HashMap<Map<String,? extends Connector.Argument>,TransportService.ListenKey>(10);
+        listenMap = new HashMap<Map<String, ? extends Connector.Argument>, TransportService.ListenKey>(10);
     }
 
     /**
@@ -107,7 +111,7 @@ public class GenericListeningConnector
         TransportService.ListenKey listener = listenMap.get(args);
         if (listener != null) {
            throw new IllegalConnectorArgumentsException("Already listening",
-               new ArrayList<String>(args.keySet()));
+               new ArrayList<>(args.keySet()));
         }
 
         listener = transportService.startListening(address);
@@ -116,27 +120,27 @@ public class GenericListeningConnector
     }
 
     public String
-        startListening(Map<String,? extends Connector.Argument> args)
+        startListening(Map<String, ? extends Connector.Argument> args)
         throws IOException, IllegalConnectorArgumentsException
     {
         String address = argument(ARG_ADDRESS, args).value();
         return startListening(address, args);
     }
 
-    public void stopListening(Map<String,? extends Connector.Argument> args)
+    public void stopListening(Map<String, ? extends Connector.Argument> args)
         throws IOException, IllegalConnectorArgumentsException
     {
         TransportService.ListenKey listener = listenMap.get(args);
         if (listener == null) {
            throw new IllegalConnectorArgumentsException("Not listening",
-               new ArrayList<String>(args.keySet()));
+               new ArrayList<>(args.keySet()));
         }
         transportService.stopListening(listener);
         listenMap.remove(args);
     }
 
     public VirtualMachine
-        accept(Map<String,? extends Connector.Argument> args)
+        accept(Map<String, ? extends Connector.Argument> args)
         throws IOException, IllegalConnectorArgumentsException
     {
         String ts = argument(ARG_TIMEOUT, args).value();
@@ -179,5 +183,4 @@ public class GenericListeningConnector
     public Transport transport() {
         return transport;
     }
-
 }

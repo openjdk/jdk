@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifndef _FIND_TESTS_GMK
+_FIND_TESTS_GMK := 1
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , common/FindTests.gmk))
+
+# JTREG_COMPONENTS might have been set by a custom extension
+JTREG_COMPONENTS += hotspot jdk langtools nashorn jaxp
+
+################################################################################
+# Find the Jtreg test groups for the given component.
+#
+# Parameter 1 is the name of the component. This name is used as variable prefix.
+#
+# After this macro has been evaluated, the following variables are defined for
+# the component:
+#   JTREG_TESTROOT - The path to the root of the test directory
+#   JTREG_GROUP_FILES - The file(s) containing the group definitions
+#   JTREG_TEST_GROUPS - The name of the test groups that the component defines
+#
+FindJtregGroups = $(NamedParamsMacroTemplate)
+define FindJtregGroupsBody
+  $1_JTREG_TESTROOT := $$(TOPDIR)/$1/test
+  ifneq ($$(wildcard $$($1_JTREG_TESTROOT)), )
+    $1_JTREG_GROUP_FILENAMES := $$(shell $$(SED) -n -e 's/\[\(.*\)\]/\1/g' \
+        -e 's/^groups\w*=//p' $$($1_JTREG_TESTROOT)/TEST.ROOT)
+    $1_JTREG_GROUP_FILES := $$(addprefix $$($1_JTREG_TESTROOT)/, \
+        $$($1_JTREG_GROUP_FILENAMES))
+    $1_JTREG_TEST_GROUPS := $$(strip $$(shell $$(SED) -n \
+        -e 's/\([^ ]*\)\w*=.*/\1/gp' $$(wildcard $$($1_JTREG_GROUP_FILES)) \
+        | $$(SORT) -u))
+  endif
+endef
+
+# Configure definitions for all available test components
+$(foreach component, $(JTREG_COMPONENTS), \
+    $(eval $(call FindJtregGroups, $(component))))
+
+# Create a list of all available Jtreg test groups in all components
+JTREG_TEST_GROUPS += $(sort $(foreach component, $(JTREG_COMPONENTS), \
+    $($(component)_JTREG_TEST_GROUPS)))
+
+# Add Jtreg test groups to list of named tests (test groups, test list, etc)
+# ALL_NAMED_TESTS might have been set by a custom extension
+ALL_NAMED_TESTS += $(JTREG_TEST_GROUPS)
+
+# Add Gtest
+ALL_NAMED_TESTS += gtest
+
+################################################################################
+
+endif # _FIND_TESTS_GMK

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ModificationWatchpointEvent;
 
 /**
  * Request for notification when a field is set.
@@ -37,19 +39,16 @@ import com.sun.jdi.*;
  * Setting a field to a value which is the same as the previous value
  * still triggers this event.
  * Modification by JDI does not trigger this event.
- * When an enabled
- * ModificationWatchpointRequest is satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing a
- * {@link com.sun.jdi.event.ModificationWatchpointEvent ModificationWatchpointEvent}
- * will be placed on
- * the {@link com.sun.jdi.event.EventQueue EventQueue}.
- * The collection of existing
- * watchpoints is
+ * When an enabled ModificationWatchpointRequest is satisfied, an
+ * {@link EventSet event set} containing a
+ * {@link ModificationWatchpointEvent ModificationWatchpointEvent}
+ * will be placed on the {@link EventQueue EventQueue}.
+ * The collection of existing watchpoints is
  * managed by the {@link EventRequestManager}.
  *
- * @see com.sun.jdi.event.ModificationWatchpointEvent
+ * @see ModificationWatchpointEvent
  * @see AccessWatchpointRequest
- * @see com.sun.jdi.event.EventQueue
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Robert Field

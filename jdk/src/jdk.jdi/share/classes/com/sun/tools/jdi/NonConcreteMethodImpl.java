@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,14 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
+
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.LocalVariable;
+import com.sun.jdi.Location;
+import com.sun.jdi.VirtualMachine;
 
 /**
  * Represents non-concrete (that is, native or abstract) methods.
@@ -45,10 +44,9 @@ public class NonConcreteMethodImpl extends MethodImpl {
 
     NonConcreteMethodImpl(VirtualMachine vm,
                           ReferenceTypeImpl declaringType,
-                          long ref,
-                          String name, String signature,
-                          String genericSignature, int modifiers) {
-
+                          long ref, String name, String signature,
+                          String genericSignature, int modifiers)
+    {
         // The generic signature is set when this is created
         super(vm, declaringType, ref, name, signature,
               genericSignature, modifiers);
@@ -65,25 +63,25 @@ public class NonConcreteMethodImpl extends MethodImpl {
     }
 
     public List<Location> allLineLocations(String stratumID,
-                                 String sourceName) {
-        return new ArrayList<Location>(0);
+                                           String sourceName) {
+        return new ArrayList<>(0);
     }
 
     public List<Location> allLineLocations(SDE.Stratum stratum,
-                                 String sourceName) {
-        return new ArrayList<Location>(0);
+                                           String sourceName) {
+        return new ArrayList<>(0);
     }
 
     public List<Location> locationsOfLine(String stratumID,
-                                String sourceName,
-                                int lineNumber) {
-        return new ArrayList<Location>(0);
+                                          String sourceName,
+                                          int lineNumber) {
+        return new ArrayList<>(0);
     }
 
     public List<Location> locationsOfLine(SDE.Stratum stratum,
-                                String sourceName,
-                                int lineNumber) {
-        return new ArrayList<Location>(0);
+                                          String sourceName,
+                                          int lineNumber) {
+        return new ArrayList<>(0);
     }
 
     public Location locationOfCodeIndex(long codeIndex) {

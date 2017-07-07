@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ public abstract class TableView extends BoxView {
         super(elem, View.Y_AXIS);
         rows = new Vector<TableRow>();
         gridValid = false;
+        totalColumnRequirements = new SizeRequirements();
     }
 
     /**
@@ -377,6 +378,11 @@ public abstract class TableView extends BoxView {
         r.preferred = (int) pref;
         r.maximum = (int) max;
         r.alignment = 0;
+
+        totalColumnRequirements.minimum = r.minimum;
+        totalColumnRequirements.preferred = r.preferred;
+        totalColumnRequirements.maximum = r.maximum;
+
         return r;
     }
 
@@ -406,6 +412,13 @@ public abstract class TableView extends BoxView {
      * into consideration any constraining maximums.
      */
     void calculateColumnRequirements(int axis) {
+
+        for (SizeRequirements req : columnRequirements) {
+            req.minimum = 0;
+            req.preferred = 0;
+            req.maximum = Integer.MAX_VALUE;
+        }
+
         // pass 1 - single column cells
         boolean hasMultiColumn = false;
         int nrows = getRowCount();
@@ -576,6 +589,9 @@ public abstract class TableView extends BoxView {
 
     int[] columnSpans;
     int[] columnOffsets;
+
+    SizeRequirements totalColumnRequirements;
+
     SizeRequirements[] columnRequirements;
     Vector<TableRow> rows;
     boolean gridValid;
@@ -644,6 +660,53 @@ public abstract class TableView extends BoxView {
         public void replace(int offset, int length, View[] views) {
             super.replace(offset, length, views);
             invalidateGrid();
+        }
+
+        @Override
+        protected SizeRequirements calculateMajorAxisRequirements(int axis, SizeRequirements r) {
+            SizeRequirements req = new SizeRequirements();
+            req.minimum = totalColumnRequirements.minimum;
+            req.maximum = totalColumnRequirements.maximum;
+            req.preferred = totalColumnRequirements.preferred;
+            req.alignment = 0f;
+            return req;
+        }
+
+        @Override
+        public float getMinimumSpan(int axis) {
+            float value;
+
+            if (axis == View.X_AXIS) {
+                value = totalColumnRequirements.minimum + getLeftInset() + getRightInset();
+            } else {
+                value = super.getMinimumSpan(axis);
+            }
+            return value;
+        }
+
+        @Override
+        public float getMaximumSpan(int axis) {
+            float value;
+
+            if (axis == View.X_AXIS) {
+                // We're flexible.
+                value = (float) Integer.MAX_VALUE;
+            } else {
+                value = super.getMaximumSpan(axis);
+            }
+            return value;
+        }
+
+        @Override
+        public float getPreferredSpan(int axis) {
+            float value;
+
+            if (axis == View.X_AXIS) {
+                value = totalColumnRequirements.preferred + getLeftInset() + getRightInset();
+            } else {
+                value = super.getPreferredSpan(axis);
+            }
+            return value;
         }
 
         /**

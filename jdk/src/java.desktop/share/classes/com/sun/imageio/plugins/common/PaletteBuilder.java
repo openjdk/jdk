@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,8 @@ public class PaletteBuilder {
      * is unable to create approximation of {@code src}
      * and {@code canCreatePalette} returns {@code false}.
      *
-     * @see createIndexColorModel
-     *
-     * @see canCreatePalette
-     *
+     * @see #createIndexColorModel
+     * @see #canCreatePalette
      */
     public static RenderedImage createIndexedImage(RenderedImage src) {
         PaletteBuilder pb = new PaletteBuilder(src);
@@ -107,10 +105,8 @@ public class PaletteBuilder {
      * is unable to create approximation of {@code img}
      * and {@code canCreatePalette} returns {@code false}.
      *
-     * @see createIndexedImage
-     *
-     * @see canCreatePalette
-     *
+     * @see #createIndexedImage
+     * @see #canCreatePalette
      */
     public static IndexColorModel createIndexColorModel(RenderedImage img) {
         PaletteBuilder pb = new PaletteBuilder(img);
