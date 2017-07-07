@@ -31,12 +31,8 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.ReturnNode;
@@ -60,6 +56,8 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * In these test the FrameStates are explicitly cleared out, so that the scheduling of
@@ -706,7 +704,8 @@ public class MemoryScheduleTest extends GraphScheduleTest {
     private ScheduleResult getFinalSchedule(final String snippet, final TestMode mode, final SchedulingStrategy schedulingStrategy) {
         OptionValues options = new OptionValues(getInitialOptions(), OptScheduleOutOfLoops, schedulingStrategy == SchedulingStrategy.LATEST_OUT_OF_LOOPS, OptImplicitNullChecks, false);
         final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, options);
-        try (Scope d = Debug.scope("FloatingReadTest", graph)) {
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope d = debug.scope("FloatingReadTest", graph)) {
             HighTierContext context = getDefaultHighTierContext();
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
             canonicalizer.apply(graph, context);
@@ -717,7 +716,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
             if (mode == TestMode.WITHOUT_FRAMESTATES || mode == TestMode.INLINED_WITHOUT_FRAMESTATES) {
                 graph.clearAllStateAfter();
             }
-            Debug.dump(Debug.BASIC_LEVEL, graph, "after removal of framestates");
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "after removal of framestates");
 
             new FloatingReadPhase().apply(graph);
             new RemoveValueProxyPhase().apply(graph);
@@ -732,7 +731,7 @@ public class MemoryScheduleTest extends GraphScheduleTest {
             assertDeepEquals(1, graph.getNodes().filter(StartNode.class).count());
             return graph.getLastSchedule();
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

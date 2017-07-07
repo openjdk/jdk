@@ -22,11 +22,11 @@
  */
 package org.graalvm.compiler.hotspot.stubs;
 
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
-import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCall;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.JavaCallee;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -34,7 +34,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.JavaMethodContext;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition;
@@ -104,7 +104,8 @@ public class ForeignCallStub extends Stub {
      */
     public ForeignCallStub(OptionValues options, HotSpotJVMCIRuntimeProvider runtime, HotSpotProviders providers, long address, ForeignCallDescriptor descriptor, boolean prependThread,
                     Transition transition,
-                    boolean reexecutable, LocationIdentity... killedLocations) {
+                    boolean reexecutable,
+                    LocationIdentity... killedLocations) {
         super(options, providers, HotSpotForeignCallLinkageImpl.create(providers.getMetaAccess(), providers.getCodeCache(), providers.getWordTypes(), providers.getForeignCalls(), descriptor, 0L,
                         PRESERVES_REGISTERS, JavaCall, JavaCallee, transition, reexecutable, killedLocations));
         this.jvmciRuntime = runtime;
@@ -223,12 +224,11 @@ public class ForeignCallStub extends Stub {
      * %r15 on AMD64) and is only prepended if {@link #prependThread} is true.
      */
     @Override
-    protected StructuredGraph getGraph(CompilationIdentifier compilationId) {
+    protected StructuredGraph getGraph(DebugContext debug, CompilationIdentifier compilationId) {
         WordTypes wordTypes = providers.getWordTypes();
         Class<?>[] args = linkage.getDescriptor().getArgumentTypes();
         boolean isObjectResult = !LIRKind.isValue(linkage.getOutgoingCallingConvention().getReturn());
-
-        StructuredGraph graph = new StructuredGraph.Builder(options).name(toString()).compilationId(compilationId).build();
+        StructuredGraph graph = new StructuredGraph.Builder(options, debug).name(toString()).compilationId(compilationId).build();
         graph.disableUnsafeAccessTracking();
 
         GraphKit kit = new GraphKit(graph, providers, wordTypes, providers.getGraphBuilderPlugins());
@@ -243,13 +243,13 @@ public class ForeignCallStub extends Stub {
         }
         kit.append(new ReturnNode(linkage.getDescriptor().getResultType() == void.class ? null : result));
 
-        Debug.dump(Debug.VERBOSE_LEVEL, graph, "Initial stub graph");
+        debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Initial stub graph");
 
         kit.inlineInvokes();
 
         new RemoveValueProxyPhase().apply(graph);
 
-        Debug.dump(Debug.VERBOSE_LEVEL, graph, "Stub graph before compilation");
+        debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Stub graph before compilation");
 
         return graph;
     }

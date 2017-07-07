@@ -93,7 +93,7 @@ import org.graalvm.compiler.bytecode.BytecodeSwitch;
 import org.graalvm.compiler.bytecode.BytecodeTableSwitch;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
@@ -437,12 +437,14 @@ public final class BciBlockMapping {
     private static final int LOOP_HEADER_INITIAL_CAPACITY = 4;
 
     private int blocksNotYetAssignedId;
+    private final DebugContext debug;
 
     /**
      * Creates a new BlockMap instance from {@code code}.
      */
-    private BciBlockMapping(Bytecode code) {
+    private BciBlockMapping(Bytecode code, DebugContext debug) {
         this.code = code;
+        this.debug = debug;
         this.exceptionHandlers = code.getExceptionHandlers();
     }
 
@@ -464,7 +466,7 @@ public final class BciBlockMapping {
             }
             createJsrAlternatives(blockMap, blockMap[0]);
         }
-        if (Debug.isLogEnabled()) {
+        if (debug.isLogEnabled()) {
             this.log(blockMap, "Before BlockOrder");
         }
         computeBlockOrder(blockMap);
@@ -473,7 +475,7 @@ public final class BciBlockMapping {
         assert verify();
 
         startBlock = blockMap[0];
-        if (Debug.isLogEnabled()) {
+        if (debug.isLogEnabled()) {
             this.log(blockMap, "Before LivenessAnalysis");
         }
     }
@@ -703,7 +705,7 @@ public final class BciBlockMapping {
             block.addSuccessor(block.getRetSuccessor());
             assert block.getRetSuccessor() != block.getJsrSuccessor();
         }
-        Debug.log("JSR alternatives block %s  sux %s  jsrSux %s  retSux %s  jsrScope %s", block, block.getSuccessors(), block.getJsrSuccessor(), block.getRetSuccessor(), block.getJsrScope());
+        debug.log("JSR alternatives block %s  sux %s  jsrSux %s  retSux %s  jsrScope %s", block, block.getSuccessors(), block.getJsrSuccessor(), block.getRetSuccessor(), block.getJsrScope());
 
         if (block.getJsrSuccessor() != null || !scope.isEmpty()) {
             for (int i = 0; i < block.getSuccessorCount(); i++) {
@@ -870,9 +872,9 @@ public final class BciBlockMapping {
     }
 
     public void log(BciBlock[] blockMap, String name) {
-        if (Debug.isLogEnabled()) {
+        if (debug.isLogEnabled()) {
             String n = System.lineSeparator();
-            StringBuilder sb = new StringBuilder(Debug.currentScope()).append("BlockMap ").append(name).append(" :");
+            StringBuilder sb = new StringBuilder(debug.getCurrentScopeName()).append("BlockMap ").append(name).append(" :");
             sb.append(n);
             Iterable<BciBlock> it;
             if (blocks == null) {
@@ -905,7 +907,7 @@ public final class BciBlockMapping {
                 }
                 sb.append(n);
             }
-            Debug.log("%s", sb);
+            debug.log("%s", sb);
         }
     }
 
@@ -946,7 +948,7 @@ public final class BciBlockMapping {
 
             assert block.loops == 0;
             block.loops = 1L << nextLoop;
-            Debug.log("makeLoopHeader(%s) -> %x", block, block.loops);
+            debug.log("makeLoopHeader(%s) -> %x", block, block.loops);
             if (loopHeaders == null) {
                 loopHeaders = new BciBlock[LOOP_HEADER_INITIAL_CAPACITY];
             } else if (nextLoop >= loopHeaders.length) {
@@ -992,7 +994,7 @@ public final class BciBlockMapping {
         }
 
         block.loops = loops;
-        Debug.log("computeBlockOrder(%s) -> %x", block, block.loops);
+        debug.log("computeBlockOrder(%s) -> %x", block, block.loops);
 
         if (block.isLoopHeader) {
             loops &= ~(1L << block.loopId);
@@ -1024,7 +1026,7 @@ public final class BciBlockMapping {
         if (block.loops != loops) {
             loopChanges = true;
             block.loops = loops;
-            Debug.log("fixLoopBits0(%s) -> %x", block, block.loops);
+            debug.log("fixLoopBits0(%s) -> %x", block, block.loops);
         }
 
         if (block.isLoopHeader) {
@@ -1034,11 +1036,11 @@ public final class BciBlockMapping {
         return loops;
     }
 
-    public static BciBlockMapping create(BytecodeStream stream, Bytecode code, OptionValues options) {
-        BciBlockMapping map = new BciBlockMapping(code);
+    public static BciBlockMapping create(BytecodeStream stream, Bytecode code, OptionValues options, DebugContext debug) {
+        BciBlockMapping map = new BciBlockMapping(code, debug);
         map.build(stream, options);
-        if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
-            Debug.dump(Debug.INFO_LEVEL, map, code.getMethod().format("After block building %f %R %H.%n(%P)"));
+        if (debug.isDumpEnabled(DebugContext.INFO_LEVEL)) {
+            debug.dump(DebugContext.INFO_LEVEL, map, code.getMethod().format("After block building %f %R %H.%n(%P)"));
         }
 
         return map;

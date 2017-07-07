@@ -27,6 +27,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.test.ExportingClassLoader;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
@@ -104,12 +105,12 @@ public final class InterfaceMethodHandleTest extends GraalCompilerTest {
     }
 
     @Override
-    protected InstalledCode addMethod(ResolvedJavaMethod method, CompilationResult compResult) {
+    protected InstalledCode addMethod(DebugContext debug, ResolvedJavaMethod method, CompilationResult compResult) {
         if (method.getDeclaringClass().equals(getMetaAccess().lookupJavaType(M2Thrower.class))) {
             // Make sure M2Thrower.m2 is invoked from normal code
-            return getBackend().createDefaultInstalledCode(method, compResult);
+            return getBackend().createDefaultInstalledCode(debug, method, compResult);
         }
-        return super.addMethod(method, compResult);
+        return super.addMethod(debug, method, compResult);
     }
 
     /**

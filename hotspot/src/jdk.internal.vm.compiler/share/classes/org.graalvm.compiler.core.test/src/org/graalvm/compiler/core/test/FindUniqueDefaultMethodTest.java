@@ -22,18 +22,16 @@
  */
 package org.graalvm.compiler.core.test;
 
-import jdk.vm.ci.meta.Assumptions.AssumptionResult;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * This test illustrates problems and limitations with class hierarchy analysis when default methods
@@ -139,13 +137,14 @@ public class FindUniqueDefaultMethodTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     protected StructuredGraph buildGraph(final String snippet) {
-        try (Scope s = Debug.scope("InstanceOfTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("InstanceOfTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
+            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
             compile(graph.method(), graph);
-            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
+            debug.dump(DebugContext.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

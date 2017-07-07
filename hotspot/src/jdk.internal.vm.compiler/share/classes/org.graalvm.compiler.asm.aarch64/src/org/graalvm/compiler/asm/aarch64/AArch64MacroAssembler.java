@@ -146,10 +146,10 @@ public class AArch64MacroAssembler extends AArch64Assembler {
                     return new AddressGenerationPlan(ADD_TO_BASE, REGISTER_OFFSET, needsScratch);
                 }
             } else {
-                if (NumUtil.isSignedNbit(9, displacement)) {
-                    return new AddressGenerationPlan(NO_WORK, IMMEDIATE_UNSCALED, false);
-                } else if (displacementScalable && NumUtil.isUnsignedNbit(12, scaledDisplacement)) {
+                if (displacementScalable && NumUtil.isUnsignedNbit(12, scaledDisplacement)) {
                     return new AddressGenerationPlan(NO_WORK, IMMEDIATE_SCALED, false);
+                } else if (NumUtil.isSignedNbit(9, displacement)) {
+                    return new AddressGenerationPlan(NO_WORK, IMMEDIATE_UNSCALED, false);
                 } else {
                     boolean needsScratch = !isArithmeticImmediate(displacement);
                     return new AddressGenerationPlan(ADD_TO_BASE, REGISTER_OFFSET, needsScratch);

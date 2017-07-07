@@ -23,17 +23,16 @@
 
 package org.graalvm.compiler.lir.ssa;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import java.util.BitSet;
 import java.util.EnumSet;
 import java.util.HashMap;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIR;
@@ -67,12 +66,13 @@ final class SSAVerifier {
 
     @SuppressWarnings("try")
     public boolean verify() {
-        try (Scope s = Debug.scope("SSAVerifier", lir)) {
+        DebugContext debug = lir.getDebug();
+        try (DebugContext.Scope s = debug.scope("SSAVerifier", lir)) {
             for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
                 doBlock(block);
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
         return true;
     }
@@ -87,7 +87,7 @@ final class SSAVerifier {
                 doBlock(pred);
             }
         }
-        try (Indent indent = Debug.logAndIndent(Debug.INFO_LEVEL, "handle block %s", b)) {
+        try (Indent indent = lir.getDebug().logAndIndent(DebugContext.INFO_LEVEL, "handle block %s", b)) {
             assert verifyBlock(b);
         }
     }

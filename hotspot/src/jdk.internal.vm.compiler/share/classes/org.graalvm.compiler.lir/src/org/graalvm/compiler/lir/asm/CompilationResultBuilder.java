@@ -34,16 +34,16 @@ import java.util.function.Consumer;
 
 import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Assembler;
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.CompilationResult.CodeAnnotation;
 import org.graalvm.compiler.code.DataSection.Data;
 import org.graalvm.compiler.code.DataSection.RawData;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.core.common.type.DataPointerConstant;
 import org.graalvm.compiler.debug.Assertions;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.lir.LIR;
@@ -145,18 +145,19 @@ public class CompilationResultBuilder {
     private List<ExceptionInfo> exceptionInfoList;
 
     private final OptionValues options;
+    private final DebugContext debug;
     private final EconomicMap<Constant, Data> dataCache;
 
     private Consumer<LIRInstruction> beforeOp;
     private Consumer<LIRInstruction> afterOp;
 
     public CompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-                    OptionValues options, CompilationResult compilationResult) {
-        this(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult, EconomicMap.create(Equivalence.DEFAULT));
+                    OptionValues options, DebugContext debug, CompilationResult compilationResult) {
+        this(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, EconomicMap.create(Equivalence.DEFAULT));
     }
 
     public CompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-                    OptionValues options, CompilationResult compilationResult, EconomicMap<Constant, Data> dataCache) {
+                    OptionValues options, DebugContext debug, CompilationResult compilationResult, EconomicMap<Constant, Data> dataCache) {
         this.target = codeCache.getTarget();
         this.codeCache = codeCache;
         this.foreignCalls = foreignCalls;
@@ -166,6 +167,7 @@ public class CompilationResultBuilder {
         this.compilationResult = compilationResult;
         this.frameContext = frameContext;
         this.options = options;
+        this.debug = debug;
         assert frameContext != null;
         this.dataCache = dataCache;
 
@@ -263,7 +265,7 @@ public class CompilationResultBuilder {
     public void recordInlineDataInCode(Constant data) {
         assert data != null;
         int pos = asm.position();
-        Debug.log("Inline data in code: pos = %d, data = %s", pos, data);
+        debug.log("Inline data in code: pos = %d, data = %s", pos, data);
         if (data instanceof VMConstant) {
             compilationResult.recordDataPatch(pos, new ConstantReference((VMConstant) data));
         }
@@ -272,7 +274,7 @@ public class CompilationResultBuilder {
     public void recordInlineDataInCodeWithNote(Constant data, Object note) {
         assert data != null;
         int pos = asm.position();
-        Debug.log("Inline data in code: pos = %d, data = %s, note = %s", pos, data, note);
+        debug.log("Inline data in code: pos = %d, data = %s, note = %s", pos, data, note);
         if (data instanceof VMConstant) {
             compilationResult.recordDataPatchWithNote(pos, new ConstantReference((VMConstant) data), note);
         }
@@ -292,7 +294,7 @@ public class CompilationResultBuilder {
 
     public AbstractAddress recordDataReferenceInCode(Constant constant, int alignment) {
         assert constant != null;
-        Debug.log("Constant reference in code: pos = %d, data = %s", asm.position(), constant);
+        debug.log("Constant reference in code: pos = %d, data = %s", asm.position(), constant);
         Data data = dataCache.get(constant);
         if (data == null) {
             data = dataBuilder.createDataItem(constant);
@@ -304,8 +306,8 @@ public class CompilationResultBuilder {
 
     public AbstractAddress recordDataReferenceInCode(byte[] data, int alignment) {
         assert data != null;
-        if (Debug.isLogEnabled()) {
-            Debug.log("Data reference in code: pos = %d, data = %s", asm.position(), Arrays.toString(data));
+        if (debug.isLogEnabled()) {
+            debug.log("Data reference in code: pos = %d, data = %s", asm.position(), Arrays.toString(data));
         }
         return recordDataSectionReference(new RawData(data, alignment));
     }
@@ -461,7 +463,7 @@ public class CompilationResultBuilder {
         if (block == null) {
             return;
         }
-        boolean emitComment = Debug.isDumpEnabled(Debug.BASIC_LEVEL) || PrintLIRWithAssembly.getValue(getOptions());
+        boolean emitComment = debug.isDumpEnabled(DebugContext.BASIC_LEVEL) || PrintLIRWithAssembly.getValue(getOptions());
         if (emitComment) {
             blockComment(String.format("block B%d %s", block.getId(), block.getLoop()));
         }

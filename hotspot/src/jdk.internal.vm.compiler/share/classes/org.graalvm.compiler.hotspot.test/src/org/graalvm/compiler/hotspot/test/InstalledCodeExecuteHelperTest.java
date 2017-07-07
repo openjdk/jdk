@@ -24,13 +24,13 @@ package org.graalvm.compiler.hotspot.test;
 
 import static java.lang.reflect.Modifier.isStatic;
 
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
-import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.nodes.StructuredGraph.Builder;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,9 +76,10 @@ public class InstalledCodeExecuteHelperTest extends GraalCompilerTest {
     }
 
     @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId, OptionValues options) {
-        StructuredGraph graph = super.parseEager(m, allowAssumptions, compilationId, options);
+    protected StructuredGraph parse(Builder builder, PhaseSuite<HighTierContext> graphBuilderSuite) {
+        StructuredGraph graph = super.parse(builder, graphBuilderSuite);
         if (argsToBind != null) {
+            ResolvedJavaMethod m = graph.method();
             Object receiver = isStatic(m.getModifiers()) ? null : this;
             Object[] args = argsWithReceiver(receiver, argsToBind);
             JavaType[] parameterTypes = m.toParameterTypes();

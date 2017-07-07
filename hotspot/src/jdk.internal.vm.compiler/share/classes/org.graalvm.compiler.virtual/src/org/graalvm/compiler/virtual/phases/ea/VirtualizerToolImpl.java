@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.MaximumEscapeAnalysi
 import java.util.List;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -55,16 +56,18 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     private final PartialEscapeClosure<?> closure;
     private final Assumptions assumptions;
     private final OptionValues options;
+    private final DebugContext debug;
     private final LoweringProvider loweringProvider;
 
     VirtualizerToolImpl(MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider, PartialEscapeClosure<?> closure,
-                    Assumptions assumptions, OptionValues options, LoweringProvider loweringProvider) {
+                    Assumptions assumptions, OptionValues options, DebugContext debug, LoweringProvider loweringProvider) {
         this.metaAccess = metaAccess;
         this.constantReflection = constantReflection;
         this.constantFieldProvider = constantFieldProvider;
         this.closure = closure;
         this.assumptions = assumptions;
         this.options = options;
+        this.debug = debug;
         this.loweringProvider = loweringProvider;
     }
 
@@ -77,6 +80,11 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
     @Override
     public OptionValues getOptions() {
         return options;
+    }
+
+    @Override
+    public DebugContext getDebug() {
+        return debug;
     }
 
     @Override
@@ -181,7 +189,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
 
     @Override
     public void createVirtualObject(VirtualObjectNode virtualObject, ValueNode[] entryState, List<MonitorIdNode> locks, boolean ensureVirtualized) {
-        VirtualUtil.trace(options, "{{%s}} ", current);
+        VirtualUtil.trace(options, debug, "{{%s}} ", current);
         if (!virtualObject.isAlive()) {
             effects.addFloatingNode(virtualObject, "newVirtualObject");
         }
@@ -197,7 +205,7 @@ class VirtualizerToolImpl implements VirtualizerTool, CanonicalizerTool {
         }
         state.addObject(id, new ObjectState(entryState, locks, ensureVirtualized));
         closure.addVirtualAlias(virtualObject, virtualObject);
-        PartialEscapeClosure.COUNTER_ALLOCATION_REMOVED.increment();
+        PartialEscapeClosure.COUNTER_ALLOCATION_REMOVED.increment(debug);
         effects.addVirtualizationDelta(1);
     }
 

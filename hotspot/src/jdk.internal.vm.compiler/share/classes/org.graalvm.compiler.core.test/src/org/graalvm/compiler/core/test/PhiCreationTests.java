@@ -22,13 +22,12 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * In the following tests, the correct removal of redundant phis during graph building is tested.
@@ -70,7 +69,8 @@ public class PhiCreationTests extends GraalCompilerTest {
     @Test
     public void test3() {
         StructuredGraph graph = parseEager("test3Snippet", AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         Assert.assertFalse(graph.getNodes().filter(ValuePhiNode.class).iterator().hasNext());
     }
 
@@ -86,7 +86,8 @@ public class PhiCreationTests extends GraalCompilerTest {
     @Test
     public void test4() {
         StructuredGraph graph = parseEager("test4Snippet", AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         Assert.assertFalse(graph.getNodes().filter(ValuePhiNode.class).iterator().hasNext());
     }
 

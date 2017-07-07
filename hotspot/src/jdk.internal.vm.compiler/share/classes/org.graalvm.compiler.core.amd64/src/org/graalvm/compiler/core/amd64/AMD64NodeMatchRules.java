@@ -36,7 +36,6 @@ import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.SD;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.SS;
 
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RRMOp;
@@ -44,12 +43,12 @@ import org.graalvm.compiler.asm.amd64.AMD64Assembler.AVXOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.SSEOp;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRValueUtil;
@@ -147,7 +146,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
                 matchedAsConstant = true;
             }
             if (kind.isXMM()) {
-                Debug.log("Skipping constant compares for float kinds");
+                ifNode.getDebug().log("Skipping constant compares for float kinds");
                 return null;
             }
         }

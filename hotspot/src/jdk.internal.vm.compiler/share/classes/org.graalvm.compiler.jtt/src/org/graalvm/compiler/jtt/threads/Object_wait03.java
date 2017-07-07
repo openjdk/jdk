@@ -25,7 +25,7 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.core.common.CancellationBailoutException;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.jtt.JTTTest;
 import org.graalvm.compiler.nodes.Cancellable;
 import org.junit.Rule;
@@ -125,7 +125,8 @@ public class Object_wait03 extends JTTTest {
         } catch (CancellationBailoutException e) {
             String message = String.format("Compilation cancelled after " + COMPILATION_TIMEOUT_MS + " ms");
             // For diagnosing expectedly long compilations (GR-3853)
-            Debug.forceDump(lastCompiledGraph, message);
+            DebugContext debug = getDebugContext();
+            debug.forceDump(lastCompiledGraph, message);
             throw new AssertionError(message, e);
         }
     }

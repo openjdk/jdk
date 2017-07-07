@@ -23,8 +23,11 @@
  */
 package org.graalvm.compiler.phases.common;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.PrefetchAllocateNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
@@ -81,13 +84,11 @@ public class AddressLoweringByUsePhase extends Phase {
                 Stamp stamp = abstractWriteNode.value().stamp();
                 address = abstractWriteNode.getAddress();
                 lowered = lowering.lower(abstractWriteNode, stamp, address);
-                // TODO -- PrefetchAllocateNode is not yet implemented for AArch64
-                // } else if (node instanceof PrefetchAllocateNode) {
-                // PrefetchAllocateNode prefetchAllocateNode = (PrefetchAllocateNode) node;
-                // Stamp stamp = prefetchAllocateNode.value().stamp();
-                // n.b.this getter is not provided!
-                // address = prefetchAllocateNode.getAddress();
-                // lowered = lowering.lower(prefetchAllocateNode, stamp, address);
+            } else if (node instanceof PrefetchAllocateNode) {
+                PrefetchAllocateNode prefetchAllocateNode = (PrefetchAllocateNode) node;
+                Stamp stamp = StampFactory.forKind(JavaKind.Object);
+                address = (AddressNode) prefetchAllocateNode.inputs().first();
+                lowered = lowering.lower(prefetchAllocateNode, stamp, address);
             } else {
                 continue;
             }

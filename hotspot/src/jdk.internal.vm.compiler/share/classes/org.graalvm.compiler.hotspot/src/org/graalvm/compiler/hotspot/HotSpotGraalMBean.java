@@ -54,7 +54,8 @@ import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
-import org.graalvm.compiler.debug.GraalDebugConfig;
+
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
@@ -165,9 +166,9 @@ public final class HotSpotGraalMBean implements DynamicMBean {
             for (Dump request : methodDumps) {
                 final String clazzName = method.getDeclaringClass().getName();
                 if (method.getName().equals(request.method) && clazzName.equals(request.clazz)) {
-                    current = new OptionValues(current, GraalDebugConfig.Options.Dump, request.filter,
-                                    GraalDebugConfig.Options.PrintGraphHost, request.host,
-                                    GraalDebugConfig.Options.PrintBinaryGraphPort, request.port);
+                    current = new OptionValues(current, DebugOptions.Dump, request.filter,
+                                    DebugOptions.PrintGraphHost, request.host,
+                                    DebugOptions.PrintBinaryGraphPort, request.port);
                     break;
                 }
             }

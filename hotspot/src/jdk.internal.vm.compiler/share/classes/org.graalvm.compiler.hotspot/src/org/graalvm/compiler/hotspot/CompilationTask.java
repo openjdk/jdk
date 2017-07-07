@@ -34,19 +34,21 @@ import static org.graalvm.compiler.java.BytecodeParserOptions.InlineDuringParsin
 
 import java.util.List;
 
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.debug.DebugTimer;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TimeSource;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.BailoutException;
@@ -63,7 +65,7 @@ import jdk.vm.ci.services.JVMCIServiceLocator;
 
 public class CompilationTask {
 
-    private static final DebugCounter BAILOUTS = Debug.counter("Bailouts");
+    private static final CounterKey BAILOUTS = DebugContext.counter("Bailouts");
 
     private static final EventProvider eventProvider;
 
@@ -99,7 +101,7 @@ public class CompilationTask {
         CompilationResult result;
 
         RetryableCompilation(EventProvider.CompilationEvent compilationEvent) {
-            super(compiler.getGraalRuntime(), options);
+            super(compiler.getGraalRuntime());
             this.compilationEvent = compilationEvent;
         }
 
@@ -110,7 +112,7 @@ public class CompilationTask {
 
         @SuppressWarnings("try")
         @Override
-        protected HotSpotCompilationRequestResult run(Throwable retryCause) {
+        protected HotSpotCompilationRequestResult run(DebugContext debug, Throwable retryCause) {
             HotSpotResolvedJavaMethod method = getMethod();
             int entryBCI = getEntryBCI();
             final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
@@ -133,15 +135,15 @@ public class CompilationTask {
                 allocatedBytesBefore = 0L;
             }
 
-            try (Scope s = Debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
+            try (DebugContext.Scope s = debug.scope("Compiling", new DebugDumpScope(getIdString(), true))) {
                 // Begin the compilation event.
                 compilationEvent.begin();
-                result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId, options);
+                result = compiler.compile(method, entryBCI, useProfilingInfo, compilationId, options, debug);
             } catch (Throwable e) {
                 if (retryCause != null) {
                     log("Exception during retry", e);
                 }
-                throw Debug.handle(e);
+                throw debug.handle(e);
             } finally {
                 // End the compilation event.
                 compilationEvent.end();
@@ -166,8 +168,8 @@ public class CompilationTask {
             }
 
             if (result != null) {
-                try (DebugCloseable b = CodeInstallationTime.start()) {
-                    installMethod(result);
+                try (DebugCloseable b = CodeInstallationTime.start(debug)) {
+                    installMethod(debug, result);
                 }
             }
             stats.finish(method, installedCode);
@@ -219,10 +221,14 @@ public class CompilationTask {
         return getRequest().getMethod();
     }
 
+    CompilationIdentifier getCompilationIdentifier() {
+        return compilationId;
+    }
+
     /**
-     * Returns the compilation id of this task.
+     * Returns the HostSpot id of this compilation.
      *
-     * @return compile id
+     * @return HotSpot compile id
      */
     public int getId() {
         return getRequest().getId();
@@ -251,45 +257,43 @@ public class CompilationTask {
     /**
      * Time spent in compilation.
      */
-    private static final DebugTimer CompilationTime = Debug.timer("CompilationTime");
+    private static final TimerKey CompilationTime = DebugContext.timer("CompilationTime").doc("Time spent in compilation and code installation.");
 
     /**
      * Counts the number of compiled {@linkplain CompilationResult#getBytecodeSize() bytecodes}.
      */
-    private static final DebugCounter CompiledBytecodes = Debug.counter("CompiledBytecodes");
+    private static final CounterKey CompiledBytecodes = DebugContext.counter("CompiledBytecodes");
 
     /**
      * Counts the number of compiled {@linkplain CompilationResult#getBytecodeSize() bytecodes} for
      * which {@linkplain CompilationResult#getTargetCode()} code was installed.
      */
-    private static final DebugCounter CompiledAndInstalledBytecodes = Debug.counter("CompiledAndInstalledBytecodes");
+    private static final CounterKey CompiledAndInstalledBytecodes = DebugContext.counter("CompiledAndInstalledBytecodes");
 
     /**
      * Counts the number of installed {@linkplain CompilationResult#getTargetCodeSize()} bytes.
      */
-    private static final DebugCounter InstalledCodeSize = Debug.counter("InstalledCodeSize");
+    private static final CounterKey InstalledCodeSize = DebugContext.counter("InstalledCodeSize");
 
     /**
      * Time spent in code installation.
      */
-    public static final DebugTimer CodeInstallationTime = Debug.timer("CodeInstallation");
+    public static final TimerKey CodeInstallationTime = DebugContext.timer("CodeInstallation");
+
+    public HotSpotCompilationRequestResult runCompilation() {
+        SnippetReflectionProvider snippetReflection = compiler.getGraalRuntime().getHostProviders().getSnippetReflection();
+        try (DebugContext debug = DebugContext.create(options, new GraalDebugHandlersFactory(snippetReflection))) {
+            return runCompilation(debug);
+        }
+    }
 
     @SuppressWarnings("try")
-    public HotSpotCompilationRequestResult runCompilation() {
+    public HotSpotCompilationRequestResult runCompilation(DebugContext debug) {
         HotSpotGraalRuntimeProvider graalRuntime = compiler.getGraalRuntime();
         GraalHotSpotVMConfig config = graalRuntime.getVMConfig();
         int entryBCI = getEntryBCI();
         boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
         HotSpotResolvedJavaMethod method = getMethod();
-
-        // register the compilation id in the method metrics
-        if (Debug.isMethodMeterEnabled()) {
-            if (getEntryBCI() != JVMCICompiler.INVOCATION_ENTRY_BCI) {
-                Debug.methodMetrics(method).addToMetric(getId(), "CompilationIdOSR");
-            } else {
-                Debug.methodMetrics(method).addToMetric(getId(), "CompilationId");
-            }
-        }
 
         // Log a compilation event.
         EventProvider.CompilationEvent compilationEvent = eventProvider.newCompilationEvent();
@@ -304,10 +308,10 @@ public class CompilationTask {
         }
 
         RetryableCompilation compilation = new RetryableCompilation(compilationEvent);
-        try (DebugCloseable a = CompilationTime.start()) {
-            return compilation.execute();
+        try (DebugCloseable a = CompilationTime.start(debug)) {
+            return compilation.runWithRetry(debug);
         } catch (BailoutException bailout) {
-            BAILOUTS.increment();
+            BAILOUTS.increment(debug);
             if (ExitVMOnBailout.getValue(options)) {
                 TTY.out.println(method.format("Bailout in %H.%n(%p)"));
                 bailout.printStackTrace(TTY.out);
@@ -350,11 +354,11 @@ public class CompilationTask {
 
                 if (compilation.result != null) {
                     compiledBytecodes = compilation.result.getBytecodeSize();
-                    CompiledBytecodes.add(compiledBytecodes);
+                    CompiledBytecodes.add(debug, compiledBytecodes);
                     if (installedCode != null) {
                         codeSize = installedCode.getSize();
-                        CompiledAndInstalledBytecodes.add(compiledBytecodes);
-                        InstalledCodeSize.add(codeSize);
+                        CompiledAndInstalledBytecodes.add(debug, compiledBytecodes);
+                        InstalledCodeSize.add(debug, codeSize);
                     }
                 }
 
@@ -411,13 +415,17 @@ public class CompilationTask {
     }
 
     @SuppressWarnings("try")
-    private void installMethod(final CompilationResult compResult) {
+    private void installMethod(DebugContext debug, final CompilationResult compResult) {
         final CodeCacheProvider codeCache = jvmciRuntime.getHostJVMCIBackend().getCodeCache();
         HotSpotBackend backend = compiler.getGraalRuntime().getHostBackend();
         installedCode = null;
         Object[] context = {new DebugDumpScope(getIdString(), true), codeCache, getMethod(), compResult};
-        installedCode = (HotSpotInstalledCode) backend.createInstalledCode(getRequest().getMethod(), getRequest(), compResult,
-                        getRequest().getMethod().getSpeculationLog(), null, installAsDefault, context);
+        try (DebugContext.Scope s = debug.scope("CodeInstall", context)) {
+            installedCode = (HotSpotInstalledCode) backend.createInstalledCode(debug, getRequest().getMethod(), getRequest(), compResult,
+                            getRequest().getMethod().getSpeculationLog(), null, installAsDefault, context);
+        } catch (Throwable e) {
+            throw debug.handle(e);
+        }
     }
 
     @Override

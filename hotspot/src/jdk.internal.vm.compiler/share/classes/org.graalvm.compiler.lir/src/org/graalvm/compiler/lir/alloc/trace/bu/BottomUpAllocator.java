@@ -42,8 +42,7 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig.Allocatab
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
 import org.graalvm.compiler.lir.LIR;
@@ -102,6 +101,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
     private final BitSet allocatedBlocks;
     private final TraceBuilderResult resultTraces;
     private final TraceGlobalMoveResolver moveResolver;
+    private final DebugContext debug;
 
     /**
      * Maps from {@link Variable#index} to a spill stack slot. If
@@ -119,6 +119,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
     public BottomUpAllocator(TargetDescription target, LIRGenerationResult lirGenRes, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
                     AllocatableValue[] cachedStackSlots, TraceBuilderResult resultTraces, boolean neverSpillConstant, GlobalLivenessInfo livenessInfo) {
         this.target = target;
+        this.debug = lirGenRes.getLIR().getDebug();
         this.lirGenRes = lirGenRes;
         this.spillMoveFactory = spillMoveFactory;
         this.registerAllocationConfig = registerAllocationConfig;
@@ -160,13 +161,13 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         int variableIndex = var.index;
         AllocatableValue cachedStackSlot = stackSlots[variableIndex];
         if (cachedStackSlot != null) {
-            TraceRegisterAllocationPhase.globalStackSlots.increment();
+            TraceRegisterAllocationPhase.globalStackSlots.increment(debug);
             assert cachedStackSlot.getValueKind().equals(var.getValueKind()) : "CachedStackSlot: kind mismatch? " + var.getValueKind() + " vs. " + cachedStackSlot.getValueKind();
             return cachedStackSlot;
         }
         VirtualStackSlot slot = lirGenRes.getFrameMapBuilder().allocateSpillSlot(var.getValueKind());
         stackSlots[variableIndex] = slot;
-        TraceRegisterAllocationPhase.allocatedStackSlots.increment();
+        TraceRegisterAllocationPhase.allocatedStackSlots.increment(debug);
         return slot;
     }
 
@@ -205,8 +206,8 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
     private void resolveFindInsertPos(AbstractBlockBase<?> fromBlock, AbstractBlockBase<?> toBlock) {
         LIR lir = lirGenRes.getLIR();
         if (fromBlock.getSuccessorCount() <= 1) {
-            if (Debug.isLogEnabled()) {
-                Debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
+            if (debug.isLogEnabled()) {
+                debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
             }
 
             ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(fromBlock);
@@ -219,8 +220,8 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             }
 
         } else {
-            if (Debug.isLogEnabled()) {
-                Debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
+            if (debug.isLogEnabled()) {
+                debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
             }
 
             if (DetailedAsserts.getValue(getLIR().getOptions())) {
@@ -284,7 +285,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         }
 
         private void setLastRegisterUsage(Register reg, int pos) {
-            Debug.log("Register %s last used %d", reg, pos);
+            debug.log("Register %s last used %d", reg, pos);
             lastRegisterUsage[reg.number] = pos;
         }
 
@@ -293,7 +294,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         }
 
         private void setLastRegisterKill(Register reg, int pos) {
-            Debug.log("Register %s killed %d", reg, pos);
+            debug.log("Register %s killed %d", reg, pos);
             lastRegisterKill[reg.number] = pos;
         }
 
@@ -309,7 +310,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             LIRInstruction move = spillMoveFactory.createMove(dst, src);
             insertInstructionsBefore.add(move);
             move.setComment(lirGenRes, "BottomUp: spill move before");
-            Debug.log("insert before %s", move);
+            debug.log("insert before %s", move);
         }
 
         private void insertSpillMoveAfter(AllocatableValue dst, Value src) {
@@ -318,9 +319,9 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 LIRInstruction move = spillMoveFactory.createMove(dst, src);
                 insertInstructionsAfter.add(move);
                 move.setComment(lirGenRes, "BottomUp: spill move after");
-                Debug.log("insert after %s", move);
+                debug.log("insert after %s", move);
             } else {
-                Debug.log("Block end op. No from %s to %s necessary.", src, dst);
+                debug.log("Block end op. No from %s to %s necessary.", src, dst);
                 requireResolution = true;
             }
         }
@@ -346,7 +347,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
 
         @SuppressWarnings("try")
         private void allocateTrace(Trace trace) {
-            try (Scope s = Debug.scope("BottomUpAllocator", trace.getBlocks()); Indent indent = Debug.logAndIndent("%s (Trace%d)", trace, trace.getId())) {
+            try (DebugContext.Scope s = debug.scope("BottomUpAllocator", trace.getBlocks()); Indent indent = debug.logAndIndent("%s (Trace%d)", trace, trace.getId())) {
                 AbstractBlockBase<?>[] blocks = trace.getBlocks();
                 int lastBlockIdx = blocks.length - 1;
                 AbstractBlockBase<?> successorBlock = blocks[lastBlockIdx];
@@ -367,7 +368,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 }
                 resolveLoopBackEdge(trace);
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debug.handle(e);
             }
         }
 
@@ -410,7 +411,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 // insert move from variable
                 move = spillMoveFactory.createMove(dest, asVariable(phiOut));
             }
-            Debug.log("Inserting load %s", move);
+            debug.log("Inserting load %s", move);
             move.setComment(lirGenRes, "BottomUp: phi resolution");
             phiResolutionMoves.add(move);
         }
@@ -498,7 +499,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             // might be set in insertSpillMoveAfter
             requireResolution = false;
 
-            try (Indent indent = Debug.logAndIndent("handle block %s", block)) {
+            try (Indent indent = debug.logAndIndent("handle block %s", block)) {
                 currentInstructions = getLIR().getLIRforBlock(block);
                 for (currentInstructionIndex = currentInstructions.size() - 1; currentInstructionIndex >= 0; currentInstructionIndex--) {
                     LIRInstruction inst = currentInstructions.get(currentInstructionIndex);
@@ -515,8 +516,8 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         @SuppressWarnings("try")
         private void allocateInstruction(LIRInstruction op, AbstractBlockBase<?> block) {
             assert op != null && op.id() == currentOpId;
-            try (Indent indent = Debug.logAndIndent("handle inst: %d: %s", op.id(), op)) {
-                try (Indent indent1 = Debug.logAndIndent("output pos")) {
+            try (Indent indent = debug.logAndIndent("handle inst: %d: %s", op.id(), op)) {
+                try (Indent indent1 = debug.logAndIndent("output pos")) {
                     // spill caller saved registers
                     if (op.destroysCallerSavedRegisters()) {
                         spillCallerSavedRegisters();
@@ -540,7 +541,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                         processIncoming(block, op);
                     }
                 }
-                try (Indent indent1 = Debug.logAndIndent("input pos")) {
+                try (Indent indent1 = debug.logAndIndent("input pos")) {
 
                     currentOpId++;
 
@@ -592,8 +593,8 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                     setLastRegisterUsage(reg, currentOpId);
                 }
             }
-            if (Debug.isLogEnabled()) {
-                Debug.log("operation destroys all caller-save registers");
+            if (debug.isLogEnabled()) {
+                debug.log("operation destroys all caller-save registers");
             }
         }
 
@@ -670,7 +671,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             setRegisterUsage(freeRegister, var);
             RegisterValue registerValue = freeRegister.asValue(var.getValueKind());
             setCurrentLocation(var, registerValue);
-            Debug.log("AllocateRegister[%5s] %s for %s", mode, freeRegister, var);
+            debug.log("AllocateRegister[%5s] %s for %s", mode, freeRegister, var);
             return registerValue;
         }
 
@@ -693,13 +694,13 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                         if (mode == OperandMode.ALIVE && killedAtDef(reg)) {
                             AllocatableValue spillSlot = allocateSpillSlot(var);
                             insertSpillMoveBefore(spillSlot, currentLocation);
-                            Debug.log("AllocateStackOrReg[%5s] temporary use %s for %s since current location %s is destroyed at def", mode, spillSlot, var, currentLocation);
+                            debug.log("AllocateStackOrReg[%5s] temporary use %s for %s since current location %s is destroyed at def", mode, spillSlot, var, currentLocation);
                             return spillSlot;
                         }
                         // update register usage
                         setLastRegisterUsage(reg, currentOpId);
                     }
-                    Debug.log(3, "AllocateStackOrReg[%5s] %s already in %s", mode, var, currentLocation);
+                    debug.log(3, "AllocateStackOrReg[%5s] %s already in %s", mode, var, currentLocation);
                     return currentLocation;
                 }
                 // no location available
@@ -716,7 +717,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                 setRegisterUsage(freeRegister, var);
                 RegisterValue registerValue = freeRegister.asValue(var.getValueKind());
                 setCurrentLocation(var, registerValue);
-                Debug.log("AllocateStackOrReg[%5s] %s for %s", mode, freeRegister, var);
+                debug.log("AllocateStackOrReg[%5s] %s for %s", mode, freeRegister, var);
                 return registerValue;
             }
             return value;
@@ -739,10 +740,10 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
                     return reg;
                 }
             }
-            if (Debug.isLogEnabled()) {
-                try (Indent i = Debug.logAndIndent("All Registers occupied:")) {
+            if (debug.isLogEnabled()) {
+                try (Indent i = debug.logAndIndent("All Registers occupied:")) {
                     for (Register reg : availableRegs) {
-                        Debug.log("%6s: last used %4d %s", reg, getLastRegisterUsage(reg), getCurrentValue(reg));
+                        debug.log("%6s: last used %4d %s", reg, getLastRegisterUsage(reg), getCurrentValue(reg));
                     }
                 }
             }
@@ -792,9 +793,9 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
             if (val != null && isVariable(val)) {
                 Variable var = asVariable(val);
                 setCurrentLocation(var, null);
-                Debug.log("Free Registers %s (was %s)", reg, var);
+                debug.log("Free Registers %s (was %s)", reg, var);
             } else {
-                Debug.log("Free Registers %s", reg);
+                debug.log("Free Registers %s", reg);
             }
         }
 
@@ -838,7 +839,7 @@ public final class BottomUpAllocator extends TraceAllocationPhase<TraceAllocatio
         private void spillVariable(AllocatableValue val, Register reg) {
             if (val != null && isVariable(val)) {
                 Variable var = asVariable(val);
-                Debug.log("Spill Variable %s from %s", var, reg);
+                debug.log("Spill Variable %s from %s", var, reg);
                 // insert reload
                 AllocatableValue spillSlot = allocateSpillSlot(var);
                 setCurrentLocation(var, spillSlot);

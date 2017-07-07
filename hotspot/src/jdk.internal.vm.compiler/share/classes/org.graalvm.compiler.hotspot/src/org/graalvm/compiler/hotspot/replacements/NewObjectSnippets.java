@@ -74,7 +74,7 @@ import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
@@ -591,8 +591,9 @@ public class NewObjectSnippets implements Snippets {
         private final GraalHotSpotVMConfig config;
         private final Counters counters;
 
-        public Templates(OptionValues options, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target, GraalHotSpotVMConfig config) {
-            super(options, providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target,
+                        GraalHotSpotVMConfig config) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
             this.config = config;
             counters = new Counters(factory);
         }
@@ -620,8 +621,8 @@ public class NewObjectSnippets implements Snippets {
             args.addConst("options", localOptions);
             args.addConst("counters", counters);
 
-            SnippetTemplate template = template(args);
-            Debug.log("Lowering allocateInstance in %s: node=%s, template=%s, arguments=%s", graph, newInstanceNode, template, args);
+            SnippetTemplate template = template(graph.getDebug(), args);
+            graph.getDebug().log("Lowering allocateInstance in %s: node=%s, template=%s, arguments=%s", graph, newInstanceNode, template, args);
             template.instantiate(providers.getMetaAccess(), newInstanceNode, DEFAULT_REPLACER, args);
         }
 
@@ -663,8 +664,8 @@ public class NewObjectSnippets implements Snippets {
             args.addConst("typeContext", ProfileAllocations.getValue(localOptions) ? arrayType.toJavaName(false) : "");
             args.addConst("options", localOptions);
             args.addConst("counters", counters);
-            SnippetTemplate template = template(args);
-            Debug.log("Lowering allocateArray in %s: node=%s, template=%s, arguments=%s", graph, newArrayNode, template, args);
+            SnippetTemplate template = template(graph.getDebug(), args);
+            graph.getDebug().log("Lowering allocateArray in %s: node=%s, template=%s, arguments=%s", graph, newArrayNode, template, args);
             template.instantiate(providers.getMetaAccess(), newArrayNode, DEFAULT_REPLACER, args);
         }
 
@@ -680,7 +681,7 @@ public class NewObjectSnippets implements Snippets {
             args.addConst("options", localOptions);
             args.addConst("counters", counters);
 
-            SnippetTemplate template = template(args);
+            SnippetTemplate template = template(newInstanceNode.getDebug(), args);
             template.instantiate(providers.getMetaAccess(), newInstanceNode, DEFAULT_REPLACER, args);
         }
 
@@ -709,7 +710,7 @@ public class NewObjectSnippets implements Snippets {
             args.add("prototypeMarkWord", lookupArrayClass(tool, JavaKind.Object).prototypeMarkWord());
             args.addConst("options", localOptions);
             args.addConst("counters", counters);
-            SnippetTemplate template = template(args);
+            SnippetTemplate template = template(graph.getDebug(), args);
             template.instantiate(providers.getMetaAccess(), newArrayNode, DEFAULT_REPLACER, args);
         }
 
@@ -733,7 +734,7 @@ public class NewObjectSnippets implements Snippets {
             args.add("hub", hub);
             args.addConst("rank", rank);
             args.addVarargs("dimensions", int.class, StampFactory.forKind(JavaKind.Int), dims);
-            template(args).instantiate(providers.getMetaAccess(), newmultiarrayNode, DEFAULT_REPLACER, args);
+            template(newmultiarrayNode.getDebug(), args).instantiate(providers.getMetaAccess(), newmultiarrayNode, DEFAULT_REPLACER, args);
         }
 
         private static int instanceSize(HotSpotResolvedObjectType type) {
@@ -747,7 +748,7 @@ public class NewObjectSnippets implements Snippets {
                 Arguments args = new Arguments(verifyHeap, verifyHeapNode.graph().getGuardsStage(), tool.getLoweringStage());
                 args.addConst("threadRegister", registers.getThreadRegister());
 
-                SnippetTemplate template = template(args);
+                SnippetTemplate template = template(verifyHeapNode.getDebug(), args);
                 template.instantiate(providers.getMetaAccess(), verifyHeapNode, DEFAULT_REPLACER, args);
             } else {
                 GraphUtil.removeFixedWithUnusedInputs(verifyHeapNode);

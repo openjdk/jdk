@@ -24,8 +24,8 @@ package org.graalvm.compiler.phases.graph;
 
 import java.util.function.ToDoubleFunction;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -36,15 +36,15 @@ import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StartNode;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 /**
  * Compute probabilities for fixed nodes on the fly and cache them at {@link AbstractBeginNode}s.
  */
 public class FixedNodeProbabilityCache implements ToDoubleFunction<FixedNode> {
 
-    private static final DebugCounter computeNodeProbabilityCounter = Debug.counter("ComputeNodeProbability");
+    private static final CounterKey computeNodeProbabilityCounter = DebugContext.counter("ComputeNodeProbability");
 
     private final EconomicMap<FixedNode, Double> cache = EconomicMap.create(Equivalence.IDENTITY);
 
@@ -82,7 +82,7 @@ public class FixedNodeProbabilityCache implements ToDoubleFunction<FixedNode> {
     @Override
     public double applyAsDouble(FixedNode node) {
         assert node != null;
-        computeNodeProbabilityCounter.increment();
+        computeNodeProbabilityCounter.increment(node.getDebug());
 
         FixedNode current = findBegin(node);
         if (current == null) {

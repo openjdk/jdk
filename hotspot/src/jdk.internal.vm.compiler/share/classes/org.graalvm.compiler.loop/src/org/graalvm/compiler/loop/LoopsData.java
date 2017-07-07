@@ -28,16 +28,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 
 public class LoopsData {
     private final EconomicMap<LoopBeginNode, LoopEx> loopBeginToEx = EconomicMap.create(Equivalence.IDENTITY);
@@ -46,10 +45,11 @@ public class LoopsData {
 
     @SuppressWarnings("try")
     public LoopsData(final StructuredGraph graph) {
-        try (Scope s = Debug.scope("ControlFlowGraph")) {
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("ControlFlowGraph")) {
             cfg = ControlFlowGraph.compute(graph, true, true, true, true);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
         assert checkLoopOrder(cfg.getLoops());
         loops = new ArrayList<>(cfg.getLoops().size());

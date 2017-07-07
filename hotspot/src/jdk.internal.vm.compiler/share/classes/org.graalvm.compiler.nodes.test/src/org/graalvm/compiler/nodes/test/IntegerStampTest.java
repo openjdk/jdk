@@ -36,14 +36,17 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.graph.test.GraphTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * This class tests that integer stamps are created correctly for constants.
  */
-public class IntegerStampTest {
+public class IntegerStampTest extends GraphTest {
 
     private StructuredGraph graph;
 
@@ -53,7 +56,9 @@ public class IntegerStampTest {
 
     @Before
     public void before() {
-        graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).build();
+        OptionValues options = getInitialOptions();
+        DebugContext debug = getDebug(options);
+        graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
     }
 
     @Test

@@ -99,7 +99,7 @@ public class TypedNodeIteratorTest2 extends GraphTest {
 
     @Test
     public void simpleSubclassTest() {
-        Graph graph = new Graph(getOptions());
+        Graph graph = new Graph(getOptions(), getDebug());
         graph.add(new NodeB("b"));
         graph.add(new NodeD("d"));
 
@@ -109,7 +109,7 @@ public class TypedNodeIteratorTest2 extends GraphTest {
 
     @Test
     public void addingNodeDuringIterationTest() {
-        Graph graph = new Graph(getOptions());
+        Graph graph = new Graph(getOptions(), getDebug());
         graph.add(new NodeB("b1"));
         NodeD d1 = graph.add(new NodeD("d1"));
         StringBuilder sb = new StringBuilder();

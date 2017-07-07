@@ -40,7 +40,7 @@ public class StaticFieldAccessTest extends GraalCompilerTest {
             if (c.length != 1) {
                 throw new InternalError("can't find single constructor");
             }
-            tester.parseDebug(tester.asResolvedJavaMethod(c[0]), AllowAssumptions.YES);
+            tester.parse(tester.builder(tester.asResolvedJavaMethod(c[0]), AllowAssumptions.YES), tester.getDebugGraphBuilderSuite());
         }
 
         public Inner(Object o) {

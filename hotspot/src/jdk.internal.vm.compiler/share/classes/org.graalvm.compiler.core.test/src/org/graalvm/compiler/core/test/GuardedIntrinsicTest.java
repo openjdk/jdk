@@ -112,7 +112,7 @@ public class GuardedIntrinsicTest extends GraalCompilerTest {
     @Override
     protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId, OptionValues options) {
         graph = super.parseForCompile(method, compilationId, options);
-        parsedForCompile = (StructuredGraph) graph.copy();
+        parsedForCompile = (StructuredGraph) graph.copy(graph.getDebug());
         return graph;
     }
 

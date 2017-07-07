@@ -30,7 +30,6 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -44,9 +43,9 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.GuardedNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
-import org.graalvm.compiler.nodes.extended.UnsafeAccessNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.extended.RawStoreNode;
+import org.graalvm.compiler.nodes.extended.UnsafeAccessNode;
 import org.graalvm.compiler.nodes.java.AccessFieldNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
@@ -58,9 +57,9 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.virtual.phases.ea.ReadEliminationBlockState.CacheEntry;
 import org.graalvm.compiler.virtual.phases.ea.ReadEliminationBlockState.LoadCacheEntry;
 import org.graalvm.compiler.virtual.phases.ea.ReadEliminationBlockState.UnsafeLoadCacheEntry;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 import org.graalvm.util.MapCursor;
 import org.graalvm.word.LocationIdentity;
 
@@ -359,8 +358,8 @@ public final class ReadEliminationClosure extends EffectsClosure<ReadElimination
                     for (LocationIdentity location : forwardEndLiveLocations) {
                         loopKilledLocations.rememberLoopKilledLocation(location);
                     }
-                    if (Debug.isLogEnabled() && loopKilledLocations != null) {
-                        Debug.log("[Early Read Elimination] Setting loop killed locations of loop at node %s with %s",
+                    if (debug.isLogEnabled() && loopKilledLocations != null) {
+                        debug.log("[Early Read Elimination] Setting loop killed locations of loop at node %s with %s",
                                         loop.getHeader().getBeginNode(), forwardEndLiveLocations);
                     }
                 }

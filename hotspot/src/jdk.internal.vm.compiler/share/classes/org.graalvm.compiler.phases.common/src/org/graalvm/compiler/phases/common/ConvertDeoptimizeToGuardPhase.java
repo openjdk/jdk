@@ -26,8 +26,8 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -169,9 +169,10 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
             return;
         }
 
+        DebugContext debug = deoptBegin.getDebug();
         if (deoptBegin instanceof AbstractMergeNode) {
             AbstractMergeNode mergeNode = (AbstractMergeNode) deoptBegin;
-            Debug.log("Visiting %s", mergeNode);
+            debug.log("Visiting %s", mergeNode);
             FixedNode next = mergeNode.next();
             while (mergeNode.isAlive()) {
                 AbstractEndNode end = mergeNode.forwardEnds().first();
@@ -201,7 +202,7 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
             }
             survivingSuccessor.replaceAtUsages(InputType.Guard, newGuard);
 
-            Debug.log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", deoptBegin == ifNode.trueSuccessor() ? "true" : "false", ifNode, survivingSuccessor);
+            debug.log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", deoptBegin == ifNode.trueSuccessor() ? "true" : "false", ifNode, survivingSuccessor);
             FixedNode next = pred.next();
             pred.setNext(guard);
             guard.setNext(next);

@@ -35,9 +35,9 @@ import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeStack;
@@ -63,10 +63,10 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.UnaryOpLogicNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValuePhiNode;
-import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.calc.AndNode;
 import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.nodes.calc.BinaryNode;
@@ -96,10 +96,10 @@ import jdk.vm.ci.meta.TriState;
 
 public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
 
-    private static final DebugCounter counterStampsRegistered = Debug.counter("StampsRegistered");
-    private static final DebugCounter counterStampsFound = Debug.counter("StampsFound");
-    private static final DebugCounter counterIfsKilled = Debug.counter("CE_KilledIfs");
-    private static final DebugCounter counterPhiStampsImproved = Debug.counter("CE_ImprovedPhis");
+    private static final CounterKey counterStampsRegistered = DebugContext.counter("StampsRegistered");
+    private static final CounterKey counterStampsFound = DebugContext.counter("StampsFound");
+    private static final CounterKey counterIfsKilled = DebugContext.counter("CE_KilledIfs");
+    private static final CounterKey counterPhiStampsImproved = DebugContext.counter("CE_ImprovedPhis");
     private final boolean fullSchedule;
     private final boolean moveGuards;
 
@@ -115,7 +115,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
     @Override
     @SuppressWarnings("try")
     protected void run(StructuredGraph graph, PhaseContext context) {
-        try (Debug.Scope s = Debug.scope("DominatorConditionalElimination")) {
+        try (DebugContext.Scope s = graph.getDebug().scope("DominatorConditionalElimination")) {
             BlockMap<List<Node>> blockToNodes = null;
             NodeMap<Block> nodeToBlock = null;
             ControlFlowGraph cfg = ControlFlowGraph.compute(graph, true, true, true, true);
@@ -242,6 +242,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         protected final CanonicalizerTool tool;
         protected final NodeStack undoOperations;
         protected final StructuredGraph graph;
+        protected final DebugContext debug;
         protected final EconomicMap<MergeNode, EconomicMap<ValuePhiNode, PhiInfoElement>> mergeMaps;
 
         /**
@@ -251,6 +252,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
 
         public Instance(StructuredGraph graph, BlockMap<List<Node>> blockToNodes, PhaseContext context) {
             this.graph = graph;
+            this.debug = graph.getDebug();
             this.blockToNodes = blockToNodes;
             this.undoOperations = new NodeStack();
             this.map = graph.createNodeMap();
@@ -304,7 +306,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                     node.replaceAtPredecessor(deopt);
                     GraphUtil.killCFG(node);
                 }
-                Debug.log("Kill fixed guard guard");
+                debug.log("Kill fixed guard guard");
                 return true;
             })) {
                 registerNewCondition(node.condition(), node.isNegated(), node);
@@ -318,7 +320,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                 survivingSuccessor.replaceAtPredecessor(null);
                 node.replaceAtPredecessor(survivingSuccessor);
                 GraphUtil.killCFG(node);
-                counterIfsKilled.increment();
+                counterIfsKilled.increment(debug);
                 return true;
             });
         }
@@ -326,7 +328,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         @Override
         public Integer enter(Block block) {
             int mark = undoOperations.size();
-            Debug.log("[Pre Processing block %s]", block);
+            debug.log("[Pre Processing block %s]", block);
             // For now conservatively collect guards only within the same block.
             pendingTests.clear();
             processNodes(block);
@@ -348,7 +350,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         private void processBlock(Block block) {
             FixedNode n = block.getBeginNode();
             FixedNode endNode = block.getEndNode();
-            Debug.log("[Processing block %s]", block);
+            debug.log("[Processing block %s]", block);
             while (n != endNode) {
                 if (n.isDeleted() || endNode.isDeleted()) {
                     // This branch was deleted!
@@ -473,7 +475,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                                 }
                                 newPhi.addInput(valueAt);
                             }
-                            counterPhiStampsImproved.increment();
+                            counterPhiStampsImproved.increment(debug);
                             phi.replaceAtUsagesAndDelete(newPhi);
                         }
                     }
@@ -697,7 +699,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
         }
 
         protected boolean rewireGuards(GuardingNode guard, boolean result, ValueNode proxifiedInput, Stamp guardedValueStamp, GuardRewirer rewireGuardFunction) {
-            counterStampsFound.increment();
+            counterStampsFound.increment(debug);
             return rewireGuardFunction.rewire(guard, result, guardedValueStamp, proxifiedInput);
         }
 
@@ -893,8 +895,8 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                     proxiedValue = value;
                 }
                 do {
-                    counterStampsRegistered.increment();
-                    Debug.log("\t Saving stamp for node %s stamp %s guarded by %s", value, stamp, guard);
+                    counterStampsRegistered.increment(debug);
+                    debug.log("\t Saving stamp for node %s stamp %s guarded by %s", value, stamp, guard);
                     assert value instanceof LogicNode || stamp.isCompatible(value.stamp()) : stamp + " vs. " + value.stamp() + " (" + value + ")";
                     map.setAndGrow(value, new InfoElement(stamp, guard, proxiedValue, map.getAndGrow(value)));
                     undoOperations.push(value);

@@ -25,13 +25,14 @@ package org.graalvm.compiler.core.test.inlining;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -100,10 +101,9 @@ public class NestedLoopEffectsPhaseComplexityTest extends GraalCompilerTest {
     }
 
     private void testAndTime(String snippet) {
-        initializeForTimeout();
         for (int i = InliningCountLowerBound; i < InliningCountUpperBound; i++) {
             StructuredGraph g1 = prepareGraph(snippet, i);
-            StructuredGraph g2 = (StructuredGraph) g1.copy();
+            StructuredGraph g2 = (StructuredGraph) g1.copy(g1.getDebug());
             ResolvedJavaMethod method = g1.method();
             long elapsedRE = runAndTimePhase(g1, new EarlyReadEliminationPhase(new CanonicalizerPhase()));
             long elapsedPEA = runAndTimePhase(g2, new PartialEscapePhase(true, new CanonicalizerPhase(), g1.getOptions()));
@@ -121,7 +121,8 @@ public class NestedLoopEffectsPhaseComplexityTest extends GraalCompilerTest {
         long start = System.currentTimeMillis();
         phase.apply(g, context);
         long end = System.currentTimeMillis();
-        Debug.dump(Debug.DETAILED_LEVEL, g, "After %s", phase.contractorName());
+        DebugContext debug = g.getDebug();
+        debug.dump(DebugContext.DETAILED_LEVEL, g, "After %s", phase.contractorName());
         return end - start;
     }
 
@@ -138,13 +139,14 @@ public class NestedLoopEffectsPhaseComplexityTest extends GraalCompilerTest {
             next = callerGraph.getNodes(MethodCallTargetNode.TYPE).first().invoke();
             EconomicSet<Node> canonicalizeNodes = InliningUtil.inlineForCanonicalization(next, calleeGraph, false, calleeMethod);
             canonicalizer.applyIncremental(callerGraph, context, canonicalizeNodes);
-            Debug.dump(Debug.DETAILED_LEVEL, callerGraph, "After inlining %s into %s iteration %d", calleeMethod, callerMethod, i);
+            callerGraph.getDebug().dump(DebugContext.DETAILED_LEVEL, callerGraph, "After inlining %s into %s iteration %d", calleeMethod, callerMethod, i);
         }
         return callerGraph;
     }
 
-    private static StructuredGraph parseBytecodes(ResolvedJavaMethod method, HighTierContext context, CanonicalizerPhase canonicalizer) {
-        StructuredGraph newGraph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.NO).method(method).build();
+    private StructuredGraph parseBytecodes(ResolvedJavaMethod method, HighTierContext context, CanonicalizerPhase canonicalizer) {
+        OptionValues options = getInitialOptions();
+        StructuredGraph newGraph = new StructuredGraph.Builder(options, getDebugContext(options), AllowAssumptions.NO).method(method).build();
         context.getGraphBuilderSuite().apply(newGraph, context);
         new DeadCodeEliminationPhase(Optional).apply(newGraph);
         canonicalizer.apply(newGraph, context);

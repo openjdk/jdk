@@ -32,6 +32,7 @@ import org.graalvm.compiler.loop.InductionVariable.Direction;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.GuardNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
@@ -51,13 +52,15 @@ public class CountedLoopInfo {
     private ValueNode end;
     private boolean oneOff;
     private AbstractBeginNode body;
+    private IfNode ifNode;
 
-    CountedLoopInfo(LoopEx loop, InductionVariable iv, ValueNode end, boolean oneOff, AbstractBeginNode body) {
+    CountedLoopInfo(LoopEx loop, InductionVariable iv, IfNode ifNode, ValueNode end, boolean oneOff, AbstractBeginNode body) {
         this.loop = loop;
         this.iv = iv;
         this.end = end;
         this.oneOff = oneOff;
         this.body = body;
+        this.ifNode = ifNode;
     }
 
     public ValueNode maxTripCountNode() {
@@ -162,6 +165,10 @@ public class CountedLoopInfo {
 
     public ValueNode getLimit() {
         return end;
+    }
+
+    public IfNode getLimitTest() {
+        return ifNode;
     }
 
     public ValueNode getStart() {

@@ -24,14 +24,8 @@ package org.graalvm.compiler.core.test.ea;
 
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Assert;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -43,6 +37,10 @@ import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
+import org.junit.Assert;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 //JaCoCo Exclude
 
@@ -154,8 +152,9 @@ public class EATestBase extends GraalCompilerTest {
     @SuppressWarnings("try")
     protected void prepareGraph(String snippet, boolean iterativeEscapeAnalysis) {
         ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
-        try (Scope s = Debug.scope(getClass(), method, getCodeCache())) {
-            graph = parseEager(method, AllowAssumptions.YES);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope(getClass(), method, getCodeCache())) {
+            graph = parseEager(method, AllowAssumptions.YES, debug);
             context = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
             new DeadCodeEliminationPhase().apply(graph);
@@ -163,7 +162,7 @@ public class EATestBase extends GraalCompilerTest {
             new PartialEscapePhase(iterativeEscapeAnalysis, false, new CanonicalizerPhase(), null, graph.getOptions()).apply(graph, context);
             returnNodes = graph.getNodes(ReturnNode.TYPE).snapshot();
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

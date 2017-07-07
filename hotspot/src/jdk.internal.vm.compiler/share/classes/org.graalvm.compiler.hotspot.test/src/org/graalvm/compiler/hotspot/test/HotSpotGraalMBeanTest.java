@@ -41,7 +41,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
-import org.graalvm.compiler.debug.GraalDebugConfig;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalMBean;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.test.GraalTest;
@@ -227,14 +227,14 @@ public class HotSpotGraalMBeanTest {
         ResolvedJavaMethod method = metaAccess.lookupJavaMethod(Arrays.class.getMethod("asList", Object[].class));
         final OptionValues forMethod = realBean.optionsFor(unsetDump, method);
         assertNotSame(unsetDump, forMethod);
-        Object nothing = unsetDump.getMap().get(GraalDebugConfig.Options.Dump);
+        Object nothing = unsetDump.getMap().get(DebugOptions.Dump);
         assertEquals("Empty string", "", nothing);
 
-        Object specialValue = forMethod.getMap().get(GraalDebugConfig.Options.Dump);
+        Object specialValue = forMethod.getMap().get(DebugOptions.Dump);
         assertEquals(":3", specialValue);
 
         OptionValues normalMethod = realBean.optionsFor(unsetDump, null);
-        Object noSpecialValue = normalMethod.getMap().get(GraalDebugConfig.Options.Dump);
+        Object noSpecialValue = normalMethod.getMap().get(DebugOptions.Dump);
         assertEquals("Empty string", "", noSpecialValue);
     }
 

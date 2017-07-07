@@ -22,25 +22,24 @@
  */
 package org.graalvm.compiler.phases.common.inlining;
 
-import jdk.vm.ci.code.BytecodeFrame;
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.DeoptimizationAction;
-import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
+import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
+import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.core.common.util.Util;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsImpl;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsInlineeScopeInfo;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -97,15 +96,14 @@ import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
 import org.graalvm.util.UnmodifiableMapCursor;
 
-import java.lang.reflect.Constructor;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
-import static jdk.vm.ci.meta.DeoptimizationAction.InvalidateReprofile;
-import static jdk.vm.ci.meta.DeoptimizationReason.NullCheckException;
-import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
+import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class InliningUtil extends ValueMergeUtil {
 
@@ -135,24 +133,26 @@ public class InliningUtil extends ValueMergeUtil {
     public static void logInliningDecision(InlineInfo info, int inliningDepth, boolean allowLogging, boolean success, String msg, final Object... args) {
         if (allowLogging) {
             printInlining(info, inliningDepth, success, msg, args);
-            if (shouldLogInliningDecision()) {
-                logInliningDecision(methodName(info), success, msg, args);
+            DebugContext debug = info.graph().getDebug();
+            if (shouldLogInliningDecision(debug)) {
+                logInliningDecision(debug, methodName(info), success, msg, args);
             }
         }
     }
 
     @SuppressWarnings("try")
-    public static void logInliningDecision(final String msg, final Object... args) {
-        try (Scope s = Debug.scope(inliningDecisionsScopeString)) {
+    public static void logInliningDecision(DebugContext debug, final String msg, final Object... args) {
+        try (DebugContext.Scope s = debug.scope(inliningDecisionsScopeString)) {
             // Can't use log here since we are varargs
-            if (Debug.isLogEnabled()) {
-                Debug.logv(msg, args);
+            if (debug.isLogEnabled()) {
+                debug.logv(msg, args);
             }
         }
     }
 
     public static void logNotInlinedMethod(Invoke invoke, String msg) {
-        if (shouldLogInliningDecision()) {
+        DebugContext debug = invoke.asNode().getDebug();
+        if (shouldLogInliningDecision(debug)) {
             String methodString = invoke.toString();
             if (invoke.callTarget() == null) {
                 methodString += " callTarget=null";
@@ -162,7 +162,7 @@ public class InliningUtil extends ValueMergeUtil {
                     methodString += " " + targetName;
                 }
             }
-            logInliningDecision(methodString, false, msg, new Object[0]);
+            logInliningDecision(debug, methodString, false, msg, new Object[0]);
         }
     }
 
@@ -171,25 +171,26 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     public static void logNotInlinedInvoke(Invoke invoke, int inliningDepth, ResolvedJavaMethod method, String msg, Object... args) {
+        DebugContext debug = invoke.asNode().getDebug();
         printInlining(method, invoke, inliningDepth, false, msg, args);
-        if (shouldLogInliningDecision()) {
+        if (shouldLogInliningDecision(debug)) {
             String methodString = methodName(method, invoke);
-            logInliningDecision(methodString, false, msg, args);
+            logInliningDecision(debug, methodString, false, msg, args);
         }
     }
 
-    private static void logInliningDecision(final String methodString, final boolean success, final String msg, final Object... args) {
+    private static void logInliningDecision(DebugContext debug, final String methodString, final boolean success, final String msg, final Object... args) {
         String inliningMsg = "inlining " + methodString + ": " + msg;
         if (!success) {
             inliningMsg = "not " + inliningMsg;
         }
-        logInliningDecision(inliningMsg, args);
+        logInliningDecision(debug, inliningMsg, args);
     }
 
     @SuppressWarnings("try")
-    public static boolean shouldLogInliningDecision() {
-        try (Scope s = Debug.scope(inliningDecisionsScopeString)) {
-            return Debug.isLogEnabled();
+    public static boolean shouldLogInliningDecision(DebugContext debug) {
+        try (DebugContext.Scope s = debug.scope(inliningDecisionsScopeString)) {
+            return debug.isLogEnabled();
         }
     }
 
@@ -278,121 +279,115 @@ public class InliningUtil extends ValueMergeUtil {
     public static UnmodifiableEconomicMap<Node, Node> inline(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod) {
         FixedNode invokeNode = invoke.asNode();
         StructuredGraph graph = invokeNode.graph();
-        MethodMetricsInlineeScopeInfo m = MethodMetricsInlineeScopeInfo.create(graph.getOptions());
-        try (Debug.Scope s = Debug.methodMetricsScope("InlineEnhancement", m, false)) {
-            final NodeInputList<ValueNode> parameters = invoke.callTarget().arguments();
+        final NodeInputList<ValueNode> parameters = invoke.callTarget().arguments();
 
-            assert inlineGraph.getGuardsStage().ordinal() >= graph.getGuardsStage().ordinal();
-            assert !invokeNode.graph().isAfterFloatingReadPhase() : "inline isn't handled correctly after floating reads phase";
+        assert inlineGraph.getGuardsStage().ordinal() >= graph.getGuardsStage().ordinal();
+        assert !invokeNode.graph().isAfterFloatingReadPhase() : "inline isn't handled correctly after floating reads phase";
 
-            if (receiverNullCheck && !((MethodCallTargetNode) invoke.callTarget()).isStatic()) {
-                nonNullReceiver(invoke);
-            }
-
-            ArrayList<Node> nodes = new ArrayList<>(inlineGraph.getNodes().count());
-            ArrayList<ReturnNode> returnNodes = new ArrayList<>(4);
-            ArrayList<Invoke> partialIntrinsicExits = new ArrayList<>();
-            UnwindNode unwindNode = null;
-            final StartNode entryPointNode = inlineGraph.start();
-            FixedNode firstCFGNode = entryPointNode.next();
-            if (firstCFGNode == null) {
-                throw new IllegalStateException("Inlined graph is in invalid state: " + inlineGraph);
-            }
-            for (Node node : inlineGraph.getNodes()) {
-                if (node == entryPointNode || (node == entryPointNode.stateAfter() && node.usages().count() == 1) || node instanceof ParameterNode) {
-                    // Do nothing.
-                } else {
-                    nodes.add(node);
-                    if (node instanceof ReturnNode) {
-                        returnNodes.add((ReturnNode) node);
-                    } else if (node instanceof Invoke) {
-                        Invoke invokeInInlineGraph = (Invoke) node;
-                        if (invokeInInlineGraph.bci() == BytecodeFrame.UNKNOWN_BCI) {
-                            ResolvedJavaMethod target1 = inlineeMethod;
-                            ResolvedJavaMethod target2 = invokeInInlineGraph.callTarget().targetMethod();
-                            assert target1.equals(target2) : String.format("invoke in inlined method expected to be partial intrinsic exit (i.e., call to %s), not a call to %s",
-                                            target1.format("%H.%n(%p)"), target2.format("%H.%n(%p)"));
-                            partialIntrinsicExits.add(invokeInInlineGraph);
-                        }
-                    } else if (node instanceof UnwindNode) {
-                        assert unwindNode == null;
-                        unwindNode = (UnwindNode) node;
-                    }
-                }
-            }
-
-            final AbstractBeginNode prevBegin = AbstractBeginNode.prevBegin(invokeNode);
-            DuplicationReplacement localReplacement = new DuplicationReplacement() {
-
-                @Override
-                public Node replacement(Node node) {
-                    if (node instanceof ParameterNode) {
-                        return parameters.get(((ParameterNode) node).index());
-                    } else if (node == entryPointNode) {
-                        return prevBegin;
-                    }
-                    return node;
-                }
-            };
-
-            assert invokeNode.successors().first() != null : invoke;
-            assert invokeNode.predecessor() != null;
-
-            EconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
-
-            FrameState stateAfter = invoke.stateAfter();
-            assert stateAfter == null || stateAfter.isAlive();
-
-            FrameState stateAtExceptionEdge = null;
-            if (invoke instanceof InvokeWithExceptionNode) {
-                InvokeWithExceptionNode invokeWithException = ((InvokeWithExceptionNode) invoke);
-                if (unwindNode != null) {
-                    ExceptionObjectNode obj = (ExceptionObjectNode) invokeWithException.exceptionEdge();
-                    stateAtExceptionEdge = obj.stateAfter();
-                }
-            }
-
-            updateSourcePositions(invoke, inlineGraph, duplicates);
-            if (stateAfter != null) {
-                processFrameStates(invoke, inlineGraph, duplicates, stateAtExceptionEdge, returnNodes.size() > 1);
-                int callerLockDepth = stateAfter.nestedLockDepth();
-                if (callerLockDepth != 0) {
-                    for (MonitorIdNode original : inlineGraph.getNodes(MonitorIdNode.TYPE)) {
-                        MonitorIdNode monitor = (MonitorIdNode) duplicates.get(original);
-                        processMonitorId(invoke.stateAfter(), monitor);
-                    }
-                }
-            } else {
-                assert checkContainsOnlyInvalidOrAfterFrameState(duplicates);
-            }
-
-            firstCFGNode = (FixedNode) duplicates.get(firstCFGNode);
-            for (int i = 0; i < returnNodes.size(); i++) {
-                returnNodes.set(i, (ReturnNode) duplicates.get(returnNodes.get(i)));
-            }
-            for (Invoke exit : partialIntrinsicExits) {
-                // A partial intrinsic exit must be replaced with a call to
-                // the intrinsified method.
-                Invoke dup = (Invoke) duplicates.get(exit.asNode());
-                if (dup instanceof InvokeNode) {
-                    InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
-                    dup.intrinsify(repl.asNode());
-                } else {
-                    ((InvokeWithExceptionNode) dup).replaceWithNewBci(invoke.bci());
-                }
-            }
-            if (unwindNode != null) {
-                unwindNode = (UnwindNode) duplicates.get(unwindNode);
-            }
-
-            finishInlining(invoke, graph, firstCFGNode, returnNodes, unwindNode, inlineGraph.getAssumptions(), inlineGraph);
-            GraphUtil.killCFG(invokeNode);
-
-            if (Debug.isMethodMeterEnabled() && m != null) {
-                MethodMetricsImpl.recordInlinee(m.getRootMethod(), invoke.asNode().graph().method(), inlineeMethod);
-            }
-            return duplicates;
+        if (receiverNullCheck && !((MethodCallTargetNode) invoke.callTarget()).isStatic()) {
+            nonNullReceiver(invoke);
         }
+
+        ArrayList<Node> nodes = new ArrayList<>(inlineGraph.getNodes().count());
+        ArrayList<ReturnNode> returnNodes = new ArrayList<>(4);
+        ArrayList<Invoke> partialIntrinsicExits = new ArrayList<>();
+        UnwindNode unwindNode = null;
+        final StartNode entryPointNode = inlineGraph.start();
+        FixedNode firstCFGNode = entryPointNode.next();
+        if (firstCFGNode == null) {
+            throw new IllegalStateException("Inlined graph is in invalid state: " + inlineGraph);
+        }
+        for (Node node : inlineGraph.getNodes()) {
+            if (node == entryPointNode || (node == entryPointNode.stateAfter() && node.usages().count() == 1) || node instanceof ParameterNode) {
+                // Do nothing.
+            } else {
+                nodes.add(node);
+                if (node instanceof ReturnNode) {
+                    returnNodes.add((ReturnNode) node);
+                } else if (node instanceof Invoke) {
+                    Invoke invokeInInlineGraph = (Invoke) node;
+                    if (invokeInInlineGraph.bci() == BytecodeFrame.UNKNOWN_BCI) {
+                        ResolvedJavaMethod target1 = inlineeMethod;
+                        ResolvedJavaMethod target2 = invokeInInlineGraph.callTarget().targetMethod();
+                        assert target1.equals(target2) : String.format("invoke in inlined method expected to be partial intrinsic exit (i.e., call to %s), not a call to %s",
+                                        target1.format("%H.%n(%p)"), target2.format("%H.%n(%p)"));
+                        partialIntrinsicExits.add(invokeInInlineGraph);
+                    }
+                } else if (node instanceof UnwindNode) {
+                    assert unwindNode == null;
+                    unwindNode = (UnwindNode) node;
+                }
+            }
+        }
+
+        final AbstractBeginNode prevBegin = AbstractBeginNode.prevBegin(invokeNode);
+        DuplicationReplacement localReplacement = new DuplicationReplacement() {
+
+            @Override
+            public Node replacement(Node node) {
+                if (node instanceof ParameterNode) {
+                    return parameters.get(((ParameterNode) node).index());
+                } else if (node == entryPointNode) {
+                    return prevBegin;
+                }
+                return node;
+            }
+        };
+
+        assert invokeNode.successors().first() != null : invoke;
+        assert invokeNode.predecessor() != null;
+
+        EconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
+
+        FrameState stateAfter = invoke.stateAfter();
+        assert stateAfter == null || stateAfter.isAlive();
+
+        FrameState stateAtExceptionEdge = null;
+        if (invoke instanceof InvokeWithExceptionNode) {
+            InvokeWithExceptionNode invokeWithException = ((InvokeWithExceptionNode) invoke);
+            if (unwindNode != null) {
+                ExceptionObjectNode obj = (ExceptionObjectNode) invokeWithException.exceptionEdge();
+                stateAtExceptionEdge = obj.stateAfter();
+            }
+        }
+
+        updateSourcePositions(invoke, inlineGraph, duplicates);
+        if (stateAfter != null) {
+            processFrameStates(invoke, inlineGraph, duplicates, stateAtExceptionEdge, returnNodes.size() > 1);
+            int callerLockDepth = stateAfter.nestedLockDepth();
+            if (callerLockDepth != 0) {
+                for (MonitorIdNode original : inlineGraph.getNodes(MonitorIdNode.TYPE)) {
+                    MonitorIdNode monitor = (MonitorIdNode) duplicates.get(original);
+                    processMonitorId(invoke.stateAfter(), monitor);
+                }
+            }
+        } else {
+            assert checkContainsOnlyInvalidOrAfterFrameState(duplicates);
+        }
+
+        firstCFGNode = (FixedNode) duplicates.get(firstCFGNode);
+        for (int i = 0; i < returnNodes.size(); i++) {
+            returnNodes.set(i, (ReturnNode) duplicates.get(returnNodes.get(i)));
+        }
+        for (Invoke exit : partialIntrinsicExits) {
+            // A partial intrinsic exit must be replaced with a call to
+            // the intrinsified method.
+            Invoke dup = (Invoke) duplicates.get(exit.asNode());
+            if (dup instanceof InvokeNode) {
+                InvokeNode repl = graph.add(new InvokeNode(invoke.callTarget(), invoke.bci()));
+                dup.intrinsify(repl.asNode());
+            } else {
+                ((InvokeWithExceptionNode) dup).replaceWithNewBci(invoke.bci());
+            }
+        }
+        if (unwindNode != null) {
+            unwindNode = (UnwindNode) duplicates.get(unwindNode);
+        }
+
+        finishInlining(invoke, graph, firstCFGNode, returnNodes, unwindNode, inlineGraph.getAssumptions(), inlineGraph);
+        GraphUtil.killCFG(invokeNode);
+
+        return duplicates;
     }
 
     /**

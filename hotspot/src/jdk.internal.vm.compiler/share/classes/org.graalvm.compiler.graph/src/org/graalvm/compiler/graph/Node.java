@@ -43,6 +43,7 @@ import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.NodeEventListener;
 import org.graalvm.compiler.graph.Graph.Options;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -260,6 +261,13 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
      */
     public final OptionValues getOptions() {
         return graph == null ? null : graph.getOptions();
+    }
+
+    /**
+     * Gets the debug context associated with this node's graph.
+     */
+    public final DebugContext getDebug() {
+        return graph.getDebug();
     }
 
     /**

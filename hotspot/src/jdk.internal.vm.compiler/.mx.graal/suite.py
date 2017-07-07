@@ -70,15 +70,15 @@ suite = {
       "exports" : [
         "<package-info>",  # exports all packages containing package-info.java
       ],
-      "checkstyle" : "org.graalvm.api.word",
+      "checkstyle" : "org.graalvm.word",
       "javaCompliance" : "1.8",
       "workingSets" : "API,SDK",
     },
-    "org.graalvm.api.word" : {
+    "org.graalvm.word" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [],
-      "checkstyle" : "org.graalvm.api.word",
+      "checkstyle" : "org.graalvm.word",
       "javaCompliance" : "1.8",
       "workingSets" : "API,SDK",
     },
@@ -142,8 +142,7 @@ suite = {
       "sourceDirs" : ["src"],
       "checkstyle" : "org.graalvm.compiler.graph",
       "uses" : [
-        "org.graalvm.compiler.debug.DebugConfigCustomizer",
-        "org.graalvm.compiler.debug.DebugInitializationParticipant",
+        "org.graalvm.compiler.debug.DebugHandlersFactory",
         "org.graalvm.compiler.debug.TTYStreamProvider",
       ],
       "dependencies" : [
@@ -792,6 +791,36 @@ suite = {
       "workingSets" : "Graal,Phases",
     },
 
+    "org.graalvm.compiler.virtual.bench" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : ["mx:JMH_1_18", "org.graalvm.compiler.microbenchmarks"],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "annotationProcessors" : ["mx:JMH_1_18"],
+      "findbugsIgnoresGenerated" : True,
+      "workingSets" : "Graal,Bench",
+      "isTestProject" : True,
+    },
+
+    "org.graalvm.compiler.microbenchmarks" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "mx:JMH_1_18",
+        "org.graalvm.compiler.api.test",
+        "org.graalvm.compiler.java",
+        "org.graalvm.compiler.runtime",
+      ],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "checkPackagePrefix" : "false",
+      "annotationProcessors" : ["mx:JMH_1_18"],
+      "findbugsIgnoresGenerated" : True,
+      "workingSets" : "Graal,Bench",
+      "isTestProject" : True,
+    },
+
     "org.graalvm.compiler.loop" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
@@ -970,7 +999,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.debug",
-        "org.graalvm.api.word",
+        "org.graalvm.word",
       ],
       "annotationProcessors" : ["GRAAL_OPTIONS_PROCESSOR"],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -998,6 +1027,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.compiler.debug",
         "org.graalvm.util",
         "mx:JUNIT",
       ],

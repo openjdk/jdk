@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.phases.common;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeFlood;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.phases.Phase;
 
 public class DeadCodeEliminationPhase extends Phase {
@@ -44,7 +44,7 @@ public class DeadCodeEliminationPhase extends Phase {
         // @formatter:on
     }
 
-    private static final DebugCounter counterNodesRemoved = Debug.counter("NodesRemoved");
+    private static final CounterKey counterNodesRemoved = DebugContext.counter("NodesRemoved");
 
     public enum Optionality {
         Optional,
@@ -133,11 +133,12 @@ public class DeadCodeEliminationPhase extends Phase {
             }
         };
 
+        DebugContext debug = graph.getDebug();
         for (Node node : graph.getNodes()) {
             if (!flood.isMarked(node)) {
                 node.markDeleted();
                 node.applyInputs(consumer);
-                counterNodesRemoved.increment();
+                counterNodesRemoved.increment(debug);
             }
         }
     }

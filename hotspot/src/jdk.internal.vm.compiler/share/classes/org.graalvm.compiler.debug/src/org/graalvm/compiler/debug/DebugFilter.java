@@ -25,44 +25,43 @@ package org.graalvm.compiler.debug;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.debug.GraalDebugConfig.Options;
-import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 
 /**
- * Implements the filter specified by the {@link Options#Dump}, {@link Options#Log},
- * {@link Options#Count},{@link Options#MethodMeter} and {@link Options#Time} options.
+ * Implements the filter specified by the {@link DebugOptions#Dump}, {@link DebugOptions#Log},
+ * {@link DebugOptions#Count} and {@link DebugOptions#Time} options.
  * <p>
  * These options enable the associated debug facility if their filter matches the
- * {@linkplain DebugScope#getQualifiedName() name} of the {@linkplain Debug#currentScope() current
- * scope}. For the {@link Options#Dump} and {@link Options#Log} options, the log or dump level is
- * set. The {@link Options#Count},{@link Options#MethodMeter} and {@link Options#Time} options don't
- * have a level, for them {@code level = 0} means disabled and a {@code level > 0} means enabled.
+ * {@linkplain Scope#getQualifiedName() name} of the current scope. For the
+ * {@link DebugOptions#Dump} and {@link DebugOptions#Log} options, the log or dump level is set. The
+ * {@link DebugOptions#Count} and {@link DebugOptions#Time} options don't have a level, for them
+ * {@code level = 0} means disabled and a {@code level > 0} means enabled.
  * <p>
  * A filter is a list of comma-separated terms of the form {@code <pattern>[:<level>]}. {@code
  * <pattern>} is interpreted as a glob pattern if it contains a "*" or "?" character. Otherwise, it
  * is interpreted as a substring. If {@code <pattern>} is empty, it matches every scope. If {@code :
- * <level>} is omitted, it defaults to {@link Debug#BASIC_LEVEL}. The term {@code ~<pattern>} is a
- * shorthand for {@code <pattern>:0} to disable a debug facility for a pattern.
+ * <level>} is omitted, it defaults to {@link DebugContext#BASIC_LEVEL}. The term {@code ~<pattern>}
+ * is a shorthand for {@code <pattern>:0} to disable a debug facility for a pattern.
  * <p>
  * The resulting log level of a scope is determined by the <em>last</em> matching term. If no term
  * matches, the log level is 0 (disabled). A filter with no terms matches every scope with a log
- * level of {@link Debug#BASIC_LEVEL}.
+ * level of {@link DebugContext#BASIC_LEVEL}.
  *
  * <h2>Examples of filters</h2>
  *
  * <ul>
  * <li>(empty string)<br>
- * Matches any scope with log level {@link Debug#BASIC_LEVEL}.
+ * Matches any scope with log level {@link DebugContext#BASIC_LEVEL}.
  *
  * <li>{@code :1}<br>
  * Matches any scope with log level 1.
  *
  * <li>{@code *}<br>
- * Matches any scope with log level {@link Debug#BASIC_LEVEL}.
+ * Matches any scope with log level {@link DebugContext#BASIC_LEVEL}.
  *
  * <li>{@code CodeGen,CodeInstall}<br>
  * Matches scopes containing "CodeGen" or "CodeInstall", both with log level
- * {@link Debug#BASIC_LEVEL}.
+ * {@link DebugContext#BASIC_LEVEL}.
  *
  * <li>{@code CodeGen:2,CodeInstall:1}<br>
  * Matches scopes containing "CodeGen" with log level 2, or "CodeInstall" with log level 1.
@@ -74,10 +73,10 @@ import org.graalvm.compiler.debug.internal.DebugScope;
  * Matches all scopes with log level 1, except those containing "Dead".
  *
  * <li>{@code Code*}<br>
- * Matches scopes starting with "Code" with log level {@link Debug#BASIC_LEVEL}.
+ * Matches scopes starting with "Code" with log level {@link DebugContext#BASIC_LEVEL}.
  *
  * <li>{@code Code,~Dead}<br>
- * Matches scopes containing "Code" but not "Dead", with log level {@link Debug#BASIC_LEVEL}.
+ * Matches scopes containing "Code" but not "Dead", with log level {@link DebugContext#BASIC_LEVEL}.
  * </ul>
  */
 final class DebugFilter {
@@ -108,7 +107,7 @@ final class DebugFilter {
                         level = 0;
                     } else {
                         pattern = t;
-                        level = Debug.BASIC_LEVEL;
+                        level = DebugContext.BASIC_LEVEL;
                     }
                 } else {
                     pattern = t.substring(0, idx);
@@ -119,13 +118,13 @@ final class DebugFilter {
                         } catch (NumberFormatException e) {
                             switch (levelString) {
                                 case "basic":
-                                    level = Debug.BASIC_LEVEL;
+                                    level = DebugContext.BASIC_LEVEL;
                                     break;
                                 case "info":
-                                    level = Debug.INFO_LEVEL;
+                                    level = DebugContext.INFO_LEVEL;
                                     break;
                                 case "verbose":
-                                    level = Debug.VERBOSE_LEVEL;
+                                    level = DebugContext.VERBOSE_LEVEL;
                                     break;
                                 default:
                                     throw new IllegalArgumentException("Unknown dump level: \"" + levelString + "\" expected basic, info, verbose or an integer");
@@ -133,7 +132,7 @@ final class DebugFilter {
                         }
 
                     } else {
-                        level = Debug.BASIC_LEVEL;
+                        level = DebugContext.BASIC_LEVEL;
                     }
                 }
 
@@ -147,7 +146,7 @@ final class DebugFilter {
      */
     public int matchLevel(String input) {
         if (terms == null) {
-            return Debug.BASIC_LEVEL;
+            return DebugContext.BASIC_LEVEL;
         } else {
             int level = 0;
             for (Term t : terms) {

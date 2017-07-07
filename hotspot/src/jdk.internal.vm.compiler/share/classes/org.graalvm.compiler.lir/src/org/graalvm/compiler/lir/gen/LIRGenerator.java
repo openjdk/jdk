@@ -47,6 +47,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRVerifier;
@@ -302,12 +303,13 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public <I extends LIRInstruction> I append(I op) {
+        LIR lir = res.getLIR();
         if (printIrWithLir) {
             TTY.println(op.toStringWithIdPrefix());
             TTY.println();
         }
         assert LIRVerifier.verify(op);
-        ArrayList<LIRInstruction> lirForBlock = res.getLIR().getLIRforBlock(getCurrentBlock());
+        ArrayList<LIRInstruction> lirForBlock = lir.getLIRforBlock(getCurrentBlock());
         op.setPosition(currentPosition);
         lirForBlock.add(op);
         return op;

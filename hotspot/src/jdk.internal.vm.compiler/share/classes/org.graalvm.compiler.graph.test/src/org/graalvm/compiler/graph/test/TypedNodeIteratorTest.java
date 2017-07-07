@@ -62,8 +62,8 @@ public class TypedNodeIteratorTest extends GraphTest {
 
     @Test
     public void singleNodeTest() {
-        getOptions();
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(new TestNode("a"));
         assertTrue(graph.hasNode(TestNode.TYPE));
         assertEquals("a", toString(graph.getNodes(TestNode.TYPE)));
@@ -76,7 +76,8 @@ public class TypedNodeIteratorTest extends GraphTest {
     @Test
     public void deletingNodeTest() {
         TestNode testNode = new TestNode("a");
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(testNode);
         testNode.safeDelete();
         assertEquals("", toString(graph.getNodes(TestNode.TYPE)));
@@ -85,7 +86,8 @@ public class TypedNodeIteratorTest extends GraphTest {
     @Test
     public void deleteAndAddTest() {
         TestNode testNode = new TestNode("b");
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(new TestNode("a"));
         graph.add(testNode);
         testNode.safeDelete();
@@ -96,7 +98,8 @@ public class TypedNodeIteratorTest extends GraphTest {
 
     @Test
     public void iteratorBehaviorTest() {
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(new TestNode("a"));
         Iterator<TestNode> iterator = graph.getNodes(TestNode.TYPE).iterator();
         assertTrue(iterator.hasNext());
@@ -115,7 +118,8 @@ public class TypedNodeIteratorTest extends GraphTest {
 
     @Test
     public void complicatedIterationTest() {
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(new TestNode("a"));
         for (TestNode tn : graph.getNodes(TestNode.TYPE)) {
             String name = tn.getName();
@@ -154,7 +158,8 @@ public class TypedNodeIteratorTest extends GraphTest {
 
     @Test
     public void addingNodeDuringIterationTest() {
-        Graph graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        Graph graph = new Graph(options, getDebug(options));
         graph.add(new TestNode("a"));
         StringBuilder sb = new StringBuilder();
         int z = 0;

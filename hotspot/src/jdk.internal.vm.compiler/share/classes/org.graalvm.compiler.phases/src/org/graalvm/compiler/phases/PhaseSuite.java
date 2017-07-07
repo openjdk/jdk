@@ -72,6 +72,30 @@ public class PhaseSuite<C> extends BasePhase<C> {
     }
 
     /**
+     * Inserts a phase before the last phase in the suite. If the suite contains no phases the new
+     * phase will be inserted as the first phase.
+     */
+    public final void addBeforeLast(BasePhase<? super C> phase) {
+        ListIterator<BasePhase<? super C>> last = findLastPhase();
+        if (last.hasPrevious()) {
+            last.previous();
+        }
+        last.add(phase);
+    }
+
+    /**
+     * Returns a {@link ListIterator} at the position of the last phase in the suite. If the suite
+     * has no phases then it will return an empty iterator.
+     */
+    private ListIterator<BasePhase<? super C>> findLastPhase() {
+        ListIterator<BasePhase<? super C>> it = phases.listIterator();
+        while (it.hasNext()) {
+            it.next();
+        }
+        return it;
+    }
+
+    /**
      * Returns a {@link ListIterator} at the position of the first phase which is an instance of
      * {@code phaseClass} or null if no such phase can be found.
      *

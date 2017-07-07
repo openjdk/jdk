@@ -25,8 +25,8 @@ package org.graalvm.compiler.replacements.test;
 import java.util.Objects;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -147,7 +147,8 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
     public void testFieldOffsetMergeNonLiveBasePointer() {
         thrown.expect(GraalError.class);
         thrown.expectMessage(UNKNOWN_REFERENCE_AT_SAFEPOINT_MSG);
-        try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
+        DebugContext debug = getDebugContext();
+        try (Scope s = debug.disable()) {
             // Run a couple times to encourage objects to move
             for (int i = 0; i < 4; i++) {
                 Result r = new Result();
@@ -171,7 +172,8 @@ public class DerivedOopTest extends ReplacementsTest implements Snippets {
     public void testFieldOffsetMergeLiveBasePointer() {
         thrown.expect(GraalError.class);
         thrown.expectMessage(UNKNOWN_REFERENCE_AT_SAFEPOINT_MSG);
-        try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
+        DebugContext debug = getDebugContext();
+        try (Scope s = debug.disable()) {
             // Run a couple times to encourage objects to move
             for (int i = 0; i < 4; i++) {
                 Result r = new Result();

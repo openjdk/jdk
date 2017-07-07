@@ -22,8 +22,7 @@
  */
 package org.graalvm.compiler.core.phases;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.NodeEvent;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
@@ -33,8 +32,8 @@ import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 
 /**
  * A utility phase for detecting when a phase would change the graph and reporting extra information
@@ -68,12 +67,13 @@ public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSui
          * having their inputs change are the main interesting differences.
          */
         HashSetNodeEventListener listener = new HashSetNodeEventListener().exclude(NodeEvent.NODE_ADDED);
-        StructuredGraph graphCopy = (StructuredGraph) graph.copy();
+        StructuredGraph graphCopy = (StructuredGraph) graph.copy(graph.getDebug());
+        DebugContext debug = graph.getDebug();
         try (NodeEventScope s = graphCopy.trackNodeEvents(listener)) {
-            try (Scope s2 = Debug.sandbox("WithoutMonitoring", null)) {
+            try (DebugContext.Scope s2 = debug.sandbox("WithoutMonitoring", null)) {
                 super.run(graphCopy, context);
             } catch (Throwable t) {
-                Debug.handle(t);
+                debug.handle(t);
             }
         }
 
@@ -90,15 +90,15 @@ public class GraphChangeMonitoringPhase<C extends PhaseContext> extends PhaseSui
             /* rerun it on the real graph in a new Debug scope so Dump and Log can find it. */
             listener = new HashSetNodeEventListener();
             try (NodeEventScope s = graph.trackNodeEvents(listener)) {
-                try (Scope s2 = Debug.scope("WithGraphChangeMonitoring")) {
-                    if (Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
-                        Debug.dump(Debug.DETAILED_LEVEL, graph, "*** Before phase %s", getName());
+                try (DebugContext.Scope s2 = debug.scope("WithGraphChangeMonitoring")) {
+                    if (debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {
+                        debug.dump(DebugContext.DETAILED_LEVEL, graph, "*** Before phase %s", getName());
                     }
                     super.run(graph, context);
-                    if (Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
-                        Debug.dump(Debug.DETAILED_LEVEL, graph, "*** After phase %s %s", getName(), filteredNodes);
+                    if (debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {
+                        debug.dump(DebugContext.DETAILED_LEVEL, graph, "*** After phase %s %s", getName(), filteredNodes);
                     }
-                    Debug.log("*** %s %s %s\n", message, graph, filteredNodes);
+                    debug.log("*** %s %s %s\n", message, graph, filteredNodes);
                 }
             }
         } else {

@@ -23,9 +23,9 @@
 package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.Mark;
@@ -62,13 +62,13 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 
     private static final int MAX_ITERATION_PER_NODE = 10;
-    private static final DebugCounter COUNTER_CANONICALIZED_NODES = Debug.counter("CanonicalizedNodes");
-    private static final DebugCounter COUNTER_PROCESSED_NODES = Debug.counter("ProcessedNodes");
-    private static final DebugCounter COUNTER_CANONICALIZATION_CONSIDERED_NODES = Debug.counter("CanonicalizationConsideredNodes");
-    private static final DebugCounter COUNTER_INFER_STAMP_CALLED = Debug.counter("InferStampCalled");
-    private static final DebugCounter COUNTER_STAMP_CHANGED = Debug.counter("StampChanged");
-    private static final DebugCounter COUNTER_SIMPLIFICATION_CONSIDERED_NODES = Debug.counter("SimplificationConsideredNodes");
-    private static final DebugCounter COUNTER_GLOBAL_VALUE_NUMBERING_HITS = Debug.counter("GlobalValueNumberingHits");
+    private static final CounterKey COUNTER_CANONICALIZED_NODES = DebugContext.counter("CanonicalizedNodes");
+    private static final CounterKey COUNTER_PROCESSED_NODES = DebugContext.counter("ProcessedNodes");
+    private static final CounterKey COUNTER_CANONICALIZATION_CONSIDERED_NODES = DebugContext.counter("CanonicalizationConsideredNodes");
+    private static final CounterKey COUNTER_INFER_STAMP_CALLED = DebugContext.counter("InferStampCalled");
+    private static final CounterKey COUNTER_STAMP_CHANGED = DebugContext.counter("StampChanged");
+    private static final CounterKey COUNTER_SIMPLIFICATION_CONSIDERED_NODES = DebugContext.counter("SimplificationConsideredNodes");
+    private static final CounterKey COUNTER_GLOBAL_VALUE_NUMBERING_HITS = DebugContext.counter("GlobalValueNumberingHits");
 
     private boolean globalValueNumber = true;
     private boolean canonicalizeReads = true;
@@ -161,6 +161,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 
         private NodeWorkList workList;
         private Tool tool;
+        private DebugContext debug;
 
         private Instance(PhaseContext context) {
             this(context, null, null);
@@ -187,6 +188,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 
         @Override
         protected void run(StructuredGraph graph) {
+            this.debug = graph.getDebug();
             boolean wholeGraph = newNodesMark == null || newNodesMark.isStart();
             if (initWorkingSet == null) {
                 workList = graph.createIterativeNodeWorkList(wholeGraph, MAX_ITERATION_PER_NODE);
@@ -229,8 +231,8 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             try (NodeEventScope nes = graph.trackNodeEvents(listener)) {
                 for (Node n : workList) {
                     boolean changed = processNode(n);
-                    if (changed && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
-                        Debug.dump(Debug.DETAILED_LEVEL, graph, "CanonicalizerPhase %s", n);
+                    if (changed && debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {
+                        debug.dump(DebugContext.DETAILED_LEVEL, graph, "CanonicalizerPhase %s", n);
                     }
                 }
             }
@@ -243,7 +245,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
             if (!node.isAlive()) {
                 return false;
             }
-            COUNTER_PROCESSED_NODES.increment();
+            COUNTER_PROCESSED_NODES.increment(debug);
             if (GraphUtil.tryKillUnused(node)) {
                 return true;
             }
@@ -261,7 +263,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                 Constant constant = valueNode.stamp().asConstant();
                 if (constant != null && !(node instanceof ConstantNode)) {
                     ConstantNode stampConstant = ConstantNode.forConstant(valueNode.stamp(), constant, context.getMetaAccess(), graph);
-                    Debug.log("Canonicalizer: constant stamp replaces %1s with %1s", valueNode, stampConstant);
+                    debug.log("Canonicalizer: constant stamp replaces %1s with %1s", valueNode, stampConstant);
                     valueNode.replaceAtUsages(InputType.Value, stampConstant);
                     GraphUtil.tryKillUnused(valueNode);
                     return true;
@@ -282,8 +284,8 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                 if (newNode != null) {
                     assert !(node instanceof FixedNode || newNode instanceof FixedNode);
                     node.replaceAtUsagesAndDelete(newNode);
-                    COUNTER_GLOBAL_VALUE_NUMBERING_HITS.increment();
-                    Debug.log("GVN applied and new node is %1s", newNode);
+                    COUNTER_GLOBAL_VALUE_NUMBERING_HITS.increment(debug);
+                    debug.log("GVN applied and new node is %1s", newNode);
                     return true;
                 }
             }
@@ -319,7 +321,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                     }
                 }
                 if (nodeClass.isCanonicalizable()) {
-                    COUNTER_CANONICALIZATION_CONSIDERED_NODES.increment();
+                    COUNTER_CANONICALIZATION_CONSIDERED_NODES.increment(debug);
                     Node canonical;
                     try (AutoCloseable verify = getCanonicalizeableContractAssertion(node)) {
                         canonical = ((Canonicalizable) node).canonical(tool);
@@ -335,8 +337,8 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                 }
 
                 if (nodeClass.isSimplifiable() && simplify) {
-                    Debug.log(Debug.VERBOSE_LEVEL, "Canonicalizer: simplifying %s", node);
-                    COUNTER_SIMPLIFICATION_CONSIDERED_NODES.increment();
+                    debug.log(DebugContext.VERBOSE_LEVEL, "Canonicalizer: simplifying %s", node);
+                    COUNTER_SIMPLIFICATION_CONSIDERED_NODES.increment(debug);
                     node.simplify(tool);
                     return node.isDeleted();
                 }
@@ -362,12 +364,12 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 // @formatter:on
         private boolean performReplacement(final Node node, Node newCanonical) {
             if (newCanonical == node) {
-                Debug.log(Debug.VERBOSE_LEVEL, "Canonicalizer: work on %1s", node);
+                debug.log(DebugContext.VERBOSE_LEVEL, "Canonicalizer: work on %1s", node);
                 return false;
             } else {
                 Node canonical = newCanonical;
-                Debug.log("Canonicalizer: replacing %1s with %1s", node, canonical);
-                COUNTER_CANONICALIZED_NODES.increment();
+                debug.log("Canonicalizer: replacing %1s with %1s", node, canonical);
+                COUNTER_CANONICALIZED_NODES.increment(debug);
                 StructuredGraph graph = (StructuredGraph) node.graph();
                 if (canonical != null && !canonical.isAlive()) {
                     assert !canonical.isDeleted();
@@ -428,9 +430,9 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
          */
         private boolean tryInferStamp(ValueNode node) {
             if (node.isAlive()) {
-                COUNTER_INFER_STAMP_CALLED.increment();
+                COUNTER_INFER_STAMP_CALLED.increment(debug);
                 if (node.inferStamp()) {
-                    COUNTER_STAMP_CHANGED.increment();
+                    COUNTER_STAMP_CHANGED.increment(debug);
                     for (Node usage : node.usages()) {
                         workList.add(usage);
                     }

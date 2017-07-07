@@ -22,11 +22,19 @@
  */
 package org.graalvm.compiler.graph;
 
-import org.graalvm.compiler.debug.Debug;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.function.Consumer;
+
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugCounter;
-import org.graalvm.compiler.debug.DebugTimer;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.options.Option;
@@ -36,14 +44,6 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.function.Consumer;
-
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 /**
  * This class is a graph container, it contains the set of nodes that belong to this graph.
@@ -147,12 +147,22 @@ public class Graph {
      */
     private final OptionValues options;
 
+    /**
+     * The {@link DebugContext} used while compiling this graph.
+     */
+    private final DebugContext debug;
+
     private class NodeSourcePositionScope implements DebugCloseable {
         private final NodeSourcePosition previous;
 
         NodeSourcePositionScope(NodeSourcePosition sourcePosition) {
             previous = currentNodeSourcePosition;
             currentNodeSourcePosition = sourcePosition;
+        }
+
+        @Override
+        public DebugContext getDebug() {
+            return debug;
         }
 
         @Override
@@ -217,8 +227,8 @@ public class Graph {
     /**
      * Creates an empty Graph with no name.
      */
-    public Graph(OptionValues options) {
-        this(null, options);
+    public Graph(OptionValues options, DebugContext debug) {
+        this(null, options, debug);
     }
 
     /**
@@ -239,12 +249,14 @@ public class Graph {
      *
      * @param name the name of the graph, used for debugging purposes
      */
-    public Graph(String name, OptionValues options) {
+    public Graph(String name, OptionValues options, DebugContext debug) {
         nodes = new Node[INITIAL_NODES_SIZE];
         iterableNodesFirst = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         iterableNodesLast = new ArrayList<>(NodeClass.allocatedNodeIterabledIds());
         this.name = name;
         this.options = options;
+        assert debug != null;
+        this.debug = debug;
 
         if (isModificationCountsEnabled()) {
             nodeModCounts = new int[INITIAL_NODES_SIZE];
@@ -302,27 +314,37 @@ public class Graph {
 
     /**
      * Creates a copy of this graph.
+     *
+     * @param debugForCopy the debug context for the graph copy. This must not be the debug for this
+     *            graph if this graph can be accessed from multiple threads (e.g., it's in a cache
+     *            accessed by multiple threads).
      */
-    public final Graph copy() {
-        return copy(name, null);
+    public final Graph copy(DebugContext debugForCopy) {
+        return copy(name, null, debugForCopy);
     }
 
     /**
      * Creates a copy of this graph.
      *
      * @param duplicationMapCallback consumer of the duplication map created during the copying
+     * @param debugForCopy the debug context for the graph copy. This must not be the debug for this
+     *            graph if this graph can be accessed from multiple threads (e.g., it's in a cache
+     *            accessed by multiple threads).
      */
-    public final Graph copy(Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
-        return copy(name, duplicationMapCallback);
+    public final Graph copy(Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback, DebugContext debugForCopy) {
+        return copy(name, duplicationMapCallback, debugForCopy);
     }
 
     /**
      * Creates a copy of this graph.
      *
      * @param newName the name of the copy, used for debugging purposes (can be null)
+     * @param debugForCopy the debug context for the graph copy. This must not be the debug for this
+     *            graph if this graph can be accessed from multiple threads (e.g., it's in a cache
+     *            accessed by multiple threads).
      */
-    public final Graph copy(String newName) {
-        return copy(newName, null);
+    public final Graph copy(String newName, DebugContext debugForCopy) {
+        return copy(newName, null, debugForCopy);
     }
 
     /**
@@ -330,9 +352,12 @@ public class Graph {
      *
      * @param newName the name of the copy, used for debugging purposes (can be null)
      * @param duplicationMapCallback consumer of the duplication map created during the copying
+     * @param debugForCopy the debug context for the graph copy. This must not be the debug for this
+     *            graph if this graph can be accessed from multiple threads (e.g., it's in a cache
+     *            accessed by multiple threads).
      */
-    protected Graph copy(String newName, Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
-        Graph copy = new Graph(newName, options);
+    protected Graph copy(String newName, Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback, DebugContext debugForCopy) {
+        Graph copy = new Graph(newName, options, debugForCopy);
         UnmodifiableEconomicMap<Node, Node> duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), (EconomicMap<Node, Node>) null);
         if (duplicationMapCallback != null) {
             duplicationMapCallback.accept(duplicates);
@@ -342,6 +367,10 @@ public class Graph {
 
     public final OptionValues getOptions() {
         return options;
+    }
+
+    public DebugContext getDebug() {
+        return debug;
     }
 
     @Override
@@ -806,7 +835,7 @@ public class Graph {
 
     }
 
-    private static final DebugCounter GraphCompressions = Debug.counter("GraphCompressions");
+    private static final CounterKey GraphCompressions = DebugContext.counter("GraphCompressions");
 
     /**
      * If the {@linkplain Options#GraphCompressionThreshold compression threshold} is met, the list
@@ -814,7 +843,7 @@ public class Graph {
      * preserving the ordering between the nodes within the list.
      */
     public boolean maybeCompress() {
-        if (Debug.isDumpEnabledForMethod() || Debug.isLogEnabledForMethod()) {
+        if (debug.isDumpEnabledForMethod() || debug.isLogEnabledForMethod()) {
             return false;
         }
         int liveNodeCount = getNodeCount();
@@ -823,7 +852,7 @@ public class Graph {
         if (compressionThreshold == 0 || liveNodePercent >= compressionThreshold) {
             return false;
         }
-        GraphCompressions.increment();
+        GraphCompressions.increment(debug);
         int nextId = 0;
         for (int i = 0; nextId < liveNodeCount; i++) {
             Node n = nodes[i];
@@ -1077,7 +1106,7 @@ public class Graph {
     }
 
     /**
-     * Adds duplicates of the nodes in {@code nodes} to this graph. This will recreate any edges
+     * Adds duplicates of the nodes in {@code newNodes} to this graph. This will recreate any edges
      * between the duplicate nodes. The {@code replacement} map can be used to replace a node from
      * the source graph by a given node (which must already be in this graph). Edges between
      * duplicate and replacement nodes will also be recreated so care should be taken regarding the
@@ -1118,11 +1147,11 @@ public class Graph {
 
     }
 
-    private static final DebugTimer DuplicateGraph = Debug.timer("DuplicateGraph");
+    private static final TimerKey DuplicateGraph = DebugContext.timer("DuplicateGraph");
 
     @SuppressWarnings({"all", "try"})
     public EconomicMap<Node, Node> addDuplicates(Iterable<? extends Node> newNodes, final Graph oldGraph, int estimatedNodeCount, DuplicationReplacement replacements) {
-        try (DebugCloseable s = DuplicateGraph.start()) {
+        try (DebugCloseable s = DuplicateGraph.start(getDebug())) {
             return NodeClass.addGraphDuplicate(this, oldGraph, estimatedNodeCount, newNodes, replacements);
         }
     }

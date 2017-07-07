@@ -81,6 +81,14 @@ public interface OptionDescriptors extends Iterable<OptionDescriptor> {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @since 1.0
+     */
+    @Override
+    Iterator<OptionDescriptor> iterator();
+
+    /**
      * Create an {@link OptionDescriptors} instance from a list. The option descriptors
      * implementation is backed by a {@link LinkedHashMap} that preserves ordering.
      *

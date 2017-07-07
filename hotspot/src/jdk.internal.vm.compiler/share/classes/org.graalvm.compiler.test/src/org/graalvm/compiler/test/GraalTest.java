@@ -22,12 +22,25 @@
  */
 package org.graalvm.compiler.test;
 
+import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
+import static org.graalvm.compiler.debug.DebugContext.NO_DESCRIPTION;
+import static org.graalvm.compiler.debug.DebugContext.NO_GLOBAL_METRIC_VALUES;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugDumpHandler;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.internal.ComparisonCriteria;
 import org.junit.internal.ExactComparisonCriteria;
@@ -364,5 +377,45 @@ public class GraalTest {
      */
     public static void assertFalse(boolean condition, String message, Object... objects) {
         assertTrue(!condition, message, objects);
+    }
+
+    /**
+     * Gets the {@link DebugHandlersFactory}s available for a {@link DebugContext}.
+     */
+    protected Collection<DebugHandlersFactory> getDebugHandlersFactories() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Gets a {@link DebugContext} object corresponding to {@code options}, creating a new one if
+     * none currently exists. Debug contexts created by this method will have their
+     * {@link DebugDumpHandler}s closed in {@link #afterTest()}.
+     */
+    protected DebugContext getDebugContext(OptionValues options) {
+        List<DebugContext> cached = cachedDebugs.get();
+        if (cached == null) {
+            cached = new ArrayList<>();
+            cachedDebugs.set(cached);
+        }
+        for (DebugContext debug : cached) {
+            if (debug.getOptions() == options) {
+                return debug;
+            }
+        }
+        DebugContext debug = DebugContext.create(options, NO_DESCRIPTION, NO_GLOBAL_METRIC_VALUES, DEFAULT_LOG_STREAM, getDebugHandlersFactories());
+        cached.add(debug);
+        return debug;
+    }
+
+    private final ThreadLocal<List<DebugContext>> cachedDebugs = new ThreadLocal<>();
+
+    @After
+    public void afterTest() {
+        List<DebugContext> cached = cachedDebugs.get();
+        if (cached != null) {
+            for (DebugContext debug : cached) {
+                debug.closeDumpHandlers(true);
+            }
+        }
     }
 }

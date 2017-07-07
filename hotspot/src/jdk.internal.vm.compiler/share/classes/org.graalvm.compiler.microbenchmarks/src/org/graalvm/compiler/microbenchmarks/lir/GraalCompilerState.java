@@ -34,12 +34,6 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import org.openjdk.jmh.annotations.Level;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.code.CompilationResult;
@@ -51,9 +45,8 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugEnvironment;
-import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
@@ -81,6 +74,11 @@ import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterConfig;
@@ -106,6 +104,7 @@ public abstract class GraalCompilerState {
      * The graph processed by the benchmark.
      */
     private final OptionValues options;
+    private final DebugContext debug;
     private StructuredGraph graph;
     private final Backend backend;
     private final Providers providers;
@@ -119,12 +118,7 @@ public abstract class GraalCompilerState {
         this.options = Graal.getRequiredCapability(OptionValues.class);
         this.backend = Graal.getRequiredCapability(RuntimeProvider.class).getHostBackend();
         this.providers = backend.getProviders();
-
-        // Ensure a debug configuration for this thread is initialized
-        if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            DebugEnvironment.ensureInitialized(options);
-        }
-
+        this.debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
     }
 
     protected boolean useProfilingInfo() {
@@ -136,10 +130,10 @@ public abstract class GraalCompilerState {
         GraalState graal = new GraalState();
         ResolvedJavaMethod method = graal.metaAccess.lookupJavaMethod(getMethod());
         StructuredGraph structuredGraph = null;
-        try (Debug.Scope s = Debug.scope("GraphState", method)) {
+        try (DebugContext.Scope s = debug.scope("GraphState", method)) {
             structuredGraph = preprocessOriginal(getGraph(graal, method, useProfilingInfo()));
         } catch (Throwable t) {
-            Debug.handle(t);
+            debug.handle(t);
         }
         this.originalGraph = structuredGraph;
     }
@@ -321,7 +315,7 @@ public abstract class GraalCompilerState {
     protected final void prepareRequest() {
         assert originalGraph != null : "call initialzeMethod first";
         CompilationIdentifier compilationId = backend.getCompilationIdentifier(originalGraph.method());
-        graph = originalGraph.copyWithIdentifier(compilationId);
+        graph = originalGraph.copyWithIdentifier(compilationId, originalGraph.getDebug());
         assert !graph.isFrozen();
         ResolvedJavaMethod installedCodeOwner = graph.method();
         request = new Request<>(graph, installedCodeOwner, getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL,
@@ -376,7 +370,7 @@ public abstract class GraalCompilerState {
         codeEmittingOrder = ComputeBlockOrder.computeCodeEmittingOrder(blocks.length, startBlock);
         linearScanOrder = ComputeBlockOrder.computeLinearScanOrder(blocks.length, startBlock);
 
-        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder, getGraphOptions());
+        LIR lir = new LIR(cfg, linearScanOrder, codeEmittingOrder, getGraphOptions(), getGraphDebug());
         FrameMapBuilder frameMapBuilder = request.backend.newFrameMapBuilder(registerConfig);
         lirGenRes = request.backend.newLIRGenerationResult(graph.compilationId(), lir, frameMapBuilder, request.graph, stub);
         lirGenTool = request.backend.newLIRGenerator(lirGenRes);
@@ -385,6 +379,10 @@ public abstract class GraalCompilerState {
 
     protected OptionValues getGraphOptions() {
         return graph.getOptions();
+    }
+
+    protected DebugContext getGraphDebug() {
+        return graph.getDebug();
     }
 
     private static ControlFlowGraph deepCopy(ControlFlowGraph cfg) {

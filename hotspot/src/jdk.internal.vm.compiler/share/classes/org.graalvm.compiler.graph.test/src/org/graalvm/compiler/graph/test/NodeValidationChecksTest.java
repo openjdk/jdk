@@ -51,7 +51,7 @@ public class NodeValidationChecksTest extends GraphTest {
 
     @Test
     public void testInputNotAlive() {
-        Graph graph = new Graph(getOptions());
+        Graph graph = new Graph(getOptions(), getDebug());
         TestNode node = new TestNode(null, null);
         try {
             graph.add(new TestNode(node, null));
@@ -64,7 +64,7 @@ public class NodeValidationChecksTest extends GraphTest {
 
     @Test
     public void testSuccessorNotAlive() {
-        Graph graph = new Graph(getOptions());
+        Graph graph = new Graph(getOptions(), getDebug());
         TestNode node = new TestNode(null, null);
         try {
             graph.add(new TestNode(null, node));

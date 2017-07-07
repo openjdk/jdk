@@ -28,6 +28,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
@@ -47,12 +48,15 @@ public class AMD64AddressLowering extends AddressLowering {
         AMD64AddressNode ret = new AMD64AddressNode(base, offset);
         boolean changed;
         do {
-            changed = improve(ret);
+            changed = improve(base.getDebug(), ret);
         } while (changed);
         return base.graph().unique(ret);
     }
 
-    protected boolean improve(AMD64AddressNode ret) {
+    /**
+     * @param debug
+     */
+    protected boolean improve(DebugContext debug, AMD64AddressNode ret) {
         ValueNode newBase = improveInput(ret, ret.getBase(), 0);
         if (newBase != ret.getBase()) {
             ret.setBase(newBase);

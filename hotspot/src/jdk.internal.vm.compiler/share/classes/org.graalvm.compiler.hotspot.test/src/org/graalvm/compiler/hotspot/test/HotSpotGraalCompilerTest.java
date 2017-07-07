@@ -30,6 +30,7 @@ import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -54,7 +55,8 @@ public abstract class HotSpotGraalCompilerTest extends GraalCompilerTest {
         HotSpotGraalRuntimeProvider rt = (HotSpotGraalRuntimeProvider) Graal.getRequiredCapability(RuntimeProvider.class);
         HotSpotProviders providers = rt.getHostBackend().getProviders();
         CompilationIdentifier compilationId = runtime().getHostBackend().getCompilationIdentifier(method);
-        StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, compilationId, getInitialOptions());
+        OptionValues options = getInitialOptions();
+        StructuredGraph graph = compiler.getIntrinsicGraph(method, providers, compilationId, options, getDebugContext(options));
         if (graph != null) {
             return getCode(method, graph, true, true, graph.getOptions());
         }

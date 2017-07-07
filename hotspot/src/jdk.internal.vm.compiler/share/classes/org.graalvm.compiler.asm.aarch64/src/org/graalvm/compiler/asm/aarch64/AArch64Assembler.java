@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.asm.aarch64;
 
+import static jdk.vm.ci.aarch64.AArch64.cpuRegisters;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.ADD;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.ADDS;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.ADR;
@@ -1008,6 +1009,100 @@ public abstract class AArch64Assembler extends Assembler {
         assert (srcSize == 8 || srcSize == 16 || srcSize == 32) && srcSize != targetSize;
         int transferSize = NumUtil.log2Ceil(srcSize / 8);
         loadStoreInstruction(LDRS, rt, address, generalFromSize(targetSize), transferSize);
+    }
+
+    public enum PrefetchMode {
+        PLDL1KEEP(0b00000),
+        PLDL1STRM(0b00001),
+        PLDL2KEEP(0b00010),
+        PLDL2STRM(0b00011),
+        PLDL3KEEP(0b00100),
+        PLDL3STRM(0b00101),
+
+        PLIL1KEEP(0b01000),
+        PLIL1STRM(0b01001),
+        PLIL2KEEP(0b01010),
+        PLIL2STRM(0b01011),
+        PLIL3KEEP(0b01100),
+        PLIL3STRM(0b01101),
+
+        PSTL1KEEP(0b10000),
+        PSTL1STRM(0b10001),
+        PSTL2KEEP(0b10010),
+        PSTL2STRM(0b10011),
+        PSTL3KEEP(0b10100),
+        PSTL3STRM(0b10101);
+
+        private final int encoding;
+
+        PrefetchMode(int encoding) {
+            this.encoding = encoding;
+        }
+
+        private static PrefetchMode[] modes = {
+                        PLDL1KEEP,
+                        PLDL1STRM,
+                        PLDL2KEEP,
+                        PLDL2STRM,
+                        PLDL3KEEP,
+                        PLDL3STRM,
+
+                        null,
+                        null,
+
+                        PLIL1KEEP,
+                        PLIL1STRM,
+                        PLIL2KEEP,
+                        PLIL2STRM,
+                        PLIL3KEEP,
+                        PLIL3STRM,
+
+                        null,
+                        null,
+
+                        PSTL1KEEP,
+                        PSTL1STRM,
+                        PSTL2KEEP,
+                        PSTL2STRM,
+                        PSTL3KEEP,
+                        PSTL3STRM
+        };
+
+        public static PrefetchMode lookup(int enc) {
+            assert enc >= 00 && enc < modes.length;
+            return modes[enc];
+        }
+
+        public Register toRegister() {
+            return cpuRegisters.get(encoding);
+        }
+    }
+
+    /*
+     * implements a prefetch at a 64-bit aligned address using a scaled 12 bit or unscaled 9 bit
+     * displacement addressing mode
+     *
+     * @param rt general purpose register. May not be null, zr or stackpointer.
+     *
+     * @param address only displacement addressing modes allowed. May not be null.
+     */
+    public void prfm(AArch64Address address, PrefetchMode mode) {
+        assert (address.getAddressingMode() == AddressingMode.IMMEDIATE_SCALED ||
+                        address.getAddressingMode() == AddressingMode.IMMEDIATE_UNSCALED ||
+                        address.getAddressingMode() == AddressingMode.REGISTER_OFFSET);
+        assert mode != null;
+        final int srcSize = 64;
+        final int transferSize = NumUtil.log2Ceil(srcSize / 8);
+        final Register rt = mode.toRegister();
+        // this looks weird but that's because loadStoreInstruction is weird
+        // instruction select fields are size [31:30], v [26] and opc [25:24]
+        // prfm requires size == 0b11, v == 0b0 and opc == 0b11
+        // passing LDRS ensures opc[1] == 0b1
+        // (n.b. passing LDR/STR makes no difference to opc[1:0]!!)
+        // passing General64 ensures opc[0] == 0b1 and v = 0b0
+        // (n.b. passing General32 ensures opc[0] == 0b0 and v = 0b0)
+        // srcSize 64 ensures size == 0b11
+        loadStoreInstruction(LDRS, rt, address, General64, transferSize);
     }
 
     /**

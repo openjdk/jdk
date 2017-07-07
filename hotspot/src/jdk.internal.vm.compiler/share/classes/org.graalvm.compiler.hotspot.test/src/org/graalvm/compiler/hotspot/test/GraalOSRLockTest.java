@@ -32,7 +32,7 @@ import java.util.HashSet;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.phases.HighTier;
-import org.graalvm.compiler.debug.DebugEnvironment;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.hotspot.phases.OnStackReplacementPhase;
@@ -40,7 +40,6 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -147,11 +146,6 @@ public class GraalOSRLockTest extends GraalOSRTestBase {
         Assert.assertFalse(wasLocked());
         // force a safepoint and hope the inflated locks are deflated
         System.gc();
-    }
-
-    @BeforeClass
-    public static void init() {
-        DebugEnvironment.ensureInitialized(getInitialOptions());
     }
 
     // @Test
@@ -313,7 +307,8 @@ public class GraalOSRLockTest extends GraalOSRTestBase {
             EconomicMap<OptionKey<?>, Object> overrides = osrLockNoDeopt();
             overrides.put(HighTier.Options.Inline, false);
             OptionValues options = new OptionValues(getInitialOptions(), overrides);
-            compile(options, leaf, -1);
+            DebugContext debug = getDebugContext(options);
+            compile(debug, leaf, -1);
             testOSR(options, "testRecursiveLockingRoot");
         });
     }
@@ -327,7 +322,8 @@ public class GraalOSRLockTest extends GraalOSRTestBase {
             EconomicMap<OptionKey<?>, Object> overrides = osrLockNoDeopt();
             overrides.put(HighTier.Options.Inline, false);
             OptionValues options = new OptionValues(getInitialOptions(), overrides);
-            compile(options, root, -1);
+            DebugContext debug = getDebugContext(options);
+            compile(debug, root, -1);
             testOSR(options, "testRecursiveLeafOSR");
             // force a safepoint and hope the inflated locks are deflated
             System.gc();

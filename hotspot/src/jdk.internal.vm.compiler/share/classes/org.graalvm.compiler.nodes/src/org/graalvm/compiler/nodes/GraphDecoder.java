@@ -41,7 +41,7 @@ import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.util.TypeReader;
 import org.graalvm.compiler.core.common.util.UnsafeArrayTypeReader;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Edges;
 import org.graalvm.compiler.graph.Graph;
@@ -61,6 +61,7 @@ import org.graalvm.compiler.nodes.GraphDecoder.ProxyPlaceholder;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin.LoopExplosionKind;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
@@ -341,23 +342,28 @@ public class GraphDecoder {
     protected final Architecture architecture;
     /** The target graph where decoded nodes are added to. */
     protected final StructuredGraph graph;
+    protected final OptionValues options;
+    protected final DebugContext debug;
+
     private final EconomicMap<NodeClass<?>, ArrayDeque<Node>> reusableFloatingNodes;
 
     public GraphDecoder(Architecture architecture, StructuredGraph graph) {
         this.architecture = architecture;
         this.graph = graph;
+        this.options = graph.getOptions();
+        this.debug = graph.getDebug();
         reusableFloatingNodes = EconomicMap.create(Equivalence.IDENTITY);
     }
 
     @SuppressWarnings("try")
     public final void decode(EncodedGraph encodedGraph) {
-        try (Debug.Scope scope = Debug.scope("GraphDecoder", graph)) {
+        try (DebugContext.Scope scope = debug.scope("GraphDecoder", graph)) {
             MethodScope methodScope = new MethodScope(null, graph, encodedGraph, LoopExplosionKind.NONE);
             decode(createInitialLoopScope(methodScope, null));
             cleanupGraph(methodScope);
             assert graph.verify();
         } catch (Throwable ex) {
-            Debug.handle(ex);
+            debug.handle(ex);
         }
     }
 
@@ -1355,7 +1361,8 @@ class LoopDetector implements Runnable {
 
     @Override
     public void run() {
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "Before loop detection");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "Before loop detection");
 
         List<Loop> orderedLoops = findLoops();
         assert orderedLoops.get(orderedLoops.size() - 1) == irreducibleLoopHandler : "outermost loop must be the last element in the list";
@@ -1378,11 +1385,11 @@ class LoopDetector implements Runnable {
             } else {
                 insertLoopNodes(loop);
             }
-            Debug.dump(Debug.DETAILED_LEVEL, graph, "After handling of loop %s", loop.header);
+            debug.dump(DebugContext.DETAILED_LEVEL, graph, "After handling of loop %s", loop.header);
         }
 
         logIrreducibleLoops();
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "After loop detection");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "After loop detection");
     }
 
     private List<Loop> findLoops() {
@@ -1909,15 +1916,16 @@ class LoopDetector implements Runnable {
      */
     @SuppressWarnings("try")
     private void logIrreducibleLoops() {
-        try (Debug.Scope s = Debug.scope("IrreducibleLoops")) {
-            if (Debug.isLogEnabled(Debug.BASIC_LEVEL) && irreducibleLoopSwitch != null) {
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("IrreducibleLoops")) {
+            if (debug.isLogEnabled(DebugContext.BASIC_LEVEL) && irreducibleLoopSwitch != null) {
                 StringBuilder msg = new StringBuilder("Inserted state machine to remove irreducible loops. Dispatching to the following states: ");
                 String sep = "";
                 for (int i = 0; i < irreducibleLoopSwitch.keyCount(); i++) {
                     msg.append(sep).append(irreducibleLoopSwitch.keyAt(i).asInt());
                     sep = ", ";
                 }
-                Debug.log(Debug.BASIC_LEVEL, "%s", msg);
+                debug.log(DebugContext.BASIC_LEVEL, "%s", msg);
             }
         }
     }

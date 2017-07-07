@@ -25,6 +25,7 @@ package org.graalvm.compiler.lir.asm;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -39,7 +40,7 @@ public interface CompilationResultBuilderFactory {
      * Creates a new {@link CompilationResultBuilder}.
      */
     CompilationResultBuilder createBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-                    OptionValues options, CompilationResult compilationResult);
+                    OptionValues options, DebugContext debug, CompilationResult compilationResult);
 
     /**
      * The default factory creates a standard {@link CompilationResultBuilder}.
@@ -48,8 +49,8 @@ public interface CompilationResultBuilderFactory {
 
         @Override
         public CompilationResultBuilder createBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder,
-                        FrameContext frameContext, OptionValues options, CompilationResult compilationResult) {
-            return new CompilationResultBuilder(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, compilationResult);
+                        FrameContext frameContext, OptionValues options, DebugContext debug, CompilationResult compilationResult) {
+            return new CompilationResultBuilder(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult);
         }
     };
 }

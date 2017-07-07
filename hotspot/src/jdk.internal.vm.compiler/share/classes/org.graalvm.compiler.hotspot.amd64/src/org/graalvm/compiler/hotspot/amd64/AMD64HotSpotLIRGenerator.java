@@ -41,7 +41,7 @@ import org.graalvm.compiler.core.common.CompressEncoding;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.common.spi.LIRKindTool;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
@@ -555,7 +555,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
             LIR lir = getResult().getLIR();
             ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(lir.getControlFlowGraph().getStartBlock());
             instructions.add(1, op);
-            Debug.dump(Debug.INFO_LEVEL, lir, "created rescue dummy op");
+            lir.getDebug().dump(DebugContext.INFO_LEVEL, lir, "created rescue dummy op");
         }
     }
 

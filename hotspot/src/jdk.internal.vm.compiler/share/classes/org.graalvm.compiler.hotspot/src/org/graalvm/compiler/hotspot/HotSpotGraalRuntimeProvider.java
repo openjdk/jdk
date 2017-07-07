@@ -23,6 +23,9 @@
 package org.graalvm.compiler.hotspot;
 
 import org.graalvm.compiler.api.runtime.GraalRuntime;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetCounter.Group;
@@ -55,19 +58,27 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
     GraalHotSpotVMConfig getVMConfig();
 
     /**
+     * Opens a debug context for compiling {@code compilable}. The {@link DebugContext#close()}
+     * method should be called on the returned object once the compilation is finished.
+     *
+     * @param compilationOptions the options used to configure the compilation debug context
+     * @param compilationId a system wide unique compilation id
+     * @param compilable the input to the compilation
+     */
+    DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories);
+
+    /**
      * Gets the option values associated with this runtime.
      */
     OptionValues getOptions();
 
     /**
-     * Gets the option values associated with this runtime that are applicable for given method.
+     * Gets the option values associated with this runtime that are applicable for a given method.
      *
      * @param forMethod the method we are seeking for options for
-     * @return the options - by default same as {@link #getOptions()}
+     * @return the options applicable for compiling {@code method}
      */
-    default OptionValues getOptions(ResolvedJavaMethod forMethod) {
-        return getOptions();
-    }
+    OptionValues getOptions(ResolvedJavaMethod forMethod);
 
     /**
      * Determines if the VM is currently bootstrapping the JVMCI compiler.

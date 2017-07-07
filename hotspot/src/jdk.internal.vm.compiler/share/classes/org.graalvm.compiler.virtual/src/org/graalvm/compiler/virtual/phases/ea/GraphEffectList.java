@@ -24,6 +24,7 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.ArrayList;
 
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ControlSinkNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -42,6 +43,10 @@ import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 
 public final class GraphEffectList extends EffectList {
+
+    public GraphEffectList(DebugContext debug) {
+        super(debug);
+    }
 
     /**
      * Determines how many objects are virtualized (positive) or materialized (negative) by this

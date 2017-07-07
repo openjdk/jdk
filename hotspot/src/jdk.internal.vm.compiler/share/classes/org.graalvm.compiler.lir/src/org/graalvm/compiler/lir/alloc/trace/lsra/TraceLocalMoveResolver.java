@@ -37,8 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
@@ -54,11 +54,9 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.Value;
 
-/**
- */
 final class TraceLocalMoveResolver {
 
-    private static final DebugCounter cycleBreakingSlotsAllocated = Debug.counter("TraceRA[cycleBreakingSlotsAllocated(local)]");
+    private static final CounterKey cycleBreakingSlotsAllocated = DebugContext.counter("TraceRA[cycleBreakingSlotsAllocated(local)]");
 
     private static final int STACK_SLOT_IN_CALLER_FRAME_IDX = -1;
     private final TraceLinearScan allocator;
@@ -73,6 +71,8 @@ final class TraceLocalMoveResolver {
 
     private int[] stackBlocked;
     private final int firstVirtualStackIndex;
+
+    private final DebugContext debug;
 
     private int getStackArrayIndex(Value stackSlotValue) {
         if (isStackSlot(stackSlotValue)) {
@@ -168,6 +168,7 @@ final class TraceLocalMoveResolver {
     protected TraceLocalMoveResolver(TraceLinearScan allocator) {
 
         this.allocator = allocator;
+        this.debug = allocator.getDebug();
         this.mappingFrom = new ArrayList<>(8);
         this.mappingFromOpr = new ArrayList<>(8);
         this.mappingTo = new ArrayList<>(8);
@@ -256,7 +257,7 @@ final class TraceLocalMoveResolver {
             assert areMultipleReadsAllowed() || valueBlocked(location) == 0 : "location already marked as used: " + location;
             int direction = 1;
             setValueBlocked(location, direction);
-            Debug.log("block %s", location);
+            debug.log("block %s", location);
         }
     }
 
@@ -266,7 +267,7 @@ final class TraceLocalMoveResolver {
         if (mightBeBlocked(location)) {
             assert valueBlocked(location) > 0 : "location already marked as unused: " + location;
             setValueBlocked(location, -1);
-            Debug.log("unblock %s", location);
+            debug.log("unblock %s", location);
         }
     }
 
@@ -329,8 +330,8 @@ final class TraceLocalMoveResolver {
 
         insertionBuffer.append(insertIdx, createMove(allocator.getOperand(fromInterval), allocator.getOperand(toInterval), fromInterval.location(), toInterval.location()));
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
+        if (debug.isLogEnabled()) {
+            debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
         }
     }
 
@@ -354,16 +355,16 @@ final class TraceLocalMoveResolver {
         LIRInstruction move = getAllocator().getSpillMoveFactory().createLoad(toOpr, fromOpr);
         insertionBuffer.append(insertIdx, move);
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("insert move from value %s to %s at %d", fromOpr, toInterval, insertIdx);
+        if (debug.isLogEnabled()) {
+            debug.log("insert move from value %s to %s at %d", fromOpr, toInterval, insertIdx);
         }
     }
 
     @SuppressWarnings("try")
     private void resolveMappings() {
-        try (Indent indent = Debug.logAndIndent("resolveMapping")) {
+        try (Indent indent = debug.logAndIndent("resolveMapping")) {
             assert verifyBeforeResolve();
-            if (Debug.isLogEnabled()) {
+            if (debug.isLogEnabled()) {
                 printMapping();
             }
 
@@ -438,7 +439,7 @@ final class TraceLocalMoveResolver {
             if (spillSlot1 == null) {
                 spillSlot1 = getAllocator().getFrameMapBuilder().allocateSpillSlot(allocator.getKind(fromInterval1));
                 fromInterval1.setSpillSlot(spillSlot1);
-                cycleBreakingSlotsAllocated.increment();
+                cycleBreakingSlotsAllocated.increment(debug);
             }
             spillInterval(spillCandidate, fromInterval1, spillSlot1);
             return;
@@ -463,8 +464,8 @@ final class TraceLocalMoveResolver {
 
         spillInterval.assignLocation(spillSlot);
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("created new Interval for spilling: %s", spillInterval);
+        if (debug.isLogEnabled()) {
+            debug.log("created new Interval for spilling: %s", spillInterval);
         }
         blockRegisters(spillInterval);
 
@@ -476,7 +477,7 @@ final class TraceLocalMoveResolver {
 
     @SuppressWarnings("try")
     private void printMapping() {
-        try (Indent indent = Debug.logAndIndent("Mapping")) {
+        try (Indent indent = debug.logAndIndent("Mapping")) {
             for (int i = mappingFrom.size() - 1; i >= 0; i--) {
                 TraceInterval fromInterval = mappingFrom.get(i);
                 TraceInterval toInterval = mappingTo.get(i);
@@ -487,7 +488,7 @@ final class TraceLocalMoveResolver {
                 } else {
                     from = fromInterval.location().toString();
                 }
-                Debug.log("move %s <- %s", from, to);
+                debug.log("move %s <- %s", from, to);
             }
         }
     }
@@ -520,8 +521,8 @@ final class TraceLocalMoveResolver {
     public void addMapping(TraceInterval fromInterval, TraceInterval toInterval) {
 
         if (isIllegal(toInterval.location()) && toInterval.canMaterialize()) {
-            if (Debug.isLogEnabled()) {
-                Debug.log("no store to rematerializable interval %s needed", toInterval);
+            if (debug.isLogEnabled()) {
+                debug.log("no store to rematerializable interval %s needed", toInterval);
             }
             return;
         }
@@ -531,8 +532,8 @@ final class TraceLocalMoveResolver {
             addMapping(rematValue, toInterval);
             return;
         }
-        if (Debug.isLogEnabled()) {
-            Debug.log("add move mapping from %s to %s", fromInterval, toInterval);
+        if (debug.isLogEnabled()) {
+            debug.log("add move mapping from %s to %s", fromInterval, toInterval);
         }
 
         assert fromInterval.operandNumber != toInterval.operandNumber : "from and to interval equal: " + fromInterval;
@@ -544,8 +545,8 @@ final class TraceLocalMoveResolver {
     }
 
     public void addMapping(Constant fromOpr, TraceInterval toInterval) {
-        if (Debug.isLogEnabled()) {
-            Debug.log("add move mapping from %s to %s", fromOpr, toInterval);
+        if (debug.isLogEnabled()) {
+            debug.log("add move mapping from %s to %s", fromOpr, toInterval);
         }
 
         mappingFrom.add(null);

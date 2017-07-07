@@ -32,9 +32,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.java.GraphBuilderPhase;
@@ -58,6 +58,7 @@ import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.graph.StatelessPostOrderNodeIterator;
 
@@ -240,12 +241,14 @@ public class StaticAnalysis {
                  * Build the Graal graph for the method using the bytecode parser provided by Graal.
                  */
 
-                StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).build();
+                OptionValues options = getInitialOptions();
+                DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+                StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).build();
                 /*
                  * Support for graph dumping, IGV uses this information to show the method name of a
                  * graph.
                  */
-                try (Scope scope = Debug.scope("graph building", graph)) {
+                try (DebugContext.Scope scope = debug.scope("graph building", graph)) {
                     /*
                      * We want all types to be resolved by the graph builder, i.e., we want classes
                      * referenced by the bytecodes to be loaded and initialized. Since we do not run
@@ -271,7 +274,7 @@ public class StaticAnalysis {
                     GraphBuilderPhase.Instance graphBuilder = new GraphBuilderPhase.Instance(metaAccess, stampProvider, null, null, graphBuilderConfig, optimisticOpts, null);
                     graphBuilder.apply(graph);
                 } catch (Throwable ex) {
-                    Debug.handle(ex);
+                    debug.handle(ex);
                 }
 
                 /*

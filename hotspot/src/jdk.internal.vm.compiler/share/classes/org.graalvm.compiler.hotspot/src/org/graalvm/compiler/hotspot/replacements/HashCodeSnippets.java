@@ -36,6 +36,7 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQ
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 
 import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -78,15 +79,15 @@ public class HashCodeSnippets implements Snippets {
 
         private final SnippetInfo identityHashCodeSnippet = snippet(HashCodeSnippets.class, "identityHashCodeSnippet", HotSpotReplacementsUtil.MARK_WORD_LOCATION);
 
-        public Templates(OptionValues options, HotSpotProviders providers, TargetDescription target) {
-            super(options, providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
         }
 
         public void lower(IdentityHashCodeNode node, LoweringTool tool) {
             StructuredGraph graph = node.graph();
             Arguments args = new Arguments(identityHashCodeSnippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("thisObj", node.object);
-            SnippetTemplate template = template(args);
+            SnippetTemplate template = template(node.getDebug(), args);
             template.instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, args);
         }
 

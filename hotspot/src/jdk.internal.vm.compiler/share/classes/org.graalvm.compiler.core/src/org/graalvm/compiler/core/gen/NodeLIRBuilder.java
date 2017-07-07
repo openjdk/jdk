@@ -26,12 +26,13 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isLegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.core.common.GraalOptions.MatchExpressions;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
+import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 import static org.graalvm.compiler.lir.LIR.verifyBlock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -41,8 +42,7 @@ import org.graalvm.compiler.core.match.ComplexMatchValue;
 import org.graalvm.compiler.core.match.MatchPattern;
 import org.graalvm.compiler.core.match.MatchRuleRegistry;
 import org.graalvm.compiler.core.match.MatchStatement;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.GraalGraphError;
@@ -135,7 +135,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
         this.debugInfoBuilder = createDebugInfoBuilder(graph, this);
         OptionValues options = graph.getOptions();
         if (MatchExpressions.getValue(options)) {
-            matchRules = MatchRuleRegistry.lookup(nodeMatchRules.getClass(), options);
+            matchRules = MatchRuleRegistry.lookup(nodeMatchRules.getClass(), options, graph.getDebug());
         }
         traceLIRGeneratorLevel = TTY.isSuppressed() ? 0 : Options.TraceLIRGeneratorLevel.getValue(options);
 
@@ -147,9 +147,8 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
         return nodeMatchRules;
     }
 
-    @SuppressWarnings({"unused"})
     protected DebugInfoBuilder createDebugInfoBuilder(StructuredGraph graph, NodeValueMap nodeValueMap) {
-        return new DebugInfoBuilder(nodeValueMap);
+        return new DebugInfoBuilder(nodeValueMap, graph.getDebug());
     }
 
     /**
@@ -351,6 +350,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
                 if (node instanceof ValueNode) {
+                    DebugContext debug = node.getDebug();
                     ValueNode valueNode = (ValueNode) node;
                     if (trace) {
                         TTY.println("LIRGen for " + valueNode);
@@ -368,9 +368,9 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
                         }
                     } else if (ComplexMatchValue.INTERIOR_MATCH.equals(operand)) {
                         // Doesn't need to be evaluated
-                        Debug.log("interior match for %s", valueNode);
+                        debug.log("interior match for %s", valueNode);
                     } else if (operand instanceof ComplexMatchValue) {
-                        Debug.log("complex match for %s", valueNode);
+                        debug.log("complex match for %s", valueNode);
                         ComplexMatchValue match = (ComplexMatchValue) operand;
                         operand = match.evaluate(this);
                         if (operand != null) {
@@ -403,11 +403,12 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
     @SuppressWarnings("try")
     protected void matchComplexExpressions(List<Node> nodes) {
         if (matchRules != null) {
-            try (Scope s = Debug.scope("MatchComplexExpressions")) {
+            DebugContext debug = gen.getResult().getLIR().getDebug();
+            try (DebugContext.Scope s = debug.scope("MatchComplexExpressions")) {
                 if (LogVerbose.getValue(nodeOperands.graph().getOptions())) {
                     int i = 0;
                     for (Node node : nodes) {
-                        Debug.log("%d: (%s) %1S", i++, node.getUsageCount(), node);
+                        debug.log("%d: (%s) %1S", i++, node.getUsageCount(), node);
                     }
                 }
 
@@ -439,15 +440,15 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
             TTY.println("Emitting LIR for instruction " + instr);
         }
         currentInstruction = instr;
-
-        Debug.log("Visiting %s", instr);
+        DebugContext debug = instr.getDebug();
+        debug.log("Visiting %s", instr);
         emitNode(instr);
-        Debug.log("Operand for %s = %s", instr, getOperand(instr));
+        debug.log("Operand for %s = %s", instr, getOperand(instr));
     }
 
     protected void emitNode(ValueNode node) {
-        if (Debug.isLogEnabled() && node.stamp().isEmpty()) {
-            Debug.log("This node has an empty stamp, we are emitting dead code(?): %s", node);
+        if (node.getDebug().isLogEnabled() && node.stamp().isEmpty()) {
+            node.getDebug().log("This node has an empty stamp, we are emitting dead code(?): %s", node);
         }
         setSourcePosition(node.getNodeSourcePosition());
         if (node instanceof LIRLowerable) {

@@ -87,6 +87,10 @@ public abstract class Loop<T extends AbstractBlockBase<T>> {
         return exits;
     }
 
+    public void addExit(T t) {
+        exits.add(t);
+    }
+
     /**
      * Determines if one loop is a transitive parent of another loop.
      *

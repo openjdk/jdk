@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
@@ -47,7 +46,7 @@ public final class LinearScanRegisterAllocationPhase extends LinearScanAllocatio
 
     @SuppressWarnings("try")
     void allocateRegisters() {
-        try (Indent indent = Debug.logAndIndent("allocate registers")) {
+        try (Indent indent = allocator.getDebug().logAndIndent("allocate registers")) {
             Interval precoloredIntervals;
             Interval notPrecoloredIntervals;
 

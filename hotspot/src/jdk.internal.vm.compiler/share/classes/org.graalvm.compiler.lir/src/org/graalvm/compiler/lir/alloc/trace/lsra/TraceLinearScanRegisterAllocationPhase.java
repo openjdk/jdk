@@ -25,7 +25,7 @@ package org.graalvm.compiler.lir.alloc.trace.lsra;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
@@ -43,7 +43,8 @@ final class TraceLinearScanRegisterAllocationPhase extends TraceLinearScanAlloca
 
     @SuppressWarnings("try")
     private static void allocateRegisters(TraceLinearScan allocator) {
-        try (Indent indent = Debug.logAndIndent("allocate registers")) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("allocate registers")) {
             FixedInterval precoloredIntervals = allocator.createFixedUnhandledList();
             TraceInterval notPrecoloredIntervals = allocator.createUnhandledListByFrom(TraceLinearScanPhase.IS_VARIABLE_INTERVAL);
 

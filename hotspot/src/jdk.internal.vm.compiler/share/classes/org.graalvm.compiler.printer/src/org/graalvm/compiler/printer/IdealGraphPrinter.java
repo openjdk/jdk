@@ -32,8 +32,8 @@ import java.util.Set;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
-import org.graalvm.compiler.debug.GraalDebugConfig.Options;
-import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -50,6 +50,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
@@ -63,7 +64,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPrinter {
 
     private final boolean tryToSchedule;
-    private SnippetReflectionProvider snippetReflection;
+    private final SnippetReflectionProvider snippetReflection;
 
     /**
      * Creates a new {@link IdealGraphPrinter} that writes to the specified output stream.
@@ -71,15 +72,11 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * @param tryToSchedule If false, no scheduling is done, which avoids exceptions for
      *            non-schedulable graphs.
      */
-    public IdealGraphPrinter(OutputStream stream, boolean tryToSchedule) {
+    public IdealGraphPrinter(OutputStream stream, boolean tryToSchedule, SnippetReflectionProvider snippetReflection) {
         super(stream);
+        this.snippetReflection = snippetReflection;
         this.begin();
         this.tryToSchedule = tryToSchedule;
-    }
-
-    @Override
-    public void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection) {
-        this.snippetReflection = snippetReflection;
     }
 
     @Override
@@ -92,7 +89,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * as properties.
      */
     @Override
-    public void beginGroup(String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) {
+    public void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) {
         beginGroup();
         beginProperties();
         printProperty("name", name);
@@ -114,8 +111,8 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * nodes.
      */
     @Override
-    public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) {
-        String title = formatTitle(id, format, args);
+    public void print(DebugContext debug, Graph graph, Map<Object, Object> properties, int id, String format, Object... args) {
+        String title = id + ": " + String.format(format, simplifyClassArgs(args));
         beginGraph(title);
         EconomicSet<Node> noBlockNodes = EconomicSet.create(Equivalence.IDENTITY);
         ScheduleResult schedule = null;
@@ -123,9 +120,10 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
             StructuredGraph structuredGraph = (StructuredGraph) graph;
             schedule = structuredGraph.getLastSchedule();
             if (schedule == null && tryToSchedule) {
-                if (Options.PrintGraphWithSchedule.getValue(DebugScope.getConfig().getOptions())) {
+                OptionValues options = graph.getOptions();
+                if (DebugOptions.PrintGraphWithSchedule.getValue(options)) {
                     try {
-                        SchedulePhase schedulePhase = new SchedulePhase(graph.getOptions());
+                        SchedulePhase schedulePhase = new SchedulePhase(options);
                         schedulePhase.apply(structuredGraph);
                         schedule = structuredGraph.getLastSchedule();
                     } catch (Throwable t) {

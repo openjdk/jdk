@@ -30,8 +30,6 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
@@ -471,9 +469,7 @@ public class ReplacementsParseTest extends ReplacementsTest {
         byte[] in = {0, 1, 2, 3, 4};
         byte[] out = new byte[in.length];
         try {
-            try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
-                test("callCopyFirstL2R", in, out);
-            }
+            test("callCopyFirstL2R", in, out);
         } catch (GraalGraphError e) {
             assertTrue(e.getMessage().startsWith("Invalid frame state"));
         }

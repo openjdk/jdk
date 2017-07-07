@@ -27,6 +27,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
@@ -85,7 +86,8 @@ public class UnbalancedMonitorsTest extends GraalCompilerTest {
     private void checkForBailout(String name) throws ClassNotFoundException {
         ResolvedJavaMethod method = getResolvedJavaMethod(LOADER.findClass(INNER_CLASS_NAME), name);
         try {
-            StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).build();
+            OptionValues options = getInitialOptions();
+            StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(options)).method(method).build();
             Plugins plugins = new Plugins(new InvocationPlugins());
             GraphBuilderConfiguration graphBuilderConfig = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
             OptimisticOptimizations optimisticOpts = OptimisticOptimizations.NONE;

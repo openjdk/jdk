@@ -60,7 +60,7 @@ public class EconomyCompilerConfiguration implements CompilerConfiguration {
 
     @Override
     public LIRPhaseSuite<AllocationContext> createAllocationStage(OptionValues options) {
-        return new EconomyAllocationStage();
+        return new EconomyAllocationStage(options);
     }
 
     @Override

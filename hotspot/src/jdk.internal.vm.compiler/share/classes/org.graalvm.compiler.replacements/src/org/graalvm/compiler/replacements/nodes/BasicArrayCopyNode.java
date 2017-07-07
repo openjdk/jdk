@@ -29,7 +29,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
 import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -218,8 +218,9 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
                         tool.setVirtualEntry(destVirtual, destPosInt + i, tool.getEntry(srcVirtual, srcPosInt + i), false);
                     }
                     tool.delete();
-                    if (Debug.isLogEnabled()) {
-                        Debug.log("virtualized arraycopyf(%s, %d, %s, %d, %d)", getSource(), srcPosInt, getDestination(), destPosInt, len);
+                    DebugContext debug = getDebug();
+                    if (debug.isLogEnabled()) {
+                        debug.log("virtualized arraycopy(%s, %d, %s, %d, %d)", getSource(), srcPosInt, getDestination(), destPosInt, len);
                     }
                 } else {
                     ResolvedJavaType sourceType = StampTool.typeOrNull(srcAlias);

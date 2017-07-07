@@ -26,9 +26,8 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
@@ -63,10 +62,10 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         // @formatter:on
     }
 
-    private static final DebugCounter tracesCounter = Debug.counter("TraceRA[traces]");
+    private static final CounterKey tracesCounter = DebugContext.counter("TraceRA[traces]");
 
-    public static final DebugCounter globalStackSlots = Debug.counter("TraceRA[GlobalStackSlots]");
-    public static final DebugCounter allocatedStackSlots = Debug.counter("TraceRA[AllocatedStackSlots]");
+    public static final CounterKey globalStackSlots = DebugContext.counter("TraceRA[GlobalStackSlots]");
+    public static final CounterKey allocatedStackSlots = DebugContext.counter("TraceRA[AllocatedStackSlots]");
 
     @Override
     @SuppressWarnings("try")
@@ -74,6 +73,7 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         RegisterAllocationConfig registerAllocationConfig = context.registerAllocationConfig;
         LIR lir = lirGenRes.getLIR();
+        DebugContext debug = lir.getDebug();
         TraceBuilderResult resultTraces = context.contextLookup(TraceBuilderResult.class);
         GlobalLivenessInfo livenessInfo = context.contextLookup(GlobalLivenessInfo.class);
         assert livenessInfo != null;
@@ -86,16 +86,16 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         final TraceRegisterAllocationPolicy plan = DefaultTraceRegisterAllocationPolicy.allocationPolicy(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces,
                         neverSpillConstant, livenessInfo, lir.getOptions());
 
-        try (Scope s0 = Debug.scope("AllocateTraces", resultTraces, livenessInfo)) {
+        try (DebugContext.Scope s0 = debug.scope("AllocateTraces", resultTraces, livenessInfo)) {
             for (Trace trace : resultTraces.getTraces()) {
-                tracesCounter.increment();
+                tracesCounter.increment(debug);
                 TraceAllocationPhase<TraceAllocationContext> allocator = plan.selectStrategy(trace);
-                try (Indent i = Debug.logAndIndent("Allocating Trace%d: %s (%s)", trace.getId(), trace, allocator); Scope s = Debug.scope("AllocateTrace", trace)) {
+                try (Indent i = debug.logAndIndent("Allocating Trace%d: %s (%s)", trace.getId(), trace, allocator); DebugContext.Scope s = debug.scope("AllocateTrace", trace)) {
                     allocator.apply(target, lirGenRes, trace, traceContext);
                 }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
 
         TraceGlobalMoveResolutionPhase.resolve(target, lirGenRes, traceContext);

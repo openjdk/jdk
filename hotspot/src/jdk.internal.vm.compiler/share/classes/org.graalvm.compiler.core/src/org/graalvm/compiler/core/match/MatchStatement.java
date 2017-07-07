@@ -22,20 +22,20 @@
  */
 package org.graalvm.compiler.core.match;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
+import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 
 import java.util.List;
-
-import jdk.vm.ci.meta.Value;
 
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.match.MatchPattern.MatchResultCode;
 import org.graalvm.compiler.core.match.MatchPattern.Result;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.Verbosity;
+
+import jdk.vm.ci.meta.Value;
 
 /**
  * A named {@link MatchPattern} along with a {@link MatchGenerator} that can be evaluated to replace
@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodeinfo.Verbosity;
  */
 
 public class MatchStatement {
-    private static final DebugCounter MatchStatementSuccess = Debug.counter("MatchStatementSuccess");
+    private static final CounterKey MatchStatementSuccess = DebugContext.counter("MatchStatementSuccess");
 
     /**
      * A printable name for this statement. Usually it's just the name of the method doing the
@@ -83,6 +83,7 @@ public class MatchStatement {
      *         evaluated by the NodeLIRBuilder.
      */
     public boolean generate(NodeLIRBuilder builder, int index, Node node, List<Node> nodes) {
+        DebugContext debug = node.getDebug();
         assert index == nodes.indexOf(node);
         // Check that the basic shape matches
         Result result = pattern.matchShape(node, this);
@@ -97,19 +98,19 @@ public class MatchStatement {
             ComplexMatchResult value = generatorMethod.match(builder.getNodeMatchRules(), buildArgList(context));
             if (value != null) {
                 context.setResult(value);
-                MatchStatementSuccess.increment();
-                Debug.counter("MatchStatement[%s]", getName()).increment();
+                MatchStatementSuccess.increment(debug);
+                DebugContext.counter("MatchStatement[%s]", getName()).increment(debug);
                 return true;
             }
             // The pattern matched but some other code generation constraint disallowed code
             // generation for the pattern.
             if (LogVerbose.getValue(node.getOptions())) {
-                Debug.log("while matching %s|%s %s %s returned null", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), generatorMethod.getName());
-                Debug.log("with nodes %s", formatMatch(node));
+                debug.log("while matching %s|%s %s %s returned null", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), generatorMethod.getName());
+                debug.log("with nodes %s", formatMatch(node));
             }
         } else {
             if (LogVerbose.getValue(node.getOptions()) && result.code != MatchResultCode.WRONG_CLASS) {
-                Debug.log("while matching %s|%s %s %s", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), result);
+                debug.log("while matching %s|%s %s %s", context.getRoot().toString(Verbosity.Id), context.getRoot().getClass().getSimpleName(), getName(), result);
             }
         }
         return false;

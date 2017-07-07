@@ -38,9 +38,9 @@ public final class PointerUtils {
      *
      * @return A null Pointer value.
      */
-    @SuppressWarnings("unchecked")
     public static <T extends PointerBase> T nullPointer() {
-        return (T) WordFactory.zero();
+        /* This method will be deleted soon. */
+        return WordFactory.nullPointer();
     }
 
     /**
@@ -49,7 +49,8 @@ public final class PointerUtils {
      * @return Whether that Pointer is the null Pointer.
      */
     public static boolean isNull(ComparableWord that) {
-        return that.equal(nullPointer());
+        /* This method will be deleted soon. */
+        return ((PointerBase) that).isNull();
     }
 
     /**
@@ -58,7 +59,8 @@ public final class PointerUtils {
      * @return Whether that Pointer is not the null Pointer.
      */
     public static boolean isNonNull(ComparableWord that) {
-        return that.notEqual(nullPointer());
+        /* This method will be deleted soon. */
+        return ((PointerBase) that).isNonNull();
     }
 
     /**

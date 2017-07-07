@@ -25,7 +25,7 @@ package org.graalvm.compiler.lir.alloc.trace.lsra;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
@@ -52,8 +52,11 @@ abstract class TraceLinearScanAllocationPhase {
     final void apply(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, MoveFactory spillMoveFactory, RegisterAllocationConfig registerAllocationConfig,
                     TraceBuilderResult traceBuilderResult, TraceLinearScan allocator, boolean dumpLIR) {
         run(target, lirGenRes, trace, spillMoveFactory, registerAllocationConfig, traceBuilderResult, allocator);
-        if (dumpLIR && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
-            Debug.dump(Debug.DETAILED_LEVEL, trace, "After %s (Trace%s)", getName(), trace.getId());
+        if (dumpLIR) {
+            DebugContext debug = lirGenRes.getLIR().getDebug();
+            if (debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {
+                debug.dump(DebugContext.DETAILED_LEVEL, trace, "After %s (Trace%s)", getName(), trace.getId());
+            }
         }
     }
 

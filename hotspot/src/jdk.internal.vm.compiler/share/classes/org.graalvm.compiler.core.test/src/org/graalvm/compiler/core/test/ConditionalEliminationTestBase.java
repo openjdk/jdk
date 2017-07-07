@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.common.IterativeConditionalEliminationPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
-import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.junit.Assert;
@@ -52,21 +52,22 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
     @SuppressWarnings("try")
     protected void testConditionalElimination(String snippet, String referenceSnippet, boolean applyConditionalEliminationOnReference, boolean applyLowering) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         PhaseContext context = new PhaseContext(getProviders());
         CanonicalizerPhase canonicalizer1 = new CanonicalizerPhase();
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
-        try (Debug.Scope scope = Debug.scope("ConditionalEliminationTest", graph)) {
+        try (DebugContext.Scope scope = debug.scope("ConditionalEliminationTest", graph)) {
             prepareGraph(graph, canonicalizer1, context, applyLowering);
             new IterativeConditionalEliminationPhase(canonicalizer, true).apply(graph, context);
             canonicalizer.apply(graph, context);
             canonicalizer.apply(graph, context);
             new ConvertDeoptimizeToGuardPhase().apply(graph, context);
         } catch (Throwable t) {
-            Debug.handle(t);
+            debug.handle(t);
         }
         StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.YES);
-        try (Debug.Scope scope = Debug.scope("ConditionalEliminationTest.ReferenceGraph", referenceGraph)) {
+        try (DebugContext.Scope scope = debug.scope("ConditionalEliminationTest.ReferenceGraph", referenceGraph)) {
             prepareGraph(referenceGraph, canonicalizer, context, applyLowering);
             if (applyConditionalEliminationOnReference) {
                 new ConditionalEliminationPhase(true).apply(referenceGraph, context);
@@ -75,7 +76,7 @@ public class ConditionalEliminationTestBase extends GraalCompilerTest {
             canonicalizer.apply(referenceGraph, context);
             new ConvertDeoptimizeToGuardPhase().apply(graph, context);
         } catch (Throwable t) {
-            Debug.handle(t);
+            debug.handle(t);
         }
         assertEquals(referenceGraph, graph);
     }

@@ -23,8 +23,9 @@
 package org.graalvm.compiler.replacements;
 
 import static java.util.FormattableFlags.ALTERNATE;
-import static org.graalvm.compiler.debug.Debug.applyFormattingFlagsAndWidth;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugStubsAndSnippets;
+import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
+import static org.graalvm.compiler.debug.DebugContext.applyFormattingFlagsAndWidth;
+import static org.graalvm.compiler.debug.DebugOptions.DebugStubsAndSnippets;
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
@@ -42,6 +43,7 @@ import java.util.Formatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -55,14 +57,13 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.core.common.type.TypeReference;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.internal.DebugScope;
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugConfig;
-import org.graalvm.compiler.debug.DebugCounter;
-import org.graalvm.compiler.debug.DebugTimer;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Description;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -227,22 +228,22 @@ public class SnippetTemplate {
          *
          * @see SnippetTemplate#instantiationTimer
          */
-        private final DebugTimer instantiationTimer;
+        private final TimerKey instantiationTimer;
 
         /**
          * Counts instantiations of all templates derived from this snippet.
          *
          * @see SnippetTemplate#instantiationCounter
          */
-        private final DebugCounter instantiationCounter;
+        private final CounterKey instantiationCounter;
 
         protected abstract Lazy lazy();
 
         protected SnippetInfo(ResolvedJavaMethod method, LocationIdentity[] privateLocations) {
             this.method = method;
             this.privateLocations = privateLocations;
-            instantiationCounter = Debug.counter("SnippetInstantiationCount[%s]", method.getName());
-            instantiationTimer = Debug.timer("SnippetInstantiationTime[%s]", method.getName());
+            instantiationCounter = DebugContext.counter("SnippetInstantiationCount[%s]", method.getName());
+            instantiationTimer = DebugContext.timer("SnippetInstantiationTime[%s]", method.getName());
             assert method.isStatic() : "snippet method must be static: " + method.format("%H.%n");
         }
 
@@ -562,8 +563,8 @@ public class SnippetTemplate {
         }
     }
 
-    private static final DebugTimer SnippetTemplateCreationTime = Debug.timer("SnippetTemplateCreationTime");
-    private static final DebugCounter SnippetTemplates = Debug.counter("SnippetTemplateCount");
+    private static final TimerKey SnippetTemplateCreationTime = DebugContext.timer("SnippetTemplateCreationTime");
+    private static final CounterKey SnippetTemplates = DebugContext.counter("SnippetTemplateCount");
 
     static class Options {
         @Option(help = "Use a LRU cache for snippet templates.")//
@@ -581,14 +582,16 @@ public class SnippetTemplate {
         protected final OptionValues options;
         protected final Providers providers;
         protected final SnippetReflectionProvider snippetReflection;
+        protected final Iterable<DebugHandlersFactory> factories;
         protected final TargetDescription target;
         private final Map<CacheKey, SnippetTemplate> templates;
 
-        protected AbstractTemplates(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+        protected AbstractTemplates(OptionValues options, Iterable<DebugHandlersFactory> factories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
             this.options = options;
             this.providers = providers;
             this.snippetReflection = snippetReflection;
             this.target = target;
+            this.factories = factories;
             if (Options.UseSnippetTemplateCache.getValue(options)) {
                 int size = Options.MaxTemplatesPerSnippet.getValue(options);
                 this.templates = Collections.synchronizedMap(new LRUCache<>(size, size));
@@ -627,22 +630,33 @@ public class SnippetTemplate {
             }
         }
 
+        static final AtomicInteger nextSnippetTemplateId = new AtomicInteger();
+
+        private DebugContext openDebugContext(DebugContext outer, Arguments args) {
+            if (DebugStubsAndSnippets.getValue(options)) {
+                Description description = new Description(args.cacheKey.method, "SnippetTemplate_" + nextSnippetTemplateId.incrementAndGet());
+                return DebugContext.create(options, description, outer.getGlobalMetrics(), DEFAULT_LOG_STREAM, factories);
+            }
+            return DebugContext.DISABLED;
+        }
+
         /**
          * Gets a template for a given key, creating it first if necessary.
          */
         @SuppressWarnings("try")
-        protected SnippetTemplate template(final Arguments args) {
+        protected SnippetTemplate template(DebugContext outer, final Arguments args) {
             SnippetTemplate template = Options.UseSnippetTemplateCache.getValue(options) && args.cacheable ? templates.get(args.cacheKey) : null;
             if (template == null) {
-                SnippetTemplates.increment();
-                DebugConfig config = DebugStubsAndSnippets.getValue(options) ? DebugScope.getConfig() : Debug.silentConfig();
-                try (DebugCloseable a = SnippetTemplateCreationTime.start(); Scope s = Debug.sandbox("SnippetSpecialization", config, args.info.method)) {
-                    template = new SnippetTemplate(options, providers, snippetReflection, args);
-                    if (Options.UseSnippetTemplateCache.getValue(options) && args.cacheable) {
-                        templates.put(args.cacheKey, template);
+                try (DebugContext debug = openDebugContext(outer, args)) {
+                    try (DebugCloseable a = SnippetTemplateCreationTime.start(debug); DebugContext.Scope s = debug.scope("SnippetSpecialization", args.info.method)) {
+                        SnippetTemplates.increment(debug);
+                        template = new SnippetTemplate(options, debug, providers, snippetReflection, args);
+                        if (Options.UseSnippetTemplateCache.getValue(options) && args.cacheable) {
+                            templates.put(args.cacheKey, template);
+                        }
+                    } catch (Throwable e) {
+                        throw debug.handle(e);
                     }
-                } catch (Throwable e) {
-                    throw Debug.handle(e);
                 }
             }
             return template;
@@ -686,14 +700,14 @@ public class SnippetTemplate {
      * Creates a snippet template.
      */
     @SuppressWarnings("try")
-    protected SnippetTemplate(OptionValues options, final Providers providers, SnippetReflectionProvider snippetReflection, Arguments args) {
+    protected SnippetTemplate(OptionValues options, DebugContext debug, final Providers providers, SnippetReflectionProvider snippetReflection, Arguments args) {
         this.snippetReflection = snippetReflection;
         this.info = args.info;
 
         Object[] constantArgs = getConstantArgs(args);
         StructuredGraph snippetGraph = providers.getReplacements().getSnippet(args.info.method, args.info.original, constantArgs);
-        instantiationTimer = Debug.timer("SnippetTemplateInstantiationTime[%#s]", args);
-        instantiationCounter = Debug.counter("SnippetTemplateInstantiationCount[%#s]", args);
+        instantiationTimer = DebugContext.timer("SnippetTemplateInstantiationTime[%#s]", args);
+        instantiationCounter = DebugContext.counter("SnippetTemplateInstantiationCount[%#s]", args);
 
         ResolvedJavaMethod method = snippetGraph.method();
         Signature signature = method.getSignature();
@@ -701,9 +715,9 @@ public class SnippetTemplate {
         PhaseContext phaseContext = new PhaseContext(providers);
 
         // Copy snippet graph, replacing constant parameters with given arguments
-        final StructuredGraph snippetCopy = new StructuredGraph.Builder(options).name(snippetGraph.name).method(snippetGraph.method()).build();
+        final StructuredGraph snippetCopy = new StructuredGraph.Builder(options, debug).name(snippetGraph.name).method(snippetGraph.method()).build();
 
-        try (Debug.Scope scope = Debug.scope("SpecializeSnippet", snippetCopy)) {
+        try (DebugContext.Scope scope = debug.scope("SpecializeSnippet", snippetCopy)) {
             if (!snippetGraph.isUnsafeAccessTrackingEnabled()) {
                 snippetCopy.disableUnsafeAccessTracking();
             }
@@ -748,7 +762,7 @@ public class SnippetTemplate {
             }
             snippetCopy.addDuplicates(snippetGraph.getNodes(), snippetGraph, snippetGraph.getNodeCount(), nodeReplacements);
 
-            Debug.dump(Debug.INFO_LEVEL, snippetCopy, "Before specialization");
+            debug.dump(DebugContext.INFO_LEVEL, snippetCopy, "Before specialization");
 
             // Gather the template parameters
             parameters = new Object[parameterCount];
@@ -776,10 +790,10 @@ public class SnippetTemplate {
                         for (Node usage : placeholder.usages().snapshot()) {
                             if (usage instanceof LoadIndexedNode) {
                                 LoadIndexedNode loadIndexed = (LoadIndexedNode) usage;
-                                Debug.dump(Debug.INFO_LEVEL, snippetCopy, "Before replacing %s", loadIndexed);
+                                debug.dump(DebugContext.INFO_LEVEL, snippetCopy, "Before replacing %s", loadIndexed);
                                 LoadSnippetVarargParameterNode loadSnippetParameter = snippetCopy.add(new LoadSnippetVarargParameterNode(params, loadIndexed.index(), loadIndexed.stamp()));
                                 snippetCopy.replaceFixedWithFixed(loadIndexed, loadSnippetParameter);
-                                Debug.dump(Debug.INFO_LEVEL, snippetCopy, "After replacing %s", loadIndexed);
+                                debug.dump(DebugContext.INFO_LEVEL, snippetCopy, "After replacing %s", loadIndexed);
                             } else if (usage instanceof StoreIndexedNode) {
                                 /*
                                  * The template lowering doesn't really treat this as an array so
@@ -809,10 +823,10 @@ public class SnippetTemplate {
                 new GuardLoweringPhase().apply(snippetCopy, null);
             }
             snippetCopy.setGuardsStage(guardsStage);
-            try (Scope s = Debug.scope("LoweringSnippetTemplate", snippetCopy)) {
+            try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", snippetCopy)) {
                 new LoweringPhase(new CanonicalizerPhase(), args.cacheKey.loweringStage).apply(snippetCopy, phaseContext);
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debug.handle(e);
             }
 
             ArrayList<StateSplit> curSideEffectNodes = new ArrayList<>();
@@ -897,7 +911,7 @@ public class SnippetTemplate {
                     this.memoryAnchor = null;
                 }
             }
-            Debug.dump(Debug.INFO_LEVEL, snippet, "SnippetTemplate after fixing memory anchoring");
+            debug.dump(DebugContext.INFO_LEVEL, snippet, "SnippetTemplate after fixing memory anchoring");
 
             List<ReturnNode> returnNodes = snippet.getNodes(ReturnNode.TYPE).snapshot();
             if (returnNodes.isEmpty()) {
@@ -941,11 +955,14 @@ public class SnippetTemplate {
                 }
             }
 
-            Debug.counter("SnippetTemplateNodeCount[%#s]", args).add(nodes.size());
-            Debug.dump(Debug.INFO_LEVEL, snippet, "SnippetTemplate final state");
+            if (debug.areMetricsEnabled()) {
+                DebugContext.counter("SnippetTemplateNodeCount[%#s]", args).add(debug, nodes.size());
+            }
+            debug.dump(DebugContext.INFO_LEVEL, snippet, "SnippetTemplate final state");
+            this.snippet.freeze();
 
         } catch (Throwable ex) {
-            throw Debug.handle(ex);
+            throw debug.handle(ex);
         }
     }
 
@@ -1065,14 +1082,14 @@ public class SnippetTemplate {
      *
      * @see SnippetInfo#instantiationTimer
      */
-    private final DebugTimer instantiationTimer;
+    private final TimerKey instantiationTimer;
 
     /**
      * Counts instantiations of this template.
      *
      * @see SnippetInfo#instantiationCounter
      */
-    private final DebugCounter instantiationCounter;
+    private final CounterKey instantiationCounter;
 
     /**
      * Gets the instantiation-time bindings to this template's parameters.
@@ -1387,10 +1404,11 @@ public class SnippetTemplate {
      */
     @SuppressWarnings("try")
     public UnmodifiableEconomicMap<Node, Node> instantiate(MetaAccessProvider metaAccess, FixedNode replacee, UsageReplacer replacer, Arguments args, boolean killReplacee) {
+        DebugContext debug = replacee.getDebug();
         assert assertSnippetKills(replacee);
-        try (DebugCloseable a = args.info.instantiationTimer.start(); DebugCloseable b = instantiationTimer.start()) {
-            args.info.instantiationCounter.increment();
-            instantiationCounter.increment();
+        try (DebugCloseable a = args.info.instantiationTimer.start(debug); DebugCloseable b = instantiationTimer.start(debug)) {
+            args.info.instantiationCounter.increment(debug);
+            instantiationCounter.increment(debug);
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();
             FixedNode firstCFGNode = entryPointNode.next();
@@ -1398,7 +1416,7 @@ public class SnippetTemplate {
             EconomicMap<Node, Node> replacements = bind(replaceeGraph, metaAccess, args);
             replacements.put(entryPointNode, AbstractBeginNode.prevBegin(replacee));
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(nodes, snippet, snippet.getNodeCount(), replacements);
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             // Re-wire the control flow graph around the replacee
             FixedNode firstCFGNodeDuplicate = (FixedNode) duplicates.get(firstCFGNode);
@@ -1486,7 +1504,7 @@ public class SnippetTemplate {
                 GraphUtil.killCFG(replacee);
             }
 
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
             return duplicates;
         }
     }
@@ -1524,8 +1542,8 @@ public class SnippetTemplate {
     /**
      * Gets a copy of the specialized graph.
      */
-    public StructuredGraph copySpecializedGraph() {
-        return (StructuredGraph) snippet.copy();
+    public StructuredGraph copySpecializedGraph(DebugContext debugForCopy) {
+        return (StructuredGraph) snippet.copy(debugForCopy);
     }
 
     /**
@@ -1539,10 +1557,11 @@ public class SnippetTemplate {
      */
     @SuppressWarnings("try")
     public void instantiate(MetaAccessProvider metaAccess, FloatingNode replacee, UsageReplacer replacer, LoweringTool tool, Arguments args) {
+        DebugContext debug = replacee.getDebug();
         assert assertSnippetKills(replacee);
-        try (DebugCloseable a = args.info.instantiationTimer.start()) {
-            args.info.instantiationCounter.increment();
-            instantiationCounter.increment();
+        try (DebugCloseable a = args.info.instantiationTimer.start(debug)) {
+            args.info.instantiationCounter.increment(debug);
+            instantiationCounter.increment(debug);
 
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();
@@ -1551,7 +1570,7 @@ public class SnippetTemplate {
             EconomicMap<Node, Node> replacements = bind(replaceeGraph, metaAccess, args);
             replacements.put(entryPointNode, tool.getCurrentGuardAnchor().asNode());
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(nodes, snippet, snippet.getNodeCount(), replacements);
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             FixedWithNextNode lastFixedNode = tool.lastFixedNode();
             assert lastFixedNode != null && lastFixedNode.isAlive() : replaceeGraph + " lastFixed=" + lastFixedNode;
@@ -1575,7 +1594,7 @@ public class SnippetTemplate {
                 returnDuplicate.replaceAndDelete(next);
             }
 
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
         }
     }
 
@@ -1591,10 +1610,11 @@ public class SnippetTemplate {
      */
     @SuppressWarnings("try")
     public void instantiate(MetaAccessProvider metaAccess, FloatingNode replacee, UsageReplacer replacer, Arguments args) {
+        DebugContext debug = replacee.getDebug();
         assert assertSnippetKills(replacee);
-        try (DebugCloseable a = args.info.instantiationTimer.start()) {
-            args.info.instantiationCounter.increment();
-            instantiationCounter.increment();
+        try (DebugCloseable a = args.info.instantiationTimer.start(debug)) {
+            args.info.instantiationCounter.increment(debug);
+            instantiationCounter.increment(debug);
 
             // Inline the snippet nodes, replacing parameters with the given args in the process
             StartNode entryPointNode = snippet.start();
@@ -1613,7 +1633,7 @@ public class SnippetTemplate {
                 }
             }
             UnmodifiableEconomicMap<Node, Node> duplicates = replaceeGraph.addDuplicates(floatingNodes, snippet, floatingNodes.size(), replacements);
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After inlining snippet %s", snippet.method());
 
             rewireFrameStates(replacee, duplicates);
             updateStamps(replacee, duplicates);
@@ -1625,7 +1645,7 @@ public class SnippetTemplate {
             ValueNode returnValue = (ValueNode) duplicates.get(returnNode.result());
             replacer.replace(replacee, returnValue);
 
-            Debug.dump(Debug.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
+            debug.dump(DebugContext.DETAILED_LEVEL, replaceeGraph, "After lowering %s with %s", replacee, this);
         }
     }
 

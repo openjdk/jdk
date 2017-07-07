@@ -25,7 +25,6 @@ package org.graalvm.compiler.microbenchmarks.graal.util;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -33,7 +32,6 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
-import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
@@ -133,7 +131,8 @@ public class GraalUtil {
     }
 
     public static StructuredGraph getGraph(GraalState graal, ResolvedJavaMethod javaMethod, boolean useProfilingInfo) {
-        StructuredGraph graph = new StructuredGraph.Builder(Graal.getRequiredCapability(OptionValues.class), AllowAssumptions.YES).useProfilingInfo(useProfilingInfo).method(javaMethod).build();
+        StructuredGraph graph = new StructuredGraph.Builder(graal.options, graal.debug, AllowAssumptions.YES).useProfilingInfo(
+                        useProfilingInfo).method(javaMethod).build();
         PhaseSuite<HighTierContext> graphBuilderSuite = new PhaseSuite<>();
         graphBuilderSuite.appendPhase(new GraphBuilderPhase(GraphBuilderConfiguration.getDefault(new Plugins(new InvocationPlugins()))));
         graphBuilderSuite.apply(graph, new HighTierContext(graal.providers, graphBuilderSuite, OptimisticOptimizations.ALL));

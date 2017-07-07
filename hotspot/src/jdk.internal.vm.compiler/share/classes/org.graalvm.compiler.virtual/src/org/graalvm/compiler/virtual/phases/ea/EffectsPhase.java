@@ -22,12 +22,10 @@
  */
 package org.graalvm.compiler.virtual.phases.ea;
 
-import static org.graalvm.compiler.debug.Debug.isEnabled;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Required;
 
 import org.graalvm.compiler.core.common.util.CompilationAlarm;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.spi.Simplifiable;
@@ -77,8 +75,9 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
     public boolean runAnalysis(StructuredGraph graph, PhaseContextT context) {
         boolean changed = false;
         CompilationAlarm compilationAlarm = CompilationAlarm.current();
+        DebugContext debug = graph.getDebug();
         for (int iteration = 0; iteration < maxIterations && !compilationAlarm.hasExpired(); iteration++) {
-            try (Scope s = Debug.scope(isEnabled() ? "iteration " + iteration : null)) {
+            try (DebugContext.Scope s = debug.scope(debug.areScopesEnabled() ? "iteration " + iteration : null)) {
                 ScheduleResult schedule;
                 ControlFlowGraph cfg;
                 if (unscheduled) {
@@ -89,7 +88,7 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
                     schedule = graph.getLastSchedule();
                     cfg = schedule.getCFG();
                 }
-                try (Scope scheduleScope = Debug.scope("EffectsPhaseWithSchedule", schedule)) {
+                try (DebugContext.Scope scheduleScope = debug.scope("EffectsPhaseWithSchedule", schedule)) {
                     Closure<?> closure = createEffectsClosure(context, schedule, cfg);
                     ReentrantBlockIterator.apply(closure, cfg.getStartBlock());
 
@@ -100,8 +99,8 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
                             closure.applyEffects();
                         }
 
-                        if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
-                            Debug.dump(Debug.DETAILED_LEVEL, graph, "%s iteration", getName());
+                        if (debug.isDumpEnabled(DebugContext.INFO_LEVEL)) {
+                            debug.dump(DebugContext.DETAILED_LEVEL, graph, "%s iteration", getName());
                         }
 
                         new DeadCodeEliminationPhase(Required).apply(graph);
@@ -121,7 +120,7 @@ public abstract class EffectsPhase<PhaseContextT extends PhaseContext> extends B
                         break;
                     }
                 } catch (Throwable t) {
-                    throw Debug.handle(t);
+                    throw debug.handle(t);
                 }
             }
         }

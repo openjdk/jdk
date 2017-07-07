@@ -22,15 +22,14 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
+import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
-import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -149,10 +148,11 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
                 new FrameStateAssignmentPhase().apply(replacementGraph);
             }
         }
-        try (Scope s = Debug.scope("LoweringSnippetTemplate", replacementGraph)) {
+        DebugContext debug = replacementGraph.getDebug();
+        try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", replacementGraph)) {
             new LoweringPhase(new CanonicalizerPhase(), tool.getLoweringStage()).apply(replacementGraph, c);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
         return replacementGraph;
     }
@@ -174,7 +174,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
                 }
             }
             InliningUtil.inline(invoke, replacementGraph, false, targetMethod);
-            Debug.dump(Debug.DETAILED_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
+            replacementGraph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
         } else {
             if (isPlaceholderBci(invoke.bci())) {
                 throw new GraalError("%s: cannot lower to invoke with placeholder BCI: %s", graph(), this);

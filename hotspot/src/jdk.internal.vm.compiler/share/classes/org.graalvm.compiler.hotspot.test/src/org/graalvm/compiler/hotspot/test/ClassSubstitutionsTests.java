@@ -23,16 +23,14 @@
 
 package org.graalvm.compiler.hotspot.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.junit.Test;
 
 public class ClassSubstitutionsTests extends GraalCompilerTest {
 
@@ -44,14 +42,15 @@ public class ClassSubstitutionsTests extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     protected StructuredGraph test(final String snippet) {
-        try (Scope s = Debug.scope("ClassSubstitutionsTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("ClassSubstitutionsTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
+            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
             compile(graph.method(), graph);
             assertNotInGraph(graph, Invoke.class);
-            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
+            debug.dump(DebugContext.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

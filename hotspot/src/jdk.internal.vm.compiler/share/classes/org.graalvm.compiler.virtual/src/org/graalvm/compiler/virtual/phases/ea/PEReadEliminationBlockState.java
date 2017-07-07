@@ -25,6 +25,7 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Iterator;
 import java.util.List;
 
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
@@ -73,8 +74,8 @@ public final class PEReadEliminationBlockState extends PartialEscapeBlockState<P
         }
     }
 
-    public PEReadEliminationBlockState(OptionValues options) {
-        super(options);
+    public PEReadEliminationBlockState(OptionValues options, DebugContext debug) {
+        super(options, debug);
         readCache = EconomicMap.create(Equivalence.DEFAULT);
     }
 

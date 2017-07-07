@@ -30,7 +30,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.CFGVerifier;
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -594,7 +594,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                 if (beginNode instanceof LoopBeginNode) {
                     Loop<Block> loop = new HIRLoop(block.getLoop(), loops.size(), block);
                     loops.add(loop);
-                    block.loop = loop;
+                    block.setLoop(loop);
                     loop.getBlocks().add(block);
 
                     LoopBeginNode loopBegin = (LoopBeginNode) beginNode;
@@ -608,7 +608,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                             Block exitBlock = nodeToBlock.get(exit);
                             assert exitBlock.getPredecessorCount() == 1;
                             computeLoopBlocks(exitBlock.getFirstPredecessor(), loop, stack, true);
-                            loop.getExits().add(exitBlock);
+                            loop.addExit(exitBlock);
                         }
 
                         // The following loop can add new blocks to the end of the loop's block
@@ -617,10 +617,10 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                         for (int i = 0; i < size; ++i) {
                             Block b = loop.getBlocks().get(i);
                             for (Block sux : b.getSuccessors()) {
-                                if (sux.loop != loop) {
+                                if (sux.getLoop() != loop) {
                                     AbstractBeginNode begin = sux.getBeginNode();
                                     if (!(begin instanceof LoopExitNode && ((LoopExitNode) begin).loopBegin() == loopBegin)) {
-                                        Debug.log(Debug.VERBOSE_LEVEL, "Unexpected loop exit with %s, including whole branch in the loop", sux);
+                                        graph.getDebug().log(DebugContext.VERBOSE_LEVEL, "Unexpected loop exit with %s, including whole branch in the loop", sux);
                                         computeLoopBlocks(sux, loop, stack, false);
                                     }
                                 }
@@ -645,7 +645,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                                 // we might exit multiple loops if b.loops is not a loop at depth 0
                                 Loop<Block> curr = b.getLoop();
                                 while (curr != null) {
-                                    curr.getExits().add(succ);
+                                    curr.addExit(succ);
                                     curr = curr.getParent();
                                 }
                             } else {
@@ -667,7 +667,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                                     assert !Loop.transitiveParentLoop(succ.getLoop(), b.getLoop());
                                     Loop<Block> curr = b.getLoop();
                                     while (curr != null && curr != succ.getLoop()) {
-                                        curr.getExits().add(succ);
+                                        curr.addExit(succ);
                                         curr = curr.getParent();
                                     }
                                 }
@@ -681,8 +681,8 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
     }
 
     private static void computeLoopBlocks(Block start, Loop<Block> loop, Block[] stack, boolean usePred) {
-        if (start.loop != loop) {
-            start.loop = loop;
+        if (start.getLoop() != loop) {
+            start.setLoop(loop);
             stack[0] = start;
             loop.getBlocks().add(start);
             int tos = 0;
@@ -691,9 +691,9 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
 
                 // Add predecessors or successors to the loop.
                 for (Block b : (usePred ? block.getPredecessors() : block.getSuccessors())) {
-                    if (b.loop != loop) {
+                    if (b.getLoop() != loop) {
                         stack[++tos] = b;
-                        b.loop = loop;
+                        b.setLoop(loop);
                         loop.getBlocks().add(b);
                     }
                 }

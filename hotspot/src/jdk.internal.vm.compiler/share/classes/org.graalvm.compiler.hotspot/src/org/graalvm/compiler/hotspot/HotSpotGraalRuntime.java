@@ -27,12 +27,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
-import static org.graalvm.compiler.debug.GraalDebugConfig.areScopedGlobalMetricsEnabled;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugValueSummary;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Log;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.MethodFilter;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Verify;
+import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,14 +49,15 @@ import java.util.zip.ZipOutputStream;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugEnvironment;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Description;
+import org.graalvm.compiler.debug.GlobalMetrics;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.debug.internal.DebugValuesPrinter;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsPrinter;
 import org.graalvm.compiler.hotspot.CompilationStatistics.Options;
 import org.graalvm.compiler.hotspot.CompilerConfigurationFactory.BackendMap;
 import org.graalvm.compiler.hotspot.debug.BenchmarkCounters;
@@ -104,7 +100,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     private final HotSpotBackend hostBackend;
-    private DebugValuesPrinter debugValuesPrinter;
+    private final GlobalMetrics metricValues = new GlobalMetrics();
     private final List<SnippetCounter.Group> snippetCounterGroups;
 
     private final EconomicMap<Class<? extends Architecture>, HotSpotBackend> backends = EconomicMap.create(Equivalence.IDENTITY);
@@ -163,56 +159,6 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             }
         }
 
-        if (Log.getValue(options) == null && !areScopedGlobalMetricsEnabled(options) && Dump.getValue(options) == null && Verify.getValue(options) == null) {
-            if (MethodFilter.getValue(options) != null && !Debug.isEnabled()) {
-                TTY.println("WARNING: Ignoring MethodFilter option since Log, Meter, Time, TrackMemUse, Dump and Verify options are all null");
-            }
-        }
-
-        if (Debug.isEnabled()) {
-            DebugEnvironment.ensureInitialized(options, hostBackend.getProviders().getSnippetReflection());
-
-            String summary = DebugValueSummary.getValue(options);
-            if (summary != null) {
-                switch (summary) {
-                    case "Name":
-                    case "Partial":
-                    case "Complete":
-                    case "Thread":
-                        break;
-                    default:
-                        throw new GraalError("Unsupported value for DebugSummaryValue: %s", summary);
-                }
-            }
-        }
-
-        if (Debug.areUnconditionalCountersEnabled() || Debug.areUnconditionalTimersEnabled() || Debug.areUnconditionalMethodMetricsEnabled() ||
-                        (Debug.isEnabled() && areScopedGlobalMetricsEnabled(options)) || (Debug.isEnabled() && Debug.isMethodFilteringEnabled())) {
-            // This must be created here to avoid loading the DebugValuesPrinter class
-            // during shutdown() which in turn can cause a deadlock
-            int mmPrinterType = 0;
-            mmPrinterType |= MethodMetricsPrinter.Options.MethodMeterPrintAscii.getValue(options) ? 1 : 0;
-            mmPrinterType |= MethodMetricsPrinter.Options.MethodMeterFile.getValue(options) != null ? 2 : 0;
-            switch (mmPrinterType) {
-                case 0:
-                    debugValuesPrinter = new DebugValuesPrinter();
-                    break;
-                case 1:
-                    debugValuesPrinter = new DebugValuesPrinter(new MethodMetricsPrinter.MethodMetricsASCIIPrinter(TTY.out));
-                    break;
-                case 2:
-                    debugValuesPrinter = new DebugValuesPrinter(new MethodMetricsPrinter.MethodMetricsCSVFilePrinter());
-                    break;
-                case 3:
-                    debugValuesPrinter = new DebugValuesPrinter(
-                                    new MethodMetricsPrinter.MethodMetricsCompositePrinter(new MethodMetricsPrinter.MethodMetricsCSVFilePrinter(),
-                                                    new MethodMetricsPrinter.MethodMetricsASCIIPrinter(TTY.out)));
-                    break;
-                default:
-                    break;
-            }
-        }
-
         // Complete initialization of backends
         try (InitTimer st = timer(hostBackend.getTarget().arch.getName(), ".completeInitialization")) {
             hostBackend.completeInitialization(jvmciRuntime, options);
@@ -259,6 +205,12 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     @Override
     public GraalHotSpotVMConfig getVMConfig() {
         return config;
+    }
+
+    @Override
+    public DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories) {
+        Description description = new Description(compilable, compilationId.toString(CompilationIdentifier.Verbosity.ID));
+        return DebugContext.create(compilationOptions, description, metricValues, DEFAULT_LOG_STREAM, factories);
     }
 
     @Override
@@ -330,9 +282,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
     void shutdown() {
         shutdown = true;
-        if (debugValuesPrinter != null) {
-            debugValuesPrinter.printDebugValues(options);
-        }
+        metricValues.print(options);
+
         phaseTransition("final");
 
         if (snippetCounterGroups != null) {
@@ -345,10 +296,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         archiveAndDeleteOutputDirectory();
     }
 
-    void clearMeters() {
-        if (debugValuesPrinter != null) {
-            debugValuesPrinter.clearDebugValues();
-        }
+    void clearMetrics() {
+        metricValues.clear();
     }
 
     private final boolean bootstrapJVMCI;
@@ -449,15 +398,13 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
                     });
                     TTY.println("Graal diagnostic output saved in %s", zip);
                 } catch (IOException e) {
-                    TTY.printf("IO error archiving %s:%n", dir);
-                    e.printStackTrace(TTY.out);
+                    TTY.printf("IO error archiving %s:%n%s%n", dir, e);
                 }
                 for (Path p : toDelete) {
                     try {
                         Files.delete(p);
                     } catch (IOException e) {
-                        TTY.printf("IO error deleting %s:%n", p);
-                        e.printStackTrace(TTY.out);
+                        TTY.printf("IO error deleting %s:%n%s%n", p, e);
                     }
                 }
             }

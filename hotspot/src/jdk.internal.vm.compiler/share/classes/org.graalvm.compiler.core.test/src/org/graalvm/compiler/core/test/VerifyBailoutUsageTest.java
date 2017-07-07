@@ -27,19 +27,19 @@ import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.RetryableBailoutException;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
+import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -48,6 +48,7 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.phases.verify.VerifyBailoutUsage;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.junit.Test;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -125,12 +126,14 @@ public class VerifyBailoutUsageTest {
         GraphBuilderConfiguration config = GraphBuilderConfiguration.getDefault(plugins).withEagerResolving(true);
         graphBuilderSuite.appendPhase(new GraphBuilderPhase(config));
         HighTierContext context = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.NONE);
+        OptionValues options = getInitialOptions();
+        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
         for (Method m : c.getDeclaredMethods()) {
             if (!Modifier.isNative(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers())) {
                 ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-                StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).build();
+                StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).build();
                 graphBuilderSuite.apply(graph, context);
-                try (DebugConfigScope s = Debug.disableIntercept()) {
+                try (DebugCloseable s = debug.disableIntercept()) {
                     new VerifyBailoutUsage().apply(graph, context);
                 }
             }

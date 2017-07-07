@@ -22,10 +22,11 @@
  */
 package org.graalvm.compiler.printer;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.CanonicalGraphStringsCheckConstants;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.CanonicalGraphStringsExcludeVirtuals;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.CanonicalGraphStringsRemoveIdentities;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintCanonicalGraphStringFlavor;
+import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsCheckConstants;
+import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsExcludeVirtuals;
+import static org.graalvm.compiler.debug.DebugOptions.CanonicalGraphStringsRemoveIdentities;
+import static org.graalvm.compiler.debug.DebugOptions.PrintCanonicalGraphStringFlavor;
+import static org.graalvm.compiler.printer.GraalDebugHandlersFactory.sanitizedFileName;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -42,7 +43,7 @@ import java.util.regex.Pattern;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.Fields;
-import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -61,43 +62,20 @@ import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class CanonicalStringGraphPrinter implements GraphPrinter {
     private static final Pattern IDENTITY_PATTERN = Pattern.compile("([A-Za-z0-9$_]+)@[0-9a-f]+");
-    private Path currentDirectory;
-    private Path root;
-    private SnippetReflectionProvider snippetReflection;
+    private final SnippetReflectionProvider snippetReflection;
 
-    public CanonicalStringGraphPrinter(Path directory) {
-        this.currentDirectory = directory;
-        this.root = directory;
-    }
-
-    @Override
-    public void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection) {
+    public CanonicalStringGraphPrinter(SnippetReflectionProvider snippetReflection) {
         this.snippetReflection = snippetReflection;
     }
 
     @Override
     public SnippetReflectionProvider getSnippetReflectionProvider() {
         return snippetReflection;
-    }
-
-    protected static String escapeFileName(String name) {
-        byte[] bytes = name.getBytes();
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '.' || b == '-' || b == '_') {
-                sb.append((char) b);
-            } else {
-                sb.append('%');
-                sb.append(Integer.toHexString(b));
-            }
-        }
-        return sb.toString();
     }
 
     private static String removeIdentities(String str) {
@@ -144,99 +122,122 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
     }
 
     protected static void writeCanonicalExpressionCFGString(StructuredGraph graph, boolean checkConstants, boolean removeIdentities, PrintWriter writer) {
-        ControlFlowGraph controlFlowGraph = ControlFlowGraph.compute(graph, true, true, false, false);
-        for (Block block : controlFlowGraph.getBlocks()) {
-            writer.print("Block ");
-            writer.print(block);
-            writer.print(" ");
-            if (block == controlFlowGraph.getStartBlock()) {
-                writer.print("* ");
-            }
-            writer.print("-> ");
-            for (Block successor : block.getSuccessors()) {
-                writer.print(successor);
+        ControlFlowGraph controlFlowGraph = getControlFlowGraph(graph);
+        if (controlFlowGraph == null) {
+            return;
+        }
+        try {
+            for (Block block : controlFlowGraph.getBlocks()) {
+                writer.print("Block ");
+                writer.print(block);
                 writer.print(" ");
-            }
-            writer.println();
-            FixedNode node = block.getBeginNode();
-            while (node != null) {
-                writeCanonicalGraphExpressionString(node, checkConstants, removeIdentities, writer);
+                if (block == controlFlowGraph.getStartBlock()) {
+                    writer.print("* ");
+                }
+                writer.print("-> ");
+                for (Block successor : block.getSuccessors()) {
+                    writer.print(successor);
+                    writer.print(" ");
+                }
                 writer.println();
-                if (node instanceof FixedWithNextNode) {
-                    node = ((FixedWithNextNode) node).next();
-                } else {
-                    node = null;
+                FixedNode node = block.getBeginNode();
+                while (node != null) {
+                    writeCanonicalGraphExpressionString(node, checkConstants, removeIdentities, writer);
+                    writer.println();
+                    if (node instanceof FixedWithNextNode) {
+                        node = ((FixedWithNextNode) node).next();
+                    } else {
+                        node = null;
+                    }
                 }
             }
+        } catch (Throwable e) {
+            writer.println();
+            e.printStackTrace(writer);
+        }
+    }
+
+    protected static ControlFlowGraph getControlFlowGraph(StructuredGraph graph) {
+        try {
+            return ControlFlowGraph.compute(graph, true, true, false, false);
+        } catch (Throwable e) {
+            // Ignore a non-well formed graph
+            return null;
         }
     }
 
     protected static void writeCanonicalGraphString(StructuredGraph graph, boolean excludeVirtual, boolean checkConstants, PrintWriter writer) {
-        SchedulePhase schedule = new SchedulePhase(SchedulePhase.SchedulingStrategy.EARLIEST);
-        schedule.apply(graph);
-        StructuredGraph.ScheduleResult scheduleResult = graph.getLastSchedule();
-
-        NodeMap<Integer> canonicalId = graph.createNodeMap();
-        int nextId = 0;
-
-        List<String> constantsLines = null;
-        if (checkConstants) {
-            constantsLines = new ArrayList<>();
+        StructuredGraph.ScheduleResult scheduleResult = GraphPrinter.getScheduleOrNull(graph);
+        if (scheduleResult == null) {
+            return;
         }
+        try {
 
-        for (Block block : scheduleResult.getCFG().getBlocks()) {
-            writer.print("Block ");
-            writer.print(block);
-            writer.print(" ");
-            if (block == scheduleResult.getCFG().getStartBlock()) {
-                writer.print("* ");
+            NodeMap<Integer> canonicalId = graph.createNodeMap();
+            int nextId = 0;
+
+            List<String> constantsLines = null;
+            if (checkConstants) {
+                constantsLines = new ArrayList<>();
             }
-            writer.print("-> ");
-            for (Block successor : block.getSuccessors()) {
-                writer.print(successor);
+
+            for (Block block : scheduleResult.getCFG().getBlocks()) {
+                writer.print("Block ");
+                writer.print(block);
                 writer.print(" ");
-            }
-            writer.println();
-            for (Node node : scheduleResult.getBlockToNodesMap().get(block)) {
-                if (node instanceof ValueNode && node.isAlive()) {
-                    if (!excludeVirtual || !(node instanceof VirtualObjectNode || node instanceof ProxyNode || node instanceof FullInfopointNode)) {
-                        if (node instanceof ConstantNode) {
-                            if (constantsLines != null) {
-                                String name = node.toString(Verbosity.Name);
-                                String str = name + (excludeVirtual ? "" : "    (" + filteredUsageCount(node) + ")");
-                                constantsLines.add(str);
-                            }
-                        } else {
-                            int id;
-                            if (canonicalId.get(node) != null) {
-                                id = canonicalId.get(node);
+                if (block == scheduleResult.getCFG().getStartBlock()) {
+                    writer.print("* ");
+                }
+                writer.print("-> ");
+                for (Block successor : block.getSuccessors()) {
+                    writer.print(successor);
+                    writer.print(" ");
+                }
+                writer.println();
+                for (Node node : scheduleResult.getBlockToNodesMap().get(block)) {
+                    if (node instanceof ValueNode && node.isAlive()) {
+                        if (!excludeVirtual || !(node instanceof VirtualObjectNode || node instanceof ProxyNode || node instanceof FullInfopointNode)) {
+                            if (node instanceof ConstantNode) {
+                                if (constantsLines != null) {
+                                    String name = node.toString(Verbosity.Name);
+                                    String str = name + (excludeVirtual ? "" : "    (" + filteredUsageCount(node) + ")");
+                                    constantsLines.add(str);
+                                }
                             } else {
-                                id = nextId++;
-                                canonicalId.set(node, id);
+                                int id;
+                                if (canonicalId.get(node) != null) {
+                                    id = canonicalId.get(node);
+                                } else {
+                                    id = nextId++;
+                                    canonicalId.set(node, id);
+                                }
+                                String name = node.getClass().getSimpleName();
+                                writer.print("  ");
+                                writer.print(id);
+                                writer.print("|");
+                                writer.print(name);
+                                if (!excludeVirtual) {
+                                    writer.print("    (");
+                                    writer.print(filteredUsageCount(node));
+                                    writer.print(")");
+                                }
+                                writer.println();
                             }
-                            String name = node.getClass().getSimpleName();
-                            writer.print("  ");
-                            writer.print(id);
-                            writer.print("|");
-                            writer.print(name);
-                            if (!excludeVirtual) {
-                                writer.print("    (");
-                                writer.print(filteredUsageCount(node));
-                                writer.print(")");
-                            }
-                            writer.println();
                         }
                     }
                 }
             }
-        }
-        if (constantsLines != null) {
-            writer.print(constantsLines.size());
-            writer.println(" constants:");
-            Collections.sort(constantsLines);
-            for (String s : constantsLines) {
-                writer.println(s);
+            if (constantsLines != null) {
+                writer.print(constantsLines.size());
+                writer.println(" constants:");
+                Collections.sort(constantsLines);
+                for (String s : constantsLines) {
+                    writer.println(s);
+                }
             }
+        } catch (Throwable t) {
+            writer.println();
+            t.printStackTrace(writer);
         }
     }
 
@@ -253,22 +254,29 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
     }
 
     @Override
-    public void beginGroup(String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException {
-        currentDirectory = currentDirectory.resolve(escapeFileName(name));
+    public void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException {
+    }
+
+    private StructuredGraph currentGraph;
+    private Path currentDirectory;
+
+    private Path getDirectory(StructuredGraph graph) throws IOException {
+        if (graph == currentGraph) {
+            return currentDirectory;
+        }
+        currentDirectory = GraalDebugHandlersFactory.createDumpPath(graph.getOptions(), graph, "graph-strings", true);
+        currentGraph = graph;
+        return currentDirectory;
     }
 
     @Override
-    public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
+    public void print(DebugContext debug, Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
         if (graph instanceof StructuredGraph) {
             OptionValues options = graph.getOptions();
             StructuredGraph structuredGraph = (StructuredGraph) graph;
-            currentDirectory.toFile().mkdirs();
-            if (this.root != null) {
-                TTY.println("Dumping string graphs in %s", this.root);
-                this.root = null;
-            }
-            String title = formatTitle(id, format, args);
-            Path filePath = currentDirectory.resolve(escapeFileName(title));
+            Path outDirectory = getDirectory(structuredGraph);
+            String title = String.format("%03d-%s.txt", id, String.format(format, simplifyClassArgs(args)));
+            Path filePath = outDirectory.resolve(sanitizedFileName(title));
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath.toFile())))) {
                 switch (PrintCanonicalGraphStringFlavor.getValue(options)) {
                     case 1:
@@ -285,8 +293,6 @@ public class CanonicalStringGraphPrinter implements GraphPrinter {
 
     @Override
     public void endGroup() throws IOException {
-        currentDirectory = currentDirectory.getParent();
-        assert currentDirectory != null;
     }
 
     @Override

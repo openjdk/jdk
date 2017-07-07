@@ -28,16 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.phases.common.AbstractInliningPhase;
+import org.junit.Test;
 
 import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.Mark;
@@ -485,13 +483,14 @@ public class InstanceOfTest extends TypeCheckTest {
 
     @SuppressWarnings("try")
     protected StructuredGraph buildGraph(final String snippet) {
-        try (Scope s = Debug.scope("InstanceOfTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("InstanceOfTest", getMetaAccess().lookupJavaMethod(getMethod(snippet)))) {
+            StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
             compile(graph.method(), graph);
-            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
+            debug.dump(DebugContext.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

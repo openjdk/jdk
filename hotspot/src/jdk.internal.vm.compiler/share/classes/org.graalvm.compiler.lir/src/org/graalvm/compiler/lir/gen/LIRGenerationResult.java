@@ -24,7 +24,7 @@ package org.graalvm.compiler.lir.gen;
 
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.CompilationIdentifier.Verbosity;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.framemap.FrameMap;
@@ -65,7 +65,8 @@ public class LIRGenerationResult {
      * Adds a comment to a {@link LIRInstruction}. Existing comments are replaced.
      */
     public final void setComment(LIRInstruction op, String comment) {
-        if (Debug.isDumpEnabled(Debug.BASIC_LEVEL)) {
+        DebugContext debug = lir.getDebug();
+        if (debug.isDumpEnabled(DebugContext.BASIC_LEVEL)) {
             if (comments == null) {
                 comments = EconomicMap.create(Equivalence.IDENTITY);
             }

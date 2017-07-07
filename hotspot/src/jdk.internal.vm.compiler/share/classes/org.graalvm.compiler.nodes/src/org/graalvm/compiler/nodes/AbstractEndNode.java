@@ -25,7 +25,6 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -63,7 +62,7 @@ public abstract class AbstractEndNode extends FixedNode implements LIRLowerable 
     public Iterable<? extends Node> cfgSuccessors() {
         AbstractMergeNode merge = merge();
         if (merge != null) {
-            return Arrays.asList(merge);
+            return Collections.singletonList(merge);
         }
         return Collections.emptyList();
     }

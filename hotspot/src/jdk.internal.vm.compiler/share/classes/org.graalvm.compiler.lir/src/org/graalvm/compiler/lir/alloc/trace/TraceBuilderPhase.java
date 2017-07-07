@@ -34,16 +34,16 @@ import org.graalvm.compiler.core.common.alloc.TraceBuilderResult.TrivialTracePre
 import org.graalvm.compiler.core.common.alloc.TraceStatisticsPrinter;
 import org.graalvm.compiler.core.common.alloc.UniDirectionalTraceBuilder;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
 import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.options.OptionKey;
 
 import jdk.vm.ci.code.TargetDescription;
 
@@ -73,15 +73,16 @@ public class TraceBuilderPhase extends AllocationPhase {
 
         final TraceBuilderResult traceBuilderResult = getTraceBuilderResult(lir, startBlock, linearScanOrder);
 
-        if (Debug.isLogEnabled(Debug.BASIC_LEVEL)) {
+        DebugContext debug = lir.getDebug();
+        if (debug.isLogEnabled(DebugContext.BASIC_LEVEL)) {
             ArrayList<Trace> traces = traceBuilderResult.getTraces();
             for (int i = 0; i < traces.size(); i++) {
                 Trace trace = traces.get(i);
-                Debug.log(Debug.BASIC_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
+                debug.log(DebugContext.BASIC_LEVEL, "Trace %5d: %s%s", i, trace, isTrivialTrace(lirGenRes.getLIR(), trace) ? " (trivial)" : "");
             }
         }
-        TraceStatisticsPrinter.printTraceStatistics(traceBuilderResult, lirGenRes.getCompilationUnitName());
-        Debug.dump(Debug.VERBOSE_LEVEL, traceBuilderResult, "TraceBuilderResult");
+        TraceStatisticsPrinter.printTraceStatistics(debug, traceBuilderResult, lirGenRes.getCompilationUnitName());
+        debug.dump(DebugContext.VERBOSE_LEVEL, traceBuilderResult, "TraceBuilderResult");
         context.contextAdd(traceBuilderResult);
     }
 
@@ -90,14 +91,15 @@ public class TraceBuilderPhase extends AllocationPhase {
 
         OptionValues options = lir.getOptions();
         TraceBuilder selectedTraceBuilder = Options.TraceBuilding.getValue(options);
-        Debug.log(Debug.BASIC_LEVEL, "Building Traces using %s", selectedTraceBuilder);
+        DebugContext debug = lir.getDebug();
+        debug.log(DebugContext.BASIC_LEVEL, "Building Traces using %s", selectedTraceBuilder);
         switch (Options.TraceBuilding.getValue(options)) {
             case SingleBlock:
-                return SingleBlockTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);
+                return SingleBlockTraceBuilder.computeTraces(debug, startBlock, linearScanOrder, pred);
             case BiDirectional:
-                return BiDirectionalTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);
+                return BiDirectionalTraceBuilder.computeTraces(debug, startBlock, linearScanOrder, pred);
             case UniDirectional:
-                return UniDirectionalTraceBuilder.computeTraces(startBlock, linearScanOrder, pred);
+                return UniDirectionalTraceBuilder.computeTraces(debug, startBlock, linearScanOrder, pred);
         }
         throw GraalError.shouldNotReachHere("Unknown trace building algorithm: " + Options.TraceBuilding.getValue(options));
     }

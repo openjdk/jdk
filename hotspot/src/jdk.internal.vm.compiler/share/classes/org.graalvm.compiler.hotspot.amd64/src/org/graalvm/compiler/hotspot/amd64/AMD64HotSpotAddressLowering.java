@@ -35,8 +35,8 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
@@ -55,7 +55,7 @@ import jdk.vm.ci.meta.JavaKind;
 
 public class AMD64HotSpotAddressLowering extends AMD64AddressLowering {
 
-    private static final DebugCounter counterFoldedUncompressDuringAddressLowering = Debug.counter("FoldedUncompressDuringAddressLowering");
+    private static final CounterKey counterFoldedUncompressDuringAddressLowering = DebugContext.counter("FoldedUncompressDuringAddressLowering");
 
     private final long heapBase;
     private final Register heapBaseRegister;
@@ -93,25 +93,25 @@ public class AMD64HotSpotAddressLowering extends AMD64AddressLowering {
     }
 
     @Override
-    protected boolean improve(AMD64AddressNode addr) {
+    protected boolean improve(DebugContext debug, AMD64AddressNode addr) {
 
         boolean result = false;
 
-        while (super.improve(addr)) {
+        while (super.improve(debug, addr)) {
             result = true;
         }
 
         if (addr.getScale() == Scale.Times1) {
             if (addr.getIndex() instanceof CompressionNode) {
                 if (improveUncompression(addr, (CompressionNode) addr.getIndex(), addr.getBase())) {
-                    counterFoldedUncompressDuringAddressLowering.increment();
+                    counterFoldedUncompressDuringAddressLowering.increment(debug);
                     return true;
                 }
             }
 
             if (addr.getBase() instanceof CompressionNode) {
                 if (improveUncompression(addr, (CompressionNode) addr.getBase(), addr.getIndex())) {
-                    counterFoldedUncompressDuringAddressLowering.increment();
+                    counterFoldedUncompressDuringAddressLowering.increment(debug);
                     return true;
                 }
             }

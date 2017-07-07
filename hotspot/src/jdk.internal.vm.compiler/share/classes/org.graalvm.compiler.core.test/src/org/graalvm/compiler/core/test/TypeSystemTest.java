@@ -28,7 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -179,7 +179,8 @@ public class TypeSystemTest extends GraalCompilerTest {
 
     private void test(String snippet, String referenceSnippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         /*
          * When using FlowSensitiveReductionPhase instead of ConditionalEliminationPhase,
          * tail-duplication gets activated thus resulting in a graph with more nodes than the
@@ -198,9 +199,10 @@ public class TypeSystemTest extends GraalCompilerTest {
 
     @Override
     protected void assertEquals(StructuredGraph expected, StructuredGraph graph) {
+        DebugContext debug = graph.getDebug();
         if (getNodeCountExcludingUnusedConstants(expected) != getNodeCountExcludingUnusedConstants(graph)) {
-            Debug.dump(Debug.BASIC_LEVEL, expected, "expected (node count)");
-            Debug.dump(Debug.BASIC_LEVEL, graph, "graph (node count)");
+            debug.dump(DebugContext.BASIC_LEVEL, expected, "expected (node count)");
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "graph (node count)");
             Assert.fail("Graphs do not have the same number of nodes: " + expected.getNodeCount() + " vs. " + graph.getNodeCount());
         }
     }
@@ -243,7 +245,8 @@ public class TypeSystemTest extends GraalCompilerTest {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph " + snippet);
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph " + snippet);
         Assert.assertFalse("shouldn't have nodes of type " + clazz, graph.getNodes().filter(clazz).iterator().hasNext());
     }
 }

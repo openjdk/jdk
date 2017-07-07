@@ -22,13 +22,12 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 public class StraighteningTest extends GraalCompilerTest {
 
@@ -88,7 +87,8 @@ public class StraighteningTest extends GraalCompilerTest {
     private void test(final String snippet) {
         // No debug scope to reduce console noise for @Test(expected = ...) tests
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         StructuredGraph referenceGraph = parseEager(REFERENCE_SNIPPET, AllowAssumptions.YES);
         assertEquals(referenceGraph, graph);

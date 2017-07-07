@@ -26,9 +26,14 @@ import static org.graalvm.compiler.core.common.GraalOptions.ConditionalEliminati
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.OptDeoptimizationGrouping;
 import static org.graalvm.compiler.core.common.GraalOptions.OptFloatingReads;
+import static org.graalvm.compiler.core.common.GraalOptions.OptLoopTransform;
+import static org.graalvm.compiler.core.common.GraalOptions.PartialUnroll;
 import static org.graalvm.compiler.core.common.GraalOptions.ReassociateInvariants;
 import static org.graalvm.compiler.core.common.GraalOptions.VerifyHeapAtReturn;
 
+import org.graalvm.compiler.loop.DefaultLoopPolicies;
+import org.graalvm.compiler.loop.LoopPolicies;
+import org.graalvm.compiler.loop.phases.LoopPartialUnrollPhase;
 import org.graalvm.compiler.loop.phases.LoopSafepointEliminationPhase;
 import org.graalvm.compiler.loop.phases.ReassociateInvariantPhase;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
@@ -79,6 +84,12 @@ public class MidTier extends PhaseSuite<MidTierContext> {
 
         appendPhase(new FrameStateAssignmentPhase());
 
+        LoopPolicies loopPolicies = createLoopPolicies();
+        if (OptLoopTransform.getValue(options)) {
+            if (PartialUnroll.getValue(options)) {
+                appendPhase(new LoopPartialUnrollPhase(loopPolicies, canonicalizer));
+            }
+        }
         if (ReassociateInvariants.getValue(options)) {
             appendPhase(new ReassociateInvariantPhase());
         }
@@ -88,5 +99,9 @@ public class MidTier extends PhaseSuite<MidTierContext> {
         }
 
         appendPhase(canonicalizer);
+    }
+
+    public LoopPolicies createLoopPolicies() {
+        return new DefaultLoopPolicies();
     }
 }

@@ -25,12 +25,11 @@ package org.graalvm.compiler.lir.alloc.trace;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugCounter;
-import org.graalvm.compiler.debug.DebugMemUseTracker;
-import org.graalvm.compiler.debug.DebugTimer;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.MemUseTrackerKey;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import org.graalvm.compiler.lir.phases.LIRPhase;
@@ -57,23 +56,23 @@ public abstract class TraceAllocationPhase<C extends TraceAllocationPhase.TraceA
     /**
      * Records time spent within {@link #apply}.
      */
-    private final DebugTimer timer;
+    private final TimerKey timer;
 
     /**
      * Records memory usage within {@link #apply}.
      */
-    private final DebugMemUseTracker memUseTracker;
+    private final MemUseTrackerKey memUseTracker;
 
     /**
      * Records the number of traces allocated with this phase.
      */
-    private final DebugCounter allocatedTraces;
+    private final CounterKey allocatedTraces;
 
     public static final class AllocationStatistics {
-        private final DebugCounter allocatedTraces;
+        private final CounterKey allocatedTraces;
 
         public AllocationStatistics(Class<?> clazz) {
-            allocatedTraces = Debug.counter("TraceRA[%s]", clazz);
+            allocatedTraces = DebugContext.counter("TraceRA[%s]", clazz);
         }
     }
 
@@ -110,19 +109,24 @@ public abstract class TraceAllocationPhase<C extends TraceAllocationPhase.TraceA
 
     @SuppressWarnings("try")
     public final void apply(TargetDescription target, LIRGenerationResult lirGenRes, Trace trace, C context, boolean dumpTrace) {
-        try (Scope s = Debug.scope(getName(), this)) {
-            try (DebugCloseable a = timer.start(); DebugCloseable c = memUseTracker.start()) {
-                if (dumpTrace && Debug.isDumpEnabled(Debug.DETAILED_LEVEL)) {
-                    Debug.dump(Debug.DETAILED_LEVEL, trace, "Before %s (Trace%s: %s)", getName(), trace.getId(), trace);
+        DebugContext debug = lirGenRes.getLIR().getDebug();
+        try (DebugContext.Scope s = debug.scope(getName(), this)) {
+            try (DebugCloseable a = timer.start(debug); DebugCloseable c = memUseTracker.start(debug)) {
+                if (dumpTrace) {
+                    if (debug.isDumpEnabled(DebugContext.DETAILED_LEVEL)) {
+                        debug.dump(DebugContext.DETAILED_LEVEL, trace, "Before %s (Trace%s: %s)", getName(), trace.getId(), trace);
+                    }
                 }
                 run(target, lirGenRes, trace, context);
-                allocatedTraces.increment();
-                if (dumpTrace && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
-                    Debug.dump(Debug.VERBOSE_LEVEL, trace, "After %s (Trace%s: %s)", getName(), trace.getId(), trace);
+                allocatedTraces.increment(debug);
+                if (dumpTrace) {
+                    if (debug.isDumpEnabled(DebugContext.VERBOSE_LEVEL)) {
+                        debug.dump(DebugContext.VERBOSE_LEVEL, trace, "After %s (Trace%s: %s)", getName(), trace.getId(), trace);
+                    }
                 }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

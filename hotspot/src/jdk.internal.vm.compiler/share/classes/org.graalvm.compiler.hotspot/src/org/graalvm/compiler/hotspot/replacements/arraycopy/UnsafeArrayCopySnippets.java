@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayBaseOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayIndexScale;
@@ -31,32 +32,33 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperLog2ElementSizeShift;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.runtime;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.wordSize;
-import static org.graalvm.compiler.nodes.NamedLocationIdentity.any;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.NOT_FREQUENT_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
+import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
-import org.graalvm.compiler.nodes.extended.UnsafeCopyNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.extended.RawStoreNode;
+import org.graalvm.compiler.nodes.extended.UnsafeCopyNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
+import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.ObjectAccess;
 import org.graalvm.word.LocationIdentity;
 import org.graalvm.word.Unsigned;
 import org.graalvm.word.WordFactory;
-import org.graalvm.compiler.replacements.Snippets;
+
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 
@@ -284,8 +286,8 @@ public class UnsafeArrayCopySnippets implements Snippets {
         private final SnippetInfo[] arraycopySnippets;
         private final SnippetInfo genericPrimitiveSnippet;
 
-        public Templates(OptionValues options, HotSpotProviders providers, TargetDescription target) {
-            super(options, providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
 
             arraycopySnippets = new SnippetInfo[JavaKind.values().length];
             arraycopySnippets[JavaKind.Boolean.ordinal()] = snippet(UnsafeArrayCopySnippets.class, "arraycopyBoolean");
@@ -315,7 +317,7 @@ public class UnsafeArrayCopySnippets implements Snippets {
             Arguments args = new Arguments(snippet, node.graph().getGuardsStage(), tool.getLoweringStage());
             node.addSnippetArguments(args);
 
-            SnippetTemplate template = template(args);
+            SnippetTemplate template = template(node.getDebug(), args);
             template.instantiate(providers.getMetaAccess(), node, DEFAULT_REPLACER, args);
         }
     }

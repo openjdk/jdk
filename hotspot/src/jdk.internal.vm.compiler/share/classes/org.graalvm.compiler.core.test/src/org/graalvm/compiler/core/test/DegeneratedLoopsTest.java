@@ -22,16 +22,14 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Test;
 
 /**
  * In the following tests, the usages of local variable "a" are replaced with the integer constant
@@ -81,17 +79,18 @@ public class DegeneratedLoopsTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     private void test(final String snippet) {
-        try (Scope s = Debug.scope("DegeneratedLoopsTest", new DebugDumpScope(snippet))) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("DegeneratedLoopsTest", new DebugDumpScope(snippet))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             HighTierContext context = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
             new CanonicalizerPhase().apply(graph, context);
-            Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
             StructuredGraph referenceGraph = parseEager(REFERENCE_SNIPPET, AllowAssumptions.YES);
-            Debug.dump(Debug.BASIC_LEVEL, referenceGraph, "ReferenceGraph");
+            debug.dump(DebugContext.BASIC_LEVEL, referenceGraph, "ReferenceGraph");
             assertEquals(referenceGraph, graph);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

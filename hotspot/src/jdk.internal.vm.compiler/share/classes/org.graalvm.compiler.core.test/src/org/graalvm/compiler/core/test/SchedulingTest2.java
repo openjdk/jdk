@@ -24,10 +24,8 @@ package org.graalvm.compiler.core.test;
 
 import java.util.List;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.nodes.BeginNode;
@@ -51,6 +49,7 @@ import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 public class SchedulingTest2 extends GraphScheduleTest {
 
@@ -65,11 +64,12 @@ public class SchedulingTest2 extends GraphScheduleTest {
     @Test
     public void testValueProxyInputs() {
         StructuredGraph graph = parseEager("testSnippet", AllowAssumptions.YES);
+        DebugContext debug = graph.getDebug();
         ReturnNode returnNode = graph.getNodes(ReturnNode.TYPE).first();
         BeginNode beginNode = graph.add(new BeginNode());
         returnNode.replaceAtPredecessor(beginNode);
         beginNode.setNext(returnNode);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST);
         schedulePhase.apply(graph);
         ScheduleResult schedule = graph.getLastSchedule();

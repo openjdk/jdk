@@ -22,8 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import static org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 import org.graalvm.compiler.lir.phases.LIRPhase;
@@ -47,13 +46,16 @@ abstract class LinearScanAllocationPhase {
 
     @SuppressWarnings("try")
     public final void apply(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context, boolean dumpLIR) {
-        try (Scope s = Debug.scope(getName(), this)) {
+        DebugContext debug = lirGenRes.getLIR().getDebug();
+        try (DebugContext.Scope s = debug.scope(getName(), this)) {
             run(target, lirGenRes, context);
-            if (dumpLIR && Debug.isDumpEnabled(Debug.VERBOSE_LEVEL)) {
-                Debug.dump(Debug.VERBOSE_LEVEL, lirGenRes.getLIR(), "After %s", getName());
+            if (dumpLIR) {
+                if (debug.isDumpEnabled(DebugContext.VERBOSE_LEVEL)) {
+                    debug.dump(DebugContext.VERBOSE_LEVEL, lirGenRes.getLIR(), "After %s", getName());
+                }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

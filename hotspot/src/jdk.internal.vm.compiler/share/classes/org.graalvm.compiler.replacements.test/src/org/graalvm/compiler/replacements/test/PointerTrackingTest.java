@@ -24,8 +24,6 @@ package org.graalvm.compiler.replacements.test;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -82,9 +80,7 @@ public class PointerTrackingTest extends ReplacementsTest implements Snippets {
     @Test(expected = GraalError.class)
     @SuppressWarnings("try")
     public void testVerification() {
-        try (DebugConfigScope scope = Debug.disableIntercept()) {
-            compile(getResolvedJavaMethod("verificationSnippet"), null);
-        }
+        compile(getResolvedJavaMethod("verificationSnippet"), null);
     }
 
     public static long verificationSnippet(Object obj) {

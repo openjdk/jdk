@@ -31,12 +31,14 @@ import org.graalvm.compiler.bytecode.BytecodeStream;
 import org.graalvm.compiler.bytecode.ResolvedJavaMethodBytecode;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.hotspot.CompilationTask;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.java.BciBlockMapping;
 import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Assert;
@@ -68,13 +70,13 @@ public abstract class GraalOSRTestBase extends GraalCompilerTest {
         checkResult(result);
     }
 
-    protected static void compile(OptionValues options, ResolvedJavaMethod method, int bci) {
+    protected static void compile(DebugContext debug, ResolvedJavaMethod method, int bci) {
         HotSpotJVMCIRuntimeProvider runtime = HotSpotJVMCIRuntime.runtime();
         long jvmciEnv = 0L;
         HotSpotCompilationRequest request = new HotSpotCompilationRequest((HotSpotResolvedJavaMethod) method, bci, jvmciEnv);
         HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) runtime.getCompiler();
-        CompilationTask task = new CompilationTask(runtime, compiler, request, true, true, options);
-        HotSpotCompilationRequestResult result = task.runCompilation();
+        CompilationTask task = new CompilationTask(runtime, compiler, request, true, true, debug.getOptions());
+        HotSpotCompilationRequestResult result = task.runCompilation(debug);
         if (result.getFailure() != null) {
             throw new GraalError(result.getFailureMessage());
         }
@@ -84,10 +86,11 @@ public abstract class GraalOSRTestBase extends GraalCompilerTest {
      * Returns the target BCI of the first bytecode backedge. This is where HotSpot triggers
      * on-stack-replacement in case the backedge counter overflows.
      */
-    private static int getBackedgeBCI(ResolvedJavaMethod method) {
+    private static int getBackedgeBCI(DebugContext debug, ResolvedJavaMethod method) {
         Bytecode code = new ResolvedJavaMethodBytecode(method);
         BytecodeStream stream = new BytecodeStream(code.getCode());
-        BciBlockMapping bciBlockMapping = BciBlockMapping.create(stream, code, getInitialOptions());
+        OptionValues options = debug.getOptions();
+        BciBlockMapping bciBlockMapping = BciBlockMapping.create(stream, code, options, debug);
 
         for (BciBlock block : bciBlockMapping.getBlocks()) {
             if (block.startBci != -1) {
@@ -117,12 +120,11 @@ public abstract class GraalOSRTestBase extends GraalCompilerTest {
 
     private void compileOSR(OptionValues options, ResolvedJavaMethod method) {
         // ensure eager resolving
-        parseEager(method, AllowAssumptions.YES, options);
-        int bci = getBackedgeBCI(method);
+        StructuredGraph graph = parseEager(method, AllowAssumptions.YES, options);
+        DebugContext debug = graph.getDebug();
+        int bci = getBackedgeBCI(debug, method);
         assert bci != -1;
-        // ensure eager resolving
-        parseEager(method, AllowAssumptions.YES, options);
-        compile(options, method, bci);
+        compile(debug, method, bci);
     }
 
     protected enum ReturnValue {

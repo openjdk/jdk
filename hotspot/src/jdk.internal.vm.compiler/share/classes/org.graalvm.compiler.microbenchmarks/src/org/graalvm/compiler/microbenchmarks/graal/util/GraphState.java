@@ -25,8 +25,7 @@ package org.graalvm.compiler.microbenchmarks.graal.util;
 import static org.graalvm.compiler.microbenchmarks.graal.util.GraalUtil.getGraph;
 import static org.graalvm.compiler.microbenchmarks.graal.util.GraalUtil.getMethodFromMethodSpec;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugEnvironment;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
@@ -46,15 +45,13 @@ public abstract class GraphState {
     @SuppressWarnings("try")
     public GraphState() {
         GraalState graal = new GraalState();
-        // Ensure a debug configuration for this thread is initialized
-        DebugEnvironment.ensureInitialized(graal.options);
-
+        DebugContext debug = graal.debug;
         ResolvedJavaMethod method = graal.metaAccess.lookupJavaMethod(getMethodFromMethodSpec(getClass()));
         StructuredGraph structuredGraph = null;
-        try (Debug.Scope s = Debug.scope("GraphState", method)) {
+        try (DebugContext.Scope s = debug.scope("GraphState", method)) {
             structuredGraph = preprocessOriginal(getGraph(graal, method));
         } catch (Throwable t) {
-            Debug.handle(t);
+            debug.handle(t);
         }
         this.originalGraph = structuredGraph;
     }
@@ -75,6 +72,6 @@ public abstract class GraphState {
 
     @Setup(Level.Invocation)
     public void beforeInvocation() {
-        graph = (StructuredGraph) originalGraph.copy();
+        graph = (StructuredGraph) originalGraph.copy(originalGraph.getDebug());
     }
 }

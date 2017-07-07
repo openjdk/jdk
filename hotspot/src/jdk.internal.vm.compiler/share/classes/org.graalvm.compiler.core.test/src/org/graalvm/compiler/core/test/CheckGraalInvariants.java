@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.core.test;
 
-import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.INTERCEPT;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,14 +46,11 @@ import org.graalvm.compiler.api.replacements.Snippet.VarargsParameter;
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.bytecode.BridgeMethodUtils;
 import org.graalvm.compiler.core.CompilerThreadFactory;
-import org.graalvm.compiler.core.CompilerThreadFactory.DebugConfigAccess;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
-import org.graalvm.compiler.debug.DebugEnvironment;
-import org.graalvm.compiler.debug.DelegatingDebugConfig;
-import org.graalvm.compiler.debug.GraalDebugConfig;
+import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -203,12 +198,7 @@ public class CheckGraalInvariants extends GraalCompilerTest {
         String[] filters = property == null ? null : property.split(",");
 
         OptionValues options = getInitialOptions();
-        CompilerThreadFactory factory = new CompilerThreadFactory("CheckInvariantsThread", new DebugConfigAccess() {
-            @Override
-            public GraalDebugConfig getDebugConfig() {
-                return DebugEnvironment.ensureInitialized(options);
-            }
-        });
+        CompilerThreadFactory factory = new CompilerThreadFactory("CheckInvariantsThread");
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         ThreadPoolExecutor executor = new ThreadPoolExecutor(availableProcessors, availableProcessors, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), factory);
 
@@ -216,17 +206,19 @@ public class CheckGraalInvariants extends GraalCompilerTest {
 
         for (Method m : BadUsageWithEquals.class.getDeclaredMethods()) {
             ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-            StructuredGraph graph = new StructuredGraph.Builder(options, AllowAssumptions.YES).method(method).build();
-            try (DebugConfigScope s = Debug.setConfig(new DelegatingDebugConfig().disable(INTERCEPT)); Debug.Scope ds = Debug.scope("CheckingGraph", graph, method)) {
-                graphBuilderSuite.apply(graph, context);
-                // update phi stamps
-                graph.getNodes().filter(PhiNode.class).forEach(PhiNode::inferStamp);
-                checkGraph(context, graph);
-                errors.add(String.format("Expected error while checking %s", m));
-            } catch (VerificationError e) {
-                // expected!
-            } catch (Throwable e) {
-                errors.add(String.format("Error while checking %s:%n%s", m, printStackTraceToString(e)));
+            try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
+                StructuredGraph graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).method(method).build();
+                try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
+                    graphBuilderSuite.apply(graph, context);
+                    // update phi stamps
+                    graph.getNodes().filter(PhiNode.class).forEach(PhiNode::inferStamp);
+                    checkGraph(context, graph);
+                    errors.add(String.format("Expected error while checking %s", m));
+                } catch (VerificationError e) {
+                    // expected!
+                } catch (Throwable e) {
+                    errors.add(String.format("Error while checking %s:%n%s", m, printStackTraceToString(e)));
+                }
             }
         }
         if (errors.isEmpty()) {
@@ -251,26 +243,29 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                         String methodName = className + "." + m.getName();
                         if (matches(filters, methodName)) {
                             executor.execute(() -> {
-                                ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-                                StructuredGraph graph = new StructuredGraph.Builder(options).method(method).build();
-                                try (DebugConfigScope s = Debug.setConfig(new DelegatingDebugConfig().disable(INTERCEPT)); Debug.Scope ds = Debug.scope("CheckingGraph", graph, method)) {
-                                    checkMethod(method);
-                                    graphBuilderSuite.apply(graph, context);
-                                    // update phi stamps
-                                    graph.getNodes().filter(PhiNode.class).forEach(PhiNode::inferStamp);
-                                    checkGraph(context, graph);
-                                } catch (VerificationError e) {
-                                    errors.add(e.getMessage());
-                                } catch (LinkageError e) {
-                                    // suppress linkages errors resulting from eager resolution
-                                } catch (BailoutException e) {
-                                    // Graal bail outs on certain patterns in Java bytecode (e.g.,
-                                    // unbalanced monitors introduced by jacoco).
-                                } catch (Throwable e) {
-                                    try {
-                                        tool.handleParsingException(e);
-                                    } catch (Throwable t) {
-                                        errors.add(String.format("Error while checking %s:%n%s", methodName, printStackTraceToString(e)));
+                                try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
+                                    ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
+                                    StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).build();
+                                    try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
+                                        checkMethod(method);
+                                        graphBuilderSuite.apply(graph, context);
+                                        // update phi stamps
+                                        graph.getNodes().filter(PhiNode.class).forEach(PhiNode::inferStamp);
+                                        checkGraph(context, graph);
+                                    } catch (VerificationError e) {
+                                        errors.add(e.getMessage());
+                                    } catch (LinkageError e) {
+                                        // suppress linkages errors resulting from eager resolution
+                                    } catch (BailoutException e) {
+                                        // Graal bail outs on certain patterns in Java bytecode
+                                        // (e.g.,
+                                        // unbalanced monitors introduced by jacoco).
+                                    } catch (Throwable e) {
+                                        try {
+                                            tool.handleParsingException(e);
+                                        } catch (Throwable t) {
+                                            errors.add(String.format("Error while checking %s:%n%s", methodName, printStackTraceToString(e)));
+                                        }
                                     }
                                 }
                             });

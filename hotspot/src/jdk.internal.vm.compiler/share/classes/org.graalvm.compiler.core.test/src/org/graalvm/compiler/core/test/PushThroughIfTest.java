@@ -22,15 +22,14 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 public class PushThroughIfTest extends GraalCompilerTest {
 
@@ -59,7 +58,8 @@ public class PushThroughIfTest extends GraalCompilerTest {
 
     private void test(String snippet, String reference) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         for (FrameState fs : graph.getNodes(FrameState.TYPE).snapshot()) {
             fs.replaceAtUsages(null);
             GraphUtil.killWithUnusedFloatingInputs(fs);

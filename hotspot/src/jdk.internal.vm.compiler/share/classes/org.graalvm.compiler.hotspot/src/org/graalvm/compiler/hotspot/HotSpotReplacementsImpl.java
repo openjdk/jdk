@@ -27,6 +27,7 @@ import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.hotspot.word.HotSpotOperation;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.replacements.ReplacementsImpl;
 
 import jdk.vm.ci.code.TargetDescription;
@@ -39,7 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class HotSpotReplacementsImpl extends ReplacementsImpl {
 
     public HotSpotReplacementsImpl(OptionValues options, Providers providers, SnippetReflectionProvider snippetReflection, BytecodeProvider bytecodeProvider, TargetDescription target) {
-        super(options, providers, snippetReflection, bytecodeProvider, target);
+        super(options, new GraalDebugHandlersFactory(snippetReflection), providers, snippetReflection, bytecodeProvider, target);
     }
 
     @Override

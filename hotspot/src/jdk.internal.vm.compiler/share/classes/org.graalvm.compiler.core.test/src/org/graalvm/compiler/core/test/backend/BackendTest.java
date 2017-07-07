@@ -22,15 +22,14 @@
  */
 package org.graalvm.compiler.core.test.backend;
 
-import jdk.vm.ci.code.Architecture;
-
 import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
+
+import jdk.vm.ci.code.Architecture;
 
 public abstract class BackendTest extends GraalCompilerTest {
 
@@ -44,10 +43,11 @@ public abstract class BackendTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     protected LIRGenerationResult getLIRGenerationResult(final StructuredGraph graph) {
-        try (Scope s = Debug.scope("FrontEnd")) {
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("FrontEnd")) {
             GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), OptimisticOptimizations.NONE, graph.getProfilingInfo(), createSuites(graph.getOptions()));
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
 
         LIRGenerationResult lirGen = GraalCompiler.emitLIR(getBackend(), graph, null, null, createLIRSuites(graph.getOptions()));

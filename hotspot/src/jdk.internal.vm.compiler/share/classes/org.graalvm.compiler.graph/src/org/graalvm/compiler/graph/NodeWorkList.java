@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 
 public abstract class NodeWorkList implements Iterable<Node> {
 
@@ -75,6 +75,7 @@ public abstract class NodeWorkList implements Iterable<Node> {
         private static final int EXPLICIT_BITMAP_THRESHOLD = 10;
         protected NodeBitMap inQueue;
 
+        private final DebugContext debug;
         private int iterationLimit;
         private Node firstNoChange;
         private Node lastPull;
@@ -82,6 +83,7 @@ public abstract class NodeWorkList implements Iterable<Node> {
 
         public IterativeNodeWorkList(Graph graph, boolean fill, int iterationLimitPerNode) {
             super(graph, fill);
+            debug = graph.getDebug();
             assert iterationLimitPerNode > 0;
             long limit = (long) iterationLimitPerNode * graph.getNodeCount();
             iterationLimit = (int) Long.min(Integer.MAX_VALUE, limit);
@@ -94,7 +96,7 @@ public abstract class NodeWorkList implements Iterable<Node> {
                 public boolean hasNext() {
                     dropDeleted();
                     if (iterationLimit <= 0) {
-                        Debug.log(Debug.INFO_LEVEL, "Exceeded iteration limit in IterativeNodeWorkList");
+                        debug.log(DebugContext.INFO_LEVEL, "Exceeded iteration limit in IterativeNodeWorkList");
                         return false;
                     }
                     return !worklist.isEmpty();
