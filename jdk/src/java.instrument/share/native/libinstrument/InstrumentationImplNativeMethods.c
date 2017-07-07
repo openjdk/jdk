@@ -159,3 +159,20 @@ JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_setNativeMethodPr
   (JNIEnv * jnienv, jobject implThis, jlong agent, jobjectArray prefixArray, jboolean isRetransformable) {
     setNativeMethodPrefixes(jnienv, (JPLISAgent*)(intptr_t)agent, prefixArray, isRetransformable);
 }
+
+
+/*
+ * Class:     sun_instrument_InstrumentationImpl
+ * Method:    loadAgent0
+ */
+JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_loadAgent0
+   (JNIEnv* env, jclass clazz, jstring jarfile)
+{
+    extern jint loadAgent(JNIEnv* env, jstring path);
+    if (loadAgent(env, jarfile) != JNI_OK) {
+        if (!(*env)->ExceptionCheck(env)) {
+            createAndThrowInternalError(env);
+        }
+    }
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,6 @@ class MetalFontDesktopProperty extends com.sun.java.swing.plaf.windows.DesktopPr
      * Creates a MetalFontDesktopProperty.
      *
      * @param key Key used in looking up desktop value.
-     * @param toolkit Toolkit used to fetch property from, can be null
-     *        in which default will be used.
      * @param type Type of font being used, corresponds to MetalTheme font
      *        type.
      */

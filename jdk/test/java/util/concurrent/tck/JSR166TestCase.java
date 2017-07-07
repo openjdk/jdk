@@ -26,8 +26,9 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
+ * Written by Doug Lea and Martin Buchholz with assistance from
+ * members of JCP JSR-166 Expert Group and released to the public
+ * domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  * Other contributors include Andrew Wright, Jeffrey Hayes,
  * Pat Fisher, Mike Judd.
@@ -35,32 +36,33 @@
 
 /*
  * @test
- * @summary JSR-166 tck tests (conformance testing mode)
+ * @summary JSR-166 tck tests, in a number of variations.
+ *          The first is the conformance testing variant,
+ *          while others also test implementation details.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
- */
-
-/*
- * @test
- * @summary JSR-166 tck tests (whitebox tests allowed)
- * @build *
- * @modules java.base/java.util.concurrent:open
- *          java.base/java.lang:open
- *          java.management
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  */
@@ -79,8 +81,6 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -118,7 +118,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.AssertionFailedError;
@@ -328,9 +327,11 @@ public class JSR166TestCase extends TestCase {
 
 //     public static String cpuModel() {
 //         try {
-//             Matcher matcher = Pattern.compile("model name\\s*: (.*)")
+//             java.util.regex.Matcher matcher
+//               = Pattern.compile("model name\\s*: (.*)")
 //                 .matcher(new String(
-//                      Files.readAllBytes(Paths.get("/proc/cpuinfo")), "UTF-8"));
+//                     java.nio.file.Files.readAllBytes(
+//                         java.nio.file.Paths.get("/proc/cpuinfo")), "UTF-8"));
 //             matcher.find();
 //             return matcher.group(1);
 //         } catch (Exception ex) { return null; }
@@ -1326,18 +1327,58 @@ public class JSR166TestCase extends TestCase {
                 startTime = System.nanoTime();
             else if (millisElapsedSince(startTime) > timeoutMillis) {
                 threadAssertTrue(thread.isAlive());
-                return;
+                fail("timed out waiting for thread to enter wait state");
             }
             Thread.yield();
         }
     }
 
     /**
-     * Waits up to LONG_DELAY_MS for the given thread to enter a wait
-     * state: BLOCKED, WAITING, or TIMED_WAITING.
+     * Spin-waits up to the specified number of milliseconds for the given
+     * thread to enter a wait state: BLOCKED, WAITING, or TIMED_WAITING,
+     * and additionally satisfy the given condition.
+     */
+    void waitForThreadToEnterWaitState(
+        Thread thread, long timeoutMillis, Callable<Boolean> waitingForGodot) {
+        long startTime = 0L;
+        for (;;) {
+            Thread.State s = thread.getState();
+            if (s == Thread.State.BLOCKED ||
+                s == Thread.State.WAITING ||
+                s == Thread.State.TIMED_WAITING) {
+                try {
+                    if (waitingForGodot.call())
+                        return;
+                } catch (Throwable fail) { threadUnexpectedException(fail); }
+            }
+            else if (s == Thread.State.TERMINATED)
+                fail("Unexpected thread termination");
+            else if (startTime == 0L)
+                startTime = System.nanoTime();
+            else if (millisElapsedSince(startTime) > timeoutMillis) {
+                threadAssertTrue(thread.isAlive());
+                fail("timed out waiting for thread to enter wait state");
+            }
+            Thread.yield();
+        }
+    }
+
+    /**
+     * Spin-waits up to LONG_DELAY_MS milliseconds for the given thread to
+     * enter a wait state: BLOCKED, WAITING, or TIMED_WAITING.
      */
     void waitForThreadToEnterWaitState(Thread thread) {
         waitForThreadToEnterWaitState(thread, LONG_DELAY_MS);
+    }
+
+    /**
+     * Spin-waits up to LONG_DELAY_MS milliseconds for the given thread to
+     * enter a wait state: BLOCKED, WAITING, or TIMED_WAITING,
+     * and additionally satisfy the given condition.
+     */
+    void waitForThreadToEnterWaitState(
+        Thread thread, Callable<Boolean> waitingForGodot) {
+        waitForThreadToEnterWaitState(thread, LONG_DELAY_MS, waitingForGodot);
     }
 
     /**

@@ -27,12 +27,12 @@
  * @summary Basic unit test of thread states returned by
  *          ThreadMXBean.getThreadInfo.getThreadState().
  *          It also tests lock information returned by ThreadInfo.
- *
  * @author  Mandy Chung
  *
  * @library ../../Thread
  * @library /lib/testlibrary
- * @modules java.management
+ * @library /test/lib
+ *
  * @build jdk.testlibrary.*
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest

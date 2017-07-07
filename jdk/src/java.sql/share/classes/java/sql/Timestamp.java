@@ -69,6 +69,8 @@ import jdk.internal.misc.JavaLangAccess;
  * inheritance relationship between {@code Timestamp}
  * and {@code java.util.Date} really
  * denotes implementation inheritance, and not type inheritance.
+ *
+ * @since 1.1
  */
 public class Timestamp extends java.util.Date {
 

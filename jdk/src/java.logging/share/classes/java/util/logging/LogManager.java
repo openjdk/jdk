@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package java.util.logging;
 
 import java.io.*;
@@ -43,7 +42,6 @@ import java.util.stream.Stream;
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.util.logging.internal.LoggingProviderImpl;
-import java.lang.reflect.Module;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
 /**
@@ -1839,6 +1837,7 @@ public class LogManager {
      *          logging configuration file.
      *
      * @see #updateConfiguration(java.io.InputStream, java.util.function.Function)
+     * @since 9
      */
     public void updateConfiguration(Function<String, BiFunction<String,String,String>> mapper)
             throws IOException {
@@ -1888,7 +1887,7 @@ public class LogManager {
      * The registered {@linkplain #addConfigurationListener configuration
      * listeners} will be invoked after the configuration is successfully updated.
      * <br><br>
-     * <table summary="Updating configuration properties">
+     * <table><caption style="display:none">Updating configuration properties</caption>
      * <tr>
      * <th>Property</th>
      * <th>Resulting Behavior</th>
@@ -2035,6 +2034,7 @@ public class LogManager {
      * @throws  IOException if there are problems reading from the stream,
      *          or the given stream is not in the
      *          {@linkplain java.util.Properties properties file} format.
+     * @since 9
      */
     public void updateConfiguration(InputStream ins,
             Function<String, BiFunction<String,String,String>> mapper)
