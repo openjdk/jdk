@@ -50,6 +50,7 @@ class MetaspaceSummary;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
+class WorkGang;
 class nmethod;
 
 class GCMessage : public FormatBuffer<1024> {
@@ -602,6 +603,16 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Returns true when the phase is reached.  Returns false for an
   // unknown phase.  The default implementation returns false.
   virtual bool request_concurrent_phase(const char* phase);
+
+  // Provides a thread pool to SafepointSynchronize to use
+  // for parallel safepoint cleanup.
+  // GCs that use a GC worker thread pool may want to share
+  // it for use during safepoint cleanup. This is only possible
+  // if the GC can pause and resume concurrent work (e.g. G1
+  // concurrent marking) for an intermittent non-GC safepoint.
+  // If this method returns NULL, SafepointSynchronize will
+  // perform cleanup tasks serially in the VMThread.
+  virtual WorkGang* get_safepoint_workers() { return NULL; }
 
   // Non product verification and debugging.
 #ifndef PRODUCT

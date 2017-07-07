@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,18 @@ class SafepointSynchronize : AllStatic {
   enum SafepointTimeoutReason {
     _spinning_timeout = 0,
     _blocking_timeout = 1
+  };
+
+  // The enums are listed in the order of the tasks when done serially.
+  enum SafepointCleanupTasks {
+    SAFEPOINT_CLEANUP_DEFLATE_MONITORS,
+    SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES,
+    SAFEPOINT_CLEANUP_COMPILATION_POLICY,
+    SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
+    SAFEPOINT_CLEANUP_STRING_TABLE_REHASH,
+    SAFEPOINT_CLEANUP_CLD_PURGE,
+    // Leave this one last.
+    SAFEPOINT_CLEANUP_NUM_TASKS
   };
 
   typedef struct {

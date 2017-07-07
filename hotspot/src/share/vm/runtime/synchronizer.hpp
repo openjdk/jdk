@@ -32,6 +32,12 @@
 
 class ObjectMonitor;
 
+struct DeflateMonitorCounters {
+  int nInuse;          // currently associated with objects
+  int nInCirculation;  // extant
+  int nScavenged;      // reclaimed
+};
+
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
  public:
@@ -127,7 +133,11 @@ class ObjectSynchronizer : AllStatic {
   // GC: we current use aggressive monitor deflation policy
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
-  static void deflate_idle_monitors();
+  static void deflate_idle_monitors(DeflateMonitorCounters* counters);
+  static void deflate_thread_local_monitors(Thread* thread, DeflateMonitorCounters* counters);
+  static void prepare_deflate_idle_monitors(DeflateMonitorCounters* counters);
+  static void finish_deflate_idle_monitors(DeflateMonitorCounters* counters);
+
   // For a given monitor list: global or per-thread, deflate idle monitors
   static int deflate_monitor_list(ObjectMonitor** listheadp,
                                   ObjectMonitor** freeHeadp,
