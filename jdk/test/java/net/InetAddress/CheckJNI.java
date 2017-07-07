@@ -22,17 +22,18 @@
  */
 
 /* @test
-   @bug 4889870 4890033
-   @summary java -Xcheck:jni failing in net code on Solaris / [Datagram]Socket.getLocalAddress() failure
-   @library /lib/testlibrary
-   @build jdk.testlibrary.NetworkConfiguration
-   @run main/othervm -Xcheck:jni CheckJNI
-*/
+ * @bug 4889870 4890033
+ * @summary java -Xcheck:jni failing in net code on Solaris / [Datagram]Socket.getLocalAddress() failure
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ * @run main/othervm -Xcheck:jni CheckJNI
+ */
 
 import java.net.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 
 public class CheckJNI {
     static Socket s;

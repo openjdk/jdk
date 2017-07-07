@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 /**
@@ -73,7 +73,7 @@ public class IndexBuilder {
      */
     private boolean javafx;
 
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Utils utils;
     private final Comparator<Element> comparator;
 
@@ -84,7 +84,7 @@ public class IndexBuilder {
      * @param noDeprecated  true if -nodeprecated option is used,
      *                      false otherwise.
      */
-    public IndexBuilder(Configuration configuration, boolean noDeprecated) {
+    public IndexBuilder(BaseConfiguration configuration, boolean noDeprecated) {
         this(configuration, noDeprecated, false);
     }
 
@@ -96,7 +96,7 @@ public class IndexBuilder {
      *                      false otherwise.
      * @param classesOnly   Include only classes in index.
      */
-    public IndexBuilder(Configuration configuration, boolean noDeprecated,
+    public IndexBuilder(BaseConfiguration configuration, boolean noDeprecated,
                         boolean classesOnly) {
         this.configuration  = configuration;
         this.utils = configuration.utils;

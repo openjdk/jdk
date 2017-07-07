@@ -25,8 +25,8 @@
  * @bug 6907760 6929532
  * @summary Tests WatchService behavior when lots of events are pending (use -Dseed=X to set PRNG seed)
  * @library ..
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/timeout=180 LotsOfEvents
  * @key randomness
  */
@@ -37,7 +37,7 @@ import java.nio.file.*;
 import static java.nio.file.StandardWatchEventKinds.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class LotsOfEvents {
 

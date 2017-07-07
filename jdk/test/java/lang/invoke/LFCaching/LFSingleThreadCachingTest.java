@@ -27,10 +27,11 @@
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with single thread
  * @author kshefov
- * @library /lib/testlibrary/jsr292 /lib/testlibrary
+ * @library /lib/testlibrary /java/lang/invoke/common /test/lib
  * @modules java.base/java.lang.ref:open
  *          java.base/java.lang.invoke:open
  *          java.management
+ * @build jdk.test.lib.TimeLimitedRunner
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFCachingTestCase
@@ -77,6 +78,7 @@ public final class LFSingleThreadCachingTest extends LFCachingTestCase {
      * @param args Accepts no arguments.
      */
     public static void main(String[] args) {
-        LambdaFormTestCase.runTests(LFSingleThreadCachingTest::new, EnumSet.allOf(TestMethods.class));
+        LambdaFormTestCase.runTests(LFSingleThreadCachingTest::new,
+                                    EnumSet.allOf(TestMethods.class));
     }
 }

@@ -25,9 +25,10 @@
  * @test
  * @bug 8163798
  * @summary basic tests for multi-release jar versioned streams
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
- * @build jdk.testlibrary.FileUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng TestVersionedStream
  */
 
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class TestVersionedStream {
     private final Path userdir;

@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
@@ -106,7 +107,15 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
-        return checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
+        if (!checkAlgorithm(disabledAlgorithms, algorithm, decomposer)) {
+            return false;
+        }
+
+        if (parameters != null) {
+            return algorithmConstraints.permits(algorithm, parameters);
+        }
+
+        return true;
     }
 
     /*
@@ -242,7 +251,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 List<Constraint> constraintList =
                         constraintsMap.getOrDefault(algorithm,
                                 new ArrayList<>(1));
-                constraintsMap.putIfAbsent(algorithm, constraintList);
+
+                // Consider the impact of algorithm aliases.
+                for (String alias : AlgorithmDecomposer.getAliases(algorithm)) {
+                    constraintsMap.putIfAbsent(alias, constraintList);
+                }
+
                 if (space <= 0) {
                     constraintList.add(new DisabledConstraint(algorithm));
                     continue;
@@ -351,6 +365,27 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return true;
         }
 
+        // Check if constraints permit this AlgorithmParameters.
+        public boolean permits(String algorithm, AlgorithmParameters aps) {
+            List<Constraint> list = getConstraints(algorithm);
+            if (list == null) {
+                return true;
+            }
+
+            for (Constraint constraint : list) {
+                if (!constraint.permits(aps)) {
+                    if (debug != null) {
+                        debug.println("keySizeConstraint: failed algorithm " +
+                                "parameters constraint check " + aps);
+                    }
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // Check if constraints permit this cert.
         public void permits(String algorithm, ConstraintsParameters cp)
                 throws CertPathValidatorException {
@@ -445,6 +480,18 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         /**
+         * Check if the algorithm constraint permits a given cryptographic
+         * parameters.
+         *
+         * @param parameters the cryptographic parameters
+         * @return 'true' if the cryptographic parameters is allowed,
+         *         'false' ortherwise.
+         */
+        public boolean permits(AlgorithmParameters parameters) {
+            return true;
+        }
+
+        /**
          * Check if an algorithm constraint is permitted with a given
          * ConstraintsParameters.
          *
@@ -528,6 +575,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          * call next() for any following constraints. If it does not, exit
          * as this constraint(s) does not restrict the operation.
          */
+        @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
             if (debug != null) {
@@ -551,100 +599,101 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * This class handles the denyAfter constraint.  The date is in the UTC/GMT
      * timezone.
      */
-     private static class DenyAfterConstraint extends Constraint {
-         private Date denyAfterDate;
-         private static final SimpleDateFormat dateFormat =
-                 new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
+    private static class DenyAfterConstraint extends Constraint {
+        private Date denyAfterDate;
+        private static final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("EEE, MMM d HH:mm:ss z yyyy");
 
-         DenyAfterConstraint(String algo, int year, int month, int day) {
-             Calendar c;
+        DenyAfterConstraint(String algo, int year, int month, int day) {
+            Calendar c;
 
-             algorithm = algo;
+            algorithm = algo;
 
-             if (debug != null) {
-                 debug.println("DenyAfterConstraint read in as:  year " +
-                         year + ", month = " + month + ", day = " + day);
-             }
+            if (debug != null) {
+                debug.println("DenyAfterConstraint read in as:  year " +
+                        year + ", month = " + month + ", day = " + day);
+            }
 
-             c = new Calendar.Builder().setTimeZone(TimeZone.getTimeZone("GMT"))
-                     .setDate(year, month - 1, day).build();
+            c = new Calendar.Builder().setTimeZone(TimeZone.getTimeZone("GMT"))
+                    .setDate(year, month - 1, day).build();
 
-             if (year > c.getActualMaximum(Calendar.YEAR) ||
-                     year < c.getActualMinimum(Calendar.YEAR)) {
-                 throw new IllegalArgumentException(
-                         "Invalid year given in constraint: " + year);
-             }
-             if ((month - 1) > c.getActualMaximum(Calendar.MONTH) ||
-                     (month - 1) < c.getActualMinimum(Calendar.MONTH)) {
-                 throw new IllegalArgumentException(
-                         "Invalid month given in constraint: " + month);
-             }
-             if (day > c.getActualMaximum(Calendar.DAY_OF_MONTH) ||
-                     day < c.getActualMinimum(Calendar.DAY_OF_MONTH)) {
-                 throw new IllegalArgumentException(
-                         "Invalid Day of Month given in constraint: " + day);
-             }
+            if (year > c.getActualMaximum(Calendar.YEAR) ||
+                    year < c.getActualMinimum(Calendar.YEAR)) {
+                throw new IllegalArgumentException(
+                        "Invalid year given in constraint: " + year);
+            }
+            if ((month - 1) > c.getActualMaximum(Calendar.MONTH) ||
+                    (month - 1) < c.getActualMinimum(Calendar.MONTH)) {
+                throw new IllegalArgumentException(
+                        "Invalid month given in constraint: " + month);
+            }
+            if (day > c.getActualMaximum(Calendar.DAY_OF_MONTH) ||
+                    day < c.getActualMinimum(Calendar.DAY_OF_MONTH)) {
+                throw new IllegalArgumentException(
+                        "Invalid Day of Month given in constraint: " + day);
+            }
 
-             denyAfterDate = c.getTime();
-             if (debug != null) {
-                 debug.println("DenyAfterConstraint date set to: " +
-                         dateFormat.format(denyAfterDate));
-             }
-         }
+            denyAfterDate = c.getTime();
+            if (debug != null) {
+                debug.println("DenyAfterConstraint date set to: " +
+                        dateFormat.format(denyAfterDate));
+            }
+        }
 
-         /*
-          * Checking that the provided date is not beyond the constraint date.
-          * The provided date can be the PKIXParameter date if given,
-          * otherwise it is the current date.
-          *
-          * If the constraint disallows, call next() for any following
-          * constraints. Throw an exception if this is the last constraint.
-          */
-         @Override
-         public void permits(ConstraintsParameters cp)
-                 throws CertPathValidatorException {
-             Date currentDate;
-             String errmsg;
+        /*
+         * Checking that the provided date is not beyond the constraint date.
+         * The provided date can be the PKIXParameter date if given,
+         * otherwise it is the current date.
+         *
+         * If the constraint disallows, call next() for any following
+         * constraints. Throw an exception if this is the last constraint.
+         */
+        @Override
+        public void permits(ConstraintsParameters cp)
+                throws CertPathValidatorException {
+            Date currentDate;
+            String errmsg;
 
-             if (cp.getJARTimestamp() != null) {
-                 currentDate = cp.getJARTimestamp().getTimestamp();
-                 errmsg = "JAR Timestamp date: ";
-             } else if (cp.getPKIXParamDate() != null) {
-                 currentDate = cp.getPKIXParamDate();
-                 errmsg = "PKIXParameter date: ";
-             } else {
-                 currentDate = new Date();
-                 errmsg = "Current date: ";
-             }
+            if (cp.getJARTimestamp() != null) {
+                currentDate = cp.getJARTimestamp().getTimestamp();
+                errmsg = "JAR Timestamp date: ";
+            } else if (cp.getPKIXParamDate() != null) {
+                currentDate = cp.getPKIXParamDate();
+                errmsg = "PKIXParameter date: ";
+            } else {
+                currentDate = new Date();
+                errmsg = "Current date: ";
+            }
 
-             if (!denyAfterDate.after(currentDate)) {
-                 if (next(cp)) {
-                     return;
-                 }
-                 throw new CertPathValidatorException(
-                         "denyAfter constraint check failed: " + algorithm +
-                         " used with Constraint date: " +
-                         dateFormat.format(denyAfterDate) + "; " + errmsg +
-                         dateFormat.format(currentDate) + extendedMsg(cp),
-                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
-             }
-         }
+            if (!denyAfterDate.after(currentDate)) {
+                if (next(cp)) {
+                    return;
+                }
+                throw new CertPathValidatorException(
+                        "denyAfter constraint check failed: " + algorithm +
+                        " used with Constraint date: " +
+                        dateFormat.format(denyAfterDate) + "; " + errmsg +
+                        dateFormat.format(currentDate) + extendedMsg(cp),
+                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
+            }
+        }
 
-         /*
-          * Return result if the constraint's date is beyond the current date
-          * in UTC timezone.
-          */
-         public boolean permits(Key key) {
-             if (next(key)) {
-                 return true;
-             }
-             if (debug != null) {
-                 debug.println("DenyAfterConstraints.permits(): " + algorithm);
-             }
+        /*
+         * Return result if the constraint's date is beyond the current date
+         * in UTC timezone.
+         */
+        @Override
+        public boolean permits(Key key) {
+            if (next(key)) {
+                return true;
+            }
+            if (debug != null) {
+                debug.println("DenyAfterConstraints.permits(): " + algorithm);
+            }
 
-             return denyAfterDate.after(new Date());
-         }
-     }
+            return denyAfterDate.after(new Date());
+        }
+    }
 
     /*
      * The usage constraint is for the "usage" keyword.  It checks against the
@@ -658,6 +707,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             this.usages = usages;
         }
 
+        @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
             for (String usage : usages) {
@@ -674,12 +724,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 if (debug != null) {
                     debug.println("Checking if usage constraint \"" + v +
                             "\" matches \"" + cp.getVariant() + "\"");
-                    // Because usage checking can come from many places
-                    // a stack trace is very helpful.
-                    ByteArrayOutputStream ba = new ByteArrayOutputStream();
-                    PrintStream ps = new PrintStream(ba);
-                    (new Exception()).printStackTrace(ps);
-                    debug.println(ba.toString());
+                    if (Debug.isVerbose()) {
+                        // Because usage checking can come from many places
+                        // a stack trace is very helpful.
+                        (new Exception()).printStackTrace(debug.getPrintStream());
+                    }
                 }
                 if (cp.getVariant().compareTo(v) == 0) {
                     if (next(cp)) {
@@ -747,6 +796,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          * constraint  Any permitted constraint will exit the linked list
          * to allow the operation.
          */
+        @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
             Key key = null;
@@ -770,6 +820,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         // Check if key constraint disable the specified key
         // Uses old style permit()
+        @Override
         public boolean permits(Key key) {
             // If we recursively find a constraint that permits us to use
             // this key, return true and skip any other constraint checks.
@@ -781,6 +832,30 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
 
             return permitsImpl(key);
+        }
+
+        @Override
+        public boolean permits(AlgorithmParameters parameters) {
+            String paramAlg = parameters.getAlgorithm();
+            if (!algorithm.equalsIgnoreCase(parameters.getAlgorithm())) {
+                // Consider the impact of the algorithm aliases.
+                Collection<String> aliases =
+                        AlgorithmDecomposer.getAliases(algorithm);
+                if (!aliases.contains(paramAlg)) {
+                    return true;
+                }
+            }
+
+            int keySize = KeyUtil.getKeySize(parameters);
+            if (keySize == 0) {
+                return false;
+            } else if (keySize > 0) {
+                return !((keySize < minSize) || (keySize > maxSize) ||
+                    (prohibitedSize == keySize));
+            }   // Otherwise, the key size is not accessible or determined.
+                // Conservatively, please don't disable such keys.
+
+            return true;
         }
 
         private boolean permitsImpl(Key key) {
@@ -810,6 +885,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             algorithm = algo;
         }
 
+        @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
             throw new CertPathValidatorException(
@@ -818,6 +894,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
         }
 
+        @Override
         public boolean permits(Key key) {
             return false;
         }

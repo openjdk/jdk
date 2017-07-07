@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     /**
      * The configuration used in this run of the standard doclet.
      */
-    ConfigurationImpl configuration;
+    HtmlConfiguration configuration;
 
     /**
      * The current class being documented.
@@ -87,7 +87,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      * @param configuration the configuration used in this run
      *        of the standard doclet.
      */
-    public ConstantsSummaryWriterImpl(ConfigurationImpl configuration) {
+    public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES);
         this.configuration = configuration;
         constantsTableSummary = configuration.getText("doclet.Constants_Table_Summary",

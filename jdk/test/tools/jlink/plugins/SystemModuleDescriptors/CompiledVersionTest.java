@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 
@@ -39,9 +40,12 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build CompiledVersionTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
+ *        CompiledVersionTest jdk.testlibrary.ProcessTools
  * @run testng CompiledVersionTest
  */
 

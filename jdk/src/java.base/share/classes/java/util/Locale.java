@@ -2702,6 +2702,7 @@ public final class Locale implements Cloneable, Serializable {
          * @see #setExtension(char, String)
          */
         public Builder removeUnicodeLocaleAttribute(String attribute) {
+            Objects.requireNonNull(attribute);
             try {
                 localeBuilder.removeUnicodeLocaleAttribute(attribute);
             } catch (LocaleSyntaxException e) {

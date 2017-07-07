@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,7 +513,7 @@ abstract class KeyStore extends KeyStoreSpi {
         if (entry != null) {
             // Get end-entity certificate and remove from system cert store
             X509Certificate[] certChain = entry.getCertificateChain();
-            if (certChain != null) {
+            if (certChain != null && certChain.length > 0) {
 
                 try {
 
@@ -629,7 +629,9 @@ abstract class KeyStore extends KeyStoreSpi {
 
         for (Map.Entry<String,KeyEntry> mapEntry : entries.entrySet()) {
             KeyEntry entry = mapEntry.getValue();
-            if (entry.certChain != null && entry.certChain[0].equals(cert)) {
+            if (entry.certChain != null &&
+                entry.certChain.length > 0 &&
+                entry.certChain[0].equals(cert)) {
                 return entry.getAlias();
             }
         }

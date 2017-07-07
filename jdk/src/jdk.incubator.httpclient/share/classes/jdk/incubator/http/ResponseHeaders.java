@@ -154,14 +154,12 @@ final class ResponseHeaders implements HttpHeaders {
             String k = key.toLowerCase(Locale.US);
             cookedHeaders.merge(k, newValues,
                     (v1, v2) -> {
-                        if (v1 == null) {
-                            ArrayList<String> newV = new ArrayList<>();
-                            newV.addAll(v2);
-                            return newV;
-                        } else {
-                            v1.addAll(v2);
-                            return v1;
+                        ArrayList<String> newV = new ArrayList<>();
+                        if (v1 != null) {
+                            newV.addAll(v1);
                         }
+                        newV.addAll(v2);
+                        return newV;
                     });
         }
         return cookedHeaders;

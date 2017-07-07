@@ -222,7 +222,8 @@ module java.base {
         jdk.naming.dns;
     exports sun.net.util to
         java.desktop,
-        jdk.jconsole;
+        jdk.jconsole,
+        jdk.incubator.httpclient;
     exports sun.net.www to
         java.desktop,
         jdk.incubator.httpclient,

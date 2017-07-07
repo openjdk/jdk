@@ -321,7 +321,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
                 assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
-        aboutToWait.await();
+        await(aboutToWait);
         waitForThreadToEnterWaitState(t);
         t.interrupt();
         awaitTermination(t);
@@ -826,7 +826,7 @@ public class LinkedTransferQueueTest extends JSR166TestCase {
         Thread first = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 q.transfer(four);
-                assertTrue(!q.contains(four));
+                assertFalse(q.contains(four));
                 assertEquals(1, q.size());
             }});
 
