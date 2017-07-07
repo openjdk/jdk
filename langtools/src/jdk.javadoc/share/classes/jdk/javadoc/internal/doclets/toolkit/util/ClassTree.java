@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 /**
@@ -94,7 +94,7 @@ public class ClassTree {
     */
     private final Map<TypeElement, SortedSet<TypeElement>> implementingClasses = new HashMap<>();
 
-    private final Configuration configuration;
+    private final BaseConfiguration configuration;
     private final Utils utils;
     private final Comparator<Element> comparator;
 
@@ -105,7 +105,7 @@ public class ClassTree {
      * @param noDeprecated Don't add deprecated classes in the class tree, if
      * true.
      */
-    public ClassTree(Configuration configuration, boolean noDeprecated) {
+    public ClassTree(BaseConfiguration configuration, boolean noDeprecated) {
         this.configuration = configuration;
         this.utils = configuration.utils;
 
@@ -126,7 +126,7 @@ public class ClassTree {
      * @param docEnv the DocletEnvironment.
      * @param configuration The current configuration of the doclet.
      */
-    public ClassTree(DocletEnvironment docEnv, Configuration configuration) {
+    public ClassTree(DocletEnvironment docEnv, BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         comparator = utils.makeClassUseComparator();
@@ -143,7 +143,7 @@ public class ClassTree {
      * @param classesSet a set of classes
      * @param configuration The current configuration of the doclet.
      */
-    public ClassTree(SortedSet<TypeElement>classesSet, Configuration configuration) {
+    public ClassTree(SortedSet<TypeElement>classesSet, BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         comparator = utils.makeClassUseComparator();
@@ -203,7 +203,7 @@ public class ClassTree {
      * @param typeElement for which sub class mapping is to be generated.
      * @param configuration the current configuration of the doclet.
      */
-    private void processType(TypeElement typeElement, Configuration configuration,
+    private void processType(TypeElement typeElement, BaseConfiguration configuration,
             Collection<TypeElement> bases, Map<TypeElement, SortedSet<TypeElement>> subs) {
         TypeElement superclass = utils.getFirstVisibleSuperClassAsTypeElement(typeElement);
         if (superclass != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ package jdk.test.lib.hprof.parser;
 import java.io.*;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Map;
 import jdk.test.lib.hprof.model.ArrayTypeCodes;
 import jdk.test.lib.hprof.model.*;
 
@@ -355,6 +356,22 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         }
 
         return snapshot;
+    }
+
+    public String printStackTraces() {
+        StringBuffer output = new StringBuffer();
+        for (Map.Entry<Integer, StackTrace> entry : stackTraces.entrySet()) {
+            StackFrame[] frames = entry.getValue().getFrames();
+            output.append("SerialNo " + entry.getKey() + "\n");
+            for (int i = 0; i < frames.length; i++) {
+                output.append("  " + frames[i].getClassName() + "." + frames[i].getMethodName()
+                        + frames[i].getMethodSignature() + " (" + frames[i].getSourceFileName()
+                        + ":" + frames[i].getLineNumber() + ")" + "\n");
+            }
+        }
+
+        System.out.println(output);
+        return output.toString();
     }
 
     private void skipBytes(long length) throws IOException {

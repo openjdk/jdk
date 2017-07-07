@@ -173,7 +173,11 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
   }
 }
 
-oop LiveFrameStream::create_primitive_value_instance(StackValueCollection* values, int i, TRAPS) {
+// Create and return a LiveStackFrame.PrimitiveSlot (if needed) for the
+// StackValue at the given index. 'type' is expected to be T_INT, T_LONG,
+// T_OBJECT, or T_CONFLICT.
+oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values,
+                                                    int i, BasicType type, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_null(vmSymbols::java_lang_LiveStackFrameInfo(), CHECK_NULL);
   instanceKlassHandle ik (THREAD, k);
 
@@ -182,8 +186,8 @@ oop LiveFrameStream::create_primitive_value_instance(StackValueCollection* value
   Symbol* signature = NULL;
 
   // ## TODO: type is only available in LocalVariable table, if present.
-  // ## StackValue type is T_INT or T_OBJECT.
-  switch (values->at(i)->type()) {
+  // ## StackValue type is T_INT or T_OBJECT (or converted to T_LONG on 64-bit)
+  switch (type) {
     case T_INT:
       args.push_int(values->int_at(i));
       signature = vmSymbols::asPrimitive_int_signature();
@@ -195,42 +199,26 @@ oop LiveFrameStream::create_primitive_value_instance(StackValueCollection* value
       break;
 
     case T_FLOAT:
-      args.push_float(values->float_at(i));
-      signature = vmSymbols::asPrimitive_float_signature();
-      break;
-
     case T_DOUBLE:
-      args.push_double(values->double_at(i));
-      signature = vmSymbols::asPrimitive_double_signature();
-      break;
-
     case T_BYTE:
-      args.push_int(values->int_at(i));
-      signature = vmSymbols::asPrimitive_byte_signature();
-      break;
-
     case T_SHORT:
-      args.push_int(values->int_at(i));
-      signature = vmSymbols::asPrimitive_short_signature();
-      break;
-
     case T_CHAR:
-      args.push_int(values->int_at(i));
-      signature = vmSymbols::asPrimitive_char_signature();
-      break;
-
     case T_BOOLEAN:
-      args.push_int(values->int_at(i));
-      signature = vmSymbols::asPrimitive_boolean_signature();
-      break;
+      THROW_MSG_(vmSymbols::java_lang_InternalError(), "Unexpected StackValue type", NULL);
 
     case T_OBJECT:
       return values->obj_at(i)();
 
     case T_CONFLICT:
       // put a non-null slot
-      args.push_int(0);
-      signature = vmSymbols::asPrimitive_int_signature();
+      #ifdef _LP64
+        args.push_long(0);
+        signature = vmSymbols::asPrimitive_long_signature();
+      #else
+        args.push_int(0);
+        signature = vmSymbols::asPrimitive_int_signature();
+      #endif
+
       break;
 
     default: ShouldNotReachHere();
@@ -252,9 +240,19 @@ objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* val
   objArrayHandle array_h(THREAD, array_oop);
   for (int i = 0; i < values->size(); i++) {
     StackValue* st = values->at(i);
-    oop obj = create_primitive_value_instance(values, i, CHECK_(empty));
-    if (obj != NULL)
+    BasicType type = st->type();
+    int index = i;
+#ifdef _LP64
+    if (type != T_OBJECT && type != T_CONFLICT) {
+        intptr_t ret = st->get_int(); // read full 64-bit slot
+        type = T_LONG;                // treat as long
+        index--;                      // undo +1 in StackValueCollection::long_at
+    }
+#endif
+    oop obj = create_primitive_slot_instance(values, index, type, CHECK_(empty));
+    if (obj != NULL) {
       array_h->obj_at_put(i, obj);
+    }
   }
   return array_h;
 }
@@ -286,6 +284,13 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
     StackValueCollection* expressions = _jvf->expressions();
     GrowableArray<MonitorInfo*>* monitors = _jvf->monitors();
 
+    int mode = 0;
+    if (_jvf->is_interpreted_frame()) {
+      mode = MODE_INTERPRETED;
+    } else if (_jvf->is_compiled_frame()) {
+      mode = MODE_COMPILED;
+    }
+
     if (!locals->is_empty()) {
       objArrayHandle locals_h = values_to_object_array(locals, CHECK);
       java_lang_LiveStackFrameInfo::set_locals(stackFrame(), locals_h());
@@ -298,6 +303,7 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
       objArrayHandle monitors_h = monitors_to_object_array(monitors, CHECK);
       java_lang_LiveStackFrameInfo::set_monitors(stackFrame(), monitors_h());
     }
+    java_lang_LiveStackFrameInfo::set_mode(stackFrame(), mode);
   }
 }
 

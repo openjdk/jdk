@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,7 @@ import java.io.Serializable;
 
 /**
  * This {@code Line2D} represents a line segment in {@code (x,y)}
- * coordinate space.  This class, like all of the Java 2D API, uses a
- * default coordinate system called <i>user space</i> in which the y-axis
- * values increase downward and x-axis values increase to the right.  For
- * more information on the user space coordinate system, see the
- * <a href="{@docRoot}/../technotes/guides/2d/spec/j2d-intro.html">
- * Coordinate Systems</a> section of the Java 2D Programmer's Guide.
+ * coordinate space.
  * <p>
  * This class is only the abstract superclass for all objects that
  * store a 2D line segment.
@@ -623,7 +618,7 @@ public abstract class Line2D implements Shape, Cloneable {
      *           specified line segment
      * @param y2 the Y coordinate of the end point of the
      *           specified line segment
-     * @return {@code <true>} if this line segment and the specified line segment
+     * @return {@code true} if this line segment and the specified line segment
      *                  intersect each other; {@code false} otherwise.
      * @since 1.2
      */

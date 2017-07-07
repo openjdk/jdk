@@ -42,6 +42,8 @@ package java.sql;
  *                           .build();
  * }
  * </pre>
+ *
+ * @since 9
  */
 public interface ShardingKeyBuilder {
 

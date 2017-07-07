@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,11 @@ import sun.management.MemoryUsageCompositeData;
  * the heap or non-heap memory of the Java virtual machine as a whole.
  *
  * <p> A {@code MemoryUsage} object contains four values:
- * <table summary="Describes the MemoryUsage object content">
+ * <table>
+ * <caption style="display:none">Describes the MemoryUsage object content</caption>
  * <tr>
- * <td valign=top> {@code init} </td>
- * <td valign=top> represents the initial amount of memory (in bytes) that
+ * <td style="vertical-align:top"> {@code init} </td>
+ * <td style="vertical-align:top"> represents the initial amount of memory (in bytes) that
  *      the Java virtual machine requests from the operating system
  *      for memory management during startup.  The Java virtual machine
  *      may request additional memory from the operating system and
@@ -48,13 +49,13 @@ import sun.management.MemoryUsageCompositeData;
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> {@code used} </td>
- * <td valign=top> represents the amount of memory currently used (in bytes).
+ * <td style="vertical-align:top"> {@code used} </td>
+ * <td style="vertical-align:top"> represents the amount of memory currently used (in bytes).
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> {@code committed} </td>
- * <td valign=top> represents the amount of memory (in bytes) that is
+ * <td style="vertical-align:top"> {@code committed} </td>
+ * <td style="vertical-align:top"> represents the amount of memory (in bytes) that is
  *      guaranteed to be available for use by the Java virtual machine.
  *      The amount of committed memory may change over time (increase
  *      or decrease).  The Java virtual machine may release memory to
@@ -64,8 +65,8 @@ import sun.management.MemoryUsageCompositeData;
  * </td>
  * </tr>
  * <tr>
- * <td valign=top> {@code max} </td>
- * <td valign=top> represents the maximum amount of memory (in bytes)
+ * <td style="vertical-align:top"> {@code max} </td>
+ * <td style="vertical-align:top"> represents the maximum amount of memory (in bytes)
  *      that can be used for memory management. Its value may be undefined.
  *      The maximum amount of memory may change over time if defined.
  *      The amount of used and committed memory will always be less than
@@ -252,10 +253,11 @@ public class MemoryUsage {
      * must contain the following attributes:
      *
      * <blockquote>
-     * <table border summary="The attributes and the types the given CompositeData contains">
+     * <table border="1">
+     * <caption style="display:none">The attributes and the types the given CompositeData contains</caption>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th style="text-align:left">Attribute Name</th>
+     *   <th style="text-align:left">Type</th>
      * </tr>
      * <tr>
      *   <td>init</td>

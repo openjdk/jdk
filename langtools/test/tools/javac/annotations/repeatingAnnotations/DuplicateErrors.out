@@ -1,3 +1,3 @@
-DuplicateErrors.java:34:1: compiler.err.duplicate.annotation.missing.container: Foo, java.lang.annotation.Repeatable
-DuplicateErrors.java:35:1: compiler.err.duplicate.annotation.missing.container: Foo, java.lang.annotation.Repeatable
+DuplicateErrors.java:34:1: compiler.err.duplicate.annotation.missing.container: Foo
+DuplicateErrors.java:35:1: compiler.err.duplicate.annotation.missing.container: Foo
 2 errors

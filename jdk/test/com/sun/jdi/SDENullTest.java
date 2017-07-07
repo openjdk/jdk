@@ -22,16 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4621289
- *  @summary vm.setDefaultStratum(null) causes a Null Ptr exception
+ * @test
+ * @bug 4621289
+ * @summary vm.setDefaultStratum(null) causes a Null Ptr exception
  *
- *  @author jjh
+ * @author jjh
  *
- *  @modules jdk.jdi
- *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g SDENullTest.java
- *  @run driver SDENullTest
+ * @run build  TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g SDENullTest.java
+ * @run driver SDENullTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7025809 8028543 6415644
+ * @bug 7025809 8028543 6415644 8028544 8029942
  * @summary Test latest, latestSupported, underscore as keyword, etc.
  * @author  Joseph D. Darcy
  * @modules java.compiler
@@ -44,8 +44,8 @@ public class TestSourceVersion {
     }
 
     private static void testLatestSupported() {
-        if (SourceVersion.latest() != RELEASE_9 ||
-            SourceVersion.latestSupported() != RELEASE_9)
+        if (SourceVersion.latest() != RELEASE_10 ||
+            SourceVersion.latestSupported() != RELEASE_10)
             throw new RuntimeException("Unexpected release value(s) found:\n" +
                                        "latest:\t" + SourceVersion.latest() + "\n" +
                                        "latestSupported:\t" + SourceVersion.latestSupported());

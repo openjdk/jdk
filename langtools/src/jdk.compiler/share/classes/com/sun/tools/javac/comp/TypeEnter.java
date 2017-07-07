@@ -44,6 +44,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -52,6 +53,7 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
@@ -339,7 +341,7 @@ public class TypeEnter implements Completer {
                 // Import-on-demand java.lang.
                 PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
                 if (javaLang.members().isEmpty() && !javaLang.exists())
-                    throw new FatalError(diags.fragment("fatal.err.no.java.lang"));
+                    throw new FatalError(diags.fragment(Fragments.FatalErrNoJavaLang));
                 importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
@@ -378,8 +380,7 @@ public class TypeEnter implements Completer {
                     PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, p.owner.getQualifiedName());
                     if (syms.getClass(pack.modle, p.getQualifiedName()) != null) {
                         log.error(tree.pos,
-                                  "pkg.clashes.with.class.of.same.name",
-                                  p);
+                                  Errors.PkgClashesWithClassOfSameName(p));
                     }
                     p = p.owner;
                 }
@@ -471,7 +472,7 @@ public class TypeEnter implements Completer {
                                        final Name name,
                                        final Env<AttrContext> env) {
             if (tsym.kind != TYP) {
-                log.error(DiagnosticFlag.RECOVERABLE, imp.pos(), "static.imp.only.classes.and.interfaces");
+                log.error(DiagnosticFlag.RECOVERABLE, imp.pos(), Errors.StaticImpOnlyClassesAndInterfaces);
                 return;
             }
 
@@ -831,7 +832,7 @@ public class TypeEnter implements Completer {
             if (checkClash &&
                 sym.owner.kind == PCK && sym.owner != env.toplevel.modle.unnamedPackage &&
                 syms.packageExists(env.toplevel.modle, sym.fullname)) {
-                log.error(tree.pos, "clash.with.pkg.of.same.name", Kinds.kindName(sym), sym);
+                log.error(tree.pos, Errors.ClashWithPkgOfSameName(Kinds.kindName(sym),sym));
             }
             if (sym.owner.kind == PCK && (sym.flags_field & PUBLIC) == 0 &&
                 !env.toplevel.sourcefile.isNameCompatible(sym.name.toString(),JavaFileObject.Kind.SOURCE)) {
