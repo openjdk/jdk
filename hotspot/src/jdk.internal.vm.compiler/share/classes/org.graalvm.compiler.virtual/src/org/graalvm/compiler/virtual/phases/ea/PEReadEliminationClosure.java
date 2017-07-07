@@ -31,8 +31,8 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.FieldLocationIdentity;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -45,9 +45,9 @@ import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.ValueProxyNode;
 import org.graalvm.compiler.nodes.cfg.Block;
-import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.nodes.extended.RawStoreNode;
+import org.graalvm.compiler.nodes.extended.UnboxNode;
 import org.graalvm.compiler.nodes.java.ArrayLengthNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
@@ -91,7 +91,7 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
 
     @Override
     protected PEReadEliminationBlockState getInitialState() {
-        return new PEReadEliminationBlockState(tool.getOptions());
+        return new PEReadEliminationBlockState(tool.getOptions(), tool.getDebug());
     }
 
     @Override
@@ -117,11 +117,11 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
         } else if (node instanceof RawStoreNode) {
             return processUnsafeStore((RawStoreNode) node, state, effects);
         } else if (node instanceof MemoryCheckpoint.Single) {
-            COUNTER_MEMORYCHECKPOINT.increment();
+            COUNTER_MEMORYCHECKPOINT.increment(node.getDebug());
             LocationIdentity identity = ((MemoryCheckpoint.Single) node).getLocationIdentity();
             processIdentity(state, identity);
         } else if (node instanceof MemoryCheckpoint.Multi) {
-            COUNTER_MEMORYCHECKPOINT.increment();
+            COUNTER_MEMORYCHECKPOINT.increment(node.getDebug());
             for (LocationIdentity identity : ((MemoryCheckpoint.Multi) node).getLocationIdentities()) {
                 processIdentity(state, identity);
             }
@@ -426,7 +426,8 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                 loopKilledLocations = new LoopKillCache(1/* 1.visit */);
                 loopLocationKillCache.put(loop, loopKilledLocations);
             } else {
-                OptionValues options = loop.getHeader().getBeginNode().getOptions();
+                AbstractBeginNode beginNode = loop.getHeader().getBeginNode();
+                OptionValues options = beginNode.getOptions();
                 if (loopKilledLocations.visits() > ReadEliminationMaxLoopVisits.getValue(options)) {
                     // we have processed the loop too many times, kill all locations so the inner
                     // loop will never be processed more than once again on visit
@@ -445,9 +446,9 @@ public final class PEReadEliminationClosure extends PartialEscapeClosure<PEReadE
                     for (LocationIdentity location : forwardEndLiveLocations) {
                         loopKilledLocations.rememberLoopKilledLocation(location);
                     }
-                    if (Debug.isLogEnabled() && loopKilledLocations != null) {
-                        Debug.log("[Early Read Elimination] Setting loop killed locations of loop at node %s with %s",
-                                        loop.getHeader().getBeginNode(), forwardEndLiveLocations);
+                    if (debug.isLogEnabled() && loopKilledLocations != null) {
+                        debug.log("[Early Read Elimination] Setting loop killed locations of loop at node %s with %s",
+                                        beginNode, forwardEndLiveLocations);
                     }
                 }
                 // remember the loop visit

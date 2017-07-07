@@ -29,6 +29,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.StandardOp.BlockEndOp;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
@@ -62,15 +63,18 @@ public final class LIR extends LIRGenerator.VariableProvider {
 
     private final OptionValues options;
 
+    private final DebugContext debug;
+
     /**
      * Creates a new LIR instance for the specified compilation.
      */
-    public LIR(AbstractControlFlowGraph<?> cfg, AbstractBlockBase<?>[] linearScanOrder, AbstractBlockBase<?>[] codeEmittingOrder, OptionValues options) {
+    public LIR(AbstractControlFlowGraph<?> cfg, AbstractBlockBase<?>[] linearScanOrder, AbstractBlockBase<?>[] codeEmittingOrder, OptionValues options, DebugContext debug) {
         this.cfg = cfg;
         this.codeEmittingOrder = codeEmittingOrder;
         this.linearScanOrder = linearScanOrder;
         this.lirInstructions = new BlockMap<>(cfg);
         this.options = options;
+        this.debug = debug;
     }
 
     public AbstractControlFlowGraph<?> getControlFlowGraph() {
@@ -79,6 +83,10 @@ public final class LIR extends LIRGenerator.VariableProvider {
 
     public OptionValues getOptions() {
         return options;
+    }
+
+    public DebugContext getDebug() {
+        return debug;
     }
 
     /**

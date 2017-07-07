@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintBailout;
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
+import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
@@ -68,14 +69,11 @@ import java.util.stream.Collectors;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
-import org.graalvm.compiler.core.CompilerThreadFactory.DebugConfigAccess;
 import org.graalvm.compiler.core.test.ReflectionOptionDescriptors;
-import org.graalvm.compiler.debug.DebugEnvironment;
-import org.graalvm.compiler.debug.GraalDebugConfig;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.debug.internal.MemUseTrackerImpl;
 import org.graalvm.compiler.hotspot.CompilationTask;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
@@ -219,7 +217,7 @@ public final class CompileTheWorld {
         PrintStackTraceOnException.putIfAbsent(compilationOptionsCopy, true);
 
         // By default only report statistics for the CTW threads themselves
-        GraalDebugConfig.Options.DebugValueThreadFilter.putIfAbsent(compilationOptionsCopy, "^CompileTheWorld");
+        DebugOptions.MetricsThreadFilter.putIfAbsent(compilationOptionsCopy, "^CompileTheWorld");
         this.compilationOptions = compilationOptionsCopy;
     }
 
@@ -511,13 +509,7 @@ public final class CompileTheWorld {
 
         OptionValues savedOptions = currentOptions;
         currentOptions = new OptionValues(compilationOptions);
-        threadPool = new ThreadPoolExecutor(threadCount, threadCount, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-                        new CompilerThreadFactory("CompileTheWorld", new DebugConfigAccess() {
-                            @Override
-                            public GraalDebugConfig getDebugConfig() {
-                                return DebugEnvironment.ensureInitialized(currentOptions, compiler.getGraalRuntime().getHostProviders().getSnippetReflection());
-                            }
-                        }));
+        threadPool = new ThreadPoolExecutor(threadCount, threadCount, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new CompilerThreadFactory("CompileTheWorld"));
 
         try {
             for (int i = 0; i < entries.length; i++) {
@@ -703,7 +695,7 @@ public final class CompileTheWorld {
     private void compileMethod(HotSpotResolvedJavaMethod method, int counter) {
         try {
             long start = System.currentTimeMillis();
-            long allocatedAtStart = MemUseTrackerImpl.getCurrentThreadAllocatedBytes();
+            long allocatedAtStart = getCurrentThreadAllocatedBytes();
             int entryBCI = JVMCICompiler.INVOCATION_ENTRY_BCI;
             HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, 0L);
             // For more stable CTW execution, disable use of profiling information
@@ -718,7 +710,7 @@ public final class CompileTheWorld {
                 installedCode.invalidate();
             }
 
-            memoryUsed.getAndAdd(MemUseTrackerImpl.getCurrentThreadAllocatedBytes() - allocatedAtStart);
+            memoryUsed.getAndAdd(getCurrentThreadAllocatedBytes() - allocatedAtStart);
             compileTime.getAndAdd(System.currentTimeMillis() - start);
             compiledMethodsCounter.incrementAndGet();
         } catch (Throwable t) {

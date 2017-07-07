@@ -22,21 +22,20 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterBinding;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterBindingLists;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterPriority;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.State;
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -65,23 +64,24 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
             return;
         }
         assert isStackSlotValue(interval.location()) : "interval not assigned to a stack slot " + interval;
-        try (Scope s1 = Debug.scope("LSRAOptimization")) {
-            Debug.log("adding stack to unhandled list %s", interval);
+        DebugContext debug = allocator.getDebug();
+        try (DebugContext.Scope s1 = debug.scope("LSRAOptimization")) {
+            debug.log("adding stack to unhandled list %s", interval);
             unhandledLists.addToListSortedByStartAndUsePositions(RegisterBinding.Stack, interval);
         }
     }
 
     @SuppressWarnings("unused")
-    private static void printRegisterBindingList(RegisterBindingLists list, RegisterBinding binding) {
+    private static void printRegisterBindingList(DebugContext debug, RegisterBindingLists list, RegisterBinding binding) {
         for (Interval interval = list.get(binding); !interval.isEndMarker(); interval = interval.next) {
-            Debug.log("%s", interval);
+            debug.log("%s", interval);
         }
     }
 
     @SuppressWarnings("try")
     @Override
     void walk() {
-        try (Scope s = Debug.scope("OptimizingLinearScanWalker")) {
+        try (DebugContext.Scope s = allocator.getDebug().scope("OptimizingLinearScanWalker")) {
             for (AbstractBlockBase<?> block : allocator.sortedBlocks()) {
                 optimizeBlock(block);
             }
@@ -93,27 +93,28 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
     private void optimizeBlock(AbstractBlockBase<?> block) {
         if (block.getPredecessorCount() == 1) {
             int nextBlock = allocator.getFirstLirInstructionId(block);
-            try (Scope s1 = Debug.scope("LSRAOptimization")) {
-                Debug.log("next block: %s (%d)", block, nextBlock);
+            DebugContext debug = allocator.getDebug();
+            try (DebugContext.Scope s1 = debug.scope("LSRAOptimization")) {
+                debug.log("next block: %s (%d)", block, nextBlock);
             }
-            try (Indent indent0 = Debug.indent()) {
+            try (Indent indent0 = debug.indent()) {
                 walkTo(nextBlock);
 
-                try (Scope s1 = Debug.scope("LSRAOptimization")) {
+                try (DebugContext.Scope s1 = debug.scope("LSRAOptimization")) {
                     boolean changed = true;
                     // we need to do this because the active lists might change
                     loop: while (changed) {
                         changed = false;
-                        try (Indent indent1 = Debug.logAndIndent("Active intervals: (block %s [%d])", block, nextBlock)) {
+                        try (Indent indent1 = debug.logAndIndent("Active intervals: (block %s [%d])", block, nextBlock)) {
                             for (Interval active = activeLists.get(RegisterBinding.Any); !active.isEndMarker(); active = active.next) {
-                                Debug.log("active   (any): %s", active);
+                                debug.log("active   (any): %s", active);
                                 if (optimize(nextBlock, block, active, RegisterBinding.Any)) {
                                     changed = true;
                                     break loop;
                                 }
                             }
                             for (Interval active = activeLists.get(RegisterBinding.Stack); !active.isEndMarker(); active = active.next) {
-                                Debug.log("active (stack): %s", active);
+                                debug.log("active (stack): %s", active);
                                 if (optimize(nextBlock, block, active, RegisterBinding.Stack)) {
                                     changed = true;
                                     break loop;
@@ -171,9 +172,10 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
 
         assert isStackSlotValue(currentLocation) || isRegister(currentLocation) : "current location not a register or stack slot " + currentLocation;
 
-        try (Indent indent = Debug.logAndIndent("location differs: %s vs. %s", predecessorLocation, currentLocation)) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("location differs: %s vs. %s", predecessorLocation, currentLocation)) {
             // split current interval at current position
-            Debug.log("splitting at position %d", currentPos);
+            debug.log("splitting at position %d", currentPos);
 
             assert allocator.isBlockBegin(currentPos) && ((currentPos & 1) == 0) : "split pos must be even when on block boundary";
 
@@ -186,9 +188,9 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
             assert splitPart.currentSplitChild() == currentInterval : "overwriting wrong currentSplitChild";
             splitPart.makeCurrentSplitChild();
 
-            if (Debug.isLogEnabled()) {
-                Debug.log("left interval  : %s", currentInterval.logString(allocator));
-                Debug.log("right interval : %s", splitPart.logString(allocator));
+            if (debug.isLogEnabled()) {
+                debug.log("left interval  : %s", currentInterval.logString(allocator));
+                debug.log("right interval : %s", splitPart.logString(allocator));
             }
 
             if (Options.LSRAOptSplitOnly.getValue(allocator.getOptions())) {
@@ -199,7 +201,7 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
                     splitRegisterInterval(splitPart, asRegister(predecessorLocation));
                 } else {
                     assert isStackSlotValue(predecessorLocation);
-                    Debug.log("assigning interval %s to %s", splitPart, predecessorLocation);
+                    debug.log("assigning interval %s to %s", splitPart, predecessorLocation);
                     splitPart.assignLocation(predecessorLocation);
                     // activate interval
                     activeLists.addToListSortedByCurrentFromPositions(RegisterBinding.Stack, splitPart);
@@ -224,13 +226,14 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
         spillCollectActiveAny(RegisterPriority.LiveAtLoopEnd);
         spillCollectInactiveAny(interval);
 
-        if (Debug.isLogEnabled()) {
-            try (Indent indent2 = Debug.logAndIndent("state of registers:")) {
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            try (Indent indent2 = debug.logAndIndent("state of registers:")) {
                 for (Register register : availableRegs) {
                     int i = register.number;
-                    try (Indent indent3 = Debug.logAndIndent("reg %d: usePos: %d, blockPos: %d, intervals: ", i, usePos[i], blockPos[i])) {
+                    try (Indent indent3 = debug.logAndIndent("reg %d: usePos: %d, blockPos: %d, intervals: ", i, usePos[i], blockPos[i])) {
                         for (int j = 0; j < spillIntervals[i].size(); j++) {
-                            Debug.log("%d ", spillIntervals[i].get(j).operandNumber);
+                            debug.log("%d ", spillIntervals[i].get(j).operandNumber);
                         }
                     }
                 }
@@ -245,7 +248,7 @@ public class OptimizingLinearScanWalker extends LinearScanWalker {
         assert splitPos > 0 : "invalid splitPos";
         assert needSplit || splitPos > interval.from() : "splitting interval at from";
 
-        Debug.log("assigning interval %s to %s", interval, reg);
+        debug.log("assigning interval %s to %s", interval, reg);
         interval.assignLocation(reg.asValue(interval.kind()));
         if (needSplit) {
             // register not available for full interval : so split it

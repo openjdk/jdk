@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.core.match;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -62,12 +62,12 @@ public class MatchPattern {
             this.matcher = matcher;
         }
 
-        private static final DebugCounter MatchResult_WRONG_CLASS = Debug.counter("MatchResult_WRONG_CLASS");
-        private static final DebugCounter MatchResult_NAMED_VALUE_MISMATCH = Debug.counter("MatchResult_NAMED_VALUE_MISMATCH");
-        private static final DebugCounter MatchResult_TOO_MANY_USERS = Debug.counter("MatchResult_TOO_MANY_USERS");
-        private static final DebugCounter MatchResult_NOT_IN_BLOCK = Debug.counter("MatchResult_NOT_IN_BLOCK");
-        private static final DebugCounter MatchResult_NOT_SAFE = Debug.counter("MatchResult_NOT_SAFE");
-        private static final DebugCounter MatchResult_ALREADY_USED = Debug.counter("MatchResult_ALREADY_USED");
+        private static final CounterKey MatchResult_WRONG_CLASS = DebugContext.counter("MatchResult_WRONG_CLASS");
+        private static final CounterKey MatchResult_NAMED_VALUE_MISMATCH = DebugContext.counter("MatchResult_NAMED_VALUE_MISMATCH");
+        private static final CounterKey MatchResult_TOO_MANY_USERS = DebugContext.counter("MatchResult_TOO_MANY_USERS");
+        private static final CounterKey MatchResult_NOT_IN_BLOCK = DebugContext.counter("MatchResult_NOT_IN_BLOCK");
+        private static final CounterKey MatchResult_NOT_SAFE = DebugContext.counter("MatchResult_NOT_SAFE");
+        private static final CounterKey MatchResult_ALREADY_USED = DebugContext.counter("MatchResult_ALREADY_USED");
 
         static final Result OK = new Result(MatchResultCode.OK, null, null);
         private static final Result CACHED_WRONG_CLASS = new Result(MatchResultCode.WRONG_CLASS, null, null);
@@ -78,33 +78,33 @@ public class MatchPattern {
         private static final Result CACHED_ALREADY_USED = new Result(MatchResultCode.ALREADY_USED, null, null);
 
         static Result wrongClass(Node node, MatchPattern matcher) {
-            MatchResult_WRONG_CLASS.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.WRONG_CLASS, node, matcher) : CACHED_WRONG_CLASS;
+            MatchResult_WRONG_CLASS.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.WRONG_CLASS, node, matcher) : CACHED_WRONG_CLASS;
         }
 
         static Result namedValueMismatch(Node node, MatchPattern matcher) {
-            MatchResult_NAMED_VALUE_MISMATCH.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.NAMED_VALUE_MISMATCH, node, matcher) : CACHED_NAMED_VALUE_MISMATCH;
+            MatchResult_NAMED_VALUE_MISMATCH.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.NAMED_VALUE_MISMATCH, node, matcher) : CACHED_NAMED_VALUE_MISMATCH;
         }
 
         static Result tooManyUsers(Node node, MatchPattern matcher) {
-            MatchResult_TOO_MANY_USERS.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.TOO_MANY_USERS, node, matcher) : CACHED_TOO_MANY_USERS;
+            MatchResult_TOO_MANY_USERS.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.TOO_MANY_USERS, node, matcher) : CACHED_TOO_MANY_USERS;
         }
 
         static Result notInBlock(Node node, MatchPattern matcher) {
-            MatchResult_NOT_IN_BLOCK.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.NOT_IN_BLOCK, node, matcher) : CACHED_NOT_IN_BLOCK;
+            MatchResult_NOT_IN_BLOCK.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.NOT_IN_BLOCK, node, matcher) : CACHED_NOT_IN_BLOCK;
         }
 
         static Result notSafe(Node node, MatchPattern matcher) {
-            MatchResult_NOT_SAFE.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.NOT_SAFE, node, matcher) : CACHED_NOT_SAFE;
+            MatchResult_NOT_SAFE.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.NOT_SAFE, node, matcher) : CACHED_NOT_SAFE;
         }
 
         static Result alreadyUsed(Node node, MatchPattern matcher) {
-            MatchResult_ALREADY_USED.increment();
-            return Debug.isLogEnabled() ? new Result(MatchResultCode.ALREADY_USED, node, matcher) : CACHED_ALREADY_USED;
+            MatchResult_ALREADY_USED.increment(node.getDebug());
+            return node.getDebug().isLogEnabled() ? new Result(MatchResultCode.ALREADY_USED, node, matcher) : CACHED_ALREADY_USED;
         }
 
         @Override

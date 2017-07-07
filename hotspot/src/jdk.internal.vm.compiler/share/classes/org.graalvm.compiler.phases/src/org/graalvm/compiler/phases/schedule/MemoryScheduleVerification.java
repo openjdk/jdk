@@ -26,7 +26,7 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -40,9 +40,9 @@ import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClosure;
+import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
 import org.graalvm.word.LocationIdentity;
-import org.graalvm.util.EconomicSet;
 
 public final class MemoryScheduleVerification extends BlockIteratorClosure<EconomicSet<FloatingReadNode>> {
 
@@ -123,7 +123,7 @@ public final class MemoryScheduleVerification extends BlockIteratorClosure<Econo
         for (FloatingReadNode r : cloneState(currentState)) {
             if (r.getLocationIdentity().overlaps(location)) {
                 // This read is killed by this location.
-                Debug.log(Debug.VERBOSE_LEVEL, "%s removing %s from state", n, r);
+                r.getDebug().log(DebugContext.VERBOSE_LEVEL, "%s removing %s from state", n, r);
                 currentState.remove(r);
             }
         }

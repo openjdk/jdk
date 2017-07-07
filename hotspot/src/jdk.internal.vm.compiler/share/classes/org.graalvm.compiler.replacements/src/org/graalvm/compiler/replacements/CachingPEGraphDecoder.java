@@ -25,7 +25,7 @@ package org.graalvm.compiler.replacements;
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.EncodedGraph;
 import org.graalvm.compiler.nodes.GraphEncoder;
@@ -38,7 +38,6 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.LoopExplosionPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.NodePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.ParameterPlugin;
-import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
@@ -62,9 +61,10 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     private final EconomicMap<ResolvedJavaMethod, EncodedGraph> graphCache;
 
     public CachingPEGraphDecoder(Architecture architecture, StructuredGraph graph, Providers providers, GraphBuilderConfiguration graphBuilderConfig, OptimisticOptimizations optimisticOpts,
-                    AllowAssumptions allowAssumptions, OptionValues options, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
-                    ParameterPlugin parameterPlugin, NodePlugin[] nodePlugins) {
-        super(architecture, graph, providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), options, loopExplosionPlugin,
+                    AllowAssumptions allowAssumptions, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
+                    ParameterPlugin parameterPlugin,
+                    NodePlugin[] nodePlugins) {
+        super(architecture, graph, providers.getMetaAccess(), providers.getConstantReflection(), providers.getConstantFieldProvider(), providers.getStampProvider(), loopExplosionPlugin,
                         invocationPlugins, inlineInvokePlugins, parameterPlugin, nodePlugins);
 
         this.providers = providers;
@@ -81,8 +81,8 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
 
     @SuppressWarnings("try")
     private EncodedGraph createGraph(ResolvedJavaMethod method, BytecodeProvider intrinsicBytecodeProvider) {
-        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, allowAssumptions).useProfilingInfo(false).method(method).build();
-        try (Debug.Scope scope = Debug.scope("createGraph", graphToEncode)) {
+        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, debug, allowAssumptions).useProfilingInfo(false).method(method).build();
+        try (DebugContext.Scope scope = debug.scope("createGraph", graphToEncode)) {
             IntrinsicContext initialIntrinsicContext = intrinsicBytecodeProvider != null ? new IntrinsicContext(method, method, intrinsicBytecodeProvider, INLINE_AFTER_PARSING) : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
             graphBuilderPhaseInstance.apply(graphToEncode);
@@ -101,7 +101,7 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
             return encodedGraph;
 
         } catch (Throwable ex) {
-            throw Debug.handle(ex);
+            throw debug.handle(ex);
         }
     }
 

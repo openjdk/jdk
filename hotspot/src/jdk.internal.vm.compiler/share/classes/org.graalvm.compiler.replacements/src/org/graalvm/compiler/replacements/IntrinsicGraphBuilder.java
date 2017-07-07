@@ -29,6 +29,7 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.core.common.type.TypeReference;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -76,22 +77,20 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
     protected ValueNode[] arguments;
     protected ValueNode returnValue;
 
-    public IntrinsicGraphBuilder(OptionValues options, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    StampProvider stampProvider,
-                    Bytecode code, int invokeBci) {
-        this(options, metaAccess, constantReflection, constantFieldProvider, stampProvider, code, invokeBci, AllowAssumptions.YES);
+    public IntrinsicGraphBuilder(OptionValues options, DebugContext debug, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
+                    StampProvider stampProvider, Bytecode code, int invokeBci) {
+        this(options, debug, metaAccess, constantReflection, constantFieldProvider, stampProvider, code, invokeBci, AllowAssumptions.YES);
     }
 
-    protected IntrinsicGraphBuilder(OptionValues options, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    StampProvider stampProvider,
-                    Bytecode code, int invokeBci, AllowAssumptions allowAssumptions) {
+    protected IntrinsicGraphBuilder(OptionValues options, DebugContext debug, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
+                    StampProvider stampProvider, Bytecode code, int invokeBci, AllowAssumptions allowAssumptions) {
         this.metaAccess = metaAccess;
         this.constantReflection = constantReflection;
         this.constantFieldProvider = constantFieldProvider;
         this.stampProvider = stampProvider;
         this.code = code;
         this.method = code.getMethod();
-        this.graph = new StructuredGraph.Builder(options, allowAssumptions).method(method).build();
+        this.graph = new StructuredGraph.Builder(options, debug, allowAssumptions).method(method).build();
         this.invokeBci = invokeBci;
         this.lastInstr = graph.start();
 

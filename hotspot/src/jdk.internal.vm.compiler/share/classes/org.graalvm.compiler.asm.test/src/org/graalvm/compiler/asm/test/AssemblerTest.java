@@ -31,8 +31,7 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.DisassemblerProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
@@ -83,10 +82,12 @@ public abstract class AssemblerTest extends GraalTest {
     @SuppressWarnings("try")
     protected InstalledCode assembleMethod(Method m, CodeGenTest test) {
         ResolvedJavaMethod method = getMetaAccess().lookupJavaMethod(m);
-        try (Scope s = Debug.scope("assembleMethod", method, codeCache)) {
+        OptionValues options = getInitialOptions();
+        DebugContext debug = getDebugContext(options);
+        try (DebugContext.Scope s = debug.scope("assembleMethod", method, codeCache)) {
             RegisterConfig registerConfig = codeCache.getRegisterConfig();
             CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
-            StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions()).method(method).compilationId(compilationId).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
             CallingConvention cc = backend.newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
 
             CompilationResult compResult = new CompilationResult();
@@ -95,7 +96,7 @@ public abstract class AssemblerTest extends GraalTest {
             compResult.setTotalFrameSize(0);
             compResult.close();
 
-            InstalledCode code = backend.addInstalledCode(method, asCompilationRequest(compilationId), compResult);
+            InstalledCode code = backend.addInstalledCode(debug, method, asCompilationRequest(compilationId), compResult);
 
             for (DisassemblerProvider dis : GraalServices.load(DisassemblerProvider.class)) {
                 String disasm1 = dis.disassembleCompiledCode(codeCache, compResult);
@@ -105,7 +106,7 @@ public abstract class AssemblerTest extends GraalTest {
             }
             return code;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

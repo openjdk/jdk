@@ -282,6 +282,16 @@ public class WordOperationPlugin extends WordFactory implements NodePlugin, Type
                 b.push(returnKind, comparisonOp(b, operation.condition(), args[0], fromSigned(b, args[1])));
                 break;
 
+            case IS_NULL:
+                assert args.length == 1;
+                b.push(returnKind, comparisonOp(b, Condition.EQ, args[0], ConstantNode.forIntegerKind(wordKind, 0L)));
+                break;
+
+            case IS_NON_NULL:
+                assert args.length == 1;
+                b.push(returnKind, comparisonOp(b, Condition.NE, args[0], ConstantNode.forIntegerKind(wordKind, 0L)));
+                break;
+
             case NOT:
                 assert args.length == 1;
                 b.addPush(returnKind, new XorNode(args[0], b.add(forIntegerKind(wordKind, -1))));

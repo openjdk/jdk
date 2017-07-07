@@ -22,16 +22,17 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.PhaseSuite;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,8 +60,8 @@ public class CompiledExceptionHandlerTest extends GraalCompilerTest {
     }
 
     @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId, OptionValues options) {
-        StructuredGraph graph = super.parseEager(m, allowAssumptions, compilationId, options);
+    protected StructuredGraph parse(Builder builder, PhaseSuite<HighTierContext> graphBuilderSuite) {
+        StructuredGraph graph = super.parse(builder, graphBuilderSuite);
         int handlers = graph.getNodes().filter(ExceptionObjectNode.class).count();
         Assert.assertEquals(1, handlers);
         return graph;

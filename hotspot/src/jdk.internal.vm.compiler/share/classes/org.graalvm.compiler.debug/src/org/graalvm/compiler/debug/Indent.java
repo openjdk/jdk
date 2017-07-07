@@ -23,7 +23,7 @@
 package org.graalvm.compiler.debug;
 
 /**
- * Object used to close a debug {@link Debug#indent() indentation} scope.
+ * Object used to close a debug {@link DebugContext#indent() indentation} scope.
  * <p>
  * Example usage:
  *

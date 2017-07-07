@@ -26,8 +26,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.OptImplicitNullCheck
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -58,10 +58,10 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
 
-    private static final DebugCounter counterTrappingNullCheck = Debug.counter("TrappingNullCheck");
-    private static final DebugCounter counterTrappingNullCheckExistingRead = Debug.counter("TrappingNullCheckExistingRead");
-    private static final DebugCounter counterTrappingNullCheckUnreached = Debug.counter("TrappingNullCheckUnreached");
-    private static final DebugCounter counterTrappingNullCheckDynamicDeoptimize = Debug.counter("TrappingNullCheckDynamicDeoptimize");
+    private static final CounterKey counterTrappingNullCheck = DebugContext.counter("TrappingNullCheck");
+    private static final CounterKey counterTrappingNullCheckExistingRead = DebugContext.counter("TrappingNullCheckExistingRead");
+    private static final CounterKey counterTrappingNullCheckUnreached = DebugContext.counter("TrappingNullCheckUnreached");
+    private static final CounterKey counterTrappingNullCheckDynamicDeoptimize = DebugContext.counter("TrappingNullCheckDynamicDeoptimize");
 
     @Override
     protected void run(StructuredGraph graph, LowTierContext context) {
@@ -175,12 +175,13 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
     }
 
     private static void replaceWithTrappingNullCheck(AbstractDeoptimizeNode deopt, IfNode ifNode, LogicNode condition, DeoptimizationReason deoptimizationReason, long implicitNullCheckLimit) {
-        counterTrappingNullCheck.increment();
+        DebugContext debug = deopt.getDebug();
+        counterTrappingNullCheck.increment(debug);
         if (deopt instanceof DynamicDeoptimizeNode) {
-            counterTrappingNullCheckDynamicDeoptimize.increment();
+            counterTrappingNullCheckDynamicDeoptimize.increment(debug);
         }
         if (deoptimizationReason == DeoptimizationReason.UnreachedCode) {
-            counterTrappingNullCheckUnreached.increment();
+            counterTrappingNullCheckUnreached.increment(debug);
         }
         IsNullNode isNullNode = (IsNullNode) condition;
         AbstractBeginNode nonTrappingContinuation = ifNode.falseSuccessor();
@@ -202,7 +203,7 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
                         fixedAccessNode.setNullCheck(true);
                         deopt.graph().removeSplit(ifNode, nonTrappingContinuation);
                         trappingNullCheck = fixedAccessNode;
-                        counterTrappingNullCheckExistingRead.increment();
+                        counterTrappingNullCheckExistingRead.increment(debug);
                     }
                 }
             }

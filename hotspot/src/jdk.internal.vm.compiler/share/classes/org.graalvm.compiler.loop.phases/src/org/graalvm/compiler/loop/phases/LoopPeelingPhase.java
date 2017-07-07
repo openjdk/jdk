@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.loop.phases;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopPolicies;
 import org.graalvm.compiler.loop.LoopsData;
@@ -38,19 +38,20 @@ public class LoopPeelingPhase extends LoopPhase<LoopPolicies> {
     @Override
     @SuppressWarnings("try")
     protected void run(StructuredGraph graph, PhaseContext context) {
+        DebugContext debug = graph.getDebug();
         if (graph.hasLoops()) {
             LoopsData data = new LoopsData(graph);
-            try (Debug.Scope s = Debug.scope("peeling", data.getCFG())) {
+            try (DebugContext.Scope s = debug.scope("peeling", data.getCFG())) {
                 for (LoopEx loop : data.outerFirst()) {
                     if (getPolicies().shouldPeel(loop, data.getCFG(), context.getMetaAccess())) {
-                        Debug.log("Peeling %s", loop);
+                        debug.log("Peeling %s", loop);
                         LoopTransformations.peel(loop);
-                        Debug.dump(Debug.DETAILED_LEVEL, graph, "Peeling %s", loop);
+                        debug.dump(DebugContext.DETAILED_LEVEL, graph, "Peeling %s", loop);
                     }
                 }
                 data.deleteUnusedNodes();
             } catch (Throwable t) {
-                throw Debug.handle(t);
+                throw debug.handle(t);
             }
         }
     }

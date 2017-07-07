@@ -29,14 +29,13 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import java.util.function.Consumer;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.lir.FullInfopointOp;
@@ -51,6 +50,7 @@ import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.junit.Test;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -134,9 +134,13 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
     }
 
     private void test(TestSpec spec) {
+        test(getDebugContext(), spec);
+    }
+
+    private void test(DebugContext debug, TestSpec spec) {
         ResolvedJavaMethod method = getResolvedJavaMethod("testMethod");
 
-        StructuredGraph graph = parseForCompile(method);
+        StructuredGraph graph = parseForCompile(method, debug);
         TestNode test = graph.add(new TestNode(spec));
         graph.addAfterFixed(graph.start(), test);
 
@@ -266,12 +270,13 @@ public class JVMCIInfopointErrorTest extends GraalCompilerTest {
     @SuppressWarnings("try")
     @Test(expected = Error.class)
     public void testUnknownJavaValue() {
-        try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
+        DebugContext debug = DebugContext.create(getInitialOptions(), DebugHandlersFactory.LOADER);
+        try (Scope s = debug.disable()) {
             /*
              * Expected: either AssertionError or GraalError, depending on whether the unit test run
              * is with assertions enabled or disabled.
              */
-            test((tool, state, safepoint) -> {
+            test(debug, (tool, state, safepoint) -> {
                 LIRFrameState newState = modifyTopFrame(state, new JavaValue[]{new UnknownJavaValue()}, new JavaKind[]{JavaKind.Int}, 1, 0, 0);
                 safepoint.accept(newState);
             });

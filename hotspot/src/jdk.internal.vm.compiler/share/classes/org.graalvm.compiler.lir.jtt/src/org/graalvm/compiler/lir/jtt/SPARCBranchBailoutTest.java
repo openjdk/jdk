@@ -24,13 +24,15 @@ package org.graalvm.compiler.lir.jtt;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugConfigScope;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -82,9 +84,11 @@ public class SPARCBranchBailoutTest extends LIRTest {
     public void testBailoutOnBranchOverflow() throws Throwable {
         Assume.assumeTrue(getBackend().getTarget().arch instanceof SPARC);
         ResolvedJavaMethod m = getResolvedJavaMethod("testBranch");
+        DebugContext debug = getDebugContext();
         try {
-            try (DebugConfigScope s = Debug.setConfig(Debug.silentConfig())) {
-                compile(m, null);
+            try (Scope s = debug.disable()) {
+                StructuredGraph graph = parseEager(m, AllowAssumptions.YES, debug);
+                compile(m, graph);
             }
         } catch (GraalError e) {
             Assert.assertEquals(PermanentBailoutException.class, e.getCause().getClass());

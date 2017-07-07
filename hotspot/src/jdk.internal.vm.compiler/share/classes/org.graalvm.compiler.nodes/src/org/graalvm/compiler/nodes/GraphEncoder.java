@@ -33,7 +33,7 @@ import org.graalvm.compiler.core.common.util.TypeConversion;
 import org.graalvm.compiler.core.common.util.TypeReader;
 import org.graalvm.compiler.core.common.util.TypeWriter;
 import org.graalvm.compiler.core.common.util.UnsafeArrayTypeWriter;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Edges;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -42,8 +42,8 @@ import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
-import org.graalvm.util.UnmodifiableMapCursor;
 import org.graalvm.util.Pair;
+import org.graalvm.util.UnmodifiableMapCursor;
 
 import jdk.vm.ci.code.Architecture;
 
@@ -418,7 +418,8 @@ public class GraphEncoder {
      */
     @SuppressWarnings("try")
     public static boolean verifyEncoding(StructuredGraph originalGraph, EncodedGraph encodedGraph, Architecture architecture) {
-        StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), AllowAssumptions.YES).method(originalGraph.method()).build();
+        DebugContext debug = originalGraph.getDebug();
+        StructuredGraph decodedGraph = new StructuredGraph.Builder(originalGraph.getOptions(), debug, AllowAssumptions.YES).method(originalGraph.method()).build();
         GraphDecoder decoder = new GraphDecoder(architecture, decodedGraph);
         decoder.decode(encodedGraph);
 
@@ -426,9 +427,10 @@ public class GraphEncoder {
         try {
             GraphComparison.verifyGraphsEqual(originalGraph, decodedGraph);
         } catch (Throwable ex) {
-            try (Debug.Scope scope = Debug.scope("GraphEncoder")) {
-                Debug.dump(Debug.VERBOSE_LEVEL, originalGraph, "Original Graph");
-                Debug.dump(Debug.VERBOSE_LEVEL, decodedGraph, "Decoded Graph");
+            originalGraph.getDebug();
+            try (DebugContext.Scope scope = debug.scope("GraphEncoder")) {
+                debug.dump(DebugContext.VERBOSE_LEVEL, originalGraph, "Original Graph");
+                debug.dump(DebugContext.VERBOSE_LEVEL, decodedGraph, "Decoded Graph");
             }
             throw ex;
         }

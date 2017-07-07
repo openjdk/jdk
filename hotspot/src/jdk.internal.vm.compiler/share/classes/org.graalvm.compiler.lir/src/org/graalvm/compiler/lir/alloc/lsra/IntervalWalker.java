@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterBinding;
 import org.graalvm.compiler.lir.alloc.lsra.Interval.RegisterBindingLists;
@@ -233,7 +233,8 @@ public class IntervalWalker {
             walkTo(State.Active, opId);
             walkTo(State.Inactive, opId);
 
-            try (Indent indent = Debug.logAndIndent("walk to op %d", opId)) {
+            DebugContext debug = allocator.getDebug();
+            try (Indent indent = debug.logAndIndent("walk to op %d", opId)) {
                 currentInterval.state = State.Active;
                 if (activateCurrent(currentInterval)) {
                     activeLists.addToListSortedByCurrentFromPositions(currentBinding, currentInterval);
@@ -257,8 +258,9 @@ public class IntervalWalker {
     private void intervalMoved(Interval interval, State from, State to) {
         // intervalMoved() is called whenever an interval moves from one interval list to another.
         // In the implementation of this method it is prohibited to move the interval to any list.
-        if (Debug.isLogEnabled()) {
-            Debug.log("interval moved from %s to %s: %s", from, to, interval.logString(allocator));
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("interval moved from %s to %s: %s", from, to, interval.logString(allocator));
         }
     }
 

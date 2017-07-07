@@ -32,8 +32,6 @@ module jdk.internal.vm.compiler {
 
     uses org.graalvm.compiler.code.DisassemblerProvider;
     uses org.graalvm.compiler.core.match.MatchStatementSet;
-    uses org.graalvm.compiler.debug.DebugConfigCustomizer;
-    uses org.graalvm.compiler.debug.DebugInitializationParticipant;
     uses org.graalvm.compiler.debug.TTYStreamProvider;
     uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
@@ -51,7 +49,6 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.core.common            to jdk.aot;
     exports org.graalvm.compiler.core.target            to jdk.aot;
     exports org.graalvm.compiler.debug                  to jdk.aot;
-    exports org.graalvm.compiler.debug.internal         to jdk.aot;
     exports org.graalvm.compiler.graph                  to jdk.aot;
     exports org.graalvm.compiler.hotspot                to jdk.aot;
     exports org.graalvm.compiler.hotspot.meta           to jdk.aot;
@@ -66,6 +63,7 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.options                to jdk.aot;
     exports org.graalvm.compiler.phases                 to jdk.aot;
     exports org.graalvm.compiler.phases.tiers           to jdk.aot;
+    exports org.graalvm.compiler.printer                to jdk.aot;
     exports org.graalvm.compiler.runtime                to jdk.aot;
     exports org.graalvm.compiler.replacements           to jdk.aot;
     exports org.graalvm.compiler.word                   to jdk.aot;

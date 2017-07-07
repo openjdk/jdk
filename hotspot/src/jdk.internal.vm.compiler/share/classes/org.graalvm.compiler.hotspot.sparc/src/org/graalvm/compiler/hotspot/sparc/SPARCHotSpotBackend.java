@@ -59,8 +59,8 @@ import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.sparc.SPARCNodeMatchRules;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
@@ -117,7 +117,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
     }
 
     private static class SizeEstimateStatistics {
-        private static final ConcurrentHashMap<String, DebugCounter> counters = new ConcurrentHashMap<>();
+        private static final ConcurrentHashMap<String, CounterKey> counters = new ConcurrentHashMap<>();
         private final String suffix;
 
         SizeEstimateStatistics(String suffix) {
@@ -125,10 +125,10 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
             this.suffix = suffix;
         }
 
-        public void add(Class<?> c, int count) {
+        public void add(Class<?> c, int count, DebugContext debug) {
             String name = SizeEstimateStatistics.class.getSimpleName() + "_" + c.getSimpleName() + "." + suffix;
-            DebugCounter m = counters.computeIfAbsent(name, (n) -> Debug.counter(n));
-            m.add(count);
+            CounterKey m = counters.computeIfAbsent(name, (n) -> DebugContext.counter(n));
+            m.add(debug, count);
         }
     }
 
@@ -239,7 +239,9 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
         OptionValues options = lir.getOptions();
-        CompilationResultBuilder crb = factory.createBuilder(getProviders().getCodeCache(), getProviders().getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, compilationResult);
+        DebugContext debug = lir.getDebug();
+        CompilationResultBuilder crb = factory.createBuilder(getProviders().getCodeCache(), getProviders().getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, debug,
+                        compilationResult);
         crb.setTotalFrameSize(frameMap.totalFrameSize());
         crb.setMaxInterpreterFrameSize(gen.getMaxInterpreterFrameSize());
         StackSlot deoptimizationRescueSlot = gen.getDeoptimizationRescueSlot();
@@ -253,7 +255,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
             EconomicMap<LIRFrameState, SaveRegistersOp> calleeSaveInfo = gen.getCalleeSaveInfo();
             updateStub(stub, destroyedCallerRegisters, calleeSaveInfo, frameMap);
         }
-        assert registerSizePredictionValidator(crb);
+        assert registerSizePredictionValidator(crb, debug);
         return crb;
     }
 
@@ -261,13 +263,18 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
      * Registers a verifier which checks if the LIRInstructions estimate of constants size is
      * greater or equal to the actual one.
      */
-    private static boolean registerSizePredictionValidator(final CompilationResultBuilder crb) {
+    private static boolean registerSizePredictionValidator(final CompilationResultBuilder crb, DebugContext debug) {
         /**
          * Used to hold state between beforeOp and afterOp
          */
         class ValidationState {
             LIRInstruction op;
+            final DebugContext debug;
             int constantSizeBefore;
+
+            ValidationState(DebugContext debug) {
+                this.debug = debug;
+            }
 
             public void before(LIRInstruction before) {
                 assert op == null : "LIRInstruction " + op + " no after call received";
@@ -283,8 +290,8 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
                     org.graalvm.compiler.lir.sparc.SPARCLIRInstructionMixin.SizeEstimate size = ((SPARCLIRInstructionMixin) op).estimateSize();
                     assert size != null : "No size prediction available for op: " + op;
                     Class<?> c = op.getClass();
-                    CONSTANT_ESTIMATED_STATS.add(c, size.constantSize);
-                    CONSTANT_ACTUAL_STATS.add(c, actual);
+                    CONSTANT_ESTIMATED_STATS.add(c, size.constantSize, debug);
+                    CONSTANT_ACTUAL_STATS.add(c, actual, debug);
                     assert size.constantSize >= actual : "Op " + op + " exceeded estimated constant size; predicted: " + size.constantSize + " actual: " + actual;
                 } else {
                     assert actual == 0 : "Op " + op + " emitted to DataSection without any estimate.";
@@ -293,7 +300,7 @@ public class SPARCHotSpotBackend extends HotSpotHostBackend {
                 constantSizeBefore = 0;
             }
         }
-        final ValidationState state = new ValidationState();
+        final ValidationState state = new ValidationState(debug);
         crb.setOpCallback(op -> state.before(op), op -> state.after(op));
         return true;
     }

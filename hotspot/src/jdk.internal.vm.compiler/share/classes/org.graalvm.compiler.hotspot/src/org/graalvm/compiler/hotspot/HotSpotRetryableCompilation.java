@@ -22,31 +22,23 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import static org.graalvm.compiler.debug.Debug.VERBOSE_LEVEL;
-import static org.graalvm.compiler.debug.DelegatingDebugConfig.Feature.DUMP_METHOD;
-import static org.graalvm.compiler.debug.DelegatingDebugConfig.Level.DUMP;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DumpPath;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.ForceDebugEnable;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintCFGFileName;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintGraphFileName;
+import static org.graalvm.compiler.debug.DebugContext.VERBOSE_LEVEL;
+import static org.graalvm.compiler.debug.DebugOptions.Dump;
+import static org.graalvm.compiler.debug.DebugOptions.DumpPath;
+import static org.graalvm.compiler.debug.DebugOptions.MethodFilter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugDumpHandler;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugRetryableTask;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.compiler.printer.GraalDebugConfigCustomizer;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 
 import jdk.vm.ci.code.BailoutException;
 
@@ -56,12 +48,10 @@ import jdk.vm.ci.code.BailoutException;
  */
 public abstract class HotSpotRetryableCompilation<T> extends DebugRetryableTask<T> {
 
-    protected final OptionValues originalOptions;
     protected final HotSpotGraalRuntimeProvider runtime;
 
-    public HotSpotRetryableCompilation(HotSpotGraalRuntimeProvider runtime, OptionValues options) {
+    public HotSpotRetryableCompilation(HotSpotGraalRuntimeProvider runtime) {
         this.runtime = runtime;
-        this.originalOptions = options;
     }
 
     /**
@@ -70,65 +60,42 @@ public abstract class HotSpotRetryableCompilation<T> extends DebugRetryableTask<
     @Override
     public abstract String toString();
 
-    private static String sanitizedFileName(String name) {
-        StringBuilder buf = new StringBuilder(name.length());
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            try {
-                Paths.get(String.valueOf(c));
-            } catch (InvalidPathException e) {
-                buf.append('_');
-            }
-            buf.append(c);
-        }
-        return buf.toString();
-    }
-
     @Override
-    protected boolean onRetry(Throwable t) {
+    protected DebugContext getRetryContext(DebugContext initialDebug, Throwable t) {
         if (t instanceof BailoutException) {
-            return false;
+            return null;
         }
 
-        if (!Debug.isEnabled()) {
-            TTY.printf("Error while compiling %s due to %s.%nRe-run with -D%s%s=true to capture graph dumps upon a compilation failure.%n", this,
-                            t, HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX, ForceDebugEnable.getName());
-            return false;
-        }
-
-        if (Dump.hasBeenSet(originalOptions)) {
+        OptionValues initialOptions = initialDebug.getOptions();
+        if (Dump.hasBeenSet(initialOptions)) {
             // If dumping is explicitly enabled, Graal is being debugged
             // so don't interfere with what the user is expecting to see.
-            return false;
+            return null;
         }
 
         String outputDirectory = runtime.getOutputDirectory();
         if (outputDirectory == null) {
-            return false;
+            return null;
         }
-        String dumpName = sanitizedFileName(toString());
+        String dumpName = GraalDebugHandlersFactory.sanitizedFileName(toString());
         File dumpPath = new File(outputDirectory, dumpName);
         dumpPath.mkdirs();
         if (!dumpPath.exists()) {
             TTY.println("Warning: could not create dump directory " + dumpPath);
-            return false;
+            return null;
         }
 
         TTY.println("Retrying compilation of " + this + " due to " + t);
         retryLogPath = new File(dumpPath, "retry.log").getPath();
         log("Exception causing retry", t);
-        retryDumpHandlers = new ArrayList<>();
-        retryOptions = new OptionValues(originalOptions,
-                        PrintCFGFileName, dumpName,
-                        PrintGraphFileName, dumpName,
+        OptionValues retryOptions = new OptionValues(initialOptions,
+                        Dump, ":" + VERBOSE_LEVEL,
+                        MethodFilter, null,
                         DumpPath, dumpPath.getPath());
-        override(DUMP, VERBOSE_LEVEL).enable(DUMP_METHOD);
-        new GraalDebugConfigCustomizer().customize(this);
-        return true;
+        SnippetReflectionProvider snippetReflection = runtime.getHostProviders().getSnippetReflection();
+        return DebugContext.create(retryOptions, new GraalDebugHandlersFactory(snippetReflection));
     }
 
-    private Collection<DebugDumpHandler> retryDumpHandlers;
-    private OptionValues retryOptions;
     private String retryLogPath;
 
     /**
@@ -152,15 +119,5 @@ public abstract class HotSpotRetryableCompilation<T> extends DebugRetryableTask<
                 TTY.println("Warning: could not open retry log file " + retryLogPath + " [" + e + "]");
             }
         }
-    }
-
-    @Override
-    public Collection<DebugDumpHandler> dumpHandlers() {
-        return retryDumpHandlers;
-    }
-
-    @Override
-    public OptionValues getOptions() {
-        return retryOptions;
     }
 }

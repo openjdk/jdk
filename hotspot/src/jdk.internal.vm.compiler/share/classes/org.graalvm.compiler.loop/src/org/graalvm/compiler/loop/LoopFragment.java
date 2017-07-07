@@ -131,6 +131,8 @@ public abstract class LoopFragment {
 
     protected abstract DuplicationReplacement getDuplicationReplacement();
 
+    protected abstract void beforeDuplication();
+
     protected abstract void finishDuplication();
 
     protected void patchNodes(final DuplicationReplacement dataFix) {
@@ -162,6 +164,7 @@ public abstract class LoopFragment {
             } else {
                 dr = null;
             }
+            beforeDuplication();
             NodeIterable<Node> nodesIterable = original().nodes();
             duplicationMap = graph().addDuplicates(nodesIterable, graph(), nodesIterable.count(), dr);
             finishDuplication();
@@ -175,13 +178,13 @@ public abstract class LoopFragment {
         return computeNodes(graph, blocks, Collections.emptyList());
     }
 
-    protected static NodeBitMap computeNodes(Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<LoopExitNode> earlyExits) {
+    protected static NodeBitMap computeNodes(Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<AbstractBeginNode> earlyExits) {
         final NodeBitMap nodes = graph.createNodeBitMap();
         computeNodes(nodes, graph, blocks, earlyExits);
         return nodes;
     }
 
-    protected static void computeNodes(NodeBitMap nodes, Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<LoopExitNode> earlyExits) {
+    protected static void computeNodes(NodeBitMap nodes, Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<AbstractBeginNode> earlyExits) {
         for (AbstractBeginNode b : blocks) {
             if (b.isDeleted()) {
                 continue;
@@ -198,18 +201,22 @@ public abstract class LoopFragment {
                 nodes.mark(n);
             }
         }
-        for (LoopExitNode earlyExit : earlyExits) {
+        for (AbstractBeginNode earlyExit : earlyExits) {
             if (earlyExit.isDeleted()) {
                 continue;
             }
 
-            FrameState stateAfter = earlyExit.stateAfter();
-            if (stateAfter != null) {
-                stateAfter.applyToVirtual(node -> nodes.mark(node));
-            }
             nodes.mark(earlyExit);
-            for (ProxyNode proxy : earlyExit.proxies()) {
-                nodes.mark(proxy);
+
+            if (earlyExit instanceof LoopExitNode) {
+                LoopExitNode loopExit = (LoopExitNode) earlyExit;
+                FrameState stateAfter = loopExit.stateAfter();
+                if (stateAfter != null) {
+                    stateAfter.applyToVirtual(node -> nodes.mark(node));
+                }
+                for (ProxyNode proxy : loopExit.proxies()) {
+                    nodes.mark(proxy);
+                }
             }
         }
 
@@ -302,22 +309,30 @@ public abstract class LoopFragment {
         };
     }
 
-    public static NodeIterable<LoopExitNode> toHirExits(final Iterable<Block> blocks) {
-        return new NodeIterable<LoopExitNode>() {
+    public static NodeIterable<AbstractBeginNode> toHirExits(final Iterable<Block> blocks) {
+        return new NodeIterable<AbstractBeginNode>() {
 
             @Override
-            public Iterator<LoopExitNode> iterator() {
+            public Iterator<AbstractBeginNode> iterator() {
                 final Iterator<Block> it = blocks.iterator();
-                return new Iterator<LoopExitNode>() {
+                return new Iterator<AbstractBeginNode>() {
 
                     @Override
                     public void remove() {
                         throw new UnsupportedOperationException();
                     }
 
+                    /**
+                     * Return the true LoopExitNode for this loop or the BeginNode for the block.
+                     */
                     @Override
-                    public LoopExitNode next() {
-                        return (LoopExitNode) it.next().getBeginNode();
+                    public AbstractBeginNode next() {
+                        Block next = it.next();
+                        LoopExitNode exit = next.getLoopExit();
+                        if (exit != null) {
+                            return exit;
+                        }
+                        return next.getBeginNode();
                     }
 
                     @Override

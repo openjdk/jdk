@@ -24,6 +24,7 @@ package org.graalvm.compiler.nodes.spi;
 
 import java.util.List;
 
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
@@ -158,4 +159,6 @@ public interface VirtualizerTool {
     boolean ensureMaterialized(VirtualObjectNode virtualObject);
 
     OptionValues getOptions();
+
+    DebugContext getDebug();
 }

@@ -31,8 +31,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.TrivialInliningSize;
 
 import java.util.Map;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
@@ -43,7 +43,7 @@ import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
 public class GreedyInliningPolicy extends AbstractInliningPolicy {
 
-    private static final DebugCounter inliningStoppedByMaxDesiredSizeCounter = Debug.counter("InliningStoppedByMaxDesiredSize");
+    private static final CounterKey inliningStoppedByMaxDesiredSizeCounter = DebugContext.counter("InliningStoppedByMaxDesiredSize");
 
     public GreedyInliningPolicy(Map<Invoke, Double> hints) {
         super(hints);
@@ -52,8 +52,9 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
     @Override
     public boolean continueInlining(StructuredGraph currentGraph) {
         if (InliningUtil.getNodeCount(currentGraph) >= MaximumDesiredSize.getValue(currentGraph.getOptions())) {
-            InliningUtil.logInliningDecision("inlining is cut off by MaximumDesiredSize");
-            inliningStoppedByMaxDesiredSizeCounter.increment();
+            DebugContext debug = currentGraph.getDebug();
+            InliningUtil.logInliningDecision(debug, "inlining is cut off by MaximumDesiredSize");
+            inliningStoppedByMaxDesiredSizeCounter.increment(debug);
             return false;
         }
         return true;

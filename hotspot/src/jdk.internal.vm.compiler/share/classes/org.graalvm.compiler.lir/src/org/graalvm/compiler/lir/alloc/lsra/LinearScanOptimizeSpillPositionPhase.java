@@ -29,8 +29,8 @@ import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import java.util.Iterator;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -44,13 +44,15 @@ import jdk.vm.ci.meta.AllocatableValue;
 
 public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAllocationPhase {
 
-    private static final DebugCounter betterSpillPos = Debug.counter("BetterSpillPosition");
-    private static final DebugCounter betterSpillPosWithLowerProbability = Debug.counter("BetterSpillPositionWithLowerProbability");
+    private static final CounterKey betterSpillPos = DebugContext.counter("BetterSpillPosition");
+    private static final CounterKey betterSpillPosWithLowerProbability = DebugContext.counter("BetterSpillPositionWithLowerProbability");
 
     private final LinearScan allocator;
+    private DebugContext debug;
 
     LinearScanOptimizeSpillPositionPhase(LinearScan allocator) {
         this.allocator = allocator;
+        this.debug = allocator.getDebug();
     }
 
     @Override
@@ -61,7 +63,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
 
     @SuppressWarnings("try")
     private void optimizeSpillPosition(LIRGenerationResult res) {
-        try (Indent indent0 = Debug.logAndIndent("OptimizeSpillPositions")) {
+        try (Indent indent0 = debug.logAndIndent("OptimizeSpillPositions")) {
             LIRInsertionBuffer[] insertionBuffers = new LIRInsertionBuffer[allocator.getLIR().linearScanOrder().length];
             for (Interval interval : allocator.intervals()) {
                 optimizeInterval(insertionBuffers, interval, res);
@@ -83,7 +85,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
         AbstractBlockBase<?> defBlock = allocator.blockForId(interval.spillDefinitionPos());
         AbstractBlockBase<?> spillBlock = null;
         Interval firstSpillChild = null;
-        try (Indent indent = Debug.logAndIndent("interval %s (%s)", interval, defBlock)) {
+        try (Indent indent = debug.logAndIndent("interval %s (%s)", interval, defBlock)) {
             for (Interval splitChild : interval.getSplitChildren()) {
                 if (isStackSlotValue(splitChild.location())) {
                     if (firstSpillChild == null || splitChild.from() < firstSpillChild.from()) {
@@ -94,7 +96,7 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
                     // iterate all blocks where the interval has use positions
                     for (AbstractBlockBase<?> splitBlock : blocksForInterval(splitChild)) {
                         if (dominates(defBlock, splitBlock)) {
-                            Debug.log("Split interval %s, block %s", splitChild, splitBlock);
+                            debug.log("Split interval %s, block %s", splitChild, splitBlock);
                             if (spillBlock == null) {
                                 spillBlock = splitBlock;
                             } else {
@@ -106,17 +108,17 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
                 }
             }
             if (spillBlock == null) {
-                Debug.log("not spill interval found");
+                debug.log("not spill interval found");
                 // no spill interval
                 interval.setSpillState(SpillState.StoreAtDefinition);
                 return;
             }
-            Debug.log(Debug.VERBOSE_LEVEL, "Spill block candidate (initial): %s", spillBlock);
+            debug.log(DebugContext.VERBOSE_LEVEL, "Spill block candidate (initial): %s", spillBlock);
             // move out of loops
             if (defBlock.getLoopDepth() < spillBlock.getLoopDepth()) {
                 spillBlock = moveSpillOutOfLoop(defBlock, spillBlock);
             }
-            Debug.log(Debug.VERBOSE_LEVEL, "Spill block candidate (after loop optimizaton): %s", spillBlock);
+            debug.log(DebugContext.VERBOSE_LEVEL, "Spill block candidate (after loop optimizaton): %s", spillBlock);
 
             /*
              * The spill block is the begin of the first split child (aka the value is on the
@@ -129,25 +131,25 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
             assert firstSpillChild != null;
             if (!defBlock.equals(spillBlock) && spillBlock.equals(allocator.blockForId(firstSpillChild.from()))) {
                 AbstractBlockBase<?> dom = spillBlock.getDominator();
-                if (Debug.isLogEnabled()) {
-                    Debug.log("Spill block (%s) is the beginning of a spill child -> use dominator (%s)", spillBlock, dom);
+                if (debug.isLogEnabled()) {
+                    debug.log("Spill block (%s) is the beginning of a spill child -> use dominator (%s)", spillBlock, dom);
                 }
                 spillBlock = dom;
             }
             if (defBlock.equals(spillBlock)) {
-                Debug.log(Debug.VERBOSE_LEVEL, "Definition is the best choice: %s", defBlock);
+                debug.log(DebugContext.VERBOSE_LEVEL, "Definition is the best choice: %s", defBlock);
                 // definition is the best choice
                 interval.setSpillState(SpillState.StoreAtDefinition);
                 return;
             }
             assert dominates(defBlock, spillBlock);
-            betterSpillPos.increment();
-            if (Debug.isLogEnabled()) {
-                Debug.log("Better spill position found (Block %s)", spillBlock);
+            betterSpillPos.increment(debug);
+            if (debug.isLogEnabled()) {
+                debug.log("Better spill position found (Block %s)", spillBlock);
             }
 
             if (defBlock.probability() <= spillBlock.probability()) {
-                Debug.log(Debug.VERBOSE_LEVEL, "Definition has lower probability %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.probability(), spillBlock,
+                debug.log(DebugContext.VERBOSE_LEVEL, "Definition has lower probability %s (%f) is lower than spill block %s (%f)", defBlock, defBlock.probability(), spillBlock,
                                 spillBlock.probability());
                 // better spill block has the same probability -> do nothing
                 interval.setSpillState(SpillState.StoreAtDefinition);
@@ -166,14 +168,14 @@ public final class LinearScanOptimizeSpillPositionPhase extends LinearScanAlloca
             AllocatableValue toLocation = LinearScan.canonicalSpillOpr(interval);
             LIRInstruction move = allocator.getSpillMoveFactory().createMove(toLocation, fromLocation);
             move.setComment(res, "LSRAOptimizeSpillPos: optimize spill pos");
-            Debug.log(Debug.VERBOSE_LEVEL, "Insert spill move %s", move);
+            debug.log(DebugContext.VERBOSE_LEVEL, "Insert spill move %s", move);
             move.setId(LinearScan.DOMINATOR_SPILL_MOVE_ID);
             /*
              * We can use the insertion buffer directly because we always insert at position 1.
              */
             insertionBuffer.append(1, move);
 
-            betterSpillPosWithLowerProbability.increment();
+            betterSpillPosWithLowerProbability.increment(debug);
             interval.setSpillDefinitionPos(spillOpId);
         }
     }

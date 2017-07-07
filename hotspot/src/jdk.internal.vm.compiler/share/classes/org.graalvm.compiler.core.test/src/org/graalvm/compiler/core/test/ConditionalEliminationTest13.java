@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -310,7 +310,8 @@ public class ConditionalEliminationTest13 extends ConditionalEliminationTestBase
         super.prepareGraph(graph, canonicalizer, context, applyLowering);
         graph.clearAllStateAfter();
         graph.setGuardsStage(StructuredGraph.GuardsStage.AFTER_FSA);
-        Debug.dump(Debug.BASIC_LEVEL, graph, "After preparation");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "After preparation");
         canonicalizer.apply(graph, context);
     }
 }

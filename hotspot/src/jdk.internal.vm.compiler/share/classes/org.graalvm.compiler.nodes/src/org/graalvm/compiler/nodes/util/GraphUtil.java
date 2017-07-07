@@ -25,14 +25,16 @@ package org.graalvm.compiler.nodes.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.code.SourceStackTraceBailoutException;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
@@ -44,6 +46,7 @@ import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
@@ -58,11 +61,16 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
+import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.LimitedValueProxy;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
+import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
+import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
@@ -77,8 +85,10 @@ import jdk.vm.ci.code.BytecodePosition;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class GraphUtil {
 
@@ -98,7 +108,8 @@ public class GraphUtil {
 
         fixSurvivingAffectedMerges(markedNodes, unmarkedMerges);
 
-        Debug.dump(Debug.DETAILED_LEVEL, node.graph(), "After fixing merges (killCFG %s)", node);
+        DebugContext debug = node.getDebug();
+        debug.dump(DebugContext.DETAILED_LEVEL, node.graph(), "After fixing merges (killCFG %s)", node);
 
         // Mark non-fixed nodes
         markUsages(markedNodes);
@@ -112,7 +123,7 @@ public class GraphUtil {
                 }
             }
         }
-        Debug.dump(Debug.VERY_DETAILED_LEVEL, node.graph(), "After disconnecting non-marked inputs (killCFG %s)", node);
+        debug.dump(DebugContext.VERY_DETAILED_LEVEL, node.graph(), "After disconnecting non-marked inputs (killCFG %s)", node);
         // Kill marked nodes
         for (Node marked : markedNodes) {
             if (marked.isAlive()) {
@@ -218,7 +229,8 @@ public class GraphUtil {
 
     @SuppressWarnings("try")
     public static void killCFG(FixedNode node) {
-        try (Debug.Scope scope = Debug.scope("KillCFG", node)) {
+        DebugContext debug = node.getDebug();
+        try (DebugContext.Scope scope = debug.scope("KillCFG", node)) {
             EconomicSet<Node> unusedNodes = null;
             EconomicSet<Node> unsafeNodes = null;
             Graph.NodeEventScope nodeEventScope = null;
@@ -237,9 +249,9 @@ public class GraphUtil {
                     }
                 });
             }
-            Debug.dump(Debug.VERY_DETAILED_LEVEL, node.graph(), "Before killCFG %s", node);
+            debug.dump(DebugContext.VERY_DETAILED_LEVEL, node.graph(), "Before killCFG %s", node);
             killCFGInner(node);
-            Debug.dump(Debug.VERY_DETAILED_LEVEL, node.graph(), "After killCFG %s", node);
+            debug.dump(DebugContext.VERY_DETAILED_LEVEL, node.graph(), "After killCFG %s", node);
             if (Graph.Options.VerifyGraalGraphEdges.getValue(options)) {
                 EconomicSet<Node> newUnsafeNodes = collectUnsafeNodes(node.graph());
                 newUnsafeNodes.removeAll(unsafeNodes);
@@ -257,7 +269,7 @@ public class GraphUtil {
                 assert unusedNodes.isEmpty() : "New unused nodes: " + unusedNodes;
             }
         } catch (Throwable t) {
-            throw Debug.handle(t);
+            throw debug.handle(t);
         }
     }
 
@@ -934,5 +946,80 @@ public class GraphUtil {
             return result;
         }
         return null;
+    }
+
+    /**
+     * Virtualize an array copy.
+     *
+     * @param tool the virtualization tool
+     * @param source the source array
+     * @param sourceLength the length of the source array
+     * @param newLength the length of the new array
+     * @param from the start index in the source array
+     * @param newComponentType the component type of the new array
+     * @param elementKind the kind of the new array elements
+     * @param graph the node graph
+     * @param virtualArrayProvider a functional provider that returns a new virtual array given the
+     *            component type and length
+     */
+    public static void virtualizeArrayCopy(VirtualizerTool tool, ValueNode source, ValueNode sourceLength, ValueNode newLength, ValueNode from, ResolvedJavaType newComponentType, JavaKind elementKind,
+                    StructuredGraph graph, BiFunction<ResolvedJavaType, Integer, VirtualArrayNode> virtualArrayProvider) {
+
+        ValueNode sourceAlias = tool.getAlias(source);
+        ValueNode replacedSourceLength = tool.getAlias(sourceLength);
+        ValueNode replacedNewLength = tool.getAlias(newLength);
+        ValueNode replacedFrom = tool.getAlias(from);
+        if (!replacedNewLength.isConstant() || !replacedFrom.isConstant() || !replacedSourceLength.isConstant()) {
+            return;
+        }
+
+        assert newComponentType != null : "An array copy can be virtualized only if the real type of the resulting array is known statically.";
+
+        int fromInt = replacedFrom.asJavaConstant().asInt();
+        int newLengthInt = replacedNewLength.asJavaConstant().asInt();
+        int sourceLengthInt = replacedSourceLength.asJavaConstant().asInt();
+        if (sourceAlias instanceof VirtualObjectNode) {
+            VirtualObjectNode sourceVirtual = (VirtualObjectNode) sourceAlias;
+            assert sourceLengthInt == sourceVirtual.entryCount();
+        }
+
+        if (fromInt < 0 || newLengthInt < 0 || fromInt > sourceLengthInt) {
+            /* Illegal values for either from index, the new length or the source length. */
+            return;
+        }
+
+        if (newLengthInt >= tool.getMaximumEntryCount()) {
+            /* The new array size is higher than maximum allowed size of virtualized objects. */
+            return;
+        }
+
+        ValueNode[] newEntryState = new ValueNode[newLengthInt];
+        int readLength = Math.min(newLengthInt, sourceLengthInt - fromInt);
+
+        if (sourceAlias instanceof VirtualObjectNode) {
+            /* The source array is virtualized, just copy over the values. */
+            VirtualObjectNode sourceVirtual = (VirtualObjectNode) sourceAlias;
+            for (int i = 0; i < readLength; i++) {
+                newEntryState[i] = tool.getEntry(sourceVirtual, fromInt + i);
+            }
+        } else {
+            /* The source array is not virtualized, emit index loads. */
+            for (int i = 0; i < readLength; i++) {
+                LoadIndexedNode load = new LoadIndexedNode(null, sourceAlias, ConstantNode.forInt(i + fromInt, graph), elementKind);
+                tool.addNode(load);
+                newEntryState[i] = load;
+            }
+        }
+        if (readLength < newLengthInt) {
+            /* Pad the copy with the default value of its elment kind. */
+            ValueNode defaultValue = ConstantNode.defaultForKind(elementKind, graph);
+            for (int i = readLength; i < newLengthInt; i++) {
+                newEntryState[i] = defaultValue;
+            }
+        }
+        /* Perform the replacement. */
+        VirtualArrayNode newVirtualArray = virtualArrayProvider.apply(newComponentType, newLengthInt);
+        tool.createVirtualObject(newVirtualArray, newEntryState, Collections.<MonitorIdNode> emptyList(), false);
+        tool.replaceWithVirtual(newVirtualArray);
     }
 }

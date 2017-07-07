@@ -22,13 +22,13 @@
  */
 package org.graalvm.compiler.core.match;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
+import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.graalvm.compiler.core.gen.NodeMatchRules;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Edges;
 import org.graalvm.compiler.graph.Node;
@@ -36,8 +36,8 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 import org.graalvm.util.MapCursor;
 
 public class MatchRuleRegistry {
@@ -77,7 +77,7 @@ public class MatchRuleRegistry {
      * @return the set of {@link MatchStatement}s applicable to theClass.
      */
     @SuppressWarnings("try")
-    public static synchronized EconomicMap<Class<? extends Node>, List<MatchStatement>> lookup(Class<? extends NodeMatchRules> theClass, OptionValues options) {
+    public static synchronized EconomicMap<Class<? extends Node>, List<MatchStatement>> lookup(Class<? extends NodeMatchRules> theClass, OptionValues options, DebugContext debug) {
         EconomicMap<Class<? extends Node>, List<MatchStatement>> result = registry.get(theClass);
 
         if (result == null) {
@@ -87,13 +87,13 @@ public class MatchRuleRegistry {
             result = rules;
 
             if (LogVerbose.getValue(options)) {
-                try (Scope s = Debug.scope("MatchComplexExpressions")) {
-                    Debug.log("Match rules for %s", theClass.getSimpleName());
+                try (DebugContext.Scope s = debug.scope("MatchComplexExpressions")) {
+                    debug.log("Match rules for %s", theClass.getSimpleName());
                     MapCursor<Class<? extends Node>, List<MatchStatement>> cursor = result.getEntries();
                     while (cursor.advance()) {
-                        Debug.log("  For node class: %s", cursor.getKey());
+                        debug.log("  For node class: %s", cursor.getKey());
                         for (MatchStatement statement : cursor.getValue()) {
-                            Debug.log("    %s", statement.getPattern());
+                            debug.log("    %s", statement.getPattern());
                         }
                     }
                 }

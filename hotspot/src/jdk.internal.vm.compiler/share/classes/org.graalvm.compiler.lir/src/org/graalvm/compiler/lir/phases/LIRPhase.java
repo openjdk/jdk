@@ -24,11 +24,10 @@ package org.graalvm.compiler.lir.phases;
 
 import java.util.regex.Pattern;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
 import org.graalvm.compiler.debug.DebugCloseable;
-import org.graalvm.compiler.debug.DebugMemUseTracker;
-import org.graalvm.compiler.debug.DebugTimer;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.MemUseTrackerKey;
+import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.options.Option;
@@ -53,27 +52,27 @@ public abstract class LIRPhase<C> {
     /**
      * Records time spent within {@link #apply}.
      */
-    private final DebugTimer timer;
+    private final TimerKey timer;
 
     /**
      * Records memory usage within {@link #apply}.
      */
-    private final DebugMemUseTracker memUseTracker;
+    private final MemUseTrackerKey memUseTracker;
 
     public static final class LIRPhaseStatistics {
         /**
          * Records time spent within {@link #apply}.
          */
-        public final DebugTimer timer;
+        public final TimerKey timer;
 
         /**
          * Records memory usage within {@link #apply}.
          */
-        public final DebugMemUseTracker memUseTracker;
+        public final MemUseTrackerKey memUseTracker;
 
         public LIRPhaseStatistics(Class<?> clazz) {
-            timer = Debug.timer("LIRPhaseTime_%s", clazz);
-            memUseTracker = Debug.memUseTracker("LIRPhaseMemUse_%s", clazz);
+            timer = DebugContext.timer("LIRPhaseTime_%s", clazz);
+            memUseTracker = DebugContext.memUseTracker("LIRPhaseMemUse_%s", clazz);
         }
     }
 
@@ -110,23 +109,25 @@ public abstract class LIRPhase<C> {
 
     @SuppressWarnings("try")
     public final void apply(TargetDescription target, LIRGenerationResult lirGenRes, C context, boolean dumpLIR) {
-        try (Scope s = Debug.scope(getName(), this)) {
-            try (DebugCloseable a = timer.start(); DebugCloseable c = memUseTracker.start()) {
+        DebugContext debug = lirGenRes.getLIR().getDebug();
+        try (DebugContext.Scope s = debug.scope(getName(), this)) {
+            try (DebugCloseable a = timer.start(debug); DebugCloseable c = memUseTracker.start(debug)) {
                 run(target, lirGenRes, context);
-                if (dumpLIR && Debug.isEnabled()) {
+                if (dumpLIR && debug.areScopesEnabled()) {
                     dumpAfter(lirGenRes);
                 }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 
     private void dumpAfter(LIRGenerationResult lirGenRes) {
         boolean isStage = this instanceof LIRPhaseSuite;
         if (!isStage) {
-            if (Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
-                Debug.dump(Debug.INFO_LEVEL, lirGenRes.getLIR(), "After %s", getName());
+            DebugContext debug = lirGenRes.getLIR().getDebug();
+            if (debug.isDumpEnabled(DebugContext.INFO_LEVEL)) {
+                debug.dump(DebugContext.INFO_LEVEL, lirGenRes.getLIR(), "After %s", getName());
             }
         }
     }

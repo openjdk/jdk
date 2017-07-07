@@ -22,9 +22,9 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.MethodFilter;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.PrintGraph;
+import static org.graalvm.compiler.debug.DebugOptions.Dump;
+import static org.graalvm.compiler.debug.DebugOptions.MethodFilter;
+import static org.graalvm.compiler.debug.DebugOptions.PrintGraph;
 import static org.graalvm.compiler.test.SubprocessUtil.getVMCommandLine;
 import static org.graalvm.compiler.test.SubprocessUtil.withoutDebuggerArguments;
 

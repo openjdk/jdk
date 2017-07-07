@@ -31,6 +31,7 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.JVMCIError;
@@ -63,8 +64,23 @@ public final class TraceRegisterAllocationPolicy {
             return resultTraces;
         }
 
+        protected final GlobalLivenessInfo getGlobalLivenessInfo() {
+            return livenessInfo;
+        }
+
+        protected final RegisterAllocationConfig getRegisterAllocationConfig() {
+            return registerAllocationConfig;
+        }
+
+        protected final TargetDescription getTarget() {
+            return target;
+        }
+
         /**
          * Returns {@code true} if the allocation strategy should be used for {@code trace}.
+         *
+         * This method must not alter any state of the strategy, nor rely on being called in a
+         * specific trace order.
          */
         public abstract boolean shouldApplyTo(Trace trace);
 
@@ -97,6 +113,10 @@ public final class TraceRegisterAllocationPolicy {
         this.livenessInfo = livenessInfo;
 
         this.strategies = new ArrayList<>(3);
+    }
+
+    protected OptionValues getOptions() {
+        return lirGenRes.getLIR().getOptions();
     }
 
     public void appendStrategy(AllocationStrategy strategy) {

@@ -23,8 +23,8 @@
 package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.BeginNode;
@@ -139,6 +139,7 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
     }
 
     private static void processBlock(Block block, ScheduleResult schedule) {
-        new LowerGuards(block, Debug.isDumpEnabledForMethod() || Debug.isLogEnabledForMethod()).processNodes(block, schedule);
+        DebugContext debug = block.getBeginNode().getDebug();
+        new LowerGuards(block, debug.isDumpEnabledForMethod() || debug.isLogEnabledForMethod()).processNodes(block, schedule);
     }
 }

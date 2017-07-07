@@ -76,7 +76,7 @@ public class InfopointReasonTest extends GraalCompilerTest {
     @Test
     public void lineInfopoints() {
         final ResolvedJavaMethod method = getResolvedJavaMethod("testMethod");
-        final StructuredGraph graph = parseDebug(method, AllowAssumptions.ifTrue(OptAssumptions.getValue(getInitialOptions())));
+        final StructuredGraph graph = parse(builder(method, AllowAssumptions.ifTrue(OptAssumptions.getValue(getInitialOptions()))), getDebugGraphBuilderSuite());
         int graphLineSPs = 0;
         for (FullInfopointNode ipn : graph.getNodes().filter(FullInfopointNode.class)) {
             if (ipn.getReason() == InfopointReason.BYTECODE_POSITION) {

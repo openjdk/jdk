@@ -26,9 +26,10 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.phases.LIRPhase;
@@ -56,8 +57,8 @@ public class LIRGenerationPhase extends LIRPhase<LIRGenerationPhase.LIRGeneratio
         }
     }
 
-    private static final DebugCounter instructionCounter = Debug.counter("GeneratedLIRInstructions");
-    private static final DebugCounter nodeCount = Debug.counter("FinalNodeCount");
+    private static final CounterKey instructionCounter = DebugContext.counter("GeneratedLIRInstructions");
+    private static final CounterKey nodeCount = DebugContext.counter("FinalNodeCount");
 
     @Override
     protected final void run(TargetDescription target, LIRGenerationResult lirGenRes, LIRGenerationPhase.LIRGenerationContext context) {
@@ -69,18 +70,16 @@ public class LIRGenerationPhase extends LIRPhase<LIRGenerationPhase.LIRGeneratio
         }
         context.lirGen.beforeRegisterAllocation();
         assert SSAUtil.verifySSAForm(lirGenRes.getLIR());
-        if (nodeCount.isEnabled()) {
-            nodeCount.add(graph.getNodeCount());
-        }
+        nodeCount.add(graph.getDebug(), graph.getNodeCount());
     }
 
     private static void emitBlock(NodeLIRBuilderTool nodeLirGen, LIRGenerationResult lirGenRes, Block b, StructuredGraph graph, BlockMap<List<Node>> blockMap) {
         assert !isProcessed(lirGenRes, b) : "Block already processed " + b;
         assert verifyPredecessors(lirGenRes, b);
         nodeLirGen.doBlock(b, graph, blockMap);
-        if (instructionCounter.isEnabled()) {
-            instructionCounter.add(lirGenRes.getLIR().getLIRforBlock(b).size());
-        }
+        LIR lir = lirGenRes.getLIR();
+        DebugContext debug = lir.getDebug();
+        instructionCounter.add(debug, lir.getLIRforBlock(b).size());
     }
 
     private static boolean verifyPredecessors(LIRGenerationResult lirGenRes, Block block) {

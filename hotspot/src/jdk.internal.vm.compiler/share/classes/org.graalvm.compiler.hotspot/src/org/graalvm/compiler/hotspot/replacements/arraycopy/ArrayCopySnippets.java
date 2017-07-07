@@ -43,6 +43,7 @@ import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -411,8 +412,8 @@ public class ArrayCopySnippets implements Snippets {
 
     public static class Templates extends SnippetTemplate.AbstractTemplates {
 
-        public Templates(OptionValues options, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target) {
-            super(options, providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
             this.counters = new Counters(factory);
         }
 
@@ -617,7 +618,7 @@ public class ArrayCopySnippets implements Snippets {
             args.add("destPos", arraycopy.getDestinationPosition());
             args.addConst("length", arraycopy.getUnrollLength());
             args.addConst("elementKind", arraycopy.getElementKind());
-            template(args).instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args);
+            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args);
         }
 
         /**
@@ -629,7 +630,7 @@ public class ArrayCopySnippets implements Snippets {
          */
         private void instantiate(Arguments args, BasicArrayCopyNode arraycopy) {
             StructuredGraph graph = arraycopy.graph();
-            SnippetTemplate template = template(args);
+            SnippetTemplate template = template(graph.getDebug(), args);
             UnmodifiableEconomicMap<Node, Node> replacements = template.instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args, false);
             for (Node originalNode : replacements.getKeys()) {
                 if (originalNode instanceof Invoke) {

@@ -43,9 +43,20 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
 
     public static final NodeClass<LoopBeginNode> TYPE = NodeClass.create(LoopBeginNode.class);
     protected double loopFrequency;
+    protected double loopOrigFrequency;
     protected int nextEndIndex;
     protected int unswitches;
+    protected int splits;
     protected int inversionCount;
+    protected LoopType loopType;
+    protected int unrollFactor;
+
+    public enum LoopType {
+        SIMPLE_LOOP,
+        PRE_LOOP,
+        MAIN_LOOP,
+        POST_LOOP
+    }
 
     /** See {@link LoopEndNode#canSafepoint} for more information. */
     boolean canEndsSafepoint;
@@ -55,7 +66,51 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
     public LoopBeginNode() {
         super(TYPE);
         loopFrequency = 1;
+        loopOrigFrequency = 1;
+        unswitches = 0;
+        splits = 0;
         this.canEndsSafepoint = true;
+        loopType = LoopType.SIMPLE_LOOP;
+        unrollFactor = 1;
+    }
+
+    public boolean isSimpleLoop() {
+        return (loopType == LoopType.SIMPLE_LOOP);
+    }
+
+    public void setPreLoop() {
+        assert isSimpleLoop();
+        loopType = LoopType.PRE_LOOP;
+    }
+
+    public boolean isPreLoop() {
+        return (loopType == LoopType.PRE_LOOP);
+    }
+
+    public void setMainLoop() {
+        assert isSimpleLoop();
+        loopType = LoopType.MAIN_LOOP;
+    }
+
+    public boolean isMainLoop() {
+        return (loopType == LoopType.MAIN_LOOP);
+    }
+
+    public void setPostLoop() {
+        assert isSimpleLoop();
+        loopType = LoopType.POST_LOOP;
+    }
+
+    public boolean isPostLoop() {
+        return (loopType == LoopType.POST_LOOP);
+    }
+
+    public int getUnrollFactor() {
+        return unrollFactor;
+    }
+
+    public void setUnrollFactor(int currentUnrollFactor) {
+        unrollFactor = currentUnrollFactor;
     }
 
     /** Disables safepoint for the whole loop, i.e., for all {@link LoopEndNode loop ends}. */
@@ -66,6 +121,15 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
         for (LoopEndNode loopEnd : loopEnds()) {
             loopEnd.disableSafepoint();
         }
+    }
+
+    public double loopOrigFrequency() {
+        return loopOrigFrequency;
+    }
+
+    public void setLoopOrigFrequency(double loopOrigFrequency) {
+        assert loopOrigFrequency >= 0;
+        this.loopOrigFrequency = loopOrigFrequency;
     }
 
     public double loopFrequency() {
@@ -122,9 +186,21 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
         return result;
     }
 
+    public boolean isSingleEntryLoop() {
+        return (forwardEndCount() == 1);
+    }
+
     public AbstractEndNode forwardEnd() {
         assert forwardEndCount() == 1;
         return forwardEndAt(0);
+    }
+
+    public int splits() {
+        return splits;
+    }
+
+    public void incrementSplits() {
+        splits++;
     }
 
     @Override

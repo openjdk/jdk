@@ -22,16 +22,15 @@
  */
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static jdk.vm.ci.amd64.AMD64.rbp;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 
 import org.graalvm.compiler.core.amd64.AMD64NodeLIRBuilder;
 import org.graalvm.compiler.core.amd64.AMD64NodeMatchRules;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
@@ -177,7 +176,7 @@ public class AMD64HotSpotNodeLIRBuilder extends AMD64NodeLIRBuilder implements H
     @Override
     public void visitFullInfopointNode(FullInfopointNode i) {
         if (i.getState() != null && i.getState().bci == BytecodeFrame.AFTER_BCI) {
-            Debug.log("Ignoring InfopointNode for AFTER_BCI");
+            i.getDebug().log("Ignoring InfopointNode for AFTER_BCI");
         } else {
             super.visitFullInfopointNode(i);
         }

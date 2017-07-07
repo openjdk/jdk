@@ -22,9 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FrameState;
@@ -40,6 +38,7 @@ import org.graalvm.compiler.phases.common.GuardLoweringPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 /**
  * In the following tests, the usages of local variable "a" are replaced with the integer constant
@@ -237,6 +236,7 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
 
     private void test(String snippet) {
         StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
+        DebugContext debug = graph.getDebug();
         ParameterNode param = graph.getNodes(ParameterNode.TYPE).iterator().next();
         ConstantNode constant = ConstantNode.forInt(0, graph);
         for (Node n : param.usages().snapshot()) {
@@ -244,7 +244,7 @@ public class IfCanonicalizerTest extends GraalCompilerTest {
                 n.replaceFirstInput(param, constant);
             }
         }
-        Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         for (FrameState fs : param.usages().filter(FrameState.class).snapshot()) {
             fs.replaceFirstInput(param, null);

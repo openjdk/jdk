@@ -65,6 +65,9 @@ public class PrintStreamOptionKey extends OptionKey<String> {
 
             }
         }
+        if (name.contains("%t")) {
+            name = name.replaceAll("%t", String.valueOf(System.currentTimeMillis()));
+        }
         return name;
     }
 

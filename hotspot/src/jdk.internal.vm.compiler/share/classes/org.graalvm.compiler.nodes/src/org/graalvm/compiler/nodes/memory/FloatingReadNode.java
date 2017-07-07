@@ -88,7 +88,18 @@ public final class FloatingReadNode extends FloatingAccessNode implements LIRLow
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
-        return ReadNode.canonicalizeRead(this, getAddress(), getLocationIdentity(), tool);
+        Node result = ReadNode.canonicalizeRead(this, getAddress(), getLocationIdentity(), tool);
+        if (result != this) {
+            return result;
+        }
+        if (tool.canonicalizeReads() && getAddress().hasMoreThanOneUsage() && lastLocationAccess instanceof WriteNode) {
+            WriteNode write = (WriteNode) lastLocationAccess;
+            if (write.getAddress() == getAddress() && write.getAccessStamp().isCompatible(getAccessStamp())) {
+                // Same memory location with no intervening write
+                return write.value();
+            }
+        }
+        return this;
     }
 
     @SuppressWarnings("try")

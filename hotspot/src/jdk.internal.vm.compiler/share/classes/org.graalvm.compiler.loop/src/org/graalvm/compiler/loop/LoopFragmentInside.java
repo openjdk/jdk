@@ -50,8 +50,8 @@ import org.graalvm.compiler.nodes.ValuePhiNode;
 import org.graalvm.compiler.nodes.VirtualState.NodeClosure;
 import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 public class LoopFragmentInside extends LoopFragment {
 
@@ -71,6 +71,17 @@ public class LoopFragmentInside extends LoopFragment {
                 return oriInput;
             }
             return prim((ValueNode) oriInput);
+        }
+    };
+
+    private final DuplicationReplacement dataFixWithinAfter = new DuplicationReplacement() {
+
+        @Override
+        public Node replacement(Node oriInput) {
+            if (!(oriInput instanceof ValueNode)) {
+                return oriInput;
+            }
+            return primAfter((ValueNode) oriInput);
         }
     };
 
@@ -119,6 +130,12 @@ public class LoopFragmentInside extends LoopFragment {
         AbstractBeginNode entry = getDuplicatedNode(loop.loopBegin());
         loop.entryPoint().replaceAtPredecessor(entry);
         end.setNext(loop.entryPoint());
+    }
+
+    public void insertWithinAfter(LoopEx loop) {
+        assert this.isDuplicate() && this.original().loop() == loop;
+
+        patchNodes(dataFixWithinAfter);
     }
 
     @Override
@@ -203,6 +220,11 @@ public class LoopFragmentInside extends LoopFragment {
     @Override
     protected void finishDuplication() {
         // TODO (gd) ?
+    }
+
+    @Override
+    protected void beforeDuplication() {
+        // Nothing to do
     }
 
     private static PhiNode patchPhi(StructuredGraph graph, PhiNode phi, AbstractMergeNode merge) {
@@ -326,6 +348,24 @@ public class LoopFragmentInside extends LoopFragment {
         if (loopBegin.isPhiAtMerge(b)) {
             PhiNode phi = (PhiNode) b;
             return phi.valueAt(loopBegin.forwardEnd());
+        } else if (nodesReady) {
+            ValueNode v = getDuplicatedNode(b);
+            if (v == null) {
+                return b;
+            }
+            return v;
+        } else {
+            return b;
+        }
+    }
+
+    protected ValueNode primAfter(ValueNode b) {
+        assert isDuplicate();
+        LoopBeginNode loopBegin = original().loop().loopBegin();
+        if (loopBegin.isPhiAtMerge(b)) {
+            PhiNode phi = (PhiNode) b;
+            assert phi.valueCount() == 2;
+            return phi.valueAt(1);
         } else if (nodesReady) {
             ValueNode v = getDuplicatedNode(b);
             if (v == null) {

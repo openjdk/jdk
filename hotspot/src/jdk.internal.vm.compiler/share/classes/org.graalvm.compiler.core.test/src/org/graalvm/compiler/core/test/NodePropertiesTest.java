@@ -23,7 +23,6 @@
 package org.graalvm.compiler.core.test;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -196,7 +195,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testDifferentLoopFaster --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testDifferentLoopFaster --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
         Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
@@ -214,7 +213,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testSameLoopMoreIterationsCostlier --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testSameLoopMoreIterationsCostlier --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
         Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
@@ -231,7 +230,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testDifferentLoopsInnerOuter --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testDifferentLoopsInnerOuter --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalSize > gc1.finalSize);
     }
 
@@ -246,7 +245,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test Graph Cost --> 1.Graph cost:%f vs. 2.Graph cost:%f\n", gc1.finalCycles, gc2.finalCycles);
+        g1.getDebug().log("Test Graph Cost --> 1.Graph cost:%f vs. 2.Graph cost:%f\n", gc1.finalCycles, gc2.finalCycles);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
         Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }

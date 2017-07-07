@@ -62,7 +62,9 @@ public final class CachedGraph<G extends Graph> {
     @SuppressWarnings("unchecked")
     public G getMutableCopy(Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback) {
         if (!hasMutableCopy()) {
-            mutableCopy = (G) readonlyCopy.copy(duplicationMapCallback);
+            // Sharing the debug context with the copy is safe since both graphs are
+            // only used in the current thread.
+            mutableCopy = (G) readonlyCopy.copy(duplicationMapCallback, readonlyCopy.getDebug());
         }
         return mutableCopy;
     }

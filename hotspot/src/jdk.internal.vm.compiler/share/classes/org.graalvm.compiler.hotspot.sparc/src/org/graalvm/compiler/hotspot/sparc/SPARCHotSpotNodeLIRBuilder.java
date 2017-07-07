@@ -22,16 +22,15 @@
  */
 package org.graalvm.compiler.hotspot.sparc;
 
-import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static jdk.vm.ci.sparc.SPARC.g5;
 import static jdk.vm.ci.sparc.SPARC.o7;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
 import org.graalvm.compiler.core.sparc.SPARCNodeLIRBuilder;
 import org.graalvm.compiler.core.sparc.SPARCNodeMatchRules;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
@@ -150,7 +149,7 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     @Override
     public void visitFullInfopointNode(FullInfopointNode i) {
         if (i.getState() != null && i.getState().bci == BytecodeFrame.AFTER_BCI) {
-            Debug.log("Ignoring InfopointNode for AFTER_BCI");
+            i.getDebug().log("Ignoring InfopointNode for AFTER_BCI");
         } else {
             super.visitFullInfopointNode(i);
         }

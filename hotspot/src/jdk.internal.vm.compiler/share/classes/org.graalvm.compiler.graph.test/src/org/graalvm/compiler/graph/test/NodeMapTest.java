@@ -37,6 +37,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.options.OptionValues;
 
 public class NodeMapTest extends GraphTest {
 
@@ -58,7 +59,8 @@ public class NodeMapTest extends GraphTest {
         // Need to initialize HotSpotGraalRuntime before any Node class is initialized.
         Graal.getRuntime();
 
-        graph = new Graph(getOptions());
+        OptionValues options = getOptions();
+        graph = new Graph(options, getDebug(options));
         for (int i = 0; i < nodes.length; i++) {
             nodes[i] = graph.add(new TestNode());
         }

@@ -80,6 +80,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -723,8 +724,9 @@ public class MonitorSnippets implements Snippets {
         private final boolean useFastLocking;
         public final Counters counters;
 
-        public Templates(OptionValues options, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target, boolean useFastLocking) {
-            super(options, providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, SnippetCounter.Group.Factory factory, HotSpotProviders providers, TargetDescription target,
+                        boolean useFastLocking) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
             this.useFastLocking = useFastLocking;
 
             this.counters = new Counters(factory);
@@ -756,7 +758,7 @@ public class MonitorSnippets implements Snippets {
                 args.addConst("counters", counters);
             }
 
-            template(args).instantiate(providers.getMetaAccess(), monitorenterNode, DEFAULT_REPLACER, args);
+            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), monitorenterNode, DEFAULT_REPLACER, args);
         }
 
         public void lower(MonitorExitNode monitorexitNode, HotSpotRegistersProvider registers, LoweringTool tool) {
@@ -775,7 +777,7 @@ public class MonitorSnippets implements Snippets {
             args.addConst("options", graph.getOptions());
             args.addConst("counters", counters);
 
-            template(args).instantiate(providers.getMetaAccess(), monitorexitNode, DEFAULT_REPLACER, args);
+            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), monitorexitNode, DEFAULT_REPLACER, args);
         }
 
         public static boolean isTracingEnabledForType(ValueNode object) {
@@ -843,7 +845,7 @@ public class MonitorSnippets implements Snippets {
 
                         Arguments args = new Arguments(checkCounter, graph.getGuardsStage(), tool.getLoweringStage());
                         args.addConst("errMsg", msg);
-                        inlineeGraph = template(args).copySpecializedGraph();
+                        inlineeGraph = template(graph.getDebug(), args).copySpecializedGraph(graph.getDebug());
                         InliningUtil.inline(invoke, inlineeGraph, false, null);
                     }
                 }

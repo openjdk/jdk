@@ -87,6 +87,17 @@ public abstract class WordFactory {
     }
 
     /**
+     * The null pointer, i.e., the pointer with no bits set. There is no difference to a signed or
+     * unsigned {@link #zero}.
+     *
+     * @return the null pointer.
+     */
+    @FactoryOperation(opcode = FactoryOpcode.ZERO)
+    public static <T extends PointerBase> T nullPointer() {
+        return boxFactory.box(0L);
+    }
+
+    /**
      * Unsafe conversion from a Java long value to a Word. The parameter is treated as an unsigned
      * 64-bit value (in contrast to the semantics of a Java long).
      *

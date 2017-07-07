@@ -33,8 +33,7 @@ import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -96,7 +95,7 @@ public abstract class SnippetStub extends Stub implements Snippets {
 
     @Override
     @SuppressWarnings("try")
-    protected StructuredGraph getGraph(CompilationIdentifier compilationId) {
+    protected StructuredGraph getGraph(DebugContext debug, CompilationIdentifier compilationId) {
         Plugins defaultPlugins = providers.getGraphBuilderPlugins();
         MetaAccessProvider metaAccess = providers.getMetaAccess();
         SnippetReflectionProvider snippetReflection = providers.getSnippetReflection();
@@ -107,8 +106,8 @@ public abstract class SnippetStub extends Stub implements Snippets {
 
         // Stubs cannot have optimistic assumptions since they have
         // to be valid for the entire run of the VM.
-        final StructuredGraph graph = new StructuredGraph.Builder(options).method(method).compilationId(compilationId).build();
-        try (Scope outer = Debug.scope("SnippetStub", graph)) {
+        final StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
+        try (DebugContext.Scope outer = debug.scope("SnippetStub", graph)) {
             graph.disableUnsafeAccessTracking();
 
             IntrinsicContext initialIntrinsicContext = new IntrinsicContext(method, method, getReplacementsBytecodeProvider(), INLINE_AFTER_PARSING);
@@ -132,7 +131,7 @@ public abstract class SnippetStub extends Stub implements Snippets {
             canonicalizer.apply(graph, context);
             new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
 
         return graph;

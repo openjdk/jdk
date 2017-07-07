@@ -22,12 +22,19 @@
  */
 package org.graalvm.compiler.phases.schedule;
 
+import static org.graalvm.compiler.core.common.GraalOptions.OptScheduleOutOfLoops;
+import static org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph.strictlyDominates;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Formatter;
+import java.util.List;
+
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.debug.Assertions;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Graph.NodeEvent;
 import org.graalvm.compiler.graph.Graph.NodeEventListener;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
@@ -68,14 +75,6 @@ import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.word.LocationIdentity;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Formatter;
-import java.util.List;
-
-import static org.graalvm.compiler.core.common.GraalOptions.OptScheduleOutOfLoops;
-import static org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph.strictlyDominates;
 
 public final class SchedulePhase extends Phase {
 
@@ -1014,7 +1013,7 @@ public final class SchedulePhase extends Phase {
             } else if (n instanceof GuardNode) {
                 buf.format(", anchor: %s", ((GuardNode) n).getAnchor());
             }
-            Debug.log("%s", buf);
+            n.getDebug().log("%s", buf);
         }
 
         public ControlFlowGraph getCFG() {

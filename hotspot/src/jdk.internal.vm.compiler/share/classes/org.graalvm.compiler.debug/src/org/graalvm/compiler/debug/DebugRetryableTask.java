@@ -22,28 +22,26 @@
  */
 package org.graalvm.compiler.debug;
 
-import org.graalvm.compiler.debug.Debug.Scope;
-
 /**
  * A mechanism for re-executing a task upon failure.
  */
-public abstract class DebugRetryableTask<T> extends DelegatingDebugConfig {
+public abstract class DebugRetryableTask<T> {
 
     /**
      * Calls {@link #run} on this task and if it results in an exception, calls
-     * {@link #onRetry(Throwable)} and if that returns {@code true}, calls {@link #run}.
+     * {@link #getRetryContext} and if that returns a non-null value,
+     * {@link #run(DebugContext, Throwable)} is called with it.
+     *
+     * @param initialDebug the debug context to be used for the initial execution
      */
     @SuppressWarnings("try")
-    public final T execute() {
+    public final T runWithRetry(DebugContext initialDebug) {
         try {
-            return run(null);
+            return run(initialDebug, null);
         } catch (Throwable t) {
-            if (onRetry(t)) {
-                try (Scope d = Debug.sandbox("Retrying: " + this, this)) {
-                    return run(t);
-                } catch (Throwable t2) {
-                    throw Debug.handle(t2);
-                }
+            DebugContext retryDebug = getRetryContext(initialDebug, t);
+            if (retryDebug != null) {
+                return run(retryDebug, t);
             } else {
                 throw t;
             }
@@ -51,22 +49,24 @@ public abstract class DebugRetryableTask<T> extends DelegatingDebugConfig {
     }
 
     /**
-     * Runs this task.
+     * Runs this body of this task.
      *
-     * @param failure the cause of the first execution to fail or {@code null} if this is the first
-     *            execution of {@link #run(Throwable)}
+     * @param debug the debug context to use for the execution
+     * @param failure {@code null} if this is the first execution otherwise the cause of the first
+     *            execution to fail
      */
-    protected abstract T run(Throwable failure);
+    protected abstract T run(DebugContext debug, Throwable failure);
 
     /**
-     * Notifies this object that the initial execution failed with exception {@code t} and is about
-     * to be re-executed. The re-execution will use this object as the active {@link DebugConfig}.
-     * As such, this method can be overridden to enable more detailed debug facilities.
+     * Notifies this object that the initial execution failed with exception {@code t} and requests
+     * a debug context to be used for re-execution.
      *
+     * @param initialDebug the debug context used for the initial execution
      * @param t an exception that terminated the first execution of this task
-     * @return whether this task should be re-executed. If false, {@code t} will be re-thrown.
+     * @return the debug context to be used for re-executing this task or {@code null} if {@code t}
+     *         should immediately be re-thrown without re-executing this task
      */
-    protected boolean onRetry(Throwable t) {
-        return true;
+    protected DebugContext getRetryContext(DebugContext initialDebug, Throwable t) {
+        return null;
     }
 }

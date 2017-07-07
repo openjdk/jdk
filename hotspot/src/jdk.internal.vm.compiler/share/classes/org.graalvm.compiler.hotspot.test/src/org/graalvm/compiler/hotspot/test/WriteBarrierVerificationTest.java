@@ -23,14 +23,11 @@
 package org.graalvm.compiler.hotspot.test;
 
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.DebugConfig;
-import org.graalvm.compiler.debug.DebugConfigScope;
+
+import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.debug.DebugDumpScope;
-import org.graalvm.compiler.debug.internal.DebugScope;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.nodes.G1ArrayRangePostWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1ArrayRangePreWriteBarrier;
@@ -64,6 +61,8 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.word.LocationIdentity;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 
@@ -647,8 +646,9 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
 
     @SuppressWarnings("try")
     private void testPredicate(final String snippet, final GraphPredicate expectedBarriers, final int... removedBarrierIndices) {
-        try (Scope d = Debug.scope("WriteBarrierVerificationTest", new DebugDumpScope(snippet))) {
-            final StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
+        DebugContext debug = getDebugContext();
+        try (DebugCloseable d = debug.disableIntercept(); DebugContext.Scope s = debug.scope("WriteBarrierVerificationTest", new DebugDumpScope(snippet))) {
+            final StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES, debug);
             HighTierContext highTierContext = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, highTierContext);
 
@@ -725,10 +725,7 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
                 }
             };
 
-            DebugConfig debugConfig = DebugScope.getConfig();
-            DebugConfig fixedConfig = debugConfig == null ? null
-                            : Debug.fixedConfig(debugConfig.getOptions(), 0, 0, false, false, false, false, false, debugConfig.dumpHandlers(), debugConfig.verifyHandlers(), debugConfig.output());
-            try (DebugConfigScope s = Debug.setConfig(fixedConfig)) {
+            try (Scope disabled = debug.disable()) {
                 ReentrantNodeIterator.apply(closure, graph.start(), false);
                 new WriteBarrierVerificationPhase(config).apply(graph);
             } catch (AssertionError error) {
@@ -740,7 +737,7 @@ public class WriteBarrierVerificationTest extends HotSpotGraalCompilerTest {
                 throw error;
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

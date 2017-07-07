@@ -22,13 +22,16 @@
  */
 package org.graalvm.compiler.nodes.test;
 
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 import static org.junit.Assert.assertEquals;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +46,9 @@ public class NegateNodeCanonicalizationTest {
 
     @Before
     public void before() {
-        graph = new StructuredGraph.Builder(GraalCompilerTest.getInitialOptions(), AllowAssumptions.YES).build();
+        OptionValues options = getInitialOptions();
+        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
     }
 
     @Test

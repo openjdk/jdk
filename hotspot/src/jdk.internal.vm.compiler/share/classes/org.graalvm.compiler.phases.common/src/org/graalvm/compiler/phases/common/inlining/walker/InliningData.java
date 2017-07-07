@@ -35,10 +35,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsInlineeScopeInfo;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.CallTargetNode;
@@ -101,9 +100,9 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 public class InliningData {
 
     // Counters
-    private static final DebugCounter counterInliningPerformed = Debug.counter("InliningPerformed");
-    private static final DebugCounter counterInliningRuns = Debug.counter("InliningRuns");
-    private static final DebugCounter counterInliningConsidered = Debug.counter("InliningConsidered");
+    private static final CounterKey counterInliningPerformed = DebugContext.counter("InliningPerformed");
+    private static final CounterKey counterInliningRuns = DebugContext.counter("InliningRuns");
+    private static final CounterKey counterInliningConsidered = DebugContext.counter("InliningConsidered");
 
     /**
      * Call hierarchy from outer most call (i.e., compilation unit) to inner most callee.
@@ -116,6 +115,7 @@ public class InliningData {
     private final CanonicalizerPhase canonicalizer;
     private final InliningPolicy inliningPolicy;
     private final StructuredGraph rootGraph;
+    private final DebugContext debug;
 
     private int maxGraphs;
 
@@ -127,6 +127,7 @@ public class InliningData {
         this.inliningPolicy = inliningPolicy;
         this.maxGraphs = 1;
         this.rootGraph = rootGraph;
+        this.debug = rootGraph.getDebug();
 
         invocationQueue.push(new MethodInvocation(null, 1.0, 1.0, null));
         graphQueue.push(new CallsiteHolderExplorable(rootGraph, 1.0, 1.0, null, rootInvokes));
@@ -395,14 +396,13 @@ public class InliningData {
         StructuredGraph callerGraph = callerCallsiteHolder.graph();
         InlineInfo calleeInfo = calleeInvocation.callee();
         try {
-            OptionValues options = rootGraph.getOptions();
-            try (Debug.Scope scope = Debug.scope("doInline", callerGraph); Debug.Scope s = Debug.methodMetricsScope("InlineEnhancement", MethodMetricsInlineeScopeInfo.create(options), false)) {
+            try (DebugContext.Scope scope = debug.scope("doInline", callerGraph)) {
                 EconomicSet<Node> canonicalizedNodes = EconomicSet.create(Equivalence.IDENTITY);
                 canonicalizedNodes.addAll(calleeInfo.invoke().asNode().usages());
                 EconomicSet<Node> parameterUsages = calleeInfo.inline(new Providers(context));
                 canonicalizedNodes.addAll(parameterUsages);
-                counterInliningRuns.increment();
-                Debug.dump(Debug.DETAILED_LEVEL, callerGraph, "after %s", calleeInfo);
+                counterInliningRuns.increment(debug);
+                debug.dump(DebugContext.DETAILED_LEVEL, callerGraph, "after %s", calleeInfo);
 
                 Graph.Mark markBeforeCanonicalization = callerGraph.getMark();
 
@@ -417,7 +417,7 @@ public class InliningData {
 
                 callerCallsiteHolder.computeProbabilities();
 
-                counterInliningPerformed.increment();
+                counterInliningPerformed.increment(debug);
             }
         } catch (BailoutException bailout) {
             throw bailout;
@@ -426,7 +426,7 @@ public class InliningData {
         } catch (GraalError e) {
             throw e.addContext(calleeInfo.toString());
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 
@@ -446,7 +446,7 @@ public class InliningData {
         CallsiteHolderExplorable callerCallsiteHolder = (CallsiteHolderExplorable) currentGraph();
         InlineInfo calleeInfo = calleeInvocation.callee();
         assert callerCallsiteHolder.containsInvoke(calleeInfo.invoke());
-        counterInliningConsidered.increment();
+        counterInliningConsidered.increment(debug);
 
         if (inliningPolicy.isWorthInlining(context.getReplacements(), calleeInvocation, inliningDepth, true)) {
             doInline(callerCallsiteHolder, calleeInvocation);
@@ -572,7 +572,7 @@ public class InliningData {
      * Gets the call hierarchy of this inlining from outer most call to inner most callee.
      */
     private Object[] inliningContext() {
-        if (!Debug.isDumpEnabled(Debug.INFO_LEVEL)) {
+        if (!debug.isDumpEnabled(DebugContext.INFO_LEVEL)) {
             return NO_CONTEXT;
         }
         Object[] result = new Object[graphQueue.size()];
@@ -737,14 +737,14 @@ public class InliningData {
              * "all concrete methods that come into question already had the callees they contain analyzed for inlining"
              */
             popInvocation();
-            try (Debug.Scope s = Debug.scope("Inlining", inliningContext())) {
+            try (DebugContext.Scope s = debug.scope("Inlining", inliningContext())) {
                 if (tryToInline(currentInvocation, inliningDepth() + 1)) {
                     // Report real progress only if we inline into the root graph
                     return currentGraph().graph() == rootGraph;
                 }
                 return false;
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debug.handle(e);
             }
         }
 

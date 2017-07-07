@@ -40,8 +40,8 @@ import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -413,7 +413,6 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         }
     }
 
-    protected final OptionValues options;
     private final LoopExplosionPlugin loopExplosionPlugin;
     private final InvocationPlugins invocationPlugins;
     private final InlineInvokePlugin[] inlineInvokePlugins;
@@ -423,14 +422,14 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
     private final EconomicMap<ResolvedJavaMethod, Object> invocationPluginCache;
 
     public PEGraphDecoder(Architecture architecture, StructuredGraph graph, MetaAccessProvider metaAccess, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    StampProvider stampProvider, OptionValues options, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
-                    ParameterPlugin parameterPlugin, NodePlugin[] nodePlugins) {
+                    StampProvider stampProvider, LoopExplosionPlugin loopExplosionPlugin, InvocationPlugins invocationPlugins, InlineInvokePlugin[] inlineInvokePlugins,
+                    ParameterPlugin parameterPlugin,
+                    NodePlugin[] nodePlugins) {
         super(architecture, graph, metaAccess, constantReflection, constantFieldProvider, stampProvider, true);
         this.loopExplosionPlugin = loopExplosionPlugin;
         this.invocationPlugins = invocationPlugins;
         this.inlineInvokePlugins = inlineInvokePlugins;
         this.parameterPlugin = parameterPlugin;
-        this.options = options;
         this.nodePlugins = nodePlugins;
         this.specialCallTargetCache = EconomicMap.create(Equivalence.DEFAULT);
         this.invocationPluginCache = EconomicMap.create(Equivalence.DEFAULT);
@@ -449,7 +448,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         decode(createInitialLoopScope(methodScope, null));
         cleanupGraph(methodScope);
 
-        Debug.dump(Debug.VERBOSE_LEVEL, graph, "After graph cleanup");
+        debug.dump(DebugContext.VERBOSE_LEVEL, graph, "After graph cleanup");
         assert graph.verify();
 
         try {

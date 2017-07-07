@@ -28,8 +28,7 @@ import static org.graalvm.compiler.test.JLModule.uncheckedAddExports;
 import java.lang.reflect.Method;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -52,14 +51,15 @@ public class ConstantPoolSubstitutionsTests extends GraalCompilerTest {
     @SuppressWarnings("try")
     protected StructuredGraph test(final String snippet) {
         ResolvedJavaMethod method = getMetaAccess().lookupJavaMethod(getMethod(snippet));
-        try (Scope s = Debug.scope("ConstantPoolSubstitutionsTests", method)) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("ConstantPoolSubstitutionsTests", method)) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
             compile(graph.method(), graph);
             assertNotInGraph(graph, Invoke.class);
-            Debug.dump(Debug.BASIC_LEVEL, graph, snippet);
+            debug.dump(DebugContext.BASIC_LEVEL, graph, snippet);
             return graph;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

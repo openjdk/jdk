@@ -27,8 +27,7 @@ import java.util.BitSet;
 import java.util.EnumSet;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
@@ -156,12 +155,13 @@ public final class GlobalLivenessInfo {
      */
     @SuppressWarnings("try")
     public boolean verify(LIR lir) {
-        try (Scope s = Debug.scope("Verify GlobalLivenessInfo", this)) {
+        DebugContext debug = lir.getDebug();
+        try (DebugContext.Scope s = debug.scope("Verify GlobalLivenessInfo", this)) {
             for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
                 assert verifyBlock(block, lir);
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
         return true;
     }

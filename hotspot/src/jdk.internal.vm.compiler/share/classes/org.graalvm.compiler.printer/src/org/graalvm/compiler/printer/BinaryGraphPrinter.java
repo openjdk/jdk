@@ -40,8 +40,8 @@ import java.util.Map.Entry;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.GraalDebugConfig.Options;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.graph.CachedGraph;
 import org.graalvm.compiler.graph.Edges;
 import org.graalvm.compiler.graph.Graph;
@@ -59,12 +59,10 @@ import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ProxyNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
-import org.graalvm.compiler.phases.schedule.SchedulePhase;
 
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -152,20 +150,16 @@ public class BinaryGraphPrinter implements GraphPrinter {
     private final ConstantPool constantPool;
     private final ByteBuffer buffer;
     private final WritableByteChannel channel;
-    private SnippetReflectionProvider snippetReflection;
+    private final SnippetReflectionProvider snippetReflection;
 
     private static final Charset utf8 = Charset.forName("UTF-8");
 
-    public BinaryGraphPrinter(WritableByteChannel channel) throws IOException {
+    public BinaryGraphPrinter(WritableByteChannel channel, SnippetReflectionProvider snippetReflection) throws IOException {
         constantPool = new ConstantPool();
+        this.snippetReflection = snippetReflection;
         buffer = ByteBuffer.allocateDirect(256 * 1024);
         this.channel = channel;
         writeVersion();
-    }
-
-    @Override
-    public void setSnippetReflectionProvider(SnippetReflectionProvider snippetReflection) {
-        this.snippetReflection = snippetReflection;
     }
 
     @Override
@@ -175,55 +169,38 @@ public class BinaryGraphPrinter implements GraphPrinter {
 
     @SuppressWarnings("all")
     @Override
-    public void print(Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
+    public void print(DebugContext debug, Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException {
         writeByte(BEGIN_GRAPH);
         if (CURRENT_MAJOR_VERSION >= 3) {
             writeInt(id);
             writeString(format);
             writeInt(args.length);
             for (Object a : args) {
-                writePropertyObject(a);
+                writePropertyObject(debug, a);
             }
         } else {
-            writePoolObject(formatTitle(id, format, args));
+            writePoolObject(id + ": " + String.format(format, simplifyClassArgs(args)));
         }
-        writeGraph(graph, properties);
+        writeGraph(debug, graph, properties);
         flush();
     }
 
-    private void writeGraph(Graph graph, Map<Object, Object> properties) throws IOException {
-        ScheduleResult scheduleResult = null;
-        if (graph instanceof StructuredGraph) {
-
-            StructuredGraph structuredGraph = (StructuredGraph) graph;
-            scheduleResult = structuredGraph.getLastSchedule();
-            if (scheduleResult == null) {
-
-                // Also provide a schedule when an error occurs
-                if (Options.PrintGraphWithSchedule.getValue(graph.getOptions()) || Debug.contextLookup(Throwable.class) != null) {
-                    try {
-                        SchedulePhase schedule = new SchedulePhase(graph.getOptions());
-                        schedule.apply(structuredGraph);
-                        scheduleResult = structuredGraph.getLastSchedule();
-                    } catch (Throwable t) {
-                    }
-                }
-
-            }
-        }
-        ControlFlowGraph cfg = scheduleResult == null ? Debug.contextLookup(ControlFlowGraph.class) : scheduleResult.getCFG();
+    private void writeGraph(DebugContext debug, Graph graph, Map<Object, Object> properties) throws IOException {
+        boolean needSchedule = DebugOptions.PrintGraphWithSchedule.getValue(graph.getOptions()) || debug.contextLookup(Throwable.class) != null;
+        ScheduleResult scheduleResult = needSchedule ? GraphPrinter.getScheduleOrNull(graph) : null;
+        ControlFlowGraph cfg = scheduleResult == null ? debug.contextLookup(ControlFlowGraph.class) : scheduleResult.getCFG();
         BlockMap<List<Node>> blockToNodes = scheduleResult == null ? null : scheduleResult.getBlockToNodesMap();
         NodeMap<Block> nodeToBlocks = scheduleResult == null ? null : scheduleResult.getNodeToBlockMap();
         List<Block> blocks = cfg == null ? null : Arrays.asList(cfg.getBlocks());
-        writeProperties(properties);
-        writeNodes(graph, nodeToBlocks, cfg);
+        writeProperties(debug, properties);
+        writeNodes(debug, graph, nodeToBlocks, cfg);
         writeBlocks(blocks, blockToNodes);
     }
 
     private void flush() throws IOException {
         buffer.flip();
         /*
-         * Try not to let interrupted threads aborting the write. There's still a race here but an
+         * Try not to let interrupted threads abort the write. There's still a race here but an
          * interrupt that's been pending for a long time shouldn't stop this writing.
          */
         boolean interrupted = Thread.interrupted();
@@ -438,8 +415,11 @@ public class BinaryGraphPrinter implements GraphPrinter {
             writeInt(bci);
             StackTraceElement ste = method.asStackTraceElement(bci);
             if (ste != null) {
-                writePoolObject(ste.getFileName());
-                writeInt(ste.getLineNumber());
+                String fn = ste.getFileName();
+                writePoolObject(fn);
+                if (fn != null) {
+                    writeInt(ste.getLineNumber());
+                }
             } else {
                 writePoolObject(null);
             }
@@ -462,7 +442,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         }
     }
 
-    private void writePropertyObject(Object obj) throws IOException {
+    private void writePropertyObject(DebugContext debug, Object obj) throws IOException {
         if (obj instanceof Integer) {
             writeByte(PROPERTY_INT);
             writeInt(((Integer) obj).intValue());
@@ -483,10 +463,10 @@ public class BinaryGraphPrinter implements GraphPrinter {
             }
         } else if (obj instanceof Graph) {
             writeByte(PROPERTY_SUBGRAPH);
-            writeGraph((Graph) obj, null);
+            writeGraph(debug, (Graph) obj, null);
         } else if (obj instanceof CachedGraph) {
             writeByte(PROPERTY_SUBGRAPH);
-            writeGraph(((CachedGraph<?>) obj).getReadonlyCopy(), null);
+            writeGraph(debug, ((CachedGraph<?>) obj).getReadonlyCopy(), null);
         } else if (obj != null && obj.getClass().isArray()) {
             Class<?> componentType = obj.getClass().getComponentType();
             if (componentType.isPrimitive()) {
@@ -536,7 +516,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         return null;
     }
 
-    private void writeNodes(Graph graph, NodeMap<Block> nodeToBlocks, ControlFlowGraph cfg) throws IOException {
+    private void writeNodes(DebugContext debug, Graph graph, NodeMap<Block> nodeToBlocks, ControlFlowGraph cfg) throws IOException {
         Map<Object, Object> props = new HashMap<>();
 
         writeInt(graph.getNodeCount());
@@ -544,7 +524,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         for (Node node : graph.getNodes()) {
             NodeClass<?> nodeClass = node.getNodeClass();
             node.getDebugProperties(props);
-            if (cfg != null && Options.PrintGraphProbabilities.getValue(graph.getOptions()) && node instanceof FixedNode) {
+            if (cfg != null && DebugOptions.PrintGraphProbabilities.getValue(graph.getOptions()) && node instanceof FixedNode) {
                 try {
                     props.put("probability", cfg.blockFor(node).probability());
                 } catch (Throwable t) {
@@ -596,7 +576,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
             writeInt(getNodeId(node));
             writePoolObject(nodeClass);
             writeByte(node.predecessor() == null ? 0 : 1);
-            writeProperties(props);
+            writeProperties(debug, props);
             writeEdges(node, Inputs);
             writeEdges(node, Successors);
 
@@ -604,7 +584,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         }
     }
 
-    private void writeProperties(Map<Object, Object> props) throws IOException {
+    private void writeProperties(DebugContext debug, Map<Object, Object> props) throws IOException {
         if (props == null) {
             writeShort((char) 0);
             return;
@@ -614,7 +594,7 @@ public class BinaryGraphPrinter implements GraphPrinter {
         for (Entry<Object, Object> entry : props.entrySet()) {
             String key = entry.getKey().toString();
             writePoolObject(key);
-            writePropertyObject(entry.getValue());
+            writePropertyObject(debug, entry.getValue());
         }
     }
 
@@ -690,13 +670,13 @@ public class BinaryGraphPrinter implements GraphPrinter {
     }
 
     @Override
-    public void beginGroup(String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException {
+    public void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException {
         writeByte(BEGIN_GROUP);
         writePoolObject(name);
         writePoolObject(shortName);
         writePoolObject(method);
         writeInt(bci);
-        writeProperties(properties);
+        writeProperties(debug, properties);
     }
 
     @Override

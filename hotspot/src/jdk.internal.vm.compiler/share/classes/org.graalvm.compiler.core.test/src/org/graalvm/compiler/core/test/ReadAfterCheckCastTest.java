@@ -22,11 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -37,6 +33,8 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.FloatingReadPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 /* consider
  *     B b = (B) a;
@@ -84,7 +82,8 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
 
     @SuppressWarnings("try")
     private void test(final String snippet) {
-        try (Scope s = Debug.scope("ReadAfterCheckCastTest", new DebugDumpScope(snippet))) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("ReadAfterCheckCastTest", new DebugDumpScope(snippet))) {
             // check shape of graph, with lots of assumptions. will probably fail if graph
             // structure changes significantly
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.YES);
@@ -94,7 +93,7 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
             new FloatingReadPhase().apply(graph);
             canonicalizer.apply(graph, context);
 
-            Debug.dump(Debug.BASIC_LEVEL, graph, "After lowering");
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "After lowering");
 
             for (FloatingReadNode node : graph.getNodes(ParameterNode.TYPE).first().usages().filter(FloatingReadNode.class)) {
                 // Checking that the parameter a is not directly used for the access to field
@@ -102,7 +101,7 @@ public class ReadAfterCheckCastTest extends GraphScheduleTest {
                 Assert.assertTrue(node.getLocationIdentity().isImmutable());
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

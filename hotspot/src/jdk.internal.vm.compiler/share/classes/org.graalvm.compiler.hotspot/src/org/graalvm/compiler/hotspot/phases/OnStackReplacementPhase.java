@@ -27,8 +27,8 @@ import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Option
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
@@ -80,7 +80,7 @@ public class OnStackReplacementPhase extends Phase {
         // @formatter:on
     }
 
-    private static final DebugCounter OsrWithLocksCount = Debug.counter("OSRWithLocks");
+    private static final CounterKey OsrWithLocksCount = DebugContext.counter("OSRWithLocks");
 
     private static boolean supportOSRWithLocks(OptionValues options) {
         return Options.SupportOSRWithLocks.getValue(options);
@@ -88,13 +88,14 @@ public class OnStackReplacementPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
+        DebugContext debug = graph.getDebug();
         if (graph.getEntryBCI() == JVMCICompiler.INVOCATION_ENTRY_BCI) {
             // This happens during inlining in a OSR method, because the same phase plan will be
             // used.
             assert graph.getNodes(EntryMarkerNode.TYPE).isEmpty();
             return;
         }
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement initial at bci %d", graph.getEntryBCI());
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement initial at bci %d", graph.getEntryBCI());
 
         EntryMarkerNode osr;
         int maxIterations = -1;
@@ -144,7 +145,7 @@ public class OnStackReplacementPhase extends Phase {
                 proxy.replaceAndDelete(proxy.value());
             }
             GraphUtil.removeFixedWithUnusedInputs(osr);
-            Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement loop peeling result");
+            debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement loop peeling result");
         } while (true);
 
         FrameState osrState = osr.stateAfter();
@@ -157,7 +158,7 @@ public class OnStackReplacementPhase extends Phase {
         graph.setStart(osrStart);
         osrStart.setStateAfter(osrState);
 
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement after setting OSR start");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement after setting OSR start");
         final int localsSize = osrState.localsSize();
         final int locksSize = osrState.locksSize();
 
@@ -188,13 +189,13 @@ public class OnStackReplacementPhase extends Phase {
         }
 
         osr.replaceAtUsages(InputType.Guard, osrStart);
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement after replacing entry proxies");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement after replacing entry proxies");
         GraphUtil.killCFG(start);
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement result");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement result");
         new DeadCodeEliminationPhase(Required).apply(graph);
 
         if (currentOSRWithLocks) {
-            OsrWithLocksCount.increment();
+            OsrWithLocksCount.increment(debug);
             for (int i = osrState.monitorIdCount() - 1; i >= 0; --i) {
                 MonitorIdNode id = osrState.monitorIdAt(i);
                 ValueNode lockedObject = osrState.lockAt(i);
@@ -210,7 +211,7 @@ public class OnStackReplacementPhase extends Phase {
                 osrMonitorEnter.setNext(oldNext);
                 osrStart.setNext(osrMonitorEnter);
             }
-            Debug.dump(Debug.DETAILED_LEVEL, graph, "After inserting OSR monitor enters");
+            debug.dump(DebugContext.DETAILED_LEVEL, graph, "After inserting OSR monitor enters");
             /*
              * Ensure balanced monitorenter - monitorexit
              *
@@ -226,7 +227,7 @@ public class OnStackReplacementPhase extends Phase {
                 }
             }
         }
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "OnStackReplacement result");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "OnStackReplacement result");
         new DeadCodeEliminationPhase(Required).apply(graph);
         /*
          * There must not be any parameter nodes left after OSR compilation.

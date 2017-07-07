@@ -28,25 +28,25 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 
-import jdk.vm.ci.meta.Assumptions;
-import jdk.vm.ci.meta.Assumptions.Assumption;
-import jdk.vm.ci.meta.Assumptions.LeafType;
-import jdk.vm.ci.meta.Assumptions.NoFinalizableSubclass;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.java.GraphBuilderPhase;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.java.RegisterFinalizerNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Assert;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.Assumptions.LeafType;
+import jdk.vm.ci.meta.Assumptions.NoFinalizableSubclass;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class FinalizableSubclassTest extends GraalCompilerTest {
 
@@ -71,7 +71,8 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
         Constructor<?>[] constructors = cl.getConstructors();
         Assert.assertTrue(constructors.length == 1);
         final ResolvedJavaMethod javaMethod = getMetaAccess().lookupJavaMethod(constructors[0]);
-        StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions(), allowAssumptions).method(javaMethod).build();
+        OptionValues options = getInitialOptions();
+        StructuredGraph graph = new StructuredGraph.Builder(options, getDebugContext(options), allowAssumptions).method(javaMethod).build();
 
         GraphBuilderConfiguration conf = GraphBuilderConfiguration.getSnippetDefault(getDefaultGraphBuilderPlugins());
         new GraphBuilderPhase.Instance(getMetaAccess(), getProviders().getStampProvider(), getProviders().getConstantReflection(), getProviders().getConstantFieldProvider(), conf,
@@ -107,8 +108,9 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
      */
     @Test
     public void test1() throws ClassNotFoundException {
+        DebugContext debug = getDebugContext();
         for (int i = 0; i < 2; i++) {
-            ClassTemplateLoader loader = new ClassTemplateLoader();
+            ClassTemplateLoader loader = new ClassTemplateLoader(debug);
             checkForRegisterFinalizeNode(loader.findClass("NoFinalizerEverAAAA"), true, AllowAssumptions.NO);
             checkForRegisterFinalizeNode(loader.findClass("NoFinalizerEverAAAA"), false, AllowAssumptions.YES);
 
@@ -126,8 +128,11 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
         private final String replaceTo;
         private HashMap<String, Class<?>> cache = new HashMap<>();
 
-        ClassTemplateLoader() {
+        private final DebugContext debug;
+
+        ClassTemplateLoader(DebugContext debug) {
             loaderInstance++;
+            this.debug = debug;
             replaceTo = String.format("%04d", loaderInstance);
         }
 
@@ -155,14 +160,15 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
             } catch (IOException e) {
                 Assert.fail("can't access class: " + name);
             }
-            dumpStringsInByteArray(classData);
+
+            dumpStringsInByteArray(debug, classData);
 
             // replace all occurrences of "AAAA" in classfile
             int index = -1;
             while ((index = indexOfAAAA(classData, index + 1)) != -1) {
                 replaceAAAA(classData, index, replaceTo);
             }
-            dumpStringsInByteArray(classData);
+            dumpStringsInByteArray(debug, classData);
 
             Class<?> c = defineClass(null, classData, 0, classData.length);
             cache.put(nameReplaced, c);
@@ -192,14 +198,14 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
             }
         }
 
-        private static void dumpStringsInByteArray(byte[] b) {
+        private static void dumpStringsInByteArray(DebugContext debug, byte[] b) {
             boolean wasChar = true;
             StringBuilder sb = new StringBuilder();
             for (Byte x : b) {
                 // check for [a-zA-Z0-9]
                 if ((x >= 0x41 && x <= 0x7a) || (x >= 0x30 && x <= 0x39)) {
                     if (!wasChar) {
-                        Debug.log(sb + "");
+                        debug.log(sb + "");
                         sb.setLength(0);
                     }
                     sb.append(String.format("%c", x));
@@ -208,7 +214,7 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
                     wasChar = false;
                 }
             }
-            Debug.log(sb + "");
+            debug.log(sb + "");
         }
     }
 }

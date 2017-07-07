@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.loop.phases;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopPolicies;
 import org.graalvm.compiler.loop.LoopsData;
@@ -33,7 +33,7 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 public class LoopFullUnrollPhase extends LoopPhase<LoopPolicies> {
 
-    private static final DebugCounter FULLY_UNROLLED_LOOPS = Debug.counter("FullUnrolls");
+    private static final CounterKey FULLY_UNROLLED_LOOPS = DebugContext.counter("FullUnrolls");
     private final CanonicalizerPhase canonicalizer;
 
     public LoopFullUnrollPhase(CanonicalizerPhase canonicalizer, LoopPolicies policies) {
@@ -43,6 +43,7 @@ public class LoopFullUnrollPhase extends LoopPhase<LoopPolicies> {
 
     @Override
     protected void run(StructuredGraph graph, PhaseContext context) {
+        DebugContext debug = graph.getDebug();
         if (graph.hasLoops()) {
             boolean peeled;
             do {
@@ -51,10 +52,10 @@ public class LoopFullUnrollPhase extends LoopPhase<LoopPolicies> {
                 dataCounted.detectedCountedLoops();
                 for (LoopEx loop : dataCounted.countedLoops()) {
                     if (getPolicies().shouldFullUnroll(loop)) {
-                        Debug.log("FullUnroll %s", loop);
+                        debug.log("FullUnroll %s", loop);
                         LoopTransformations.fullUnroll(loop, context, canonicalizer);
-                        FULLY_UNROLLED_LOOPS.increment();
-                        Debug.dump(Debug.DETAILED_LEVEL, graph, "FullUnroll %s", loop);
+                        FULLY_UNROLLED_LOOPS.increment(debug);
+                        debug.dump(DebugContext.DETAILED_LEVEL, graph, "FullUnroll %s", loop);
                         peeled = true;
                         break;
                     }

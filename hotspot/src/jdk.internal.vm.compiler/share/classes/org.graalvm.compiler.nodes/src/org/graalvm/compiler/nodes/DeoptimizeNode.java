@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -83,8 +83,11 @@ public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowe
     @SuppressWarnings("deprecation")
     public int getDebugId() {
         int deoptDebugId = debugId;
-        if (deoptDebugId == DEFAULT_DEBUG_ID && (Debug.isDumpEnabledForMethod() || Debug.isLogEnabledForMethod())) {
-            deoptDebugId = this.getId();
+        if (deoptDebugId == DEFAULT_DEBUG_ID) {
+            DebugContext debug = getDebug();
+            if ((debug.isDumpEnabledForMethod() || debug.isLogEnabledForMethod())) {
+                deoptDebugId = this.getId();
+            }
         }
         return deoptDebugId;
     }

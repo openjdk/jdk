@@ -35,9 +35,8 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIR;
@@ -82,12 +81,12 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
         new Optimization(lirGenRes.getLIR(), lirGen).apply();
     }
 
-    private static final DebugCounter constantsTotal = Debug.counter("ConstantLoadOptimization[total]");
-    private static final DebugCounter phiConstantsSkipped = Debug.counter("ConstantLoadOptimization[PhisSkipped]");
-    private static final DebugCounter singleUsageConstantsSkipped = Debug.counter("ConstantLoadOptimization[SingleUsageSkipped]");
-    private static final DebugCounter usageAtDefinitionSkipped = Debug.counter("ConstantLoadOptimization[UsageAtDefinitionSkipped]");
-    private static final DebugCounter materializeAtDefinitionSkipped = Debug.counter("ConstantLoadOptimization[MaterializeAtDefinitionSkipped]");
-    private static final DebugCounter constantsOptimized = Debug.counter("ConstantLoadOptimization[optimized]");
+    private static final CounterKey constantsTotal = DebugContext.counter("ConstantLoadOptimization[total]");
+    private static final CounterKey phiConstantsSkipped = DebugContext.counter("ConstantLoadOptimization[PhisSkipped]");
+    private static final CounterKey singleUsageConstantsSkipped = DebugContext.counter("ConstantLoadOptimization[SingleUsageSkipped]");
+    private static final CounterKey usageAtDefinitionSkipped = DebugContext.counter("ConstantLoadOptimization[UsageAtDefinitionSkipped]");
+    private static final CounterKey materializeAtDefinitionSkipped = DebugContext.counter("ConstantLoadOptimization[MaterializeAtDefinitionSkipped]");
+    private static final CounterKey constantsOptimized = DebugContext.counter("ConstantLoadOptimization[optimized]");
 
     private static final class Optimization {
         private final LIR lir;
@@ -97,9 +96,11 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
         private final BitSet defined;
         private final BlockMap<List<UseEntry>> blockMap;
         private final BlockMap<LIRInsertionBuffer> insertionBuffers;
+        private final DebugContext debug;
 
         private Optimization(LIR lir, LIRGeneratorTool lirGen) {
             this.lir = lir;
+            this.debug = lir.getDebug();
             this.lirGen = lirGen;
             this.map = new VariableMap<>();
             this.phiConstants = new BitSet();
@@ -110,8 +111,8 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
 
         @SuppressWarnings("try")
         private void apply() {
-            try (Indent indent = Debug.logAndIndent("ConstantLoadOptimization")) {
-                try (Scope s = Debug.scope("BuildDefUseTree")) {
+            try (Indent indent = debug.logAndIndent("ConstantLoadOptimization")) {
+                try (DebugContext.Scope s = debug.scope("BuildDefUseTree")) {
                     // build DefUseTree
                     for (AbstractBlockBase<?> b : lir.getControlFlowGraph().getBlocks()) {
                         this.analyzeBlock(b);
@@ -121,17 +122,17 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                         if (t.usageCount() > 1) {
                             return true;
                         } else {
-                            singleUsageConstantsSkipped.increment();
+                            singleUsageConstantsSkipped.increment(debug);
                             return false;
                         }
                     });
                     // collect block map
                     map.forEach(tree -> tree.forEach(this::addUsageToBlockMap));
                 } catch (Throwable e) {
-                    throw Debug.handle(e);
+                    throw debug.handle(e);
                 }
 
-                try (Scope s = Debug.scope("BuildConstantTree")) {
+                try (DebugContext.Scope s = debug.scope("BuildConstantTree")) {
                     // create ConstantTree
                     map.forEach(this::createConstantTree);
 
@@ -142,7 +143,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
 
                     assert verifyStates();
                 } catch (Throwable e) {
-                    throw Debug.handle(e);
+                    throw debug.handle(e);
                 }
             }
         }
@@ -191,7 +192,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
          */
         @SuppressWarnings("try")
         private void analyzeBlock(AbstractBlockBase<?> block) {
-            try (Indent indent = Debug.logAndIndent("Block: %s", block)) {
+            try (Indent indent = debug.logAndIndent("Block: %s", block)) {
 
                 InstructionValueConsumer loadConsumer = (instruction, value, mode, flags) -> {
                     if (isVariable(value)) {
@@ -201,19 +202,19 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                             if (!defined.get(var.index)) {
                                 defined.set(var.index);
                                 if (isConstantLoad(instruction)) {
-                                    Debug.log("constant load: %s", instruction);
+                                    debug.log("constant load: %s", instruction);
                                     map.put(var, new DefUseTree(instruction, block));
-                                    constantsTotal.increment();
+                                    constantsTotal.increment(debug);
                                 }
                             } else {
                                 // Variable is redefined, this only happens for constant loads
                                 // introduced by phi resolution -> ignore.
                                 DefUseTree removed = map.remove(var);
                                 if (removed != null) {
-                                    phiConstantsSkipped.increment();
+                                    phiConstantsSkipped.increment(debug);
                                 }
                                 phiConstants.set(var.index);
-                                Debug.log(Debug.VERBOSE_LEVEL, "Removing phi variable: %s", var);
+                                debug.log(DebugContext.VERBOSE_LEVEL, "Removing phi variable: %s", var);
                             }
                         } else {
                             assert defined.get(var.index) : "phi but not defined? " + var;
@@ -228,7 +229,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
                             DefUseTree tree = map.get(var);
                             if (tree != null) {
                                 tree.addUsage(block, instruction, value);
-                                Debug.log("usage of %s : %s", var, instruction);
+                                debug.log("usage of %s : %s", var, instruction);
                             }
                         }
                     }
@@ -257,40 +258,40 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
 
             if (constTree.get(Flags.USAGE, tree.getBlock())) {
                 // usage in the definition block -> no optimization
-                usageAtDefinitionSkipped.increment();
+                usageAtDefinitionSkipped.increment(debug);
                 return;
             }
 
             constTree.markBlocks();
 
-            NodeCost cost = ConstantTreeAnalyzer.analyze(constTree, tree.getBlock());
+            NodeCost cost = ConstantTreeAnalyzer.analyze(debug, constTree, tree.getBlock());
             int usageCount = cost.getUsages().size();
             assert usageCount == tree.usageCount() : "Usage count differs: " + usageCount + " vs. " + tree.usageCount();
 
-            if (Debug.isLogEnabled()) {
-                try (Indent i = Debug.logAndIndent("Variable: %s, Block: %s, prob.: %f", tree.getVariable(), tree.getBlock(), tree.getBlock().probability())) {
-                    Debug.log("Usages result: %s", cost);
+            if (debug.isLogEnabled()) {
+                try (Indent i = debug.logAndIndent("Variable: %s, Block: %s, prob.: %f", tree.getVariable(), tree.getBlock(), tree.getBlock().probability())) {
+                    debug.log("Usages result: %s", cost);
                 }
 
             }
 
             if (cost.getNumMaterializations() > 1 || cost.getBestCost() < tree.getBlock().probability()) {
-                try (Scope s = Debug.scope("CLOmodify", constTree); Indent i = Debug.logAndIndent("Replacing %s = %s", tree.getVariable(), tree.getConstant().toValueString())) {
+                try (DebugContext.Scope s = debug.scope("CLOmodify", constTree); Indent i = debug.logAndIndent("Replacing %s = %s", tree.getVariable(), tree.getConstant().toValueString())) {
                     // mark original load for removal
                     deleteInstruction(tree);
-                    constantsOptimized.increment();
+                    constantsOptimized.increment(debug);
 
                     // collect result
                     createLoads(tree, constTree, tree.getBlock());
 
                 } catch (Throwable e) {
-                    throw Debug.handle(e);
+                    throw debug.handle(e);
                 }
             } else {
                 // no better solution found
-                materializeAtDefinitionSkipped.increment();
+                materializeAtDefinitionSkipped.increment(debug);
             }
-            Debug.dump(Debug.DETAILED_LEVEL, constTree, "ConstantTree for %s", tree.getVariable());
+            debug.dump(DebugContext.DETAILED_LEVEL, constTree, "ConstantTree for %s", tree.getVariable());
         }
 
         private void createLoads(DefUseTree tree, ConstantTree constTree, AbstractBlockBase<?> startBlock) {
@@ -322,11 +323,11 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
             LIRInstruction move = lirGen.getSpillMoveFactory().createLoad(variable, constant);
             // insert instruction
             getInsertionBuffer(block).append(1, move);
-            Debug.log("new move (%s) and inserted in block %s", move, block);
+            debug.log("new move (%s) and inserted in block %s", move, block);
             // update usages
             for (UseEntry u : usages) {
                 u.setValue(variable);
-                Debug.log("patched instruction %s", u.getInstruction());
+                debug.log("patched instruction %s", u.getInstruction());
             }
         }
 
@@ -361,7 +362,7 @@ public final class ConstantLoadOptimization extends PreAllocationOptimizationPha
         private void deleteInstruction(DefUseTree tree) {
             AbstractBlockBase<?> block = tree.getBlock();
             LIRInstruction instruction = tree.getInstruction();
-            Debug.log("deleting instruction %s from block %s", instruction, block);
+            debug.log("deleting instruction %s from block %s", instruction, block);
             lir.getLIRforBlock(block).set(instruction.id(), null);
         }
 

@@ -24,6 +24,7 @@ package org.graalvm.compiler.core.test.tutorial;
 
 import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCompilationRequest;
 import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
+
 import java.lang.reflect.Method;
 
 import org.graalvm.compiler.api.test.Graal;
@@ -31,8 +32,8 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.lir.phases.LIRSuites;
@@ -85,7 +86,8 @@ public class InvokeGraal {
         /* Create a unique compilation identifier, visible in IGV. */
         CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
         OptionValues options = getInitialOptions();
-        try (Scope s = Debug.scope("compileAndInstallMethod", new DebugDumpScope(String.valueOf(compilationId), true))) {
+        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        try (DebugContext.Scope s = debug.scope("compileAndInstallMethod", new DebugDumpScope(String.valueOf(compilationId), true))) {
 
             /*
              * The graph that is compiled. We leave it empty (no nodes added yet). This means that
@@ -93,7 +95,7 @@ public class InvokeGraal {
              * that we want the compilation to make optimistic assumptions about runtime state such
              * as the loaded class hierarchy.
              */
-            StructuredGraph graph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).method(method).compilationId(compilationId).build();
+            StructuredGraph graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).method(method).compilationId(compilationId).build();
 
             /*
              * The phases used to build the graph. Usually this is just the GraphBuilderPhase. If
@@ -131,9 +133,9 @@ public class InvokeGraal {
              * Install the compilation result into the VM, i.e., copy the byte[] array that contains
              * the machine code into an actual executable memory location.
              */
-            return backend.addInstalledCode(method, asCompilationRequest(compilationId), compilationResult);
+            return backend.addInstalledCode(debug, method, asCompilationRequest(compilationId), compilationResult);
         } catch (Throwable ex) {
-            throw Debug.handle(ex);
+            throw debug.handle(ex);
         }
     }
 

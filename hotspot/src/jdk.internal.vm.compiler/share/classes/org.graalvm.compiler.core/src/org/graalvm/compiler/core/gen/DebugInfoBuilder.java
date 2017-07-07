@@ -26,8 +26,8 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.LIRFrameState;
@@ -42,8 +42,8 @@ import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.virtual.nodes.MaterializedObjectState;
 import org.graalvm.compiler.virtual.nodes.VirtualObjectState;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.VirtualObject;
@@ -61,9 +61,11 @@ import jdk.vm.ci.meta.Value;
 public class DebugInfoBuilder {
 
     protected final NodeValueMap nodeValueMap;
+    protected final DebugContext debug;
 
-    public DebugInfoBuilder(NodeValueMap nodeValueMap) {
+    public DebugInfoBuilder(NodeValueMap nodeValueMap, DebugContext debug) {
         this.nodeValueMap = nodeValueMap;
+        this.debug = debug;
     }
 
     private static final JavaValue[] NO_JAVA_VALUES = {};
@@ -276,10 +278,10 @@ public class DebugInfoBuilder {
         return toJavaValue(state.lockAt(i));
     }
 
-    private static final DebugCounter STATE_VIRTUAL_OBJECTS = Debug.counter("StateVirtualObjects");
-    private static final DebugCounter STATE_ILLEGALS = Debug.counter("StateIllegals");
-    private static final DebugCounter STATE_VARIABLES = Debug.counter("StateVariables");
-    private static final DebugCounter STATE_CONSTANTS = Debug.counter("StateConstants");
+    private static final CounterKey STATE_VIRTUAL_OBJECTS = DebugContext.counter("StateVirtualObjects");
+    private static final CounterKey STATE_ILLEGALS = DebugContext.counter("StateIllegals");
+    private static final CounterKey STATE_VARIABLES = DebugContext.counter("StateVariables");
+    private static final CounterKey STATE_CONSTANTS = DebugContext.counter("StateConstants");
 
     private static JavaKind toSlotKind(ValueNode value) {
         if (value == null) {
@@ -308,18 +310,18 @@ public class DebugInfoBuilder {
                         virtualObjects.put(obj, vobject);
                         pendingVirtualObjects.add(obj);
                     }
-                    STATE_VIRTUAL_OBJECTS.increment();
+                    STATE_VIRTUAL_OBJECTS.increment(debug);
                     return vobject;
                 }
             } else {
                 // Remove proxies from constants so the constant can be directly embedded.
                 ValueNode unproxied = GraphUtil.unproxify(value);
                 if (unproxied instanceof ConstantNode) {
-                    STATE_CONSTANTS.increment();
+                    STATE_CONSTANTS.increment(debug);
                     return unproxied.asJavaConstant();
 
                 } else if (value != null) {
-                    STATE_VARIABLES.increment();
+                    STATE_VARIABLES.increment(debug);
                     Value operand = nodeValueMap.operand(value);
                     if (operand instanceof ConstantValue && ((ConstantValue) operand).isJavaConstant()) {
                         return ((ConstantValue) operand).getJavaConstant();
@@ -330,7 +332,7 @@ public class DebugInfoBuilder {
 
                 } else {
                     // return a dummy value because real value not needed
-                    STATE_ILLEGALS.increment();
+                    STATE_ILLEGALS.increment(debug);
                     return Value.ILLEGAL;
                 }
             }

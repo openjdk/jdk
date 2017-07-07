@@ -146,8 +146,8 @@ public abstract class HotSpotForeignCallsProviderImpl implements HotSpotForeignC
      *            cannot be re-executed.
      * @param killedLocations the memory locations killed by the foreign call
      */
-    public void linkForeignCall(OptionValues options, HotSpotProviders providers, ForeignCallDescriptor descriptor, long address, boolean prependThread, Transition transition,
-                    boolean reexecutable, LocationIdentity... killedLocations) {
+    public void linkForeignCall(OptionValues options, HotSpotProviders providers, ForeignCallDescriptor descriptor, long address, boolean prependThread, Transition transition, boolean reexecutable,
+                    LocationIdentity... killedLocations) {
         ForeignCallStub stub = new ForeignCallStub(options, jvmciRuntime, providers, address, descriptor, prependThread, transition, reexecutable, killedLocations);
         HotSpotForeignCallLinkage linkage = stub.getLinkage();
         HotSpotForeignCallLinkage targetLinkage = stub.getTargetLinkage();

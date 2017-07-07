@@ -31,7 +31,7 @@ import java.util.EnumSet;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
@@ -65,7 +65,7 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
 
     private final class Analyser {
 
-        private static final int LOG_LEVEL = Debug.INFO_LEVEL;
+        private static final int LOG_LEVEL = DebugContext.INFO_LEVEL;
 
         /**
          * Bit map specifying which operands are live upon entry to this block. These are values
@@ -140,9 +140,10 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
         @SuppressWarnings("try")
         private void computeLiveness() {
             // iterate all blocks
+            DebugContext debug = lir.getDebug();
             for (int i = blocks.length - 1; i >= 0; i--) {
                 final AbstractBlockBase<?> block = blocks[i];
-                try (Indent indent = Debug.logAndIndent(LOG_LEVEL, "compute local live sets for block %s", block)) {
+                try (Indent indent = debug.logAndIndent(LOG_LEVEL, "compute local live sets for block %s", block)) {
 
                     final BitSet liveIn = mergeLiveSets(block);
                     setLiveOut(block, (BitSet) liveIn.clone());
@@ -159,8 +160,8 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
                             processDef(liveIn, op, operand);
                         }
                     };
-                    if (Debug.isLogEnabled()) {
-                        Debug.log(LOG_LEVEL, "liveOut B%d %s", block.getId(), getLiveOut(block));
+                    if (debug.isLogEnabled()) {
+                        debug.log(LOG_LEVEL, "liveOut B%d %s", block.getId(), getLiveOut(block));
                     }
 
                     // iterate all instructions of the block
@@ -168,7 +169,7 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
                     for (int j = instructions.size() - 1; j >= 0; j--) {
                         final LIRInstruction op = instructions.get(j);
 
-                        try (Indent indent2 = Debug.logAndIndent(LOG_LEVEL, "handle op %d: %s", op.id(), op)) {
+                        try (Indent indent2 = debug.logAndIndent(LOG_LEVEL, "handle op %d: %s", op.id(), op)) {
                             op.visitEachOutput(defConsumer);
                             op.visitEachTemp(defConsumer);
                             op.visitEachState(useConsumer);
@@ -182,8 +183,8 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
                         handleLoopHeader(block.getLoop(), liveIn);
                     }
 
-                    if (Debug.isLogEnabled()) {
-                        Debug.log(LOG_LEVEL, "liveIn  B%d %s", block.getId(), getLiveIn(block));
+                    if (debug.isLogEnabled()) {
+                        debug.log(LOG_LEVEL, "liveIn  B%d %s", block.getId(), getLiveIn(block));
                     }
 
                 }
@@ -218,8 +219,9 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
             if (isVariable(operand)) {
                 int operandNum = operandNumber(operand);
                 liveGen.set(operandNum);
-                if (Debug.isLogEnabled()) {
-                    Debug.log(LOG_LEVEL, "liveGen for operand %d(%s)", operandNum, operand);
+                DebugContext debug = lir.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log(LOG_LEVEL, "liveGen for operand %d(%s)", operandNum, operand);
                 }
             }
         }
@@ -232,8 +234,9 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
                     operands[operandNum] = operand;
                 }
                 liveGen.clear(operandNum);
-                if (Debug.isLogEnabled()) {
-                    Debug.log(LOG_LEVEL, "liveKill for operand %d(%s)", operandNum, operand);
+                DebugContext debug = lir.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log(LOG_LEVEL, "liveKill for operand %d(%s)", operandNum, operand);
                 }
             }
         }
@@ -256,7 +259,7 @@ public final class GlobalLivenessAnalysisPhase extends AllocationPhase {
         public void finish() {
             // iterate all blocks in reverse order
             for (AbstractBlockBase<?> block : (AbstractBlockBase<?>[]) lir.getControlFlowGraph().getBlocks()) {
-                try (Indent indent = Debug.logAndIndent(LOG_LEVEL, "Finish Block %s", block)) {
+                try (Indent indent = lir.getDebug().logAndIndent(LOG_LEVEL, "Finish Block %s", block)) {
                     buildIncoming(block);
                     buildOutgoing(block);
                 }

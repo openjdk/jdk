@@ -26,7 +26,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.TraceEscapeAnalysis;
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
@@ -51,6 +51,7 @@ public final class VirtualUtil {
         // Nodes with support for GVN can be kept alive by GVN and are therefore not part of the
         // assertion.
 
+        DebugContext debug = graph.getDebug();
         NodeFlood flood = graph.createNodeFlood();
         EconomicMap<Node, Node> path = EconomicMap.create(Equivalence.IDENTITY);
         flood.add(graph.start());
@@ -115,38 +116,38 @@ public final class VirtualUtil {
         }
         if (!success) {
             TTY.println();
-            Debug.forceDump(graph, "assertNonReachable");
+            debug.forceDump(graph, "assertNonReachable");
         }
         return success;
     }
 
-    public static void trace(OptionValues options, String msg) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
-            Debug.log(msg);
+    public static void trace(OptionValues options, DebugContext debug, String msg) {
+        if (debug.areScopesEnabled() && TraceEscapeAnalysis.getValue(options) && debug.isLogEnabled()) {
+            debug.log(msg);
         }
     }
 
-    public static void trace(OptionValues options, String format, Object obj) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
-            Debug.logv(format, obj);
+    public static void trace(OptionValues options, DebugContext debug, String format, Object obj) {
+        if (debug.areScopesEnabled() && TraceEscapeAnalysis.getValue(options) && debug.isLogEnabled()) {
+            debug.logv(format, obj);
         }
     }
 
-    public static void trace(OptionValues options, String format, Object obj, Object obj2) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
-            Debug.logv(format, obj, obj2);
+    public static void trace(OptionValues options, DebugContext debug, String format, Object obj, Object obj2) {
+        if (debug.areScopesEnabled() && TraceEscapeAnalysis.getValue(options) && debug.isLogEnabled()) {
+            debug.logv(format, obj, obj2);
         }
     }
 
-    public static void trace(OptionValues options, String format, Object obj, Object obj2, Object obj3) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
-            Debug.logv(format, obj, obj2, obj3);
+    public static void trace(OptionValues options, DebugContext debug, String format, Object obj, Object obj2, Object obj3) {
+        if (debug.areScopesEnabled() && TraceEscapeAnalysis.getValue(options) && debug.isLogEnabled()) {
+            debug.logv(format, obj, obj2, obj3);
         }
     }
 
-    public static void trace(OptionValues options, String format, Object obj, Object obj2, Object obj3, Object obj4) {
-        if (Debug.isEnabled() && TraceEscapeAnalysis.getValue(options) && Debug.isLogEnabled()) {
-            Debug.logv(format, obj, obj2, obj3, obj4);
+    public static void trace(OptionValues options, DebugContext debug, String format, Object obj, Object obj2, Object obj3, Object obj4) {
+        if (debug.areScopesEnabled() && TraceEscapeAnalysis.getValue(options) && debug.isLogEnabled()) {
+            debug.logv(format, obj, obj2, obj3, obj4);
         }
     }
 

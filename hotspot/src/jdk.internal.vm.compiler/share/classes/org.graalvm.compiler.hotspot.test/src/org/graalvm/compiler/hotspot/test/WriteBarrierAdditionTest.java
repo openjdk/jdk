@@ -27,11 +27,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 
 import java.lang.ref.WeakReference;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.nodes.G1PostWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1PreWriteBarrier;
@@ -53,6 +49,8 @@ import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InlineEverythingPolicy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.meta.JavaConstant;
@@ -256,8 +254,9 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
     @SuppressWarnings("try")
     private void testHelper(final String snippetName, final int expectedBarriers) throws Exception, SecurityException {
         ResolvedJavaMethod snippet = getResolvedJavaMethod(snippetName);
-        try (Scope s = Debug.scope("WriteBarrierAdditionTest", snippet)) {
-            StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("WriteBarrierAdditionTest", snippet)) {
+            StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
             HighTierContext highContext = getDefaultHighTierContext();
             MidTierContext midContext = new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, graph.getProfilingInfo());
             new InliningPhase(new InlineEverythingPolicy(), new CanonicalizerPhase()).apply(graph, highContext);
@@ -266,7 +265,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
             new GuardLoweringPhase().apply(graph, midContext);
             new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.MID_TIER).apply(graph, midContext);
             new WriteBarrierAdditionPhase(config).apply(graph);
-            Debug.dump(Debug.BASIC_LEVEL, graph, "After Write Barrier Addition");
+            debug.dump(DebugContext.BASIC_LEVEL, graph, "After Write Barrier Addition");
 
             int barriers = 0;
             if (config.useG1GC) {
@@ -305,7 +304,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
                 }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

@@ -22,11 +22,10 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.debug.internal.MemUseTrackerImpl.getCurrentThreadAllocatedBytes;
+import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.AllocSpy;
-import org.graalvm.compiler.debug.DebugEnvironment;
 import org.graalvm.compiler.hotspot.CompilationTask;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -121,8 +120,6 @@ public class MemoryUsageBenchmark extends HotSpotGraalCompilerTest {
         // may include processing command line options used by the latter.
         Graal.getRuntime();
 
-        // Ensure a debug configuration for this thread is initialized
-        DebugEnvironment.ensureInitialized(getInitialOptions());
         new MemoryUsageBenchmark().run();
     }
 
@@ -156,7 +153,9 @@ public class MemoryUsageBenchmark extends HotSpotGraalCompilerTest {
             try (AllocSpy as = AllocSpy.open(methodName)) {
                 HotSpotJVMCIRuntimeProvider runtime = HotSpotJVMCIRuntime.runtime();
                 HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, JVMCICompiler.INVOCATION_ENTRY_BCI, jvmciEnv);
-                CompilationTask task = new CompilationTask(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), request, true, false, getInitialOptions());
+                HotSpotGraalCompiler compiler = (HotSpotGraalCompiler) runtime.getCompiler();
+                OptionValues options = getInitialOptions();
+                CompilationTask task = new CompilationTask(runtime, compiler, request, true, false, options);
                 task.runCompilation();
             }
         }

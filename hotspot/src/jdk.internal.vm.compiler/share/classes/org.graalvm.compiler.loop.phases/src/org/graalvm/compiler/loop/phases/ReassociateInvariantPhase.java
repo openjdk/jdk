@@ -22,8 +22,7 @@
  */
 package org.graalvm.compiler.loop.phases;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -36,12 +35,13 @@ public class ReassociateInvariantPhase extends Phase {
     protected void run(StructuredGraph graph) {
         if (graph.hasLoops()) {
             final LoopsData dataReassociate = new LoopsData(graph);
-            try (Scope s = Debug.scope("ReassociateInvariants")) {
+            DebugContext debug = graph.getDebug();
+            try (DebugContext.Scope s = debug.scope("ReassociateInvariants")) {
                 for (LoopEx loop : dataReassociate.loops()) {
                     loop.reassociateInvariants();
                 }
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debug.handle(e);
             }
             dataReassociate.deleteUnusedNodes();
         }

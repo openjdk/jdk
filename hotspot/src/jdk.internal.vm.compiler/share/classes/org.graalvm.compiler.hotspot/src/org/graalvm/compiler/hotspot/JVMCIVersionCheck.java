@@ -38,11 +38,11 @@ import java.util.Objects;
 class JVMCIVersionCheck {
 
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 26;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 29;
 
     // MAX_VALUE indicates that no current EA version is compatible with Graal.
     // Note: Keep README.md in sync with the EA version support checked here.
-    private static final int JVMCI9_MIN_EA_BUILD = 174;
+    private static final int JVMCI9_MIN_EA_BUILD = 176;
 
     private static void failVersionCheck(boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
@@ -112,7 +112,7 @@ class JVMCIVersionCheck {
                             "Cannot read JVMCI version from java.vm.version property: %s.%n", vmVersion);
         } else {
             if (vmVersion.contains("SNAPSHOT")) {
-                // The snapshot of http://hg.openjdk.java.net/jdk9/hs tip is expected to work
+                // The snapshot of http://hg.openjdk.java.net/jdk9/dev tip is expected to work
                 return;
             }
             if (vmVersion.contains("internal")) {
@@ -120,9 +120,8 @@ class JVMCIVersionCheck {
                 return;
             }
             // http://openjdk.java.net/jeps/223
-            // Only support EA builds until GA is available
-            if (vmVersion.startsWith("9-ea+")) {
-                int start = "9-ea+".length();
+            if (vmVersion.startsWith("9+")) {
+                int start = "9+".length();
                 int end = start;
                 end = start;
                 while (end < vmVersion.length() && Character.isDigit(vmVersion.charAt(end))) {
@@ -145,9 +144,10 @@ class JVMCIVersionCheck {
                     failVersionCheck(exitOnFailure, "The VM is an insufficiently recent EA JDK9 build for Graal: %d < %d.%n", build, JVMCI9_MIN_EA_BUILD);
                 }
                 return;
+            } else {
+                // Graal will be compatible with all JDK versions as of 9 GA
+                // until a JVMCI API change is made in a 9u or later release.
             }
-            failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
-                            "Cannot read JDK9 EA build number from java.vm.version property: %s.%n", vmVersion);
         }
     }
 

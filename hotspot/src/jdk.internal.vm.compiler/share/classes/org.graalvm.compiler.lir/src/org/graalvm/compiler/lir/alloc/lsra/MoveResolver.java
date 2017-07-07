@@ -29,8 +29,8 @@ import static jdk.vm.ci.code.ValueUtil.isRegister;
 import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.LIRKind;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
@@ -39,7 +39,6 @@ import org.graalvm.compiler.lir.LIRValueUtil;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicSet;
-
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.Value;
@@ -48,7 +47,7 @@ import jdk.vm.ci.meta.Value;
  */
 public class MoveResolver {
 
-    private static final DebugCounter cycleBreakingSlotsAllocated = Debug.counter("LSRA[cycleBreakingSlotsAllocated]");
+    private static final CounterKey cycleBreakingSlotsAllocated = DebugContext.counter("LSRA[cycleBreakingSlotsAllocated]");
 
     private final LinearScan allocator;
 
@@ -207,7 +206,7 @@ public class MoveResolver {
             assert areMultipleReadsAllowed() || valueBlocked(location) == 0 : "location already marked as used: " + location;
             int direction = 1;
             setValueBlocked(location, direction);
-            Debug.log("block %s", location);
+            allocator.getDebug().log("block %s", location);
         }
     }
 
@@ -217,7 +216,7 @@ public class MoveResolver {
         if (mightBeBlocked(location)) {
             assert valueBlocked(location) > 0 : "location already marked as unused: " + location;
             setValueBlocked(location, -1);
-            Debug.log("unblock %s", location);
+            allocator.getDebug().log("unblock %s", location);
         }
     }
 
@@ -276,8 +275,9 @@ public class MoveResolver {
         LIRInstruction move = createMove(fromInterval.operand, toInterval.operand, fromInterval.location(), toInterval.location());
         insertionBuffer.append(insertIdx, move);
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("insert move from %s to %s at %d", fromInterval, toInterval, insertIdx);
         }
         return move;
     }
@@ -299,17 +299,19 @@ public class MoveResolver {
         LIRInstruction move = getAllocator().getSpillMoveFactory().createLoad(toOpr, fromOpr);
         insertionBuffer.append(insertIdx, move);
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("insert move from value %s to %s at %d", fromOpr, toInterval, insertIdx);
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("insert move from value %s to %s at %d", fromOpr, toInterval, insertIdx);
         }
         return move;
     }
 
     @SuppressWarnings("try")
     private void resolveMappings() {
-        try (Indent indent = Debug.logAndIndent("resolveMapping")) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("resolveMapping")) {
             assert verifyBeforeResolve();
-            if (Debug.isLogEnabled()) {
+            if (debug.isLogEnabled()) {
                 printMapping();
             }
 
@@ -389,7 +391,7 @@ public class MoveResolver {
         if (spillSlot == null) {
             spillSlot = getAllocator().getFrameMapBuilder().allocateSpillSlot(fromInterval.kind());
             fromInterval.setSpillSlot(spillSlot);
-            cycleBreakingSlotsAllocated.increment();
+            cycleBreakingSlotsAllocated.increment(allocator.getDebug());
         }
         spillInterval(spillCandidate, fromInterval, spillSlot);
     }
@@ -406,8 +408,9 @@ public class MoveResolver {
 
         spillInterval.assignLocation(spillSlot);
 
-        if (Debug.isLogEnabled()) {
-            Debug.log("created new Interval for spilling: %s", spillInterval);
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("created new Interval for spilling: %s", spillInterval);
         }
         blockRegisters(spillInterval);
 
@@ -420,7 +423,8 @@ public class MoveResolver {
 
     @SuppressWarnings("try")
     private void printMapping() {
-        try (Indent indent = Debug.logAndIndent("Mapping")) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("Mapping")) {
             for (int i = mappingFrom.size() - 1; i >= 0; i--) {
                 Interval fromInterval = mappingFrom.get(i);
                 Interval toInterval = mappingTo.get(i);
@@ -431,7 +435,7 @@ public class MoveResolver {
                 } else {
                     from = fromInterval.location().toString();
                 }
-                Debug.log("move %s <- %s", from, to);
+                debug.log("move %s <- %s", from, to);
             }
         }
     }
@@ -460,10 +464,10 @@ public class MoveResolver {
     }
 
     public void addMapping(Interval fromInterval, Interval toInterval) {
-
+        DebugContext debug = allocator.getDebug();
         if (isIllegal(toInterval.location()) && toInterval.canMaterialize()) {
-            if (Debug.isLogEnabled()) {
-                Debug.log("no store to rematerializable interval %s needed", toInterval);
+            if (debug.isLogEnabled()) {
+                debug.log("no store to rematerializable interval %s needed", toInterval);
             }
             return;
         }
@@ -473,8 +477,8 @@ public class MoveResolver {
             addMapping(rematValue, toInterval);
             return;
         }
-        if (Debug.isLogEnabled()) {
-            Debug.log("add move mapping from %s to %s", fromInterval, toInterval);
+        if (debug.isLogEnabled()) {
+            debug.log("add move mapping from %s to %s", fromInterval, toInterval);
         }
 
         assert !fromInterval.operand.equals(toInterval.operand) : "from and to interval equal: " + fromInterval;
@@ -486,8 +490,9 @@ public class MoveResolver {
     }
 
     public void addMapping(Constant fromOpr, Interval toInterval) {
-        if (Debug.isLogEnabled()) {
-            Debug.log("add move mapping from %s to %s", fromOpr, toInterval);
+        DebugContext debug = allocator.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("add move mapping from %s to %s", fromOpr, toInterval);
         }
 
         mappingFrom.add(null);

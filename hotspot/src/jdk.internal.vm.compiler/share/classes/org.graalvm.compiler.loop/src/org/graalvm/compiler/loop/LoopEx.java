@@ -29,7 +29,7 @@ import java.util.Queue;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
@@ -46,7 +46,6 @@ import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
-import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -180,8 +179,9 @@ public class LoopEx {
             }
             ValueNode result = BinaryArithmeticNode.reassociate(binary, invariant, binary.getX(), binary.getY());
             if (result != binary) {
-                if (Debug.isLogEnabled()) {
-                    Debug.log("%s : Reassociated %s into %s", graph.method().format("%H::%n"), binary, result);
+                DebugContext debug = graph.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log("%s : Reassociated %s into %s", graph.method().format("%H::%n"), binary, result);
                 }
                 if (!result.isAlive()) {
                     assert !result.isDeleted();
@@ -211,7 +211,7 @@ public class LoopEx {
             LogicNode ifTest = ifNode.condition();
             if (!(ifTest instanceof IntegerLessThanNode) && !(ifTest instanceof IntegerEqualsNode)) {
                 if (ifTest instanceof IntegerBelowNode) {
-                    Debug.log("Ignored potential Counted loop at %s with |<|", loopBegin);
+                    ifTest.getDebug().log("Ignored potential Counted loop at %s with |<|", loopBegin);
                 }
                 return false;
             }
@@ -286,7 +286,7 @@ public class LoopEx {
                 default:
                     throw GraalError.shouldNotReachHere();
             }
-            counted = new CountedLoopInfo(this, iv, limit, oneOff, negated ? ifNode.falseSuccessor() : ifNode.trueSuccessor());
+            counted = new CountedLoopInfo(this, iv, ifNode, limit, oneOff, negated ? ifNode.falseSuccessor() : ifNode.trueSuccessor());
             return true;
         }
         return false;
@@ -298,7 +298,7 @@ public class LoopEx {
 
     public void nodesInLoopBranch(NodeBitMap branchNodes, AbstractBeginNode branch) {
         EconomicSet<AbstractBeginNode> blocks = EconomicSet.create();
-        Collection<LoopExitNode> exits = new LinkedList<>();
+        Collection<AbstractBeginNode> exits = new LinkedList<>();
         Queue<Block> work = new LinkedList<>();
         ControlFlowGraph cfg = loopsData().getCFG();
         work.add(cfg.blockFor(branch));
@@ -306,7 +306,7 @@ public class LoopEx {
             Block b = work.remove();
             if (loop().getExits().contains(b)) {
                 assert !exits.contains(b.getBeginNode());
-                exits.add((LoopExitNode) b.getBeginNode());
+                exits.add(b.getBeginNode());
             } else if (blocks.add(b.getBeginNode())) {
                 Block d = b.getDominatedSibling();
                 while (d != null) {

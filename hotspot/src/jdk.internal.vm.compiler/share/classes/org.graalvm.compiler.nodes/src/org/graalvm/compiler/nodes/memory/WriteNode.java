@@ -24,7 +24,10 @@ package org.graalvm.compiler.nodes.memory;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.Canonicalizable;
+import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -35,7 +38,7 @@ import org.graalvm.word.LocationIdentity;
  * Writes a given {@linkplain #value() value} a {@linkplain FixedAccessNode memory location}.
  */
 @NodeInfo(nameTemplate = "Write#{p#location/s}")
-public class WriteNode extends AbstractWriteNode implements LIRLowerableAccess {
+public class WriteNode extends AbstractWriteNode implements LIRLowerableAccess, Canonicalizable {
 
     public static final NodeClass<WriteNode> TYPE = NodeClass.create(WriteNode.class);
 
@@ -61,5 +64,17 @@ public class WriteNode extends AbstractWriteNode implements LIRLowerableAccess {
     @Override
     public Stamp getAccessStamp() {
         return value().stamp();
+    }
+
+    @Override
+    public Node canonical(CanonicalizerTool tool) {
+        if (tool.canonicalizeReads() && hasExactlyOneUsage() && next() instanceof WriteNode) {
+            WriteNode write = (WriteNode) next();
+            if (write.lastLocationAccess == this && write.getAddress() == getAddress() && getAccessStamp().isCompatible(write.getAccessStamp())) {
+                write.setLastLocationAccess(getLastLocationAccess());
+                return write;
+            }
+        }
+        return this;
     }
 }

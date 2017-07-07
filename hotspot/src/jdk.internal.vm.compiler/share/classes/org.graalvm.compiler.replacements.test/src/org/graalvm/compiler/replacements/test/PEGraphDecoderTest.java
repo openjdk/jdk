@@ -24,10 +24,9 @@ package org.graalvm.compiler.replacements.test;
 
 import static org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo.createStandardInlineInfo;
 
-import org.junit.Test;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
@@ -47,6 +46,7 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.replacements.CachingPEGraphDecoder;
 import org.graalvm.word.LocationIdentity;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -130,15 +130,16 @@ public class PEGraphDecoderTest extends GraalCompilerTest {
     public void test() {
         ResolvedJavaMethod testMethod = getResolvedJavaMethod(PEGraphDecoderTest.class, "doTest", Object.class);
         StructuredGraph targetGraph = null;
-        try (Debug.Scope scope = Debug.scope("GraphPETest", testMethod)) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope scope = debug.scope("GraphPETest", testMethod)) {
             GraphBuilderConfiguration graphBuilderConfig = GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withEagerResolving(true);
             registerPlugins(graphBuilderConfig.getPlugins().getInvocationPlugins());
-            targetGraph = new StructuredGraph.Builder(getInitialOptions(), AllowAssumptions.YES).method(testMethod).build();
+            targetGraph = new StructuredGraph.Builder(getInitialOptions(), debug, AllowAssumptions.YES).method(testMethod).build();
             CachingPEGraphDecoder decoder = new CachingPEGraphDecoder(getTarget().arch, targetGraph, getProviders(), graphBuilderConfig, OptimisticOptimizations.NONE, AllowAssumptions.YES,
-                            getInitialOptions(), null, null, new InlineInvokePlugin[]{new InlineAll()}, null, null);
+                            null, null, new InlineInvokePlugin[]{new InlineAll()}, null, null);
 
             decoder.decode(testMethod);
-            Debug.dump(Debug.BASIC_LEVEL, targetGraph, "Target Graph");
+            debug.dump(DebugContext.BASIC_LEVEL, targetGraph, "Target Graph");
             targetGraph.verify();
 
             PhaseContext context = new PhaseContext(getProviders());
@@ -147,9 +148,9 @@ public class PEGraphDecoderTest extends GraalCompilerTest {
 
         } catch (Throwable ex) {
             if (targetGraph != null) {
-                Debug.dump(Debug.BASIC_LEVEL, targetGraph, ex.toString());
+                debug.dump(DebugContext.BASIC_LEVEL, targetGraph, ex.toString());
             }
-            Debug.handle(ex);
+            debug.handle(ex);
         }
     }
 }

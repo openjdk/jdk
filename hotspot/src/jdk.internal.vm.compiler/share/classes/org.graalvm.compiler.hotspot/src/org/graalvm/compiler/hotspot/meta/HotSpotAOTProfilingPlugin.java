@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
-import org.graalvm.compiler.hotspot.FingerprintUtil;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -50,7 +49,7 @@ public class HotSpotAOTProfilingPlugin extends HotSpotProfilingPlugin {
 
     @Override
     public boolean shouldProfile(GraphBuilderContext builder, ResolvedJavaMethod method) {
-        return super.shouldProfile(builder, method) && FingerprintUtil.getFingerprint(((HotSpotResolvedObjectType) method.getDeclaringClass())) != 0;
+        return super.shouldProfile(builder, method) && ((HotSpotResolvedObjectType) method.getDeclaringClass()).getFingerprint() != 0;
     }
 
     @Override

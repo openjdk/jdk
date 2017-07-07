@@ -27,8 +27,8 @@ import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeStack;
@@ -81,13 +81,13 @@ import jdk.vm.ci.meta.TriState;
  */
 public class FixReadsPhase extends BasePhase<LowTierContext> {
 
-    private static final DebugCounter counterStampsRegistered = Debug.counter("FixReads_StampsRegistered");
-    private static final DebugCounter counterIfsKilled = Debug.counter("FixReads_KilledIfs");
-    private static final DebugCounter counterConditionalsKilled = Debug.counter("FixReads_KilledConditionals");
-    private static final DebugCounter counterCanonicalizedSwitches = Debug.counter("FixReads_CanonicalizedSwitches");
-    private static final DebugCounter counterConstantReplacements = Debug.counter("FixReads_ConstantReplacement");
-    private static final DebugCounter counterConstantInputReplacements = Debug.counter("FixReads_ConstantInputReplacement");
-    private static final DebugCounter counterBetterMergedStamps = Debug.counter("FixReads_BetterMergedStamp");
+    private static final CounterKey counterStampsRegistered = DebugContext.counter("FixReads_StampsRegistered");
+    private static final CounterKey counterIfsKilled = DebugContext.counter("FixReads_KilledIfs");
+    private static final CounterKey counterConditionalsKilled = DebugContext.counter("FixReads_KilledConditionals");
+    private static final CounterKey counterCanonicalizedSwitches = DebugContext.counter("FixReads_CanonicalizedSwitches");
+    private static final CounterKey counterConstantReplacements = DebugContext.counter("FixReads_ConstantReplacement");
+    private static final CounterKey counterConstantInputReplacements = DebugContext.counter("FixReads_ConstantInputReplacement");
+    private static final CounterKey counterBetterMergedStamps = DebugContext.counter("FixReads_BetterMergedStamp");
 
     protected boolean replaceInputsWithConstants;
     protected Phase schedulePhase;
@@ -137,9 +137,11 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
         private final boolean replaceConstantInputs;
         private final BlockMap<Integer> blockActionStart;
         private final EconomicMap<MergeNode, EconomicMap<ValueNode, Stamp>> endMaps;
+        private final DebugContext debug;
 
         protected RawConditionalEliminationVisitor(StructuredGraph graph, ScheduleResult schedule, MetaAccessProvider metaAccess, boolean replaceInputsWithConstants) {
             this.graph = graph;
+            this.debug = graph.getDebug();
             this.schedule = schedule;
             this.metaAccess = metaAccess;
             blockActionStart = new BlockMap<>(schedule.getCFG());
@@ -174,7 +176,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                                         continue;
                                     }
                                 }
-                                counterConstantInputReplacements.increment();
+                                counterConstantInputReplacements.increment(node.getDebug());
                                 ConstantNode stampConstant = ConstantNode.forConstant(bestStamp, constant, metaAccess, graph);
                                 assert stampConstant.stamp().isCompatible(valueNode.stamp());
                                 replaceInput(p, node, stampConstant);
@@ -220,7 +222,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             MapCursor<ValueNode, Stamp> entries = endMap.getEntries();
             while (entries.advance()) {
                 if (registerNewValueStamp(entries.getKey(), entries.getValue())) {
-                    counterBetterMergedStamps.increment();
+                    counterBetterMergedStamps.increment(debug);
                 }
             }
         }
@@ -320,8 +322,8 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             Constant constant = newStamp.asConstant();
             if (constant != null && !(node instanceof ConstantNode)) {
                 ConstantNode stampConstant = ConstantNode.forConstant(newStamp, constant, metaAccess, graph);
-                Debug.log("RawConditionElimination: constant stamp replaces %1s with %1s", node, stampConstant);
-                counterConstantReplacements.increment();
+                debug.log("RawConditionElimination: constant stamp replaces %1s with %1s", node, stampConstant);
+                counterConstantReplacements.increment(debug);
                 node.replaceAtUsages(InputType.Value, stampConstant);
                 GraphUtil.tryKillUnused(node);
                 return true;
@@ -341,8 +343,8 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
         protected void processIntegerSwitch(IntegerSwitchNode node) {
             Stamp bestStamp = getBestStamp(node.value());
             if (node.tryRemoveUnreachableKeys(null, bestStamp)) {
-                Debug.log("\t Canonicalized integer switch %s for value %s and stamp %s", node, node.value(), bestStamp);
-                counterCanonicalizedSwitches.increment();
+                debug.log("\t Canonicalized integer switch %s for value %s and stamp %s", node, node.value(), bestStamp);
+                counterCanonicalizedSwitches.increment(debug);
             }
         }
 
@@ -356,7 +358,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
                 node.replaceAtPredecessor(survivingSuccessor);
                 GraphUtil.killCFG(node);
 
-                counterIfsKilled.increment();
+                counterIfsKilled.increment(debug);
             }
         }
 
@@ -364,7 +366,7 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
             TriState result = tryProveCondition(node.condition());
             if (result != TriState.UNKNOWN) {
                 boolean isTrue = (result == TriState.TRUE);
-                counterConditionalsKilled.increment();
+                counterConditionalsKilled.increment(debug);
                 node.replaceAndDelete(isTrue ? node.trueValue() : node.falseValue());
             } else {
                 Stamp trueStamp = getBestStamp(node.trueValue());
@@ -444,8 +446,8 @@ public class FixReadsPhase extends BasePhase<LowTierContext> {
         }
 
         protected void registerNewStamp(ValueNode value, Stamp newStamp) {
-            counterStampsRegistered.increment();
-            Debug.log("\t Saving stamp for node %s stamp %s", value, newStamp);
+            counterStampsRegistered.increment(debug);
+            debug.log("\t Saving stamp for node %s stamp %s", value, newStamp);
             ValueNode originalNode = value;
             stampMap.setAndGrow(originalNode, new StampElement(newStamp, stampMap.getAndGrow(originalNode)));
             undoOperations.push(originalNode);

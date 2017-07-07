@@ -28,7 +28,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.graph.Node;
@@ -59,10 +59,10 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClosure;
 import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.LoopInfo;
-import org.graalvm.util.Equivalence;
-import org.graalvm.word.LocationIdentity;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
+import org.graalvm.word.LocationIdentity;
 
 public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> extends EffectsPhase.Closure<BlockT> {
 
@@ -112,6 +112,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
     protected final EconomicMap<Loop<Block>, LoopKillCache> loopLocationKillCache = EconomicMap.create(Equivalence.IDENTITY);
 
     protected boolean changed;
+    protected final DebugContext debug;
 
     public EffectsClosure(ScheduleResult schedule, ControlFlowGraph cfg) {
         this.schedule = schedule;
@@ -119,8 +120,9 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
         this.aliases = cfg.graph.createNodeMap();
         this.hasScalarReplacedInputs = cfg.graph.createNodeBitMap();
         this.blockEffects = new BlockMap<>(cfg);
+        this.debug = cfg.graph.getDebug();
         for (Block block : cfg.getBlocks()) {
-            blockEffects.put(block, new GraphEffectList());
+            blockEffects.put(block, new GraphEffectList(debug));
         }
     }
 
@@ -182,7 +184,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
         };
         ReentrantBlockIterator.apply(closure, cfg.getStartBlock());
         for (GraphEffectList effects : effectList) {
-            Debug.log(" ==== effects");
+            debug.log(" ==== effects");
             effects.apply(graph, obsoleteNodes, false);
         }
         /*
@@ -191,10 +193,10 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
          * indexes.
          */
         for (GraphEffectList effects : effectList) {
-            Debug.log(" ==== cfg kill effects");
+            debug.log(" ==== cfg kill effects");
             effects.apply(graph, obsoleteNodes, true);
         }
-        Debug.dump(Debug.DETAILED_LEVEL, graph, "After applying effects");
+        debug.dump(DebugContext.DETAILED_LEVEL, graph, "After applying effects");
         assert VirtualUtil.assertNonReachable(graph, obsoleteNodes);
         for (Node node : obsoleteNodes) {
             if (node.isAlive() && node.hasNoUsages()) {
@@ -233,7 +235,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
             }
 
             OptionValues options = block.getBeginNode().getOptions();
-            VirtualUtil.trace(options, "\nBlock: %s, preds: %s, succ: %s (", block, block.getPredecessors(), block.getSuccessors());
+            VirtualUtil.trace(options, debug, "\nBlock: %s, preds: %s, succ: %s (", block, block.getPredecessors(), block.getSuccessors());
 
             // a lastFixedNode is needed in case we want to insert fixed nodes
             FixedWithNextNode lastFixedNode = null;
@@ -257,7 +259,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
                     break;
                 }
             }
-            VirtualUtil.trace(options, ")\n    end state: %s\n", state);
+            VirtualUtil.trace(options, debug, ")\n    end state: %s\n", state);
         }
         return state;
     }
@@ -329,7 +331,7 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
          * more generic, e.g., adding phis instead of non-phi values.
          */
         for (int iteration = 0; iteration < 10; iteration++) {
-            try (Indent i = Debug.logAndIndent("================== Process Loop Effects Closure: block:%s begin node:%s", loop.getHeader(), loop.getHeader().getBeginNode())) {
+            try (Indent i = debug.logAndIndent("================== Process Loop Effects Closure: block:%s begin node:%s", loop.getHeader(), loop.getHeader().getBeginNode())) {
                 LoopInfo<BlockT> info = ReentrantBlockIterator.processLoop(this, loop, cloneState(lastMergedState));
 
                 List<BlockT> states = new ArrayList<>();
@@ -337,9 +339,9 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
                 states.addAll(info.endStates);
                 doMergeWithoutDead(mergeProcessor, states);
 
-                Debug.log("MergeProcessor New State: %s", mergeProcessor.newState);
-                Debug.log("===== vs.");
-                Debug.log("Last Merged State: %s", lastMergedState);
+                debug.log("MergeProcessor New State: %s", mergeProcessor.newState);
+                debug.log("===== vs.");
+                debug.log("Last Merged State: %s", lastMergedState);
 
                 if (mergeProcessor.newState.equivalentTo(lastMergedState)) {
                     blockEffects.get(loop.getHeader()).insertAll(mergeProcessor.mergeEffects, 0);
@@ -441,8 +443,8 @@ public abstract class EffectsClosure<BlockT extends EffectsBlockState<BlockT>> e
         public MergeProcessor(Block mergeBlock) {
             this.mergeBlock = mergeBlock;
             this.merge = (AbstractMergeNode) mergeBlock.getBeginNode();
-            this.mergeEffects = new GraphEffectList();
-            this.afterMergeEffects = new GraphEffectList();
+            this.mergeEffects = new GraphEffectList(debug);
+            this.afterMergeEffects = new GraphEffectList(debug);
         }
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,6 @@ import static org.graalvm.compiler.nodes.ConstantNode.getConstantNodes;
 import java.util.HashSet;
 import java.util.List;
 
-import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -44,7 +36,6 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
-import org.graalvm.compiler.hotspot.FingerprintUtil;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyFixedNode;
@@ -52,17 +43,36 @@ import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadMethodCountersNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersNode;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
+import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.LoopExitNode;
+import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
+import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.util.EconomicMap;
+
+import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
+import jdk.vm.ci.hotspot.HotSpotObjectConstant;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
 
@@ -115,60 +125,172 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
             if (type.getElementalType().isPrimitive()) {
                 return false;
             }
-            return FingerprintUtil.getFingerprint((HotSpotResolvedObjectType) (type.getElementalType())) == 0;
+            return ((HotSpotResolvedObjectType) (type.getElementalType())).getFingerprint() == 0;
         }
-        return FingerprintUtil.getFingerprint((HotSpotResolvedObjectType) type) == 0;
+        return ((HotSpotResolvedObjectType) type).getFingerprint() == 0;
     }
 
     /**
-     * Replace {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} with indirection.
+     * Insert the replacement node into the graph. We may need to insert it into a place different
+     * than the original {@link FloatingNode} since we need to make sure that replacement will have
+     * a valid state assigned.
      *
      * @param graph
-     * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
-     *            resolution.
-     */
-    private void handleHotSpotMetaspaceConstant(StructuredGraph graph, ConstantNode node) {
-        HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
-        HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
-
-        if (type != null) {
-            if (verifyFingerprints && checkForBadFingerprint(type)) {
-                throw new GraalError("Type with bad fingerprint: " + type);
-            }
-            assert !metaspaceConstant.isCompressed() : "No support for replacing compressed metaspace constants";
-            tryToReplaceWithExisting(graph, node);
-            if (anyUsagesNeedReplacement(node)) {
-                replaceWithResolution(graph, node);
-            }
-        } else {
-            throw new GraalError("Unsupported metaspace constant type: " + type);
-        }
-    }
-
-    /**
-     * Find the lowest dominating {@link FixedWithNextNode} before given node.
-     *
-     * @param graph
+     * @param stateMapper
      * @param node
-     * @return the last {@link FixedWithNextNode} that is scheduled before node.
+     * @param replacement
      */
-    private static FixedWithNextNode findFixedWithNextBefore(StructuredGraph graph, Node node) {
+    private static void insertReplacement(StructuredGraph graph, FrameStateMapperClosure stateMapper, FloatingNode node, FixedWithNextNode replacement) {
+        FixedWithNextNode insertionPoint = findInsertionPoint(graph, stateMapper, node);
+        graph.addAfterFixed(insertionPoint, replacement);
+        stateMapper.addState(replacement, stateMapper.getState(insertionPoint));
+    }
+
+    /**
+     * Find a good place to insert a stateful fixed node that is above the given node. A good
+     * insertion point should have a valid FrameState reaching it.
+     *
+     * @param graph
+     * @param stateMapper
+     * @param node start search from this node up
+     * @return an insertion point
+     */
+    private static FixedWithNextNode findInsertionPoint(StructuredGraph graph, FrameStateMapperClosure stateMapper, FloatingNode node) {
+        FixedWithNextNode fixed = findFixedBeforeFloating(graph, node);
+        FixedWithNextNode result = findFixedWithValidState(graph, stateMapper, fixed);
+        return result;
+    }
+
+    /**
+     * Find the first {@link FixedWithNextNode} that is currently scheduled before the given
+     * floating node.
+     *
+     * @param graph
+     * @param node start search from this node up
+     * @return the first {@link FixedWithNextNode}
+     */
+    private static FixedWithNextNode findFixedBeforeFloating(StructuredGraph graph, FloatingNode node) {
         ScheduleResult schedule = graph.getLastSchedule();
         NodeMap<Block> nodeToBlock = schedule.getNodeToBlockMap();
-        BlockMap<List<Node>> blockToNodes = schedule.getBlockToNodesMap();
-
         Block block = nodeToBlock.get(node);
+        BlockMap<List<Node>> blockToNodes = schedule.getBlockToNodesMap();
         FixedWithNextNode result = null;
         for (Node n : blockToNodes.get(block)) {
-            if (n instanceof FixedWithNextNode) {
-                result = (FixedWithNextNode) n;
-            }
             if (n.equals(node)) {
                 break;
+            }
+            if (n instanceof FixedWithNextNode) {
+                result = (FixedWithNextNode) n;
             }
         }
         assert result != null;
         return result;
+    }
+
+    /**
+     * Find first dominating {@link FixedWithNextNode} that has a valid state reaching it starting
+     * from the given node.
+     *
+     * @param graph
+     * @param stateMapper
+     * @param node
+     * @return {@link FixedWithNextNode} that we can use as an insertion point
+     */
+    private static FixedWithNextNode findFixedWithValidState(StructuredGraph graph, FrameStateMapperClosure stateMapper, FixedWithNextNode node) {
+        ScheduleResult schedule = graph.getLastSchedule();
+        NodeMap<Block> nodeToBlock = schedule.getNodeToBlockMap();
+        Block block = nodeToBlock.get(node);
+
+        Node n = node;
+        do {
+            if (isFixedWithValidState(stateMapper, n)) {
+                return (FixedWithNextNode) n;
+            }
+            while (n != block.getBeginNode()) {
+                n = n.predecessor();
+                if (isFixedWithValidState(stateMapper, n)) {
+                    return (FixedWithNextNode) n;
+                }
+            }
+            block = block.getDominator();
+            if (block != null) {
+                n = block.getEndNode();
+            }
+        } while (block != null);
+
+        return graph.start();
+    }
+
+    private static boolean isFixedWithValidState(FrameStateMapperClosure stateMapper, Node n) {
+        if (n instanceof FixedWithNextNode) {
+            FixedWithNextNode fixed = (FixedWithNextNode) n;
+            assert stateMapper.getState(fixed) != null;
+            if (!BytecodeFrame.isPlaceholderBci(stateMapper.getState(fixed).bci)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Compute frame states for all fixed nodes in the graph.
+     */
+    private static class FrameStateMapperClosure extends NodeIteratorClosure<FrameState> {
+        private NodeMap<FrameState> reachingStates;
+
+        @Override
+        protected FrameState processNode(FixedNode node, FrameState previousState) {
+            FrameState currentState = previousState;
+            if (node instanceof StateSplit) {
+                StateSplit stateSplit = (StateSplit) node;
+                FrameState stateAfter = stateSplit.stateAfter();
+                if (stateAfter != null) {
+                    currentState = stateAfter;
+                }
+            }
+            reachingStates.put(node, currentState);
+            return currentState;
+        }
+
+        @Override
+        protected FrameState merge(AbstractMergeNode merge, List<FrameState> states) {
+            FrameState singleFrameState = singleFrameState(states);
+            FrameState currentState = singleFrameState == null ? merge.stateAfter() : singleFrameState;
+            reachingStates.put(merge, currentState);
+            return currentState;
+        }
+
+        @Override
+        protected FrameState afterSplit(AbstractBeginNode node, FrameState oldState) {
+            return oldState;
+        }
+
+        @Override
+        protected EconomicMap<LoopExitNode, FrameState> processLoop(LoopBeginNode loop, FrameState initialState) {
+            return ReentrantNodeIterator.processLoop(this, loop, initialState).exitStates;
+        }
+
+        private static FrameState singleFrameState(List<FrameState> states) {
+            FrameState singleState = states.get(0);
+            for (int i = 1; i < states.size(); ++i) {
+                if (states.get(i) != singleState) {
+                    return null;
+                }
+            }
+            return singleState;
+        }
+
+        FrameStateMapperClosure(StructuredGraph graph) {
+            reachingStates = new NodeMap<>(graph);
+        }
+
+        public FrameState getState(Node n) {
+            return reachingStates.get(n);
+        }
+
+        public void addState(Node n, FrameState s) {
+            reachingStates.setAndGrow(n, s);
+        }
     }
 
     /**
@@ -223,10 +345,11 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * {@link ResolveConstantNode}.
      *
      * @param graph
+     * @param stateMapper
      * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
      *            resolution.
      */
-    private static void replaceWithResolution(StructuredGraph graph, ConstantNode node) {
+    private static void replaceWithResolution(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node) {
         HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
         HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
         ResolvedJavaType topMethodHolder = graph.method().getDeclaringClass();
@@ -249,10 +372,36 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
             } else {
                 fixedReplacement = graph.add(new ResolveConstantNode(node));
             }
-            graph.addAfterFixed(findFixedWithNextBefore(graph, node), fixedReplacement);
+            insertReplacement(graph, stateMapper, node, fixedReplacement);
             replacement = fixedReplacement;
         }
         node.replaceAtUsages(replacement, n -> !isReplacementNode(n));
+    }
+
+    /**
+     * Replace {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} with indirection.
+     *
+     * @param graph
+     * @param stateMapper
+     * @param node {@link ConstantNode} containing a {@link HotSpotResolvedJavaType} that needs
+     *            resolution.
+     */
+    private void handleHotSpotMetaspaceConstant(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node) {
+        HotSpotMetaspaceConstant metaspaceConstant = (HotSpotMetaspaceConstant) node.asConstant();
+        HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) metaspaceConstant.asResolvedJavaType();
+
+        if (type != null) {
+            if (verifyFingerprints && checkForBadFingerprint(type)) {
+                throw new GraalError("Type with bad fingerprint: " + type);
+            }
+            assert !metaspaceConstant.isCompressed() : "No support for replacing compressed metaspace constants";
+            tryToReplaceWithExisting(graph, node);
+            if (anyUsagesNeedReplacement(node)) {
+                replaceWithResolution(graph, stateMapper, node);
+            }
+        } else {
+            throw new GraalError("Unsupported metaspace constant type: " + type);
+        }
     }
 
     /**
@@ -260,16 +409,17 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * support only strings.
      *
      * @param graph
+     * @param stateMapper
      * @param node {@link ConstantNode} containing a {@link HotSpotObjectConstant} that needs
      *            resolution.
      */
-    private static void handleHotSpotObjectConstant(StructuredGraph graph, ConstantNode node) {
+    private static void handleHotSpotObjectConstant(StructuredGraph graph, FrameStateMapperClosure stateMapper, ConstantNode node) {
         HotSpotObjectConstant constant = (HotSpotObjectConstant) node.asJavaConstant();
         HotSpotResolvedJavaType type = (HotSpotResolvedJavaType) constant.getType();
         if (type.mirror().equals(String.class)) {
             assert !constant.isCompressed() : "No support for replacing compressed oop constants";
             FixedWithNextNode replacement = graph.add(new ResolveConstantNode(node));
-            graph.addAfterFixed(findFixedWithNextBefore(graph, node), replacement);
+            insertReplacement(graph, stateMapper, node, replacement);
             node.replaceAtUsages(replacement, n -> !(n instanceof ResolveConstantNode));
         } else {
             throw new GraalError("Unsupported object constant type: " + type);
@@ -281,16 +431,17 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * {@link ResolveMethodAndLoadCountersNode}, expose a klass constant of the holder.
      *
      * @param graph
+     * @param stateMapper
      * @param node
      * @param context
      */
-    private static void handleLoadMethodCounters(StructuredGraph graph, LoadMethodCountersNode node, PhaseContext context) {
+    private static void handleLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, LoadMethodCountersNode node, PhaseContext context) {
         ResolvedJavaType type = node.getMethod().getDeclaringClass();
         Stamp hubStamp = context.getStampProvider().createHubStamp((ObjectStamp) StampFactory.objectNonNull());
         ConstantReflectionProvider constantReflection = context.getConstantReflection();
         ConstantNode klassHint = ConstantNode.forConstant(hubStamp, constantReflection.asObjectHub(type), context.getMetaAccess(), graph);
         FixedWithNextNode replacement = graph.add(new ResolveMethodAndLoadCountersNode(node.getMethod(), klassHint));
-        graph.addAfterFixed(findFixedWithNextBefore(graph, node), replacement);
+        insertReplacement(graph, stateMapper, node, replacement);
         node.replaceAtUsages(replacement, n -> !(n instanceof ResolveMethodAndLoadCountersNode));
     }
 
@@ -299,13 +450,15 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * klass constants.
      *
      * @param graph
+     * @param stateMapper
      * @param context
      */
-    private static void replaceLoadMethodCounters(StructuredGraph graph, PhaseContext context) {
+    private static void replaceLoadMethodCounters(StructuredGraph graph, FrameStateMapperClosure stateMapper, PhaseContext context) {
         new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS, true).apply(graph, false);
+
         for (LoadMethodCountersNode node : getLoadMethodCountersNodes(graph)) {
             if (anyUsagesNeedReplacement(node)) {
-                handleLoadMethodCounters(graph, node, context);
+                handleLoadMethodCounters(graph, stateMapper, node, context);
             }
         }
     }
@@ -314,29 +467,33 @@ public class ReplaceConstantNodesPhase extends BasePhase<PhaseContext> {
      * Replace object and klass constants with resolution nodes or reuse preceding initializations.
      *
      * @param graph
+     * @param stateMapper
      */
-    private void replaceKlassesAndObjects(StructuredGraph graph) {
+    private void replaceKlassesAndObjects(StructuredGraph graph, FrameStateMapperClosure stateMapper) {
         new SchedulePhase(SchedulingStrategy.LATEST_OUT_OF_LOOPS, true).apply(graph, false);
 
         for (ConstantNode node : getConstantNodes(graph)) {
             Constant constant = node.asConstant();
             if (constant instanceof HotSpotMetaspaceConstant && anyUsagesNeedReplacement(node)) {
-                handleHotSpotMetaspaceConstant(graph, node);
+                handleHotSpotMetaspaceConstant(graph, stateMapper, node);
             } else if (constant instanceof HotSpotObjectConstant && anyUsagesNeedReplacement(node)) {
-                handleHotSpotObjectConstant(graph, node);
+                handleHotSpotObjectConstant(graph, stateMapper, node);
             }
         }
     }
 
     @Override
     protected void run(StructuredGraph graph, PhaseContext context) {
+        FrameStateMapperClosure stateMapper = new FrameStateMapperClosure(graph);
+        ReentrantNodeIterator.apply(stateMapper, graph.start(), null);
+
         // Replace LoadMethodCountersNode with ResolveMethodAndLoadCountersNode, expose klass
         // constants.
-        replaceLoadMethodCounters(graph, context);
+        replaceLoadMethodCounters(graph, stateMapper, context);
 
         // Replace object and klass constants (including the ones added in the previous pass) with
         // resolution nodes.
-        replaceKlassesAndObjects(graph);
+        replaceKlassesAndObjects(graph, stateMapper);
     }
 
     @Override

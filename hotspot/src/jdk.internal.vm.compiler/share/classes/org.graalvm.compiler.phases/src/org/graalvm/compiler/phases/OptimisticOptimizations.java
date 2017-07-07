@@ -26,8 +26,6 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import org.graalvm.compiler.core.common.GraalOptions;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -37,7 +35,6 @@ public final class OptimisticOptimizations {
 
     public static final OptimisticOptimizations ALL = new OptimisticOptimizations(EnumSet.allOf(Optimization.class));
     public static final OptimisticOptimizations NONE = new OptimisticOptimizations(EnumSet.noneOf(Optimization.class));
-    private static final DebugCounter disabledOptimisticOptsCounter = Debug.counter("DisabledOptimisticOpts");
 
     public enum Optimization {
         RemoveNeverExecutedCode,
@@ -64,8 +61,6 @@ public final class OptimisticOptimizations {
     private void addOptimization(OptionValues options, ProfilingInfo info, DeoptimizationReason deoptReason, Optimization optimization) {
         if (checkDeoptimizations(options, info, deoptReason)) {
             enabledOpts.add(optimization);
-        } else {
-            disabledOptimisticOptsCounter.increment();
         }
     }
 

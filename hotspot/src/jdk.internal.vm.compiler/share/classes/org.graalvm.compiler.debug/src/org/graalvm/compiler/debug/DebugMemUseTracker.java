@@ -38,7 +38,7 @@ public interface DebugMemUseTracker {
 
     /**
      * Creates a point from which memory usage will be recorded if memory use tracking is
-     * {@linkplain Debug#isMemUseTrackingEnabled() enabled}.
+     * {@linkplain DebugContext#isMemUseTrackingEnabled() enabled}.
      *
      * @return an object that must be closed once the activity has completed to add the memory used
      *         since this call to the total for this tracker

@@ -37,7 +37,7 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -67,7 +67,9 @@ public final class TraceGlobalMoveResolutionPhase {
     }
 
     public static void resolve(TargetDescription target, LIRGenerationResult lirGenRes, TraceAllocationContext context) {
-        Debug.dump(Debug.VERBOSE_LEVEL, lirGenRes.getLIR(), "Before TraceGlobalMoveResultion");
+        LIR lir = lirGenRes.getLIR();
+        DebugContext debug = lir.getDebug();
+        debug.dump(DebugContext.VERBOSE_LEVEL, lir, "Before TraceGlobalMoveResultion");
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         resolveGlobalDataFlow(context.resultTraces, lirGenRes, spillMoveFactory, target.arch, context.livenessInfo, context.registerAllocationConfig);
     }
@@ -79,12 +81,13 @@ public final class TraceGlobalMoveResolutionPhase {
         /* Resolve trace global data-flow mismatch. */
         TraceGlobalMoveResolver moveResolver = new TraceGlobalMoveResolver(lirGenRes, spillMoveFactory, registerAllocationConfig, arch);
 
-        try (Indent indent = Debug.logAndIndent("Trace global move resolution")) {
+        DebugContext debug = lir.getDebug();
+        try (Indent indent = debug.logAndIndent("Trace global move resolution")) {
             for (Trace trace : resultTraces.getTraces()) {
                 for (AbstractBlockBase<?> fromBlock : trace.getBlocks()) {
                     for (AbstractBlockBase<?> toBlock : fromBlock.getSuccessors()) {
                         if (resultTraces.getTraceForBlock(fromBlock) != resultTraces.getTraceForBlock(toBlock)) {
-                            try (Indent indent0 = Debug.logAndIndent("Handle trace edge from %s (Trace%d) to %s (Trace%d)", fromBlock, resultTraces.getTraceForBlock(fromBlock).getId(), toBlock,
+                            try (Indent indent0 = debug.logAndIndent("Handle trace edge from %s (Trace%d) to %s (Trace%d)", fromBlock, resultTraces.getTraceForBlock(fromBlock).getId(), toBlock,
                                             resultTraces.getTraceForBlock(toBlock).getId())) {
 
                                 final ArrayList<LIRInstruction> instructions;

@@ -49,6 +49,7 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -199,25 +200,25 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
     }
 
     @Override
-    public void initialize(OptionValues options, HotSpotProviders providers, GraalHotSpotVMConfig config) {
-        super.initialize(options, runtime, providers, providers.getSnippetReflection());
+    public void initialize(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, GraalHotSpotVMConfig config) {
+        super.initialize(options, factories, runtime, providers, providers.getSnippetReflection());
 
         assert target == providers.getCodeCache().getTarget();
-        instanceofSnippets = new InstanceOfSnippets.Templates(options, runtime, providers, target);
-        newObjectSnippets = new NewObjectSnippets.Templates(options, runtime, providers, target, config);
-        monitorSnippets = new MonitorSnippets.Templates(options, runtime, providers, target, config.useFastLocking);
-        writeBarrierSnippets = new WriteBarrierSnippets.Templates(options, runtime, providers, target, config.useCompressedOops ? config.getOopEncoding() : null);
-        exceptionObjectSnippets = new LoadExceptionObjectSnippets.Templates(options, providers, target);
-        unsafeLoadSnippets = new UnsafeLoadSnippets.Templates(options, providers, target);
-        assertionSnippets = new AssertionSnippets.Templates(options, providers, target);
-        arraycopySnippets = new ArrayCopySnippets.Templates(options, runtime, providers, target);
-        stringToBytesSnippets = new StringToBytesSnippets.Templates(options, providers, target);
-        hashCodeSnippets = new HashCodeSnippets.Templates(options, providers, target);
+        instanceofSnippets = new InstanceOfSnippets.Templates(options, factories, runtime, providers, target);
+        newObjectSnippets = new NewObjectSnippets.Templates(options, factories, runtime, providers, target, config);
+        monitorSnippets = new MonitorSnippets.Templates(options, factories, runtime, providers, target, config.useFastLocking);
+        writeBarrierSnippets = new WriteBarrierSnippets.Templates(options, factories, runtime, providers, target, config.useCompressedOops ? config.getOopEncoding() : null);
+        exceptionObjectSnippets = new LoadExceptionObjectSnippets.Templates(options, factories, providers, target);
+        unsafeLoadSnippets = new UnsafeLoadSnippets.Templates(options, factories, providers, target);
+        assertionSnippets = new AssertionSnippets.Templates(options, factories, providers, target);
+        arraycopySnippets = new ArrayCopySnippets.Templates(options, factories, runtime, providers, target);
+        stringToBytesSnippets = new StringToBytesSnippets.Templates(options, factories, providers, target);
+        hashCodeSnippets = new HashCodeSnippets.Templates(options, factories, providers, target);
         if (GeneratePIC.getValue(options)) {
-            resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, providers, target);
-            profileSnippets = new ProfileSnippets.Templates(options, providers, target);
+            resolveConstantSnippets = new ResolveConstantSnippets.Templates(options, factories, providers, target);
+            profileSnippets = new ProfileSnippets.Templates(options, factories, providers, target);
         }
-        providers.getReplacements().registerSnippetTemplateCache(new UnsafeArrayCopySnippets.Templates(options, providers, target));
+        providers.getReplacements().registerSnippetTemplateCache(new UnsafeArrayCopySnippets.Templates(options, factories, providers, target));
     }
 
     public MonitorSnippets.Templates getMonitorSnippets() {

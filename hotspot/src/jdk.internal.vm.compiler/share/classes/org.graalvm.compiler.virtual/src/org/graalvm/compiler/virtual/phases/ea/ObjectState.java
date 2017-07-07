@@ -25,8 +25,8 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
@@ -44,8 +44,8 @@ import jdk.vm.ci.meta.JavaConstant;
  */
 public class ObjectState {
 
-    public static final DebugCounter CREATE_ESCAPED_OBJECT_STATE = Debug.counter("CreateEscapeObjectState");
-    public static final DebugCounter GET_ESCAPED_OBJECT_STATE = Debug.counter("GetEscapeObjectState");
+    public static final CounterKey CREATE_ESCAPED_OBJECT_STATE = DebugContext.counter("CreateEscapeObjectState");
+    public static final CounterKey GET_ESCAPED_OBJECT_STATE = DebugContext.counter("GetEscapeObjectState");
 
     private ValueNode[] entries;
     private ValueNode materializedValue;
@@ -92,10 +92,10 @@ public class ObjectState {
         return new ObjectState(this);
     }
 
-    public EscapeObjectState createEscapeObjectState(VirtualObjectNode virtual) {
-        GET_ESCAPED_OBJECT_STATE.increment();
+    public EscapeObjectState createEscapeObjectState(DebugContext debug, VirtualObjectNode virtual) {
+        GET_ESCAPED_OBJECT_STATE.increment(debug);
         if (cachedState == null) {
-            CREATE_ESCAPED_OBJECT_STATE.increment();
+            CREATE_ESCAPED_OBJECT_STATE.increment(debug);
             if (isVirtual()) {
                 /*
                  * Clear out entries that are default values anyway.

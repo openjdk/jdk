@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.Loop;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Node;
@@ -290,7 +289,7 @@ public final class GraphOrder {
             ReentrantBlockIterator.apply(closure, schedule.getCFG().getStartBlock());
 
         } catch (Throwable t) {
-            Debug.handle(t);
+            graph.getDebug().handle(t);
         }
         return true;
     }

@@ -28,7 +28,6 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -183,7 +182,7 @@ public abstract class AbstractMergeNode extends BeginStateSplitNode implements I
                     }
                 }
             }
-            Debug.log("Split %s into ends for %s.", this, merge);
+            getDebug().log("Split %s into ends for %s.", this, merge);
             int numEnds = this.forwardEndCount();
             for (int i = 0; i < numEnds - 1; i++) {
                 AbstractEndNode end = forwardEndAt(numEnds - 1 - i);

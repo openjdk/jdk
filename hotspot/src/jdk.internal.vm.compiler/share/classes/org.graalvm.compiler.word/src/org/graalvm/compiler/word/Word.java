@@ -80,6 +80,8 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     public enum Opcode {
         NODE_CLASS,
         COMPARISON,
+        IS_NULL,
+        IS_NON_NULL,
         NOT,
         READ_POINTER,
         READ_OBJECT,
@@ -426,6 +428,18 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     }
 
     @Override
+    @Operation(opcode = Opcode.IS_NULL)
+    public boolean isNull() {
+        return equal(WordFactory.zero());
+    }
+
+    @Override
+    @Operation(opcode = Opcode.IS_NON_NULL)
+    public boolean isNonNull() {
+        return notEqual(WordFactory.zero());
+    }
+
+    @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
     public boolean equal(ComparableWord val) {
         return equal((Word) val);
@@ -716,7 +730,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
     public <T extends WordBase> T readWord(int offset, LocationIdentity locationIdentity) {
-        return readWord((WordBase)signed(offset), locationIdentity);
+        return readWord(signed(offset), locationIdentity);
     }
 
     @Override
@@ -943,7 +957,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
     public <T extends WordBase> T readWord(int offset) {
-        return readWord((WordBase)signed(offset));
+        return readWord(signed(offset));
     }
 
     @Override
@@ -1116,7 +1130,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
     @Override
     @Operation(opcode = Opcode.CAS_POINTER)
     public <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity) {
-        return compareAndSwapWord((WordBase)signed(offset), expectedValue, newValue, locationIdentity);
+        return compareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
     }
 
     @Override

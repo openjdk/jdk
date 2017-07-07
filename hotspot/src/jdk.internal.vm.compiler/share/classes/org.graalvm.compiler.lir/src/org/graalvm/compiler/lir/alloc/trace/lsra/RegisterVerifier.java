@@ -32,8 +32,7 @@ import java.util.EnumSet;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
@@ -46,8 +45,6 @@ import org.graalvm.compiler.lir.alloc.trace.lsra.TraceLinearScanPhase.TraceLinea
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.Value;
 
-/**
- */
 final class RegisterVerifier {
 
     TraceLinearScan allocator;
@@ -88,7 +85,8 @@ final class RegisterVerifier {
 
     @SuppressWarnings("try")
     void verify(AbstractBlockBase<?> start) {
-        try (Scope s = Debug.scope("RegisterVerifier")) {
+        DebugContext debug = allocator.getDebug();
+        try (DebugContext.Scope s = debug.scope("RegisterVerifier")) {
             // setup input registers (method arguments) for first block
             TraceInterval[] inputState = new TraceInterval[stateSize()];
             setStateForBlock(start, inputState);
@@ -106,18 +104,19 @@ final class RegisterVerifier {
 
     @SuppressWarnings("try")
     private void processBlock(AbstractBlockBase<?> block) {
-        try (Indent indent = Debug.logAndIndent("processBlock B%d", block.getId())) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("processBlock B%d", block.getId())) {
             // must copy state because it is modified
             TraceInterval[] inputState = copy(stateForBlock(block));
 
-            try (Indent indent2 = Debug.logAndIndent("Input-State of intervals:")) {
+            try (Indent indent2 = debug.logAndIndent("Input-State of intervals:")) {
                 printState(inputState);
             }
 
             // process all operations of the block
             processOperations(block, inputState);
 
-            try (Indent indent2 = Debug.logAndIndent("Output-State of intervals:")) {
+            try (Indent indent2 = debug.logAndIndent("Output-State of intervals:")) {
                 printState(inputState);
             }
 
@@ -129,13 +128,14 @@ final class RegisterVerifier {
     }
 
     protected void printState(TraceInterval[] inputState) {
+        DebugContext debug = allocator.getDebug();
         for (int i = 0; i < stateSize(); i++) {
             Register reg = allocator.getRegisters().get(i);
             assert reg.number == i;
             if (inputState[i] != null) {
-                Debug.log(" %6s %4d  --  %s", reg, inputState[i].operandNumber, inputState[i]);
+                debug.log(" %6s %4d  --  %s", reg, inputState[i].operandNumber, inputState[i]);
             } else {
-                Debug.log(" %6s   __", reg);
+                debug.log(" %6s   __", reg);
             }
         }
     }
@@ -143,6 +143,7 @@ final class RegisterVerifier {
     private void processSuccessor(AbstractBlockBase<?> block, TraceInterval[] inputState) {
         TraceInterval[] savedState = stateForBlock(block);
 
+        DebugContext debug = allocator.getDebug();
         if (savedState != null) {
             // this block was already processed before.
             // check if new inputState is consistent with savedState
@@ -159,23 +160,23 @@ final class RegisterVerifier {
                         savedStateCorrect = false;
                         savedState[i] = null;
 
-                        Debug.log("processSuccessor B%d: invalidating slot %d", block.getId(), i);
+                        debug.log("processSuccessor B%d: invalidating slot %d", block.getId(), i);
                     }
                 }
             }
 
             if (savedStateCorrect) {
                 // already processed block with correct inputState
-                Debug.log("processSuccessor B%d: previous visit already correct", block.getId());
+                debug.log("processSuccessor B%d: previous visit already correct", block.getId());
             } else {
                 // must re-visit this block
-                Debug.log("processSuccessor B%d: must re-visit because input state changed", block.getId());
+                debug.log("processSuccessor B%d: must re-visit because input state changed", block.getId());
                 addToWorkList(block);
             }
 
         } else {
             // block was not processed before, so set initial inputState
-            Debug.log("processSuccessor B%d: initial visit", block.getId());
+            debug.log("processSuccessor B%d: initial visit", block.getId());
 
             setStateForBlock(block, copy(inputState));
             addToWorkList(block);
@@ -186,14 +187,14 @@ final class RegisterVerifier {
         return inputState.clone();
     }
 
-    static void statePut(TraceInterval[] inputState, Value location, TraceInterval interval) {
+    static void statePut(DebugContext debug, TraceInterval[] inputState, Value location, TraceInterval interval) {
         if (location != null && isRegister(location)) {
             Register reg = asRegister(location);
             int regNum = reg.number;
             if (interval != null) {
-                Debug.log("%s = v%d", reg, interval.operandNumber);
+                debug.log("%s = v%d", reg, interval.operandNumber);
             } else if (inputState[regNum] != null) {
-                Debug.log("%s = null", reg);
+                debug.log("%s = null", reg);
             }
 
             inputState[regNum] = interval;
@@ -213,6 +214,7 @@ final class RegisterVerifier {
 
     void processOperations(AbstractBlockBase<?> block, final TraceInterval[] inputState) {
         ArrayList<LIRInstruction> ops = allocator.getLIR().getLIRforBlock(block);
+        DebugContext debug = allocator.getDebug();
         InstructionValueConsumer useConsumer = new InstructionValueConsumer() {
 
             @Override
@@ -236,7 +238,7 @@ final class RegisterVerifier {
                     interval = interval.getSplitChildAtOpId(op.id(), mode);
                 }
 
-                statePut(inputState, interval.location(), interval.splitParent());
+                statePut(debug, inputState, interval.location(), interval.splitParent());
             }
         };
 
@@ -244,8 +246,8 @@ final class RegisterVerifier {
         for (int i = 0; i < ops.size(); i++) {
             final LIRInstruction op = ops.get(i);
 
-            if (Debug.isLogEnabled()) {
-                Debug.log("%s", op.toStringWithIdPrefix());
+            if (debug.isLogEnabled()) {
+                debug.log("%s", op.toStringWithIdPrefix());
             }
 
             // check if input operands are correct
@@ -253,7 +255,7 @@ final class RegisterVerifier {
             // invalidate all caller save registers at calls
             if (op.destroysCallerSavedRegisters()) {
                 for (Register r : allocator.getRegisterAllocationConfig().getRegisterConfig().getCallerSaveRegisters()) {
-                    statePut(inputState, r.asValue(), null);
+                    statePut(debug, inputState, r.asValue(), null);
                 }
             }
             op.visitEachAlive(useConsumer);

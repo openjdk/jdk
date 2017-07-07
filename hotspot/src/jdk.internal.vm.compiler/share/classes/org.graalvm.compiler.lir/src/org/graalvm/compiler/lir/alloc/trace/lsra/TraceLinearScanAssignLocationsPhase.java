@@ -38,7 +38,7 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -165,7 +165,8 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
 
         @SuppressWarnings("try")
         private void assignBlock(AbstractBlockBase<?> block) {
-            try (Indent indent2 = Debug.logAndIndent("assign locations in block B%d", block.getId())) {
+            DebugContext debug = allocator.getDebug();
+            try (Indent indent2 = debug.logAndIndent("assign locations in block B%d", block.getId())) {
                 ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
                 handleBlockBegin(block, instructions);
                 int numInst = instructions.size();
@@ -312,7 +313,7 @@ final class TraceLinearScanAssignLocationsPhase extends TraceLinearScanAllocatio
 
         @SuppressWarnings("try")
         private void assign() {
-            try (Indent indent = Debug.logAndIndent("assign locations")) {
+            try (Indent indent = allocator.getDebug().logAndIndent("assign locations")) {
                 for (AbstractBlockBase<?> block : allocator.sortedBlocks()) {
                     assignBlock(block);
                 }

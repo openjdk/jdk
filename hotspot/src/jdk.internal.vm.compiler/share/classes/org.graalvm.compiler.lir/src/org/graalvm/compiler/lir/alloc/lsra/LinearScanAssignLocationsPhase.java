@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.lir.InstructionValueProcedure;
@@ -230,9 +230,10 @@ public class LinearScanAssignLocationsPhase extends LinearScanAllocationPhase {
 
     @SuppressWarnings("try")
     private void assignLocations() {
-        try (Indent indent = Debug.logAndIndent("assign locations")) {
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.logAndIndent("assign locations")) {
             for (AbstractBlockBase<?> block : allocator.sortedBlocks()) {
-                try (Indent indent2 = Debug.logAndIndent("assign locations in block B%d", block.getId())) {
+                try (Indent indent2 = debug.logAndIndent("assign locations in block B%d", block.getId())) {
                     assignLocations(allocator.getLIR().getLIRforBlock(block));
                 }
             }

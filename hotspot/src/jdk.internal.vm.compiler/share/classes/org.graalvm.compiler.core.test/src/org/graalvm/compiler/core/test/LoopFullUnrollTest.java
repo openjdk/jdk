@@ -22,8 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
@@ -83,15 +82,16 @@ public class LoopFullUnrollTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     private void test(String snippet, int loopCount) {
-        try (Scope s = Debug.scope(getClass().getSimpleName(), new DebugDumpScope(snippet))) {
-            final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope(getClass().getSimpleName(), new DebugDumpScope(snippet))) {
+            final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO, debug);
 
             PhaseContext context = new PhaseContext(getProviders());
             new LoopFullUnrollPhase(new CanonicalizerPhase(), new DefaultLoopPolicies()).apply(graph, context);
 
             assertTrue(graph.getNodes().filter(LoopBeginNode.class).count() == loopCount);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

@@ -22,15 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
-
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.nodes.ParameterNode;
 import org.graalvm.compiler.nodes.PiNode;
@@ -44,6 +36,12 @@ import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class PushNodesThroughPiTest extends GraalCompilerTest {
 
@@ -77,7 +75,8 @@ public class PushNodesThroughPiTest extends GraalCompilerTest {
     @SuppressWarnings("try")
     public void test1() {
         final String snippet = "test1Snippet";
-        try (Scope s = Debug.scope("PushThroughPi", new DebugDumpScope(snippet))) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("PushThroughPi", new DebugDumpScope(snippet))) {
             StructuredGraph graph = compileTestSnippet(snippet);
             for (ReadNode rn : graph.getNodes().filter(ReadNode.class)) {
                 OffsetAddressNode address = (OffsetAddressNode) rn.getAddress();
@@ -96,7 +95,7 @@ public class PushNodesThroughPiTest extends GraalCompilerTest {
 
             Assert.assertTrue(graph.getNodes().filter(IsNullNode.class).count() == 1);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

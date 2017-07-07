@@ -22,21 +22,15 @@
  */
 package org.graalvm.compiler.core.test.inlining;
 
-import jdk.vm.ci.code.site.InfopointReason;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -44,6 +38,11 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class InliningTest extends GraalCompilerTest {
 
@@ -236,24 +235,26 @@ public class InliningTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     private StructuredGraph getGraph(final String snippet, final boolean eagerInfopointMode) {
-        try (Scope s = Debug.scope("InliningTest", new DebugDumpScope(snippet, true))) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("InliningTest", new DebugDumpScope(snippet, true))) {
             ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
-            StructuredGraph graph = eagerInfopointMode ? parseDebug(method, AllowAssumptions.YES) : parseEager(method, AllowAssumptions.YES);
-            try (Scope s2 = Debug.scope("Inlining", graph)) {
+            Builder builder = builder(method, AllowAssumptions.YES, debug);
+            StructuredGraph graph = eagerInfopointMode ? parse(builder, getDebugGraphBuilderSuite()) : parse(builder, getEagerGraphBuilderSuite());
+            try (DebugContext.Scope s2 = debug.scope("Inlining", graph)) {
                 PhaseSuite<HighTierContext> graphBuilderSuite = eagerInfopointMode
                                 ? getCustomGraphBuilderSuite(GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withFullInfopoints(true))
                                 : getDefaultGraphBuilderSuite();
                 HighTierContext context = new HighTierContext(getProviders(), graphBuilderSuite, OptimisticOptimizations.ALL);
-                Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+                debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
                 new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
-                Debug.dump(Debug.BASIC_LEVEL, graph, "Graph");
+                debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
                 new CanonicalizerPhase().apply(graph, context);
                 new DeadCodeEliminationPhase().apply(graph);
                 return graph;
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

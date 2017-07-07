@@ -27,7 +27,6 @@ import static org.graalvm.compiler.core.common.GraalOptions.TrivialInliningSize;
 
 import java.util.Map;
 
-import org.graalvm.compiler.hotspot.FingerprintUtil;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.options.Option;
@@ -67,7 +66,7 @@ public class AOTInliningPolicy extends GreedyInliningPolicy {
 
         for (int i = 0; i < info.numberOfMethods(); ++i) {
             HotSpotResolvedObjectType t = (HotSpotResolvedObjectType) info.methodAt(i).getDeclaringClass();
-            if (FingerprintUtil.getFingerprint(t) == 0) {
+            if (t.getFingerprint() == 0) {
                 return false;
             }
         }

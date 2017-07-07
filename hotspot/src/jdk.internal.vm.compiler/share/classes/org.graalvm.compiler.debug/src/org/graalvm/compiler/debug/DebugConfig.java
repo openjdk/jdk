@@ -25,86 +25,68 @@ package org.graalvm.compiler.debug;
 import java.io.PrintStream;
 import java.util.Collection;
 
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.meta.JavaMethod;
 
 public interface DebugConfig {
 
     /**
-     * Returns the option values that can be used to configure details of debug clients.
+     * Returns the option values used to configure this object.
      */
     OptionValues getOptions();
 
     /**
-     * Determines the current log level in the {@linkplain Debug#currentScope() current debug scope}
-     * .
+     * Determines the current log level in {@code scope}.
      */
-    int getLogLevel();
+    int getLogLevel(DebugContext.Scope scope);
 
     /**
-     * Determines the current dump level in the {@linkplain Debug#currentScope() current debug
-     * scope}.
+     * Determines the current dump level in {@code scope}.
      */
-    int getDumpLevel();
+    int getDumpLevel(DebugContext.Scope scope);
 
     /**
-     * Determines if logging can be enabled in the current method, regardless of the
-     * {@linkplain Debug#currentScope() current debug scope}.
+     * Determines if logging is enabled for any {@link JavaMethod} in {@code scope}'s
+     * {@linkplain Scope#getCurrentContext() context}.
      */
-    boolean isLogEnabledForMethod();
+    boolean isLogEnabledForMethod(DebugContext.Scope scope);
 
     /**
-     * Determines if counting is enabled in the {@linkplain Debug#currentScope() current debug
-     * scope}.
+     * Determines if counting is enabled in {@code scope}.
      *
-     * @see Debug#counter(CharSequence)
+     * @see DebugContext#counter(CharSequence)
      */
-    boolean isCountEnabled();
+    boolean isCountEnabled(DebugContext.Scope scope);
 
     /**
-     * Determines if memory use tracking is enabled in the {@linkplain Debug#currentScope() current
-     * debug scope}.
+     * Determines if memory use tracking is {@code scope}.
      *
-     * @see Debug#memUseTracker(CharSequence)
+     * @see DebugContext#memUseTracker(CharSequence)
      */
-    boolean isMemUseTrackingEnabled();
+    boolean isMemUseTrackingEnabled(DebugContext.Scope scope);
 
     /**
-     * Determines if dumping can be enabled in the current method, regardless of the
-     * {@linkplain Debug#currentScope() current debug scope}.
+     * Determines if dumping is enabled for any {@link JavaMethod} in {@code scope}'s
+     * {@linkplain Scope#getCurrentContext() context}.
      */
-    boolean isDumpEnabledForMethod();
+    boolean isDumpEnabledForMethod(DebugContext.Scope scope);
 
     /**
-     * @see Debug#isVerifyEnabled()
+     * @see DebugContext#isVerifyEnabled()
      */
-    boolean isVerifyEnabled();
+    boolean isVerifyEnabled(DebugContext.Scope scope);
 
     /**
-     * @see Debug#isVerifyEnabledForMethod()
+     * @see DebugContext#isVerifyEnabledForMethod()
      */
-    boolean isVerifyEnabledForMethod();
+    boolean isVerifyEnabledForMethod(DebugContext.Scope scope);
 
     /**
-     * @see Debug#isMethodMeterEnabled()
+     * @see DebugContext#timer(CharSequence)
      */
-    boolean isMethodMeterEnabled();
-
-    /**
-     * Adds an object the context used by this configuration to do filtering.
-     */
-    void addToContext(Object o);
-
-    /**
-     * Removes an object the context used by this configuration to do filtering.
-     *
-     * This should only removes extra context added by {@link #addToContext(Object)}.
-     */
-    void removeFromContext(Object o);
-
-    /**
-     * @see Debug#timer(CharSequence)
-     */
-    boolean isTimeEnabled();
+    boolean isTimeEnabled(DebugContext.Scope scope);
 
     /**
      * Handles notification of an exception occurring within a debug scope.
@@ -112,18 +94,47 @@ public interface DebugConfig {
      * @return the exception object that is to be propagated to parent scope. A value of
      *         {@code null} indicates that {@code e} is to be propagated.
      */
-    RuntimeException interceptException(Throwable e);
+    RuntimeException interceptException(DebugContext debug, Throwable e);
 
     /**
-     * Gets the modifiable collection of dump handlers registered with this configuration.
+     * Gets an unmodifiable view of the dump handlers registered with this configuration.
      */
     Collection<DebugDumpHandler> dumpHandlers();
 
+    /**
+     * Gets the {@link PrintStream} for logging.
+     */
     PrintStream output();
 
     /**
-     * Gets the modifiable collection of verify handlers registered with this configuration.
+     * Gets an unmodifiable view of the verify handlers registered with this configuration.
      */
     Collection<DebugVerifyHandler> verifyHandlers();
 
+    default void closeDumpHandlers(boolean ignoreErrors) {
+        for (DebugDumpHandler handler : dumpHandlers()) {
+            try {
+                handler.close();
+            } catch (Throwable e) {
+                if (!ignoreErrors) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts a {@link JavaMethod} from an opaque debug context.
+     *
+     * @return the {@link JavaMethod} represented by {@code context} or null
+     */
+    static JavaMethod asJavaMethod(Object context) {
+        if (context instanceof JavaMethodContext) {
+            return ((JavaMethodContext) context).asJavaMethod();
+        }
+        if (context instanceof JavaMethod) {
+            return (JavaMethod) context;
+        }
+        return null;
+    }
 }

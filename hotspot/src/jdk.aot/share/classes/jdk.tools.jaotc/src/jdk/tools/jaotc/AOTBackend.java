@@ -27,8 +27,7 @@ import java.util.ListIterator;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -82,6 +81,10 @@ public class AOTBackend {
         return backend;
     }
 
+    public HotSpotProviders getProviders() {
+        return providers;
+    }
+
     private Suites getSuites() {
         // create suites every time, as we modify options for the compiler
         return backend.getSuites().getDefaultSuites(graalOptions);
@@ -93,10 +96,10 @@ public class AOTBackend {
     }
 
     @SuppressWarnings("try")
-    public CompilationResult compileMethod(ResolvedJavaMethod resolvedMethod) {
-        StructuredGraph graph = buildStructuredGraph(resolvedMethod);
+    public CompilationResult compileMethod(ResolvedJavaMethod resolvedMethod, DebugContext debug) {
+        StructuredGraph graph = buildStructuredGraph(resolvedMethod, debug);
         if (graph != null) {
-            return compileGraph(resolvedMethod, graph);
+            return compileGraph(resolvedMethod, graph, debug);
         }
         return null;
     }
@@ -105,12 +108,13 @@ public class AOTBackend {
      * Build a structured graph for the member.
      *
      * @param javaMethod method for whose code the graph is to be created
+     * @param debug
      * @return structured graph
      */
     @SuppressWarnings("try")
-    private StructuredGraph buildStructuredGraph(ResolvedJavaMethod javaMethod) {
-        try (Scope s = Debug.scope("AOTParseMethod")) {
-            StructuredGraph graph = new StructuredGraph.Builder(graalOptions).method(javaMethod).useProfilingInfo(false).build();
+    private StructuredGraph buildStructuredGraph(ResolvedJavaMethod javaMethod, DebugContext debug) {
+        try (DebugContext.Scope s = debug.scope("AOTParseMethod")) {
+            StructuredGraph graph = new StructuredGraph.Builder(graalOptions, debug).method(javaMethod).useProfilingInfo(false).build();
             graphBuilderSuite.apply(graph, highTierContext);
             return graph;
         } catch (Throwable e) {
@@ -120,8 +124,8 @@ public class AOTBackend {
     }
 
     @SuppressWarnings("try")
-    private CompilationResult compileGraph(ResolvedJavaMethod resolvedMethod, StructuredGraph graph) {
-        try (Scope s = Debug.scope("AOTCompileMethod")) {
+    private CompilationResult compileGraph(ResolvedJavaMethod resolvedMethod, StructuredGraph graph, DebugContext debug) {
+        try (DebugContext.Scope s = debug.scope("AOTCompileMethod")) {
             ProfilingInfo profilingInfo = DefaultProfilingInfo.get(TriState.FALSE);
 
             final boolean isImmutablePIC = true;

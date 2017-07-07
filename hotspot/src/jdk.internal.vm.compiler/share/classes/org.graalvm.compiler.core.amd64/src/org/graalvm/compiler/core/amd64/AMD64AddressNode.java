@@ -26,10 +26,16 @@ package org.graalvm.compiler.core.amd64;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.Simplifiable;
+import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.compiler.nodes.PhiNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -42,7 +48,7 @@ import jdk.vm.ci.meta.Value;
  * optional.
  */
 @NodeInfo
-public class AMD64AddressNode extends AddressNode implements LIRLowerable {
+public class AMD64AddressNode extends AddressNode implements Simplifiable, LIRLowerable {
 
     public static final NodeClass<AMD64AddressNode> TYPE = NodeClass.create(AMD64AddressNode.class);
 
@@ -62,6 +68,28 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
         this.base = base;
         this.index = index;
         this.scale = Scale.Times1;
+    }
+
+    public void canonicalizeIndex(SimplifierTool tool) {
+        if (index instanceof AddNode) {
+            AddNode add = (AddNode) index;
+            ValueNode valX = add.getX();
+            if (valX instanceof PhiNode) {
+                PhiNode phi = (PhiNode) valX;
+                if (phi.merge() instanceof LoopBeginNode) {
+                    LoopBeginNode loopNode = (LoopBeginNode) phi.merge();
+                    if (!loopNode.isSimpleLoop()) {
+                        ValueNode valY = add.getY();
+                        if (valY instanceof ConstantNode) {
+                            int addBy = valY.asJavaConstant().asInt();
+                            displacement = displacement + scale.value * addBy;
+                            replaceFirstInput(index, phi);
+                            tool.addToWorkList(index);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -134,5 +162,10 @@ public class AMD64AddressNode extends AddressNode implements LIRLowerable {
     @Override
     public long getMaxConstantDisplacement() {
         return displacement;
+    }
+
+    @Override
+    public void simplify(SimplifierTool tool) {
+        canonicalizeIndex(tool);
     }
 }

@@ -59,7 +59,10 @@ import jdk.tools.jaotc.collect.jar.JarSourceProvider;
 import jdk.tools.jaotc.collect.module.ModuleSourceProvider;
 import jdk.tools.jaotc.utils.Timer;
 
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalJVMCICompiler;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Activation;
 import org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompilerFactory;
@@ -72,6 +75,7 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -467,6 +471,7 @@ public class Main implements LogPrinter {
             }
 
             AOTBackend aotBackend = new AOTBackend(this, graalOptions, backend, filters);
+            SnippetReflectionProvider snippetReflection = aotBackend.getProviders().getSnippetReflection();
             AOTCompiler compiler = new AOTCompiler(this, graalOptions, aotBackend, options.threads);
             classes = compiler.compileClasses(classes);
 
@@ -485,7 +490,10 @@ public class Main implements LogPrinter {
 
             BinaryContainer binaryContainer = new BinaryContainer(graalOptions, graalHotSpotVMConfig, graphBuilderConfig, JVM_VERSION);
             DataBuilder dataBuilder = new DataBuilder(this, backend, classes, binaryContainer);
-            dataBuilder.prepareData();
+
+            try (DebugContext debug = DebugContext.create(graalOptions, new GraalDebugHandlersFactory(snippetReflection)); Activation a = debug.activate()) {
+                dataBuilder.prepareData(debug);
+            }
 
             // Print information about section sizes
             printContainerInfo(binaryContainer.getHeaderContainer().getContainer());
