@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter.SerialFieldWriter;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter.SerialMethodWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -64,7 +62,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * @param configuration the configuration data for the doclet
      */
-    public SerializedFormWriterImpl(ConfigurationImpl configuration) {
+    public SerializedFormWriterImpl(HtmlConfiguration configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM);
         visibleClasses = configuration.getIncludedTypeElements();
     }

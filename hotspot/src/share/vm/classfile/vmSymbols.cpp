@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,25 +632,28 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:
-  case vmIntrinsics::_compareAndSwapLong:
-  case vmIntrinsics::_weakCompareAndSwapLong:
-  case vmIntrinsics::_weakCompareAndSwapLongAcquire:
-  case vmIntrinsics::_weakCompareAndSwapLongRelease:
-  case vmIntrinsics::_compareAndSwapInt:
-  case vmIntrinsics::_weakCompareAndSwapInt:
-  case vmIntrinsics::_weakCompareAndSwapIntAcquire:
-  case vmIntrinsics::_weakCompareAndSwapIntRelease:
-  case vmIntrinsics::_compareAndSwapObject:
-  case vmIntrinsics::_weakCompareAndSwapObject:
-  case vmIntrinsics::_weakCompareAndSwapObjectAcquire:
-  case vmIntrinsics::_weakCompareAndSwapObjectRelease:
-  case vmIntrinsics::_compareAndExchangeIntVolatile:
+  case vmIntrinsics::_compareAndSetLong:
+  case vmIntrinsics::_weakCompareAndSetLong:
+  case vmIntrinsics::_weakCompareAndSetLongPlain:
+  case vmIntrinsics::_weakCompareAndSetLongAcquire:
+  case vmIntrinsics::_weakCompareAndSetLongRelease:
+  case vmIntrinsics::_compareAndSetInt:
+  case vmIntrinsics::_weakCompareAndSetInt:
+  case vmIntrinsics::_weakCompareAndSetIntPlain:
+  case vmIntrinsics::_weakCompareAndSetIntAcquire:
+  case vmIntrinsics::_weakCompareAndSetIntRelease:
+  case vmIntrinsics::_compareAndSetObject:
+  case vmIntrinsics::_weakCompareAndSetObject:
+  case vmIntrinsics::_weakCompareAndSetObjectPlain:
+  case vmIntrinsics::_weakCompareAndSetObjectAcquire:
+  case vmIntrinsics::_weakCompareAndSetObjectRelease:
+  case vmIntrinsics::_compareAndExchangeInt:
   case vmIntrinsics::_compareAndExchangeIntAcquire:
   case vmIntrinsics::_compareAndExchangeIntRelease:
-  case vmIntrinsics::_compareAndExchangeLongVolatile:
+  case vmIntrinsics::_compareAndExchangeLong:
   case vmIntrinsics::_compareAndExchangeLongAcquire:
   case vmIntrinsics::_compareAndExchangeLongRelease:
-  case vmIntrinsics::_compareAndExchangeObjectVolatile:
+  case vmIntrinsics::_compareAndExchangeObject:
   case vmIntrinsics::_compareAndExchangeObjectAcquire:
   case vmIntrinsics::_compareAndExchangeObjectRelease:
     if (!InlineUnsafeOps) return true;

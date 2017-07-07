@@ -188,8 +188,8 @@ import java.lang.Double;
  * administrator to replace the default preferences implementation with an
  * alternative implementation.
  *
- * <p>Implementation note: In Sun's JRE, the {@code PreferencesFactory}
- * implementation is located as follows:
+ * @implNote
+ * The {@code PreferencesFactory} implementation is located as follows:
  *
  * <ol>
  *

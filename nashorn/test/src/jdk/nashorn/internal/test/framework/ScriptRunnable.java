@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,10 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
         if (errors != 0 || checkCompilerMsg) {
             if (expectCompileFailure || checkCompilerMsg) {
-                final PrintStream outputDest = new PrintStream(new FileOutputStream(errorFileName));
-                TestHelper.dumpFile(outputDest, new StringReader(new String(err.toByteArray())));
-                outputDest.println("--");
+                try (PrintStream outputDest = new PrintStream(new FileOutputStream(errorFileName))) {
+                    TestHelper.dumpFile(outputDest, new StringReader(new String(err.toByteArray())));
+                    outputDest.println("--");
+                }
             } else {
                 log(new String(err.toByteArray()));
             }
@@ -224,7 +225,6 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
         BufferedReader expected;
         if (expectedFile.exists()) {
-            expected = new BufferedReader(new InputStreamReader(new FileInputStream(expectedFileName0)));
             // copy expected file overwriting existing file and preserving last
             // modified time of source
             try {
@@ -235,11 +235,14 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
             } catch (final IOException ex) {
                 fail("failed to copy expected " + expectedFileName + " to " + copyExpectedFileName + ": " + ex.getMessage());
             }
+            expected = new BufferedReader(new InputStreamReader(new FileInputStream(expectedFileName0)));
         } else {
             expected = new BufferedReader(new StringReader(""));
         }
 
-        final BufferedReader actual = new BufferedReader(new InputStreamReader(new FileInputStream(outputFileName0)));
-        compare(actual, expected, compareCompilerMsg);
+        try (BufferedReader actual = new BufferedReader(new InputStreamReader(new FileInputStream(outputFileName0)));
+             BufferedReader expected0 = expected){
+            compare(actual, expected0, compareCompilerMsg);
+        }
     }
 }

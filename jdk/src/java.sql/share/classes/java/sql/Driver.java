@@ -54,6 +54,7 @@ import java.util.logging.Logger;
  * @see DriverManager
  * @see Connection
  * @see DriverAction
+ * @since 1.1
  */
 public interface Driver {
 

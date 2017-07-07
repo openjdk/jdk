@@ -119,7 +119,7 @@ import java.util.function.Function;
  * Using a static nested class, as above, will avoid accidentally retaining the
  * object reference.
  * <p>
- * <a name="compatible-cleaners"></a>
+ * <a id="compatible-cleaners"></a>
  * Cleaning actions should be prepared to be invoked concurrently with
  * other cleaning actions.
  * Typically the cleaning actions should be very quick to execute

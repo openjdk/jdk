@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,9 +176,9 @@ class XPathFactoryFinder  {
 
         String javah = ss.getSystemProperty( "java.home" );
         String configFile = javah + File.separator +
-        "lib" + File.separator + "jaxp.properties";
+        "conf" + File.separator + "jaxp.properties";
 
-        // try to read from $java.home/lib/jaxp.properties
+        // try to read from $java.home/conf/jaxp.properties
         try {
             if(firstTime){
                 synchronized(cacheProps){
@@ -193,7 +193,7 @@ class XPathFactoryFinder  {
                 }
             }
             final String factoryClassName = cacheProps.getProperty(propertyName);
-            debugPrintln(()->"found " + factoryClassName + " in $java.home/jaxp.properties");
+            debugPrintln(()->"found " + factoryClassName + " in $java.home/conf/jaxp.properties");
 
             if (factoryClassName != null) {
                 xpathFactory = createInstance(factoryClassName, true);
