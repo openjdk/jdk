@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
  * A collection of utility methods used by the SelectorProvider.inheritedChannel
  * unit tests.
  */
-import java.net.*;
-import java.io.*;
-import java.nio.channels.*;
-import java.lang.reflect.*;
+import java.io.File;
+import java.io.FileDescriptor;
+import java.lang.reflect.Field;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 public class Util {
 

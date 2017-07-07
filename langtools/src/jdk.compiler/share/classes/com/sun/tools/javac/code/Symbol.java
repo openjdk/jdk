@@ -951,13 +951,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Name getSimpleName() {
-            Name fullName = getQualifiedName();
-            int lastPeriod = fullName.lastIndexOf((byte)'.');
-            if (lastPeriod == -1) {
-                return fullName;
-            } else {
-                return fullName.subName(lastPeriod + 1, fullName.length());
-            }
+            return Convert.shortName(name);
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -2159,18 +2153,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          */
         public JCDiagnostic diag;
 
-        /** A localized string describing the failure.
-         * @deprecated Use {@code getDetail()} or {@code getMessage()}
-         */
-        @Deprecated
-        public String errmsg;
-
-        public CompletionFailure(Symbol sym, String errmsg) {
-            this.sym = sym;
-            this.errmsg = errmsg;
-//          this.printStackTrace();//DEBUG
-        }
-
         public CompletionFailure(Symbol sym, JCDiagnostic diag) {
             this.sym = sym;
             this.diag = diag;
@@ -2183,14 +2165,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override
         public String getMessage() {
-            if (diag != null)
-                return diag.getMessage(null);
-            else
-                return errmsg;
+            return diag.getMessage(null);
         }
 
-        public Object getDetailValue() {
-            return (diag != null ? diag : errmsg);
+        public JCDiagnostic getDetailValue() {
+            return diag;
         }
 
         @Override

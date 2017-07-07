@@ -28,7 +28,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
- * @run main/othervm T7043922
  */
 
 import com.sun.source.util.JavacTask;

@@ -41,6 +41,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
@@ -811,7 +812,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
                     if (descriptorType.getParameterTypes().length() != tree.params.length()) {
                         checkContext.report(tree,
-                                diags.fragment("incompatible.arg.types.in.lambda"));
+                                diags.fragment(Fragments.IncompatibleArgTypesInLambda));
                     }
 
                     Type currentReturnType = descriptorType.getReturnType();
@@ -821,8 +822,7 @@ public class DeferredAttr extends JCTree.Visitor {
                             TreeInfo.isExpressionStatement((JCExpression)tree.getBody());
                         if (!isExpressionCompatible) {
                             resultInfo.checkContext.report(tree.pos(),
-                                diags.fragment("incompatible.ret.type.in.lambda",
-                                    diags.fragment("missing.ret.val", currentReturnType)));
+                                diags.fragment(Fragments.IncompatibleRetTypeInLambda(Fragments.MissingRetVal(currentReturnType))));
                         }
                     } else {
                         LambdaBodyStructChecker lambdaBodyChecker =
@@ -834,20 +834,19 @@ public class DeferredAttr extends JCTree.Visitor {
                         if (returnTypeIsVoid) {
                             if (!isVoidCompatible) {
                                 resultInfo.checkContext.report(tree.pos(),
-                                    diags.fragment("unexpected.ret.val"));
+                                    diags.fragment(Fragments.UnexpectedRetVal));
                             }
                         } else {
                             boolean isValueCompatible = lambdaBodyChecker.isPotentiallyValueCompatible
                                 && !canLambdaBodyCompleteNormally(tree);
                             if (!isValueCompatible && !isVoidCompatible) {
                                 log.error(tree.body.pos(),
-                                    "lambda.body.neither.value.nor.void.compatible");
+                                          Errors.LambdaBodyNeitherValueNorVoidCompatible);
                             }
 
                             if (!isValueCompatible) {
                                 resultInfo.checkContext.report(tree.pos(),
-                                    diags.fragment("incompatible.ret.type.in.lambda",
-                                        diags.fragment("missing.ret.val", currentReturnType)));
+                                    diags.fragment(Fragments.IncompatibleRetTypeInLambda(Fragments.MissingRetVal(currentReturnType))));
                             }
                         }
                     }

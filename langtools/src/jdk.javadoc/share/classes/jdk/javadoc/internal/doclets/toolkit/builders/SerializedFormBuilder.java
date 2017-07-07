@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.util.*;
+
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -53,11 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * @author Bhavesh Patel (Modified)
  */
 public class SerializedFormBuilder extends AbstractBuilder {
-
-    /**
-     * The root element of the serialized form XML is {@value}.
-     */
-    public static final String NAME = "SerializedForm";
 
     /**
      * The writer for this builder.
@@ -139,28 +137,21 @@ public class SerializedFormBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(layoutParser.parseXML(NAME), contentTree);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return NAME;
+        buildSerializedForm(contentTree);
     }
 
     /**
      * Build the serialized form.
      *
-     * @param node the XML element that specifies which components to document
      * @param serializedTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializedForm(XMLNode node, Content serializedTree) throws DocletException {
+    protected void buildSerializedForm(Content serializedTree) throws DocletException {
         serializedTree = writer.getHeader(configuration.getText(
                 "doclet.Serialized_Form"));
-        buildChildren(node, serializedTree);
+
+        buildSerializedFormSummaries(serializedTree);
+
         writer.addFooter(serializedTree);
         writer.printDocument(serializedTree);
     }
@@ -168,16 +159,16 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the serialized form summaries.
      *
-     * @param node the XML element that specifies which components to document
      * @param serializedTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializedFormSummaries(XMLNode node, Content serializedTree)
+    protected void buildSerializedFormSummaries(Content serializedTree)
             throws DocletException {
         Content serializedSummariesTree = writer.getSerializedSummariesHeader();
         for (PackageElement pkg : configuration.packages) {
             currentPackage = pkg;
-            buildChildren(node, serializedSummariesTree);
+
+            buildPackageSerializedForm(serializedSummariesTree);
         }
         serializedTree.addContent(writer.getSerializedContent(
                 serializedSummariesTree));
@@ -186,11 +177,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the package serialized form for the current package being processed.
      *
-     * @param node the XML element that specifies which components to document
      * @param serializedSummariesTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPackageSerializedForm(XMLNode node, Content serializedSummariesTree) throws DocletException {
+    protected void buildPackageSerializedForm(Content serializedSummariesTree) throws DocletException {
         Content packageSerializedTree = writer.getPackageSerializedHeader();
         SortedSet<TypeElement> classes = utils.getAllClassesUnfiltered(currentPackage);
         if (classes.isEmpty()) {
@@ -202,17 +192,19 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (!serialClassFoundToDocument(classes)) {
             return;
         }
-        buildChildren(node, packageSerializedTree);
+
+        buildPackageHeader(packageSerializedTree);
+        buildClassSerializedForm(packageSerializedTree);
+
         writer.addPackageSerializedTree(serializedSummariesTree, packageSerializedTree);
     }
 
     /**
      * Build the package header.
      *
-     * @param node the XML element that specifies which components to document
      * @param packageSerializedTree content tree to which the documentation will be added
      */
-    public void buildPackageHeader(XMLNode node, Content packageSerializedTree) {
+    protected void buildPackageHeader(Content packageSerializedTree) {
         packageSerializedTree.addContent(writer.getPackageHeader(
                 utils.getPackageName(currentPackage)));
     }
@@ -220,11 +212,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the class serialized form.
      *
-     * @param node the XML element that specifies which components to document
      * @param packageSerializedTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildClassSerializedForm(XMLNode node, Content packageSerializedTree)
+    protected void buildClassSerializedForm(Content packageSerializedTree)
             throws DocletException {
         Content classSerializedTree = writer.getClassSerializedHeader();
         SortedSet<TypeElement> typeElements = utils.getAllClassesUnfiltered(currentPackage);
@@ -237,7 +228,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
                     continue;
                 }
                 Content classTree = writer.getClassHeader(currentTypeElement);
-                buildChildren(node, classTree);
+
+                buildSerialUIDInfo(classTree);
+                buildClassContent(classTree);
+
                 classSerializedTree.addContent(classTree);
             }
         }
@@ -247,10 +241,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the serial UID information for the given class.
      *
-     * @param node the XML element that specifies which components to document
      * @param classTree content tree to which the serial UID information will be added
      */
-    public void buildSerialUIDInfo(XMLNode node, Content classTree) {
+    protected void buildSerialUIDInfo(Content classTree) {
         Content serialUidTree = writer.getSerialUIDInfoHeader();
         for (Element e : utils.getFieldsUnfiltered(currentTypeElement)) {
             VariableElement field = (VariableElement)e;
@@ -267,25 +260,26 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the summaries for the methods and fields.
      *
-     * @param node the XML element that specifies which components to document
      * @param classTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildClassContent(XMLNode node, Content classTree) throws DocletException {
+    protected void buildClassContent(Content classTree) throws DocletException {
         Content classContentTree = writer.getClassContentHeader();
-        buildChildren(node, classContentTree);
+
+        buildSerializableMethods(classContentTree);
+        buildFieldHeader(classContentTree);
+        buildSerializableFields(classContentTree);
+
         classTree.addContent(classContentTree);
     }
 
     /**
-     * Build the summaries for the methods that belong to the given
-     * class.
+     * Build the summaries for the methods that belong to the given class.
      *
-     * @param node the XML element that specifies which components to document
      * @param classContentTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializableMethods(XMLNode node, Content classContentTree) throws DocletException {
+    protected void buildSerializableMethods(Content classContentTree) throws DocletException {
         Content serializableMethodTree = methodWriter.getSerializableMethodsHeader();
         SortedSet<ExecutableElement> members = utils.serializationMethods(currentTypeElement);
         if (!members.isEmpty()) {
@@ -293,7 +287,11 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 currentMember = member;
                 Content methodsContentTree = methodWriter.getMethodsContentHeader(
                         currentMember == members.last());
-                buildChildren(node, methodsContentTree);
+
+                buildMethodSubHeader(methodsContentTree);
+                buildDeprecatedMethodInfo(methodsContentTree);
+                buildMethodInfo(methodsContentTree);
+
                 serializableMethodTree.addContent(methodsContentTree);
             }
         }
@@ -316,54 +314,51 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the method sub header.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
      */
-    public void buildMethodSubHeader(XMLNode node, Content methodsContentTree)  {
+    protected void buildMethodSubHeader(Content methodsContentTree)  {
         methodWriter.addMemberHeader((ExecutableElement)currentMember, methodsContentTree);
     }
 
     /**
      * Build the deprecated method description.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
      */
-    public void buildDeprecatedMethodInfo(XMLNode node, Content methodsContentTree) {
+    protected void buildDeprecatedMethodInfo(Content methodsContentTree) {
         methodWriter.addDeprecatedMemberInfo((ExecutableElement)currentMember, methodsContentTree);
     }
 
     /**
      * Build the information for the method.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMethodInfo(XMLNode node, Content methodsContentTree) throws DocletException  {
-        if(configuration.nocomment){
+    protected void buildMethodInfo(Content methodsContentTree) throws DocletException  {
+        if (configuration.nocomment) {
             return;
         }
-        buildChildren(node, methodsContentTree);
+
+        buildMethodDescription(methodsContentTree);
+        buildMethodTags(methodsContentTree);
     }
 
     /**
      * Build method description.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
      */
-    public void buildMethodDescription(XMLNode node, Content methodsContentTree) {
+    protected void buildMethodDescription(Content methodsContentTree) {
         methodWriter.addMemberDescription((ExecutableElement)currentMember, methodsContentTree);
     }
 
     /**
      * Build the method tags.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodsContentTree content tree to which the documentation will be added
      */
-    public void buildMethodTags(XMLNode node, Content methodsContentTree) {
+    protected void buildMethodTags(Content methodsContentTree) {
         methodWriter.addMemberTags((ExecutableElement)currentMember, methodsContentTree);
         ExecutableElement method = (ExecutableElement)currentMember;
         if (method.getSimpleName().toString().compareTo("writeExternal") == 0
@@ -380,10 +375,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the field header.
      *
-     * @param node the XML element that specifies which components to document
      * @param classContentTree content tree to which the documentation will be added
      */
-    public void buildFieldHeader(XMLNode node, Content classContentTree) {
+    protected void buildFieldHeader(Content classContentTree) {
         if (!utils.serializableFields(currentTypeElement).isEmpty()) {
             buildFieldSerializationOverview(currentTypeElement, classContentTree);
         }
@@ -419,11 +413,10 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the summaries for the fields that belong to the given class.
      *
-     * @param node the XML element that specifies which components to document
      * @param classContentTree content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSerializableFields(XMLNode node, Content classContentTree)
+    protected void buildSerializableFields(Content classContentTree)
             throws DocletException {
         SortedSet<VariableElement> members = utils.serializableFields(currentTypeElement);
         if (!members.isEmpty()) {
@@ -433,7 +426,11 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 if (!utils.definesSerializableFields(currentTypeElement)) {
                     Content fieldsContentTree = fieldWriter.getFieldsContentHeader(
                             currentMember == members.last());
-                    buildChildren(node, fieldsContentTree);
+
+                    buildFieldSubHeader(fieldsContentTree);
+                    buildFieldDeprecationInfo(fieldsContentTree);
+                    buildFieldInfo(fieldsContentTree);
+
                     serializableFieldsTree.addContent(fieldsContentTree);
                 } else {
                     buildSerialFieldTagsInfo(serializableFieldsTree);
@@ -448,10 +445,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the field sub header.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldsContentTree content tree to which the documentation will be added
      */
-    public void buildFieldSubHeader(XMLNode node, Content fieldsContentTree) {
+    protected void buildFieldSubHeader(Content fieldsContentTree) {
         if (!utils.definesSerializableFields(currentTypeElement)) {
             VariableElement field = (VariableElement) currentMember;
             fieldWriter.addMemberHeader(utils.asTypeElement(field.asType()),
@@ -464,10 +460,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the field deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldsContentTree content tree to which the documentation will be added
      */
-    public void buildFieldDeprecationInfo(XMLNode node, Content fieldsContentTree) {
+    protected void buildFieldDeprecationInfo(Content fieldsContentTree) {
         if (!utils.definesSerializableFields(currentTypeElement)) {
             fieldWriter.addMemberDeprecatedInfo((VariableElement)currentMember,
                     fieldsContentTree);
@@ -479,8 +474,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @param serializableFieldsTree content tree to which the documentation will be added
      */
-    public void buildSerialFieldTagsInfo(Content serializableFieldsTree) {
-        if(configuration.nocomment){
+    protected void buildSerialFieldTagsInfo(Content serializableFieldsTree) {
+        if (configuration.nocomment) {
             return;
         }
         VariableElement field = (VariableElement)currentMember;
@@ -524,17 +519,16 @@ public class SerializedFormBuilder extends AbstractBuilder {
     /**
      * Build the field information.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldsContentTree content tree to which the documentation will be added
      */
-    public void buildFieldInfo(XMLNode node, Content fieldsContentTree) {
-        if(configuration.nocomment){
+    protected void buildFieldInfo(Content fieldsContentTree) {
+        if (configuration.nocomment) {
             return;
         }
         VariableElement field = (VariableElement)currentMember;
         TypeElement te = utils.getEnclosingTypeElement(currentMember);
         // Process default Serializable field.
-        if ((utils.getSerialTrees(field).isEmpty()) /*&& ! field.isSynthetic()*/
+        if ((utils.getSerialTrees(field).isEmpty()) /*&& !field.isSynthetic()*/
                 && configuration.serialwarn) {
             messages.warning(field,
                     "doclet.MissingSerialTag", utils.getFullyQualifiedName(te),

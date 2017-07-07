@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
@@ -68,7 +68,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class TagletWriterImpl extends TagletWriter {
 
     private final HtmlDocletWriter htmlWriter;
-    private final ConfigurationImpl configuration;
+    private final HtmlConfiguration configuration;
     private final Utils utils;
 
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence) {
@@ -438,7 +438,7 @@ public class TagletWriterImpl extends TagletWriter {
     /**
      * {@inheritDoc}
      */
-    public Configuration configuration() {
+    public BaseConfiguration configuration() {
         return configuration;
     }
 }

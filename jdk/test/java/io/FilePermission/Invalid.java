@@ -27,6 +27,8 @@
  * @bug 8167646
  * @summary Better invalid FilePermission
  * @library /test/lib
+ * @build jdk.test.lib.Asserts
+ * @run main Invalid
  */
 
 import jdk.test.lib.Asserts;

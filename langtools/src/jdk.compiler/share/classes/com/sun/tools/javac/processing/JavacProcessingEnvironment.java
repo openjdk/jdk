@@ -69,6 +69,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
@@ -412,7 +413,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     this.iterator = handleServiceLoaderUnavailability("proc.no.service", null);
                 }
             } catch (Throwable t) {
-                log.error("proc.service.problem");
+                log.error(Errors.ProcServiceProblem);
                 throw new Abort(t);
             }
         }
@@ -428,7 +429,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             try {
                 return internalHasNext();
             } catch(ServiceConfigurationError sce) {
-                log.error("proc.bad.config.file", sce.getLocalizedMessage());
+                log.error(Errors.ProcBadConfigFile(sce.getLocalizedMessage()));
                 throw new Abort(sce);
             } catch (Throwable t) {
                 throw new Abort(t);
@@ -444,7 +445,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             try {
                 return internalNext();
             } catch (ServiceConfigurationError sce) {
-                log.error("proc.bad.config.file", sce.getLocalizedMessage());
+                log.error(Errors.ProcBadConfigFile(sce.getLocalizedMessage()));
                 throw new Abort(sce);
             } catch (Throwable t) {
                 throw new Abort(t);
@@ -561,13 +562,13 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     ensureReadable(processorClass);
                     return (Processor) processorClass.getConstructor().newInstance();
                 } catch (ClassNotFoundException cnfe) {
-                    log.error("proc.processor.not.found", processorName);
+                    log.error(Errors.ProcProcessorNotFound(processorName));
                     return null;
                 } catch (ClassCastException cce) {
-                    log.error("proc.processor.wrong.type", processorName);
+                    log.error(Errors.ProcProcessorWrongType(processorName));
                     return null;
                 } catch (Exception e ) {
-                    log.error("proc.processor.cant.instantiate", processorName);
+                    log.error(Errors.ProcProcessorCantInstantiate(processorName));
                     return null;
                 }
             } catch (ClientCodeException e) {
@@ -707,19 +708,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             SourceVersion procSourceVersion = processor.getSupportedSourceVersion();
 
             if (procSourceVersion.compareTo(Source.toSourceVersion(source)) < 0 )  {
-                log.warning("proc.processor.incompatible.source.version",
-                            procSourceVersion,
-                            processor.getClass().getName(),
-                            source.name);
+                log.warning(Warnings.ProcProcessorIncompatibleSourceVersion(procSourceVersion,
+                                                                            processor.getClass().getName(),
+                                                                            source.name));
             }
         }
 
         private boolean checkOptionName(String optionName, Log log) {
             boolean valid = isValidOptionName(optionName);
             if (!valid)
-                log.error("proc.processor.bad.option.name",
-                            optionName,
-                            processor.getClass().getName());
+                log.error(Errors.ProcProcessorBadOptionName(optionName,
+                                                            processor.getClass().getName()));
             return valid;
         }
 
@@ -904,8 +903,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             // Remove annotations processed by javac
             unmatchedAnnotations.keySet().removeAll(platformAnnotations);
             if (unmatchedAnnotations.size() > 0) {
-                log.warning("proc.annotations.without.processors",
-                            unmatchedAnnotations.keySet());
+                log.warning(Warnings.ProcAnnotationsWithoutProcessors(unmatchedAnnotations.keySet()));
             }
         }
 
@@ -967,12 +965,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         try {
             return proc.process(tes, renv);
         } catch (ClassFinder.BadClassFile ex) {
-            log.error("proc.cant.access.1", ex.sym, ex.getDetailValue());
+            log.error(Errors.ProcCantAccess1(ex.sym, ex.getDetailValue()));
             return false;
         } catch (CompletionFailure ex) {
             StringWriter out = new StringWriter();
             ex.printStackTrace(new PrintWriter(out));
-            log.error("proc.cant.access", ex.sym, ex.getDetailValue(), out.toString());
+            log.error(Errors.ProcCantAccess(ex.sym, ex.getDetailValue(), out.toString()));
             return false;
         } catch (ClientCodeException e) {
             throw e;
@@ -1385,7 +1383,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private void warnIfUnmatchedOptions() {
         if (!unmatchedProcessorOptions.isEmpty()) {
-            log.warning("proc.unmatched.processor.options", unmatchedProcessorOptions.toString());
+            log.warning(Warnings.ProcUnmatchedProcessorOptions(unmatchedProcessorOptions.toString()));
         }
     }
 
@@ -1490,7 +1488,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 throw new AssertionError(ex);
             }
             catch (ServiceProxy.ServiceConfigurationError e) {
-                log.error("proc.bad.config.file", e.getLocalizedMessage());
+                log.error(Errors.ProcBadConfigFile(e.getLocalizedMessage()));
                 return true;
             }
         }
@@ -1682,7 +1680,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         if (MatchingUtils.isValidImportString(pkg)) {
             return Pattern.compile(module + MatchingUtils.validImportStringToPatternString(pkg));
         } else {
-            log.warning("proc.malformed.supported.string", s, p.getClass().getName());
+            log.warning(Warnings.ProcMalformedSupportedString(s, p.getClass().getName()));
             return noMatches; // won't match any valid identifier
         }
     }

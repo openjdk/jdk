@@ -53,6 +53,7 @@ tools/javac/annotations/typeAnnotations/newlocations/RepeatingTypeAnnotations.ja
 tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
+tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
 tools/javac/modules/T8159439/NPEForModuleInfoWithNonZeroSuperClassTest.java     8160396    generic-all    current version of jtreg needs a new promotion to include lastes version of ASM
 
 ###########################################################################

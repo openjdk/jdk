@@ -89,13 +89,13 @@ import static javax.lang.model.element.ElementKind.*;
  */
 public class WorkArounds {
 
-    public final Configuration configuration;
+    public final BaseConfiguration configuration;
     public final ToolEnvironment toolEnv;
     public final Utils utils;
 
     private DocLint doclint;
 
-    public WorkArounds(Configuration configuration) {
+    public WorkArounds(BaseConfiguration configuration) {
         this.configuration = configuration;
         this.utils = this.configuration.utils;
         this.toolEnv = ((DocEnvImpl)this.configuration.docEnv).toolEnv;

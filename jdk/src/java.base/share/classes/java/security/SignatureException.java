@@ -29,6 +29,7 @@ package java.security;
  * This is the generic Signature exception.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public class SignatureException extends GeneralSecurityException {

@@ -27,8 +27,9 @@
  * @summary Test that no locks are held when a monitor attribute is sampled
  * or notif delivered.
  * @author Eamonn McManus
+ *
  * @library /lib/testlibrary
- * @modules java.management
+ *
  * @run clean GaugeMonitorDeadlockTest
  * @run build GaugeMonitorDeadlockTest
  * @run main GaugeMonitorDeadlockTest 1
