@@ -26,7 +26,7 @@
  * @summary Test that we can create proxies which are NotificationEmitters.
  * @bug 6411747
  * @author Daniel Fuchs
- * @modules java.management
+ *
  * @run clean NotificationEmitterProxy
  * @run build NotificationEmitterProxy
  * @run main NotificationEmitterProxy

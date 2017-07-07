@@ -52,6 +52,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
@@ -219,7 +220,7 @@ public class BasicJavacTask extends JavacTask {
             }
         }
         for (List<String> p: pluginsToCall) {
-            Log.instance(context).error("plugin.not.found", p.head);
+            Log.instance(context).error(Errors.PluginNotFound(p.head));
         }
     }
 

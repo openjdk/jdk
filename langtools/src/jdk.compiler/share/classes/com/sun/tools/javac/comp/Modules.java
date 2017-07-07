@@ -213,18 +213,9 @@ public class Modules extends JCTree.Visitor {
         private static final String XMODULES_PREFIX = "-Xmodule:";
 
     int depth = -1;
-    private void dprintln(String msg) {
-        for (int i = 0; i < depth; i++)
-            System.err.print("  ");
-        System.err.println(msg);
-    }
 
     public void addExtraAddModules(String... extras) {
         extraAddMods.addAll(Arrays.asList(extras));
-    }
-
-    public void addExtraLimitModules(String... extras) {
-        extraLimitMods.addAll(Arrays.asList(extras));
     }
 
     boolean inInitModules;
@@ -275,7 +266,7 @@ public class Modules extends JCTree.Visitor {
                 msym.complete();
             }
         } catch (CompletionFailure ex) {
-            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, "cant.access", ex.sym, ex.getDetailValue());
+            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, Errors.CantAccess(ex.sym, ex.getDetailValue()));
             if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
         } finally {
             depth--;
@@ -556,7 +547,7 @@ public class Modules extends JCTree.Visitor {
 
         JavaFileObject prev = log.useSource(tree.sourcefile);
         try {
-            log.error(tree.pos(), "file.sb.on.source.or.patch.path.for.module");
+            log.error(tree.pos(), Errors.FileSbOnSourceOrPatchPathForModule);
         } finally {
             log.useSource(prev);
         }

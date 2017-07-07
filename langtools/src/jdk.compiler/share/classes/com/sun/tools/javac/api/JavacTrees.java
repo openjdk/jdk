@@ -102,6 +102,9 @@ import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCBlockTag;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
@@ -1129,19 +1132,19 @@ public class JavacTrees extends DocTrees {
         try {
             switch (kind) {
             case ERROR:
-                log.error(DiagnosticFlag.MULTIPLE, pos, "proc.messager", msg.toString());
+                log.error(DiagnosticFlag.MULTIPLE, pos, Errors.ProcMessager(msg.toString()));
                 break;
 
             case WARNING:
-                log.warning(pos, "proc.messager", msg.toString());
+                log.warning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             case MANDATORY_WARNING:
-                log.mandatoryWarning(pos, "proc.messager", msg.toString());
+                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             default:
-                log.note(pos, "proc.messager", msg.toString());
+                log.note(pos, Notes.ProcMessager(msg.toString()));
             }
         } finally {
             if (oldSource != null)

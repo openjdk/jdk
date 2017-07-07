@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -491,6 +491,11 @@ public class TestSearch extends JavadocTester {
                 "function nestedName(e) {",
                 "function sortAndConcatResults(a1, a2) {",
                 "if (exactMatcher.test(item.l)) {\n"
-                + "                        presult.unshift(item);");
+                + "                        presult.unshift(item);",
+                "$(\"#search\").on('click keydown', function() {\n"
+                + "        if ($(this).val() == watermark) {\n"
+                + "            $(this).val('').removeClass('watermark');\n"
+                + "        }\n"
+                + "    });");
     }
 }

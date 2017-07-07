@@ -31,10 +31,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.NoSuchFileException;
+import java.security.CodeSource;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.tools.JavaFileManager;
 
@@ -325,6 +328,11 @@ public class Main {
         } catch (PropagatedException ex) {
             // TODO: what about errors from plugins?   should not simply rethrow the error here
             throw ex.getCause();
+        } catch (IllegalAccessError iae) {
+            if (twoClassLoadersInUse(iae)) {
+                bugMessage(iae);
+            }
+            return Result.ABNORMAL;
         } catch (Throwable ex) {
             // Nasty.  If we've already reported an error, compensate
             // for buggy compiler error recovery by swallowing thrown
@@ -341,6 +349,35 @@ public class Main {
                 }
             }
         }
+    }
+
+    private boolean twoClassLoadersInUse(IllegalAccessError iae) {
+        String msg = iae.getMessage();
+        Pattern pattern = Pattern.compile("(?i)(?<=tried to access class )([a-z_$][a-z\\d_$]*\\.)*[a-z_$][a-z\\d_$]*");
+        Matcher matcher = pattern.matcher(msg);
+        if (matcher.find()) {
+            try {
+                String otherClassName = matcher.group(0);
+                Class<?> otherClass = Class.forName(otherClassName);
+                ClassLoader otherClassLoader = otherClass.getClassLoader();
+                ClassLoader javacClassLoader = this.getClass().getClassLoader();
+                if (javacClassLoader != otherClassLoader) {
+                    CodeSource otherClassCodeSource = otherClass.getProtectionDomain().getCodeSource();
+                    CodeSource javacCodeSource = this.getClass().getProtectionDomain().getCodeSource();
+                    if (otherClassCodeSource != null && javacCodeSource != null) {
+                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.2",
+                                otherClassCodeSource.getLocation(),
+                                javacCodeSource.getLocation());
+                    } else {
+                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.1");
+                    }
+                    return true;
+                }
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /** Print a message reporting an internal error.

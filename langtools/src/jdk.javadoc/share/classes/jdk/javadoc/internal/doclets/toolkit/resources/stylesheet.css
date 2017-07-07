@@ -576,7 +576,6 @@ td.colSecond a:link, td.colSecond a:visited,
 th.colFirst a:link, th.colFirst a:visited,
 th.colSecond a:link, th.colSecond a:visited,
 th.colConstructorName a:link, th.colConstructorName a:visited,
-td.colLast a:link, td.colLast a:visited,
 .constantValuesContainer td a:link, .constantValuesContainer td a:visited {
     font-weight:bold;
 }

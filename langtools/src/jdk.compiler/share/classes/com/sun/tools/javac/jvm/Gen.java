@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.tree.TreeInfo.PosKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -38,6 +39,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -269,7 +271,7 @@ public class Gen extends JCTree.Visitor {
             break;
         case ARRAY:
             if (types.dimensions(t) > ClassFile.MAX_DIMENSIONS) {
-                log.error(pos, "limit.dimensions");
+                log.error(pos, Errors.LimitDimensions);
                 nerrs++;
             }
             break;
@@ -516,7 +518,7 @@ public class Gen extends JCTree.Visitor {
             !(constValue instanceof String) ||
             ((String)constValue).length() < Pool.MAX_STRING_LENGTH)
             return;
-        log.error(pos, "limit.string");
+        log.error(pos, Errors.LimitString);
         nerrs++;
     }
 
@@ -887,7 +889,7 @@ public class Gen extends JCTree.Visitor {
             //      System.err.println("Generating " + meth + " in " + meth.owner); //DEBUG
             if (Code.width(types.erasure(env.enclMethod.sym.type).getParameterTypes()) + extras >
                 ClassFile.MAX_PARAMETERS) {
-                log.error(tree.pos(), "limit.parameters");
+                log.error(tree.pos(), Errors.LimitParameters);
                 nerrs++;
             }
 
@@ -904,7 +906,7 @@ public class Gen extends JCTree.Visitor {
                 }
 
                 if (code.state.stacksize != 0) {
-                    log.error(tree.body.pos(), "stack.sim.error", tree);
+                    log.error(tree.body.pos(), Errors.StackSimError(tree.sym));
                     throw new AssertionError();
                 }
 
@@ -1399,12 +1401,16 @@ public class Gen extends JCTree.Visitor {
                                   catchallpc, 0);
                     startseg = env.info.gaps.next().intValue();
                 }
-                code.statBegin(TreeInfo.finalizerPos(env.tree));
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                 code.markStatBegin();
 
                 Item excVar = makeTemp(syms.throwableType);
                 excVar.store();
                 genFinalizer(env);
+                code.resolvePending();
+                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.END_POS));
+                code.markStatBegin();
+
                 excVar.load();
                 registerCatch(body.pos(), startseg,
                               env.info.gaps.next().intValue(),
@@ -1418,7 +1424,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(env.info.cont);
 
                     // Mark statement line number
-                    code.statBegin(TreeInfo.finalizerPos(env.tree));
+                    code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
                     code.markStatBegin();
 
                     // Save return address.
@@ -1531,7 +1537,7 @@ public class Gen extends JCTree.Visitor {
                 code.addCatch(startpc1, endpc1, handler_pc1,
                               (char)catch_type);
             } else {
-                log.error(pos, "limit.code.too.large.for.try.stmt");
+                log.error(pos, Errors.LimitCodeTooLargeForTryStmt);
                 nerrs++;
             }
         }
@@ -1577,14 +1583,18 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addExit(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
     }
 
     public void visitContinue(JCContinue tree) {
+        int tmpPos = code.pendingStatPos;
         Env<GenContext> targetEnv = unwind(tree.target, env);
+        code.pendingStatPos = tmpPos;
         Assert.check(code.state.stacksize == 0);
         targetEnv.info.addCont(code.branch(goto_));
         endFinalizerGaps(env, targetEnv);
@@ -1760,7 +1770,7 @@ public class Gen extends JCTree.Visitor {
         Item makeNewArray(DiagnosticPosition pos, Type type, int ndims) {
             Type elemtype = types.elemtype(type);
             if (types.dimensions(type) > ClassFile.MAX_DIMENSIONS) {
-                log.error(pos, "limit.dimensions");
+                log.error(pos, Errors.LimitDimensions);
                 nerrs++;
             }
             int elemcode = Code.arraycode(elemtype);
@@ -1885,7 +1895,7 @@ public class Gen extends JCTree.Visitor {
             case NULLCHK:
                 result = od.load();
                 code.emitop0(dup);
-                genNullCheck(tree.pos());
+                genNullCheck(tree);
                 break;
             default:
                 Assert.error();
@@ -1894,12 +1904,13 @@ public class Gen extends JCTree.Visitor {
     }
 
     /** Generate a null check from the object value at stack top. */
-    private void genNullCheck(DiagnosticPosition pos) {
+    private void genNullCheck(JCTree tree) {
+        code.statBegin(tree.pos);
         if (allowBetterNullChecks) {
-            callMethod(pos, syms.objectsType, names.requireNonNull,
+            callMethod(tree.pos(), syms.objectsType, names.requireNonNull,
                     List.of(syms.objectType), true);
         } else {
-            callMethod(pos, syms.objectType, names.getClass,
+            callMethod(tree.pos(), syms.objectType, names.getClass,
                     List.nil(), false);
         }
         code.emitop0(pop);
@@ -2078,7 +2089,7 @@ public class Gen extends JCTree.Visitor {
                 base.drop();
             } else {
                 base.load();
-                genNullCheck(tree.selected.pos());
+                genNullCheck(tree.selected);
             }
             result = items.
                 makeImmediateItem(sym.type, ((VarSymbol) sym).getConstValue());
@@ -2171,7 +2182,7 @@ public class Gen extends JCTree.Visitor {
                 genDef(l.head, localEnv);
             }
             if (pool.numEntries() > Pool.MAX_ENTRIES) {
-                log.error(cdef.pos(), "limit.pool");
+                log.error(cdef.pos(), Errors.LimitPool);
                 nerrs++;
             }
             if (nerrs != 0) {

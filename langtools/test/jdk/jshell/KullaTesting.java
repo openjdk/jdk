@@ -793,7 +793,7 @@ public class KullaTesting {
     public void assertAnalyze(String input, Completeness status, String source, String remaining, Boolean isComplete) {
         CompletionInfo ci = getAnalysis().analyzeCompletion(input);
         if (status != null) assertEquals(ci.completeness(), status, "Input : " + input + ", status: ");
-        if (source != null) assertEquals(ci.source(), source, "Input : " + input + ", source: ");
+        assertEquals(ci.source(), source, "Input : " + input + ", source: ");
         if (remaining != null) assertEquals(ci.remaining(), remaining, "Input : " + input + ", remaining: ");
         if (isComplete != null) {
             boolean isExpectedComplete = isComplete;
