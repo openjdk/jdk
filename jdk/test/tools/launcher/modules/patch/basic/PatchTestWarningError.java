@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @test
  * @bug 8168836
  * @summary Basic argument validation for --patch-module
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build PatchTestWarningError CompilerUtils JarUtils jdk.testlibrary.*
+ * @build PatchTestWarningError JarUtils jdk.testlibrary.*
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchTestWarningError
  */
 
@@ -38,6 +39,7 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
@@ -93,20 +95,22 @@ public class PatchTestWarningError {
                                                 MODS_DIR.resolve("test"));
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches1/$MODULE patches1/$MODULE/**
+        // javac --patch-module $MODULE=patches1/$MODULE -d patches1/$MODULE patches1/$MODULE/**
         Path src = SRC1_DIR.resolve("java.base");
         Path output = PATCHES1_DIR.resolve(src.getFileName());
         Files.createDirectories(output);
         String mn = src.getFileName().toString();
-        compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+        compiled  = CompilerUtils.compile(src, output,
+                                          "--patch-module", mn + "=" + src.toString());
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches2/$MODULE patches2/$MODULE/**
+        // javac --patch-module $MODULE=patches2/$MODULE -d patches2/$MODULE patches2/$MODULE/**
         src = SRC2_DIR.resolve("java.base");
         output = PATCHES2_DIR.resolve(src.getFileName());
         Files.createDirectories(output);
         mn = src.getFileName().toString();
-        compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+        compiled  = CompilerUtils.compile(src, output,
+                                          "--patch-module", mn + "=" + src.toString());
         assertTrue(compiled, "classes did not compile");
 
     }
@@ -177,7 +181,7 @@ public class PatchTestWarningError {
                             "-m", "test/jdk.test.Main", arg)
                 .outputTo(System.out)
                 .errorTo(System.out)
-                .shouldContain("WARNING: Unknown module: DoesNotExist specified in --patch-module")
+                .shouldContain("WARNING: Unknown module: DoesNotExist specified to --patch-module")
                 .getExitValue();
 
         assertTrue(exitValue == 0);

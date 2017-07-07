@@ -26,7 +26,7 @@
  * @bug 8141591
  * @summary Tests if notifications are received after executor is shutdown
  * @author Harsha Wardhana B
- * @modules java.management
+ *
  * @run clean ExecutorShutdownTest
  * @run build ExecutorShutdownTest
  * @run main ExecutorShutdownTest

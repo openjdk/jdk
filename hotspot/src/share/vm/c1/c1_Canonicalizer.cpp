@@ -248,7 +248,9 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
   } else if ((lf = x->array()->as_LoadField()) != NULL) {
     ciField* field = lf->field();
     if (field->is_static_constant()) {
-      assert(PatchALot || ScavengeRootsInCode < 2, "Constant field loads are folded during parsing");
+      // Constant field loads are usually folded during parsing.
+      // But it doesn't happen with PatchALot, ScavengeRootsInCode < 2, or when
+      // holder class is being initialized during parsing (for static fields).
       ciObject* c = field->constant_value().as_object();
       if (!c->is_null_object()) {
         set_constant(c->as_array()->length());

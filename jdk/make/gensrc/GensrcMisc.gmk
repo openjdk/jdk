@@ -116,11 +116,13 @@ else
     JCE_DEFAULT_POLICY = limited
 endif
 
-$(eval $(call SetupTextFileProcessing, BUILD_JCESECURITY_JAVA, \
-    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity.java.template, \
-    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/javax/crypto/JceSecurity.java, \
-    REPLACEMENTS := \
+ifneq ($(wildcard $(JDK_TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity.java.template), )
+  $(eval $(call SetupTextFileProcessing, BUILD_JCESECURITY_JAVA, \
+      SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity.java.template, \
+      OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/javax/crypto/JceSecurity.java, \
+      REPLACEMENTS := \
         @@JCE_DEFAULT_POLICY@@ => $(JCE_DEFAULT_POLICY), \
-))
+  ))
 
-GENSRC_JAVA_BASE += $(BUILD_JCESECURITY_JAVA)
+  GENSRC_JAVA_BASE += $(BUILD_JCESECURITY_JAVA)
+endif

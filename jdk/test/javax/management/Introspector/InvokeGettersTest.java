@@ -26,7 +26,7 @@
  * @bug 6317101
  * @summary Test that the jmx.invoke.getters system property works
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean InvokeGettersTest
  * @run build InvokeGettersTest
  * @run main InvokeGettersTest

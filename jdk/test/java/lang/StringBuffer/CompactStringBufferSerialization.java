@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@ import java.io.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static jdk.testlibrary.SerializationUtils.*;
+import static jdk.test.lib.util.SerializationUtils.*;
 import static org.testng.Assert.*;
 
 /*
  * @test
  * @bug 8077559
- * @library /lib/testlibrary
- * @build jdk.testlibrary.SerializationUtils
+ * @library /test/lib
+ * @build jdk.test.lib.util.SerializationUtils
  * @summary Tests Compact String. This one is testing StringBuffer serialization
  *          among -XX:+CompactStrings/-XX:-CompactStrings/LegacyStringBuffer
  * @run testng/othervm -XX:+CompactStrings CompactStringBufferSerialization

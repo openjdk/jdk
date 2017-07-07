@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,11 @@
  * questions.
  */
 
-/* @test
- * @bug 4614065
- * @summary Test SocketChannel gc after running out of fds
- * @build Open
- * @run shell Open.sh
- */
-
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.net.SocketException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.Pipe;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 public class Open {

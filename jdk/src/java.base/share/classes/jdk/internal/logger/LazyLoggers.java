@@ -31,7 +31,6 @@ import java.util.function.BiFunction;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Module;
 import java.util.Objects;
 import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
@@ -402,10 +401,10 @@ public final class LazyLoggers {
      * @param module The module on behalf of which the logger is created.
      *               If the module is not loaded from the Boot ClassLoader,
      *               the LoggerFinder is accessed and the logger returned
-     *               by {@link LoggerFinder#getLogger(java.lang.String, java.lang.reflect.Module)}
+     *               by {@link LoggerFinder#getLogger(java.lang.String, java.lang.Module)}
      *               is returned to the caller directly.
      *               Otherwise, the logger returned by
-     *               {@link #getLazyLogger(java.lang.String, java.lang.reflect.Module)}
+     *               {@link #getLazyLogger(java.lang.String, java.lang.Module)}
      *               is returned to the caller.
      *
      * @return  a (possibly lazy) Logger instance.

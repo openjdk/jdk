@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
 /************************************************************************
  * Macros and constants
  */
+
+#define NET_NSEC_PER_MSEC 1000000
+#define NET_NSEC_PER_SEC  1000000000
+#define NET_NSEC_PER_USEC 1000
 
 /* Defines SO_REUSEPORT */
 #ifndef SO_REUSEPORT
@@ -68,12 +72,9 @@ typedef union {
  * Functions
  */
 
-int NET_Timeout(int s, long timeout);
-int NET_Timeout0(int s, long timeout, long currentTime);
+int NET_Timeout(JNIEnv *env, int s, long timeout, jlong  nanoTimeStamp);
 int NET_Read(int s, void* buf, size_t len);
 int NET_NonBlockingRead(int s, void* buf, size_t len);
-int NET_TimeoutWithCurrentTime(int s, long timeout, long currentTime);
-long NET_GetCurrentTime();
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
                  struct sockaddr *from, socklen_t *fromlen);
 int NET_ReadV(int s, const struct iovec * vector, int count);
