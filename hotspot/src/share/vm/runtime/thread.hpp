@@ -2069,6 +2069,7 @@ class Threads: AllStatic {
   static bool includes(JavaThread* p);
   static JavaThread* first()                     { return _thread_list; }
   static void threads_do(ThreadClosure* tc);
+  static void parallel_java_threads_do(ThreadClosure* tc);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);

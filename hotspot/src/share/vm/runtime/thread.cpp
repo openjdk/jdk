@@ -3385,6 +3385,15 @@ void Threads::threads_do(ThreadClosure* tc) {
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
+void Threads::parallel_java_threads_do(ThreadClosure* tc) {
+  int cp = Threads::thread_claim_parity();
+  ALL_JAVA_THREADS(p) {
+    if (p->claim_oops_do(true, cp)) {
+      tc->do_thread(p);
+    }
+  }
+}
+
 // The system initialization in the library has three phases.
 //
 // Phase 1: java.lang.System class initialization

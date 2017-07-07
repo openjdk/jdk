@@ -33,6 +33,8 @@
 #include "code/scopeDesc.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -543,64 +545,128 @@ static void event_safepoint_cleanup_task_commit(EventSafepointCleanupTask& event
   }
 }
 
-// Various cleaning tasks that should be done periodically at safepoints
+class ParallelSPCleanupThreadClosure : public ThreadClosure {
+private:
+  CodeBlobClosure* _nmethod_cl;
+  DeflateMonitorCounters* _counters;
+
+public:
+  ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
+    _counters(counters),
+    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()) {}
+
+  void do_thread(Thread* thread) {
+    ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
+    if (_nmethod_cl != NULL && thread->is_Java_thread() &&
+        ! thread->is_Code_cache_sweeper_thread()) {
+      JavaThread* jt = (JavaThread*) thread;
+      jt->nmethods_do(_nmethod_cl);
+    }
+  }
+};
+
+class ParallelSPCleanupTask : public AbstractGangTask {
+private:
+  SubTasksDone _subtasks;
+  ParallelSPCleanupThreadClosure _cleanup_threads_cl;
+  uint _num_workers;
+  DeflateMonitorCounters* _counters;
+public:
+  ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
+    AbstractGangTask("Parallel Safepoint Cleanup"),
+    _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
+    _num_workers(num_workers),
+    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
+    _counters(counters) {}
+
+  void work(uint worker_id) {
+    // All threads deflate monitors and mark nmethods (if necessary).
+    Threads::parallel_java_threads_do(&_cleanup_threads_cl);
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
+      const char* name = "deflating idle monitors";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      ObjectSynchronizer::deflate_idle_monitors(_counters);
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
+      const char* name = "updating inline caches";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      InlineCacheBuffer::update_inline_caches();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
+      const char* name = "compilation policy safepoint handler";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      CompilationPolicy::policy()->do_safepoint_work();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
+      if (SymbolTable::needs_rehashing()) {
+        const char* name = "rehashing symbol table";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        SymbolTable::rehash_table();
+        event_safepoint_cleanup_task_commit(event, name);
+      }
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
+      if (StringTable::needs_rehashing()) {
+        const char* name = "rehashing string table";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        StringTable::rehash_table();
+        event_safepoint_cleanup_task_commit(event, name);
+      }
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
+      // CMS delays purging the CLDG until the beginning of the next safepoint and to
+      // make sure concurrent sweep is done
+      const char* name = "purging class loader data graph";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      ClassLoaderDataGraph::purge_if_needed();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+    _subtasks.all_tasks_completed(_num_workers);
+  }
+};
+
+// Various cleaning tasks that should be done periodically at safepoints.
 void SafepointSynchronize::do_cleanup_tasks() {
-  {
-    const char* name = "deflating idle monitors";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ObjectSynchronizer::deflate_idle_monitors();
-    event_safepoint_cleanup_task_commit(event, name);
+
+  TraceTime timer("safepoint cleanup tasks", TRACETIME_LOG(Info, safepoint, cleanup));
+
+  // Prepare for monitor deflation.
+  DeflateMonitorCounters deflate_counters;
+  ObjectSynchronizer::prepare_deflate_idle_monitors(&deflate_counters);
+
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "heap not initialized yet?");
+  WorkGang* cleanup_workers = heap->get_safepoint_workers();
+  if (cleanup_workers != NULL) {
+    // Parallel cleanup using GC provided thread pool.
+    uint num_cleanup_workers = cleanup_workers->active_workers();
+    ParallelSPCleanupTask cleanup(num_cleanup_workers, &deflate_counters);
+    StrongRootsScope srs(num_cleanup_workers);
+    cleanup_workers->run_task(&cleanup);
+  } else {
+    // Serial cleanup using VMThread.
+    ParallelSPCleanupTask cleanup(1, &deflate_counters);
+    StrongRootsScope srs(1);
+    cleanup.work(0);
   }
 
-  {
-    const char* name = "updating inline caches";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    InlineCacheBuffer::update_inline_caches();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-  {
-    const char* name = "compilation policy safepoint handler";
-    EventSafepointCleanupTask event;
-    TraceTime timer("compilation policy safepoint handler", TRACETIME_LOG(Info, safepoint, cleanup));
-    CompilationPolicy::policy()->do_safepoint_work();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  {
-    const char* name = "mark nmethods";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    NMethodSweeper::mark_active_nmethods();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  if (SymbolTable::needs_rehashing()) {
-    const char* name = "rehashing symbol table";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    SymbolTable::rehash_table();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  if (StringTable::needs_rehashing()) {
-    const char* name = "rehashing string table";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    StringTable::rehash_table();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  {
-    // CMS delays purging the CLDG until the beginning of the next safepoint and to
-    // make sure concurrent sweep is done
-    const char* name = "purging class loader data graph";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ClassLoaderDataGraph::purge_if_needed();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
+  // Finish monitor deflation.
+  ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
 }
 
 
