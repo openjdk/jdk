@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,10 +146,18 @@ static void write_memory_serialize_page_with_handler(JavaThread* thread) {
  * don't call code that could leave the heap / memory in an inconsistent state,
  * or anything else where we are not in control if we suddenly jump out.
  */
-class WatcherThreadCrashProtection : public StackObj {
+class ThreadCrashProtection : public StackObj {
 public:
-  WatcherThreadCrashProtection();
+  static bool is_crash_protected(Thread* thr) {
+    return _crash_protection != NULL && _protected_thread == thr;
+  }
+
+  ThreadCrashProtection();
   bool call(os::CrashProtectionCallback& cb);
+private:
+  static Thread* _protected_thread;
+  static ThreadCrashProtection* _crash_protection;
+  static volatile intptr_t _crash_mux;
 };
 
 class PlatformEvent : public CHeapObj<mtInternal> {

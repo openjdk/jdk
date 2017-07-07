@@ -574,21 +574,10 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
-#ifdef ASSERT
-  // checking for the WatcherThread and crash_protection first
-  // since os::malloc can be called when the libjvm.{dll,so} is
-  // first loaded and we don't have a thread yet.
-  // try to find the thread after we see that the watcher thread
-  // exists and has crash protection.
-  WatcherThread *wt = WatcherThread::watcher_thread();
-  if (wt != NULL && wt->has_crash_protection()) {
-    Thread* thread = Thread::current_or_null();
-    if (thread == wt) {
-      assert(!wt->has_crash_protection(),
-          "Can't malloc with crash protection from WatcherThread");
-    }
-  }
-#endif
+  // Since os::malloc can be called when the libjvm.{dll,so} is
+  // first loaded and we don't have a thread yet we must accept NULL also here.
+  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+         "malloc() not allowed when crash protection is set");
 
   if (size == 0) {
     // return a valid pointer if size is zero
