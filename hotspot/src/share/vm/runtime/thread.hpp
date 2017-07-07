@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,9 @@ class Thread: public ThreadShadow {
     _deopt_suspend          = 0x10000000U, // thread needs to self suspend for deopt
 
     _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _critical_native_unlock = 0x00000002U  // Must call back to unlock JNI critical lock
+    _critical_native_unlock = 0x00000002U, // Must call back to unlock JNI critical lock
+
+    _trace_flag             = 0x00000004U  // call tracing backend
   };
 
   // various suspension related flags - atomically updated
@@ -382,6 +384,9 @@ class Thread: public ThreadShadow {
   inline void set_critical_native_unlock();
   inline void clear_critical_native_unlock();
 
+  inline void set_trace_flag();
+  inline void clear_trace_flag();
+
   // Support for Unhandled Oop detection
   // Add the field for both, fastdebug and debug, builds to keep
   // Thread's fields layout the same.
@@ -450,6 +455,7 @@ class Thread: public ThreadShadow {
 
   TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET;
   TRACE_DATA* trace_data() const        { return &_trace_data; }
+  bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
 
   const ThreadExt& ext() const          { return _ext; }
   ThreadExt& ext()                      { return _ext; }
@@ -1261,8 +1267,7 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    // We call is_external_suspend() last since external suspend should
-    // be less common. Because we don't use is_external_suspend_with_lock
+    // Because we don't use is_external_suspend_with_lock
     // it is possible that we won't see an asynchronous external suspend
     // request that has just gotten started, i.e., SR_lock grabbed but
     // _external_suspend field change either not made yet or not visible
@@ -1272,7 +1277,7 @@ class JavaThread: public Thread {
     // we have checked is_external_suspend(), we will recheck its value
     // under SR_lock in java_suspend_self().
     return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_deopt_suspend();
+            is_external_suspend() || is_deopt_suspend() || is_trace_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
