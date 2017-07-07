@@ -1285,8 +1285,11 @@ size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_s
   return stack_size;
 }
 
-os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
-  assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
+Thread* os::ThreadCrashProtection::_protected_thread = NULL;
+os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
+volatile intptr_t os::ThreadCrashProtection::_crash_mux = 0;
+
+os::ThreadCrashProtection::ThreadCrashProtection() {
 }
 
 /*
@@ -1295,12 +1298,13 @@ os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
  * method and returns false. If none of the signals are raised, returns true.
  * The callback is supposed to provide the method that should be protected.
  */
-bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
+bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   sigset_t saved_sig_mask;
 
-  assert(Thread::current()->is_Watcher_thread(), "Only for WatcherThread");
-  assert(!WatcherThread::watcher_thread()->has_crash_protection(),
-      "crash_protection already set?");
+  Thread::muxAcquire(&_crash_mux, "CrashProtection");
+
+  _protected_thread = Thread::current_or_null();
+  assert(_protected_thread != NULL, "Cannot crash protect a NULL thread");
 
   // we cannot rely on sigsetjmp/siglongjmp to save/restore the signal mask
   // since on at least some systems (OS X) siglongjmp will restore the mask
@@ -1309,34 +1313,36 @@ bool os::WatcherThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
   if (sigsetjmp(_jmpbuf, 0) == 0) {
     // make sure we can see in the signal handler that we have crash protection
     // installed
-    WatcherThread::watcher_thread()->set_crash_protection(this);
+    _crash_protection = this;
     cb.call();
     // and clear the crash protection
-    WatcherThread::watcher_thread()->set_crash_protection(NULL);
+    _crash_protection = NULL;
+    _protected_thread = NULL;
+    Thread::muxRelease(&_crash_mux);
     return true;
   }
   // this happens when we siglongjmp() back
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
-  WatcherThread::watcher_thread()->set_crash_protection(NULL);
+  _crash_protection = NULL;
+  _protected_thread = NULL;
+  Thread::muxRelease(&_crash_mux);
   return false;
 }
 
-void os::WatcherThreadCrashProtection::restore() {
-  assert(WatcherThread::watcher_thread()->has_crash_protection(),
-      "must have crash protection");
-
+void os::ThreadCrashProtection::restore() {
+  assert(_crash_protection != NULL, "must have crash protection");
   siglongjmp(_jmpbuf, 1);
 }
 
-void os::WatcherThreadCrashProtection::check_crash_protection(int sig,
+void os::ThreadCrashProtection::check_crash_protection(int sig,
     Thread* thread) {
 
   if (thread != NULL &&
-      thread->is_Watcher_thread() &&
-      WatcherThread::watcher_thread()->has_crash_protection()) {
+      thread == _protected_thread &&
+      _crash_protection != NULL) {
 
     if (sig == SIGSEGV || sig == SIGBUS) {
-      WatcherThread::watcher_thread()->crash_protection()->restore();
+      _crash_protection->restore();
     }
   }
 }
