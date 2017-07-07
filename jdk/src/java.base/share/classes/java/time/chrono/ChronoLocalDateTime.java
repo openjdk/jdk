@@ -66,6 +66,7 @@ import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.NANOS;
 
+import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -136,7 +137,13 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoLocalDateTime<?>> timeLineOrder() {
-        return AbstractChronology.DATE_TIME_ORDER;
+        return (Comparator<ChronoLocalDateTime<? extends ChronoLocalDate>> & Serializable) (dateTime1, dateTime2) -> {
+            int cmp = Long.compare(dateTime1.toLocalDate().toEpochDay(), dateTime2.toLocalDate().toEpochDay());
+            if (cmp == 0) {
+                cmp = Long.compare(dateTime1.toLocalTime().toNanoOfDay(), dateTime2.toLocalTime().toNanoOfDay());
+            }
+            return cmp;
+        };
     }
 
     //-----------------------------------------------------------------------

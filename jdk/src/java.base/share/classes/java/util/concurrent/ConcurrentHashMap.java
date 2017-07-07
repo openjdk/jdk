@@ -1032,9 +1032,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
-            else if (onlyIfAbsent && fh == hash &&  // check first node
-                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
-                     (fv = f.val) != null)
+            else if (onlyIfAbsent // check first node without acquiring lock
+                     && fh == hash
+                     && ((fk = f.key) == key || (fk != null && key.equals(fk)))
+                     && (fv = f.val) != null)
                 return fv;
             else {
                 V oldVal = null;
@@ -1728,9 +1729,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
-            else if (fh == h &&                  // check first node
-                     ((fk = f.key) == key || fk != null && key.equals(fk)) &&
-                     (fv = f.val) != null)
+            else if (fh == h    // check first node without acquiring lock
+                     && ((fk = f.key) == key || (fk != null && key.equals(fk)))
+                     && (fv = f.val) != null)
                 return fv;
             else {
                 boolean added = false;
@@ -3468,9 +3469,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     static final class KeyIterator<K,V> extends BaseIterator<K,V>
         implements Iterator<K>, Enumeration<K> {
-        KeyIterator(Node<K,V>[] tab, int index, int size, int limit,
+        KeyIterator(Node<K,V>[] tab, int size, int index, int limit,
                     ConcurrentHashMap<K,V> map) {
-            super(tab, index, size, limit, map);
+            super(tab, size, index, limit, map);
         }
 
         public final K next() {
@@ -3488,9 +3489,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     static final class ValueIterator<K,V> extends BaseIterator<K,V>
         implements Iterator<V>, Enumeration<V> {
-        ValueIterator(Node<K,V>[] tab, int index, int size, int limit,
+        ValueIterator(Node<K,V>[] tab, int size, int index, int limit,
                       ConcurrentHashMap<K,V> map) {
-            super(tab, index, size, limit, map);
+            super(tab, size, index, limit, map);
         }
 
         public final V next() {
@@ -3508,9 +3509,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     static final class EntryIterator<K,V> extends BaseIterator<K,V>
         implements Iterator<Map.Entry<K,V>> {
-        EntryIterator(Node<K,V>[] tab, int index, int size, int limit,
+        EntryIterator(Node<K,V>[] tab, int size, int index, int limit,
                       ConcurrentHashMap<K,V> map) {
-            super(tab, index, size, limit, map);
+            super(tab, size, index, limit, map);
         }
 
         public final Map.Entry<K,V> next() {

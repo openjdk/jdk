@@ -33,6 +33,14 @@ import java.security.KeyStore;
  * @bug 8172975
  * @summary SecurityTools.keytool() needs to accept user input
  * @library /test/lib
+ * @build jdk.test.lib.SecurityTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ * @run main ImportPrompt
  */
 
 public class ImportPrompt {

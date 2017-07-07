@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2579,14 +2579,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ reset_last_Java_frame(false);
 
-  // Unpack oop result
+  // Unbox oop result, e.g. JNIHandles::resolve value.
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
-      Label L;
-      __ testptr(rax, rax);
-      __ jcc(Assembler::zero, L);
-      __ movptr(rax, Address(rax, 0));
-      __ bind(L);
-      __ verify_oop(rax);
+    __ resolve_jobject(rax /* value */,
+                       r15_thread /* thread */,
+                       rcx /* tmp */);
   }
 
   if (CheckJNICalls) {

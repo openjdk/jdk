@@ -29,9 +29,14 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.module
- * @build jdk.test.lib.process.*
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run testng JLinkMultiReleaseJarTest
-*/
+ */
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -444,7 +444,7 @@ public class ReentrantReadWriteLock
             }
         }
 
-        private IllegalMonitorStateException unmatchedUnlockException() {
+        private static IllegalMonitorStateException unmatchedUnlockException() {
             return new IllegalMonitorStateException(
                 "attempt to unlock read lock, not locked by current thread");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  * @author Bhavesh Patel (Modified)
  */
 public class AnnotationTypeBuilder extends AbstractBuilder {
-
-    /**
-     * The root element of the annotation type XML is {@value}.
-     */
-    public static final String ROOT = "AnnotationTypeDoc";
 
     /**
      * The annotation type being documented.
@@ -100,29 +95,24 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      */
     @Override
     public void build() throws DocletException {
-        build(layoutParser.parseXML(ROOT), contentTree);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return ROOT;
+        buildAnnotationTypeDoc(contentTree);
     }
 
     /**
      * Build the annotation type documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeDoc(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildAnnotationTypeDoc(Content contentTree) throws DocletException {
         contentTree = writer.getHeader(configuration.getText("doclet.AnnotationType") +
                " " + utils.getSimpleName(annotationType));
         Content annotationContentTree = writer.getAnnotationContentHeader();
-        buildChildren(node, annotationContentTree);
+
+        buildAnnotationTypeInfo(annotationContentTree);
+        buildMemberSummary(annotationContentTree);
+        buildAnnotationTypeMemberDetails(annotationContentTree);
+
         writer.addAnnotationContentTree(contentTree, annotationContentTree);
         writer.addFooter(contentTree);
         writer.printDocument(contentTree);
@@ -136,7 +126,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
      */
     private void copyDocFiles() throws DocletException {
         PackageElement containingPackage = utils.containingPackage(annotationType);
-        if((configuration.packages == null ||
+        if ((configuration.packages == null ||
             !configuration.packages.contains(containingPackage) &&
             !containingPackagesSeen.contains(containingPackage))){
             //Only copy doc files dir if the containing package is not
@@ -150,34 +140,36 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Build the annotation information tree documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationContentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeInfo(XMLNode node, Content annotationContentTree)
+    protected void buildAnnotationTypeInfo(Content annotationContentTree)
             throws DocletException {
         Content annotationInfoTree = writer.getAnnotationInfoTreeHeader();
-        buildChildren(node, annotationInfoTree);
+
+        buildDeprecationInfo(annotationInfoTree);
+        buildAnnotationTypeSignature(annotationInfoTree);
+        buildAnnotationTypeDescription(annotationInfoTree);
+        buildAnnotationTypeTagInfo(annotationInfoTree);
+
         annotationContentTree.addContent(writer.getAnnotationInfo(annotationInfoTree));
     }
 
     /**
      * If this annotation is deprecated, build the appropriate information.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationInfoTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo (XMLNode node, Content annotationInfoTree) {
+    protected void buildDeprecationInfo(Content annotationInfoTree) {
         writer.addAnnotationTypeDeprecationInfo(annotationInfoTree);
     }
 
     /**
      * Build the signature of the current annotation type.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationInfoTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeSignature(XMLNode node, Content annotationInfoTree) {
+    protected void buildAnnotationTypeSignature(Content annotationInfoTree) {
         writer.addAnnotationTypeSignature(utils.modifiersToString(annotationType, true),
                 annotationInfoTree);
     }
@@ -185,48 +177,47 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Build the annotation type description.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationInfoTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeDescription(XMLNode node, Content annotationInfoTree) {
+    protected void buildAnnotationTypeDescription(Content annotationInfoTree) {
         writer.addAnnotationTypeDescription(annotationInfoTree);
     }
 
     /**
      * Build the tag information for the current annotation type.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationInfoTree the content tree to which the documentation will be added
      */
-    public void buildAnnotationTypeTagInfo(XMLNode node, Content annotationInfoTree) {
+    protected void buildAnnotationTypeTagInfo(Content annotationInfoTree) {
         writer.addAnnotationTypeTagInfo(annotationInfoTree);
     }
 
     /**
      * Build the member summary contents of the page.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationContentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildMemberSummary(XMLNode node, Content annotationContentTree) throws DocletException {
+    protected void buildMemberSummary(Content annotationContentTree) throws DocletException {
         Content memberSummaryTree = writer.getMemberTreeHeader();
-        configuration.getBuilderFactory().
-                getMemberSummaryBuilder(writer).buildChildren(node, memberSummaryTree);
+        builderFactory.getMemberSummaryBuilder(writer).build(memberSummaryTree);
         annotationContentTree.addContent(writer.getMemberSummaryTree(memberSummaryTree));
     }
 
     /**
      * Build the member details contents of the page.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationContentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeMemberDetails(XMLNode node, Content annotationContentTree)
+    protected void buildAnnotationTypeMemberDetails(Content annotationContentTree)
             throws DocletException {
         Content memberDetailsTree = writer.getMemberTreeHeader();
-        buildChildren(node, memberDetailsTree);
+
+        buildAnnotationTypeFieldDetails(memberDetailsTree);
+        buildAnnotationTypeRequiredMemberDetails(memberDetailsTree);
+        buildAnnotationTypeOptionalMemberDetails(memberDetailsTree);
+
         if (memberDetailsTree.isValid()) {
             annotationContentTree.addContent(writer.getMemberDetailsTree(memberDetailsTree));
         }
@@ -235,39 +226,33 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     /**
      * Build the annotation type field documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeFieldDetails(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeFieldDetails(Content memberDetailsTree)
             throws DocletException {
-        configuration.getBuilderFactory().
-                getAnnotationTypeFieldsBuilder(writer).buildChildren(node, memberDetailsTree);
+        builderFactory.getAnnotationTypeFieldsBuilder(writer).build(memberDetailsTree);
     }
 
     /**
      * Build the annotation type optional member documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeOptionalMemberDetails(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeOptionalMemberDetails(Content memberDetailsTree)
             throws DocletException {
-        configuration.getBuilderFactory().
-                getAnnotationTypeOptionalMemberBuilder(writer).buildChildren(node, memberDetailsTree);
+        builderFactory.getAnnotationTypeOptionalMemberBuilder(writer).build(memberDetailsTree);
     }
 
     /**
      * Build the annotation type required member documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    public void buildAnnotationTypeRequiredMemberDetails(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeRequiredMemberDetails(Content memberDetailsTree)
             throws DocletException {
-        configuration.getBuilderFactory().
-                getAnnotationTypeRequiredMemberBuilder(writer).buildChildren(node, memberDetailsTree);
+        builderFactory.getAnnotationTypeRequiredMemberBuilder(writer).build(memberDetailsTree);
     }
 }

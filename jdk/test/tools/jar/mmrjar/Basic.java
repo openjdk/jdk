@@ -29,8 +29,9 @@
  * @modules java.base/jdk.internal.module
  *          jdk.compiler
  *          jdk.jartool
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng Basic
  */
 
@@ -57,7 +58,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.internal.module.ModuleInfoExtender;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class Basic {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")

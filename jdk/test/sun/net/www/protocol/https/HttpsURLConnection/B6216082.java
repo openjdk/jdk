@@ -31,9 +31,11 @@
  * @bug 6216082
  * @summary  Redirect problem with HttpsURLConnection using a proxy
  * @modules java.base/sun.net.www
- * @library .. /lib/testlibrary
- * @build HttpCallback TestHttpsServer ClosedChannelList
- *        HttpTransaction TunnelProxy jdk.testlibrary.NetworkConfiguration
+ * @library .. /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        HttpCallback TestHttpsServer ClosedChannelList
+ *        HttpTransaction TunnelProxy
  * @key intermittent
  * @run main/othervm B6216082
  */
@@ -43,7 +45,7 @@ import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
 
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 
 public class B6216082 {
     static SimpleHttpTransaction httpTrans;

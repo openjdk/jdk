@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ static size_t argsCount = 1;
 static jboolean stopExpansion = JNI_FALSE;
 static jboolean relaunch = JNI_FALSE;
 
-void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile) {
+void JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
     // No expansion for relaunch
     if (argsCount != 1) {
         relaunch = JNI_TRUE;
@@ -91,7 +91,7 @@ void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile) {
     expectingNoDashArg = JNI_FALSE;
 
     // for tools, this value remains 0 all the time.
-    firstAppArgIndex = isJava ? NOT_FOUND : 0;
+    firstAppArgIndex = hasJavaArgs ? 0: NOT_FOUND;
 }
 
 int JLI_GetAppArgIndex() {

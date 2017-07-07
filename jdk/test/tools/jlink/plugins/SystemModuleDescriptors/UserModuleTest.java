@@ -23,7 +23,6 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,7 +32,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -44,11 +44,14 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8142968 8173381 8174740
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
  * @modules java.base/jdk.internal.module
  * @modules java.base/jdk.internal.org.objectweb.asm
- * @build ModuleTargetHelper UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
+ *        ModuleTargetHelper UserModuleTest jdk.testlibrary.ProcessTools
  * @run testng UserModuleTest
  */
 

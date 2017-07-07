@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
+import jdk.test.lib.hprof.parser.HprofReader;
 
 public class HeapDumpTest {
 
@@ -93,6 +94,17 @@ public class HeapDumpTest {
         launch(expectedMessage, Arrays.asList(toolArgs));
     }
 
+    public static void printStackTraces(String file) throws IOException {
+        try {
+            String output = HprofReader.getStack(file, 0);
+            if (!output.contains("LingeredAppWithExtendedChars.main")) {
+                throw new RuntimeException("'LingeredAppWithExtendedChars.main' missing from stdout/stderr");
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
+        }
+    }
+
     public static void testHeapDump() throws IOException {
         File dump = new File("jhsdb.jmap.heap." +
                              System.currentTimeMillis() + ".hprof");
@@ -105,6 +117,8 @@ public class HeapDumpTest {
 
         assertTrue(dump.exists() && dump.isFile(),
                    "Could not create dump file " + dump.getAbsolutePath());
+
+        printStackTraces(dump.getAbsolutePath());
 
         dump.delete();
     }

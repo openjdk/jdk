@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -40,9 +41,9 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8174826
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.charsets jdk.compiler jdk.jlink
- * @build SuggestProviders CompilerUtils
+ * @build SuggestProviders jdk.test.lib.compiler.CompilerUtils
  * @run testng SuggestProviders
  */
 

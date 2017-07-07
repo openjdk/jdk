@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          jdk.compiler
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider
  *          factories deployed on the module path
@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
