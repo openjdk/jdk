@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.executeTestJava;
 
 import org.testng.annotations.BeforeTest;
@@ -38,9 +38,10 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build ProxyClassAccessTest q.NP CompilerUtils jdk.testlibrary.*
+ * @build ProxyClassAccessTest q.NP jdk.testlibrary.*
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng ProxyClassAccessTest
  * @summary Driver for testing proxy class doesn't have access to
  *          types referenced by proxy interfaces
@@ -88,12 +89,12 @@ public class ProxyClassAccessTest {
     @Test
     public void testNoReadAccess() throws Exception {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
                 .configuration()
-                .resolveRequiresAndUses(ModuleFinder.of(), finder, modules);
+                .resolveAndBind(ModuleFinder.of(), finder, modules);
         ClassLoader parentLoader = this.getClass().getClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, parentLoader);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, parentLoader);
 
         ClassLoader loader = layer.findLoader("m1");
         Class<?>[] interfaces = new Class<?>[] {

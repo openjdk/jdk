@@ -33,6 +33,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SNIServerName;
 
 /**
  * Waits for incoming TCP connections from a client and establishes
@@ -48,6 +49,7 @@ public class Http2TestServer implements AutoCloseable {
     volatile boolean stopping = false;
     final Map<String,Http2Handler> handlers;
     final SSLContext sslContext;
+    final String serverName;
     final HashMap<InetSocketAddress,Http2TestServerConnection> connections;
 
     private static ThreadFactory defaultThreadFac =
@@ -62,8 +64,12 @@ public class Http2TestServer implements AutoCloseable {
         return Executors.newCachedThreadPool(defaultThreadFac);
     }
 
+    public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
+        this(serverName, secure, port, getDefaultExecutor(), null);
+    }
+
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(secure, port, getDefaultExecutor(), null);
+        this(null, secure, port, getDefaultExecutor(), null);
     }
 
     public InetSocketAddress getAddress() {
@@ -72,7 +78,19 @@ public class Http2TestServer implements AutoCloseable {
 
     public Http2TestServer(boolean secure,
                            SSLContext context) throws Exception {
-        this(secure, 0, null, context);
+        this(null, secure, 0, null, context);
+    }
+
+    public Http2TestServer(String serverName, boolean secure,
+                           SSLContext context) throws Exception {
+        this(serverName, secure, 0, null, context);
+    }
+
+    public Http2TestServer(boolean secure,
+                           int port,
+                           ExecutorService exec,
+                           SSLContext context) throws Exception {
+        this(null, secure, port, exec, context);
     }
 
     /**
@@ -80,17 +98,20 @@ public class Http2TestServer implements AutoCloseable {
      * to know in advance whether incoming connections are plain TCP "h2c"
      * or TLS "h2"/
      *
+     * @param serverName SNI servername
      * @param secure https or http
      * @param port listen port
      * @param exec executor service (cached thread pool is used if null)
      * @param context the SSLContext used when secure is true
      */
-    public Http2TestServer(boolean secure,
+    public Http2TestServer(String serverName,
+                           boolean secure,
                            int port,
                            ExecutorService exec,
                            SSLContext context)
         throws Exception
     {
+        this.serverName = serverName;
         if (secure) {
             server = initSecure(port);
         } else {
@@ -163,6 +184,10 @@ public class Http2TestServer implements AutoCloseable {
         se.setEnabledProtocols(se.getSupportedProtocols());
         // other initialisation here
         return se;
+    }
+
+    public String serverName() {
+        return serverName;
     }
 
     /**

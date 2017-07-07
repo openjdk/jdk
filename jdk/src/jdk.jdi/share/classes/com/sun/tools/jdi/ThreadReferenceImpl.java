@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,32 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.request.BreakpointRequest;
-import java.util.*;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidStackFrameException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Location;
+import com.sun.jdi.MonitorInfo;
+import com.sun.jdi.NativeMethodException;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.StackFrame;
+import com.sun.jdi.ThreadGroupReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.BreakpointRequest;
 
 public class ThreadReferenceImpl extends ObjectReferenceImpl
-             implements ThreadReference, VMListener {
+                                 implements ThreadReference {
     static final int SUSPEND_STATUS_SUSPENDED = 0x1;
     static final int SUSPEND_STATUS_BREAK = 0x2;
 
@@ -113,11 +132,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     }
 
     // Listeners - synchronized on vm.state()
-    private List<WeakReference<ThreadListener>> listeners = new ArrayList<WeakReference<ThreadListener>>();
-
+    private List<WeakReference<ThreadListener>> listeners = new ArrayList<>();
 
     ThreadReferenceImpl(VirtualMachine aVm, long aRef) {
-        super(aVm,aRef);
+        super(aVm, aRef);
         resetLocalCache();
         vm.state().addListener(this);
     }
@@ -165,8 +183,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 name = local.name;
             }
             if (name == null) {
-                name = JDWP.ThreadReference.Name.process(vm, this)
-                                                             .threadName;
+                name = JDWP.ThreadReference.Name.process(vm, this).threadName;
                 if (local != null) {
                     local.name = name;
                 }
@@ -404,7 +421,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                     = JDWP.ThreadReference.Frames.
                     process(vm, this, start, length).frames;
                 int count = jdwpFrames.length;
-                snapshot.frames = new ArrayList<StackFrame>(count);
+                snapshot.frames = new ArrayList<>(count);
 
                 for (int i = 0; i<count; i++) {
                     if (jdwpFrames[i].location == null) {
@@ -500,11 +517,9 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.monitor[] minfo;
                 minfo = JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.process(vm, this).owned;
 
-                snapshot.ownedMonitorsInfo = new ArrayList<MonitorInfo>(minfo.length);
+                snapshot.ownedMonitorsInfo = new ArrayList<>(minfo.length);
 
                 for (int i=0; i < minfo.length; i++) {
-                    JDWP.ThreadReference.OwnedMonitorsStackDepthInfo.monitor mi =
-                                                                         minfo[i];
                     MonitorInfo mon = new MonitorInfoImpl(vm, minfo[i].monitor, this, minfo[i].stack_depth);
                     snapshot.ownedMonitorsInfo.add(mon);
                 }
@@ -542,8 +557,8 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         ((StackFrameImpl)frame).pop();
     }
 
-    public void forceEarlyReturn(Value  returnValue) throws InvalidTypeException,
-                                                            ClassNotLoadedException,
+    public void forceEarlyReturn(Value returnValue) throws InvalidTypeException,
+                                                           ClassNotLoadedException,
                                              IncompatibleThreadStateException {
         if (!vm.canForceEarlyReturn()) {
             throw new UnsupportedOperationException(
@@ -595,7 +610,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
 
     void addListener(ThreadListener listener) {
         synchronized (vm.state()) {
-            listeners.add(new WeakReference<ThreadListener>(listener));
+            listeners.add(new WeakReference<>(listener));
         }
     }
 

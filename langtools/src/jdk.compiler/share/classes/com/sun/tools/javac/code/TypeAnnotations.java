@@ -55,6 +55,7 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
@@ -480,12 +481,12 @@ public class TypeAnnotations {
                             // The normal declaration annotation checks make sure that the use is valid.
                             break;
                         case 1:
-                            log.error(typetree.pos(), "cant.type.annotate.scoping.1",
-                                    onlyTypeAnnotations);
+                            log.error(typetree.pos(),
+                                      Errors.CantTypeAnnotateScoping1(onlyTypeAnnotations.head));
                             break;
                         default:
-                            log.error(typetree.pos(), "cant.type.annotate.scoping",
-                                    onlyTypeAnnotations);
+                            log.error(typetree.pos(),
+                                      Errors.CantTypeAnnotateScoping(onlyTypeAnnotations));
                     }
                     return type;
                 }

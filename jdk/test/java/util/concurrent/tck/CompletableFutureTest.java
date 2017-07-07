@@ -2589,28 +2589,28 @@ public class CompletableFutureTest extends JSR166TestCase {
 
         // unspecified behavior - both source completions available
         try {
-            assertEquals(null, h0.join());
+            assertNull(h0.join());
             rs[0].assertValue(v1);
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h0, ex);
             rs[0].assertNotInvoked();
         }
         try {
-            assertEquals(null, h1.join());
+            assertNull(h1.join());
             rs[1].assertValue(v1);
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h1, ex);
             rs[1].assertNotInvoked();
         }
         try {
-            assertEquals(null, h2.join());
+            assertNull(h2.join());
             rs[2].assertValue(v1);
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h2, ex);
             rs[2].assertNotInvoked();
         }
         try {
-            assertEquals(null, h3.join());
+            assertNull(h3.join());
             rs[3].assertValue(v1);
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h3, ex);
@@ -2849,28 +2849,28 @@ public class CompletableFutureTest extends JSR166TestCase {
 
         // unspecified behavior - both source completions available
         try {
-            assertEquals(null, h0.join());
+            assertNull(h0.join());
             rs[0].assertInvoked();
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h0, ex);
             rs[0].assertNotInvoked();
         }
         try {
-            assertEquals(null, h1.join());
+            assertNull(h1.join());
             rs[1].assertInvoked();
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h1, ex);
             rs[1].assertNotInvoked();
         }
         try {
-            assertEquals(null, h2.join());
+            assertNull(h2.join());
             rs[2].assertInvoked();
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h2, ex);
             rs[2].assertNotInvoked();
         }
         try {
-            assertEquals(null, h3.join());
+            assertNull(h3.join());
             rs[3].assertInvoked();
         } catch (CompletionException ok) {
             checkCompletedWithWrappedException(h3, ex);

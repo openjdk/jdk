@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,20 @@
 
 package com.sun.jdi.event;
 
-import com.sun.jdi.*;
-
-import java.util.List;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.BreakpointRequest;
 
 /**
  * Notification of a breakpoint in the target VM.
- * The breakpoint event
- * is generated before the code at its location is executed.
- * When a location
- * is reached which satisfies a currently enabled
- * {@link com.sun.jdi.request.BreakpointRequest breakpoint request},
- * an {@link EventSet event set}
- * containing an instance of this class will be added
- * to the VM's event queue.
+ *
+ * The breakpoint event is generated before the code at its location
+ * is executed. When a location is reached which satisfies a currently enabled
+ * {@link BreakpointRequest breakpoint request}, an {@link EventSet event set}
+ * containing an instance of this class will be added to the VM's event queue.
  *
  * @see EventQueue
  * @see VirtualMachine
- * @see com.sun.jdi.request.BreakpointRequest
+ * @see BreakpointRequest
  *
  * @author Robert Field
  * @since  1.3

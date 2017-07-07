@@ -626,7 +626,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         glyphinfo = gv.getGlyphInfo();
     }
     catch (Exception e) {
-        System.out.println(source);
+        if (DEBUG) {
+            System.err.println(source);
+            e.printStackTrace();
+        }
+        glyphinfo = new float[gv.getNumGlyphs() * numvals];
     }
 
     int numGlyphs = gv.getNumGlyphs();
@@ -775,7 +779,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         if (gx == gxlimit) {
            tgt = charInfo.length / numvals;
         } else {
-           tgt = indices[gx]-1;
+           tgt = indices[gx];
         }
         if (DEBUG) {
            System.err.println("gx=" + gx + " gxlimit=" + gxlimit +

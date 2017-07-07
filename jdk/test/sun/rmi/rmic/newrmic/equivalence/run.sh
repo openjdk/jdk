@@ -22,6 +22,8 @@
 #
 
 # @test
+# @ignore test is disabled, while further discussion on the rmic -Xnew feature
+# takes place (c.f JDK-8146299, JDK-8145980).
 # @bug 4911536
 # @summary This test verifies that the new implementation of rmic
 # generates equivalent classes as the old implementation, for a set

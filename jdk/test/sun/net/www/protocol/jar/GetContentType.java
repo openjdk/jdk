@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,8 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4274624
- * @summary  Test JarURLConnection.getContentType would
- *           would return default "content/unknown"
- *
- * @build GetContentType
- * @run shell getcontenttype.sh
- */
-
-import java.net.URL;
 import java.io.InputStream;
+import java.net.URL;
 
 public class GetContentType {
     public static void main(String args[]) throws Exception {
