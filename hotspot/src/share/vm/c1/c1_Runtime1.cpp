@@ -104,8 +104,6 @@ const char *Runtime1::_blob_names[] = {
 #ifndef PRODUCT
 // statistics
 int Runtime1::_generic_arraycopy_cnt = 0;
-int Runtime1::_primitive_arraycopy_cnt = 0;
-int Runtime1::_oop_arraycopy_cnt = 0;
 int Runtime1::_generic_arraycopystub_cnt = 0;
 int Runtime1::_arraycopy_slowcase_cnt = 0;
 int Runtime1::_arraycopy_checkcast_cnt = 0;
@@ -1443,37 +1441,6 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
 JRT_END
 
 
-JRT_LEAF(void, Runtime1::primitive_arraycopy(HeapWord* src, HeapWord* dst, int length))
-#ifndef PRODUCT
-  _primitive_arraycopy_cnt++;
-#endif
-
-  if (length == 0) return;
-  // Not guaranteed to be word atomic, but that doesn't matter
-  // for anything but an oop array, which is covered by oop_arraycopy.
-  Copy::conjoint_jbytes(src, dst, length);
-JRT_END
-
-JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
-#ifndef PRODUCT
-  _oop_arraycopy_cnt++;
-#endif
-
-  if (num == 0) return;
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
-  if (UseCompressedOops) {
-    bs->write_ref_array_pre((narrowOop*)dst, num);
-    Copy::conjoint_oops_atomic((narrowOop*) src, (narrowOop*) dst, num);
-  } else {
-    bs->write_ref_array_pre((oop*)dst, num);
-    Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
-  }
-  bs->write_ref_array(dst, num);
-JRT_END
-
-
 JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
   // had to return int instead of bool, otherwise there may be a mismatch
   // between the C calling convention and the Java one.
@@ -1545,9 +1512,7 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _short_arraycopy_cnt:            %d", _short_arraycopy_stub_cnt);
   tty->print_cr(" _int_arraycopy_cnt:              %d", _int_arraycopy_stub_cnt);
   tty->print_cr(" _long_arraycopy_cnt:             %d", _long_arraycopy_stub_cnt);
-  tty->print_cr(" _primitive_arraycopy_cnt:        %d", _primitive_arraycopy_cnt);
-  tty->print_cr(" _oop_arraycopy_cnt (C):          %d", Runtime1::_oop_arraycopy_cnt);
-  tty->print_cr(" _oop_arraycopy_cnt (stub):       %d", _oop_arraycopy_stub_cnt);
+  tty->print_cr(" _oop_arraycopy_cnt:              %d", _oop_arraycopy_stub_cnt);
   tty->print_cr(" _arraycopy_slowcase_cnt:         %d", _arraycopy_slowcase_cnt);
   tty->print_cr(" _arraycopy_checkcast_cnt:        %d", _arraycopy_checkcast_cnt);
   tty->print_cr(" _arraycopy_checkcast_attempt_cnt:%d", _arraycopy_checkcast_attempt_cnt);
