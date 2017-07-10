@@ -258,7 +258,6 @@ AOTCodeHeap::AOTCodeHeap(AOTLib* lib) :
   _code_to_aot = NEW_C_HEAP_ARRAY(CodeToAMethod, _method_count, mtCode);
   memset(_code_to_aot, 0, _method_count * sizeof(CodeToAMethod));
 
-  _low_boundary = _code_space;
   _memory.set_low_boundary((char *)_code_space);
   _memory.set_high_boundary((char *)_code_space);
   _memory.set_low((char *)_code_space);
