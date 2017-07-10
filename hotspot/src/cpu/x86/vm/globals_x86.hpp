@@ -119,7 +119,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(intx, UseAVX, 2,                                                  \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
-          constraint(UseAVXConstraintFunc, AtParse)                         \
                                                                             \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \
