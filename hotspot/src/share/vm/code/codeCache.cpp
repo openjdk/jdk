@@ -422,6 +422,16 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
   MemoryService::add_code_heap_memory_pool(heap, name);
 }
 
+CodeHeap* CodeCache::get_code_heap_containing(void* start) {
+  assert(start != NULL, "start is null");
+  FOR_ALL_HEAPS(heap) {
+    if ((*heap)->contains(start)) {
+      return *heap;
+    }
+  }
+  return NULL;
+}
+
 CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
   assert(cb != NULL, "CodeBlob is null");
   FOR_ALL_HEAPS(heap) {
@@ -609,12 +619,10 @@ CodeBlob* CodeCache::find_blob(void* start) {
 // what you are doing)
 CodeBlob* CodeCache::find_blob_unsafe(void* start) {
   // NMT can walk the stack before code cache is created
-  if (_heaps != NULL && !_heaps->is_empty()) {
-    FOR_ALL_HEAPS(heap) {
-      CodeBlob* result = (*heap)->find_blob_unsafe(start);
-      if (result != NULL) {
-        return result;
-      }
+  if (_heaps != NULL) {
+    CodeHeap* heap = get_code_heap_containing(start);
+    if (heap != NULL) {
+      return heap->find_blob_unsafe(start);
     }
   }
   return NULL;

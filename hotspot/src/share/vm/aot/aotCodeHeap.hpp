@@ -191,24 +191,20 @@ class AOTCodeHeap : public CodeHeap {
   // Collect stubs info
   int* _stubs_offsets;
 
-  address _low_boundary;
-
   bool _lib_symbols_initialized;
 
   void adjust_boundaries(AOTCompiledMethod* method) {
-    address low = _low_boundary;
-    if (method->code_begin() < low) {
-      low = method->code_begin();
+    char* low = (char*)method->code_begin();
+    if (low < low_boundary()) {
+      _memory.set_low_boundary(low);
+      _memory.set_low(low);
     }
-    address high = high_boundary();
-    if (method->code_end() > high) {
-      high = method->code_end();
+    char* high = (char *)method->code_end();
+    if (high > high_boundary()) {
+      _memory.set_high_boundary(high);
+      _memory.set_high(high);
     }
     assert(_method_count > 0, "methods count should be set already");
-
-    _low_boundary = low;
-    _memory.set_high_boundary((char *)high);
-    _memory.set_high((char *)high);
   }
 
   void register_stubs();
@@ -230,20 +226,6 @@ class AOTCodeHeap : public CodeHeap {
 public:
   AOTCodeHeap(AOTLib* lib);
   virtual ~AOTCodeHeap();
-
-  address low_boundary()  const { return _low_boundary; }
-  address high_boundary() const { return (address)CodeHeap::high(); }
-
-  bool contains(const void* p) const {
-    bool result = (low_boundary() <= p) && (p < high_boundary());
-    assert(!result || (_method_count > 0), "");
-    assert(result == CodeHeap::contains(p), "");
-    return result;
-  }
-
-  bool contains_blob(const CodeBlob* blob) const {
-    return CodeHeap::contains(blob->code_begin());
-  }
 
   AOTCompiledMethod* find_aot(address p) const;
 
