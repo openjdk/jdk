@@ -78,8 +78,10 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else {
+    if (HeapRegion::is_in_same_region(p, obj)) {
+      return;
+    }
     handle_non_cset_obj_common(state, p, obj);
-
     _par_scan_state->update_rs(_from, p, obj);
   }
 }
@@ -171,9 +173,7 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
     if (_from == to) {
       return;
     }
-
     handle_non_cset_obj_common(state, p, obj);
-
     to->rem_set()->add_reference(p, _worker_i);
   }
 }
@@ -190,6 +190,9 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else {
+    if (HeapRegion::is_in_same_region(p, obj)) {
+      return;
+    }
     handle_non_cset_obj_common(state, p, obj);
   }
 }

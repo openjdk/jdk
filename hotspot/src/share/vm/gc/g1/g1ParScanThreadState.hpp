@@ -100,9 +100,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   template <class T> void push_on_queue(T* ref);
 
   template <class T> void update_rs(HeapRegion* from, T* p, oop o) {
-    // If the new value of the field points to the same region or
-    // is the to-space, we don't need to include it in the Rset updates.
-    if (!HeapRegion::is_in_same_region(p, o) && !from->is_young()) {
+    assert(!HeapRegion::is_in_same_region(p, o), "Caller should have filtered out cross-region references already.");
+    // If the field originates from the to-space, we don't need to include it
+    // in the remembered set updates.
+    if (!from->is_young()) {
       size_t card_index = ctbs()->index_for(p);
       // If the card hasn't been added to the buffer, do it.
       if (ctbs()->mark_card_deferred(card_index)) {
