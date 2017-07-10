@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -199,7 +199,7 @@ public final class DocumentCache implements DOMCache {
             // Check for a "file:" URI (courtesy of Brian Ewins)
             if (timestamp == 0){ // get 0 for local URI
                 if ("file".equals(url.getProtocol())){
-                    File localfile = new File(URLDecoder.decode(url.getFile()));
+                    File localfile = Paths.get(url.toURI()).toFile();
                     timestamp = localfile.lastModified();
                 }
             }
