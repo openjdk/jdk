@@ -68,15 +68,15 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *   <caption>Required and optional fields for events added to the writer</caption>
    *   <thead>
    *     <tr>
-   *       <th>Event Type</th>
-   *       <th>Required Fields</th>
-   *       <th>Optional Fields</th>
-   *       <th>Required Behavior</th>
+   *       <th scope="col">Event Type</th>
+   *       <th scope="col">Required Fields</th>
+   *       <th scope="col">Optional Fields</th>
+   *       <th scope="col">Required Behavior</th>
    *     </tr>
    *   </thead>
    *   <tbody>
    *     <tr>
-   *       <td> START_ELEMENT  </td>
+   *       <th scope="row"> START_ELEMENT  </th>
    *       <td> QName name </td>
    *       <td> namespaces , attributes </td>
    *       <td> A START_ELEMENT will be written by writing the name,
@@ -96,7 +96,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *       </td>
    *     </tr>
    *     <tr>
-   *       <td> END_ELEMENT  </td>
+   *       <th scope="row"> END_ELEMENT  </th>
    *       <td> Qname name  </td>
    *       <td> None </td>
    *       <td> A well formed END_ELEMENT tag is written.
@@ -111,7 +111,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *       </td>
    *     </tr>
    *     <tr>
-   *       <td> ATTRIBUTE  </td>
+   *       <th scope="row"> ATTRIBUTE  </th>
    *       <td> QName name , String value </td>
    *       <td> QName type </td>
    *       <td> An attribute is written using the same algorithm
@@ -122,7 +122,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *       </td>
    *     </tr>
    *     <tr>
-   *       <td> NAMESPACE  </td>
+   *       <th scope="row"> NAMESPACE  </th>
    *       <td> String prefix, String namespaceURI,
    *            boolean isDefaultNamespaceDeclaration
    *      </td>
@@ -137,7 +137,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *      </td>
    *     </tr>
    *     <tr>
-   *       <td> PROCESSING_INSTRUCTION  </td>
+   *       <th scope="row"> PROCESSING_INSTRUCTION  </th>
    *       <td>   None</td>
    *       <td>   String target, String data</td>
    *       <td>   The data does not need to be present and may be
@@ -149,7 +149,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *      </td>
    *     </tr>
    *     <tr>
-   *       <td> COMMENT  </td>
+   *       <th scope="row"> COMMENT  </th>
    *       <td> None  </td>
    *       <td> String comment  </td>
    *       <td> If the comment is present (not null) it is written, otherwise an
@@ -157,7 +157,7 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *      </td>
    *     </tr>
    *     <tr>
-   *       <td> START_DOCUMENT  </td>
+   *       <th scope="row"> START_DOCUMENT  </th>
    *       <td> None  </td>
    *       <td> String encoding , boolean standalone, String version  </td>
    *       <td> A START_DOCUMENT event is not required to be written to the
@@ -166,13 +166,13 @@ public interface XMLEventWriter extends XMLEventConsumer {
    *      </td>
    *     </tr>
    *     <tr>
-   *       <td> END_DOCUMENT  </td>
+   *       <th scope="row"> END_DOCUMENT  </th>
    *       <td> None </td>
    *       <td> None  </td>
    *       <td> Nothing is written to the output  </td>
    *     </tr>
    *     <tr>
-   *       <td> DTD  </td>
+   *       <th scope="row"> DTD  </th>
    *       <td> String DocumentTypeDefinition  </td>
    *       <td> None  </td>
    *       <td> The DocumentTypeDefinition is written to the output  </td>
