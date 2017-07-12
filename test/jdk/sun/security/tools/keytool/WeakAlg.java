@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171319 8177569
+ * @bug 8171319 8177569 8182879
  * @summary keytool should print out warnings when reading or generating
   *         cert/cert req using weak algorithms
  * @library /test/lib
@@ -40,6 +40,7 @@
  * @run main/othervm/timeout=600 -Duser.language=en -Duser.country=US WeakAlg
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.security.tools.KeyStoreUtil;
@@ -47,6 +48,7 @@ import sun.security.util.DisabledAlgorithmConstraints;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -141,25 +143,164 @@ public class WeakAlg {
         kt("-delete -alias b");
         kt("-printcrl -file b.crl")
                 .shouldContain("WARNING: not verified");
+
+        jksTypeCheck();
+
+        checkInplaceImportKeyStore();
+    }
+
+    static void jksTypeCheck() throws Exception {
+
+        // No warning for cacerts, all certs
+        kt0("-cacerts -list -storepass changeit")
+                .shouldNotContain("Warning:");
+
+        rm("ks");
+        rm("ks2");
+
+        kt("-genkeypair -alias a -dname CN=A")
+                .shouldNotContain("Warning:");
+        kt("-list")
+                .shouldNotContain("Warning:");
+        kt("-list -storetype jks") // no warning if PKCS12 used as JKS
+                .shouldNotContain("Warning:");
+        kt("-exportcert -alias a -file a.crt")
+                .shouldNotContain("Warning:");
+
+        // warn if migrating to JKS
+        importkeystore("ks", "ks2", "-deststoretype jks")
+                .shouldContain("JKS keystore uses a proprietary format");
+
+        rm("ks");
+        rm("ks2");
+        rm("ks3");
+
+        // no warning if all certs
+        kt("-importcert -alias b -file a.crt -storetype jks -noprompt")
+                .shouldNotContain("Warning:");
+        kt("-genkeypair -alias a -dname CN=A")
+                .shouldContain("JKS keystore uses a proprietary format");
+        kt("-list")
+                .shouldContain("JKS keystore uses a proprietary format");
+        kt("-list -storetype pkcs12") // warn if JKS used as PKCS12
+                .shouldContain("JKS keystore uses a proprietary format");
+        kt("-exportcert -alias a -file a.crt")
+                .shouldContain("JKS keystore uses a proprietary format");
+        kt("-printcert -file a.crt") // no warning if keystore not touched
+                .shouldNotContain("Warning:");
+        kt("-certreq -alias a -file a.req")
+                .shouldContain("JKS keystore uses a proprietary format");
+        kt("-printcertreq -file a.req") // no warning if keystore not touched
+                .shouldNotContain("Warning:");
+
+        // No warning if migrating from JKS
+        importkeystore("ks", "ks2", "")
+                .shouldNotContain("Warning:");
+
+        importkeystore("ks", "ks3", "-deststoretype pkcs12")
+                .shouldNotContain("Warning:");
+
+        rm("ks");
+
+        kt("-genkeypair -alias a -dname CN=A -storetype jceks")
+                .shouldContain("JCEKS keystore uses a proprietary format");
+        kt("-list")
+                .shouldContain("JCEKS keystore uses a proprietary format");
+        kt("-importcert -alias b -file a.crt -noprompt")
+                .shouldContain("JCEKS keystore uses a proprietary format");
+        kt("-exportcert -alias a -file a.crt")
+                .shouldContain("JCEKS keystore uses a proprietary format");
+        kt("-printcert -file a.crt")
+                .shouldNotContain("Warning:");
+        kt("-certreq -alias a -file a.req")
+                .shouldContain("JCEKS keystore uses a proprietary format");
+        kt("-printcertreq -file a.req")
+                .shouldNotContain("Warning:");
+        kt("-genseckey -alias c -keyalg AES -keysize 128")
+                .shouldContain("JCEKS keystore uses a proprietary format");
     }
 
     static void checkImportKeyStore() throws Exception {
 
-        saveStore();
+        rm("ks2");
+        rm("ks3");
 
-        rm("ks");
-        kt("-importkeystore -srckeystore ks2 -srcstorepass changeit")
+        importkeystore("ks", "ks2", "")
                 .shouldContain("3 entries successfully imported")
                 .shouldContain("Warning")
                 .shouldMatch("<b>.*512-bit RSA key.*risk")
                 .shouldMatch("<a>.*MD5withRSA.*risk");
 
-        rm("ks");
-        kt("-importkeystore -srckeystore ks2 -srcstorepass changeit -srcalias a")
+        importkeystore("ks", "ks3", "-srcalias a")
                 .shouldContain("Warning")
                 .shouldMatch("<a>.*MD5withRSA.*risk");
+    }
 
-        reStore();
+    static void checkInplaceImportKeyStore() throws Exception {
+
+        rm("ks");
+        genkeypair("a", "");
+
+        // Same type backup
+        importkeystore("ks", "ks", "")
+                .shouldContain("Warning:")
+                .shouldMatch("original.*ks.old");
+
+        importkeystore("ks", "ks", "")
+                .shouldContain("Warning:")
+                .shouldMatch("original.*ks.old2");
+
+        importkeystore("ks", "ks", "-srcstoretype jks") // it knows real type
+                .shouldContain("Warning:")
+                .shouldMatch("original.*ks.old3");
+
+        String cPath = new File("ks").getCanonicalPath();
+
+        importkeystore("ks", cPath, "")
+                .shouldContain("Warning:")
+                .shouldMatch("original.*ks.old4");
+
+        // Migration
+        importkeystore("ks", "ks", "-deststoretype jks")
+                .shouldContain("Warning:")
+                .shouldContain("JKS keystore uses a proprietary format")
+                .shouldMatch("Migrated.*JKS.*PKCS12.*ks.old5");
+
+        Asserts.assertEQ(
+                KeyStore.getInstance(
+                        new File("ks"), "changeit".toCharArray()).getType(),
+                "JKS");
+
+        importkeystore("ks", "ks", "-srcstoretype PKCS12")
+                .shouldContain("Warning:")
+                .shouldNotContain("proprietary format")
+                .shouldMatch("Migrated.*PKCS12.*JKS.*ks.old6");
+
+        Asserts.assertEQ(
+                KeyStore.getInstance(
+                        new File("ks"), "changeit".toCharArray()).getType(),
+                "PKCS12");
+
+        Asserts.assertEQ(
+                KeyStore.getInstance(
+                        new File("ks.old6"), "changeit".toCharArray()).getType(),
+                "JKS");
+
+        // One password prompt is enough for migration
+        kt0("-importkeystore -srckeystore ks -destkeystore ks", "changeit")
+                .shouldMatch("original.*ks.old7");
+
+        // But three if importing to a different keystore
+        rm("ks2");
+        kt0("-importkeystore -srckeystore ks -destkeystore ks2",
+                    "changeit")
+                .shouldContain("Keystore password is too short");
+
+        kt0("-importkeystore -srckeystore ks -destkeystore ks2",
+                "changeit", "changeit", "changeit")
+                .shouldContain("Importing keystore ks to ks2...")
+                .shouldNotContain("original")
+                .shouldNotContain("Migrated");
     }
 
     static void checkImport() throws Exception {
@@ -525,17 +666,22 @@ public class WeakAlg {
         }
     }
 
-    // Fast keytool execution by directly calling its main() method
     static OutputAnalyzer kt(String cmd, String... input) {
+        return kt0("-keystore ks -storepass changeit " +
+                "-keypass changeit " + cmd, input);
+    }
+
+    // Fast keytool execution by directly calling its main() method
+    static OutputAnalyzer kt0(String cmd, String... input) {
         PrintStream out = System.out;
         PrintStream err = System.err;
         InputStream ins = System.in;
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ByteArrayOutputStream berr = new ByteArrayOutputStream();
         boolean succeed = true;
+        String sout;
+        String serr;
         try {
-            cmd = "-keystore ks -storepass changeit " +
-                    "-keypass changeit " + cmd;
             System.out.println("---------------------------------------------");
             System.out.println("$ keytool " + cmd);
             System.out.println();
@@ -559,19 +705,26 @@ public class WeakAlg {
             System.setOut(out);
             System.setErr(err);
             System.setIn(ins);
+            sout = new String(bout.toByteArray());
+            serr = new String(berr.toByteArray());
+            System.out.println("STDOUT:\n" + sout + "\nSTDERR:\n" + serr);
         }
-        String sout = new String(bout.toByteArray());
-        String serr = new String(berr.toByteArray());
-        System.out.println("STDOUT:\n" + sout + "\nSTDERR:\n" + serr);
         if (!succeed) {
             throw new RuntimeException();
         }
         return new OutputAnalyzer(sout, serr);
     }
 
+    static OutputAnalyzer importkeystore(String src, String dest,
+                                         String options) {
+        return kt0("-importkeystore "
+                + "-srckeystore " + src + " -destkeystore " + dest
+                + " -srcstorepass changeit -deststorepass changeit " + options);
+    }
+
     static OutputAnalyzer genkeypair(String alias, String options) {
         return kt("-genkeypair -alias " + alias + " -dname CN=" + alias
-                + " -storetype JKS " + options);
+                + " -storetype PKCS12 " + options);
     }
 
     static OutputAnalyzer certreq(String alias, String options) {
