@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
 #define SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
 
+#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 
 // Forward Decl.
@@ -50,9 +51,6 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   Monitor* _monitor;
   ConcurrentG1Refine* _cg1r;
 
-  // The closure applied to completed log buffers.
-  CardTableEntryClosure* _refine_closure;
-
   // This thread's activation/deactivation thresholds
   size_t _activation_threshold;
   size_t _deactivation_threshold;
@@ -72,7 +70,6 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 public:
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
-                           CardTableEntryClosure* refine_closure,
                            uint worker_id_offset, uint worker_id,
                            size_t activate, size_t deactivate);
 
