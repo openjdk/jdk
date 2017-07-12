@@ -109,8 +109,6 @@ public:
   bool do_object_b(oop p);
 };
 
-class RefineCardTableEntryClosure;
-
 class G1RegionMappingChangedListener : public G1MappingChangedListener {
  private:
   void reset_from_card_cache(uint start_idx, size_t num_regions);
@@ -781,9 +779,6 @@ protected:
   // concurrently after the collection.
   DirtyCardQueueSet _dirty_card_queue_set;
 
-  // The closure used to refine a single card.
-  RefineCardTableEntryClosure* _refine_cte_cl;
-
   // After a collection pause, convert the regions in the collection set into free
   // regions.
   void free_collection_set(G1CollectionSet* collection_set, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
@@ -940,8 +935,6 @@ protected:
 
 public:
 
-  void set_refine_cte_cl_concurrency(bool concurrent);
-
   RefToScanQueue *task_queue(uint i) const;
 
   uint num_task_queues() const;
@@ -954,6 +947,9 @@ public:
   // May not return if something goes wrong.
   G1CollectedHeap(G1CollectorPolicy* policy);
 
+private:
+  jint initialize_concurrent_refinement();
+public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.

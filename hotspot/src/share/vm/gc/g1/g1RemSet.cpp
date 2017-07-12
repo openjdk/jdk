@@ -36,6 +36,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -290,13 +291,9 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1,
   _prev_period_summary(),
   _into_cset_dirty_card_queue_set(false)
 {
-  if (log_is_enabled(Trace, gc, remset)) {
-    _prev_period_summary.initialize(this);
-  }
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
-                                             DirtyCardQ_CBL_mon,
+  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
                                              DirtyCardQ_FL_lock,
                                              -1, // never trigger processing
                                              -1, // no limit on length
@@ -522,7 +519,6 @@ void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-  _g1->set_refine_cte_cl_concurrency(false);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
@@ -531,8 +527,6 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   G1GCPhaseTimes* phase_times = _g1->g1_policy()->phase_times();
-  // Cleanup after copy
-  _g1->set_refine_cte_cl_concurrency(true);
 
   // Set all cards back to clean.
   double start = os::elapsedTime();
@@ -790,12 +784,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
   if ((G1SummarizeRSetStatsPeriod > 0) && log_is_enabled(Trace, gc, remset) &&
       (period_count % G1SummarizeRSetStatsPeriod == 0)) {
 
-    if (!_prev_period_summary.initialized()) {
-      _prev_period_summary.initialize(this);
-    }
-
-    G1RemSetSummary current;
-    current.initialize(this);
+    G1RemSetSummary current(this);
     _prev_period_summary.subtract_from(&current);
 
     Log(gc, remset) log;
@@ -811,8 +800,7 @@ void G1RemSet::print_summary_info() {
   Log(gc, remset, exit) log;
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
-    G1RemSetSummary current;
-    current.initialize(this);
+    G1RemSetSummary current(this);
     ResourceMark rm;
     current.print_on(log.trace_stream());
   }

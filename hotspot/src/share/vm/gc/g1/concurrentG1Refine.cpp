@@ -169,8 +169,7 @@ static size_t calc_init_red_zone(size_t green, size_t yellow) {
   return MIN2(yellow + size, max_red_zone);
 }
 
-ConcurrentG1Refine* ConcurrentG1Refine::create(CardTableEntryClosure* refine_closure,
-                                               jint* ecode) {
+ConcurrentG1Refine* ConcurrentG1Refine::create(jint* ecode) {
   size_t min_yellow_zone_size = calc_min_yellow_zone_size();
   size_t green_zone = calc_init_green_zone();
   size_t yellow_zone = calc_init_yellow_zone(green_zone, min_yellow_zone_size);
@@ -209,7 +208,6 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(CardTableEntryClosure* refine_clo
     ConcurrentG1RefineThread* t =
       new ConcurrentG1RefineThread(cg1r,
                                    next,
-                                   refine_closure,
                                    worker_id_offset,
                                    i,
                                    activation_level(thresholds),

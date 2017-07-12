@@ -68,9 +68,6 @@ public:
 
 
 class DirtyCardQueueSet: public PtrQueueSet {
-  // The closure used in mut_process_buffer().
-  CardTableEntryClosure* _mut_process_closure;
-
   DirtyCardQueue _shared_dirty_card_queue;
 
   // Apply the closure to the elements of "node" from it's index to
@@ -84,6 +81,23 @@ class DirtyCardQueueSet: public PtrQueueSet {
                                BufferNode* node,
                                bool consume,
                                uint worker_i = 0);
+
+  // If there are more than stop_at completed buffers, pop one, apply
+  // the specified closure to its active elements, and return true.
+  // Otherwise return false.
+  //
+  // A completely processed buffer is freed.  However, if a closure
+  // invocation returns false, processing is stopped and the partially
+  // processed buffer (with its index updated to exclude the processed
+  // elements, e.g. up to the element for which the closure returned
+  // false) is returned to the completed buffer set.
+  //
+  // If during_pause is true, stop_at must be zero, and the closure
+  // must never return false.
+  bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
+                                         uint worker_i,
+                                         size_t stop_at,
+                                         bool during_pause);
 
   bool mut_process_buffer(BufferNode* node);
 
@@ -103,8 +117,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
 public:
   DirtyCardQueueSet(bool notify_when_complete = true);
 
-  void initialize(CardTableEntryClosure* cl,
-                  Monitor* cbl_mon,
+  void initialize(Monitor* cbl_mon,
                   Mutex* fl_lock,
                   int process_completed_threshold,
                   int max_completed_queue,
@@ -118,22 +131,13 @@ public:
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // If there are more than stop_at completed buffers, pop one, apply
-  // the specified closure to its active elements, and return true.
-  // Otherwise return false.
-  //
-  // A completely processed buffer is freed.  However, if a closure
-  // invocation returns false, processing is stopped and the partially
-  // processed buffer (with its index updated to exclude the processed
-  // elements, e.g. up to the element for which the closure returned
-  // false) is returned to the completed buffer set.
-  //
-  // If during_pause is true, stop_at must be zero, and the closure
-  // must never return false.
-  bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
-                                         uint worker_i,
-                                         size_t stop_at,
-                                         bool during_pause);
+  // Apply G1RefineCardConcurrentlyClosure to completed buffers until there are stop_at
+  // completed buffers remaining.
+  bool refine_completed_buffer_concurrently(uint worker_i, size_t stop_at);
+
+  // Apply the given closure to all completed buffers. The given closure's do_card_ptr
+  // must never return false. Must only be called during GC.
+  bool apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i);
 
   BufferNode* get_completed_buffer(size_t stop_at);
 
