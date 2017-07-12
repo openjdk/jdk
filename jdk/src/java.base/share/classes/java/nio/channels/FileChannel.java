@@ -177,11 +177,11 @@ public abstract class FileChannel
      * <table class="striped">
      * <caption style="display:none">additional options</caption>
      * <thead>
-     * <tr> <th>Option</th> <th>Description</th> </tr>
+     * <tr> <th scope="col">Option</th> <th scope="col">Description</th> </tr>
      * </thead>
      * <tbody>
      * <tr>
-     *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
+     *   <th scope="row"> {@link StandardOpenOption#APPEND APPEND} </th>
      *   <td> If this option is present then the file is opened for writing and
      *     each invocation of the channel's {@code write} method first advances
      *     the position to the end of the file and then writes the requested
@@ -191,13 +191,13 @@ public abstract class FileChannel
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </td>
+     *   <th scope="row"> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </th>
      *   <td> If this option is present then the existing file is truncated to
      *   a size of 0 bytes. This option is ignored when the file is opened only
      *   for reading. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </td>
+     *   <th scope="row"> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </th>
      *   <td> If this option is present then a new file is created, failing if
      *   the file already exists. When creating a file the check for the
      *   existence of the file and the creation of the file if it does not exist
@@ -205,7 +205,7 @@ public abstract class FileChannel
      *   ignored when the file is opened only for reading. </td>
      * </tr>
      * <tr>
-     *   <td > {@link StandardOpenOption#CREATE CREATE} </td>
+     *   <th scope="row" > {@link StandardOpenOption#CREATE CREATE} </th>
      *   <td> If this option is present then an existing file is opened if it
      *   exists, otherwise a new file is created. When creating a file the check
      *   for the existence of the file and the creation of the file if it does
@@ -214,7 +214,7 @@ public abstract class FileChannel
      *   the file is opened only for reading. </td>
      * </tr>
      * <tr>
-     *   <td > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </td>
+     *   <th scope="row" > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </th>
      *   <td> When this option is present then the implementation makes a
      *   <em>best effort</em> attempt to delete the file when closed by the
      *   the {@link #close close} method. If the {@code close} method is not
@@ -222,20 +222,20 @@ public abstract class FileChannel
      *   when the Java virtual machine terminates. </td>
      * </tr>
      * <tr>
-     *   <td>{@link StandardOpenOption#SPARSE SPARSE} </td>
+     *   <th scope="row">{@link StandardOpenOption#SPARSE SPARSE} </th>
      *   <td> When creating a new file this option is a <em>hint</em> that the
      *   new file will be sparse. This option is ignored when not creating
      *   a new file. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#SYNC SYNC} </td>
+     *   <th scope="row"> {@link StandardOpenOption#SYNC SYNC} </th>
      *   <td> Requires that every update to the file's content or metadata be
      *   written synchronously to the underlying storage device. (see <a
      *   href="../file/package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
+     *   <th scope="row"> {@link StandardOpenOption#DSYNC DSYNC} </th>
      *   <td> Requires that every update to the file's content be written
      *   synchronously to the underlying storage device. (see <a
      *   href="../file/package-summary.html#integrity"> Synchronized I/O file
