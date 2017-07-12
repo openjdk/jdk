@@ -319,7 +319,7 @@ void Arguments::init_version_specific_system_properties() {
  *               Add a deprecation warning for an option (or alias) by adding an entry in the
  *               "special_jvm_flags" table and setting the "deprecated_in" field.
  *               Often an option "deprecated" in one major release will
- *               be made "obsolete" in the next. In this case the entry should also have it's
+ *               be made "obsolete" in the next. In this case the entry should also have its
  *               "obsolete_in" field set.
  *
  *     OBSOLETE: An option that has been removed (and deleted from globals.hpp), but is still accepted
@@ -380,8 +380,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },

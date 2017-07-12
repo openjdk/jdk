@@ -40,7 +40,9 @@ public class VMDeprecatedOptions {
      */
     public static final String[][] DEPRECATED_OPTIONS = {
         // deprecated non-alias flags:
-        {"MaxGCMinorPauseMillis", "1032"},
+        {"MaxGCMinorPauseMillis",     "1032"},
+        {"MustCallLoadClassInternal", "false"},
+        {"UnsyncloadClass",           "false"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
