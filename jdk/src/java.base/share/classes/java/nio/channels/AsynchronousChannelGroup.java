@@ -64,13 +64,13 @@ import java.util.concurrent.TimeUnit;
  * <caption style="display:none:">System properties</caption>
  *   <thead>
  *   <tr>
- *     <th>System property</th>
- *     <th>Description</th>
+ *     <th scope="col">System property</th>
+ *     <th scope="col">Description</th>
  *   </tr>
  *   </thead>
  *   <tbody>
  *   <tr>
- *     <td> {@code java.nio.channels.DefaultThreadPool.threadFactory} </td>
+ *     <th scope="row"> {@code java.nio.channels.DefaultThreadPool.threadFactory} </th>
  *     <td> The value of this property is taken to be the fully-qualified name
  *     of a concrete {@link java.util.concurrent.ThreadFactory ThreadFactory}
  *     class. The class is loaded using the system class loader and instantiated.
@@ -81,7 +81,7 @@ import java.util.concurrent.TimeUnit;
  *     construction of the default group. </td>
  *   </tr>
  *   <tr>
- *     <td> {@code java.nio.channels.DefaultThreadPool.initialSize} </td>
+ *     <th scope="row"> {@code java.nio.channels.DefaultThreadPool.initialSize} </th>
  *     <td> The value of the {@code initialSize} parameter for the default
  *     group (see {@link #withCachedThreadPool withCachedThreadPool}).
  *     The value of the property is taken to be the {@code String}
