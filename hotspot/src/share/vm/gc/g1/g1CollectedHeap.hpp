@@ -954,6 +954,9 @@ public:
   // May not return if something goes wrong.
   G1CollectedHeap(G1CollectorPolicy* policy);
 
+private:
+  jint initialize_concurrent_refinement();
+public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.

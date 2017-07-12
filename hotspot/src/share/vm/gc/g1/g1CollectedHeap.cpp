@@ -1779,6 +1779,14 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
   return result;
 }
 
+jint G1CollectedHeap::initialize_concurrent_refinement() {
+  _refine_cte_cl = new RefineCardTableEntryClosure();
+
+  jint ecode = JNI_OK;
+  _cg1r = ConcurrentG1Refine::create(_refine_cte_cl, &ecode);
+  return ecode;
+}
+
 jint G1CollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
   os::enable_vtime();
@@ -1802,14 +1810,6 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, heap_alignment, "g1 heap");
-
-  _refine_cte_cl = new RefineCardTableEntryClosure();
-
-  jint ecode = JNI_OK;
-  _cg1r = ConcurrentG1Refine::create(_refine_cte_cl, &ecode);
-  if (_cg1r == NULL) {
-    return ecode;
-  }
 
   // Reserve the maximum.
 
@@ -1838,9 +1838,6 @@ jint G1CollectedHeap::initialize() {
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
-
-  // Also create a G1 rem set.
-  _g1_rem_set = new G1RemSet(this, g1_barrier_set(), _hot_card_cache);
 
   // Carve out the G1 part of the heap.
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
@@ -1893,7 +1890,9 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
-  g1_rem_set()->initialize(max_capacity(), max_regions());
+  // Also create a G1 rem set.
+  _g1_rem_set = new G1RemSet(this, g1_barrier_set(), _hot_card_cache);
+  _g1_rem_set->initialize(max_capacity(), max_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
@@ -1935,6 +1934,11 @@ jint G1CollectedHeap::initialize() {
                                                SATB_Q_FL_lock,
                                                G1SATBProcessCompletedThreshold,
                                                Shared_SATB_Q_lock);
+
+  jint ecode = initialize_concurrent_refinement();
+  if (ecode != JNI_OK) {
+    return ecode;
+  }
 
   JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
                                                 DirtyCardQ_CBL_mon,
