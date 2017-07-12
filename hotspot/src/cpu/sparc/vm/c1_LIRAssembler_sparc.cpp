@@ -3189,16 +3189,29 @@ void LIR_Assembler::unpack64(LIR_Opr src, LIR_Opr dst) {
   __ srl (rs,  0, rd->successor());
 }
 
-
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest) {
-  LIR_Address* addr = addr_opr->as_address_ptr();
-  assert(addr->index()->is_illegal() && addr->scale() == LIR_Address::times_1, "can't handle complex addresses yet");
+  const LIR_Address* addr = addr_opr->as_address_ptr();
+  assert(addr->scale() == LIR_Address::times_1, "can't handle complex addresses yet");
+  const Register dest_reg = dest->as_pointer_register();
+  const Register base_reg = addr->base()->as_pointer_register();
 
   if (Assembler::is_simm13(addr->disp())) {
-    __ add(addr->base()->as_pointer_register(), addr->disp(), dest->as_pointer_register());
+    if (addr->index()->is_valid()) {
+      const Register index_reg = addr->index()->as_pointer_register();
+      assert(index_reg != G3_scratch, "invariant");
+      __ add(base_reg, addr->disp(), G3_scratch);
+      __ add(index_reg, G3_scratch, dest_reg);
+    } else {
+      __ add(base_reg, addr->disp(), dest_reg);
+    }
   } else {
     __ set(addr->disp(), G3_scratch);
-    __ add(addr->base()->as_pointer_register(), G3_scratch, dest->as_pointer_register());
+    if (addr->index()->is_valid()) {
+      const Register index_reg = addr->index()->as_pointer_register();
+      assert(index_reg != G3_scratch, "invariant");
+      __ add(index_reg, G3_scratch, G3_scratch);
+    }
+    __ add(base_reg, G3_scratch, dest_reg);
   }
 }
 
