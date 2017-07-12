@@ -94,28 +94,6 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // apply to TLAB allocation, which is not part of this interface: it
 // is done by clients of this interface.)
 
-// Local to this file.
-
-class RefineCardTableEntryClosure: public CardTableEntryClosure {
-  bool _concurrent;
-public:
-  RefineCardTableEntryClosure() : _concurrent(true) { }
-
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
-
-    if (_concurrent && SuspendibleThreadSet::should_yield()) {
-      // Caller will actually yield.
-      return false;
-    }
-    // Otherwise, we finished successfully; return true.
-    return true;
-  }
-
-  void set_concurrent(bool b) { _concurrent = b; }
-};
-
-
 class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
  private:
   size_t _num_dirtied;
@@ -1701,7 +1679,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _g1_rem_set(NULL),
   _cg1r(NULL),
   _g1mm(NULL),
-  _refine_cte_cl(NULL),
   _preserved_marks_set(true /* in_c_heap */),
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
@@ -1780,10 +1757,8 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 }
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
-  _refine_cte_cl = new RefineCardTableEntryClosure();
-
   jint ecode = JNI_OK;
-  _cg1r = ConcurrentG1Refine::create(_refine_cte_cl, &ecode);
+  _cg1r = ConcurrentG1Refine::create(&ecode);
   return ecode;
 }
 
@@ -1940,8 +1915,7 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
-                                                DirtyCardQ_CBL_mon,
+  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
                                                 (int)concurrent_g1_refine()->yellow_zone(),
                                                 (int)concurrent_g1_refine()->red_zone(),
@@ -1949,8 +1923,7 @@ jint G1CollectedHeap::initialize() {
                                                 NULL,  // fl_owner
                                                 true); // init_free_ids
 
-  dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
-                                    DirtyCardQ_CBL_mon,
+  dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                     DirtyCardQ_FL_lock,
                                     -1, // never trigger processing
                                     -1, // no limit on length
@@ -2127,7 +2100,7 @@ void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
-  while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
+  while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
   }
   g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers);
@@ -5279,10 +5252,6 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
          "inconsistent used_unlocked(), "
          "value: " SIZE_FORMAT " recalculated: " SIZE_FORMAT,
          used_unlocked(), recalculate_used());
-}
-
-void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
-  _refine_cte_cl->set_concurrent(concurrent);
 }
 
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
