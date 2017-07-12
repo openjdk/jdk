@@ -290,9 +290,6 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1,
   _prev_period_summary(),
   _into_cset_dirty_card_queue_set(false)
 {
-  if (log_is_enabled(Trace, gc, remset)) {
-    _prev_period_summary.initialize(this);
-  }
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
   _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
@@ -790,12 +787,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
   if ((G1SummarizeRSetStatsPeriod > 0) && log_is_enabled(Trace, gc, remset) &&
       (period_count % G1SummarizeRSetStatsPeriod == 0)) {
 
-    if (!_prev_period_summary.initialized()) {
-      _prev_period_summary.initialize(this);
-    }
-
-    G1RemSetSummary current;
-    current.initialize(this);
+    G1RemSetSummary current(this);
     _prev_period_summary.subtract_from(&current);
 
     Log(gc, remset) log;
@@ -812,7 +804,6 @@ void G1RemSet::print_summary_info() {
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current;
-    current.initialize(this);
     ResourceMark rm;
     current.print_on(log.trace_stream());
   }
