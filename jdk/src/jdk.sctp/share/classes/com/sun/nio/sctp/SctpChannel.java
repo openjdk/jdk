@@ -59,65 +59,70 @@ import java.nio.channels.SelectionKey;
  * {@link #setOption(SctpSocketOption,Object) setOption} method. An SCTP
  * channel support the following options:
  * <blockquote>
- * <table class="striped"><caption style="display:none">Socket options</caption>
+ * <table class="striped">
+ *   <caption style="display:none">Socket options</caption>
+ *   <thead>
  *   <tr>
- *     <th>Option Name</th>
- *     <th>Description</th>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_DISABLE_FRAGMENTS
- *                                          SCTP_DISABLE_FRAGMENTS} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_DISABLE_FRAGMENTS
+ *                                          SCTP_DISABLE_FRAGMENTS} </th>
  *     <td> Enables or disables message fragmentation </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE
- *                                          SCTP_EXPLICIT_COMPLETE} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_EXPLICIT_COMPLETE
+ *                                          SCTP_EXPLICIT_COMPLETE} </th>
  *     <td> Enables or disables explicit message completion </td>
  *   </tr>
  *    <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
- *                                          SCTP_FRAGMENT_INTERLEAVE} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_FRAGMENT_INTERLEAVE
+ *                                          SCTP_FRAGMENT_INTERLEAVE} </th>
  *     <td> Controls how the presentation of messages occur for the message
  *          receiver </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
- *                                          SCTP_INIT_MAXSTREAMS} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
+ *                                          SCTP_INIT_MAXSTREAMS} </th>
  *     <td> The maximum number of streams requested by the local endpoint during
  *          association initialization </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_NODELAY SCTP_NODELAY} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_NODELAY SCTP_NODELAY} </th>
  *     <td> Enables or disable a Nagle-like algorithm </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_PRIMARY_ADDR
- *                                          SCTP_PRIMARY_ADDR} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_PRIMARY_ADDR
+ *                                          SCTP_PRIMARY_ADDR} </th>
  *     <td> Requests that the local SCTP stack use the given peer address as the
  *          association primary </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_SET_PEER_PRIMARY_ADDR
- *                                          SCTP_SET_PEER_PRIMARY_ADDR} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_SET_PEER_PRIMARY_ADDR
+ *                                          SCTP_SET_PEER_PRIMARY_ADDR} </th>
  *     <td> Requests that the peer mark the enclosed address as the association
  *          primary </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SO_SNDBUF
- *                                          SO_SNDBUF} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SO_SNDBUF
+ *                                          SO_SNDBUF} </th>
  *     <td> The size of the socket send buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SO_RCVBUF
- *                                          SO_RCVBUF} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SO_RCVBUF
+ *                                          SO_RCVBUF} </th>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SO_LINGER
- *                                          SO_LINGER} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SO_LINGER
+ *                                          SO_LINGER} </th>
  *     <td> Linger on close if data is present (when configured in blocking mode
  *          only) </td>
  *   </tr>
+ *   </tbody>
  * </table>
  * </blockquote>
  * Additional (implementation specific) options may also be supported. The list
