@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,9 +90,15 @@ class Monitor : public CHeapObj<mtInternal> {
 
  public:
   // A special lock: Is a lock where you are guaranteed not to block while you are
-  // holding it, i.e., no vm operation can happen, taking other locks, etc.
+  // holding it, i.e., no vm operation can happen, taking other (blocking) locks, etc.
+  // The rank 'access' is similar to 'special' and has the same restrictions on usage.
+  // It is reserved for locks that may be required in order to perform memory accesses
+  // that require special barriers, e.g. SATB GC barriers, that in turn uses locks.
+  // Since memory accesses should be able to be performed pretty much anywhere
+  // in the code, that requires locks required for performing accesses being
+  // inherently a bit more special than even locks of the 'special' rank.
   // NOTE: It is critical that the rank 'special' be the lowest (earliest)
-  // (except for "event"?) for the deadlock detection to work correctly.
+  // (except for "event" and "access") for the deadlock detection to work correctly.
   // The rank native is only for use in Mutex's created by JVM_RawMonitorCreate,
   // which being external to the VM are not subject to deadlock detection.
   // The rank safepoint is used only for synchronization in reaching a
@@ -104,14 +110,15 @@ class Monitor : public CHeapObj<mtInternal> {
   // at all.
   enum lock_types {
        event,
-       special,
-       suspend_resume,
-       leaf        = suspend_resume +   2,
-       safepoint   = leaf           +  10,
-       barrier     = safepoint      +   1,
-       nonleaf     = barrier        +   1,
-       max_nonleaf = nonleaf        + 900,
-       native      = max_nonleaf    +   1
+       access         = event          +   1,
+       special        = access         +   2,
+       suspend_resume = special        +   1,
+       leaf           = suspend_resume +   2,
+       safepoint      = leaf           +  10,
+       barrier        = safepoint      +   1,
+       nonleaf        = barrier        +   1,
+       max_nonleaf    = nonleaf        + 900,
+       native         = max_nonleaf    +   1
   };
 
   // The WaitSet and EntryList linked lists are composed of ParkEvents.
