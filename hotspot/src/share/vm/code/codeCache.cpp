@@ -423,7 +423,6 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
 }
 
 CodeHeap* CodeCache::get_code_heap_containing(void* start) {
-  assert(start != NULL, "start is null");
   FOR_ALL_HEAPS(heap) {
     if ((*heap)->contains(start)) {
       return *heap;
