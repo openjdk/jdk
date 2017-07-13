@@ -51,7 +51,6 @@ CollectorPolicy::CollectorPolicy() :
     _initial_heap_byte_size(InitialHeapSize),
     _max_heap_byte_size(MaxHeapSize),
     _min_heap_byte_size(Arguments::min_heap_size()),
-    _size_policy(NULL),
     _should_clear_all_soft_refs(false),
     _all_soft_refs_clear(false)
 {}
@@ -157,12 +156,6 @@ CardTableRS* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
 }
 
 void CollectorPolicy::cleared_all_soft_refs() {
-  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
-  // have been cleared in the last collection but if the gc overhear
-  // limit continues to be near, SoftRefs should still be cleared.
-  if (size_policy() != NULL) {
-    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
-  }
   _all_soft_refs_clear = true;
 }
 
@@ -195,7 +188,8 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _max_old_size(0),
     _gen_alignment(0),
     _young_gen_spec(NULL),
-    _old_gen_spec(NULL)
+    _old_gen_spec(NULL),
+    _size_policy(NULL)
 {}
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
@@ -218,6 +212,17 @@ void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                         init_survivor_size,
                                         max_gc_pause_sec,
                                         GCTimeRatio);
+}
+
+void GenCollectorPolicy::cleared_all_soft_refs() {
+  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
+  // have been cleared in the last collection but if the gc overhear
+  // limit continues to be near, SoftRefs should still be cleared.
+  if (size_policy() != NULL) {
+    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
+  }
+
+  CollectorPolicy::cleared_all_soft_refs();
 }
 
 size_t GenCollectorPolicy::young_gen_size_lower_bound() {

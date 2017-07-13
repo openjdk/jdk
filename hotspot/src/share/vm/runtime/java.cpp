@@ -486,7 +486,6 @@ void before_exit(JavaThread* thread) {
       ClassLoaderDataGraph::dump_on(log.trace_stream());
     }
   }
-  AdaptiveSizePolicyOutput::print();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();

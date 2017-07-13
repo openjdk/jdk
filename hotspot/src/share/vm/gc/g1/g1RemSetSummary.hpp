@@ -36,11 +36,7 @@ class G1RemSetSummary VALUE_OBJ_CLASS_SPEC {
 private:
   friend class GetRSThreadVTimeClosure;
 
-  G1RemSet* _remset;
-
-  G1RemSet* remset() const {
-    return _remset;
-  }
+  G1RemSet* _rem_set;
 
   size_t _num_conc_refined_cards;
   size_t _num_processed_buf_mutator;
@@ -48,8 +44,8 @@ private:
 
   size_t _num_coarsenings;
 
-  double* _rs_threads_vtimes;
   size_t _num_vtimes;
+  double* _rs_threads_vtimes;
 
   double _sampling_thread_vtime;
 
@@ -63,16 +59,14 @@ private:
 
 public:
   G1RemSetSummary();
+  G1RemSetSummary(G1RemSet* remset);
+
   ~G1RemSetSummary();
 
   // set the counters in this summary to the values of the others
   void set(G1RemSetSummary* other);
   // subtract all counters from the other summary, and set them in the current
   void subtract_from(G1RemSetSummary* other);
-
-  // initialize and get the first sampling
-  void initialize(G1RemSet* remset);
-  bool const initialized() { return _rs_threads_vtimes != NULL; }
 
   void print_on(outputStream* out);
 

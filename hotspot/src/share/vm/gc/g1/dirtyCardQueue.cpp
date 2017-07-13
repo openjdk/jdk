@@ -25,12 +25,31 @@
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
+
+// Closure used for updating remembered sets and recording references that
+// point into the collection set while the mutator is running.
+// Assumed to be only executed concurrently with the mutator. Yields via
+// SuspendibleThreadSet after every card.
+class G1RefineCardConcurrentlyClosure: public CardTableEntryClosure {
+public:
+  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
+    G1CollectedHeap::heap()->g1_rem_set()->refine_card_concurrently(card_ptr, worker_i);
+
+    if (SuspendibleThreadSet::should_yield()) {
+      // Caller will actually yield.
+      return false;
+    }
+    // Otherwise, we finished successfully; return true.
+    return true;
+  }
+};
 
 // Represents a set of free small integer ids.
 class FreeIdSet : public CHeapObj<mtGC> {
@@ -112,7 +131,6 @@ DirtyCardQueue::~DirtyCardQueue() {
 
 DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
-  _mut_process_closure(NULL),
   _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
   _processed_buffers_mut(0), _processed_buffers_rs_thread(0)
@@ -125,15 +143,13 @@ uint DirtyCardQueueSet::num_par_ids() {
   return (uint)os::initial_active_processor_count();
 }
 
-void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl,
-                                   Monitor* cbl_mon,
+void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
                                    Mutex* fl_lock,
                                    int process_completed_threshold,
                                    int max_completed_queue,
                                    Mutex* lock,
                                    DirtyCardQueueSet* fl_owner,
                                    bool init_free_ids) {
-  _mut_process_closure = cl;
   PtrQueueSet::initialize(cbl_mon,
                           fl_lock,
                           process_completed_threshold,
@@ -192,7 +208,8 @@ bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
 
   uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
-  bool result = apply_closure_to_buffer(_mut_process_closure, node, true, worker_i);
+  G1RefineCardConcurrentlyClosure cl;
+  bool result = apply_closure_to_buffer(&cl, node, true, worker_i);
   _free_ids->release_par_id(worker_i); // release the id
 
   if (result) {
@@ -224,6 +241,16 @@ BufferNode* DirtyCardQueueSet::get_completed_buffer(size_t stop_at) {
   }
   DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   return nd;
+}
+
+bool DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size_t stop_at) {
+  G1RefineCardConcurrentlyClosure cl;
+  return apply_closure_to_completed_buffer(&cl, worker_i, stop_at, false);
+}
+
+bool DirtyCardQueueSet::apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i) {
+  assert_at_safepoint(false);
+  return apply_closure_to_completed_buffer(cl, worker_i, 0, true);
 }
 
 bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
