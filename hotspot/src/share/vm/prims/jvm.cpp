@@ -1264,8 +1264,17 @@ JVM_ENTRY(jobject, JVM_DoPrivileged(JNIEnv *env, jclass cls, jobject action, job
                                            vmSymbols::run_method_name(),
                                            vmSymbols::void_object_signature(),
                                            Klass::find_overpass);
+
+  // See if there is a default method for "Object run()".
+  if (m_oop == NULL && object->klass()->is_instance_klass()) {
+    InstanceKlass* iklass = InstanceKlass::cast(object->klass());
+    m_oop = iklass->lookup_method_in_ordered_interfaces(
+                                           vmSymbols::run_method_name(),
+                                           vmSymbols::void_object_signature());
+  }
+
   methodHandle m (THREAD, m_oop);
-  if (m.is_null() || !m->is_method() || !m()->is_public() || m()->is_static()) {
+  if (m.is_null() || !m->is_method() || !m()->is_public() || m()->is_static() || m()->is_abstract()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "No run method");
   }
 
