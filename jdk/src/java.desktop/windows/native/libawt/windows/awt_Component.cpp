@@ -3871,11 +3871,13 @@ MsgRouting AwtComponent::WmImeNotify(WPARAM subMsg, LPARAM bitsCandType)
 {
     if (!m_useNativeCompWindow) {
         if (subMsg == IMN_OPENCANDIDATE) {
-            m_bitsCandType = subMsg;
+            m_bitsCandType = bitsCandType;
             InquireCandidatePosition();
         } else if (subMsg == IMN_OPENSTATUSWINDOW ||
                    subMsg == WM_IME_STARTCOMPOSITION) {
             m_bitsCandType = 0;
+            InquireCandidatePosition();
+        } else if (subMsg == IMN_SETCANDIDATEPOS) {
             InquireCandidatePosition();
         }
         return mrConsume;
