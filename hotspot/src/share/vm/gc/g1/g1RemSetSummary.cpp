@@ -52,7 +52,7 @@ public:
 };
 
 void G1RemSetSummary::update() {
-  _num_conc_refined_cards = remset()->num_conc_refined_cards();
+  _num_conc_refined_cards = _rem_set->num_conc_refined_cards();
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   _num_processed_buf_mutator = dcqs.processed_buffers_mut();
   _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
@@ -79,27 +79,29 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
   return _rs_threads_vtimes[thread];
 }
 
-void G1RemSetSummary::initialize(G1RemSet* remset) {
-  assert(_rs_threads_vtimes == NULL, "just checking");
-  assert(remset != NULL, "just checking");
-
-  _remset = remset;
-  _num_vtimes = ConcurrentG1Refine::thread_num();
-  _rs_threads_vtimes = NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC);
-  memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
-
-  update();
-}
-
 G1RemSetSummary::G1RemSetSummary() :
-  _remset(NULL),
+  _rem_set(NULL),
   _num_conc_refined_cards(0),
   _num_processed_buf_mutator(0),
   _num_processed_buf_rs_threads(0),
   _num_coarsenings(0),
-  _rs_threads_vtimes(NULL),
-  _num_vtimes(0),
+  _num_vtimes(ConcurrentG1Refine::thread_num()),
+  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
   _sampling_thread_vtime(0.0f) {
+
+  memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
+}
+
+G1RemSetSummary::G1RemSetSummary(G1RemSet* rem_set) :
+  _rem_set(rem_set),
+  _num_conc_refined_cards(0),
+  _num_processed_buf_mutator(0),
+  _num_processed_buf_rs_threads(0),
+  _num_coarsenings(0),
+  _num_vtimes(ConcurrentG1Refine::thread_num()),
+  _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)),
+  _sampling_thread_vtime(0.0f) {
+  update();
 }
 
 G1RemSetSummary::~G1RemSetSummary() {
@@ -110,7 +112,6 @@ G1RemSetSummary::~G1RemSetSummary() {
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
-  assert(remset() == other->remset(), "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   _num_conc_refined_cards = other->num_conc_refined_cards();
@@ -127,7 +128,6 @@ void G1RemSetSummary::set(G1RemSetSummary* other) {
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   assert(other != NULL, "just checking");
-  assert(remset() == other->remset(), "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   _num_conc_refined_cards = other->num_conc_refined_cards() - _num_conc_refined_cards;
