@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHGenParameterSpec;
 
 import sun.security.provider.ParameterCache;
+import static sun.security.util.SecurityProviderConstants.DEF_DH_KEY_SIZE;
 
 /**
  * This class represents the key pair generator for Diffie-Hellman key pairs.
@@ -42,8 +43,7 @@ import sun.security.provider.ParameterCache;
  * <ul>
  * <li>By providing the size in bits of the prime modulus -
  * This will be used to create a prime modulus and base generator, which will
- * then be used to create the Diffie-Hellman key pair. The default size of the
- * prime modulus is 2048 bits.
+ * then be used to create the Diffie-Hellman key pair.
  * <li>By providing a prime modulus and base generator
  * </ul>
  *
@@ -68,7 +68,7 @@ public final class DHKeyPairGenerator extends KeyPairGeneratorSpi {
 
     public DHKeyPairGenerator() {
         super();
-        initialize(2048, null);
+        initialize(DEF_DH_KEY_SIZE, null);
     }
 
     private static void checkKeySize(int keysize)

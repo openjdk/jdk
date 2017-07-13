@@ -34,7 +34,7 @@ import jdk.test.lib.RandomFactory;
 
 /*
  * @test
- * @bug 8050374
+ * @bug 8050374 8181048
  * @key randomness
  * @summary This test validates signature verification
  *          Signature.verify(byte[], int, int). The test uses RandomFactory to
@@ -106,18 +106,25 @@ public class Offsets {
         Signature signature = Signature.getInstance(algorithm, provider);
 
         String keyAlgo;
+        int keySize = 2048;
         if (algorithm.contains("RSA")) {
             keyAlgo = "RSA";
         } else if (algorithm.contains("ECDSA")) {
             keyAlgo = "EC";
+            keySize = 256;
         } else if (algorithm.contains("DSA")) {
             keyAlgo = "DSA";
+            if (algorithm.startsWith("SHAwith") ||
+                    algorithm.startsWith("SHA1with")) {
+                keySize = 1024;
+            }
         } else {
             throw new RuntimeException("Test doesn't support this signature "
                     + "algorithm: " + algorithm);
         }
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlgo, provider);
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
         PublicKey pubkey = kp.getPublic();
         PrivateKey privkey = kp.getPrivate();

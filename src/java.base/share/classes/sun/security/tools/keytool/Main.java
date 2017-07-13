@@ -74,6 +74,7 @@ import sun.security.pkcs10.PKCS10Attribute;
 import sun.security.provider.X509Factory;
 import sun.security.provider.certpath.ssl.SSLServerCertStore;
 import sun.security.util.Password;
+import sun.security.util.SecurityProviderConstants;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -1817,9 +1818,12 @@ public final class Main {
     {
         if (keysize == -1) {
             if ("EC".equalsIgnoreCase(keyAlgName)) {
-                keysize = 256;
-            } else {
-                keysize = 2048;     // RSA and DSA
+                keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
+            } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
+                keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+            } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
+                // hardcode for now as DEF_DSA_KEY_SIZE is still 1024
+                keysize = 2048; // SecurityProviderConstants.DEF_DSA_KEY_SIZE;
             }
         }
 
