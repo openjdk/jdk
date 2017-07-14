@@ -996,7 +996,6 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
         -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
-        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_$1_OS" = xaix; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DAIX"
@@ -1081,18 +1080,50 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
 
   # Additional macosx handling
   if test "x$OPENJDK_$1_OS" = xmacosx; then
-    # Setting these parameters makes it an error to link to macosx APIs that are
-    # newer than the given OS version and makes the linked binaries compatible
-    # even if built on a newer version of the OS.
-    # The expected format is X.Y.Z
+    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
+    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
+    # JDK can be built and makes the linked binaries compatible even if built on
+    # a newer version of the OS.
     MACOSX_VERSION_MIN=10.7.0
     AC_SUBST(MACOSX_VERSION_MIN)
 
-    # The macro takes the version with no dots, ex: 1070
+    # Setting --with-macosx-version-max=<version> makes it an error to build or
+    # link to macosx APIs that are newer than the given OS version. The expected
+    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+    AC_ARG_WITH([macosx-version-max], [AS_HELP_STRING([--with-macosx-version-max],
+        [error on use of newer functionality. @<:@macosx@:>@])],
+        [
+          if echo "$with_macosx_version_max" | $GREP -q "^[[0-9]][[0-9]]\.[[0-9]]\.[[0-9]]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif echo "$with_macosx_version_max" | $GREP -q "^[[0-9]][[0-9]]\.[[0-9]][[0-9]]\.[[0-9]][[0-9]]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif test "x$with_macosx_version_max" = "xno"; then
+              # Use build system default
+              MACOSX_VERSION_MAX=
+          else
+              AC_MSG_ERROR([osx version format must be nn.n.n or nn.nn.nn])
+          fi
+        ],
+        [MACOSX_VERSION_MAX=]
+    )
+    AC_SUBST(MACOSX_VERSION_MAX)
+
     # Let the flags variables get resolved in make for easier override on make
-    # command line.
-    $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    # command line. AvailabilityMacros.h versions have no dots, ex: 1070.
+    $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     $2LDFLAGS_JDK="[$]$2LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    $2JVM_CFLAGS="[$]$2JVM_CFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+        $2JVM_CFLAGS="[$]$2JVM_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+    fi
   fi
 
   # Setup some hard coded includes
