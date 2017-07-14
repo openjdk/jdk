@@ -22,6 +22,7 @@
  *
  */
 
+#include "logging/log.hpp"
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "vm_version_sparc.hpp"
