@@ -381,7 +381,7 @@ inline static bool checkPollingPage(address pc, address fault, address* stub) {
   return false;
 }
 
-inline static bool checkByteBuffer(address pc, address npc, address* stub) {
+inline static bool checkByteBuffer(address pc, address npc, JavaThread * thread, address* stub) {
   // BugId 4454115: A read from a MappedByteBuffer can fault
   // here if the underlying file has been truncated.
   // Do not crash the VM in such a case.
@@ -573,7 +573,7 @@ JVM_handle_linux_signal(int sig,
           break;
         }
 
-        if ((sig == SIGBUS) && checkByteBuffer(pc, npc, &stub)) {
+        if ((sig == SIGBUS) && checkByteBuffer(pc, npc, thread, &stub)) {
           break;
         }
 
