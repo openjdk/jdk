@@ -203,26 +203,15 @@ void CompilerToVM::Data::initialize(TRAPS) {
   symbol_clinit = (address) vmSymbols::class_initializer_name();
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  switch (bs->kind()) {
-  case BarrierSet::CardTableModRef:
-  case BarrierSet::CardTableForRS:
-  case BarrierSet::CardTableExtension:
-  case BarrierSet::G1SATBCT:
-  case BarrierSet::G1SATBCTLogging: {
+  if (bs->is_a(BarrierSet::CardTableModRef)) {
     jbyte* base = barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base;
     assert(base != 0, "unexpected byte_map_base");
     cardtable_start_address = base;
     cardtable_shift = CardTableModRefBS::card_shift;
-    break;
-  }
-  case BarrierSet::ModRef:
+  } else {
+    // No card mark barriers
     cardtable_start_address = 0;
     cardtable_shift = 0;
-    // No post barriers
-    break;
-  default:
-    JVMCI_ERROR("Unsupported BarrierSet kind %d", bs->kind());
-    break;
   }
 
   vm_page_size = os::vm_page_size();
