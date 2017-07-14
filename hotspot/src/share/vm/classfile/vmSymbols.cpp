@@ -399,6 +399,21 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   }
 }
 
+// Some intrinsics produce different results if they are not pinned
+bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_counterTime:
+#endif
+  case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_nanoTime:
+    return true;
+  default:
+    return false;
+  }
+}
+
 bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {

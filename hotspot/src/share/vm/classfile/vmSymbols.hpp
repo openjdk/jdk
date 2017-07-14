@@ -1632,6 +1632,7 @@ public:
 
   static bool preserves_state(vmIntrinsics::ID id);
   static bool can_trap(vmIntrinsics::ID id);
+  static bool should_be_pinned(vmIntrinsics::ID id);
 
   // (2) Information needed by the C2 compiler.
 
