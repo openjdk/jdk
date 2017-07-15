@@ -38,7 +38,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -177,6 +179,16 @@ public class Start extends ToolOption.Helper {
         usage("main.Xusage", OptionKind.EXTENDED, "main.Xusage.foot");
     }
 
+    @Override
+    void version() {
+        messager.notice("javadoc.version", messager.programName, version("release"));
+    }
+
+    @Override
+    void fullVersion() {
+        messager.notice("javadoc.fullversion", messager.programName, version("full"));
+    }
+
     private void usage(String headerKey, OptionKind kind, String footerKey) {
         messager.notice(headerKey);
         showToolOptions(kind);
@@ -191,6 +203,24 @@ public class Start extends ToolOption.Helper {
         }
         if (footerKey != null)
             messager.notice(footerKey);
+    }
+
+    private static final String versionRBName = "jdk.javadoc.internal.tool.resources.version";
+    private static ResourceBundle versionRB;
+
+    private static String version(String key) {
+        if (versionRB == null) {
+            try {
+                versionRB = ResourceBundle.getBundle(versionRBName);
+            } catch (MissingResourceException e) {
+                return Log.getLocalizedString("version.not.available");
+            }
+        }
+        try {
+            return versionRB.getString(key);
+        } catch (MissingResourceException e) {
+            return Log.getLocalizedString("version.not.available");
+        }
     }
 
     void showToolOptions(OptionKind kind) {
