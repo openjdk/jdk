@@ -148,37 +148,37 @@
  *     <caption>Examples of Location Path</caption>
  *     <thead>
  *         <tr>
- *             <th>Location Path</th>
- *             <th>Description</th>
+ *             <th scope="col">Location Path</th>
+ *             <th scope="col">Description</th>
  *         </tr>
  *     </thead>
  *     <tbody>
  *         <tr>
- *             <td>
+ *             <th scope="row">
  *                 <code>/foo/bar/<strong>@id</strong></code>
- *             </td>
+ *             </th>
  *             <td>
  *                 Selects the attribute <code>id</code> of the <code>&lt;bar&gt;</code> element
  *             </td>
  *         </tr>
  *         <tr>
- *             <td><code>/foo/bar/<strong>text()</strong></code>
- *             </td>
+ *             <th scope="row"><code>/foo/bar/<strong>text()</strong></code>
+ *             </th>
  *             <td>
  *                 Selects the text nodes of the <code>&lt;bar&gt;</code> element. No
  *                 distinction is made between escaped and non-escaped character data.
  *             </td>
  *         </tr>
  *         <tr>
- *             <td><code>/foo/bar/<strong>comment()</strong></code>
- *             </td>
+ *             <th scope="row"><code>/foo/bar/<strong>comment()</strong></code>
+ *             </th>
  *             <td>
  *                 Selects all comment nodes contained in the <code>&lt;bar&gt;</code> element.
  *             </td>
  *         </tr>
  *         <tr>
- *             <td><code>/foo/bar/<strong>processing-instruction()</strong></code>
- *             </td>
+ *             <th scope="row"><code>/foo/bar/<strong>processing-instruction()</strong></code>
+ *             </th>
  *             <td>
  *                 Selects all processing-instruction nodes contained in the
  *                 <code>&lt;bar&gt;</code> element.

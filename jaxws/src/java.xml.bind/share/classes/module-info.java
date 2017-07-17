@@ -26,7 +26,7 @@
 /**
  * Defines the Java Architecture for XML Binding (JAXB) API.
  *
- * <p> This module is upgradeble.
+ * <p> This module is upgradeable.
  *
  * @uses javax.xml.bind.JAXBContextFactory
  *

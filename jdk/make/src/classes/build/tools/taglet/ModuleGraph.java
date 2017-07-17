@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet;
 import static jdk.javadoc.doclet.Taglet.Location.*;
@@ -62,7 +63,7 @@ public class ModuleGraph implements Taglet {
             return "";
         }
 
-        String moduleName = element.getSimpleName().toString();
+        String moduleName = ((ModuleElement) element).getQualifiedName().toString();
         String imageFile = moduleName + "-graph.png";
         int thumbnailHeight = -1;
         String hoverImage = "";

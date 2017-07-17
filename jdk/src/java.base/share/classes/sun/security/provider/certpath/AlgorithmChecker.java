@@ -270,7 +270,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
         AlgorithmParameters currSigAlgParams = algorithmId.getParameters();
         PublicKey currPubKey = cert.getPublicKey();
-        String currSigAlg = ((X509Certificate)cert).getSigAlgName();
+        String currSigAlg = x509Cert.getSigAlgName();
 
         // Check the signature algorithm and parameters against constraints.
         if (!constraints.permits(SIGNATURE_PRIMITIVE_SET, currSigAlg,

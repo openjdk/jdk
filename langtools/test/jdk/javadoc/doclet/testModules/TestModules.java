@@ -372,7 +372,20 @@ public class TestModules extends JavadocTester {
                 "--module", "moduleB",
                 "testpkg2mdlB", "testpkgmdlB");
         checkExit(Exit.OK);
-        //checkOverviewSummaryPackages();
+        checkGroupOptionSingleModule();
+    }
+
+    /**
+     * Test -group option for a single module.
+     */
+    @Test
+    void testModuleName() {
+        javadoc("-d", "out-modulename", "-use",
+                "--module-source-path", testSrc,
+                "--module", "moduleB,test.moduleFullName",
+                "testpkg2mdlB", "testpkgmdlB", "testpkgmdlfullname");
+        checkExit(Exit.OK);
+        checkModuleName(true);
     }
 
     void checkDescription(boolean found) {
@@ -1089,4 +1102,35 @@ public class TestModules extends JavadocTester {
                 "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
+
+    void checkModuleName(boolean found) {
+        checkOutput("test.moduleFullName-summary.html", found,
+                "<div class=\"header\">\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;test.moduleFullName</h1>\n"
+                + "</div>");
+        checkOutput("index-all.html", found,
+                "<h2 class=\"title\">T</h2>\n"
+                + "<dl>\n"
+                + "<dt><a href=\"test.moduleFullName-summary.html\">test.moduleFullName</a> - module test.moduleFullName</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
+                + "</dd>");
+        checkOutput("module-overview-frame.html", found,
+                "<h2 title=\"Modules\">Modules</h2>\n"
+                + "<ul title=\"Modules\">\n"
+                + "<li><a href=\"moduleB-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('moduleB-type-frame.html','moduleB-summary.html');\">moduleB</a></li>\n"
+                + "<li><a href=\"test.moduleFullName-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('test.moduleFullName-type-frame.html','test.moduleFullName-summary.html');\">test.moduleFullName</a></li>\n"
+                + "</ul>");
+        checkOutput("test.moduleFullName-summary.html", !found,
+                "<div class=\"header\">\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleFullName</h1>\n"
+                + "</div>");
+        checkOutput("index-all.html", !found,
+                "<dl>\n"
+                + "<dt><a href=\"test.moduleFullName-summary.html\">moduleFullName</a> - module moduleFullName</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
+                + "</dd>\n"
+                + "</dl>");
+}
 }

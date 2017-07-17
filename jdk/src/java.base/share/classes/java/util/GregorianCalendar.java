@@ -163,83 +163,83 @@ import sun.util.calendar.ZoneInfo;
  * <caption style="display:none">GregorianCalendar default field values</caption>
  *   <thead>
  *     <tr>
- *       <th>
+ *       <th scope="col">
  *          Field
  *       </th>
- *       <th>
+ *       <th scope="col">
             Default Value
  *       </th>
  *     </tr>
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>ERA</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>AD</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>YEAR</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>1970</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>MONTH</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>JANUARY</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>DAY_OF_MONTH</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>1</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>DAY_OF_WEEK</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>the first day of week</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>WEEK_OF_MONTH</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>0</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>DAY_OF_WEEK_IN_MONTH</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>1</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>AM_PM</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>AM</code>
  *       </td>
  *     </tr>
  *     <tr>
- *       <td>
+ *       <th scope="row">
  *              <code>HOUR, HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND</code>
- *       </td>
+ *       </th>
  *       <td>
  *              <code>0</code>
  *       </td>

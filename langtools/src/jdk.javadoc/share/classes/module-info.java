@@ -25,7 +25,7 @@
 
 /**
  * Defines the implementation of the
- * {@link javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
+ * {@linkplain javax.tools.ToolProvider#getSystemDocumentationTool system documentation tool}
  * and its command line equivalent, <em>{@index javadoc javadoc tool}</em>.
  *
  * <h2 style="font-family:'DejaVu Sans Mono', monospace; font-style:italic">javadoc</h2>
@@ -39,7 +39,7 @@
  *
  * <p> Instances of the tools can be obtained by calling
  * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- * or the {@link java.util.ServiceLoader service loader} with the name
+ * or the {@linkplain java.util.ServiceLoader service loader} with the name
  * {@code "javadoc"}.
  *
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">

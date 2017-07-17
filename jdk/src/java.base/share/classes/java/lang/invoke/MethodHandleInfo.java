@@ -84,43 +84,43 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <table class="striped">
  * <caption style="display:none">reference kinds</caption>
  * <thead>
- * <tr><th>reference kind</th><th>descriptive name</th><th>scope</th><th>member</th><th>behavior</th></tr>
+ * <tr><th scope="col">reference kind</th><th scope="col">descriptive name</th><th scope="col">scope</th><th scope="col">member</th><th scope="col">behavior</th></tr>
  * </thead>
  * <tbody>
  * <tr>
- *     <td>{@code 1}</td><td>{@code REF_getField}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 1}</th><td>{@code REF_getField}</td><td>{@code class}</td>
  *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 2}</td><td>{@code REF_getStatic}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 2}</th><td>{@code REF_getStatic}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (T) C.f;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 3}</td><td>{@code REF_putField}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 3}</th><td>{@code REF_putField}</td><td>{@code class}</td>
  *     <td>{@code FT f;}</td><td>{@code this.f = x;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 4}</td><td>{@code REF_putStatic}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 4}</th><td>{@code REF_putStatic}</td><td>{@code class}</td>
  *     <td>{@code static}<br>{@code FT f;}</td><td>{@code C.f = arg;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 5}</td><td>{@code REF_invokeVirtual}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 5}</th><td>{@code REF_invokeVirtual}</td><td>{@code class}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 6}</td><td>{@code REF_invokeStatic}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 6}</th><td>{@code REF_invokeStatic}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code static}<br>{@code T m(A*);}</td><td>{@code (T) C.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 7}</td><td>{@code REF_invokeSpecial}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 7}</th><td>{@code REF_invokeSpecial}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) super.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 8}</td><td>{@code REF_newInvokeSpecial}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 8}</th><td>{@code REF_newInvokeSpecial}</td><td>{@code class}</td>
  *     <td>{@code C(A*);}</td><td>{@code new C(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 9}</td><td>{@code REF_invokeInterface}</td><td>{@code interface}</td>
+ *     <th scope="row">{@code 9}</th><td>{@code REF_invokeInterface}</td><td>{@code interface}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
  * </tr>
  * </tbody>

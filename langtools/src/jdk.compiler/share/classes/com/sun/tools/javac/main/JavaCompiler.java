@@ -286,6 +286,10 @@ public class JavaCompiler {
      */
     protected Attr attr;
 
+    /** The analyzer
+     */
+    protected Analyzer analyzer;
+
     /** The attributor.
      */
     protected Check chk;
@@ -401,6 +405,7 @@ public class JavaCompiler {
         }
         source = Source.instance(context);
         attr = Attr.instance(context);
+        analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
         gen = Gen.instance(context);
         flow = Flow.instance(context);
@@ -1391,6 +1396,8 @@ public class JavaCompiler {
 
                 if (shouldStop(CompileState.FLOW))
                     return;
+
+                analyzer.flush(env);
 
                 results.add(env);
             }
