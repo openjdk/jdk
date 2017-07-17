@@ -742,7 +742,7 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
         xtty->object("x", arg.metadata_value());
       }
     } else {
-      char xn[10]; sprintf(xn, "x%d", j);
+      char xn[12]; sprintf(xn, "x%d", j);
       if (arg.is_oop()) {
         xtty->object(xn, Handle(thread, arg.oop_value()));
       } else {
