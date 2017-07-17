@@ -196,7 +196,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Evacuation Failure", Level.DEBUG),
         new LogMessageWithLevel("Recalculate Used", Level.TRACE),
         new LogMessageWithLevel("Remove Self Forwards", Level.TRACE),
-        new LogMessageWithLevel("Restore RemSet", Level.TRACE),
     };
 
     private void testWithToSpaceExhaustionLogs() throws Exception {

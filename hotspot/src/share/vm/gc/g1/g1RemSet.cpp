@@ -288,17 +288,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1,
   _ct_bs(ct_bs),
   _g1p(_g1->g1_policy()),
   _hot_card_cache(hot_card_cache),
-  _prev_period_summary(),
-  _into_cset_dirty_card_queue_set(false)
-{
-  // Initialize the card queue set used to hold cards containing
-  // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(DirtyCardQ_CBL_mon,
-                                             DirtyCardQ_FL_lock,
-                                             -1, // never trigger processing
-                                             -1, // no limit on length
-                                             Shared_DirtyCardQ_lock,
-                                             &JavaThread::dirty_card_queue_set());
+  _prev_period_summary() {
 }
 
 G1RemSet::~G1RemSet() {
@@ -446,18 +436,13 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
   p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
 }
 
-// Closure used for updating RSets and recording references that
-// point into the collection set. Only called during an
-// evacuation pause.
+// Closure used for updating rem sets. Only called during an evacuation pause.
 class G1RefineCardClosure: public CardTableEntryClosure {
   G1RemSet* _g1rs;
-  DirtyCardQueue* _into_cset_dcq;
   G1ScanObjsDuringUpdateRSClosure* _update_rs_cl;
 public:
-  G1RefineCardClosure(G1CollectedHeap* g1h,
-                      DirtyCardQueue* into_cset_dcq,
-                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
-    _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq), _update_rs_cl(update_rs_cl)
+  G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
+    _g1rs(g1h->g1_rem_set()), _update_rs_cl(update_rs_cl)
   {}
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
@@ -467,24 +452,14 @@ public:
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
 
-    if (_g1rs->refine_card_during_gc(card_ptr, _update_rs_cl)) {
-      // 'card_ptr' contains references that point into the collection
-      // set. We need to record the card in the DCQS
-      // (_into_cset_dirty_card_queue_set)
-      // that's used for that purpose.
-      //
-      // Enqueue the card
-      _into_cset_dcq->enqueue(card_ptr);
-    }
+    _g1rs->refine_card_during_gc(card_ptr, _update_rs_cl);
     return true;
   }
 };
 
-void G1RemSet::update_rem_set(DirtyCardQueue* into_cset_dcq,
-                              G1ParScanThreadState* pss,
-                              uint worker_i) {
+void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1, pss, worker_i);
-  G1RefineCardClosure refine_card_cl(_g1, into_cset_dcq, &update_rs_cl);
+  G1RefineCardClosure refine_card_cl(_g1, &update_rs_cl);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
   if (G1HotCardCache::default_use_cache()) {
@@ -503,18 +478,7 @@ void G1RemSet::cleanupHRRS() {
 void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
                                            CodeBlobClosure* heap_region_codeblobs,
                                            uint worker_i) {
-  // A DirtyCardQueue that is used to hold cards containing references
-  // that point into the collection set. This DCQ is associated with a
-  // special DirtyCardQueueSet (see g1CollectedHeap.hpp).  Under normal
-  // circumstances (i.e. the pause successfully completes), these cards
-  // are just discarded (there's no need to update the RSets of regions
-  // that were in the collection set - after the pause these regions
-  // are wholly 'free' of live objects. In the event of an evacuation
-  // failure the cards/buffers in this queue set are passed to the
-  // DirtyCardQueueSet that is used to manage RSet updates
-  DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
-
-  update_rem_set(&into_cset_dcq, pss, worker_i);
+  update_rem_set(pss, worker_i);
   scan_rem_set(pss, heap_region_codeblobs, worker_i);;
 }
 
@@ -532,26 +496,6 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   double start = os::elapsedTime();
   _scan_state->clear_card_table(_g1->workers());
   phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
-
-  DirtyCardQueueSet& into_cset_dcqs = _into_cset_dirty_card_queue_set;
-
-  if (_g1->evacuation_failed()) {
-    double restore_remembered_set_start = os::elapsedTime();
-
-    // Restore remembered sets for the regions pointing into the collection set.
-    // We just need to transfer the completed buffers from the DirtyCardQueueSet
-    // used to hold cards that contain references that point into the collection set
-    // to the DCQS used to hold the deferred RS updates.
-    _g1->dirty_card_queue_set().merge_bufferlists(&into_cset_dcqs);
-    phase_times->record_evac_fail_restore_remsets((os::elapsedTime() - restore_remembered_set_start) * 1000.0);
-  }
-
-  // Free any completed buffers in the DirtyCardQueueSet used to hold cards
-  // which contain references that point into the collection.
-  _into_cset_dirty_card_queue_set.clear();
-  assert(_into_cset_dirty_card_queue_set.completed_buffers_num() == 0,
-         "all buffers should be freed");
-  _into_cset_dirty_card_queue_set.clear_n_completed_buffers();
 }
 
 class G1ScrubRSClosure: public HeapRegionClosure {
@@ -736,7 +680,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   }
 }
 
-bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
+void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1->is_gc_active(), "Only call during GC");
 
@@ -745,9 +689,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   // If the card is no longer dirty, nothing to do. This covers cards that were already
   // scanned as parts of the remembered sets.
   if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-    // No need to return that this card contains refs that point
-    // into the collection set.
-    return false;
+    return;
   }
 
   // During GC we can immediately clean the card since we will not re-enqueue stale
@@ -762,7 +704,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   HeapWord* scan_limit = _scan_state->scan_top(r->hrm_index());
   if (scan_limit <= card_start) {
     // If the card starts above the area in the region containing objects to scan, skip it.
-    return false;
+    return;
   }
 
   // Don't use addr_for(card_ptr + 1) which can ask for
@@ -772,12 +714,8 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   assert(!dirty_region.is_empty(), "sanity");
 
   update_rs_cl->set_region(r);
-  update_rs_cl->reset_has_refs_into_cset();
-
   bool card_processed = r->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
-
-  return update_rs_cl->has_refs_into_cset();
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {
