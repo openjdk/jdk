@@ -620,19 +620,21 @@ class StubGenerator: public StubCodeGenerator {
 
   // Generate code for an array write pre barrier
   //
-  //     addr    -  starting address
-  //     count   -  element count
-  //     tmp     - scratch register
+  //     addr       - starting address
+  //     count      - element count
+  //     tmp        - scratch register
+  //     saved_regs - registers to be saved before calling static_write_ref_array_pre
   //
-  //     Destroy no registers except rscratch1 and rscratch2
+  //     Callers must specify which registers to preserve in saved_regs.
+  //     Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
   //
-  void  gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
+  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized, RegSet saved_regs) {
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
     case BarrierSet::G1SATBCTLogging:
       // With G1, don't generate the call if we statically know that the target in uninitialized
       if (!dest_uninitialized) {
-        __ push_call_clobbered_registers();
+        __ push(saved_regs, sp);
         if (count == c_rarg0) {
           if (addr == c_rarg1) {
             // exactly backwards!!
@@ -648,7 +650,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg1, count);
         }
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop_call_clobbered_registers();
+        __ pop(saved_regs, sp);
         break;
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
@@ -665,20 +667,23 @@ class StubGenerator: public StubCodeGenerator {
   // Generate code for an array write post barrier
   //
   //  Input:
-  //     start    - register containing starting address of destination array
-  //     end      - register containing ending address of destination array
-  //     scratch  - scratch register
+  //     start      - register containing starting address of destination array
+  //     end        - register containing ending address of destination array
+  //     scratch    - scratch register
+  //     saved_regs - registers to be saved before calling static_write_ref_array_post
   //
   //  The input registers are overwritten.
   //  The ending address is inclusive.
-  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch) {
+  //  Callers must specify which registers to preserve in saved_regs.
+  //  Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
+  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch, RegSet saved_regs) {
     assert_different_registers(start, end, scratch);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCTLogging:
 
         {
-          __ push_call_clobbered_registers();
+          __ push(saved_regs, sp);
           // must compute element count unless barrier set interface is changed (other platforms supply count)
           assert_different_registers(start, end, scratch);
           __ lea(scratch, Address(end, BytesPerHeapOop));
@@ -687,7 +692,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop_call_clobbered_registers();
+          __ pop(saved_regs, sp);
         }
         break;
       case BarrierSet::CardTableForRS:
@@ -822,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     Label again, drain;
     const char *stub_name;
     if (direction == copy_forwards)
-      stub_name = "foward_copy_longs";
+      stub_name = "forward_copy_longs";
     else
       stub_name = "backward_copy_longs";
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -1439,6 +1444,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_copy(size_t size, bool aligned, bool is_oop, address *entry,
                                   const char *name, bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_reg = RegSet::of(s, d, count);
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1451,9 +1457,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (is_oop) {
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_reg);
+      // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
     copy_memory(aligned, s, d, count, rscratch1, size);
     if (is_oop) {
@@ -1462,7 +1468,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1);
+      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
     __ leave();
     __ mov(r0, zr); // return 0
@@ -1495,7 +1501,7 @@ class StubGenerator: public StubCodeGenerator {
                                  address *entry, const char *name,
                                  bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-
+    RegSet saved_regs = RegSet::of(s, d, count);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
     __ enter();
@@ -1512,9 +1518,9 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::HS, nooverlap_target);
 
     if (is_oop) {
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_regs);
+      // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
     copy_memory(aligned, s, d, count, rscratch1, -size);
     if (is_oop) {
@@ -1523,7 +1529,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1);
+      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
     __ leave();
     __ mov(r0, zr); // return 0
@@ -1805,6 +1811,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckoff       = c_rarg3;   // super_check_offset
     const Register ckval       = c_rarg4;   // super_klass
 
+    RegSet wb_pre_saved_regs = RegSet::range(c_rarg0, c_rarg4);
+    RegSet wb_post_saved_regs = RegSet::of(count);
+
     // Registers used as temps (r18, r19, r20 are save-on-entry)
     const Register count_save  = r21;       // orig elementscount
     const Register start_to    = r20;       // destination array start address
@@ -1862,7 +1871,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized, wb_pre_saved_regs);
 
     // save the original count
     __ mov(count_save, count);
@@ -1906,7 +1915,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_do_card_marks);
     __ add(to, to, -heapOopSize);         // make an inclusive end pointer
-    gen_write_ref_array_post_barrier(start_to, to, rscratch1);
+    gen_write_ref_array_post_barrier(start_to, to, rscratch1, wb_post_saved_regs);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r18, r19, r20, r21), sp);
