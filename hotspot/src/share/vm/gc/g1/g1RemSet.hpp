@@ -59,12 +59,6 @@ private:
 
   G1RemSetSummary _prev_period_summary;
 
-  // A DirtyCardQueueSet that is used to hold cards that contain
-  // references into the current collection set. This is used to
-  // update the remembered sets of the regions in the collection
-  // set in the event of an evacuation failure.
-  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
-
   // Scan all remembered sets of the collection set for references into the collection
   // set.
   void scan_rem_set(G1ParScanThreadState* pss,
@@ -73,7 +67,7 @@ private:
 
   // Flush remaining refinement buffers for cross-region references to either evacuate references
   // into the collection set or update the remembered set.
-  void update_rem_set(DirtyCardQueue* into_cset_dcq, G1ParScanThreadState* pss, uint worker_i);
+  void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
   G1CollectedHeap* _g1;
   size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
@@ -133,11 +127,8 @@ public:
                                 uint worker_i);
 
   // Refine the card corresponding to "card_ptr", applying the given closure to
-  // all references found. Returns "true" if the given card contains
-  // oops that have references into the current collection set. Must only be
-  // called during gc.
-  bool refine_card_during_gc(jbyte* card_ptr,
-                             G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
+  // all references found. Must only be called during gc.
+  void refine_card_during_gc(jbyte* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

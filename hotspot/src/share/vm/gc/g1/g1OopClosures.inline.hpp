@@ -166,8 +166,6 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
     // Since the source is always from outside the collection set, here we implicitly know
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
-
-    _has_refs_into_cset = true;
   } else {
     HeapRegion* to = _g1->heap_region_containing(obj);
     if (_from == to) {

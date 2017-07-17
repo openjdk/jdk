@@ -116,7 +116,6 @@ void G1GCPhaseTimes::reset() {
   _cur_collection_code_root_fixup_time_ms = 0.0;
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
-  _cur_evac_fail_restore_remsets = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_dedup_fixup_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
@@ -346,8 +345,7 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   const double evac_fail_handling = _cur_evac_fail_recalc_used +
-                                    _cur_evac_fail_remove_self_forwards +
-                                    _cur_evac_fail_restore_remsets;
+                                    _cur_evac_fail_remove_self_forwards;
   const double sum_ms = evac_fail_handling +
                         _cur_collection_code_root_fixup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
@@ -383,7 +381,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     debug_time("Evacuation Failure", evac_fail_handling);
     trace_time("Recalculate Used", _cur_evac_fail_recalc_used);
     trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
-    trace_time("Restore RemSet", _cur_evac_fail_restore_remsets);
   }
 
   debug_time("Reference Enqueuing", _cur_ref_enq_time_ms);
