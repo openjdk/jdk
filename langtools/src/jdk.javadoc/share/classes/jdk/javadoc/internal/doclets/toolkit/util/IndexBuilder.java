@@ -199,7 +199,7 @@ public class IndexBuilder {
      */
     protected void addModulesToIndexMap() {
         for (ModuleElement mdle : configuration.modules) {
-            String mdleName = mdle.getSimpleName().toString();
+            String mdleName = mdle.getQualifiedName().toString();
             char ch = (mdleName.length() == 0)
                     ? '*'
                     : Character.toUpperCase(mdleName.charAt(0));

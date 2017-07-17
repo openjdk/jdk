@@ -867,3 +867,7 @@ table.striped > tbody > tr > td, table.striped > tbody > tr > td {
     border-left: 1px solid black;
     border-right: 1px solid black;
 }
+table.striped > tbody > tr > th {
+    font-weight: normal;
+}
+

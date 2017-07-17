@@ -38,13 +38,13 @@ import org.xml.sax.InputSource;
  *    <caption>Evaluation of XPath Expressions</caption>
  *    <thead>
  *      <tr>
- *        <th>Factor</th>
- *        <th>Behavior</th>
+ *        <th scope="col">Factor</th>
+ *        <th scope="col">Behavior</th>
  *      </tr>
  *    </thead>
  *    <tbody>
  *    <tr>
- *      <td>context</td>
+ *      <th scope="row">context</th>
  *      <td>
  *        The type of the context is implementation-dependent. If the value is
  *        null, the operation must have no dependency on the context, otherwise
@@ -55,7 +55,7 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>variables</td>
+ *      <th scope="row">variables</th>
  *      <td>
  *        If the expression contains a variable reference, its value will be found through the {@link XPathVariableResolver}
  *        set with {@link #setXPathVariableResolver(XPathVariableResolver resolver)}.
@@ -65,7 +65,7 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>functions</td>
+ *      <th scope="row">functions</th>
  *      <td>
  *        If the expression contains a function reference, the function will be found through the {@link XPathFunctionResolver}
  *        set with {@link #setXPathFunctionResolver(XPathFunctionResolver resolver)}.
@@ -74,14 +74,14 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>QNames</td>
+ *      <th scope="row">QNames</th>
  *      <td>
  *        QNames in the expression are resolved against the XPath namespace context
  *        set with {@link #setNamespaceContext(NamespaceContext nsContext)}.
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>result</td>
+ *      <th scope="row">result</th>
  *      <td>
  *        This result of evaluating an expression is converted to an instance of the desired return type.
  *        Valid return types are defined in {@link XPathConstants}.

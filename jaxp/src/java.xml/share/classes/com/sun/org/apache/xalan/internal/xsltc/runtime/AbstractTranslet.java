@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -155,7 +155,7 @@ public abstract class AbstractTranslet implements Translet {
      * Push a new parameter frame.
      */
     public final void pushParamFrame() {
-        paramsStack.add(pframe, new Integer(pbase));
+        paramsStack.add(pframe, pbase);
         pbase = ++pframe;
     }
 

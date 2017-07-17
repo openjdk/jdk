@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1342,7 +1342,7 @@ class CUP$XPathParser$actions {
           case 120: // NodeTest ::= PI
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.PI);
+                 RESULT = Integer.valueOf(NodeTest.PI);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(25/*NodeTest*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1371,7 +1371,7 @@ class CUP$XPathParser$actions {
           case 118: // NodeTest ::= COMMENT
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.COMMENT);
+                 RESULT = Integer.valueOf(NodeTest.COMMENT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(25/*NodeTest*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1380,7 +1380,7 @@ class CUP$XPathParser$actions {
           case 117: // NodeTest ::= TEXT
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.TEXT);
+                 RESULT = Integer.valueOf(NodeTest.TEXT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(25/*NodeTest*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1389,7 +1389,7 @@ class CUP$XPathParser$actions {
           case 116: // NodeTest ::= NODE
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.ANODE);
+                 RESULT = Integer.valueOf(NodeTest.ANODE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(25/*NodeTest*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1815,7 +1815,7 @@ class CUP$XPathParser$actions {
           case 96: // AxisName ::= SELF
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.SELF);
+                 RESULT = Integer.valueOf(Axis.SELF);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1824,7 +1824,7 @@ class CUP$XPathParser$actions {
           case 95: // AxisName ::= PRECEDINGSIBLING
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.PRECEDINGSIBLING);
+                 RESULT = Integer.valueOf(Axis.PRECEDINGSIBLING);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1833,7 +1833,7 @@ class CUP$XPathParser$actions {
           case 94: // AxisName ::= PRECEDING
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.PRECEDING);
+                 RESULT = Integer.valueOf(Axis.PRECEDING);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1842,7 +1842,7 @@ class CUP$XPathParser$actions {
           case 93: // AxisName ::= PARENT
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.PARENT);
+                 RESULT = Integer.valueOf(Axis.PARENT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1851,7 +1851,7 @@ class CUP$XPathParser$actions {
           case 92: // AxisName ::= NAMESPACE
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.NAMESPACE);
+                 RESULT = Integer.valueOf(Axis.NAMESPACE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1860,7 +1860,7 @@ class CUP$XPathParser$actions {
           case 91: // AxisName ::= FOLLOWINGSIBLING
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.FOLLOWINGSIBLING);
+                 RESULT = Integer.valueOf(Axis.FOLLOWINGSIBLING);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1869,7 +1869,7 @@ class CUP$XPathParser$actions {
           case 90: // AxisName ::= FOLLOWING
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.FOLLOWING);
+                 RESULT = Integer.valueOf(Axis.FOLLOWING);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1878,7 +1878,7 @@ class CUP$XPathParser$actions {
           case 89: // AxisName ::= DESCENDANTORSELF
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.DESCENDANTORSELF);
+                 RESULT = Integer.valueOf(Axis.DESCENDANTORSELF);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1887,7 +1887,7 @@ class CUP$XPathParser$actions {
           case 88: // AxisName ::= DESCENDANT
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.DESCENDANT);
+                 RESULT = Integer.valueOf(Axis.DESCENDANT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1896,7 +1896,7 @@ class CUP$XPathParser$actions {
           case 87: // AxisName ::= CHILD
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.CHILD);
+                 RESULT = Integer.valueOf(Axis.CHILD);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1905,7 +1905,7 @@ class CUP$XPathParser$actions {
           case 86: // AxisName ::= ATTRIBUTE
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ATTRIBUTE);
+                 RESULT = Integer.valueOf(Axis.ATTRIBUTE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1914,7 +1914,7 @@ class CUP$XPathParser$actions {
           case 85: // AxisName ::= ANCESTORORSELF
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ANCESTORORSELF);
+                 RESULT = Integer.valueOf(Axis.ANCESTORORSELF);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1923,7 +1923,7 @@ class CUP$XPathParser$actions {
           case 84: // AxisName ::= ANCESTOR
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ANCESTOR);
+                 RESULT = Integer.valueOf(Axis.ANCESTOR);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(40/*AxisName*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -1932,7 +1932,7 @@ class CUP$XPathParser$actions {
           case 83: // AxisSpecifier ::= ATSIGN
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ATTRIBUTE);
+                 RESULT = Integer.valueOf(Axis.ATTRIBUTE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(41/*AxisSpecifier*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2697,7 +2697,7 @@ class CUP$XPathParser$actions {
           case 35: // ChildOrAttributeAxisSpecifier ::= ATTRIBUTE DCOLON
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ATTRIBUTE);
+                 RESULT = Integer.valueOf(Axis.ATTRIBUTE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(42/*ChildOrAttributeAxisSpecifier*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-1)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2706,7 +2706,7 @@ class CUP$XPathParser$actions {
           case 34: // ChildOrAttributeAxisSpecifier ::= CHILD DCOLON
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.CHILD);
+                 RESULT = Integer.valueOf(Axis.CHILD);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(42/*ChildOrAttributeAxisSpecifier*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-1)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2715,7 +2715,7 @@ class CUP$XPathParser$actions {
           case 33: // ChildOrAttributeAxisSpecifier ::= ATSIGN
             {
               Integer RESULT = null;
-                 RESULT = new Integer(Axis.ATTRIBUTE);
+                 RESULT = Integer.valueOf(Axis.ATTRIBUTE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(42/*ChildOrAttributeAxisSpecifier*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2745,7 +2745,7 @@ class CUP$XPathParser$actions {
           case 30: // NodeTestPattern ::= PI
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.PI);
+                 RESULT = Integer.valueOf(NodeTest.PI);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(33/*NodeTestPattern*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2754,7 +2754,7 @@ class CUP$XPathParser$actions {
           case 29: // NodeTestPattern ::= COMMENT
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.COMMENT);
+                 RESULT = Integer.valueOf(NodeTest.COMMENT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(33/*NodeTestPattern*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2763,7 +2763,7 @@ class CUP$XPathParser$actions {
           case 28: // NodeTestPattern ::= TEXT
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.TEXT);
+                 RESULT = Integer.valueOf(NodeTest.TEXT);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(33/*NodeTestPattern*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
@@ -2772,7 +2772,7 @@ class CUP$XPathParser$actions {
           case 27: // NodeTestPattern ::= NODE
             {
               Object RESULT = null;
-                 RESULT = new Integer(NodeTest.ANODE);
+                 RESULT = Integer.valueOf(NodeTest.ANODE);
               CUP$XPathParser$result = new com.sun.java_cup.internal.runtime.Symbol(33/*NodeTestPattern*/, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).left, ((com.sun.java_cup.internal.runtime.Symbol)CUP$XPathParser$stack.elementAt(CUP$XPathParser$top-0)).right, RESULT);
             }
           return CUP$XPathParser$result;
