@@ -62,16 +62,12 @@ public:
 // Used during the Update RS phase to refine remaining cards in the DCQ during garbage collection.
 class G1ScanObjsDuringUpdateRSClosure: public G1ScanClosureBase {
   uint _worker_i;
-  bool _has_refs_into_cset;
 
 public:
   G1ScanObjsDuringUpdateRSClosure(G1CollectedHeap* g1h,
                                   G1ParScanThreadState* pss,
                                   uint worker_i) :
-    G1ScanClosureBase(g1h, pss), _has_refs_into_cset(false), _worker_i(worker_i) { }
-
-  void reset_has_refs_into_cset() { _has_refs_into_cset = false; }
-  bool has_refs_into_cset() const { return _has_refs_into_cset; }
+    G1ScanClosureBase(g1h, pss), _worker_i(worker_i) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
