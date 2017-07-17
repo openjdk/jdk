@@ -692,16 +692,17 @@ void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
     return;
   }
 
-  // During GC we can immediately clean the card since we will not re-enqueue stale
-  // cards as we know they can be disregarded.
-  *card_ptr = CardTableModRefBS::clean_card_val();
+  // We claim lazily (so races are possible but they're benign), which reduces the
+  // number of potential duplicate scans (multiple threads may enqueue the same card twice).
+  *card_ptr = CardTableModRefBS::clean_card_val() | CardTableModRefBS::claimed_card_val();
 
   // Construct the region representing the card.
   HeapWord* card_start = _ct_bs->addr_for(card_ptr);
   // And find the region containing it.
-  HeapRegion* r = _g1->heap_region_containing(card_start);
+  uint const card_region_idx = _g1->addr_to_region(card_start);
 
-  HeapWord* scan_limit = _scan_state->scan_top(r->hrm_index());
+  _scan_state->add_dirty_region(card_region_idx);
+  HeapWord* scan_limit = _scan_state->scan_top(card_region_idx);
   if (scan_limit <= card_start) {
     // If the card starts above the area in the region containing objects to scan, skip it.
     return;
@@ -713,8 +714,9 @@ void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  update_rs_cl->set_region(r);
-  bool card_processed = r->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
+  HeapRegion* const card_region = _g1->region_at(card_region_idx);
+  update_rs_cl->set_region(card_region);
+  bool card_processed = card_region->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
 }
 
