@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,10 +54,10 @@ public class LDC2_W extends CPInstruction
 
     switch(c.getTag()) {
     case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Long:
-        return new Long(((com.sun.org.apache.bcel.internal.classfile.ConstantLong)c).getBytes());
+        return Long.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantLong)c).getBytes());
 
     case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Double:
-        return new Double(((com.sun.org.apache.bcel.internal.classfile.ConstantDouble)c).getBytes());
+        return Double.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantDouble)c).getBytes());
 
     default: // Never reached
       throw new RuntimeException("Unknown or invalid constant type at " + index);

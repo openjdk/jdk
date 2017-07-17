@@ -1207,7 +1207,7 @@ public class Check {
         long illegal = flags & ExtendedStandardFlags & ~mask;
         if (illegal != 0) {
             if ((illegal & INTERFACE) != 0) {
-                log.error(pos, Errors.IntfNotAllowedHere);
+                log.error(pos, ((flags & ANNOTATION) != 0) ? Errors.AnnotationDeclNotAllowedHere : Errors.IntfNotAllowedHere);
                 mask |= INTERFACE;
             }
             else {

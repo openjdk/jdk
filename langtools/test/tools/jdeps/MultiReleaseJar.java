@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class MultiReleaseJar {
     Path mrjar;
@@ -50,7 +52,12 @@ public class MultiReleaseJar {
 
     @BeforeClass
     public void initialize() throws Exception {
-        mrjar = Paths.get(System.getProperty("test.classes", "."), "mrjar");
+        String testClassPath = System.getProperty("test.class.path", "");
+        mrjar = Stream.of(testClassPath.split(File.pathSeparator))
+                .map(Paths::get)
+                .filter(e -> e.endsWith("mrjar"))
+                .findAny()
+                .orElseThrow(() -> new InternalError("mrjar not found"));
         testJdk = System.getProperty("test.jdk");
         fileSep = System.getProperty("file.separator");
         cmdPath = Paths.get(testJdk, "bin");

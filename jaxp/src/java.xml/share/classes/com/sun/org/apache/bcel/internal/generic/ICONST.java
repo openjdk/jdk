@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -50,7 +49,7 @@ public class ICONST extends Instruction
     value = i;
   }
 
-  public Number getValue() { return new Integer(value); }
+  public Number getValue() { return Integer.valueOf(value); }
 
   /** @return Type.INT
    */

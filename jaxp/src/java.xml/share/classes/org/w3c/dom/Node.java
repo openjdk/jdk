@@ -65,23 +65,23 @@ package org.w3c.dom;
  * <caption style="display:none">Interface table</caption>
  * <thead>
  * <tr>
- * <th>Interface</th>
- * <th>nodeName</th>
- * <th>nodeValue</th>
- * <th>attributes</th>
+ * <th scope="col">Interface</th>
+ * <th scope="col">nodeName</th>
+ * <th scope="col">nodeValue</th>
+ * <th scope="col">attributes</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>
- * <code>Attr</code></td>
+ * <th scope="row">
+ * <code>Attr</code></th>
  * <td>same as <code>Attr.name</code></td>
  * <td>same as
  * <code>Attr.value</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>CDATASection</code></td>
+ * <th scope="row"><code>CDATASection</code></th>
  * <td>
  * <code>"#cdata-section"</code></td>
  * <td>same as <code>CharacterData.data</code>, the
@@ -89,7 +89,7 @@ package org.w3c.dom;
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>Comment</code></td>
+ * <th scope="row"><code>Comment</code></th>
  * <td>
  * <code>"#comment"</code></td>
  * <td>same as <code>CharacterData.data</code>, the
@@ -97,58 +97,58 @@ package org.w3c.dom;
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>Document</code></td>
+ * <th scope="row"><code>Document</code></th>
  * <td>
  * <code>"#document"</code></td>
  * <td><code>null</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td>
- * <code>DocumentFragment</code></td>
+ * <th scope="row">
+ * <code>DocumentFragment</code></th>
  * <td><code>"#document-fragment"</code></td>
  * <td>
  * <code>null</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>DocumentType</code></td>
+ * <th scope="row"><code>DocumentType</code></th>
  * <td>same as
  * <code>DocumentType.name</code></td>
  * <td><code>null</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td>
- * <code>Element</code></td>
+ * <th scope="row">
+ * <code>Element</code></th>
  * <td>same as <code>Element.tagName</code></td>
  * <td><code>null</code></td>
  * <td>
  * <code>NamedNodeMap</code></td>
  * </tr>
  * <tr>
- * <td><code>Entity</code></td>
+ * <th scope="row"><code>Entity</code></th>
  * <td>entity name</td>
  * <td><code>null</code></td>
  * <td>
  * <code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>EntityReference</code></td>
+ * <th scope="row"><code>EntityReference</code></th>
  * <td>name of entity referenced</td>
  * <td>
  * <code>null</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>Notation</code></td>
+ * <th scope="row"><code>Notation</code></th>
  * <td>notation name</td>
  * <td>
  * <code>null</code></td>
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>ProcessingInstruction</code></td>
+ * <th scope="row"><code>ProcessingInstruction</code></th>
  * <td>same
  * as <code>ProcessingInstruction.target</code></td>
  * <td>same as
@@ -156,7 +156,7 @@ package org.w3c.dom;
  * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td><code>Text</code></td>
+ * <th scope="row"><code>Text</code></th>
  * <td>
  * <code>"#text"</code></td>
  * <td>same as <code>CharacterData.data</code>, the content
@@ -696,28 +696,28 @@ public interface Node {
      * <caption style="display:none">Node/Content table</caption>
      * <thead>
      * <tr>
-     * <th>Node type</th>
-     * <th>Content</th>
+     * <th scope="col">Node type</th>
+     * <th scope="col">Content</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td>
+     * <th scope="row">
      * ELEMENT_NODE, ATTRIBUTE_NODE, ENTITY_NODE, ENTITY_REFERENCE_NODE,
-     * DOCUMENT_FRAGMENT_NODE</td>
+     * DOCUMENT_FRAGMENT_NODE</th>
      * <td>concatenation of the <code>textContent</code>
      * attribute value of every child node, excluding COMMENT_NODE and
      * PROCESSING_INSTRUCTION_NODE nodes. This is the empty string if the
      * node has no children.</td>
      * </tr>
      * <tr>
-     * <td>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
-     * PROCESSING_INSTRUCTION_NODE</td>
+     * <th scope="row">TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
+     * PROCESSING_INSTRUCTION_NODE</th>
      * <td><code>nodeValue</code></td>
      * </tr>
      * <tr>
-     * <td>DOCUMENT_NODE,
-     * DOCUMENT_TYPE_NODE, NOTATION_NODE</td>
+     * <th scope="row">DOCUMENT_NODE,
+     * DOCUMENT_TYPE_NODE, NOTATION_NODE</th>
      * <td><em>null</em></td>
      * </tr>
      * </tbody>
@@ -751,28 +751,28 @@ public interface Node {
      * <caption style="display:none">Node/Content table</caption>
      * <thead>
      * <tr>
-     * <th>Node type</th>
-     * <th>Content</th>
+     * <th scope="col">Node type</th>
+     * <th scope="col">Content</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td>
+     * <th scope="row">
      * ELEMENT_NODE, ATTRIBUTE_NODE, ENTITY_NODE, ENTITY_REFERENCE_NODE,
-     * DOCUMENT_FRAGMENT_NODE</td>
+     * DOCUMENT_FRAGMENT_NODE</th>
      * <td>concatenation of the <code>textContent</code>
      * attribute value of every child node, excluding COMMENT_NODE and
      * PROCESSING_INSTRUCTION_NODE nodes. This is the empty string if the
      * node has no children.</td>
      * </tr>
      * <tr>
-     * <td>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
-     * PROCESSING_INSTRUCTION_NODE</td>
+     * <th scope="row">TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
+     * PROCESSING_INSTRUCTION_NODE</th>
      * <td><code>nodeValue</code></td>
      * </tr>
      * <tr>
-     * <td>DOCUMENT_NODE,
-     * DOCUMENT_TYPE_NODE, NOTATION_NODE</td>
+     * <th scope="row">DOCUMENT_NODE,
+     * DOCUMENT_TYPE_NODE, NOTATION_NODE</th>
      * <td><em>null</em></td>
      * </tr>
      * </tbody>
