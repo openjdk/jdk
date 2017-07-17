@@ -323,7 +323,7 @@ void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
     // If the object is stack-locked by the current thread, try to
     // swing the displaced header from the BasicLock back to the mark.
     assert(dhw->is_neutral(), "invariant");
-    if ((markOop) Atomic::cmpxchg_ptr(dhw, object->mark_addr(), mark) == mark) {
+    if (object->cas_set_mark(dhw, mark) == mark) {
       TEVENT(fast_exit: release stack-lock);
       return;
     }
@@ -348,7 +348,7 @@ void ObjectSynchronizer::slow_enter(Handle obj, BasicLock* lock, TRAPS) {
     // Anticipate successful CAS -- the ST of the displaced mark must
     // be visible <= the ST performed by the CAS.
     lock->set_displaced_header(mark);
-    if (mark == (markOop) Atomic::cmpxchg_ptr(lock, obj()->mark_addr(), mark)) {
+    if (mark == obj()->cas_set_mark((markOop) lock, mark)) {
       TEVENT(slow_enter: release stacklock);
       return;
     }
@@ -758,7 +758,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread * Self, oop obj) {
     hash = get_next_hash(Self, obj);  // allocate a new hash code
     temp = mark->copy_set_hash(hash); // merge the hash code into header
     // use (machine word version) atomic operation to install the hash
-    test = (markOop) Atomic::cmpxchg_ptr(temp, obj->mark_addr(), mark);
+    test = obj->cas_set_mark(temp, mark);
     if (test == mark) {
       return hash;
     }
@@ -1452,7 +1452,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
       m->_recursions   = 0;
       m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;   // Consider: maintain by type/class
 
-      markOop cmp = (markOop) Atomic::cmpxchg_ptr(markOopDesc::INFLATING(), object->mark_addr(), mark);
+      markOop cmp = object->cas_set_mark(markOopDesc::INFLATING(), mark);
       if (cmp != mark) {
         omRelease(Self, m, true);
         continue;       // Interference -- just retry
@@ -1547,7 +1547,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     m->_Responsible  = NULL;
     m->_SpinDuration = ObjectMonitor::Knob_SpinLimit;       // consider: keep metastats by type/class
 
-    if (Atomic::cmpxchg_ptr (markOopDesc::encode(m), object->mark_addr(), mark) != mark) {
+    if (object->cas_set_mark(markOopDesc::encode(m), mark) != mark) {
       m->set_object(NULL);
       m->set_owner(NULL);
       m->Recycle();
