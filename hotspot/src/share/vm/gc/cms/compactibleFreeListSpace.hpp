@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr);
   // Accessors
   bool bestFitFirst() { return _fitStrategy == FreeBlockBestFitFirst; }
-  FreeBlockDictionary<FreeChunk>* dictionary() const { return _dictionary; }
+  AFLBinaryTreeDictionary* dictionary() const { return _dictionary; }
   HeapWord* nearLargestChunk() const { return _nearLargestChunk; }
   void set_nearLargestChunk(HeapWord* v) { _nearLargestChunk = v; }
 

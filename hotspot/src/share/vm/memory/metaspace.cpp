@@ -940,8 +940,7 @@ MetaWord* BlockFreelist::get_block(size_t word_size) {
     return NULL;
   }
 
-  Metablock* free_block =
-    dictionary()->get_chunk(word_size, FreeBlockDictionary<Metablock>::atLeast);
+  Metablock* free_block = dictionary()->get_chunk(word_size);
   if (free_block == NULL) {
     return NULL;
   }
@@ -1912,9 +1911,7 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     log_trace(gc, metaspace, freelist)("ChunkManager::free_chunks_get: free_list " PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
                                        p2i(free_list), p2i(chunk), chunk->word_size());
   } else {
-    chunk = humongous_dictionary()->get_chunk(
-      word_size,
-      FreeBlockDictionary<Metachunk>::atLeast);
+    chunk = humongous_dictionary()->get_chunk(word_size);
 
     if (chunk == NULL) {
       return NULL;
