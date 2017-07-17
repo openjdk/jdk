@@ -31,7 +31,7 @@ package org.graalvm.word;
  * null checks, read- or write barriers. Even when the VM uses compressed pointers, then readObject
  * and writeObject methods access uncompressed pointers.
  */
-public interface Pointer extends Unsigned, PointerBase {
+public interface Pointer extends UnsignedWord, PointerBase {
 
     /**
      * Unsafe conversion of this Pointer to a Java language object. No correctness checks or type
@@ -55,8 +55,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -69,8 +69,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -83,8 +83,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -97,8 +97,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -111,8 +111,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -125,8 +125,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -139,8 +139,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -153,8 +153,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -167,8 +167,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -271,8 +271,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -285,8 +285,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -299,8 +299,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -313,8 +313,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -327,8 +327,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -341,8 +341,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -355,8 +355,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -369,8 +369,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -383,8 +383,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Initializes the memory at address {@code (this + offset)}. Both the base address and offset
      * are in bytes. The memory must be uninitialized or zero prior to this operation.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -397,8 +397,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -511,8 +511,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -524,8 +524,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -537,8 +537,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -550,8 +550,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -563,8 +563,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -576,8 +576,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -589,8 +589,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -602,8 +602,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -615,8 +615,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -709,8 +709,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -722,8 +722,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -735,8 +735,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -748,8 +748,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -761,8 +761,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -774,8 +774,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -787,8 +787,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -800,8 +800,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -813,8 +813,8 @@ public interface Pointer extends Unsigned, PointerBase {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -940,25 +940,25 @@ public interface Pointer extends Unsigned, PointerBase {
     // It is therefore safe that they return a static type of Pointer instead of Unsigned.
 
     @Override
-    Pointer add(Unsigned val);
+    Pointer add(UnsignedWord val);
 
     @Override
     Pointer add(int val);
 
     @Override
-    Pointer subtract(Unsigned val);
+    Pointer subtract(UnsignedWord val);
 
     @Override
     Pointer subtract(int val);
 
     @Override
-    Pointer and(Unsigned val);
+    Pointer and(UnsignedWord val);
 
     @Override
     Pointer and(int val);
 
     @Override
-    Pointer or(Unsigned val);
+    Pointer or(UnsignedWord val);
 
     @Override
     Pointer or(int val);

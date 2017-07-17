@@ -30,7 +30,7 @@ import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.word.Pointer;
-import org.graalvm.word.Unsigned;
+import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordBase;
 import org.graalvm.word.WordFactory;
 import org.junit.Test;
@@ -118,7 +118,7 @@ public class WordTest extends SnippetsTest {
     @Snippet
     public static long cast(long input) {
         WordBase base = WordFactory.signed(input);
-        Unsigned unsigned = (Unsigned) base;
+        UnsignedWord unsigned = (UnsignedWord) base;
         Pointer pointer = (Pointer) unsigned;
         Word word = (Word) pointer;
         return word.rawValue();

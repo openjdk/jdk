@@ -23,6 +23,7 @@
 package org.graalvm.compiler.hotspot.amd64;
 
 import org.graalvm.compiler.core.amd64.AMD64MoveFactory;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 
 import jdk.vm.ci.hotspot.HotSpotCompressedNullConstant;
@@ -57,7 +58,7 @@ public class AMD64HotSpotMoveFactory extends AMD64MoveFactory {
         if (value instanceof HotSpotConstant) {
             return ((HotSpotConstant) value).isCompressed();
         }
-        return true;
+        return super.allowConstantToStackMove(value);
     }
 
     @Override
@@ -70,6 +71,21 @@ public class AMD64HotSpotMoveFactory extends AMD64MoveFactory {
             return new AMD64HotSpotMove.HotSpotLoadMetaspaceConstantOp(dst, (HotSpotMetaspaceConstant) src);
         } else {
             return super.createLoad(dst, src);
+        }
+    }
+
+    @Override
+    public LIRInstruction createStackLoad(AllocatableValue dst, Constant src) {
+        if (HotSpotCompressedNullConstant.COMPRESSED_NULL.equals(src)) {
+            return super.createStackLoad(dst, JavaConstant.INT_0);
+        } else if (src instanceof HotSpotObjectConstant) {
+            assert ((HotSpotConstant) src).isCompressed();
+            return new AMD64HotSpotMove.HotSpotLoadObjectConstantOp(dst, (HotSpotObjectConstant) src);
+        } else if (src instanceof HotSpotMetaspaceConstant) {
+            assert ((HotSpotConstant) src).isCompressed();
+            return new AMD64HotSpotMove.HotSpotLoadMetaspaceConstantOp(dst, (HotSpotMetaspaceConstant) src);
+        } else {
+            return super.createStackLoad(dst, src);
         }
     }
 }

@@ -32,6 +32,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.java.FrameStateBuilder;
@@ -206,7 +207,7 @@ public class GraphKit implements GraphBuilderTool {
                 method = providers.getMetaAccess().lookupJavaMethod(m);
             }
         }
-        assert method != null : "did not find method in " + declaringClass + " named " + name;
+        GraalError.guarantee(method != null, "Could not find %s.%s (%s)", declaringClass, name, isStatic ? "static" : "non-static");
         return method;
     }
 

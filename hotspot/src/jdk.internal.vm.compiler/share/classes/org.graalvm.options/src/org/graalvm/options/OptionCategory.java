@@ -25,7 +25,7 @@
 package org.graalvm.options;
 
 /**
- * Classifies options in several categories depending on who this option is relevant for.
+ * Categorizes options according to user relevance.
  *
  * @since 1.0
  */

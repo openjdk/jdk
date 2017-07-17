@@ -180,7 +180,7 @@ public class DebugOptions {
     /**
      * Gets the directory in which {@link DebugDumpHandler}s can generate output. This will be the
      * directory specified by {@link #DumpPath} if it has been set otherwise it will be derived from
-     * the default value of {@link #DumpPath} and {@link UniquePathUtilities#getGlobalTimeStamp()}.
+     * the default value of {@link #DumpPath} and {@link PathUtilities#getGlobalTimeStamp()}.
      *
      * This method will ensure the returned directory exists, printing a message to {@link TTY} if
      * it creates it.
@@ -193,13 +193,14 @@ public class DebugOptions {
         if (DumpPath.hasBeenSet(options)) {
             dumpDir = Paths.get(DumpPath.getValue(options));
         } else {
-            dumpDir = Paths.get(DumpPath.getValue(options), String.valueOf(UniquePathUtilities.getGlobalTimeStamp()));
+            dumpDir = Paths.get(DumpPath.getValue(options), String.valueOf(PathUtilities.getGlobalTimeStamp()));
         }
+        dumpDir = dumpDir.toAbsolutePath();
         if (!Files.exists(dumpDir)) {
             synchronized (DebugConfigImpl.class) {
                 if (!Files.exists(dumpDir)) {
                     Files.createDirectories(dumpDir);
-                    TTY.println("Dumping debug output in %s", dumpDir.toAbsolutePath().toString());
+                    TTY.println("Dumping debug output in %s", dumpDir.toString());
                 }
             }
         }

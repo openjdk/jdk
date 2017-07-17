@@ -91,6 +91,14 @@ public class SPARCMoveFactory implements MoveFactory {
     }
 
     @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        if (input instanceof DataPointerConstant) {
+            throw GraalError.shouldNotReachHere("unsupported constant for stack load: " + input);
+        }
+        return createLoad(result, input);
+    }
+
+    @Override
     public boolean canInlineConstant(Constant con) {
         if (con instanceof JavaConstant) {
             JavaConstant c = (JavaConstant) con;

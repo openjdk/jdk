@@ -31,8 +31,8 @@ import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
 import org.graalvm.word.LocationIdentity;
 import org.graalvm.word.Pointer;
-import org.graalvm.word.Signed;
-import org.graalvm.word.Unsigned;
+import org.graalvm.word.SignedWord;
+import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordBase;
 
 /**
@@ -50,8 +50,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -65,8 +65,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -80,8 +80,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -95,8 +95,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -110,8 +110,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -125,8 +125,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -140,8 +140,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -155,8 +155,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -170,8 +170,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -284,8 +284,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -299,8 +299,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -314,8 +314,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -329,8 +329,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -344,8 +344,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -359,8 +359,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -374,8 +374,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -389,8 +389,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -404,8 +404,8 @@ public abstract class MetaspacePointer {
      * Initializes the memory at address {@code (this + offset)}. Both the base address and offset
      * are in bytes. The memory must be uninitialized or zero prior to this operation.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -419,8 +419,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -533,8 +533,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -547,8 +547,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -561,8 +561,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -575,8 +575,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -589,8 +589,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -603,8 +603,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -617,8 +617,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -631,8 +631,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -645,8 +645,8 @@ public abstract class MetaspacePointer {
      * Reads the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -660,8 +660,8 @@ public abstract class MetaspacePointer {
      * the VM uses compressed oops, and it can be parameterized to allow read barriers (G1 referent
      * field).
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -777,8 +777,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -791,8 +791,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -805,8 +805,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -819,8 +819,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -833,8 +833,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -847,8 +847,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -861,8 +861,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -875,8 +875,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access
@@ -889,8 +889,8 @@ public abstract class MetaspacePointer {
      * Writes the memory at address {@code (this + offset)}. Both the base address and offset are in
      * bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts to of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param offset the signed offset for the memory access

@@ -57,14 +57,14 @@ public interface OptionDescriptors extends Iterable<OptionDescriptor> {
 
     /**
      * Gets the {@link OptionDescriptor} matching a given option name or {@code null} if this option
-     * descriptor set doesn't contain a matching option name.
+     * descriptor set does not contain a matching option name.
      *
      * @since 1.0
      */
     OptionDescriptor get(String optionName);
 
     /**
-     * Create a union options descriptor out of multiple given descriptors. The operation
+     * Creates a union options descriptor out of multiple given descriptors. The operation
      * descriptors are not checked for duplicate keys. The option descriptors are iterated in
      * declaration order.
      *
@@ -89,7 +89,7 @@ public interface OptionDescriptors extends Iterable<OptionDescriptor> {
     Iterator<OptionDescriptor> iterator();
 
     /**
-     * Create an {@link OptionDescriptors} instance from a list. The option descriptors
+     * Creates an {@link OptionDescriptors} instance from a list. The option descriptors
      * implementation is backed by a {@link LinkedHashMap} that preserves ordering.
      *
      * @since 1.0

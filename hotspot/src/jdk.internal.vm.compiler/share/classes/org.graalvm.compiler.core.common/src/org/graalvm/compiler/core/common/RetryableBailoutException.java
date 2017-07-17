@@ -36,8 +36,8 @@ public class RetryableBailoutException extends BailoutException {
         super(false, reason);
     }
 
-    public RetryableBailoutException(Throwable cause, String format) {
-        super(cause, format);
+    public RetryableBailoutException(Throwable cause, String format, Object... args) {
+        super(cause, format, args);
     }
 
 }

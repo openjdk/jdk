@@ -80,6 +80,8 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
         LIRInstruction createStackMove(AllocatableValue result, AllocatableValue input);
 
         LIRInstruction createLoad(AllocatableValue result, Constant input);
+
+        LIRInstruction createStackLoad(AllocatableValue result, Constant input);
     }
 
     abstract class BlockScope implements AutoCloseable {

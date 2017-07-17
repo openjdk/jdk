@@ -150,7 +150,7 @@ public class Graph {
     /**
      * The {@link DebugContext} used while compiling this graph.
      */
-    private final DebugContext debug;
+    private DebugContext debug;
 
     private class NodeSourcePositionScope implements DebugCloseable {
         private final NodeSourcePosition previous;
@@ -371,6 +371,21 @@ public class Graph {
 
     public DebugContext getDebug() {
         return debug;
+    }
+
+    /**
+     * Resets the {@link DebugContext} for this graph to a new value. This is useful when a graph is
+     * "handed over" from its creating thread to another thread.
+     *
+     * This must only be done when the current thread is no longer using the graph. This is in
+     * general impossible to test due to races and since metrics can be updated at any time. As
+     * such, this method only performs a weak sanity check that at least the current debug context
+     * does not have a nested scope open (the top level scope will always be open if scopes are
+     * enabled).
+     */
+    public void resetDebug(DebugContext newDebug) {
+        assert newDebug == debug || !debug.inNestedScope() : String.format("Cannot reset the debug context for %s while it has the nested scope \"%s\" open", this, debug.getCurrentScopeName());
+        this.debug = newDebug;
     }
 
     @Override

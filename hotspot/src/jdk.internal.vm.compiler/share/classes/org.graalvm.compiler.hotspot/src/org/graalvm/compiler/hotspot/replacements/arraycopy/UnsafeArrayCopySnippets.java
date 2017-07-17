@@ -56,7 +56,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.ObjectAccess;
 import org.graalvm.word.LocationIdentity;
-import org.graalvm.word.Unsigned;
+import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.TargetDescription;
@@ -237,15 +237,15 @@ public class UnsafeArrayCopySnippets implements Snippets {
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
         int headerSize = (layoutHelper >> layoutHelperHeaderSizeShift(INJECTED_VMCONFIG)) & layoutHelperHeaderSizeMask(INJECTED_VMCONFIG);
 
-        Unsigned vectorSize = WordFactory.unsigned(VECTOR_SIZE);
-        Unsigned srcOffset = WordFactory.unsigned(srcPos).shiftLeft(log2ElementSize).add(headerSize);
-        Unsigned destOffset = WordFactory.unsigned(destPos).shiftLeft(log2ElementSize).add(headerSize);
-        Unsigned destStart = destOffset;
-        Unsigned destEnd = destOffset.add(WordFactory.unsigned(length).shiftLeft(log2ElementSize));
+        UnsignedWord vectorSize = WordFactory.unsigned(VECTOR_SIZE);
+        UnsignedWord srcOffset = WordFactory.unsigned(srcPos).shiftLeft(log2ElementSize).add(headerSize);
+        UnsignedWord destOffset = WordFactory.unsigned(destPos).shiftLeft(log2ElementSize).add(headerSize);
+        UnsignedWord destStart = destOffset;
+        UnsignedWord destEnd = destOffset.add(WordFactory.unsigned(length).shiftLeft(log2ElementSize));
 
-        Unsigned destVectorEnd = null;
-        Unsigned nonVectorBytes = null;
-        Unsigned sizeInBytes = WordFactory.unsigned(length).shiftLeft(log2ElementSize);
+        UnsignedWord destVectorEnd = null;
+        UnsignedWord nonVectorBytes = null;
+        UnsignedWord sizeInBytes = WordFactory.unsigned(length).shiftLeft(log2ElementSize);
         if (supportsUnalignedMemoryAccess) {
             nonVectorBytes = sizeInBytes.unsignedRemainder(vectorSize);
             destVectorEnd = destEnd;
@@ -261,7 +261,7 @@ public class UnsafeArrayCopySnippets implements Snippets {
             destVectorEnd = destEnd.subtract(destEnd.unsignedRemainder(vectorSize));
         }
 
-        Unsigned destNonVectorEnd = destStart.add(nonVectorBytes);
+        UnsignedWord destNonVectorEnd = destStart.add(nonVectorBytes);
         while (destOffset.belowThan(destNonVectorEnd)) {
             ObjectAccess.writeByte(dest, destOffset, ObjectAccess.readByte(src, srcOffset, any()), any());
             destOffset = destOffset.add(1);

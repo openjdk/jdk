@@ -27,7 +27,7 @@ package org.graalvm.options;
 import java.util.Objects;
 
 /**
- * Represents the option key for a option specification.
+ * Represents the option key for an option specification.
  *
  * @since 1.0
  */
@@ -48,12 +48,12 @@ public final class OptionKey<T> {
         this.defaultValue = defaultValue;
         this.type = OptionType.defaultType(defaultValue);
         if (type == null) {
-            throw new IllegalArgumentException("No default type specified for type " + defaultValue.getClass().getName() + ". Specify the option type explicitely to resolve this.");
+            throw new IllegalArgumentException("No default type specified for type " + defaultValue.getClass().getName() + ". Specify the option type explicitly to resolve this.");
         }
     }
 
     /**
-     * Contructs a new option key givena default value and option key. The default value and the
+     * Constructs a new option key given a default value and option key. The default value and the
      * type must not be <code>null</code>.
      *
      * @since 1.0

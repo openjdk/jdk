@@ -23,9 +23,9 @@
 package org.graalvm.compiler.hotspot.test;
 
 import static java.util.Collections.singletonList;
-import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
-import static org.graalvm.compiler.core.GraalCompilerOptions.PrintBailout;
-import static org.graalvm.compiler.core.GraalCompilerOptions.PrintStackTraceOnException;
+import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.Print;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
 import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
@@ -209,12 +209,9 @@ public final class CompileTheWorld {
         EconomicMap<OptionKey<?>, Object> compilationOptionsCopy = EconomicMap.create(initialOptions.getMap());
         compilationOptionsCopy.putAll(compilationOptions);
 
-        // We don't want the VM to exit when a method fails to compile...
-        ExitVMOnException.putIfAbsent(compilationOptionsCopy, false);
-
-        // ...but we want to see exceptions.
-        PrintBailout.putIfAbsent(compilationOptionsCopy, true);
-        PrintStackTraceOnException.putIfAbsent(compilationOptionsCopy, true);
+        // We want to see stack traces when a method fails to compile
+        CompilationBailoutAction.putIfAbsent(compilationOptionsCopy, Print);
+        CompilationFailureAction.putIfAbsent(compilationOptionsCopy, Print);
 
         // By default only report statistics for the CTW threads themselves
         DebugOptions.MetricsThreadFilter.putIfAbsent(compilationOptionsCopy, "^CompileTheWorld");
