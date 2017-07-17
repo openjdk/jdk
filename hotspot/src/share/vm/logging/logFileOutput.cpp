@@ -32,13 +32,13 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
 
-const char* LogFileOutput::Prefix = "file=";
-const char* LogFileOutput::FileOpenMode = "a";
-const char* LogFileOutput::PidFilenamePlaceholder = "%p";
-const char* LogFileOutput::TimestampFilenamePlaceholder = "%t";
-const char* LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
-const char* LogFileOutput::FileSizeOptionKey = "filesize";
-const char* LogFileOutput::FileCountOptionKey = "filecount";
+const char* const LogFileOutput::Prefix = "file=";
+const char* const LogFileOutput::FileOpenMode = "a";
+const char* const LogFileOutput::PidFilenamePlaceholder = "%p";
+const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
+const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
+const char* const LogFileOutput::FileSizeOptionKey = "filesize";
+const char* const LogFileOutput::FileCountOptionKey = "filecount";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
