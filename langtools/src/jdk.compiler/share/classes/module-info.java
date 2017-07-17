@@ -25,7 +25,7 @@
 
 /**
  * Defines the implementation of the
- * {@link javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
+ * {@linkplain javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
  * and its command line equivalent, <em>{@index javac javac tool}</em>,
  * as well as <em>{@index javah javah tool}</em>.
  *
@@ -40,7 +40,7 @@
  *
  * <p> Instances of the tools can be obtained by calling
  * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- * or the {@link java.util.ServiceLoader service loader} with the name
+ * or the {@linkplain java.util.ServiceLoader service loader} with the name
  * {@code "javac"}.
  *
  * <p>
