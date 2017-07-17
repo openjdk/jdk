@@ -60,7 +60,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/freeBlockDictionary.hpp"
 #include "memory/heap.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/referenceType.hpp"

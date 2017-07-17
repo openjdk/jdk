@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1533,8 +1533,7 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size,
-                                         FreeBlockDictionary<FreeChunk>::atLeast);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return NULL;
   }
@@ -1551,8 +1550,7 @@ CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size,
-                                         FreeBlockDictionary<FreeChunk>::atLeast);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return fc;
   }
@@ -1565,8 +1563,7 @@ CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   if (fc->size() < size + MinChunkSize) {
     // Return the chunk to the dictionary and go get a bigger one.
     returnChunkToDictionary(fc);
-    fc = _dictionary->get_chunk(size + MinChunkSize,
-                                FreeBlockDictionary<FreeChunk>::atLeast);
+    fc = _dictionary->get_chunk(size + MinChunkSize);
     if (fc == NULL) {
       return NULL;
     }
@@ -2679,8 +2676,7 @@ FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, si
     MutexLockerEx x(parDictionaryAllocLock(),
                     Mutex::_no_safepoint_check_flag);
     while (n > 0) {
-      fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()),
-                                  FreeBlockDictionary<FreeChunk>::atLeast);
+      fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()));
       if (fc != NULL) {
         break;
       } else {

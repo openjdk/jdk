@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_MEMORY_BINARYTREEDICTIONARY_HPP
 #define SHARE_VM_MEMORY_BINARYTREEDICTIONARY_HPP
 
-#include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
 
 /*
@@ -176,7 +175,7 @@ template <class Chunk_t, class FreeList_t>
 size_t TreeChunk<Chunk_t, FreeList_t>::min_size() { return _min_tree_chunk_size; }
 
 template <class Chunk_t, class FreeList_t>
-class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
+class BinaryTreeDictionary: public CHeapObj<mtGC> {
   friend class VMStructs;
   size_t     _total_size;
   size_t     _total_free_blocks;
@@ -184,8 +183,8 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
 
   // private accessors
   void set_total_size(size_t v) { _total_size = v; }
-  virtual void inc_total_size(size_t v);
-  virtual void dec_total_size(size_t v);
+  void inc_total_size(size_t v);
+  void dec_total_size(size_t v);
   void set_total_free_blocks(size_t v) { _total_free_blocks = v; }
   TreeList<Chunk_t, FreeList_t>* root() const { return _root; }
   void set_root(TreeList<Chunk_t, FreeList_t>* v) { _root = v; }
@@ -200,7 +199,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   // return it.  If the chunk
   // is the last chunk of that size, remove the node for that size
   // from the tree.
-  TreeChunk<Chunk_t, FreeList_t>* get_chunk_from_tree(size_t size, enum FreeBlockDictionary<Chunk_t>::Dither dither);
+  TreeChunk<Chunk_t, FreeList_t>* get_chunk_from_tree(size_t size);
   // Remove this chunk from the tree.  If the removal results
   // in an empty list in the tree, remove the empty list.
   TreeChunk<Chunk_t, FreeList_t>* remove_chunk_from_tree(TreeChunk<Chunk_t, FreeList_t>* tc);
@@ -259,23 +258,21 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
 
   // Return a chunk of size "size" or greater from
   // the tree.
-  Chunk_t* get_chunk(size_t size, enum FreeBlockDictionary<Chunk_t>::Dither dither) {
-    FreeBlockDictionary<Chunk_t>::verify_par_locked();
-    Chunk_t* res = get_chunk_from_tree(size, dither);
+  Chunk_t* get_chunk(size_t size) {
+    verify_par_locked();
+    Chunk_t* res = get_chunk_from_tree(size);
     assert(res == NULL || res->is_free(),
            "Should be returning a free chunk");
-    assert(dither != FreeBlockDictionary<Chunk_t>::exactly ||
-           res == NULL || res->size() == size, "Not correct size");
     return res;
   }
 
   void return_chunk(Chunk_t* chunk) {
-    FreeBlockDictionary<Chunk_t>::verify_par_locked();
+    verify_par_locked();
     insert_chunk_in_tree(chunk);
   }
 
   void remove_chunk(Chunk_t* chunk) {
-    FreeBlockDictionary<Chunk_t>::verify_par_locked();
+    verify_par_locked();
     remove_chunk_from_tree((TreeChunk<Chunk_t, FreeList_t>*)chunk);
     assert(chunk->is_free(), "Should still be a free chunk");
   }
@@ -340,6 +337,10 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   void       report_statistics(outputStream* st) const;
 
   void       verify() const;
+
+  Mutex*     par_lock()                const PRODUCT_RETURN0;
+  void       set_par_lock(Mutex* lock)       PRODUCT_RETURN;
+  void       verify_par_locked()       const PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_MEMORY_BINARYTREEDICTIONARY_HPP
