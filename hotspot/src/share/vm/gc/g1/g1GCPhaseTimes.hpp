@@ -27,6 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/macros.hpp"
 
 class LineBuffer;
 
