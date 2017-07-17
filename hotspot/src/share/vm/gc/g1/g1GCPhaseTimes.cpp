@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 
 static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
