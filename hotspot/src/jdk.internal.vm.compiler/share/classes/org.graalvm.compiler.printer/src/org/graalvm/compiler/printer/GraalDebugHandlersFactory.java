@@ -28,6 +28,7 @@ import static org.graalvm.compiler.debug.DebugOptions.PrintGraphHost;
 import static org.graalvm.compiler.debug.DebugOptions.PrintXmlGraphPort;
 import static org.graalvm.compiler.debug.DebugOptions.ShowDumpFiles;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
@@ -53,7 +54,7 @@ import org.graalvm.compiler.debug.DebugHandler;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.debug.UniquePathUtilities;
+import org.graalvm.compiler.debug.PathUtilities;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -117,7 +118,13 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
         return new CanonicalStringGraphPrinter(snippetReflection);
     }
 
-    public static String sanitizedFileName(String name) {
+    public static String sanitizedFileName(String n) {
+        /*
+         * First ensure that the name does not contain the directory separator (which would be
+         * considered a valid path).
+         */
+        String name = n.replace(File.separatorChar, '_');
+
         try {
             Paths.get(name);
             return name;
@@ -194,7 +201,7 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
             label = graph == null ? null : graph.name != null ? graph.name : graph.toString();
             id = "UnknownCompilation-" + unknownCompilationId.incrementAndGet();
         }
-        String ext = UniquePathUtilities.formatExtension(extension);
+        String ext = PathUtilities.formatExtension(extension);
         Path result = createUnique(DebugOptions.getDumpDirectory(options), id, label, ext, createDirectory);
         if (ShowDumpFiles.getValue(options)) {
             TTY.println("Dumping debug output to %s", result.toAbsolutePath().toString());
@@ -220,7 +227,7 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
                 // This means `id` is very long
                 String suffix = timestamp + ext;
                 int idLengthLimit = Math.min(MAX_FILE_NAME_LENGTH - suffix.length(), id.length());
-                fileName = id.substring(0, idLengthLimit) + suffix;
+                fileName = sanitizedFileName(id.substring(0, idLengthLimit) + suffix);
             } else {
                 if (label == null) {
                     fileName = sanitizedFileName(id + timestamp + ext);

@@ -43,14 +43,31 @@ import org.junit.Test;
 /**
  * Tests support for dumping graphs and other info useful for debugging a compiler crash.
  */
-public class RetryableCompilationTest extends GraalCompilerTest {
+public class CompilationWrapperTest extends GraalCompilerTest {
 
     /**
      * Tests compilation requested by the VM.
      */
     @Test
-    public void testVMCompilation() throws IOException, InterruptedException {
-        testHelper(Arrays.asList("-XX:+BootstrapJVMCI", "-XX:+UseJVMCICompiler", "-Dgraal.CrashAt=Object.*,String.*", "-version"));
+    public void testVMCompilation1() throws IOException, InterruptedException {
+        testHelper(Arrays.asList("-XX:+BootstrapJVMCI",
+                        "-XX:+UseJVMCICompiler",
+                        "-Dgraal.CompilationFailureAction=ExitVM",
+                        "-Dgraal.CrashAt=Object.*,String.*",
+                        "-version"));
+    }
+
+    /**
+     * Tests that {@code -Dgraal.ExitVMOnException=true} works as an alias for
+     * {@code -Dgraal.CompilationFailureAction=ExitVM}.
+     */
+    @Test
+    public void testVMCompilation2() throws IOException, InterruptedException {
+        testHelper(Arrays.asList("-XX:+BootstrapJVMCI",
+                        "-XX:+UseJVMCICompiler",
+                        "-Dgraal.ExitVMOnException=true",
+                        "-Dgraal.CrashAt=Object.*,String.*",
+                        "-version"));
     }
 
     /**
@@ -58,17 +75,24 @@ public class RetryableCompilationTest extends GraalCompilerTest {
      */
     @Test
     public void testTruffleCompilation() throws IOException, InterruptedException {
-        testHelper(Arrays.asList("-Dgraal.CrashAt=root test1"), "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
+        testHelper(Arrays.asList(
+                        "-Dgraal.CompilationFailureAction=ExitVM",
+                        "-Dgraal.CrashAt=root test1"),
+                        "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite",
+                        "test");
     }
 
     private static void testHelper(List<String> extraVmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
+        final File dumpPath = new File(CompilationWrapperTest.class.getSimpleName() + "_" + System.currentTimeMillis()).getAbsoluteFile();
         List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
         vmArgs.removeIf(a -> a.startsWith("-Dgraal."));
+        vmArgs.add("-Dgraal.DumpPath=" + dumpPath);
         // Force output to a file even if there's a running IGV instance available.
         vmArgs.add("-Dgraal.PrintGraphFile=true");
         vmArgs.addAll(extraVmArgs);
 
         Subprocess proc = SubprocessUtil.java(vmArgs, mainClassAndArgs);
+        System.out.println(proc);
 
         String forcedCrashString = "Forced crash after compiling";
         String diagnosticOutputFilePrefix = "Graal diagnostic output saved in ";
@@ -86,6 +110,7 @@ public class RetryableCompilationTest extends GraalCompilerTest {
                 }
             }
         }
+
         if (!seenForcedCrashString) {
             Assert.fail(String.format("Did not find '%s' in output of command:%n%s", forcedCrashString, proc));
         }
@@ -93,8 +118,11 @@ public class RetryableCompilationTest extends GraalCompilerTest {
             Assert.fail(String.format("Did not find '%s' in output of command:%n%s", diagnosticOutputFilePrefix, proc));
         }
 
+        String[] dumpPathEntries = dumpPath.list();
+
         File zip = new File(diagnosticOutputZip).getAbsoluteFile();
         Assert.assertTrue(zip.toString(), zip.exists());
+        Assert.assertArrayEquals(dumpPathEntries, new String[]{zip.getName()});
         try {
             int bgv = 0;
             int cfg = 0;
@@ -118,6 +146,7 @@ public class RetryableCompilationTest extends GraalCompilerTest {
             }
         } finally {
             zip.delete();
+            dumpPath.delete();
         }
     }
 }

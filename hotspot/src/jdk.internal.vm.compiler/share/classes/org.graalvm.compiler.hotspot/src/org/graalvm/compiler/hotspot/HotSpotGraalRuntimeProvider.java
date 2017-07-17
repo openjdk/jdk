@@ -25,6 +25,7 @@ package org.graalvm.compiler.hotspot;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.options.OptionValues;
@@ -91,12 +92,7 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
     boolean isShutdown();
 
     /**
-     * Gets a directory into which diagnostics such crash reports and dumps should be written. This
-     * method will create the directory if it doesn't exist so it should only be called if
-     * diagnostics are about to be generated.
-     *
-     * @return the directory into which diagnostics can be written or {@code null} if the directory
-     *         does not exist and could not be created or has already been deleted
+     * Gets a directory into which diagnostics such crash reports and dumps should be written.
      */
-    String getOutputDirectory();
+    DiagnosticsOutputDirectory getOutputDirectory();
 }

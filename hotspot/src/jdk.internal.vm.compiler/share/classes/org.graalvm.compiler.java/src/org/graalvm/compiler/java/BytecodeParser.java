@@ -365,6 +365,7 @@ import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.extended.AnchoringNode;
+import org.graalvm.compiler.nodes.extended.BranchProbabilityNode;
 import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
 import org.graalvm.compiler.nodes.extended.LoadHubNode;
@@ -2959,7 +2960,7 @@ public class BytecodeParser implements GraphBuilderContext {
             }
 
             // Need to get probability based on current bci.
-            double probability = branchProbability();
+            double probability = branchProbability(condition);
 
             if (negate) {
                 BciBlock tmpBlock = trueBlock;
@@ -4026,12 +4027,36 @@ public class BytecodeParser implements GraphBuilderContext {
         return probability == 0 && optimisticOpts.removeNeverExecutedCode(getOptions());
     }
 
-    protected double branchProbability() {
+    private double rawBranchProbability(LogicNode conditionInput) {
+        if (conditionInput instanceof IntegerEqualsNode) {
+            // Propagate injected branch probability if any.
+            IntegerEqualsNode condition = (IntegerEqualsNode) conditionInput;
+            BranchProbabilityNode injectedProbability = null;
+            ValueNode other = null;
+            if (condition.getX() instanceof BranchProbabilityNode) {
+                injectedProbability = (BranchProbabilityNode) condition.getX();
+                other = condition.getY();
+            } else if (condition.getY() instanceof BranchProbabilityNode) {
+                injectedProbability = (BranchProbabilityNode) condition.getY();
+                other = condition.getX();
+            }
+
+            if (injectedProbability != null && injectedProbability.getProbability().isConstant() && other != null && other.isConstant()) {
+                double probabilityValue = injectedProbability.getProbability().asJavaConstant().asDouble();
+                return other.asJavaConstant().asInt() == 0 ? 1.0 - probabilityValue : probabilityValue;
+            }
+        }
+
         if (profilingInfo == null) {
             return 0.5;
         }
         assert assertAtIfBytecode();
-        double probability = profilingInfo.getBranchTakenProbability(bci());
+
+        return profilingInfo.getBranchTakenProbability(bci());
+    }
+
+    protected double branchProbability(LogicNode conditionInput) {
+        double probability = rawBranchProbability(conditionInput);
         if (probability < 0) {
             assert probability == -1 : "invalid probability";
             debug.log("missing probability in %s at bci %d", code, bci());

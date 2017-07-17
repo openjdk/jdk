@@ -28,7 +28,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.InvocationTargetException;
 
 public abstract class WordFactory {
 
@@ -54,19 +53,7 @@ public abstract class WordFactory {
         <T extends WordBase> T box(long val);
     }
 
-    protected static final BoxFactory boxFactory;
-
-    static {
-        try {
-            /*
-             * We know the implementation class, but cannot reference it statically because we need
-             * to break the dependency between the interface and the implementation.
-             */
-            boxFactory = (BoxFactory) Class.forName("org.graalvm.compiler.word.Word$BoxFactoryImpl").getConstructor().newInstance();
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            throw new ExceptionInInitializerError("Could not find and initialize the word type factory. The Graal compiler needs to be on the class path to use the word type.");
-        }
-    }
+    protected static BoxFactory boxFactory;
 
     /**
      * We allow subclassing, because only subclasses can access the protected inner classes that we
@@ -105,7 +92,7 @@ public abstract class WordFactory {
      * @return the value cast to Word
      */
     @FactoryOperation(opcode = FactoryOpcode.FROM_UNSIGNED)
-    public static <T extends Unsigned> T unsigned(long val) {
+    public static <T extends UnsignedWord> T unsigned(long val) {
         return boxFactory.box(val);
     }
 
@@ -129,7 +116,7 @@ public abstract class WordFactory {
      * @return the value cast to Word
      */
     @FactoryOperation(opcode = FactoryOpcode.FROM_UNSIGNED)
-    public static <T extends Unsigned> T unsigned(int val) {
+    public static <T extends UnsignedWord> T unsigned(int val) {
         return boxFactory.box(val & 0xffffffffL);
     }
 
@@ -141,7 +128,7 @@ public abstract class WordFactory {
      * @return the value cast to Word
      */
     @FactoryOperation(opcode = FactoryOpcode.FROM_SIGNED)
-    public static <T extends Signed> T signed(long val) {
+    public static <T extends SignedWord> T signed(long val) {
         return boxFactory.box(val);
     }
 
@@ -153,7 +140,7 @@ public abstract class WordFactory {
      * @return the value cast to Word
      */
     @FactoryOperation(opcode = FactoryOpcode.FROM_SIGNED)
-    public static <T extends Signed> T signed(int val) {
+    public static <T extends SignedWord> T signed(int val) {
         return boxFactory.box(val);
     }
 }

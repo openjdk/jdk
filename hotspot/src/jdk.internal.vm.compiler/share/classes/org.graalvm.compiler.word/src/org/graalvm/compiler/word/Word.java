@@ -51,12 +51,21 @@ import org.graalvm.compiler.nodes.memory.address.AddressNode.Address;
 import org.graalvm.word.ComparableWord;
 import org.graalvm.word.LocationIdentity;
 import org.graalvm.word.Pointer;
-import org.graalvm.word.Signed;
-import org.graalvm.word.Unsigned;
+import org.graalvm.word.SignedWord;
+import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordBase;
 import org.graalvm.word.WordFactory;
 
-public abstract class Word extends WordFactory implements Signed, Unsigned, Pointer {
+public abstract class Word extends WordFactory implements SignedWord, UnsignedWord, Pointer {
+
+    static {
+        assert WordFactory.boxFactory == null : "BoxFactory must be initialized only once.";
+        WordFactory.boxFactory = new BoxFactoryImpl();
+    }
+
+    public static void ensureInitialized() {
+        /* Calling this method ensures that the static initializer has been executed. */
+    }
 
     /**
      * Links a method to a canonical operation represented by an {@link Opcode} val.
@@ -166,13 +175,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = AddNode.class)
-    public Word add(Signed val) {
+    public Word add(SignedWord val) {
         return add((Word) val);
     }
 
     @Override
     @Operation(node = AddNode.class)
-    public Word add(Unsigned val) {
+    public Word add(UnsignedWord val) {
         return add((Word) val);
     }
 
@@ -189,13 +198,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = SubNode.class)
-    public Word subtract(Signed val) {
+    public Word subtract(SignedWord val) {
         return subtract((Word) val);
     }
 
     @Override
     @Operation(node = SubNode.class)
-    public Word subtract(Unsigned val) {
+    public Word subtract(UnsignedWord val) {
         return subtract((Word) val);
     }
 
@@ -212,13 +221,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = MulNode.class)
-    public Word multiply(Signed val) {
+    public Word multiply(SignedWord val) {
         return multiply((Word) val);
     }
 
     @Override
     @Operation(node = MulNode.class)
-    public Word multiply(Unsigned val) {
+    public Word multiply(UnsignedWord val) {
         return multiply((Word) val);
     }
 
@@ -235,7 +244,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = SignedDivNode.class)
-    public Word signedDivide(Signed val) {
+    public Word signedDivide(SignedWord val) {
         return signedDivide((Word) val);
     }
 
@@ -252,7 +261,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = UnsignedDivNode.class)
-    public Word unsignedDivide(Unsigned val) {
+    public Word unsignedDivide(UnsignedWord val) {
         return unsignedDivide((Word) val);
     }
 
@@ -269,7 +278,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = SignedRemNode.class)
-    public Word signedRemainder(Signed val) {
+    public Word signedRemainder(SignedWord val) {
         return signedRemainder((Word) val);
     }
 
@@ -286,7 +295,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = UnsignedRemNode.class)
-    public Word unsignedRemainder(Unsigned val) {
+    public Word unsignedRemainder(UnsignedWord val) {
         return unsignedRemainder((Word) val);
     }
 
@@ -303,7 +312,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = LeftShiftNode.class, rightOperandIsInt = true)
-    public Word shiftLeft(Unsigned val) {
+    public Word shiftLeft(UnsignedWord val) {
         return shiftLeft((Word) val);
     }
 
@@ -320,7 +329,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = RightShiftNode.class, rightOperandIsInt = true)
-    public Word signedShiftRight(Unsigned val) {
+    public Word signedShiftRight(UnsignedWord val) {
         return signedShiftRight((Word) val);
     }
 
@@ -337,7 +346,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = UnsignedRightShiftNode.class, rightOperandIsInt = true)
-    public Word unsignedShiftRight(Unsigned val) {
+    public Word unsignedShiftRight(UnsignedWord val) {
         return unsignedShiftRight((Word) val);
     }
 
@@ -354,13 +363,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = AndNode.class)
-    public Word and(Signed val) {
+    public Word and(SignedWord val) {
         return and((Word) val);
     }
 
     @Override
     @Operation(node = AndNode.class)
-    public Word and(Unsigned val) {
+    public Word and(UnsignedWord val) {
         return and((Word) val);
     }
 
@@ -377,13 +386,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = OrNode.class)
-    public Word or(Signed val) {
+    public Word or(SignedWord val) {
         return or((Word) val);
     }
 
     @Override
     @Operation(node = OrNode.class)
-    public Word or(Unsigned val) {
+    public Word or(UnsignedWord val) {
         return or((Word) val);
     }
 
@@ -400,13 +409,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(node = XorNode.class)
-    public Word xor(Signed val) {
+    public Word xor(SignedWord val) {
         return xor((Word) val);
     }
 
     @Override
     @Operation(node = XorNode.class)
-    public Word xor(Unsigned val) {
+    public Word xor(UnsignedWord val) {
         return xor((Word) val);
     }
 
@@ -447,13 +456,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
-    public boolean equal(Signed val) {
+    public boolean equal(SignedWord val) {
         return equal((Word) val);
     }
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
-    public boolean equal(Unsigned val) {
+    public boolean equal(UnsignedWord val) {
         return equal((Word) val);
     }
 
@@ -476,13 +485,13 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.NE)
-    public boolean notEqual(Signed val) {
+    public boolean notEqual(SignedWord val) {
         return notEqual((Word) val);
     }
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.NE)
-    public boolean notEqual(Unsigned val) {
+    public boolean notEqual(UnsignedWord val) {
         return notEqual((Word) val);
     }
 
@@ -499,7 +508,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.LT)
-    public boolean lessThan(Signed val) {
+    public boolean lessThan(SignedWord val) {
         return lessThan((Word) val);
     }
 
@@ -516,7 +525,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.LE)
-    public boolean lessOrEqual(Signed val) {
+    public boolean lessOrEqual(SignedWord val) {
         return lessOrEqual((Word) val);
     }
 
@@ -533,7 +542,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.GT)
-    public boolean greaterThan(Signed val) {
+    public boolean greaterThan(SignedWord val) {
         return greaterThan((Word) val);
     }
 
@@ -550,7 +559,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.GE)
-    public boolean greaterOrEqual(Signed val) {
+    public boolean greaterOrEqual(SignedWord val) {
         return greaterOrEqual((Word) val);
     }
 
@@ -567,7 +576,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.BT)
-    public boolean belowThan(Unsigned val) {
+    public boolean belowThan(UnsignedWord val) {
         return belowThan((Word) val);
     }
 
@@ -584,7 +593,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.BE)
-    public boolean belowOrEqual(Unsigned val) {
+    public boolean belowOrEqual(UnsignedWord val) {
         return belowOrEqual((Word) val);
     }
 
@@ -601,7 +610,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.AT)
-    public boolean aboveThan(Unsigned val) {
+    public boolean aboveThan(UnsignedWord val) {
         return aboveThan((Word) val);
     }
 
@@ -618,7 +627,7 @@ public abstract class Word extends WordFactory implements Signed, Unsigned, Poin
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.AE)
-    public boolean aboveOrEqual(Unsigned val) {
+    public boolean aboveOrEqual(UnsignedWord val) {
         return aboveOrEqual((Word) val);
     }
 

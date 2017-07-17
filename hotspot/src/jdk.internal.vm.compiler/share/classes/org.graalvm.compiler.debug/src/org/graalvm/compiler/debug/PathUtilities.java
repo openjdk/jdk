@@ -23,6 +23,7 @@
 package org.graalvm.compiler.debug;
 
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -32,7 +33,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 
-public class UniquePathUtilities {
+/**
+ * Miscellaneous methods for modifying and generating file system paths.
+ */
+public class PathUtilities {
 
     private static final AtomicLong globalTimeStamp = new AtomicLong();
     /**
@@ -70,6 +74,13 @@ public class UniquePathUtilities {
         return id.generateID(extension);
     }
 
+    /**
+     * Prepends a period (i.e., {@code '.'}) to an non-null, non-empty string representation a file
+     * extension if the string does not already start with a period.
+     *
+     * @return {@code ext} unmodified if it is null, empty or already starts with a period other
+     *         {@code "." + ext}
+     */
     public static String formatExtension(String ext) {
         if (ext == null || ext.length() == 0) {
             return "";
@@ -77,6 +88,10 @@ public class UniquePathUtilities {
         return "." + ext;
     }
 
+    /**
+     * Gets a time stamp for the current process. This method will always return the same value for
+     * the current VM execution.
+     */
     public static long getGlobalTimeStamp() {
         if (globalTimeStamp.get() == 0) {
             globalTimeStamp.compareAndSet(0, System.currentTimeMillis());
@@ -91,8 +106,8 @@ public class UniquePathUtilities {
      *
      * @return the output file path or null if the flag is null
      */
-    public static Path getPath(OptionValues options, OptionKey<String> option, String extension) throws IOException {
-        return getPath(options, option, extension, true);
+    public static Path getPath(OptionValues options, OptionKey<String> baseNameOption, String extension) throws IOException {
+        return getPath(options, baseNameOption, extension, true);
     }
 
     /**
@@ -119,5 +134,32 @@ public class UniquePathUtilities {
         }
         Path dumpDir = DebugOptions.getDumpDirectory(options);
         return dumpDir.resolve(name).normalize();
+    }
+
+    /**
+     * Gets a value based on {@code name} that can be passed to {@link Paths#get(String, String...)}
+     * without causing an {@link InvalidPathException}.
+     *
+     * @return {@code name} with all characters invalid for the current file system replaced by
+     *         {@code '_'}
+     */
+    public static String sanitizeFileName(String name) {
+        try {
+            Paths.get(name);
+            return name;
+        } catch (InvalidPathException e) {
+            // fall through
+        }
+        StringBuilder buf = new StringBuilder(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            try {
+                Paths.get(String.valueOf(c));
+            } catch (InvalidPathException e) {
+                buf.append('_');
+            }
+            buf.append(c);
+        }
+        return buf.toString();
     }
 }

@@ -42,8 +42,8 @@ public interface OptionValues {
      * Sets the value of {@code optionKey} to {@code value}.
      *
      * @throws IllegalArgumentException if the given value is not {@link OptionType#validate(Object)
-     *             validated} by the {@link OptionKey#getType() option type} of the key. Please note
-     *             that the operation does not fail if the option key is not described by any of the
+     *             validated} by the {@link OptionKey#getType() option type} of the key. Note that
+     *             the operation succeeds if the option key is not described by any of the
      *             associated {@link #getDescriptors() descriptors}.
      *
      * @since 1.0

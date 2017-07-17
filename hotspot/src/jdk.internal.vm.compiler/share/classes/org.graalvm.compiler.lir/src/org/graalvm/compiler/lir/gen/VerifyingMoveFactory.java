@@ -80,6 +80,13 @@ public final class VerifyingMoveFactory implements MoveFactory {
         return inst;
     }
 
+    @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        LIRInstruction inst = inner.createStackLoad(result, input);
+        assert LoadConstantOp.isLoadConstantOp(inst) && checkResult(inst, result, null);
+        return inst;
+    }
+
     /** Closure for {@link VerifyingMoveFactory#checkResult}. */
     @SuppressWarnings("unused")
     private static class CheckClosure {

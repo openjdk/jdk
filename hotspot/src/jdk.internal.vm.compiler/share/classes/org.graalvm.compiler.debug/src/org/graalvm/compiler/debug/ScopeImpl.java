@@ -165,6 +165,10 @@ public final class ScopeImpl implements DebugContext.Scope {
         owner.lastClosedScope = this;
     }
 
+    boolean isTopLevel() {
+        return parent == null;
+    }
+
     public boolean isDumpEnabled(int dumpLevel) {
         assert dumpLevel >= 0;
         return currentDumpLevel >= dumpLevel;

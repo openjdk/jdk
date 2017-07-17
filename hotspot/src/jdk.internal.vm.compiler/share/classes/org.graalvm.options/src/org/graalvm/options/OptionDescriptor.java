@@ -27,7 +27,7 @@ package org.graalvm.options;
 import java.util.Objects;
 
 /**
- * Represents meta-data for a single option.
+ * Represents metadata for a single option.
  *
  * @since 1.0
  */
@@ -48,7 +48,7 @@ public final class OptionDescriptor {
     }
 
     /**
-     * Returns the option name of the option represented by this descriptor.
+     * Returns the name of the option that this descriptor represents.
      *
      * @since 1.0
      */
@@ -185,7 +185,7 @@ public final class OptionDescriptor {
         }
 
         /**
-         * Defines whether this option is deprecated. The default value for deprecated is
+         * Defines if this option is deprecated. The default value for deprecated is
          * <code>false</code>. This can be used to evolve options between releases.
          *
          * @since 1.0

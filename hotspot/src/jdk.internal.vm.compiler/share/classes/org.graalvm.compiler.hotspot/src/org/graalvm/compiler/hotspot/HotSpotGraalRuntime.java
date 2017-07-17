@@ -29,32 +29,18 @@ import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
 import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.zip.Deflater;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugContext.Description;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.GlobalMetrics;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
@@ -108,6 +94,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     private final GraalHotSpotVMConfig config;
 
     private final OptionValues options;
+    private final DiagnosticsOutputDirectory outputDirectory;
     private final HotSpotGraalMBean mBean;
 
     /**
@@ -126,6 +113,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             options = initialOptions;
         }
 
+        outputDirectory = new DiagnosticsOutputDirectory(options);
         snippetCounterGroups = GraalOptions.SnippetCounters.getValue(options) ? new ArrayList<>() : null;
         CompilerConfiguration compilerConfiguration = compilerConfigurationFactory.createCompilerConfiguration();
 
@@ -177,17 +165,6 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
         runtimeStartTime = System.nanoTime();
         bootstrapJVMCI = config.getFlag("BootstrapJVMCI", Boolean.class);
-
-        assert checkPathIsInvalid(DELETED_OUTPUT_DIRECTORY);
-    }
-
-    private static boolean checkPathIsInvalid(String path) {
-        try {
-            Paths.get(path);
-            return false;
-        } catch (InvalidPathException e) {
-            return true;
-        }
     }
 
     private HotSpotBackend registerBackend(HotSpotBackend backend) {
@@ -293,7 +270,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         }
         BenchmarkCounters.shutdown(runtime(), options, runtimeStartTime);
 
-        archiveAndDeleteOutputDirectory();
+        outputDirectory.close();
     }
 
     void clearMetrics() {
@@ -317,98 +294,8 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         return shutdown;
     }
 
-    /**
-     * Gets a unique identifier for this execution such as a process ID.
-     */
-    private static String getExecutionID() {
-        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
-        try {
-            int index = runtimeName.indexOf('@');
-            if (index != -1) {
-                long pid = Long.parseLong(runtimeName.substring(0, index));
-                return Long.toString(pid);
-            }
-        } catch (NumberFormatException e) {
-        }
-        return runtimeName;
-    }
-
-    private String outputDirectory;
-
-    /**
-     * Use an illegal file name to denote that the output directory has been deleted.
-     */
-    private static final String DELETED_OUTPUT_DIRECTORY = "\u0000";
-
     @Override
-    public String getOutputDirectory() {
-        return getOutputDirectory(true);
-    }
-
-    private synchronized String getOutputDirectory(boolean createIfNull) {
-        if (outputDirectory == null && createIfNull) {
-            outputDirectory = "graal_output_" + getExecutionID();
-            File dir = new File(outputDirectory).getAbsoluteFile();
-            if (!dir.exists()) {
-                dir.mkdirs();
-                if (!dir.exists()) {
-                    TTY.println("Warning: could not create Graal diagnostic directory " + dir);
-                    return null;
-                }
-            }
-        }
-        return DELETED_OUTPUT_DIRECTORY.equals(outputDirectory) ? null : outputDirectory;
-    }
-
-    /**
-     * Archives and deletes the {@linkplain #getOutputDirectory() output directory} if it exists.
-     */
-    private void archiveAndDeleteOutputDirectory() {
-        String outDir = getOutputDirectory(false);
-        if (outDir != null) {
-            Path dir = Paths.get(outDir);
-            if (dir.toFile().exists()) {
-                try {
-                    // Give compiler threads a chance to finishing dumping
-                    Thread.sleep(1000);
-                } catch (InterruptedException e1) {
-                }
-                File zip = new File(outDir + ".zip").getAbsoluteFile();
-                List<Path> toDelete = new ArrayList<>();
-                try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zip))) {
-                    zos.setLevel(Deflater.BEST_COMPRESSION);
-                    Files.walkFileTree(dir, Collections.emptySet(), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                            if (attrs.isRegularFile()) {
-                                ZipEntry ze = new ZipEntry(file.toString());
-                                zos.putNextEntry(ze);
-                                zos.write(Files.readAllBytes(file));
-                                zos.closeEntry();
-                            }
-                            toDelete.add(file);
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult postVisitDirectory(Path d, IOException exc) throws IOException {
-                            toDelete.add(d);
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                    TTY.println("Graal diagnostic output saved in %s", zip);
-                } catch (IOException e) {
-                    TTY.printf("IO error archiving %s:%n%s%n", dir, e);
-                }
-                for (Path p : toDelete) {
-                    try {
-                        Files.delete(p);
-                    } catch (IOException e) {
-                        TTY.printf("IO error deleting %s:%n%s%n", p, e);
-                    }
-                }
-            }
-            outputDirectory = DELETED_OUTPUT_DIRECTORY;
-        }
+    public DiagnosticsOutputDirectory getOutputDirectory() {
+        return outputDirectory;
     }
 }

@@ -90,7 +90,7 @@ import org.graalvm.compiler.replacements.nodes.DirectStoreNode;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.word.LocationIdentity;
 import org.graalvm.word.Pointer;
-import org.graalvm.word.Unsigned;
+import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
@@ -250,11 +250,11 @@ public class WriteBarrierSnippets implements Snippets {
         // The result of the xor reveals whether the installed pointer crosses heap regions.
         // In case it does the write barrier has to be issued.
         final int logOfHeapRegionGrainBytes = GraalHotSpotVMConfigNode.logOfHeapRegionGrainBytes();
-        Unsigned xorResult = (oop.xor(writtenValue)).unsignedShiftRight(logOfHeapRegionGrainBytes);
+        UnsignedWord xorResult = (oop.xor(writtenValue)).unsignedShiftRight(logOfHeapRegionGrainBytes);
 
         // Calculate the address of the card to be enqueued to the
         // thread local card queue.
-        Unsigned cardBase = oop.unsignedShiftRight(cardTableShift(INJECTED_VMCONFIG));
+        UnsignedWord cardBase = oop.unsignedShiftRight(cardTableShift(INJECTED_VMCONFIG));
         final long startAddress = GraalHotSpotVMConfigNode.cardTableAddress();
         int displacement = 0;
         if (((int) startAddress) == startAddress && GraalHotSpotVMConfigNode.isCardTableAddressConstant()) {

@@ -100,16 +100,15 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
         final long threadId = Thread.currentThread().getId();
 
         final boolean printCompilation = GraalCompilerOptions.PrintCompilation.getValue(graalOptions) && !TTY.isSuppressed();
-        final boolean printAfterCompilation = GraalCompilerOptions.PrintAfterCompilation.getValue(graalOptions) && !TTY.isSuppressed();
         if (printCompilation) {
             TTY.println(getMethodDescription() + "...");
         }
 
         final long start;
         final long allocatedBytesBefore;
-        if (printAfterCompilation || printCompilation) {
+        if (printCompilation) {
             start = System.currentTimeMillis();
-            allocatedBytesBefore = printAfterCompilation || printCompilation ? threadMXBean.getThreadAllocatedBytes(threadId) : 0L;
+            allocatedBytesBefore = printCompilation ? threadMXBean.getThreadAllocatedBytes(threadId) : 0L;
         } else {
             start = 0L;
             allocatedBytesBefore = 0L;
@@ -123,7 +122,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
         }
         final long endTime = System.currentTimeMillis();
 
-        if (printAfterCompilation || printCompilation) {
+        if (printCompilation) {
             final long stop = System.currentTimeMillis();
             final int targetCodeSize = compResult != null ? compResult.getTargetCodeSize() : -1;
             final long allocatedBytesAfter = threadMXBean.getThreadAllocatedBytes(threadId);

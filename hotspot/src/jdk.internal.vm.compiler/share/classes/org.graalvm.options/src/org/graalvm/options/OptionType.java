@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Represents a type of an option that allows to convert string values to a java value.
+ * Represents a type of an option that allows to convert string values to Java values.
  *
  * @since 1.0
  */
@@ -43,13 +43,13 @@ public final class OptionType<T> {
     private final T defaultValue;
 
     /**
-     * Constructs a new option type with name, defaultValue and function that allows to convert a
+     * Constructs a new option type with name, defaultValue, and function that allows to convert a
      * string to the option type.
      *
-     * @param name the name of the type to identify it
-     * @param defaultValue the default value to use if no value is given
-     * @param stringConverter a function that converts a string value to the actual option value.
-     *            Can throw {@link IllegalArgumentException} to indicate an invalid string.
+     * @param name the name of the type.
+     * @param defaultValue the default value to use if no value is given.
+     * @param stringConverter a function that converts a string value to the option value. Can throw
+     *            {@link IllegalArgumentException} to indicate an invalid string.
      * @param validator used for validating the option value. Throws
      *            {@link IllegalArgumentException} if the value is invalid.
      *
@@ -67,13 +67,13 @@ public final class OptionType<T> {
     }
 
     /**
-     * Constructs a new option type with name, defaultValue and function that allows to convert a
+     * Constructs a new option type with name, defaultValue, and function that allows to convert a
      * string to the option type.
      *
-     * @param name the name of the type to identify it
-     * @param defaultValue the default value to use if no value is given
-     * @param stringConverter a function that converts a string value to the actual option value.
-     *            Can throw {@link IllegalArgumentException} to indicate an invalid string.
+     * @param name the name of the type.
+     * @param defaultValue the default value to use if no value is given.
+     * @param stringConverter a function that converts a string value to the option value. Can throw
+     *            {@link IllegalArgumentException} to indicate an invalid string.
      *
      * @since 1.0
      */
@@ -85,7 +85,7 @@ public final class OptionType<T> {
     }
 
     /**
-     * Returns the default value of this type, to be used if no value is available.
+     * Returns the default value of this type. Used if no value is available.
      *
      * @since 1.0
      */
@@ -103,7 +103,7 @@ public final class OptionType<T> {
     }
 
     /**
-     * Converts a string value, validates it and converts it to an object of this type.
+     * Converts a string value, validates it, and converts it to an object of this type.
      *
      * @throws IllegalArgumentException if the value is invalid or cannot be converted.
      * @since 1.0
@@ -115,7 +115,8 @@ public final class OptionType<T> {
     }
 
     /**
-     * Validates an option value and throws an {@link IllegalArgumentException} if it is invalid.
+     * Validates an option value and throws an {@link IllegalArgumentException} if the value is
+     * invalid.
      *
      * @throws IllegalArgumentException if the value is invalid or cannot be converted.
      * @since 1.0
@@ -199,7 +200,7 @@ public final class OptionType<T> {
 
     /**
      * Returns the default option type for a given value. Returns <code>null</code> if no default
-     * option type is available for this java type.
+     * option type is available for this Java type.
      *
      * @since 1.0
      */

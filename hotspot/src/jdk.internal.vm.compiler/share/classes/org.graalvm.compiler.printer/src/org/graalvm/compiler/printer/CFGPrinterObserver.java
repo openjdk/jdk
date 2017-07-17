@@ -144,7 +144,7 @@ public class CFGPrinterObserver implements DebugDumpHandler {
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(cfgFile));
                 cfgPrinter = new CFGPrinter(out);
             } catch (IOException e) {
-                throw (GraalError) new GraalError("Could not open %s", cfgFile.getAbsolutePath()).initCause(e);
+                throw (GraalError) new GraalError("Could not open %s", cfgFile == null ? "[null]" : cfgFile.getAbsolutePath()).initCause(e);
             }
         }
 

@@ -669,6 +669,28 @@ public class AMD64Move {
         }
     }
 
+    public static boolean canMoveConst2Stack(JavaConstant input) {
+        switch (input.getJavaKind().getStackKind()) {
+            case Int:
+                break;
+            case Long:
+                break;
+            case Float:
+                break;
+            case Double:
+                break;
+            case Object:
+                if (input.isNull()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                return false;
+        }
+        return true;
+    }
+
     public static void const2stack(CompilationResultBuilder crb, AMD64MacroAssembler masm, Value result, JavaConstant input) {
         AMD64Address dest = (AMD64Address) crb.asAddress(result);
         final long imm;

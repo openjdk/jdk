@@ -23,16 +23,18 @@
 
 package org.graalvm.compiler.core.amd64;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.DataPointerConstant;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
 import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
+import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64StackMove;
 import org.graalvm.compiler.lir.amd64.AMD64Move.LeaDataOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move.LeaOp;
@@ -70,6 +72,17 @@ public abstract class AMD64MoveFactory extends AMD64MoveFactoryBase {
     }
 
     @Override
+    public boolean allowConstantToStackMove(Constant constant) {
+        if (constant instanceof DataPointerConstant) {
+            return false;
+        }
+        if (constant instanceof JavaConstant && !AMD64Move.canMoveConst2Stack(((JavaConstant) constant))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public AMD64LIRInstruction createMove(AllocatableValue dst, Value src) {
         if (src instanceof AMD64AddressValue) {
             return new LeaOp(dst, (AMD64AddressValue) src);
@@ -95,6 +108,15 @@ public abstract class AMD64MoveFactory extends AMD64MoveFactoryBase {
             return new LeaDataOp(dst, (DataPointerConstant) src);
         } else {
             throw GraalError.shouldNotReachHere(String.format("unsupported constant: %s", src));
+        }
+    }
+
+    @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        if (input instanceof JavaConstant) {
+            return new MoveFromConstOp(result, (JavaConstant) input);
+        } else {
+            throw GraalError.shouldNotReachHere(String.format("unsupported constant for stack load: %s", input));
         }
     }
 }

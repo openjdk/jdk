@@ -76,6 +76,7 @@ public class WordTypes {
         this.objectAccessType = metaAccess.lookupJavaType(ObjectAccess.class);
         this.barrieredAccessType = metaAccess.lookupJavaType(BarrieredAccess.class);
 
+        Word.ensureInitialized();
         this.wordImplType.initialize();
     }
 

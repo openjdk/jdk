@@ -24,7 +24,7 @@
  */
 package org.graalvm.word;
 
-public interface Signed extends ComparableWord {
+public interface SignedWord extends ComparableWord {
 
     /**
      * Returns a Signed whose value is {@code (this + val)}.
@@ -32,7 +32,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be added to this Signed.
      * @return {@code this + val}
      */
-    Signed add(Signed val);
+    SignedWord add(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this - val)}.
@@ -40,7 +40,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be subtracted from this Signed.
      * @return {@code this - val}
      */
-    Signed subtract(Signed val);
+    SignedWord subtract(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this * val)}.
@@ -48,7 +48,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be multiplied by this Signed.
      * @return {@code this * val}
      */
-    Signed multiply(Signed val);
+    SignedWord multiply(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this / val)}.
@@ -56,7 +56,7 @@ public interface Signed extends ComparableWord {
      * @param val value by which this Signed is to be divided.
      * @return {@code this / val}
      */
-    Signed signedDivide(Signed val);
+    SignedWord signedDivide(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this % val)}.
@@ -64,7 +64,7 @@ public interface Signed extends ComparableWord {
      * @param val value by which this Signed is to be divided, and the remainder computed.
      * @return {@code this % val}
      */
-    Signed signedRemainder(Signed val);
+    SignedWord signedRemainder(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this << n)}.
@@ -72,7 +72,7 @@ public interface Signed extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this << n}
      */
-    Signed shiftLeft(Unsigned n);
+    SignedWord shiftLeft(UnsignedWord n);
 
     /**
      * Returns a Signed whose value is {@code (this >> n)}. Sign extension is performed.
@@ -80,7 +80,7 @@ public interface Signed extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this >> n}
      */
-    Signed signedShiftRight(Unsigned n);
+    SignedWord signedShiftRight(UnsignedWord n);
 
     /**
      * Returns a Signed whose value is {@code (this & val)}. (This method returns a negative Signed
@@ -89,7 +89,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be AND'ed with this Signed.
      * @return {@code this & val}
      */
-    Signed and(Signed val);
+    SignedWord and(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this | val)}. (This method returns a negative Signed
@@ -98,7 +98,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be OR'ed with this Signed.
      * @return {@code this | val}
      */
-    Signed or(Signed val);
+    SignedWord or(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this ^ val)}. (This method returns a negative Signed
@@ -107,7 +107,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be XOR'ed with this Signed.
      * @return {@code this ^ val}
      */
-    Signed xor(Signed val);
+    SignedWord xor(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (~this)}. (This method returns a negative value if and
@@ -115,7 +115,7 @@ public interface Signed extends ComparableWord {
      *
      * @return {@code ~this}
      */
-    Signed not();
+    SignedWord not();
 
     /**
      * Compares this Signed with the specified value.
@@ -123,7 +123,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this == val}
      */
-    boolean equal(Signed val);
+    boolean equal(SignedWord val);
 
     /**
      * Compares this Signed with the specified value.
@@ -131,7 +131,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this != val}
      */
-    boolean notEqual(Signed val);
+    boolean notEqual(SignedWord val);
 
     /**
      * Compares this Signed with the specified value.
@@ -139,7 +139,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this < val}
      */
-    boolean lessThan(Signed val);
+    boolean lessThan(SignedWord val);
 
     /**
      * Compares this Signed with the specified value.
@@ -147,7 +147,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this <= val}
      */
-    boolean lessOrEqual(Signed val);
+    boolean lessOrEqual(SignedWord val);
 
     /**
      * Compares this Signed with the specified value.
@@ -155,7 +155,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this > val}
      */
-    boolean greaterThan(Signed val);
+    boolean greaterThan(SignedWord val);
 
     /**
      * Compares this Signed with the specified value.
@@ -163,7 +163,7 @@ public interface Signed extends ComparableWord {
      * @param val value to which this Signed is to be compared.
      * @return {@code this >= val}
      */
-    boolean greaterOrEqual(Signed val);
+    boolean greaterOrEqual(SignedWord val);
 
     /**
      * Returns a Signed whose value is {@code (this + val)}.
@@ -171,7 +171,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be added to this Signed.
      * @return {@code this + val}
      */
-    Signed add(int val);
+    SignedWord add(int val);
 
     /**
      * Returns a Signed whose value is {@code (this - val)}.
@@ -179,7 +179,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be subtracted from this Signed.
      * @return {@code this - val}
      */
-    Signed subtract(int val);
+    SignedWord subtract(int val);
 
     /**
      * Returns a Signed whose value is {@code (this * val)}.
@@ -187,7 +187,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be multiplied by this Signed.
      * @return {@code this * val}
      */
-    Signed multiply(int val);
+    SignedWord multiply(int val);
 
     /**
      * Returns a Signed whose value is {@code (this / val)}.
@@ -195,7 +195,7 @@ public interface Signed extends ComparableWord {
      * @param val value by which this Signed is to be divided.
      * @return {@code this / val}
      */
-    Signed signedDivide(int val);
+    SignedWord signedDivide(int val);
 
     /**
      * Returns a Signed whose value is {@code (this % val)}.
@@ -203,7 +203,7 @@ public interface Signed extends ComparableWord {
      * @param val value by which this Signed is to be divided, and the remainder computed.
      * @return {@code this % val}
      */
-    Signed signedRemainder(int val);
+    SignedWord signedRemainder(int val);
 
     /**
      * Returns a Signed whose value is {@code (this << n)}.
@@ -211,7 +211,7 @@ public interface Signed extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this << n}
      */
-    Signed shiftLeft(int n);
+    SignedWord shiftLeft(int n);
 
     /**
      * Returns a Signed whose value is {@code (this >> n)}. Sign extension is performed.
@@ -219,7 +219,7 @@ public interface Signed extends ComparableWord {
      * @param n shift distance, in bits.
      * @return {@code this >> n}
      */
-    Signed signedShiftRight(int n);
+    SignedWord signedShiftRight(int n);
 
     /**
      * Returns a Signed whose value is {@code (this & val)}. (This method returns a negative Signed
@@ -228,7 +228,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be AND'ed with this Signed.
      * @return {@code this & val}
      */
-    Signed and(int val);
+    SignedWord and(int val);
 
     /**
      * Returns a Signed whose value is {@code (this | val)}. (This method returns a negative Signed
@@ -237,7 +237,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be OR'ed with this Signed.
      * @return {@code this | val}
      */
-    Signed or(int val);
+    SignedWord or(int val);
 
     /**
      * Returns a Signed whose value is {@code (this ^ val)}. (This method returns a negative Signed
@@ -246,7 +246,7 @@ public interface Signed extends ComparableWord {
      * @param val value to be XOR'ed with this Signed.
      * @return {@code this ^ val}
      */
-    Signed xor(int val);
+    SignedWord xor(int val);
 
     /**
      * Compares this Signed with the specified value.

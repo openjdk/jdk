@@ -28,10 +28,27 @@ import org.graalvm.util.EconomicMap;
 
 public class EnumOptionKey<T extends Enum<T>> extends OptionKey<T> {
     final Class<T> enumClass;
+    final ValueHelp<T> valueHelp;
+
+    /**
+     * Provides help text for enum values.
+     */
+    public interface ValueHelp<T extends Enum<T>> {
+        /**
+         * Gets help text for the enum {@code value} that includes the name of the value. If
+         * {@code null} is returned, {@code value.toString()} is used.
+         */
+        String getHelp(Object value);
+    }
+
+    public EnumOptionKey(T value) {
+        this(value, null);
+    }
 
     @SuppressWarnings("unchecked")
-    public EnumOptionKey(T value) {
+    public EnumOptionKey(T value, ValueHelp<T> help) {
         super(value);
+        this.valueHelp = help;
         if (value == null) {
             throw new IllegalArgumentException("Value must not be null");
         }
@@ -43,6 +60,10 @@ public class EnumOptionKey<T extends Enum<T>> extends OptionKey<T> {
      */
     public EnumSet<T> getAllValues() {
         return EnumSet.allOf(enumClass);
+    }
+
+    public ValueHelp<T> getValueHelp() {
+        return valueHelp;
     }
 
     Object valueOf(String name) {

@@ -183,6 +183,13 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                         String name = zipEntry.getName();
                         if (name.endsWith(".class")) {
                             String className = name.substring(0, name.length() - ".class".length()).replace('/', '.');
+                            if (isInNativeImage(className)) {
+                                /*
+                                 * Native Image is an external tool and does not need to follow the
+                                 * Graal invariants.
+                                 */
+                                continue;
+                            }
                             classNames.add(className);
                         }
                     }
@@ -291,6 +298,10 @@ public class CheckGraalInvariants extends GraalCompilerTest {
             }
             Assert.fail(msg.toString());
         }
+    }
+
+    private static boolean isInNativeImage(String className) {
+        return className.startsWith("org.graalvm.nativeimage");
     }
 
     private static List<Class<?>> initializeClasses(InvariantsTool tool, List<String> classNames) {

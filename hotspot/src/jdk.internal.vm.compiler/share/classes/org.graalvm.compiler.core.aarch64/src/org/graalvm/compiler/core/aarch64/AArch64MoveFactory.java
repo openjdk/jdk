@@ -86,6 +86,11 @@ public class AArch64MoveFactory implements MoveFactory {
     }
 
     @Override
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        return createLoad(result, input);
+    }
+
+    @Override
     public boolean canInlineConstant(Constant con) {
         if (con instanceof JavaConstant) {
             JavaConstant c = (JavaConstant) con;
