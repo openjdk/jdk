@@ -5014,7 +5014,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
-TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.7"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
@@ -5193,7 +5193,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1500048914
+DATE_WHEN_GENERATED=1500410254
 
 ###############################################################################
 #
