@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,11 @@ public abstract class RTMGenericCommandLineOptionTest {
             = "RTM instructions are not available on this CPU";
     protected static final String RTM_UNSUPPORTED_VM_ERROR
             = "RTM locking optimization is not supported in this VM";
-    protected static final String RTM_ABORT_RATIO_WARNING
-            = "RTMAbortRatio must be in the range 0 to 100, resetting it to 50";
     protected static final String RTM_FOR_STACK_LOCKS_WARNING
             = "UseRTMForStackLocks flag should be off when UseRTMLocking "
             + "flag is off";
     protected static final String RTM_COUNT_INCR_WARNING
-            = "RTMTotalCountIncrRate must be a power of 2, resetting it to 64";
+            = "must be a power of 2, resetting it to 64";
     protected static final String RTM_BIASED_LOCKING_WARNING
             = "Biased locking is not supported with RTM locking; "
             + "ignoring UseBiasedLocking flag";

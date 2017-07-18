@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,12 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   experimental(int, RTMAbortRatio, 50,                                      \
           "Lock abort ratio at which to stop use RTM lock eliding")         \
-          range(0, 100) /* natural range, checked in vm_version_x86.cpp */  \
+          range(0, 100) /* natural range */                                 \
                                                                             \
   experimental(int, RTMTotalCountIncrRate, 64,                              \
           "Increment total RTM attempted lock count once every n times")    \
           range(1, max_jint)                                                \
+          constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
                                                                             \
   experimental(intx, RTMLockingCalculationDelay, 0,                         \
           "Number of milliseconds to wait before start calculating aborts " \

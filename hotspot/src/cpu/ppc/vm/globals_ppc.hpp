@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,11 +193,12 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                                                                             \
   experimental(int, RTMAbortRatio, 50,                                      \
           "Lock abort ratio at which to stop use RTM lock eliding")         \
-          range(0, 100) /* natural range, checked in vm_version_ppc.cpp */  \
+          range(0, 100) /* natural range */                                 \
                                                                             \
   experimental(int, RTMTotalCountIncrRate, 64,                              \
           "Increment total RTM attempted lock count once every n times")    \
           range(1, 32767) /* immediate operand limit on ppc */              \
+          constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
                                                                             \
   experimental(intx, RTMLockingCalculationDelay, 0,                         \
           "Number of milliseconds to wait before start calculating aborts " \

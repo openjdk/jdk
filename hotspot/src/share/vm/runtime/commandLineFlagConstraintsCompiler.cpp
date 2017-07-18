@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,3 +389,17 @@ Flag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
   return Flag::SUCCESS;
 }
 #endif // COMPILER2
+
+Flag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose) {
+#if INCLUDE_RTM_OPT
+  if (UseRTMLocking && !is_power_of_2(RTMTotalCountIncrRate)) {
+    CommandLineError::print(verbose,
+                            "RTMTotalCountIncrRate (" INTX_FORMAT
+                            ") must be a power of 2, resetting it to 64\n",
+                            RTMTotalCountIncrRate);
+    FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
+  }
+#endif
+
+  return Flag::SUCCESS;
+}
