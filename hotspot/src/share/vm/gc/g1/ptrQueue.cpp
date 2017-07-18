@@ -75,16 +75,7 @@ void PtrQueue::enqueue_known_active(void* ptr) {
 
 void PtrQueue::locking_enqueue_completed_buffer(BufferNode* node) {
   assert(_lock->owned_by_self(), "Required.");
-
-  // We have to unlock _lock (which may be Shared_DirtyCardQ_lock) before
-  // we acquire DirtyCardQ_CBL_mon inside enqueue_complete_buffer as they
-  // have the same rank and we may get the "possible deadlock" message
-  _lock->unlock();
-
   qset()->enqueue_complete_buffer(node);
-  // We must relock only because the caller will unlock, for the normal
-  // case.
-  _lock->lock_without_safepoint_check();
 }
 
 
@@ -189,34 +180,11 @@ void PtrQueue::handle_zero_index() {
     if (_lock) {
       assert(_lock->owned_by_self(), "Required.");
 
-      // The current PtrQ may be the shared dirty card queue and
-      // may be being manipulated by more than one worker thread
-      // during a pause. Since the enqueueing of the completed
-      // buffer unlocks the Shared_DirtyCardQ_lock more than one
-      // worker thread can 'race' on reading the shared queue attributes
-      // (_buf and _index) and multiple threads can call into this
-      // routine for the same buffer. This will cause the completed
-      // buffer to be added to the CBL multiple times.
-
-      // We "claim" the current buffer by caching value of _buf in
-      // a local and clearing the field while holding _lock. When
-      // _lock is released (while enqueueing the completed buffer)
-      // the thread that acquires _lock will skip this code,
-      // preventing the subsequent the multiple enqueue, and
-      // install a newly allocated buffer below.
-
       BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
       _buf = NULL;         // clear shared _buf field
 
       locking_enqueue_completed_buffer(node); // enqueue completed buffer
-
-      // While the current thread was enqueueing the buffer another thread
-      // may have a allocated a new buffer and inserted it into this pointer
-      // queue. If that happens then we just return so that the current
-      // thread doesn't overwrite the buffer allocated by the other thread
-      // and potentially losing some dirtied cards.
-
-      if (_buf != NULL) return;
+      assert(_buf == NULL, "multiple enqueuers appear to be racing");
     } else {
       BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
       if (qset()->process_or_enqueue_complete_buffer(node)) {

@@ -181,14 +181,13 @@ void mutex_init() {
     def(FullGCCount_lock           , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_never);      // in support of ExplicitGCInvokesConcurrent
   }
   if (UseG1GC) {
+    def(SATB_Q_FL_lock             , PaddedMutex  , access,      true,  Monitor::_safepoint_check_never);
+    def(SATB_Q_CBL_mon             , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
+    def(Shared_SATB_Q_lock         , PaddedMutex  , access + 1,  true,  Monitor::_safepoint_check_never);
 
-    def(SATB_Q_FL_lock             , PaddedMutex  , special  ,   true,  Monitor::_safepoint_check_never);
-    def(SATB_Q_CBL_mon             , PaddedMonitor, leaf - 1 ,   true,  Monitor::_safepoint_check_never);
-    def(Shared_SATB_Q_lock         , PaddedMutex  , leaf - 1 ,   true,  Monitor::_safepoint_check_never);
-
-    def(DirtyCardQ_FL_lock         , PaddedMutex  , special  ,   true,  Monitor::_safepoint_check_never);
-    def(DirtyCardQ_CBL_mon         , PaddedMonitor, leaf - 1 ,   true,  Monitor::_safepoint_check_never);
-    def(Shared_DirtyCardQ_lock     , PaddedMutex  , leaf - 1 ,   true,  Monitor::_safepoint_check_never);
+    def(DirtyCardQ_FL_lock         , PaddedMutex  , access,      true,  Monitor::_safepoint_check_never);
+    def(DirtyCardQ_CBL_mon         , PaddedMonitor, access,      true,  Monitor::_safepoint_check_never);
+    def(Shared_DirtyCardQ_lock     , PaddedMutex  , access + 1,  true,  Monitor::_safepoint_check_never);
 
     def(FreeList_lock              , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_never);
     def(SecondaryFreeList_lock     , PaddedMonitor, leaf     ,   true,  Monitor::_safepoint_check_never);
