@@ -1202,7 +1202,7 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
 
   size_t i;
   size_t currSize = numWords + MinChunkSize;
-  assert(currSize % MinObjAlignment == 0, "currSize should be aligned");
+  assert(is_object_aligned(currSize), "currSize should be aligned");
   for (i = currSize; i < IndexSetSize; i += IndexSetStride) {
     AdaptiveFreeList<FreeChunk>* fl = &_indexedFreeList[i];
     if (fl->head()) {
@@ -1733,7 +1733,7 @@ FreeChunk* CompactibleFreeListSpace::bestFitSmall(size_t numWords) {
     AdaptiveFreeList<FreeChunk>* it   = _indexedFreeList;
     size_t    hint = _indexedFreeList[start].hint();
     while (hint < IndexSetSize) {
-      assert(hint % MinObjAlignment == 0, "hint should be aligned");
+      assert(is_object_aligned(hint), "hint should be aligned");
       AdaptiveFreeList<FreeChunk> *fl = &_indexedFreeList[hint];
       if (fl->surplus() > 0 && fl->head() != NULL) {
         // Found a list with surplus, reset original hint

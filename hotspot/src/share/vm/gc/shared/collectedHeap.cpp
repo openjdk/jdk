@@ -457,7 +457,7 @@ size_t CollectedHeap::filler_array_min_size() {
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
   assert(words >= min_fill_size(), "too small to fill");
-  assert(words % MinObjAlignment == 0, "unaligned size");
+  assert(is_object_aligned(words), "unaligned size");
   assert(Universe::heap()->is_in_reserved(start), "not in heap");
   assert(Universe::heap()->is_in_reserved(start + words - 1), "not in heap");
 }
