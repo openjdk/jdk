@@ -267,11 +267,14 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
 
 void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = SystemDictionary::Object_klass();
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
     k->restore_unshareable_info(loader_data, Handle(), CHECK);
-  } else {
+  } else
+#endif
+  {
     k->initialize_supers(ok, CHECK);
   }
   k->append_to_sibling_list();
@@ -325,6 +328,7 @@ void Universe::genesis(TRAPS) {
     _the_null_string            = StringTable::intern("null", CHECK);
     _the_min_jint_string       = StringTable::intern("-2147483648", CHECK);
 
+#if INCLUDE_CDS
     if (UseSharedSpaces) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
@@ -332,7 +336,9 @@ void Universe::genesis(TRAPS) {
       assert(_the_array_interfaces_array->at(1) ==
              SystemDictionary::Serializable_klass(), "u3");
       MetaspaceShared::fixup_shared_string_regions();
-    } else {
+    } else
+#endif
+    {
       // Set up shared interfaces array.  (Do this before supers are set up.)
       _the_array_interfaces_array->at_put(0, SystemDictionary::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, SystemDictionary::Serializable_klass());
@@ -670,6 +676,7 @@ jint universe_init() {
   Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
   Universe::_do_stack_walk_cache = new LatestMethodCache();
 
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.).  After that, access to
@@ -678,13 +685,17 @@ jint universe_init() {
     // currently mapped regions.
     MetaspaceShared::initialize_shared_spaces();
     StringTable::create_table();
-  } else {
+  } else
+#endif
+  {
     SymbolTable::create_table();
     StringTable::create_table();
 
+#if INCLUDE_CDS
     if (DumpSharedSpaces) {
       MetaspaceShared::prepare_for_dumping();
     }
+#endif
   }
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
