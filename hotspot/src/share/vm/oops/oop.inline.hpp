@@ -268,8 +268,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s % MinObjAlignment == 0, "Oop size is not properly aligned: %d", s);
   assert(s > 0, "Oop size must be greater than zero, not %d", s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: %d", s);
   return s;
 }
 
