@@ -674,12 +674,18 @@ inline Thread* Thread::current_or_null() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   return _thr_current;
 #else
-  return ThreadLocalStorage::thread();
+  if (ThreadLocalStorage::is_initialized()) {
+    return ThreadLocalStorage::thread();
+  }
+  return NULL;
 #endif
 }
 
 inline Thread* Thread::current_or_null_safe() {
-  return ThreadLocalStorage::thread();
+  if (ThreadLocalStorage::is_initialized()) {
+    return ThreadLocalStorage::thread();
+  }
+  return NULL;
 }
 
 // Name support for threads.  non-JavaThread subclasses with multiple
