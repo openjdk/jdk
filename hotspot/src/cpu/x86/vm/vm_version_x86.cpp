@@ -884,7 +884,8 @@ void VM_Version::get_processor_features() {
           (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
         // currently a collision between SKL and HSW_E3
         if (!UnlockExperimentalVMOptions && UseAVX < 3) {
-          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
+          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this "
+                                        "platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
         } else {
           warning("UseRTMLocking is only available as experimental option on this platform.");
         }
@@ -894,14 +895,6 @@ void VM_Version::get_processor_features() {
       // RTM locking should be used only for applications with
       // high lock contention. For now we do not use it by default.
       vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-    if (!is_power_of_2(RTMTotalCountIncrRate)) {
-      warning("RTMTotalCountIncrRate must be a power of 2, resetting it to 64");
-      FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
-    }
-    if (RTMAbortRatio < 0 || RTMAbortRatio > 100) {
-      warning("RTMAbortRatio must be in the range 0 to 100, resetting it to 50");
-      FLAG_SET_DEFAULT(RTMAbortRatio, 50);
     }
   } else { // !UseRTMLocking
     if (UseRTMForStackLocks) {

@@ -327,18 +327,6 @@ void VM_Version::initialize() {
       // high lock contention. For now we do not use it by default.
       vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
     }
-    if (!is_power_of_2(RTMTotalCountIncrRate)) {
-      warning("RTMTotalCountIncrRate must be a power of 2, resetting it to 64");
-      FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
-    }
-    if (RTMAbortRatio < 0 || RTMAbortRatio > 100) {
-      warning("RTMAbortRatio must be in the range 0 to 100, resetting it to 50");
-      FLAG_SET_DEFAULT(RTMAbortRatio, 50);
-    }
-    if (RTMSpinLoopCount < 0) {
-      warning("RTMSpinLoopCount must not be a negative value, resetting it to 0");
-      FLAG_SET_DEFAULT(RTMSpinLoopCount, 0);
-    }
 #else
     // Only C2 does RTM locking optimization.
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag
