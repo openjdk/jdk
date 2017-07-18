@@ -2122,12 +2122,15 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // Preload commonly used klasses
   WKID scan = FIRST_WKID;
   // first do Object, then String, Class
+#if INCLUDE_CDS
   if (UseSharedSpaces) {
     initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Object_klass), scan, CHECK);
     // Initialize the constant pool for the Object_class
     Object_klass()->constants()->restore_unshareable_info(CHECK);
     initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
-  } else {
+  } else
+#endif
+  {
     initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
   }
 
