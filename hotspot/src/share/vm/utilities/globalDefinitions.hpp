@@ -949,6 +949,7 @@ const jint     badInt           = -3;                       // generic "bad int"
 const long     badAddressVal    = -2;                       // generic "bad address" value
 const long     badOopVal        = -1;                       // generic "bad oop" value
 const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
+const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
 const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area
 const int      badResourceValue = 0xAB;                     // value used to zap resource area
 const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
