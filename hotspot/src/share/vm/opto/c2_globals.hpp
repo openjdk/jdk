@@ -192,6 +192,9 @@
           "of rounds of unroll,optimize,..")                                \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, UseSubwordForMaxVector, true,                               \
+          "Use Subword Analysis to set maximum vector size")                \
+                                                                            \
   develop(intx, UnrollLimitForProfileCheck, 1,                              \
           "Don't use profile_trip_cnt() to restrict unrolling until "       \
           "unrolling would push the number of unrolled iterations above "   \

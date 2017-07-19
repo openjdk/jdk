@@ -784,6 +784,9 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   }
 
   int slp_max_unroll_factor = cl->slp_max_unroll();
+  if ((LoopMaxUnroll < slp_max_unroll_factor) && FLAG_IS_DEFAULT(LoopMaxUnroll) && UseSubwordForMaxVector) {
+    LoopMaxUnroll = slp_max_unroll_factor;
+  }
   if (cl->has_passed_slp()) {
     if (slp_max_unroll_factor >= future_unroll_ct) return true;
     // Normal case: loop too big
@@ -792,7 +795,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   // Check for being too big
   if (body_size > (uint)_local_loop_unroll_limit) {
-    if (xors_in_loop >= 4 && body_size < (uint)LoopUnrollLimit*4) return true;
+    if ((UseSubwordForMaxVector || xors_in_loop >= 4) && body_size < (uint)LoopUnrollLimit * 4) return true;
     // Normal case: loop too big
     return false;
   }
