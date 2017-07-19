@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,8 @@ Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
 {
     HANDLE h = (HANDLE)(handleval(env, fdo));
     if (h != INVALID_HANDLE_VALUE) {
-        jint result = CloseHandle(h);
-        if (result < 0) {
+        BOOL result = CloseHandle(h);
+        if (result == 0) {
             JNU_ThrowIOExceptionWithLastError(env, "Close failed");
         }
     }
