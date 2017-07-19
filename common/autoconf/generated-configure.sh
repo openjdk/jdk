@@ -5193,7 +5193,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1500410254
+DATE_WHEN_GENERATED=1500423205
 
 ###############################################################################
 #
@@ -51468,10 +51468,15 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     JVM_CFLAGS="$JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_CFLAGS="$JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -51811,6 +51816,12 @@ fi
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
     JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_LDFLAGS="$JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables
@@ -52321,10 +52332,15 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_BUILD_OS" = xaix; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_BUILD_OS" = xbsd; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
@@ -52664,6 +52680,12 @@ fi
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_XLC"
     OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables
