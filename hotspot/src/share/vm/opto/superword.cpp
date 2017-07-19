@@ -299,6 +299,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
     bool small_basic_type = false;
+    bool flag_small_bt = false;
     for (uint i = 0; i < lpt()->_body.size(); i++) {
       if (ignored_loop_nodes[i] != -1) continue;
 
@@ -334,7 +335,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::max_vector_size(bt);
+         int cur_max_vector = Matcher::max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -348,10 +349,36 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       // Map the maximal common vector
       if (VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
-        if (cur_max_vector < max_vector) {
+        if (cur_max_vector < max_vector && !flag_small_bt) {
           max_vector = cur_max_vector;
-        }
+        } else if (cur_max_vector > max_vector && UseSubwordForMaxVector) {
+          // Analyse subword in the loop to set maximum vector size to take advantage of full vector width for subword types.
+          // Here we analyze if narrowing is likely to happen and if it is we set vector size more aggressively.
+          // We check for possibility of narrowing by looking through chain operations using subword types.
+          if (is_subword_type(bt)) {
+            uint start, end;
+            VectorNode::vector_operands(n, &start, &end);
 
+            for (uint j = start; j < end; j++) {
+              Node* in = n->in(j);
+              // Don't propagate through a memory
+              if (!in->is_Mem() && in_bb(in) && in->bottom_type()->basic_type() == T_INT) {
+                bool same_type = true;
+                for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
+                  Node *use = in->fast_out(k);
+                  if (!in_bb(use) && use->bottom_type()->basic_type() != bt) {
+                    same_type = false;
+                    break;
+                  }
+                }
+                if (same_type) {
+                  max_vector = cur_max_vector;
+                  flag_small_bt = true;
+                }
+              }
+            }
+          }
+        }
         // We only process post loops on predicated targets where we want to
         // mask map the loop to a single iteration
         if (post_loop_allowed) {
@@ -2368,7 +2395,7 @@ void SuperWord::output() {
         }
       }
 
-      if (vlen_in_bytes > max_vlen_in_bytes) {
+      if (vlen_in_bytes >= max_vlen_in_bytes && vlen > max_vlen) {
         max_vlen = vlen;
         max_vlen_in_bytes = vlen_in_bytes;
       }
