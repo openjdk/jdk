@@ -999,10 +999,15 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_$1_OS" = xaix; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_$1_OS" = xbsd; then
     $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_$1_OS" = xwindows; then
@@ -1249,6 +1254,12 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     $2LDFLAGS_JDK="${$2LDFLAGS_JDK} $LDFLAGS_XLC"
     $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables

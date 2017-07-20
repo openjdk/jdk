@@ -290,8 +290,7 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, Errors.CantAccess(ex.sym, ex.getDetailValue()));
-        if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
-        else return syms.errType;
+        return syms.errType;
     }
 
     /** Report an error that wrong type tag was found.

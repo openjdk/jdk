@@ -25,6 +25,11 @@
 
 package java.nio.charset;
 
+import jdk.internal.misc.VM;
+import sun.nio.cs.StandardCharsets;
+import sun.nio.cs.ThreadLocalCoders;
+import sun.security.action.GetPropertyAction;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.spi.CharsetProvider;
@@ -38,15 +43,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import jdk.internal.misc.VM;
-import sun.nio.cs.StandardCharsets;
-import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -150,23 +151,23 @@ import sun.security.action.GetPropertyAction;
  * <blockquote><table class="striped" style="width:80%">
  * <caption style="display:none">Description of standard charsets</caption>
  * <thead>
- * <tr><th style="text-align:left">Charset</th><th style="text-align:left">Description</th></tr>
+ * <tr><th scope="col" style="text-align:left">Charset</th><th scope="col" style="text-align:left">Description</th></tr>
  * </thead>
  * <tbody>
- * <tr><td style="vertical-align:top">{@code US-ASCII}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code US-ASCII}</th>
  *     <td>Seven-bit ASCII, a.k.a. {@code ISO646-US},
  *         a.k.a. the Basic Latin block of the Unicode character set</td></tr>
- * <tr><td style="vertical-align:top"><code>ISO-8859-1&nbsp;&nbsp;</code></td>
+ * <tr><th scope="row" style="vertical-align:top"><code>ISO-8859-1&nbsp;&nbsp;</code></th>
  *     <td>ISO Latin Alphabet No. 1, a.k.a. {@code ISO-LATIN-1}</td></tr>
- * <tr><td style="vertical-align:top">{@code UTF-8}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-8}</th>
  *     <td>Eight-bit UCS Transformation Format</td></tr>
- * <tr><td style="vertical-align:top">{@code UTF-16BE}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16BE}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         big-endian byte&nbsp;order</td></tr>
- * <tr><td style="vertical-align:top">{@code UTF-16LE}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16LE}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         little-endian byte&nbsp;order</td></tr>
- * <tr><td style="vertical-align:top">{@code UTF-16}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
  * </tbody>
@@ -635,10 +636,19 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        checkName(canonicalName);
         String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
-        for (int i = 0; i < as.length; i++)
-            checkName(as[i]);
+
+        // Skip checks for the standard, built-in Charsets we always load
+        // during initialization.  Use of identity is intentional to be
+        // consistent with sun.nio.cs.StandardCharsets
+        if (canonicalName != StandardCharsets.ISO_8859_1
+                && canonicalName != StandardCharsets.US_ASCII
+                && canonicalName != StandardCharsets.UTF_8) {
+            checkName(canonicalName);
+            for (int i = 0; i < as.length; i++) {
+                checkName(as[i]);
+            }
+        }
         this.name = canonicalName;
         this.aliases = as;
     }

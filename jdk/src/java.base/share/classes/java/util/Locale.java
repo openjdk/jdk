@@ -1590,29 +1590,29 @@ public final class Locale implements Cloneable, Serializable {
      * <table class="striped">
      * <caption style="display:none">Grandfathered tags with canonical replacements</caption>
      * <thead style="text-align:center">
-     * <tr><th style="padding: 0 2px">grandfathered tag</th><th style="padding: 0 2px">modern replacement</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
      * </thead>
      * <tbody style="text-align:center">
-     * <tr><td>art-lojban</td><td>jbo</td></tr>
-     * <tr><td>i-ami</td><td>ami</td></tr>
-     * <tr><td>i-bnn</td><td>bnn</td></tr>
-     * <tr><td>i-hak</td><td>hak</td></tr>
-     * <tr><td>i-klingon</td><td>tlh</td></tr>
-     * <tr><td>i-lux</td><td>lb</td></tr>
-     * <tr><td>i-navajo</td><td>nv</td></tr>
-     * <tr><td>i-pwn</td><td>pwn</td></tr>
-     * <tr><td>i-tao</td><td>tao</td></tr>
-     * <tr><td>i-tay</td><td>tay</td></tr>
-     * <tr><td>i-tsu</td><td>tsu</td></tr>
-     * <tr><td>no-bok</td><td>nb</td></tr>
-     * <tr><td>no-nyn</td><td>nn</td></tr>
-     * <tr><td>sgn-BE-FR</td><td>sfb</td></tr>
-     * <tr><td>sgn-BE-NL</td><td>vgt</td></tr>
-     * <tr><td>sgn-CH-DE</td><td>sgg</td></tr>
-     * <tr><td>zh-guoyu</td><td>cmn</td></tr>
-     * <tr><td>zh-hakka</td><td>hak</td></tr>
-     * <tr><td>zh-min-nan</td><td>nan</td></tr>
-     * <tr><td>zh-xiang</td><td>hsn</td></tr>
+     * <tr><th scope="row">art-lojban</th><td>jbo</td></tr>
+     * <tr><th scope="row">i-ami</th><td>ami</td></tr>
+     * <tr><th scope="row">i-bnn</th><td>bnn</td></tr>
+     * <tr><th scope="row">i-hak</th><td>hak</td></tr>
+     * <tr><th scope="row">i-klingon</th><td>tlh</td></tr>
+     * <tr><th scope="row">i-lux</th><td>lb</td></tr>
+     * <tr><th scope="row">i-navajo</th><td>nv</td></tr>
+     * <tr><th scope="row">i-pwn</th><td>pwn</td></tr>
+     * <tr><th scope="row">i-tao</th><td>tao</td></tr>
+     * <tr><th scope="row">i-tay</th><td>tay</td></tr>
+     * <tr><th scope="row">i-tsu</th><td>tsu</td></tr>
+     * <tr><th scope="row">no-bok</th><td>nb</td></tr>
+     * <tr><th scope="row">no-nyn</th><td>nn</td></tr>
+     * <tr><th scope="row">sgn-BE-FR</th><td>sfb</td></tr>
+     * <tr><th scope="row">sgn-BE-NL</th><td>vgt</td></tr>
+     * <tr><th scope="row">sgn-CH-DE</th><td>sgg</td></tr>
+     * <tr><th scope="row">zh-guoyu</th><td>cmn</td></tr>
+     * <tr><th scope="row">zh-hakka</th><td>hak</td></tr>
+     * <tr><th scope="row">zh-min-nan</th><td>nan</td></tr>
+     * <tr><th scope="row">zh-xiang</th><td>hsn</td></tr>
      * </tbody>
      * </table>
      *
@@ -1622,15 +1622,15 @@ public final class Locale implements Cloneable, Serializable {
      * <table class="striped">
      * <caption style="display:none">Grandfathered tags with no modern replacement</caption>
      * <thead style="text-align:center">
-     * <tr><th style="padding: 0 2px">grandfathered tag</th><th style="padding: 0 2px">converts to</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
      * </thead>
      * <tbody style="text-align:center">
-     * <tr><td>cel-gaulish</td><td>xtg-x-cel-gaulish</td></tr>
-     * <tr><td>en-GB-oed</td><td>en-GB-x-oed</td></tr>
-     * <tr><td>i-default</td><td>en-x-i-default</td></tr>
-     * <tr><td>i-enochian</td><td>und-x-i-enochian</td></tr>
-     * <tr><td>i-mingo</td><td>see-x-i-mingo</td></tr>
-     * <tr><td>zh-min</td><td>nan-x-zh-min</td></tr>
+     * <tr><th scope="row">cel-gaulish</th><td>xtg-x-cel-gaulish</td></tr>
+     * <tr><th scope="row">en-GB-oed</th><td>en-GB-x-oed</td></tr>
+     * <tr><th scope="row">i-default</th><td>en-x-i-default</td></tr>
+     * <tr><th scope="row">i-enochian</th><td>und-x-i-enochian</td></tr>
+     * <tr><th scope="row">i-mingo</th><td>see-x-i-mingo</td></tr>
+     * <tr><th scope="row">zh-min</th><td>nan-x-zh-min</td></tr>
      * </tbody>
      * </table>
      *
@@ -2778,16 +2778,16 @@ public final class Locale implements Cloneable, Serializable {
      * <caption>Filtering method behavior</caption>
      * <thead>
      * <tr>
-     * <th>Filtering Mode</th>
-     * <th>Language Priority List: {@code "de-DE"}</th>
-     * <th>Language Priority List: {@code "de-*-DE"}</th>
+     * <th scope="col">Filtering Mode</th>
+     * <th scope="col">Language Priority List: {@code "de-DE"}</th>
+     * <th scope="col">Language Priority List: {@code "de-*-DE"}</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td style="vertical-align:top">
+     * <th scope="row" style="vertical-align:top">
      * {@link FilteringMode#AUTOSELECT_FILTERING AUTOSELECT_FILTERING}
-     * </td>
+     * </th>
      * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
@@ -2799,9 +2799,9 @@ public final class Locale implements Cloneable, Serializable {
      * </td>
      * </tr>
      * <tr>
-     * <td style="vertical-align:top">
+     * <th scope="row" style="vertical-align:top">
      * {@link FilteringMode#EXTENDED_FILTERING EXTENDED_FILTERING}
-     * </td>
+     * </th>
      * <td style="vertical-align:top">
      * Performs <em>extended</em> filtering and returns {@code "de-DE"},
      * {@code "de-Deva-DE"}, {@code "de-DE-1996"}, {@code "de-Latn-DE"}, and
@@ -2810,9 +2810,9 @@ public final class Locale implements Cloneable, Serializable {
      * <td style="vertical-align:top">Same as above.</td>
      * </tr>
      * <tr>
-     * <td style="vertical-align:top">
+     * <th scope="row" style="vertical-align:top">
      * {@link FilteringMode#IGNORE_EXTENDED_RANGES IGNORE_EXTENDED_RANGES}
-     * </td>
+     * </th>
      * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
      * {@code "de-DE-1996"}.
@@ -2823,9 +2823,9 @@ public final class Locale implements Cloneable, Serializable {
      * </td>
      * </tr>
      * <tr>
-     * <td style="vertical-align:top">
+     * <th scope="row" style="vertical-align:top">
      * {@link FilteringMode#MAP_EXTENDED_RANGES MAP_EXTENDED_RANGES}
-     * </td>
+     * </th>
      * <td style="vertical-align:top">Same as above.</td>
      * <td style="vertical-align:top">
      * Performs <em>basic</em> filtering and returns {@code "de-DE"} and
@@ -2834,9 +2834,9 @@ public final class Locale implements Cloneable, Serializable {
      * </td>
      * </tr>
      * <tr>
-     * <td style="vertical-align:top">
+     * <th scope="row" style="vertical-align:top">
      * {@link FilteringMode#REJECT_EXTENDED_RANGES REJECT_EXTENDED_RANGES}
-     * </td>
+     * </th>
      * <td style="vertical-align:top">Same as above.</td>
      * <td style="vertical-align:top">
      * Throws {@link IllegalArgumentException} because {@code "de-*-DE"} is

@@ -400,8 +400,6 @@ public class JavaCompiler {
         } catch (CompletionFailure ex) {
             // inlined Check.completionError as it is not initialized yet
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
-            if (ex instanceof ClassFinder.BadClassFile)
-                throw new Abort();
         }
         source = Source.instance(context);
         attr = Attr.instance(context);
