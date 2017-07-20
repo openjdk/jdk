@@ -189,10 +189,6 @@ public abstract class XMLOutputFactory {
    * <p>
    * Once an application has obtained a reference to a XMLOutputFactory it
    * can use the factory to configure and obtain stream instances.
-   * <p>
-   * Note that this is a new method that replaces the deprecated newInstance() method.
-   *   No changes in behavior are defined by this replacement method relative to the
-   *   deprecated method.
    *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if

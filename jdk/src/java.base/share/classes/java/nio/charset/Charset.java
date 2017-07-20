@@ -25,6 +25,11 @@
 
 package java.nio.charset;
 
+import jdk.internal.misc.VM;
+import sun.nio.cs.StandardCharsets;
+import sun.nio.cs.ThreadLocalCoders;
+import sun.security.action.GetPropertyAction;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.spi.CharsetProvider;
@@ -38,15 +43,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import jdk.internal.misc.VM;
-import sun.nio.cs.StandardCharsets;
-import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -635,10 +636,19 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        checkName(canonicalName);
         String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
-        for (int i = 0; i < as.length; i++)
-            checkName(as[i]);
+
+        // Skip checks for the standard, built-in Charsets we always load
+        // during initialization.  Use of identity is intentional to be
+        // consistent with sun.nio.cs.StandardCharsets
+        if (canonicalName != StandardCharsets.ISO_8859_1
+                && canonicalName != StandardCharsets.US_ASCII
+                && canonicalName != StandardCharsets.UTF_8) {
+            checkName(canonicalName);
+            for (int i = 0; i < as.length; i++) {
+                checkName(as[i]);
+            }
+        }
         this.name = canonicalName;
         this.aliases = as;
     }
