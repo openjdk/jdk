@@ -192,7 +192,7 @@
           "of rounds of unroll,optimize,..")                                \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, UseSubwordForMaxVector, true,                               \
+  product(bool, UseSubwordForMaxVector, false,                              \
           "Use Subword Analysis to set maximum vector size")                \
                                                                             \
   develop(intx, UnrollLimitForProfileCheck, 1,                              \
