@@ -36,15 +36,15 @@ package java.lang.reflect;
  * <caption style="display:none">Table shows permission target name, what the permission allows, and associated risks</caption>
  * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
  * </thead>
  * <tbody>
  *
  * <tr>
- *   <td>suppressAccessChecks</td>
+ *   <th scope="row">suppressAccessChecks</th>
  *   <td>ability to suppress the standard Java language access checks
  *       on fields and methods in a class; allow access not only public members
  *       but also allow access to default (package) access, protected,
@@ -53,7 +53,7 @@ package java.lang.reflect;
  *       methods normally unavailable would be accessible to malicious code.</td>
  * </tr>
  * <tr>
- *   <td>newProxyInPackage.{package name}</td>
+ *   <th scope="row">newProxyInPackage.{package name}</th>
  *   <td>ability to create a proxy instance in the specified package of which
  *       the non-public interface that the proxy class implements.</td>
  *   <td>This gives code access to classes in packages to which it normally
