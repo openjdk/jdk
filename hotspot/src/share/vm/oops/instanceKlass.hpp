@@ -455,11 +455,7 @@ class InstanceKlass: public Klass {
   void set_package(PackageEntry* p) { _package_entry = p; }
   void set_package(ClassLoaderData* loader_data, TRAPS);
   bool is_same_class_package(const Klass* class2) const;
-  bool is_same_class_package(oop classloader2, const Symbol* classname2) const;
-  static bool is_same_class_package(oop class_loader1,
-                                    const Symbol* class_name1,
-                                    oop class_loader2,
-                                    const Symbol* class_name2);
+  bool is_same_class_package(oop other_class_loader, const Symbol* other_class_name) const;
 
   // find an enclosing class
   InstanceKlass* compute_enclosing_class(bool* inner_is_member, TRAPS) const;

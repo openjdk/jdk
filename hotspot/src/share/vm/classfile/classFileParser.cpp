@@ -5556,10 +5556,7 @@ void ClassFileParser::fix_anonymous_class_name(TRAPS) {
   if (anon_last_slash == NULL) {  // Unnamed package
     prepend_host_package_name(_host_klass, CHECK);
   } else {
-    if (!InstanceKlass::is_same_class_package(_host_klass->class_loader(),
-                                              _host_klass->name(),
-                                              _host_klass->class_loader(),
-                                              _class_name)) {
+    if (!_host_klass->is_same_class_package(_host_klass->class_loader(), _class_name)) {
       ResourceMark rm(THREAD);
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
         err_msg("Host class %s and anonymous class %s are in different packages",
