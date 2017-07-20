@@ -10951,7 +10951,7 @@ instruct negI_reg(iRegINoSp dst, iRegIorL2I src, immI0 zero, rFlagsReg cr) %{
 
 // Long Negation
 
-instruct negL_reg(iRegLNoSp dst, iRegIorL2I src, immL0 zero, rFlagsReg cr) %{
+instruct negL_reg(iRegLNoSp dst, iRegL src, immL0 zero, rFlagsReg cr) %{
   match(Set dst (SubL zero src));
 
   ins_cost(INSN_COST);
