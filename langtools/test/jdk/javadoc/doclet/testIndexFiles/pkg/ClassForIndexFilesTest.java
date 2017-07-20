@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,25 @@
  * questions.
  */
 
-/**
-  * This is a test description for the moduletags module.<br>
-  * Type Link: {@link testpkgmdltags.TestClassInModuleTags}.<br>
-  * Member Link: {@link testpkgmdltags.TestClassInModuleTags#testMethod(String)}.<br>
-  * Package Link: {@link testpkgmdltags}.<br>
-  *
-  * @author Bhavesh Patel
-  * @since JDK 9
-  * @see "Test see tag"
-  * @see testpkgmdltags.TestClassInModuleTags
-  * @regular Just a regular simple tag.
-  * @moduletag Just a simple module tag.
-  * @version 1.0
-  */
-@Deprecated
-module moduletags {
-    requires transitive static moduleA;
+package pkg;
 
-    exports testpkgmdltags;
+public class ClassForIndexFilesTest {
+
+    /**
+     * Test field.
+     */
+    public int field1;
+
+    /**
+     * Test method.
+     */
+    public void testMethod() {
+    }
+
+    /**
+     * Another test method.
+     */
+    public void anotherTestMethod() {
+    }
+
 }

@@ -94,10 +94,8 @@ import com.sun.tools.javac.tree.JCTree.JCRequires;
 import com.sun.tools.javac.tree.JCTree.JCUses;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -105,7 +103,6 @@ import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
-import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Flags.ABSTRACT;
 import static com.sun.tools.javac.code.Flags.ENUM;
@@ -266,8 +263,7 @@ public class Modules extends JCTree.Visitor {
                 msym.complete();
             }
         } catch (CompletionFailure ex) {
-            log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, Position.NOPOS, Errors.CantAccess(ex.sym, ex.getDetailValue()));
-            if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
+            chk.completionError(null, ex);
         } finally {
             depth--;
         }
@@ -1220,10 +1216,6 @@ public class Modules extends JCTree.Visitor {
         Predicate<ModuleSymbol> observablePred = sym ->
              (observable == null) ? (moduleFinder.findModule(sym).kind != ERR) : observable.contains(sym);
         Predicate<ModuleSymbol> systemModulePred = sym -> (sym.flags() & Flags.SYSTEM_MODULE) != 0;
-        Predicate<ModuleSymbol> noIncubatorPred = sym -> {
-            sym.complete();
-            return !sym.resolutionFlags.contains(ModuleResolutionFlags.DO_NOT_RESOLVE_BY_DEFAULT);
-        };
         Set<ModuleSymbol> enabledRoot = new LinkedHashSet<>();
 
         if (rootModules.contains(syms.unnamedModule)) {
@@ -1241,9 +1233,18 @@ public class Modules extends JCTree.Visitor {
                 jdkModulePred = sym -> true;
             }
 
+            Predicate<ModuleSymbol> noIncubatorPred = sym -> {
+                sym.complete();
+                return !sym.resolutionFlags.contains(ModuleResolutionFlags.DO_NOT_RESOLVE_BY_DEFAULT);
+            };
+
             for (ModuleSymbol sym : new HashSet<>(syms.getAllModules())) {
-                if (systemModulePred.test(sym) && observablePred.test(sym) && jdkModulePred.test(sym) && noIncubatorPred.test(sym)) {
-                    enabledRoot.add(sym);
+                try {
+                    if (systemModulePred.test(sym) && observablePred.test(sym) && jdkModulePred.test(sym) && noIncubatorPred.test(sym)) {
+                        enabledRoot.add(sym);
+                    }
+                } catch (CompletionFailure ex) {
+                    chk.completionError(null, ex);
                 }
             }
         }
@@ -1341,32 +1342,36 @@ public class Modules extends JCTree.Visitor {
         result.add(syms.java_base);
 
         while (primaryTodo.nonEmpty() || secondaryTodo.nonEmpty()) {
-            ModuleSymbol current;
-            boolean isPrimaryTodo;
-            if (primaryTodo.nonEmpty()) {
-                current = primaryTodo.head;
-                primaryTodo = primaryTodo.tail;
-                isPrimaryTodo = true;
-            } else {
-                current = secondaryTodo.head;
-                secondaryTodo = secondaryTodo.tail;
-                isPrimaryTodo = false;
-            }
-            if (observable != null && !observable.contains(current))
-                continue;
-            if (!result.add(current) || current == syms.unnamedModule || ((current.flags_field & Flags.AUTOMATIC_MODULE) != 0))
-                continue;
-            current.complete();
-            if (current.kind == ERR && (isPrimaryTodo || base.contains(current)) && warnedMissing.add(current)) {
-                log.error(Errors.ModuleNotFound(current));
-            }
-            for (RequiresDirective rd : current.requires) {
-                if (rd.module == syms.java_base) continue;
-                if ((rd.isTransitive() && isPrimaryTodo) || rootModules.contains(current)) {
-                    primaryTodo = primaryTodo.prepend(rd.module);
+            try {
+                ModuleSymbol current;
+                boolean isPrimaryTodo;
+                if (primaryTodo.nonEmpty()) {
+                    current = primaryTodo.head;
+                    primaryTodo = primaryTodo.tail;
+                    isPrimaryTodo = true;
                 } else {
-                    secondaryTodo = secondaryTodo.prepend(rd.module);
+                    current = secondaryTodo.head;
+                    secondaryTodo = secondaryTodo.tail;
+                    isPrimaryTodo = false;
                 }
+                if (observable != null && !observable.contains(current))
+                    continue;
+                if (!result.add(current) || current == syms.unnamedModule || ((current.flags_field & Flags.AUTOMATIC_MODULE) != 0))
+                    continue;
+                current.complete();
+                if (current.kind == ERR && (isPrimaryTodo || base.contains(current)) && warnedMissing.add(current)) {
+                    log.error(Errors.ModuleNotFound(current));
+                }
+                for (RequiresDirective rd : current.requires) {
+                    if (rd.module == syms.java_base) continue;
+                    if ((rd.isTransitive() && isPrimaryTodo) || rootModules.contains(current)) {
+                        primaryTodo = primaryTodo.prepend(rd.module);
+                    } else {
+                        secondaryTodo = secondaryTodo.prepend(rd.module);
+                    }
+                }
+            } catch (CompletionFailure ex) {
+                chk.completionError(null, ex);
             }
         }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -65,6 +65,7 @@ public class TestSearch extends JavadocTester {
         checkInvalidUsageIndexTag();
         checkSearchOutput(true);
         checkSingleIndex(true);
+        checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -86,6 +87,7 @@ public class TestSearch extends JavadocTester {
         checkDocLintErrors();
         checkSearchOutput(true);
         checkSingleIndex(true);
+        checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -127,6 +129,7 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkSingleIndex(true);
+        checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -210,6 +213,7 @@ public class TestSearch extends JavadocTester {
         checkInvalidUsageIndexTag();
         checkSearchOutput(true);
         checkSplitIndex();
+        checkSplitIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -497,5 +501,35 @@ public class TestSearch extends JavadocTester {
                 + "            $(this).val('').removeClass('watermark');\n"
                 + "        }\n"
                 + "    });");
+    }
+
+    void checkSingleIndexSearchTagDuplication() {
+        // Test for search tags duplication in index file.
+        checkOutput("index-all.html", true,
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>");
+        checkOutput("index-all.html", false,
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>");
+    }
+
+    void checkSplitIndexSearchTagDuplication() {
+        // Test for search tags duplication in index file.
+        checkOutput("index-files/index-13.html", true,
+                "<dt><span class=\"searchTagLink\"><a href=\"../pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>");
+        checkOutput("index-files/index-13.html", false,
+                "<dt><span class=\"searchTagLink\"><a href=\"../pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"../pkg2/TestError.html#SearchTagDeprecatedMethod\">"
+                + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
+                + "<dd>with description</dd>");
     }
 }

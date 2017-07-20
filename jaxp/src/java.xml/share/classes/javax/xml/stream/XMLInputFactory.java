@@ -209,16 +209,11 @@ public abstract class XMLInputFactory {
    * <p>
    *   Once an application has obtained a reference to a XMLInputFactory it
    *   can use the factory to configure and obtain stream instances.
-   * <p>
-   *   Note that this is a new method that replaces the deprecated newInstance() method.
-   *     No changes in behavior are defined by this replacement method relative to
-   *     the deprecated method.
    *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
    */
-  @Deprecated(since="1.7")
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
