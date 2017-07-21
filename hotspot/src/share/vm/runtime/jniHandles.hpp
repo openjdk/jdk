@@ -149,11 +149,6 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Fill block with bad_handle values
   void zap();
 
- protected:
-  // No more handles in the both the current and following blocks
-  void clear() { _top = 0; }
-
- private:
   // Free list computation
   void rebuild_free_list();
 
