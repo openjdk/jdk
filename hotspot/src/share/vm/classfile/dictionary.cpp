@@ -29,6 +29,8 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -136,10 +138,10 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_
     //          via a store to _pd_set.
     OrderAccess::release_store_ptr(&_pd_set, new_head);
   }
-  if (log_is_enabled(Trace, protectiondomain)) {
-    ResourceMark rm;
-    outputStream* log = Log(protectiondomain)::trace_stream();
-    print_count(log);
+  LogTarget(Trace, protectiondomain) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_count(&ls);
   }
 }
 

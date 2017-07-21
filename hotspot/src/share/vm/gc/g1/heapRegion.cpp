@@ -36,6 +36,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -527,17 +528,19 @@ public:
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
-          print_object(log.error_stream(), _containing_obj);
+          LogStream ls(log.error());
+          print_object(&ls, _containing_obj);
           log.error("points to obj " PTR_FORMAT " not in the heap", p2i(obj));
         } else {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           HeapRegion* to = _g1h->heap_region_containing((HeapWord*)obj);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
-          print_object(log.error_stream(), _containing_obj);
+          LogStream ls(log.error());
+          print_object(&ls, _containing_obj);
           log.error("points to dead obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
             p2i(obj), p2i(to->bottom()), p2i(to->end()));
-          print_object(log.error_stream(), obj);
+          print_object(&ls, obj);
         }
         log.error("----------");
         _failures = true;
@@ -593,10 +596,11 @@ public:
           log.error("Field " PTR_FORMAT " of obj " PTR_FORMAT ", in region " HR_FORMAT,
             p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
           ResourceMark rm;
-          _containing_obj->print_on(log.error_stream());
+          LogStream ls(log.error());
+          _containing_obj->print_on(&ls);
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
           if (obj->is_oop()) {
-            obj->print_on(log.error_stream());
+            obj->print_on(&ls);
           }
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
           log.error("----------");

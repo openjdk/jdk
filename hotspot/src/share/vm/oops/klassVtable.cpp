@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -302,15 +303,16 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
         if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
-          outputStream* logst = Log(vtables)::trace_stream();
+          LogTarget(Trace, vtables) lt;
+          LogStream ls(lt);
           char* sig = target_method()->name_and_sig_as_C_string();
-          logst->print("transitive overriding superclass %s with %s index %d, original flags: ",
+          ls.print("transitive overriding superclass %s with %s index %d, original flags: ",
                        supersuperklass->internal_name(),
                        sig, vtable_index);
-          super_method->print_linkage_flags(logst);
-          logst->print("overriders flags: ");
-          target_method->print_linkage_flags(logst);
-          logst->cr();
+          super_method->print_linkage_flags(&ls);
+          ls.print("overriders flags: ");
+          target_method->print_linkage_flags(&ls);
+          ls.cr();
         }
 
         break; // return found superk
@@ -333,19 +335,20 @@ static void log_vtables(int i, bool overrides, methodHandle target_method,
 #ifndef PRODUCT
   if (log_develop_is_enabled(Trace, vtables)) {
     ResourceMark rm(thread);
-    outputStream* logst = Log(vtables)::trace_stream();
+    LogTarget(Trace, vtables) lt;
+    LogStream ls(lt);
     char* sig = target_method()->name_and_sig_as_C_string();
     if (overrides) {
-      logst->print("overriding with %s index %d, original flags: ",
+      ls.print("overriding with %s index %d, original flags: ",
                    sig, i);
     } else {
-      logst->print("NOT overriding with %s index %d, original flags: ",
+      ls.print("NOT overriding with %s index %d, original flags: ",
                    sig, i);
     }
-    super_method->print_linkage_flags(logst);
-    logst->print("overriders flags: ");
-    target_method->print_linkage_flags(logst);
-    logst->cr();
+    super_method->print_linkage_flags(&ls);
+    ls.print("overriders flags: ");
+    target_method->print_linkage_flags(&ls);
+    ls.cr();
   }
 #endif
 }
@@ -551,13 +554,14 @@ void klassVtable::put_method_at(Method* m, int index) {
   } else {
     if (log_develop_is_enabled(Trace, vtables)) {
       ResourceMark rm;
-      outputStream* logst = Log(vtables)::trace_stream();
+      LogTarget(Trace, vtables) lt;
+      LogStream ls(lt);
       const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
-      logst->print("adding %s at index %d, flags: ", sig, index);
+      ls.print("adding %s at index %d, flags: ", sig, index);
       if (m != NULL) {
-        m->print_linkage_flags(logst);
+        m->print_linkage_flags(&ls);
       }
-      logst->cr();
+      ls.cr();
     }
     table()[index].set(m);
   }
@@ -885,13 +889,14 @@ int klassVtable::fill_in_mirandas(int initialized) {
     if (log_develop_is_enabled(Trace, vtables)) {
       Method* meth = mirandas.at(i);
       ResourceMark rm(Thread::current());
-      outputStream* logst = Log(vtables)::trace_stream();
+      LogTarget(Trace, vtables) lt;
+      LogStream ls(lt);
       if (meth != NULL) {
         char* sig = meth->name_and_sig_as_C_string();
-        logst->print("fill in mirandas with %s index %d, flags: ",
+        ls.print("fill in mirandas with %s index %d, flags: ",
                      sig, initialized);
-        meth->print_linkage_flags(logst);
-        logst->cr();
+        meth->print_linkage_flags(&ls);
+        ls.cr();
       }
     }
     put_method_at(mirandas.at(i), initialized);
@@ -1117,16 +1122,17 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
       // If m is already assigned a vtable index, do not disturb it.
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm;
-        outputStream* logst = Log(itables)::trace_stream();
+        LogTarget(Trace, itables) lt;
+        LogStream ls(lt);
         assert(m != NULL, "methods can never be null");
         const char* sig = m->name_and_sig_as_C_string();
         if (m->has_vtable_index()) {
-          logst->print("vtable index %d for method: %s, flags: ", m->vtable_index(), sig);
+          ls.print("vtable index %d for method: %s, flags: ", m->vtable_index(), sig);
         } else {
-          logst->print("itable index %d for method: %s, flags: ", ime_num, sig);
+          ls.print("itable index %d for method: %s, flags: ", ime_num, sig);
         }
-        m->print_linkage_flags(logst);
-        logst->cr();
+        m->print_linkage_flags(&ls);
+        ls.cr();
       }
       if (!m->has_vtable_index()) {
         // A shared method could have an initialized itable_index that
@@ -1237,14 +1243,15 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm(THREAD);
         if (target() != NULL) {
-          outputStream* logst = Log(itables)::trace_stream();
+          LogTarget(Trace, itables) lt;
+          LogStream ls(lt);
           char* sig = target()->name_and_sig_as_C_string();
-          logst->print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
+          ls.print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
                        interf->internal_name(), ime_num, sig,
                        target()->method_holder()->internal_name());
-          logst->print("target_method flags: ");
-          target()->print_linkage_flags(logst);
-          logst->cr();
+          ls.print("target_method flags: ");
+          target()->print_linkage_flags(&ls);
+          ls.cr();
         }
       }
     }

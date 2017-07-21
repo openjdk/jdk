@@ -38,6 +38,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
@@ -5910,14 +5911,15 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   assert(is_internal_format(_class_name), "external class name format used internally");
 
   if (!is_internal()) {
-    if (log_is_enabled(Debug, class, preorder)){
+    LogTarget(Debug, class, preorder) lt;
+    if (lt.is_enabled()){
       ResourceMark rm(THREAD);
-      outputStream* log = Log(class, preorder)::debug_stream();
-      log->print("%s", _class_name->as_klass_external_name());
+      LogStream ls(lt);
+      ls.print("%s", _class_name->as_klass_external_name());
       if (stream->source() != NULL) {
-        log->print(" source: %s", stream->source());
+        ls.print(" source: %s", stream->source());
       }
-      log->cr();
+      ls.cr();
     }
 
 #if INCLUDE_CDS

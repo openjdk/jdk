@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -121,24 +122,26 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     // not set) and when StackWalker::getCallerClass is called
     if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
       if (method->is_hidden()) {
-        if (log_is_enabled(Debug, stackwalk)) {
+        LogTarget(Debug, stackwalk) lt;
+        if (lt.is_enabled()) {
           ResourceMark rm(THREAD);
-          outputStream* st = Log(stackwalk)::debug_stream();
-          st->print("  hidden method: ");
-          method->print_short_name(st);
-          st->cr();
+          LogStream ls(lt);
+          ls.print("  hidden method: ");
+          method->print_short_name(&ls);
+          ls.cr();
         }
         continue;
       }
     }
 
     int index = end_index++;
-    if (log_is_enabled(Debug, stackwalk)) {
+    LogTarget(Debug, stackwalk) lt;
+    if (lt.is_enabled()) {
       ResourceMark rm(THREAD);
-      outputStream* st = Log(stackwalk)::debug_stream();
-      st->print("  %d: frame method: ", index);
-      method->print_short_name(st);
-      st->print_cr(" bci=%d", stream.bci());
+      LogStream ls(lt);
+      ls.print("  %d: frame method: ", index);
+      method->print_short_name(&ls);
+      ls.print_cr(" bci=%d", stream.bci());
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
@@ -364,12 +367,13 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
         break;
       }
 
-      if (log_is_enabled(Debug, stackwalk)) {
+      LogTarget(Debug, stackwalk) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        outputStream* st = Log(stackwalk)::debug_stream();
-        st->print("  skip ");
-        stream.method()->print_short_name(st);
-        st->cr();
+        LogStream ls(lt);
+        ls.print("  skip ");
+        stream.method()->print_short_name(&ls);
+        ls.cr();
       }
       stream.next();
     }
@@ -377,12 +381,13 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
-      if (log_is_enabled(Debug, stackwalk)) {
+      LogTarget(Debug, stackwalk) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        outputStream* st = Log(stackwalk)::debug_stream();
-        st->print("  skip ");
-        stream.method()->print_short_name(st);
-        st->cr();
+        LogStream ls(lt);
+        ls.print("  skip ");
+        stream.method()->print_short_name(&ls);
+        ls.cr();
       }
     }
   }

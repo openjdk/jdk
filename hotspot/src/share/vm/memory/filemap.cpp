@@ -33,6 +33,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
@@ -104,9 +105,9 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
     } else {
       if (log_is_enabled(Info, cds)) {
         ResourceMark rm;
-        outputStream* logstream = Log(cds)::info_stream();
-        logstream->print("UseSharedSpaces: ");
-        logstream->vprint_cr(msg, ap);
+        LogStream ls(Log(cds)::info());
+        ls.print("UseSharedSpaces: ");
+        ls.vprint_cr(msg, ap);
       }
     }
     UseSharedSpaces = false;

@@ -42,6 +42,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -1085,12 +1086,13 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
   methodHandle h_method(THREAD, class_initializer());
   assert(!is_initialized(), "we cannot initialize twice");
-  if (log_is_enabled(Info, class, init)) {
+  LogTarget(Info, class, init) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* log = Log(class, init)::info_stream();
-    log->print("%d Initializing ", call_class_initializer_counter++);
-    name()->print_value_on(log);
-    log->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this));
+    LogStream ls(lt);
+    ls.print("%d Initializing ", call_class_initializer_counter++);
+    name()->print_value_on(&ls);
+    ls.print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this));
   }
   if (h_method() != NULL) {
     JavaCallArguments args; // No arguments

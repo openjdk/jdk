@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvm.h"
 #include "runtime/java.hpp"
@@ -1355,7 +1356,8 @@ void VM_Version::get_processor_features() {
 
 #ifndef PRODUCT
   if (log_is_enabled(Info, os, cpu)) {
-    outputStream* log = Log(os, cpu)::info_stream();
+    LogStream ls(Log(os, cpu)::info());
+    outputStream* log = &ls;
     log->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());

@@ -28,6 +28,7 @@
 #include "classfile/classLoader.hpp"
 #include "runtime/os.hpp"
 
+class outputStream;
 // During dumping time, when processing class paths, we build up the dump-time
 // classpath. The JAR files that exist are stored in the list ClassLoader::_first_append_entry.
 // However, we need to store other "misc" information for run-time checking, such as
@@ -139,7 +140,7 @@ public:
     }
   }
 
-  virtual void print_path(int type, const char* path);
+  virtual void print_path(outputStream* os, int type, const char* path);
 
   bool check();
   bool read_jint(jint *ptr) {

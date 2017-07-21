@@ -416,7 +416,7 @@ JvmtiExport::add_default_read_edges(Handle h_module, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
@@ -444,7 +444,7 @@ JvmtiExport::add_module_reads(Handle module, Handle to_module, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
@@ -476,7 +476,7 @@ JvmtiExport::add_module_exports(Handle module, Handle pkg_name, Handle to_module
   if (HAS_PENDING_EXCEPTION) {
     Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
@@ -511,7 +511,7 @@ JvmtiExport::add_module_opens(Handle module, Handle pkg_name, Handle to_module, 
   if (HAS_PENDING_EXCEPTION) {
     Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
@@ -543,7 +543,7 @@ JvmtiExport::add_module_uses(Handle module, Handle service, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;
@@ -574,7 +574,7 @@ JvmtiExport::add_module_provides(Handle module, Handle service, Handle impl_clas
 
   if (HAS_PENDING_EXCEPTION) {
     LogTarget(Trace, jvmti) log;
-    LogStreamCHeap log_stream(log);
+    LogStream log_stream(log);
     java_lang_Throwable::print(PENDING_EXCEPTION, &log_stream);
     log_stream.cr();
     CLEAR_PENDING_EXCEPTION;

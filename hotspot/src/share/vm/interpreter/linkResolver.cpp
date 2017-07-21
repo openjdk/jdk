@@ -34,6 +34,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -767,11 +768,15 @@ static void trace_method_resolution(const char* prefix,
                                     int index = -1) {
 #ifndef PRODUCT
   ResourceMark rm;
+  Log(itables) logi;
+  LogStream lsi(logi.trace());
+  Log(vtables) logv;
+  LogStream lsv(logv.trace());
   outputStream* st;
   if (logitables) {
-    st = Log(itables)::trace_stream();
+    st = &lsi;
   } else {
-    st = Log(vtables)::trace_stream();
+    st = &lsv;
   }
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,

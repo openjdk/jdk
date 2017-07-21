@@ -27,6 +27,8 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 
 CompileTask*  CompileTask::_task_free_list = NULL;
@@ -425,4 +427,31 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
   st->cr();
 }
 
+void CompileTask::print_ul(const char* msg){
+  LogTarget(Debug, jit, compilation) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print(&ls, msg, /* short form */ true, /* cr */ true);
+  }
+}
+
+void CompileTask::print_ul(const nmethod* nm, const char* msg) {
+  LogTarget(Debug, jit, compilation) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_impl(&ls, nm->method(), nm->compile_id(),
+               nm->comp_level(), nm->is_osr_method(),
+               nm->is_osr_method() ? nm->osr_entry_bci() : -1,
+               /*is_blocking*/ false,
+               msg, /* short form */ true, /* cr */ true);
+  }
+}
+
+void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg) {
+  LogTarget(Debug, jit, inlining) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_inlining_inner(&ls, method, inline_level, bci, msg);
+  }
+}
 

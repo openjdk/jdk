@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
@@ -53,11 +54,12 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 }
 
 void ThreadShadow::clear_pending_exception() {
-  if (_pending_exception != NULL && log_is_enabled(Debug, exceptions)) {
+  LogTarget(Debug, exceptions) lt;
+  if (_pending_exception != NULL && lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* logst = Log(exceptions)::debug_stream();
-    logst->print("Thread::clear_pending_exception: cleared exception:");
-    _pending_exception->print_on(logst);
+    LogStream ls(lt);
+    ls.print("Thread::clear_pending_exception: cleared exception:");
+    _pending_exception->print_on(&ls);
   }
   _pending_exception = NULL;
   _exception_file    = NULL;

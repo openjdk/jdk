@@ -33,6 +33,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
@@ -155,7 +156,8 @@ PSPromotionManager::print_taskqueue_stats() {
   }
   Log(gc, task, stats) log;
   ResourceMark rm;
-  outputStream* out = log.trace_stream();
+  LogStream ls(log.trace());
+  outputStream* out = &ls;
   out->print_cr("== GC Tasks Stats, GC %3d",
                 ParallelScavengeHeap::heap()->total_collections());
 

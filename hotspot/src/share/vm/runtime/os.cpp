@@ -34,7 +34,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #ifdef ASSERT
 #include "memory/guardedMemory.hpp"
@@ -1480,7 +1480,7 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count) {
   LogTarget(Info, pagesize) log;
   if (log.is_enabled()) {
-    LogStreamCHeap out(log);
+    LogStream out(log);
 
     out.print("%s: ", str);
     for (int i = 0; i < count; ++i) {

@@ -393,7 +393,7 @@ void JvmtiBreakpoints::gc_epilogue() {
 void JvmtiBreakpoints::print() {
 #ifndef PRODUCT
   LogTarget(Trace, jvmti) log;
-  LogStreamCHeap log_stream(log);
+  LogStream log_stream(log);
 
   int n = _bps.length();
   for (int i=0; i<n; i++) {

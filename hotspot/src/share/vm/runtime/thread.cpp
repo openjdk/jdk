@@ -41,6 +41,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -111,6 +112,7 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "logging/logHandle.hpp"
 #endif
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
@@ -2103,15 +2105,16 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
       // We cannot call Exceptions::_throw(...) here because we cannot block
       set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
 
-      if (log_is_enabled(Info, exceptions)) {
+      LogTarget(Info, exceptions) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm;
-        outputStream* logstream = Log(exceptions)::info_stream();
-        logstream->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+        LogStream ls(lt);
+        ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
           if (has_last_Java_frame()) {
             frame f = last_frame();
-           logstream->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
+           ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
           }
-        logstream->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
+        ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
       clear_has_async_exception();

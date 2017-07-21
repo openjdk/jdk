@@ -28,6 +28,7 @@
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
@@ -129,7 +130,8 @@ void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_byt
   log.debug("  Requested change: " SIZE_FORMAT_HEX "  Attempted change: " SIZE_FORMAT_HEX,
                         expand_in_bytes, change_in_bytes);
   ResourceMark rm;
-  ParallelScavengeHeap::heap()->print_on(log.debug_stream());
+  LogStream ls(log.debug());
+  ParallelScavengeHeap::heap()->print_on(&ls);
   log.debug("  PS%sGen max size: " SIZE_FORMAT "K", old ? "Old" : "Young", max_size/K);
 }
 
@@ -140,7 +142,8 @@ void log_after_expansion(bool old, size_t max_size) {
   }
   log.debug("After expansion of %s gen with boundary move", old ? "old" : "young");
   ResourceMark rm;
-  ParallelScavengeHeap::heap()->print_on(log.debug_stream());
+  LogStream ls(log.debug());
+  ParallelScavengeHeap::heap()->print_on(&ls);
   log.debug("  PS%sGen max size: " SIZE_FORMAT "K", old ? "Old" : "Young", max_size/K);
 }
 

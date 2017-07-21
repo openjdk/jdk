@@ -41,6 +41,7 @@
 #include "gc/shared/space.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -774,10 +775,11 @@ jint Universe::initialize_heap() {
 
     Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
 
-    if (log_is_enabled(Info, gc, heap, coops)) {
+    LogTarget(Info, gc, heap, coops) lt;
+    if (lt.is_enabled()) {
       ResourceMark rm;
-      outputStream* logst = Log(gc, heap, coops)::info_stream();
-      Universe::print_compressed_oops_mode(logst);
+      LogStream ls(lt);
+      Universe::print_compressed_oops_mode(&ls);
     }
 
     // Tell tests in which mode we run.
@@ -1110,20 +1112,22 @@ void Universe::print_heap_at_SIGBREAK() {
 }
 
 void Universe::print_heap_before_gc() {
-  Log(gc, heap) log;
-  if (log.is_debug()) {
-    log.debug("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.debug_stream());
+    heap()->print_on(&ls);
   }
 }
 
 void Universe::print_heap_after_gc() {
-  Log(gc, heap) log;
-  if (log.is_debug()) {
-    log.debug("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  LogTarget(Debug, gc, heap) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.debug_stream());
+    heap()->print_on(&ls);
   }
 }
 

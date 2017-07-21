@@ -730,7 +730,8 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
     Log(gc, remset) log;
     log.trace("%s", header);
     ResourceMark rm;
-    _prev_period_summary.print_on(log.trace_stream());
+    LogStream ls(log.trace());
+    _prev_period_summary.print_on(&ls);
 
     _prev_period_summary.set(&current);
   }
@@ -742,7 +743,8 @@ void G1RemSet::print_summary_info() {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current(this);
     ResourceMark rm;
-    current.print_on(log.trace_stream());
+    LogStream ls(log.trace());
+    current.print_on(&ls);
   }
 }
 

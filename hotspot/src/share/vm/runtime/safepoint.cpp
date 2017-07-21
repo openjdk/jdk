@@ -35,6 +35,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -226,9 +227,11 @@ void SafepointSynchronize::begin() {
             //   steps = MIN(steps, 2000-100)
             //   if (iterations != 0) steps -= NNN
           }
-          if (log_is_enabled(Trace, safepoint)) {
+          LogTarget(Trace, safepoint) lt;
+          if (lt.is_enabled()) {
             ResourceMark rm;
-            cur_state->print_on(Log(safepoint)::trace_stream());
+            LogStream ls(lt);
+            cur_state->print_on(&ls);
           }
         }
       }

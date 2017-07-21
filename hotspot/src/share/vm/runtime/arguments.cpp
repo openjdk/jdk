@@ -4265,7 +4265,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
 
     LogTarget(Error, logging) target;
-    LogStreamCHeap errstream(target);
+    LogStream errstream(target);
     return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
   } else if (PrintGC || PrintGCDetails) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));

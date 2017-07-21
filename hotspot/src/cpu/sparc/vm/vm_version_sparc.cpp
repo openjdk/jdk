@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvm.h"
 #include "runtime/java.hpp"
@@ -426,7 +427,8 @@ void VM_Version::initialize() {
 
   if (log_is_enabled(Info, os, cpu)) {
     ResourceMark rm;
-    outputStream* log = Log(os, cpu)::info_stream();
+    LogStream ls(Log(os, cpu)::info());
+    outputStream* log = &ls;
     log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
     log->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
     log->print("Allocation");
