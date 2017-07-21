@@ -26,6 +26,8 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/align.hpp"
@@ -212,12 +214,9 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 
   if ((actual_word_size == 0 && result == NULL) || detailed_info) {
     ResourceMark rm;
-    outputStream* out;
-    if (detailed_info) {
-      out = log.trace_stream();
-    } else {
-      out = log.debug_stream();
-    }
+    LogStream ls_trace(log.trace());
+    LogStream ls_debug(log.debug());
+    outputStream* out = detailed_info ? &ls_trace : &ls_debug;
 
     out->print("%s: %u ", _name, _count);
 

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -1264,10 +1265,10 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
   ResourceMark rm;
-  outputStream* out = Log(monitormismatch)::info_stream();
-  out->print("Monitor mismatch in method ");
-  method()->print_short_name(out);
-  out->print_cr(": %s", msg);
+  LogStream ls(Log(monitormismatch)::info());
+  ls.print("Monitor mismatch in method ");
+  method()->print_short_name(&ls);
+  ls.print_cr(": %s", msg);
 }
 
 void GenerateOopMap::print_states(outputStream *os,

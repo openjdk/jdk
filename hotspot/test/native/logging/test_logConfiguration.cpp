@@ -363,7 +363,8 @@ TEST_VM_F(LogConfigurationTest, subscribe) {
 
   LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
 
-  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, log.error_stream());
+  LogStream ls(log.error());
+  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, &ls);
   ASSERT_EQ(1, Test_logconfiguration_subscribe_triggered);
 
   LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));

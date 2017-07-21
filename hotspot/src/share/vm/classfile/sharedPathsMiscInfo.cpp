@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -73,9 +74,7 @@ bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
   return false;
 }
 
-void SharedPathsMiscInfo::print_path(int type, const char* path) {
-  ResourceMark rm;
-  outputStream* out = Log(class, path)::info_stream();
+void SharedPathsMiscInfo::print_path(outputStream* out, int type, const char* path) {
   switch (type) {
   case BOOT:
     out->print("Expecting BOOT path=%s", path);
@@ -106,8 +105,13 @@ bool SharedPathsMiscInfo::check() {
     if (!read_jint(&type)) {
       return fail("Corrupted archive file header");
     }
-    log_info(class, path)("type=%s ", type_name(type));
-    print_path(type, path);
+    LogTarget(Info, class, path) lt;
+    if (lt.is_enabled()) {
+      lt.print("type=%s ", type_name(type));
+      LogStream ls(lt);
+      print_path(&ls, type, path);
+      ls.cr();
+    }
     if (!check(type, path)) {
       if (!PrintSharedArchiveAndExit) {
         return false;

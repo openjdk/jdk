@@ -57,6 +57,7 @@
 #include "code/codeCache.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -476,16 +477,17 @@ void ClassLoaderData::unload() {
   // Tell serviceability tools these classes are unloading
   classes_do(InstanceKlass::notify_unload_class);
 
-  if (log_is_enabled(Debug, class, loader, data)) {
+  LogTarget(Debug, class, loader, data) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* log = Log(class, loader, data)::debug_stream();
-    log->print(": unload loader data " INTPTR_FORMAT, p2i(this));
-    log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
+    LogStream ls(lt);
+    ls.print(": unload loader data " INTPTR_FORMAT, p2i(this));
+    ls.print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
                loader_name());
     if (is_anonymous()) {
-      log->print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
+      ls.print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
     }
-    log->cr();
+    ls.cr();
   }
 
   // In some rare cases items added to this list will not be freed elsewhere.
@@ -803,9 +805,11 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
     cld->set_next(next);
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
     if (exchanged == next) {
-      if (log_is_enabled(Debug, class, loader, data)) {
+      LogTarget(Debug, class, loader, data) lt;
+      if (lt.is_enabled()) {
        PauseNoSafepointVerifier pnsv(&no_safepoints); // Need safe points for JavaCalls::call_virtual
-       log_creation(loader, cld, CHECK_NULL);
+       LogStream ls(lt);
+       print_creation(&ls, loader, cld, CHECK_NULL);
       }
       return cld;
     }
@@ -813,7 +817,7 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
   } while (true);
 }
 
-void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRAPS) {
+void ClassLoaderDataGraph::print_creation(outputStream* out, Handle loader, ClassLoaderData* cld, TRAPS) {
   Handle string;
   if (loader.not_null()) {
     // Include the result of loader.toString() in the output. This allows
@@ -831,16 +835,15 @@ void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRA
   }
 
   ResourceMark rm;
-  outputStream* log = Log(class, loader, data)::debug_stream();
-  log->print("create class loader data " INTPTR_FORMAT, p2i(cld));
-  log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
+  out->print("create class loader data " INTPTR_FORMAT, p2i(cld));
+  out->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
              cld->loader_name());
 
   if (string.not_null()) {
-    log->print(": ");
-    java_lang_String::print(string(), log);
+    out->print(": ");
+    java_lang_String::print(string(), out);
   }
-  log->cr();
+  out->cr();
 }
 
 
@@ -981,12 +984,12 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   while (curr != _saved_head) {
     if (!curr->claimed()) {
       array->push(curr);
-
-      if (log_is_enabled(Debug, class, loader, data)) {
-        outputStream* log = Log(class, loader, data)::debug_stream();
-        log->print("found new CLD: ");
-        curr->print_value_on(log);
-        log->cr();
+      LogTarget(Debug, class, loader, data) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print("found new CLD: ");
+        curr->print_value_on(&ls);
+        ls.cr();
       }
     }
 

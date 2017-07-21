@@ -32,7 +32,8 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -2194,8 +2195,8 @@ class VerifyAllBlksClosure: public BlkClosure {
                 " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
         p2i(addr),       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
         p2i(_last_addr), _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
-      ResourceMark rm;
-      _sp->print_on(log.error_stream());
+      LogStream ls(log.error());
+      _sp->print_on(&ls);
       guarantee(false, "Verification failed.");
     }
     _last_addr = addr;
@@ -2369,7 +2370,8 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   AdaptiveFreeList<FreeChunk> total;
   log.print("end sweep# " SIZE_FORMAT, sweep_count);
   ResourceMark rm;
-  outputStream* out = log.stream();
+  LogStream ls(log);
+  outputStream* out = &ls;
   AdaptiveFreeList<FreeChunk>::print_labels_on(out, "size");
   size_t total_free = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {

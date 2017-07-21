@@ -37,6 +37,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "prims/jvm.h"
@@ -436,13 +437,14 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
 
   log_info(module, load)("%s location: %s", module_name,
                          module_location != NULL ? module_location : "NULL");
-  if (log_is_enabled(Debug, module)) {
-    outputStream* logst = Log(module)::debug_stream();
-    logst->print("define_module(): creation of module: %s, version: %s, location: %s, ",
+  LogTarget(Debug, module) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("define_module(): creation of module: %s, version: %s, location: %s, ",
                  module_name, module_version != NULL ? module_version : "NULL",
                  module_location != NULL ? module_location : "NULL");
-    loader_data->print_value_on(logst);
-    logst->print_cr(", package #: %d", pkg_list->length());
+    loader_data->print_value_on(&ls);
+    ls.print_cr(", package #: %d", pkg_list->length());
     for (int y = 0; y < pkg_list->length(); y++) {
       log_trace(module)("define_module(): creation of package %s for module %s",
                         (pkg_list->at(y))->as_C_string(), module_name);
@@ -623,21 +625,22 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   assert(module != NULL, "java.lang.Class module field not set");
   assert(java_lang_Module::is_instance(module), "module is not an instance of type java.lang.Module");
 
-  if (log_is_enabled(Debug, module)) {
+  LogTarget(Debug,module) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm(THREAD);
-    outputStream* logst = Log(module)::debug_stream();
+    LogStream ls(lt);
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_Module::name(module);
     if (module_name != NULL) {
-      logst->print("get_module(): module ");
+      ls.print("get_module(): module ");
       java_lang_String::print(module_name, tty);
     } else {
-      logst->print("get_module(): Unamed Module");
+      ls.print("get_module(): Unamed Module");
     }
     if (klass != NULL) {
-      logst->print_cr(" for class %s", klass->external_name());
+      ls.print_cr(" for class %s", klass->external_name());
     } else {
-      logst->print_cr(" for primitive class");
+      ls.print_cr(" for primitive class");
     }
   }
 

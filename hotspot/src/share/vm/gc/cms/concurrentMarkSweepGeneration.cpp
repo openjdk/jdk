@@ -55,6 +55,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/padded.hpp"
@@ -695,8 +696,8 @@ bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(size_t max_promoti
 void ConcurrentMarkSweepGeneration::promotion_failure_occurred() {
   Log(gc, promotion) log;
   if (log.is_trace()) {
-    ResourceMark rm;
-    cmsSpace()->dump_at_safepoint_with_locks(collector(), log.trace_stream());
+    LogStream ls(log.trace());
+    cmsSpace()->dump_at_safepoint_with_locks(collector(), &ls);
   }
 }
 
@@ -2247,7 +2248,8 @@ class VerifyMarkedClosure: public BitMapClosure {
     if (!_marks->isMarked(addr)) {
       Log(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.error_stream());
+      LogStream ls(log.error());
+      oop(addr)->print_on(&ls);
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       _failed = true;
     }
@@ -2372,7 +2374,8 @@ void CMSCollector::verify_after_remark_work_1() {
     Log(gc, verify) log;
     log.error("Failed marking verification after remark");
     ResourceMark rm;
-    gch->print_on(log.error_stream());
+    LogStream ls(log.error());
+    gch->print_on(&ls);
     fatal("CMS: failed marking verification after remark");
   }
 }
@@ -5873,7 +5876,8 @@ void MarkRefsIntoVerifyClosure::do_oop(oop obj) {
     if (!_cms_bm->isMarked(addr)) {
       Log(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.error_stream());
+      LogStream ls(log.error());
+      oop(addr)->print_on(&ls);
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       fatal("... aborting");
     }
@@ -6652,7 +6656,8 @@ void PushAndMarkVerifyClosure::do_oop(oop obj) {
     if (!_cms_bm->isMarked(addr)) {
       Log(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.error_stream());
+      LogStream ls(log.error());
+      oop(addr)->print_on(&ls);
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       fatal("... aborting");
     }
@@ -7059,7 +7064,8 @@ SweepClosure::~SweepClosure() {
     Log(gc, sweep) log;
     log.error("inFreeRange() should have been reset; dumping state of SweepClosure");
     ResourceMark rm;
-    print_on(log.error_stream());
+    LogStream ls(log.error());
+    print_on(&ls);
     ShouldNotReachHere();
   }
 

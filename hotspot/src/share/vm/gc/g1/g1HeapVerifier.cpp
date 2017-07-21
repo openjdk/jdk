@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
@@ -36,6 +35,8 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -66,7 +67,8 @@ public:
           log.error("  Mark word: " PTR_FORMAT, p2i(obj->mark()));
         }
         ResourceMark rm;
-        obj->print_on(log.error_stream());
+        LogStream ls(log.error());
+        obj->print_on(&ls);
         _failures = true;
       }
     }
@@ -408,7 +410,8 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // print_extended_on() instead of print_on().
     Log(gc, verify) log;
     ResourceMark rm;
-    _g1h->print_extended_on(log.error_stream());
+    LogStream ls(log.error());
+    _g1h->print_extended_on(&ls);
   }
   guarantee(!failures, "there should not have been any failures");
 }

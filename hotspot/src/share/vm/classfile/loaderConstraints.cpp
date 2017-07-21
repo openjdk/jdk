@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -88,6 +89,7 @@ LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
 
 void LoaderConstraintTable::purge_loader_constraints() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  LogTarget(Info, class, loader, constraints) lt;
   // Remove unloaded entries from constraint table
   for (int index = 0; index < table_size(); index++) {
     LoaderConstraintEntry** p = bucket_addr(index);
@@ -98,14 +100,13 @@ void LoaderConstraintTable::purge_loader_constraints() {
       if (klass != NULL &&
           klass->class_loader_data()->is_unloading()) {
         probe->set_klass(NULL);
-        if (log_is_enabled(Info, class, loader, constraints)) {
+        if (lt.is_enabled()) {
           ResourceMark rm;
-          outputStream* out = Log(class, loader, constraints)::info_stream();
-          out->print_cr("purging class object from constraint for name %s,"
+          lt.print("purging class object from constraint for name %s,"
                      " loader list:",
                      probe->name()->as_C_string());
           for (int i = 0; i < probe->num_loaders(); i++) {
-            out->print_cr("    [%d]: %s", i,
+            lt.print("    [%d]: %s", i,
                           probe->loader_data(i)->loader_name());
           }
         }
@@ -114,10 +115,9 @@ void LoaderConstraintTable::purge_loader_constraints() {
       int n = 0;
       while (n < probe->num_loaders()) {
         if (probe->loader_data(n)->is_unloading()) {
-            if (log_is_enabled(Info, class, loader, constraints)) {
+            if (lt.is_enabled()) {
               ResourceMark rm;
-              outputStream* out = Log(class, loader, constraints)::info_stream();
-              out->print_cr("purging loader %s from constraint for name %s",
+              lt.print("purging loader %s from constraint for name %s",
                             probe->loader_data(n)->loader_name(),
                             probe->name()->as_C_string()
                             );
@@ -129,12 +129,11 @@ void LoaderConstraintTable::purge_loader_constraints() {
           probe->set_loader_data(n, probe->loader_data(num));
           probe->set_loader_data(num, NULL);
 
-            if (log_is_enabled(Info, class, loader, constraints)) {
+            if (lt.is_enabled()) {
               ResourceMark rm;
-              outputStream* out = Log(class, loader, constraints)::info_stream();
-              out->print_cr("new loader list:");
+              lt.print("new loader list:");
               for (int i = 0; i < probe->num_loaders(); i++) {
-                out->print_cr("    [%d]: %s", i,
+                lt.print("    [%d]: %s", i,
                               probe->loader_data(i)->loader_name());
               }
             }
@@ -146,10 +145,9 @@ void LoaderConstraintTable::purge_loader_constraints() {
       }
       // Check whether entry should be purged
       if (probe->num_loaders() < 2) {
-            if (log_is_enabled(Info, class, loader, constraints)) {
+            if (lt.is_enabled()) {
               ResourceMark rm;
-              outputStream* out = Log(class, loader, constraints)::info_stream();
-              out->print_cr("purging complete constraint for name %s",
+              lt.print("purging complete constraint for name %s",
                          probe->name()->as_C_string());
             }
 
@@ -174,11 +172,11 @@ void LoaderConstraintTable::purge_loader_constraints() {
 
 void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
                         Handle class_loader1, Handle class_loader2) {
-  if (log_is_enabled(Info, class, loader, constraints)) {
+  LogTarget(Info, class, loader, constraints) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* out = Log(class, loader, constraints)::info_stream();
-    out->print_cr("Failed to add constraint for name: %s, loader[0]: %s,"
-                  " loader[1]: %s, Reason: %s",
+    lt.print("Failed to add constraint for name: %s, loader[0]: %s,"
+                " loader[1]: %s, Reason: %s",
                   class_name->as_C_string(),
                   SystemDictionary::loader_name(class_loader1()),
                   SystemDictionary::loader_name(class_loader2()),
@@ -189,6 +187,7 @@ void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
 bool LoaderConstraintTable::add_entry(Symbol* class_name,
                                       InstanceKlass* klass1, Handle class_loader1,
                                       InstanceKlass* klass2, Handle class_loader2) {
+  LogTarget(Info, class, loader, constraints) lt;
   if (klass1 != NULL && klass2 != NULL) {
     if (klass1 == klass2) {
       // Same type already loaded in both places.  There is no need for any constraint.
@@ -244,10 +243,9 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     p->set_klass(klass);
     p->set_next(bucket(index));
     set_entry(index, p);
-    if (log_is_enabled(Info, class, loader, constraints)) {
+    if (lt.is_enabled()) {
       ResourceMark rm;
-      outputStream* out = Log(class, loader, constraints)::info_stream();
-      out->print_cr("adding new constraint for name: %s, loader[0]: %s,"
+      lt.print("adding new constraint for name: %s, loader[0]: %s,"
                     " loader[1]: %s",
                     class_name->as_C_string(),
                     SystemDictionary::loader_name(class_loader1()),
@@ -258,10 +256,9 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     /* constraint already imposed */
     if ((*pp1)->klass() == NULL) {
       (*pp1)->set_klass(klass);
-      if (log_is_enabled(Info, class, loader, constraints)) {
+      if (lt.is_enabled()) {
         ResourceMark rm;
-        outputStream* out = Log(class, loader, constraints)::info_stream();
-        out->print_cr("setting class object in existing constraint for"
+        lt.print("setting class object in existing constraint for"
                       " name: %s and loader %s",
                       class_name->as_C_string(),
                       SystemDictionary::loader_name(class_loader1())
@@ -287,12 +284,12 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
 bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
                                             Handle loader,
                                             Symbol* name) {
+  LogTarget(Info, class, loader, constraints) lt;
   LoaderConstraintEntry* p = *(find_loader_constraint(name, loader));
   if (p && p->klass() != NULL && p->klass() != k) {
-    if (log_is_enabled(Info, class, loader, constraints)) {
+    if (lt.is_enabled()) {
       ResourceMark rm;
-      outputStream* out = Log(class, loader, constraints)::info_stream();
-      out->print_cr("constraint check failed for name %s, loader %s: "
+      lt.print("constraint check failed for name %s, loader %s: "
                  "the presented class object differs from that stored",
                  name->as_C_string(),
                  SystemDictionary::loader_name(loader()));
@@ -301,10 +298,9 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
   } else {
     if (p && p->klass() == NULL) {
       p->set_klass(k);
-      if (log_is_enabled(Info, class, loader, constraints)) {
+      if (lt.is_enabled()) {
         ResourceMark rm;
-        outputStream* out = Log(class, loader, constraints)::info_stream();
-        out->print_cr("updating constraint for name %s, loader %s, "
+        lt.print("updating constraint for name %s, loader %s, "
                    "by setting class object",
                    name->as_C_string(),
                    SystemDictionary::loader_name(loader()));
@@ -352,10 +348,10 @@ void LoaderConstraintTable::extend_loader_constraint(LoaderConstraintEntry* p,
   int num = p->num_loaders();
   p->set_loader(num, loader());
   p->set_num_loaders(num + 1);
-  if (log_is_enabled(Info, class, loader, constraints)) {
+  LogTarget(Info, class, loader, constraints) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* out = Log(class, loader, constraints)::info_stream();
-    out->print_cr("extending constraint for name %s by adding loader[%d]: %s %s",
+    lt.print("extending constraint for name %s by adding loader[%d]: %s %s",
                p->name()->as_C_string(),
                num,
                SystemDictionary::loader_name(loader()),
@@ -392,19 +388,19 @@ void LoaderConstraintTable::merge_loader_constraints(
     p1->set_num_loaders(num + 1);
   }
 
-  if (log_is_enabled(Info, class, loader, constraints)) {
+  LogTarget(Info, class, loader, constraints) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* out = Log(class, loader, constraints)::info_stream();
-    out->print_cr("merged constraints for name %s, new loader list:",
+    lt.print("merged constraints for name %s, new loader list:",
                   p1->name()->as_C_string()
                   );
 
     for (int i = 0; i < p1->num_loaders(); i++) {
-      out->print_cr("    [%d]: %s", i,
+      lt.print("    [%d]: %s", i,
                     p1->loader_data(i)->loader_name());
     }
     if (p1->klass() == NULL) {
-      out->print_cr("... and setting class object");
+      lt.print("... and setting class object");
     }
   }
 

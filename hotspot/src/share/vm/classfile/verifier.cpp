@@ -34,6 +34,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -191,11 +192,15 @@ bool Verifier::verify(InstanceKlass* klass, Verifier::Mode mode, bool should_ver
         klass, message_buffer, message_buffer_len, THREAD);
   }
 
-  if (log_is_enabled(Info, class, init)){
-    log_end_verification(Log(class, init)::info_stream(), klassName, exception_name, THREAD);
+  LogTarget(Info, class, init) lt1;
+  if (lt1.is_enabled()) {
+    LogStream ls(lt1);
+    log_end_verification(&ls, klassName, exception_name, THREAD);
   }
-  if (log_is_enabled(Info, verification)){
-    log_end_verification(Log(verification)::info_stream(), klassName, exception_name, THREAD);
+  LogTarget(Info, verification) lt2;
+  if (lt2.is_enabled()) {
+    LogStream ls(lt2);
+    log_end_verification(&ls, klassName, exception_name, THREAD);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -662,9 +667,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
                                code_data, code_length, CHECK_VERIFY(this));
 
-  if (log_is_enabled(Info, verification)) {
+  LogTarget(Info, verification) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm(THREAD);
-    stackmap_table.print_on(Log(verification)::info_stream());
+    LogStream ls(lt);
+    stackmap_table.print_on(&ls);
   }
 
   RawBytecodeStream bcs(m);
@@ -704,10 +711,12 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       VerificationType type, type2;
       VerificationType atype;
 
-      if (log_is_enabled(Info, verification)) {
+      LogTarget(Info, verification) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        current_frame.print_on(Log(verification)::info_stream());
-        log_info(verification)("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
+        LogStream ls(lt);
+        current_frame.print_on(&ls);
+        lt.print("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
       }
 
       // Make sure wide instruction is in correct format

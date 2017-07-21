@@ -46,6 +46,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -432,15 +433,16 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
 
   // Now we have to call back to java to check if the initating class has access
   JavaValue result(T_VOID);
-  if (log_is_enabled(Debug, protectiondomain)) {
+  LogTarget(Debug, protectiondomain) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
     // Print out trace information
-    outputStream* log = Log(protectiondomain)::debug_stream();
-    log->print_cr("Checking package access");
-    log->print("class loader: "); class_loader()->print_value_on(log);
-    log->print(" protection domain: "); protection_domain()->print_value_on(log);
-    log->print(" loading: "); klass->print_value_on(log);
-    log->cr();
+    LogStream ls(lt);
+    ls.print_cr("Checking package access");
+    ls.print("class loader: "); class_loader()->print_value_on(&ls);
+    ls.print(" protection domain: "); protection_domain()->print_value_on(&ls);
+    ls.print(" loading: "); klass->print_value_on(&ls);
+    ls.cr();
   }
 
   InstanceKlass* system_loader = SystemDictionary::ClassLoader_klass();

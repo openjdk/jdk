@@ -40,6 +40,8 @@
 #include "gc/shared/generation.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -609,25 +611,25 @@ void ModuleClassPathList::add_to_list(ClassPathEntry* new_entry) {
 }
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
-  if (log_is_enabled(Info, class, path)) {
-    ResourceMark rm;
-    outputStream* out = Log(class, path)::info_stream();
+  LogTarget(Info, class, path) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
     if (msg) {
-      out->print("%s", msg);
+      ls.print("%s", msg);
     }
     if (name) {
       if (strlen(name) < 256) {
-        out->print("%s", name);
+        ls.print("%s", name);
       } else {
         // For very long paths, we need to print each character separately,
         // as print_cr() has a length limit
         while (name[0] != '\0') {
-          out->print("%c", name[0]);
+          ls.print("%c", name[0]);
           name++;
         }
       }
     }
-    out->cr();
+    ls.cr();
   }
 }
 

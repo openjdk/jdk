@@ -30,6 +30,7 @@
 #include "gc/g1/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
@@ -233,11 +234,11 @@ size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
 
 template <class T>
 void G1GCPhaseTimes::details(T* phase, const char* indent) const {
-  Log(gc, phases, task) log;
-  if (log.is_level(LogLevel::Trace)) {
-    outputStream* trace_out = log.trace_stream();
-    trace_out->print("%s", indent);
-    phase->print_details_on(trace_out);
+  LogTarget(Trace, gc, phases, task) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("%s", indent);
+    phase->print_details_on(&ls);
   }
 }
 
@@ -257,18 +258,19 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
 }
 
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) const {
-  Log(gc, phases) log;
-  if (log.is_level(LogLevel::Debug)) {
+  LogTarget(Debug, gc, phases) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    log_phase(phase, 2, log.debug_stream(), true);
+    LogStream ls(lt);
+    log_phase(phase, 2, &ls, true);
   }
 }
 
 void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) const {
-  Log(gc, phases) log;
-  if (log.is_level(LogLevel::Trace)) {
-    ResourceMark rm;
-    log_phase(phase, 3, log.trace_stream(), print_sum);
+  LogTarget(Trace, gc, phases) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    log_phase(phase, 3, &ls, print_sum);
   }
 }
 

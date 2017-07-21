@@ -28,6 +28,8 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/atomic.hpp"
@@ -504,7 +506,8 @@ void NMethodSweeper::sweep_code_cache() {
 
   Log(codecache, sweep) log;
   if (log.is_debug()) {
-    CodeCache::print_summary(log.debug_stream(), false);
+    LogStream ls(log.debug());
+    CodeCache::print_summary(&ls, false);
   }
   log_sweep("finished");
 

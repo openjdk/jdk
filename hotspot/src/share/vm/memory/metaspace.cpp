@@ -27,6 +27,7 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/filemap.hpp"
@@ -1008,11 +1009,13 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
       "The committed memory doesn't match the expanded memory.");
 
   if (!is_available(chunk_word_size)) {
-    Log(gc, metaspace, freelist) log;
-    log.debug("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
-    // Dump some information about the virtual space that is nearly full
-    ResourceMark rm;
-    print_on(log.debug_stream());
+    LogTarget(Debug, gc, metaspace, freelist) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
+      // Dump some information about the virtual space that is nearly full
+      print_on(&ls);
+    }
     return NULL;
   }
 
@@ -1347,11 +1350,12 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
 #ifdef ASSERT
   new_entry->mangle();
 #endif
-  if (log_is_enabled(Trace, gc, metaspace)) {
-    Log(gc, metaspace) log;
+  LogTarget(Trace, gc, metaspace) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
     VirtualSpaceNode* vsl = current_virtual_space();
     ResourceMark rm;
-    vsl->print_on(log.trace_stream());
+    vsl->print_on(&ls);
   }
 }
 
@@ -1951,8 +1955,8 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert((word_size <= chunk->word_size()) ||
          (list_index(chunk->word_size()) == HumongousIndex),
          "Non-humongous variable sized chunk");
-  Log(gc, metaspace, freelist) log;
-  if (log.is_debug()) {
+  LogTarget(Debug, gc, metaspace, freelist) lt;
+  if (lt.is_enabled()) {
     size_t list_count;
     if (list_index(word_size) < HumongousIndex) {
       ChunkList* list = find_free_chunks_list(word_size);
@@ -1960,10 +1964,11 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
     } else {
       list_count = humongous_dictionary()->total_count();
     }
-    log.debug("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk " PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
-               p2i(this), p2i(chunk), chunk->word_size(), list_count);
+    LogStream ls(lt);
+    ls.print("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk " PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
+             p2i(this), p2i(chunk), chunk->word_size(), list_count);
     ResourceMark rm;
-    locked_print_free_chunks(log.debug_stream());
+    locked_print_free_chunks(&ls);
   }
 
   return chunk;
@@ -2390,10 +2395,11 @@ SpaceManager::~SpaceManager() {
   if (log.is_trace()) {
     log.trace("~SpaceManager(): " PTR_FORMAT, p2i(this));
     ResourceMark rm;
-    locked_print_chunks_in_use_on(log.trace_stream());
+    LogStream ls(log.trace());
+    locked_print_chunks_in_use_on(&ls);
     if (block_freelists() != NULL) {
-    block_freelists()->print_on(log.trace_stream());
-  }
+      block_freelists()->print_on(&ls);
+    }
   }
 
   // Add all the chunks in use by this space manager
@@ -2469,9 +2475,9 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   if (log.is_trace()) {
     log.trace("SpaceManager::add_chunk: " SIZE_FORMAT ") ", sum_count_in_chunks_in_use());
     ResourceMark rm;
-    outputStream* out = log.trace_stream();
-    new_chunk->print_on(out);
-    chunk_manager()->locked_print_free_chunks(out);
+    LogStream ls(log.trace());
+    new_chunk->print_on(&ls);
+    chunk_manager()->locked_print_free_chunks(&ls);
   }
 }
 
@@ -3201,10 +3207,11 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
   initialize_class_space(metaspace_rs);
 
-  if (log_is_enabled(Trace, gc, metaspace)) {
-    Log(gc, metaspace) log;
+  LogTarget(Trace, gc, metaspace) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    print_compressed_class_space(log.trace_stream(), requested_addr);
+    LogStream ls(lt);
+    print_compressed_class_space(&ls, requested_addr);
   }
 }
 
@@ -3658,11 +3665,11 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
              is_class_space_allocation(mdtype) ? "class" : "data", word_size);
     ResourceMark rm;
-    outputStream* out = log.info_stream();
+    LogStream ls(log.info());
     if (loader_data->metaspace_or_null() != NULL) {
-      loader_data->dump(out);
+      loader_data->dump(&ls);
     }
-    MetaspaceAux::dump(out);
+    MetaspaceAux::dump(&ls);
   }
 
   bool out_of_compressed_class_space = false;

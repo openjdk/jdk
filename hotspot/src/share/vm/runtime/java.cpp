@@ -37,6 +37,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -481,9 +482,11 @@ void before_exit(JavaThread* thread) {
   Log(gc, heap, exit) log;
   if (log.is_info()) {
     ResourceMark rm;
-    Universe::print_on(log.info_stream());
+    LogStream ls_info(log.info());
+    Universe::print_on(&ls_info);
     if (log.is_trace()) {
-      ClassLoaderDataGraph::dump_on(log.trace_stream());
+      LogStream ls_trace(log.trace());
+      ClassLoaderDataGraph::dump_on(&ls_trace);
     }
   }
 

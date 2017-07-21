@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -53,11 +55,12 @@ void ProtectionDomainCacheTable::unlink(BoolObjectClosure* is_alive) {
       if (is_alive->do_object_b(entry->literal())) {
         p = entry->next_addr();
       } else {
-        if (log_is_enabled(Debug, protectiondomain)) {
-          outputStream* log = Log(protectiondomain)::debug_stream();
-          log->print("protection domain unlinked: ");
-          entry->literal()->print_value_on(log);
-          log->cr();
+        LogTarget(Debug, protectiondomain) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          ls.print("protection domain unlinked: ");
+          entry->literal()->print_value_on(&ls);
+          ls.cr();
         }
         *p = entry->next();
         free_entry(entry);

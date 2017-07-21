@@ -206,7 +206,8 @@ void PSParallelCompact::print_region_ranges() {
   }
   Log(gc, compaction) log;
   ResourceMark rm;
-  Universe::print_on(log.trace_stream());
+  LogStream ls(log.trace());
+  Universe::print_on(&ls);
   log.trace("space  bottom     top        end        new_top");
   log.trace("------ ---------- ---------- ---------- ----------");
 
@@ -2372,7 +2373,8 @@ void PSParallelCompact::write_block_fill_histogram()
 
   Log(gc, compaction) log;
   ResourceMark rm;
-  outputStream* out = log.trace_stream();
+  LogStream ls(log.trace());
+  outputStream* out = &ls;
 
   typedef ParallelCompactData::RegionData rd_t;
   ParallelCompactData& sd = summary_data();

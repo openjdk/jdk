@@ -33,6 +33,8 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
@@ -1969,7 +1971,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   Log(compilation, codecache) log;
   if (log.is_debug()) {
-    codecache_print(log.debug_stream(), /* detailed= */ false);
+    LogStream ls(log.debug());
+    codecache_print(&ls, /* detailed= */ false);
   }
   if (PrintCodeCacheOnCompilation) {
     codecache_print(/* detailed= */ false);

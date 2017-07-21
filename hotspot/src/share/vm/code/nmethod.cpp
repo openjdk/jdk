@@ -37,6 +37,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
@@ -1038,14 +1039,15 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   flush_dependencies(is_alive);
 
   // Break cycle between nmethod & method
-  if (log_is_enabled(Trace, class, unload)) {
-    outputStream* log = Log(class, unload)::trace_stream();
-    log->print_cr("making nmethod " INTPTR_FORMAT
+  LogTarget(Trace, class, unload) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("making nmethod " INTPTR_FORMAT
                   " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
                   p2i(this), p2i(_method), p2i(cause));
     if (!Universe::heap()->is_gc_active())
-      cause->klass()->print_on(log);
+      cause->klass()->print_on(&ls);
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
