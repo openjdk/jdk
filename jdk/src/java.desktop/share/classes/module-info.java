@@ -112,6 +112,8 @@ module java.desktop {
 
     opens javax.swing.plaf.basic to
         jdk.jconsole;
+    opens com.sun.java.swing.plaf.windows to
+        jdk.jconsole;
 
     uses java.awt.im.spi.InputMethodDescriptor;
     uses javax.accessibility.AccessibilityProvider;

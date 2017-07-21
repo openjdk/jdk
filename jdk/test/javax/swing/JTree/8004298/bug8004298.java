@@ -25,7 +25,6 @@
  * @test
  * @key headful
  * @bug 8004298
- * @requires (os.family == "windows")
  * @summary NPE in WindowsTreeUI.ensureRowsAreVisible
  * @author Alexander Scherbatiy
  * @library ../../regtesthelpers
