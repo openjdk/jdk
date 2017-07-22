@@ -718,43 +718,43 @@ public:
 // to mapped memory for large allocations. By default ArrayAllocatorMallocLimit
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
-template <class E, MEMFLAGS F>
+template <class E>
 class ArrayAllocator : public AllStatic {
  private:
   static bool should_use_malloc(size_t length);
 
-  static E* allocate_malloc(size_t length);
-  static E* allocate_mmap(size_t length);
+  static E* allocate_malloc(size_t length, MEMFLAGS flags);
+  static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
  public:
-  static E* allocate(size_t length);
-  static E* reallocate(E* old_addr, size_t old_length, size_t new_length);
+  static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 
 // Uses mmaped memory for all allocations. All allocations are initially
 // zero-filled. No pre-touching.
-template <class E, MEMFLAGS F>
+template <class E>
 class MmapArrayAllocator : public AllStatic {
  private:
   static size_t size_for(size_t length);
 
  public:
-  static E* allocate_or_null(size_t length);
-  static E* allocate(size_t length);
+  static E* allocate_or_null(size_t length, MEMFLAGS flags);
+  static E* allocate(size_t length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 
 // Uses malloc:ed memory for all allocations.
-template <class E, MEMFLAGS F>
+template <class E>
 class MallocArrayAllocator : public AllStatic {
  public:
   static size_t size_for(size_t length);
 
-  static E* allocate(size_t length);
+  static E* allocate(size_t length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 

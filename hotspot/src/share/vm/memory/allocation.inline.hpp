@@ -146,19 +146,19 @@ template <MEMFLAGS F> void CHeapObj<F>::operator delete [](void* p){
     FreeHeap(p);
 }
 
-template <class E, MEMFLAGS F>
-size_t MmapArrayAllocator<E, F>::size_for(size_t length) {
+template <class E>
+size_t MmapArrayAllocator<E>::size_for(size_t length) {
   size_t size = length * sizeof(E);
   int alignment = os::vm_allocation_granularity();
   return align_up(size, alignment);
 }
 
-template <class E, MEMFLAGS F>
-E* MmapArrayAllocator<E, F>::allocate_or_null(size_t length) {
+template <class E>
+E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
   int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, F);
+  char* addr = os::reserve_memory(size, NULL, alignment, flags);
   if (addr == NULL) {
     return NULL;
   }
@@ -171,12 +171,12 @@ E* MmapArrayAllocator<E, F>::allocate_or_null(size_t length) {
   }
 }
 
-template <class E, MEMFLAGS F>
-E* MmapArrayAllocator<E, F>::allocate(size_t length) {
+template <class E>
+E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
   size_t size = size_for(length);
   int alignment = os::vm_allocation_granularity();
 
-  char* addr = os::reserve_memory(size, NULL, alignment, F);
+  char* addr = os::reserve_memory(size, NULL, alignment, flags);
   if (addr == NULL) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
@@ -186,55 +186,55 @@ E* MmapArrayAllocator<E, F>::allocate(size_t length) {
   return (E*)addr;
 }
 
-template <class E, MEMFLAGS F>
-void MmapArrayAllocator<E, F>::free(E* addr, size_t length) {
+template <class E>
+void MmapArrayAllocator<E>::free(E* addr, size_t length) {
   bool result = os::release_memory((char*)addr, size_for(length));
   assert(result, "Failed to release memory");
 }
 
-template <class E, MEMFLAGS F>
-size_t MallocArrayAllocator<E, F>::size_for(size_t length) {
+template <class E>
+size_t MallocArrayAllocator<E>::size_for(size_t length) {
   return length * sizeof(E);
 }
 
-template <class E, MEMFLAGS F>
-E* MallocArrayAllocator<E, F>::allocate(size_t length) {
-  return (E*)AllocateHeap(size_for(length), F);
+template <class E>
+E* MallocArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
+  return (E*)AllocateHeap(size_for(length), flags);
 }
 
-template<class E, MEMFLAGS F>
-void MallocArrayAllocator<E, F>::free(E* addr, size_t /*length*/) {
+template<class E>
+void MallocArrayAllocator<E>::free(E* addr, size_t /*length*/) {
   FreeHeap(addr);
 }
 
-template <class E, MEMFLAGS F>
-bool ArrayAllocator<E, F>::should_use_malloc(size_t length) {
-  return MallocArrayAllocator<E, F>::size_for(length) < ArrayAllocatorMallocLimit;
+template <class E>
+bool ArrayAllocator<E>::should_use_malloc(size_t length) {
+  return MallocArrayAllocator<E>::size_for(length) < ArrayAllocatorMallocLimit;
 }
 
-template <class E, MEMFLAGS F>
-E* ArrayAllocator<E, F>::allocate_malloc(size_t length) {
-  return MallocArrayAllocator<E, F>::allocate(length);
+template <class E>
+E* ArrayAllocator<E>::allocate_malloc(size_t length, MEMFLAGS flags) {
+  return MallocArrayAllocator<E>::allocate(length, flags);
 }
 
-template <class E, MEMFLAGS F>
-E* ArrayAllocator<E, F>::allocate_mmap(size_t length) {
-  return MmapArrayAllocator<E, F>::allocate(length);
+template <class E>
+E* ArrayAllocator<E>::allocate_mmap(size_t length, MEMFLAGS flags) {
+  return MmapArrayAllocator<E>::allocate(length, flags);
 }
 
-template <class E, MEMFLAGS F>
-E* ArrayAllocator<E, F>::allocate(size_t length) {
+template <class E>
+E* ArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
   if (should_use_malloc(length)) {
-    return allocate_malloc(length);
+    return allocate_malloc(length, flags);
   }
 
-  return allocate_mmap(length);
+  return allocate_mmap(length, flags);
 }
 
-template <class E, MEMFLAGS F>
-E* ArrayAllocator<E, F>::reallocate(E* old_addr, size_t old_length, size_t new_length) {
+template <class E>
+E* ArrayAllocator<E>::reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags) {
   E* new_addr = (new_length > 0)
-      ? allocate(new_length)
+      ? allocate(new_length, flags)
       : NULL;
 
   if (new_addr != NULL && old_addr != NULL) {
@@ -248,18 +248,18 @@ E* ArrayAllocator<E, F>::reallocate(E* old_addr, size_t old_length, size_t new_l
   return new_addr;
 }
 
-template<class E, MEMFLAGS F>
-void ArrayAllocator<E, F>::free_malloc(E* addr, size_t length) {
-  MallocArrayAllocator<E, F>::free(addr, length);
+template<class E>
+void ArrayAllocator<E>::free_malloc(E* addr, size_t length) {
+  MallocArrayAllocator<E>::free(addr, length);
 }
 
-template<class E, MEMFLAGS F>
-void ArrayAllocator<E, F>::free_mmap(E* addr, size_t length) {
-  MmapArrayAllocator<E, F>::free(addr, length);
+template<class E>
+void ArrayAllocator<E>::free_mmap(E* addr, size_t length) {
+  MmapArrayAllocator<E>::free(addr, length);
 }
 
-template<class E, MEMFLAGS F>
-void ArrayAllocator<E, F>::free(E* addr, size_t length) {
+template<class E>
+void ArrayAllocator<E>::free(E* addr, size_t length) {
   if (addr != NULL) {
     if (should_use_malloc(length)) {
       free_malloc(addr, length);

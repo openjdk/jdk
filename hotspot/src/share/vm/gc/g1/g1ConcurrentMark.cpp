@@ -144,7 +144,7 @@ bool G1CMMarkStack::resize(size_t new_capacity) {
   assert(new_capacity <= _max_chunk_capacity,
          "Trying to resize stack to " SIZE_FORMAT " chunks when the maximum is " SIZE_FORMAT, new_capacity, _max_chunk_capacity);
 
-  TaskQueueEntryChunk* new_base = MmapArrayAllocator<TaskQueueEntryChunk, mtGC>::allocate_or_null(new_capacity);
+  TaskQueueEntryChunk* new_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(new_capacity, mtGC);
 
   if (new_base == NULL) {
     log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
@@ -152,7 +152,7 @@ bool G1CMMarkStack::resize(size_t new_capacity) {
   }
   // Release old mapping.
   if (_base != NULL) {
-    MmapArrayAllocator<TaskQueueEntryChunk, mtGC>::free(_base, _chunk_capacity);
+    MmapArrayAllocator<TaskQueueEntryChunk>::free(_base, _chunk_capacity);
   }
 
   _base = new_base;
@@ -205,7 +205,7 @@ void G1CMMarkStack::expand() {
 
 G1CMMarkStack::~G1CMMarkStack() {
   if (_base != NULL) {
-    MmapArrayAllocator<TaskQueueEntryChunk, mtGC>::free(_base, _chunk_capacity);
+    MmapArrayAllocator<TaskQueueEntryChunk>::free(_base, _chunk_capacity);
   }
 }
 

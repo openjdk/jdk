@@ -48,10 +48,10 @@ class ResourceBitMapAllocator : StackObj {
 class CHeapBitMapAllocator : StackObj {
  public:
   bm_word_t* allocate(size_t size_in_words) const {
-    return ArrayAllocator<bm_word_t, mtInternal>::allocate(size_in_words);
+    return ArrayAllocator<bm_word_t>::allocate(size_in_words, mtInternal);
   }
   void free(bm_word_t* map, idx_t size_in_words) const {
-    ArrayAllocator<bm_word_t, mtInternal>::free(map, size_in_words);
+    ArrayAllocator<bm_word_t>::free(map, size_in_words);
   }
 };
 
