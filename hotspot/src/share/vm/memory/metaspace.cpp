@@ -164,6 +164,18 @@ class ChunkManager : public CHeapObj<mtInternal> {
   }
   void verify_free_chunks_count();
 
+  struct ChunkManagerStatistics {
+    size_t num_by_type[NumberOfFreeLists];
+    size_t single_size_by_type[NumberOfFreeLists];
+    size_t total_size_by_type[NumberOfFreeLists];
+    size_t num_humongous_chunks;
+    size_t total_size_humongous_chunks;
+  };
+
+  void locked_get_statistics(ChunkManagerStatistics* stat) const;
+  void get_statistics(ChunkManagerStatistics* stat) const;
+  static void print_statistics(const ChunkManagerStatistics* stat, outputStream* out);
+
  public:
 
   ChunkManager(size_t specialized_size, size_t small_size, size_t medium_size)
@@ -181,7 +193,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   ChunkIndex list_index(size_t size);
 
   // Map a given index to the chunk size.
-  size_t size_by_index(ChunkIndex index);
+  size_t size_by_index(ChunkIndex index) const;
 
   // Take a chunk from the ChunkManager. The chunk is expected to be in
   // the chunk manager (the freelist if non-humongous, the dictionary if
@@ -266,6 +278,10 @@ class ChunkManager : public CHeapObj<mtInternal> {
   void locked_print_sum_free_chunks(outputStream* st);
 
   void print_on(outputStream* st) const;
+
+  // Prints composition for both non-class and (if available)
+  // class chunk manager.
+  static void print_all_chunkmanagers(outputStream* out);
 };
 
 class SmallBlocks : public CHeapObj<mtClass> {
@@ -1789,10 +1805,10 @@ ChunkIndex ChunkManager::list_index(size_t size) {
   return HumongousIndex;
 }
 
-size_t ChunkManager::size_by_index(ChunkIndex index) {
+size_t ChunkManager::size_by_index(ChunkIndex index) const {
   index_bounds_check(index);
   assert(index != HumongousIndex, "Do not call for humongous chunks.");
-  return free_chunks(index)->size();
+  return _free_chunks[index].size();
 }
 
 void ChunkManager::locked_verify_free_chunks_total() {
@@ -2045,7 +2061,61 @@ void ChunkManager::return_chunk_list(ChunkIndex index, Metachunk* chunks) {
 }
 
 void ChunkManager::print_on(outputStream* out) const {
-  const_cast<ChunkManager *>(this)->humongous_dictionary()->report_statistics(out);
+  _humongous_dictionary.report_statistics(out);
+}
+
+void ChunkManager::locked_get_statistics(ChunkManagerStatistics* stat) const {
+  assert_lock_strong(SpaceManager::expand_lock());
+  for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
+    stat->num_by_type[i] = num_free_chunks(i);
+    stat->single_size_by_type[i] = size_by_index(i);
+    stat->total_size_by_type[i] = size_free_chunks_in_bytes(i);
+  }
+  stat->num_humongous_chunks = num_free_chunks(HumongousIndex);
+  stat->total_size_humongous_chunks = size_free_chunks_in_bytes(HumongousIndex);
+}
+
+void ChunkManager::get_statistics(ChunkManagerStatistics* stat) const {
+  MutexLockerEx cl(SpaceManager::expand_lock(),
+                   Mutex::_no_safepoint_check_flag);
+  locked_get_statistics(stat);
+}
+
+void ChunkManager::print_statistics(const ChunkManagerStatistics* stat, outputStream* out) {
+  size_t total = 0;
+  for (ChunkIndex i = ZeroIndex; i < NumberOfFreeLists; i = next_chunk_index(i)) {
+    out->print_cr("  " SIZE_FORMAT " %s (" SIZE_FORMAT " bytes) chunks, total " SIZE_FORMAT " bytes",
+                 stat->num_by_type[i], chunk_size_name(i),
+                 stat->single_size_by_type[i],
+                 stat->total_size_by_type[i]);
+    total += stat->total_size_by_type[i];
+  }
+  out->print_cr("  " SIZE_FORMAT " humongous chunks, total " SIZE_FORMAT " bytes",
+               stat->num_humongous_chunks, stat->total_size_humongous_chunks);
+  total += stat->total_size_humongous_chunks;
+  out->print_cr("  total size: " SIZE_FORMAT ".", total);
+}
+
+void ChunkManager::print_all_chunkmanagers(outputStream* out) {
+  // Note: keep lock protection only to retrieving statistics; keep printing
+  // out of lock protection
+  ChunkManagerStatistics stat;
+  out->print_cr("Chunkmanager (non-class):");
+  const ChunkManager* const non_class_cm = Metaspace::chunk_manager_metadata();
+  if (non_class_cm != NULL) {
+    non_class_cm->get_statistics(&stat);
+    ChunkManager::print_statistics(&stat, out);
+  } else {
+    out->print_cr("unavailable.");
+  }
+  out->print_cr("Chunkmanager (class):");
+  const ChunkManager* const class_cm = Metaspace::chunk_manager_class();
+  if (class_cm != NULL) {
+    class_cm->get_statistics(&stat);
+    ChunkManager::print_statistics(&stat, out);
+  } else {
+    out->print_cr("unavailable.");
+  }
 }
 
 // SpaceManager methods
@@ -3670,6 +3740,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
       loader_data->dump(&ls);
     }
     MetaspaceAux::dump(&ls);
+    ChunkManager::print_all_chunkmanagers(&ls);
   }
 
   bool out_of_compressed_class_space = false;
