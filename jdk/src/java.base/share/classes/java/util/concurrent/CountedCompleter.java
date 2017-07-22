@@ -57,8 +57,7 @@ import java.lang.invoke.VarHandle;
  * decremented; otherwise, the completion action is performed, and if
  * this completer itself has a completer, the process is continued
  * with its completer.  As is the case with related synchronization
- * components such as {@link java.util.concurrent.Phaser Phaser} and
- * {@link java.util.concurrent.Semaphore Semaphore}, these methods
+ * components such as {@link Phaser} and {@link Semaphore}, these methods
  * affect only internal counts; they do not establish any further
  * internal bookkeeping. In particular, the identities of pending
  * tasks are not maintained. As illustrated below, you can create
