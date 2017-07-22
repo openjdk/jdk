@@ -514,15 +514,10 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public E remove(int index) {
         Objects.checkIndex(index, size);
+        final Object[] es = elementData;
 
-        modCount++;
-        E oldValue = elementData(index);
-
-        int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
-        elementData[--size] = null; // clear to let GC do its work
+        @SuppressWarnings("unchecked") E oldValue = (E) es[index];
+        fastRemove(es, index);
 
         return oldValue;
     }
@@ -541,33 +536,35 @@ public class ArrayList<E> extends AbstractList<E>
      * @return {@code true} if this list contained the specified element
      */
     public boolean remove(Object o) {
-        if (o == null) {
-            for (int index = 0; index < size; index++)
-                if (elementData[index] == null) {
-                    fastRemove(index);
-                    return true;
-                }
-        } else {
-            for (int index = 0; index < size; index++)
-                if (o.equals(elementData[index])) {
-                    fastRemove(index);
-                    return true;
-                }
+        final Object[] es = elementData;
+        final int size = this.size;
+        int i = 0;
+        found: {
+            if (o == null) {
+                for (; i < size; i++)
+                    if (es[i] == null)
+                        break found;
+            } else {
+                for (; i < size; i++)
+                    if (o.equals(es[i]))
+                        break found;
+            }
+            return false;
         }
-        return false;
+        fastRemove(es, i);
+        return true;
     }
 
     /**
      * Private remove method that skips bounds checking and does not
      * return the value removed.
      */
-    private void fastRemove(int index) {
+    private void fastRemove(Object[] es, int i) {
         modCount++;
-        int numMoved = size - index - 1;
-        if (numMoved > 0)
-            System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
-        elementData[--size] = null; // clear to let GC do its work
+        final int newSize;
+        if ((newSize = size - 1) > i)
+            System.arraycopy(es, i + 1, es, i, newSize - i);
+        es[size = newSize] = null;
     }
 
     /**
@@ -743,29 +740,30 @@ public class ArrayList<E> extends AbstractList<E>
                         final int from, final int end) {
         Objects.requireNonNull(c);
         final Object[] es = elementData;
-        final boolean modified;
         int r;
         // Optimize for initial run of survivors
-        for (r = from; r < end && c.contains(es[r]) == complement; r++)
-            ;
-        if (modified = (r < end)) {
-            int w = r++;
-            try {
-                for (Object e; r < end; r++)
-                    if (c.contains(e = es[r]) == complement)
-                        es[w++] = e;
-            } catch (Throwable ex) {
-                // Preserve behavioral compatibility with AbstractCollection,
-                // even if c.contains() throws.
-                System.arraycopy(es, r, es, w, end - r);
-                w += end - r;
-                throw ex;
-            } finally {
-                modCount += end - w;
-                shiftTailOverGap(es, w, end);
-            }
+        for (r = from;; r++) {
+            if (r == end)
+                return false;
+            if (c.contains(es[r]) != complement)
+                break;
         }
-        return modified;
+        int w = r++;
+        try {
+            for (Object e; r < end; r++)
+                if (c.contains(e = es[r]) == complement)
+                    es[w++] = e;
+        } catch (Throwable ex) {
+            // Preserve behavioral compatibility with AbstractCollection,
+            // even if c.contains() throws.
+            System.arraycopy(es, r, es, w, end - r);
+            w += end - r;
+            throw ex;
+        } finally {
+            modCount += end - w;
+            shiftTailOverGap(es, w, end);
+        }
+        return true;
     }
 
     /**
@@ -784,7 +782,7 @@ public class ArrayList<E> extends AbstractList<E>
         int expectedModCount = modCount;
         s.defaultWriteObject();
 
-        // Write out size as capacity for behavioural compatibility with clone()
+        // Write out size as capacity for behavioral compatibility with clone()
         s.writeInt(size);
 
         // Write out all elements in the proper order.
