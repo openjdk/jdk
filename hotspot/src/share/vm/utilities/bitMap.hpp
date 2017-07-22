@@ -353,10 +353,13 @@ class CHeapBitMap : public BitMap {
   CHeapBitMap(const CHeapBitMap&);
   CHeapBitMap& operator=(const CHeapBitMap&);
 
+  // NMT memory type
+  MEMFLAGS _flags;
+
  public:
-  CHeapBitMap() : BitMap(NULL, 0) {}
+  CHeapBitMap(MEMFLAGS flags = mtInternal) : BitMap(NULL, 0), _flags(flags) {}
   // Clears the bitmap memory.
-  CHeapBitMap(idx_t size_in_bits);
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal);
   ~CHeapBitMap();
 
   // Resize the backing bitmap memory.

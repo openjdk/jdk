@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,12 @@ class ResourceBitMapAllocator : StackObj {
 };
 
 class CHeapBitMapAllocator : StackObj {
+  MEMFLAGS _flags;
+
  public:
+  CHeapBitMapAllocator(MEMFLAGS flags) : _flags(flags) {}
   bm_word_t* allocate(size_t size_in_words) const {
-    return ArrayAllocator<bm_word_t>::allocate(size_in_words, mtInternal);
+    return ArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
   }
   void free(bm_word_t* map, idx_t size_in_words) const {
     ArrayAllocator<bm_word_t>::free(map, size_in_words);
@@ -148,24 +151,24 @@ ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits)
     : BitMap(allocate(ArenaBitMapAllocator(arena), size_in_bits), size_in_bits) {
 }
 
-CHeapBitMap::CHeapBitMap(idx_t size_in_bits)
-    : BitMap(allocate(CHeapBitMapAllocator(), size_in_bits), size_in_bits) {
+CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags)
+    : BitMap(allocate(CHeapBitMapAllocator(flags), size_in_bits), size_in_bits), _flags(flags) {
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(CHeapBitMapAllocator(), map(), size());
+  free(CHeapBitMapAllocator(_flags), map(), size());
 }
 
 void CHeapBitMap::resize(idx_t new_size_in_bits) {
-  BitMap::resize(CHeapBitMapAllocator(), new_size_in_bits);
+  BitMap::resize(CHeapBitMapAllocator(_flags), new_size_in_bits);
 }
 
 void CHeapBitMap::initialize(idx_t size_in_bits) {
-  BitMap::initialize(CHeapBitMapAllocator(), size_in_bits);
+  BitMap::initialize(CHeapBitMapAllocator(_flags), size_in_bits);
 }
 
 void CHeapBitMap::reinitialize(idx_t size_in_bits) {
-  BitMap::reinitialize(CHeapBitMapAllocator(), size_in_bits);
+  BitMap::reinitialize(CHeapBitMapAllocator(_flags), size_in_bits);
 }
 
 #ifdef ASSERT

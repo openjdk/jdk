@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
 #include "utilities/bitMap.inline.hpp"
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
-  _low_boundary(NULL), _high_boundary(NULL), _committed(), _page_size(0), _special(false),
-  _dirty(), _executable(false) {
+  _low_boundary(NULL), _high_boundary(NULL), _committed(mtGC), _page_size(0), _special(false),
+  _dirty(mtGC), _executable(false) {
   initialize_with_page_size(rs, used_size, page_size);
 }
 
