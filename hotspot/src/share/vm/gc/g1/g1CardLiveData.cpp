@@ -55,13 +55,13 @@ G1CardLiveData::~G1CardLiveData()  {
 G1CardLiveData::bm_word_t* G1CardLiveData::allocate_large_bitmap(size_t size_in_bits) {
   size_t size_in_words = BitMap::calc_size_in_words(size_in_bits);
 
-  bm_word_t* map = MmapArrayAllocator<bm_word_t, mtGC>::allocate(size_in_words);
+  bm_word_t* map = MmapArrayAllocator<bm_word_t>::allocate(size_in_words, mtGC);
 
   return map;
 }
 
 void G1CardLiveData::free_large_bitmap(bm_word_t* bitmap, size_t size_in_bits) {
-  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
+  MmapArrayAllocator<bm_word_t>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
 }
 
 void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
