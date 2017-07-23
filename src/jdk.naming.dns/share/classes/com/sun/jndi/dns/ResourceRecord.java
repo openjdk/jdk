@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,8 +355,19 @@ public class ResourceRecord {
                     pos += typeAndLen;
                 } else if ((typeAndLen & 0xC0) == 0xC0) { // name compression
                     ++level;
-                    endPos = pos + 2;
+                    // cater for the case where the name pointed to is itself
+                    // compressed: we don't want endPos to be reset by the second
+                    // compression level.
+                    int ppos = pos;
+                    if (endPos == -1) endPos = pos + 2;
                     pos = getUShort(pos) & 0x3FFF;
+                    if (debug) {
+                        dprint("decode: name compression at " + ppos
+                                + " -> " + pos + " endPos=" + endPos);
+                        assert endPos > 0;
+                        assert pos < ppos;
+                        assert pos >= Header.HEADER_SIZE;
+                    }
                 } else
                     throw new IOException("Invalid label type: " + typeAndLen);
             }
@@ -405,6 +416,11 @@ public class ResourceRecord {
             }
         }
         // Unknown RR type/class
+        if (debug) {
+            dprint("Unknown RR type for RR data: " + rrtype + " rdlen=" + rdlen
+                   + ", pos=" + pos +", msglen=" + msg.length + ", remaining="
+                   + (msg.length-pos));
+        }
         byte[] rd = new byte[rdlen];
         System.arraycopy(msg, pos, rd, 0, rdlen);
         return rd;
@@ -613,4 +629,15 @@ public class ResourceRecord {
 
         return sb.toString();
     }
+
+    //-------------------------------------------------------------------------
+
+    private static final boolean debug = false;
+
+    private static void dprint(String mess) {
+        if (debug) {
+            System.err.println("DNS: " + mess);
+        }
+    }
+
 }
