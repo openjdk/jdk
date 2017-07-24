@@ -3073,16 +3073,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(intx, ThreadStackSize, value) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads, -Xusealtsigs
-    } else if (match_option(option, "-Xoss", &tail) ||
-               match_option(option, "-Xsqnopause") ||
-               match_option(option, "-Xoptimize") ||
-               match_option(option, "-Xboundthreads") ||
-               match_option(option, "-Xusealtsigs")) {
-      // All these options are deprecated in JDK 9 and will be removed in a future release
-      char version[256];
-      JDK_Version::jdk(9).to_string(version, sizeof(version));
-      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
       julong long_CodeCacheExpansionSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
