@@ -204,6 +204,8 @@ class oopDesc {
   inline Metadata* metadata_field(int offset) const;
   inline void metadata_field_put(int offset, Metadata* value);
 
+  inline void release_metadata_field_put(int offset, Metadata* value);
+
   inline jbyte byte_field(int offset) const;
   inline void byte_field_put(int offset, jbyte contents);
 

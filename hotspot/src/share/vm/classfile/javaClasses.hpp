@@ -237,7 +237,7 @@ class java_lang_Class : AllStatic {
   static oop primitive_mirror(BasicType t);
   // JVM_NewArray support
   static Klass* array_klass(oop java_class);
-  static void set_array_klass(oop java_class, Klass* klass);
+  static void release_set_array_klass(oop java_class, Klass* klass);
   // compiler support for class operations
   static int klass_offset_in_bytes()                { return _klass_offset; }
   static int array_klass_offset_in_bytes()          { return _array_klass_offset; }
