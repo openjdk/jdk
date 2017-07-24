@@ -818,6 +818,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
 
 void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
                                     Handle module, Handle protection_domain, TRAPS) {
+  assert(k != NULL, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == NULL, "should only assign mirror once");
   // Use this moment of initialization to cache modifier_flags also,
   // to support Class.getModifiers().  Instance classes recalculate
@@ -831,11 +832,10 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
     // Allocate mirror (java.lang.Class instance)
     oop mirror_oop = InstanceMirrorKlass::cast(SystemDictionary::Class_klass())->allocate_instance(k, CHECK);
     Handle mirror(THREAD, mirror_oop);
+    Handle comp_mirror;
 
     // Setup indirection from mirror->klass
-    if (k != NULL) {
-      java_lang_Class::set_klass(mirror(), k);
-    }
+    java_lang_Class::set_klass(mirror(), k);
 
     InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
     assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -844,22 +844,22 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
     // It might also have a component mirror.  This mirror must already exist.
     if (k->is_array_klass()) {
-      oop comp_mirror;
       if (k->is_typeArray_klass()) {
         BasicType type = TypeArrayKlass::cast(k)->element_type();
-        comp_mirror = Universe::java_mirror(type);
+        comp_mirror = Handle(THREAD, Universe::java_mirror(type));
       } else {
         assert(k->is_objArray_klass(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
-        comp_mirror = element_klass->java_mirror();
+        comp_mirror = Handle(THREAD, element_klass->java_mirror());
       }
-      assert(comp_mirror != NULL, "must have a mirror");
+      assert(comp_mirror() != NULL, "must have a mirror");
 
       // Two-way link between the array klass and its component mirror:
       // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
-      set_component_mirror(mirror(), comp_mirror);
-      set_array_klass(comp_mirror, k);
+      set_component_mirror(mirror(), comp_mirror());
+      // See below for ordering dependencies between field array_klass in component mirror
+      // and java_mirror in this klass.
     } else {
       assert(k->is_instance_klass(), "Must be");
 
@@ -881,10 +881,13 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
     // set the module field in the java_lang_Class instance
     set_mirror_module_field(k, mirror, module, THREAD);
 
-    // Setup indirection from klass->mirror last
+    // Setup indirection from klass->mirror
     // after any exceptions can happen during allocations.
-    if (k != NULL) {
-      k->set_java_mirror(mirror());
+    k->set_java_mirror(mirror());
+    if (comp_mirror() != NULL) {
+      // Set after k->java_mirror() is published, because compiled code running
+      // concurrently doesn't expect a k to have a null java_mirror.
+      release_set_array_klass(comp_mirror(), k);
     }
   } else {
     if (fixup_mirror_list() == NULL) {
@@ -989,7 +992,7 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlassObj(type);
     assert(aklass != NULL, "correct bootstrap");
-    set_array_klass(java_class, aklass);
+    release_set_array_klass(java_class, aklass);
   }
 #ifdef ASSERT
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(SystemDictionary::Class_klass());
@@ -1086,9 +1089,9 @@ Klass* java_lang_Class::array_klass(oop java_class) {
 }
 
 
-void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
+void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
-  java_class->metadata_field_put(_array_klass_offset, klass);
+  java_class->release_metadata_field_put(_array_klass_offset, klass);
 }
 
 

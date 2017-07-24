@@ -446,6 +446,10 @@ void oopDesc::obj_field_put_volatile(int offset, oop value) {
 Metadata* oopDesc::metadata_field(int offset) const           { return *metadata_field_addr(offset);   }
 void oopDesc::metadata_field_put(int offset, Metadata* value) { *metadata_field_addr(offset) = value;  }
 
+void oopDesc::release_metadata_field_put(int offset, Metadata* value) {
+  OrderAccess::release_store_ptr(metadata_field_addr(offset), value);
+}
+
 jbyte oopDesc::byte_field(int offset) const                   { return (jbyte) *byte_field_addr(offset);    }
 void oopDesc::byte_field_put(int offset, jbyte contents)      { *byte_field_addr(offset) = (jint) contents; }
 
