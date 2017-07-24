@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,14 +609,14 @@ void trace_method_handle_stub(const char* adaptername,
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles) { return; }
 
+  // If arg registers are contiguous, we can use STMG/LMG.
+  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == RegisterImpl::number_of_arg_registers, "Oops");
+
   BLOCK_COMMENT("trace_method_handle {");
 
   // Save argument registers (they are used in raise exception stub).
-  __ z_stg(Z_ARG1, Address(Z_SP, 16));
-  __ z_stg(Z_ARG2, Address(Z_SP, 24));
-  __ z_stg(Z_ARG3, Address(Z_SP, 32));
-  __ z_stg(Z_ARG4, Address(Z_SP, 40));
-  __ z_stg(Z_ARG5, Address(Z_SP, 48));
+  // Argument registers have contiguous register numbers -> we can use stmg/lmg.
+  __ z_stmg(Z_ARG1, Z_ARG5, 16, Z_SP);
 
   // Setup arguments.
   __ z_lgr(Z_ARG2, Z_ARG4); // mh, see generate_method_handle_interpreter_entry()
@@ -629,11 +629,9 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
   __ pop_frame();
   __ restore_return_pc();   // restores to Z_R14
-  __ z_lg(Z_ARG1, Address(Z_SP, 16));
-  __ z_lg(Z_ARG2, Address(Z_SP, 24));
-  __ z_lg(Z_ARG3, Address(Z_SP, 32));
-  __ z_lg(Z_ARG4, Address(Z_SP, 40));
-  __ z_lg(Z_ARG5, Address(Z_SP, 45));
+
+  // Restore argument registers
+  __ z_lmg(Z_ARG1, Z_ARG5, 16, Z_SP);
   __ zap_from_to(Z_SP, Z_SP, Z_R0, Z_R1, 50, -1);
   __ zap_from_to(Z_SP, Z_SP, Z_R0, Z_R1, -1, 5);
 
