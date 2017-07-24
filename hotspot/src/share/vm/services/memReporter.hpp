@@ -174,7 +174,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
-    size_t early_amount, size_t early_count) const;
+    size_t early_amount, size_t early_count, MEMFLAGS flags) const;
   void print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
     size_t early_reserved, size_t early_committed) const;
   void print_arena_diff(size_t current_amount, size_t current_count,
@@ -216,7 +216,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
                                 const VirtualMemoryAllocationSite* current)  const;
 
   void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
-    size_t currrent_count, size_t early_size, size_t early_count) const;
+    size_t currrent_count, size_t early_size, size_t early_count, MEMFLAGS flags) const;
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed) const;
 };
