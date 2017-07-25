@@ -628,11 +628,20 @@ void DirectivesParser::test() {
     "    match: \"foo/bar.*\"," "\n"
     "    c2: {" "\n"
     "      PrintInlining: false," "\n"
+    "    }" "\n"
+    "  }" "\n"
+    "]" "\n", true);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "    c2: {" "\n"
     "      VectorizeDebug: 1," "\n"
     "      VectorizeDebug: -1," "\n"
     "    }" "\n"
     "  }" "\n"
-    "]" "\n", true);
+    "]" "\n", COMPILER2_PRESENT(true) NOT_COMPILER2(false));
 
   DirectivesParser::test(
     "[" "\n"
