@@ -315,7 +315,7 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
   if (p != NULL && p->klass() != NULL) {
     assert(p->klass()->is_instance_klass(), "sanity");
-    if (p->klass()->is_loaded()) {
+    if (!p->klass()->is_loaded()) {
       // Only return fully loaded classes.  Classes found through the
       // constraints might still be in the process of loading.
       return NULL;
