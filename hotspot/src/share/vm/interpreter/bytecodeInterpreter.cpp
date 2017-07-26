@@ -2790,7 +2790,7 @@ run:
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 
-    except_oop = THREAD->vm_result();
+    except_oop = Handle(THREAD, THREAD->vm_result());
     THREAD->set_vm_result(NULL);
     if (continuation_bci >= 0) {
       // Place exception on top of stack
@@ -2994,7 +2994,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::throw_illegal_monitor_state_exception(THREAD));
             }
             assert(THREAD->has_pending_exception(), "Lost our exception!");
-            illegal_state_oop = THREAD->pending_exception();
+            illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
             THREAD->clear_pending_exception();
           }
         }
@@ -3011,7 +3011,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::throw_illegal_monitor_state_exception(THREAD));
             }
             assert(THREAD->has_pending_exception(), "Lost our exception!");
-            illegal_state_oop = THREAD->pending_exception();
+            illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
             THREAD->clear_pending_exception();
           }
         } else {
@@ -3028,7 +3028,7 @@ run:
           if (rcvr == NULL) {
             if (!suppress_error) {
               VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap);
-              illegal_state_oop = THREAD->pending_exception();
+              illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
           } else if (UseHeavyMonitors) {
@@ -3038,7 +3038,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
             }
             if (THREAD->has_pending_exception()) {
-              if (!suppress_error) illegal_state_oop = THREAD->pending_exception();
+              if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
           } else {
@@ -3059,7 +3059,7 @@ run:
                     CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
                   }
                   if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = THREAD->pending_exception();
+                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
                     THREAD->clear_pending_exception();
                   }
                 }
