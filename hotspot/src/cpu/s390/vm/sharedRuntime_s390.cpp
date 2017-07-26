@@ -542,7 +542,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
   }
 }
 
-#if INCLUDE_CDS
 size_t SharedRuntime::trampoline_size() {
   return MacroAssembler::load_const_size() + 2;
 }
@@ -552,7 +551,6 @@ void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destinatio
   __ load_const(Z_R1_scratch, destination);
   __ z_br(Z_R1_scratch);
 }
-#endif
 
 // ---------------------------------------------------------------------------
 void SharedRuntime::save_native_result(MacroAssembler * masm,
