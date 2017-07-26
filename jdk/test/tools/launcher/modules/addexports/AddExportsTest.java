@@ -24,7 +24,8 @@
 /**
  * @test
  * @library /lib/testlibrary /test/lib
- * @modules jdk.compiler
+ * @modules java.transaction
+ *          jdk.compiler
  * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng AddExportsTest
  * @summary Basic tests for java --add-exports
