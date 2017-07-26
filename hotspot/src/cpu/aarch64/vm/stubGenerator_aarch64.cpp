@@ -764,7 +764,7 @@ class StubGenerator: public StubCodeGenerator {
       // alignment.
       Label small;
       int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
-      __ cmp(cnt, low_limit >> 3);
+      __ subs(rscratch1, cnt, low_limit >> 3);
       __ br(Assembler::LT, small);
       __ zero_dcache_blocks(base, cnt);
       __ bind(small);
