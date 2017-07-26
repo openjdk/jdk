@@ -1077,8 +1077,15 @@ public class JInternalFrame extends JComponent implements
         firePropertyChange(IS_SELECTED_PROPERTY, oldValue, newValue);
         if (isSelected)
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_ACTIVATED);
-        else
+        else {
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_DEACTIVATED);
+          try {
+              java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                                               new sun.awt.UngrabEvent(this));
+          } catch (SecurityException e) {
+              this.dispatchEvent(new sun.awt.UngrabEvent(this));
+          }
+        }
         repaint();
     }
 
@@ -1758,6 +1765,12 @@ public class JInternalFrame extends JComponent implements
           isClosed = true;
         }
         fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_CLOSED);
+        try {
+            java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                    new sun.awt.UngrabEvent(this));
+        } catch (SecurityException e) {
+            this.dispatchEvent(new sun.awt.UngrabEvent(this));
+        }
     }
 
     /**
