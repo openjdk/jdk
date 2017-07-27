@@ -34,7 +34,7 @@ import com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl;
 
 /**
  * Factory that creates new {@code javax.xml.datatype} {@code Object}s that map XML to/from Java {@code Object}s.
- * <p>
+ * <p id="DatatypeFactory.newInstance">
  * A new instance of the {@code DatatypeFactory} is created through the {@link #newInstance()} method
  * that uses the following implementation resolution mechanisms to determine an implementation:
  * <ol>
