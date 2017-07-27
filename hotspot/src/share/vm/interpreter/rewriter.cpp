@@ -117,7 +117,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
 // require that local 0 is never overwritten so it's available as an
 // argument for registration.
 
-void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
+void Rewriter::rewrite_Object_init(const methodHandle& method, TRAPS) {
   RawBytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.raw_next();
@@ -491,17 +491,16 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
 }
 
 // After constant pool is created, revisit methods containing jsrs.
-methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
+methodHandle Rewriter::rewrite_jsrs(const methodHandle& method, TRAPS) {
   ResourceMark rm(THREAD);
   ResolveOopMapConflicts romc(method);
-  methodHandle original_method = method;
-  method = romc.do_potential_rewrite(CHECK_(methodHandle()));
+  methodHandle new_method = romc.do_potential_rewrite(CHECK_(methodHandle()));
   // Update monitor matching info.
   if (romc.monitor_safe()) {
-    method->set_guaranteed_monitor_matching();
+    new_method->set_guaranteed_monitor_matching();
   }
 
-  return method;
+  return new_method;
 }
 
 void Rewriter::rewrite_bytecodes(TRAPS) {

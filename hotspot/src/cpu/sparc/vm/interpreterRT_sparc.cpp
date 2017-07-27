@@ -176,7 +176,7 @@ class SlowSignatureHandler: public NativeSignatureIterator {
 
 
  public:
-  SlowSignatureHandler(methodHandle method, address from, intptr_t* to, intptr_t *RegArgSig) : NativeSignatureIterator(method) {
+  SlowSignatureHandler(const methodHandle& method, address from, intptr_t* to, intptr_t *RegArgSig) : NativeSignatureIterator(method) {
     _from = from;
     _to   = to;
     _RegArgSignature = RegArgSig;

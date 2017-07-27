@@ -63,7 +63,7 @@ class JVMCIRuntime: public AllStatic {
 
   static bool _shutdown_called;
 
-  static CompLevel adjust_comp_level_inner(methodHandle method, bool is_osr, CompLevel level, JavaThread* thread);
+  static CompLevel adjust_comp_level_inner(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread);
 
  public:
   static bool is_HotSpotJVMCIRuntime_initialized() {
@@ -125,7 +125,7 @@ class JVMCIRuntime: public AllStatic {
    * @param thread the current thread
    * @return the compilation level to use for the compilation
    */
-  static CompLevel adjust_comp_level(methodHandle method, bool is_osr, CompLevel level, JavaThread* thread);
+  static CompLevel adjust_comp_level(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread);
 
   static BasicType kindToBasicType(Handle kind, TRAPS);
 

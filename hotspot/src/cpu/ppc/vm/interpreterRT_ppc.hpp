@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 
  public:
   // Creation
-  SignatureHandlerGenerator(methodHandle method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
     _masm = new MacroAssembler(buffer);
     _num_used_fp_arg_regs = 0;
   }

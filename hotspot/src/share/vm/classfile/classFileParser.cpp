@@ -1060,7 +1060,7 @@ public:
 class MethodAnnotationCollector : public AnnotationCollector{
 public:
   MethodAnnotationCollector() : AnnotationCollector(_in_method) { }
-  void apply_to(methodHandle m);
+  void apply_to(const methodHandle& m);
 };
 
 class ClassFileParser::ClassAnnotationCollector : public AnnotationCollector{
@@ -2095,7 +2095,7 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
   MetadataFactory::free_array<u1>(_loader_data, _field_type_annotations);
 }
 
-void MethodAnnotationCollector::apply_to(methodHandle m) {
+void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_CallerSensitive))
     m->set_caller_sensitive(true);
   if (has_annotation(_method_ForceInline))
@@ -3632,7 +3632,7 @@ static unsigned int compute_oop_map_count(const InstanceKlass* super,
 #ifndef PRODUCT
 static void print_field_layout(const Symbol* name,
                                Array<u2>* fields,
-                               constantPoolHandle cp,
+                               const constantPoolHandle& cp,
                                int instance_size,
                                int instance_fields_start,
                                int instance_fields_end,

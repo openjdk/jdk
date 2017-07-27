@@ -109,7 +109,7 @@ AbstractInterpreterGenerator::AbstractInterpreterGenerator(StubQueue* _code) {
 //------------------------------------------------------------------------------------------------------------------------
 // Entry points
 
-AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m) {
+AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHandle& m) {
   // Abstract method?
   if (m->is_abstract()) return abstract;
 

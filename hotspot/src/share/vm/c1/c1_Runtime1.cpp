@@ -743,7 +743,7 @@ JRT_END
 
 #ifndef DEOPTIMIZE_WHEN_PATCHING
 
-static Klass* resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
+static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TRAPS) {
   Bytecode_field field_access(caller, bci);
   // This can be static or non-static field access
   Bytecodes::Code code       = field_access.code();

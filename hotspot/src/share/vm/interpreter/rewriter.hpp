@@ -193,7 +193,7 @@ class Rewriter: public StackObj {
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
   void scan_method(Method* m, bool reverse, bool* invokespecial_error);
-  void rewrite_Object_init(methodHandle m, TRAPS);
+  void rewrite_Object_init(const methodHandle& m, TRAPS);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);
@@ -208,7 +208,7 @@ class Rewriter: public StackObj {
   // Revert bytecodes in case of an exception.
   void restore_bytecodes();
 
-  static methodHandle rewrite_jsrs(methodHandle m, TRAPS);
+  static methodHandle rewrite_jsrs(const methodHandle& m, TRAPS);
  public:
   // Driver routine:
   static void rewrite(InstanceKlass* klass, TRAPS);

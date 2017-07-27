@@ -194,7 +194,7 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   }
 }
 
-CompLevel JVMCIRuntime::adjust_comp_level(methodHandle method, bool is_osr, CompLevel level, JavaThread* thread) {
+CompLevel JVMCIRuntime::adjust_comp_level(const methodHandle& method, bool is_osr, CompLevel level, JavaThread* thread) {
   if (!thread->adjusting_comp_level()) {
     thread->set_adjusting_comp_level(true);
     level = adjust_comp_level_inner(method, is_osr, level, thread);

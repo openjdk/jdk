@@ -282,7 +282,7 @@ class CodeCache : AllStatic {
   static void flush_evol_dependents_on(InstanceKlass* dependee);
 #endif // HOTSWAP
   // Support for fullspeed debugging
-  static void flush_dependents_on_method(methodHandle dependee);
+  static void flush_dependents_on_method(const methodHandle& dependee);
 
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();

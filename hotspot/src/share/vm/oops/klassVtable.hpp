@@ -128,7 +128,7 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
   int  initialize_from_super(Klass* super);
   int  index_of(Method* m, int len) const; // same as index_of, but search only up to len
   void put_method_at(Method* m, int index);
-  static bool needs_new_vtable_entry(methodHandle m,
+  static bool needs_new_vtable_entry(const methodHandle& m,
                                      const Klass* super,
                                      Handle classloader,
                                      Symbol* classname,
@@ -136,8 +136,8 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
                                      u2 major_version,
                                      TRAPS);
 
-  bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
- InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method, int vtable_index,
+  bool update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
+ InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, const methodHandle& target_method, int vtable_index,
                                          Handle target_loader, Symbol* target_classname, Thread* THREAD);
 
   // support for miranda methods

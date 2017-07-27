@@ -132,7 +132,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
   }
 
   static TypedMethodOptionMatcher* parse_method_pattern(char*& line, const char*& error_msg);
-  TypedMethodOptionMatcher* match(methodHandle method, const char* opt, OptionType type);
+  TypedMethodOptionMatcher* match(const methodHandle& method, const char* opt, OptionType type);
 
   void init(const char* opt, OptionType type, TypedMethodOptionMatcher* next) {
     _next = next;
@@ -261,7 +261,7 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   return tom;
 }
 
-TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(methodHandle method, const char* opt, OptionType type) {
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, const char* opt, OptionType type) {
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
     // Fastest compare first.
@@ -289,7 +289,7 @@ static void add_option_string(TypedMethodOptionMatcher* matcher,
   return;
 }
 
-static bool check_predicate(OracleCommand command, methodHandle method) {
+static bool check_predicate(OracleCommand command, const methodHandle& method) {
   return ((lists[command] != NULL) &&
           !method.is_null() &&
           lists[command]->match(method));
