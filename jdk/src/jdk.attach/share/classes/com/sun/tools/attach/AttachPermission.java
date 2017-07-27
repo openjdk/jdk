@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ package com.sun.tools.attach;
  * permission allows, and discusses the risks of granting code the
  * permission.
  *
- * <table border=1 cellpadding=5 summary="Table shows permission
- * target name, what the permission allows, and associated risks">
+ * <table class="striped"><caption style="display:none">Table shows permission
+ * target name, what the permission allows, and associated risks</caption>
  * <tr>
  * <th>Permission Target Name</th>
  * <th>What the Permission Allows</th>

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug     7007615
+ * @bug     7007615 7170058
  * @summary java_util/generics/phase2/NameClashTest02 fails since jdk7/pit/b123.
  * @author  mcimadamore
  * @compile/fail/ref=T7007615.out -XDrawDiagnostics T7007615.java

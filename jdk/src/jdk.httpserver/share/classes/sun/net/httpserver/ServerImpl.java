@@ -179,6 +179,10 @@ class ServerImpl implements TimeSource {
         return httpsConfig;
     }
 
+    public final boolean isFinishing() {
+        return finished;
+    }
+
     public void stop (int delay) {
         if (delay < 0) {
             throw new IllegalArgumentException ("negative delay parameter");

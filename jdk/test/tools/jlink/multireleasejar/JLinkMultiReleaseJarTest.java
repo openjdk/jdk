@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,20 @@
  * @bug 8156499
  * @summary Test image creation from Multi-Release JAR
  * @author Steve Drach
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.module
- * @build jdk.testlibrary.FileUtils jdk.test.lib.process.*
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run testng JLinkMultiReleaseJarTest
-*/
+ */
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -54,10 +58,8 @@ import java.util.stream.Stream;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.FileUtils;
 
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -136,23 +138,6 @@ public class JLinkMultiReleaseJarTest {
         ).toArray(String[]::new);
         int rc = JAVAC_TOOL.run(System.out, System.err, args);
         Assert.assertEquals(rc, 0);
-    }
-
-    @AfterClass
-    public void close() throws IOException {
-        Files.walk(userdir, 1)
-                .filter(p -> !p.equals(userdir))
-                .forEach(p -> {
-                    try {
-                        if (Files.isDirectory(p)) {
-                            FileUtils.deleteFileTreeWithRetry(p);
-                        } else {
-                            FileUtils.deleteFileIfExistsWithRetry(p);
-                        }
-                    } catch (IOException x) {
-                        throw new UncheckedIOException(x);
-                    }
-                });
     }
 
     @Test

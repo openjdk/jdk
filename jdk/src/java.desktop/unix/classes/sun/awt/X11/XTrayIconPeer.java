@@ -477,6 +477,7 @@ public class XTrayIconPeer implements TrayIconPeer,
             e.setSource(xtiPeer.target);
             XToolkit.postEvent(XToolkit.targetToAppContext(e.getSource()), e);
         }
+        @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent e) {
             if ((e.getClickCount() == 1 || xtiPeer.balloon.isVisible()) &&
                 e.getButton() == MouseEvent.BUTTON1)

@@ -29,6 +29,8 @@
  * @run testng JdiBadOptionListenExecutionControlTest
  */
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.testng.annotations.Test;
 import jdk.jshell.JShell;
 import static org.testng.Assert.assertTrue;
@@ -38,16 +40,18 @@ import static org.testng.Assert.fail;
 public class JdiBadOptionListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
-            "Launching JShell execution engine threw: Failed remote listen:";
+            "Unrecognized option: -BadBadOption";
 
     public void badOptionListenTest() {
         try {
+            // turn on logging of launch failures
+            Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
             JShell.builder()
                     .executionEngine("jdi")
                     .remoteVMOptions("-BadBadOption")
                     .build();
         } catch (IllegalStateException ex) {
-            assertTrue(ex.getMessage().startsWith(EXPECTED_ERROR), ex.getMessage());
+            assertTrue(ex.getMessage().contains(EXPECTED_ERROR), ex.getMessage());
             return;
         }
         fail("Expected IllegalStateException");

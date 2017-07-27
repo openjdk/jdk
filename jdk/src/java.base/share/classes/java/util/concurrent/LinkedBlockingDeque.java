@@ -68,7 +68,7 @@ import java.util.function.Predicate;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.6
@@ -651,7 +651,7 @@ public class LinkedBlockingDeque<E>
 
     /**
      * Retrieves and removes the head of the queue represented by this deque.
-     * This method differs from {@link #poll poll} only in that it throws an
+     * This method differs from {@link #poll() poll()} only in that it throws an
      * exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #removeFirst() removeFirst}.
@@ -677,7 +677,7 @@ public class LinkedBlockingDeque<E>
 
     /**
      * Retrieves, but does not remove, the head of the queue represented by
-     * this deque.  This method differs from {@link #peek peek} only in that
+     * this deque.  This method differs from {@link #peek() peek()} only in that
      * it throws an exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #getFirst() getFirst}.

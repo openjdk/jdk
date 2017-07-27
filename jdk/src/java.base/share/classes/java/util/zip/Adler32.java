@@ -39,6 +39,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * a {@link NullPointerException} to be thrown.</p>
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class Adler32 implements Checksum {
@@ -135,4 +136,8 @@ class Adler32 implements Checksum {
     @HotSpotIntrinsicCandidate
     private static native int updateByteBuffer(int adler, long addr,
                                                int off, int len);
+
+    static {
+        ZipUtils.loadLibrary();
+    }
 }

@@ -71,7 +71,10 @@ public interface MessageType {
      */
     public enum SimpleType implements MessageType {
 
+        ANNOTATION("annotation", "Compound", "com.sun.tools.javac.code.Attribute"),
         BOOLEAN("boolean", "boolean", null),
+        COLLECTION("collection", "Collection", "java.util"),
+        FLAG("flag", "Flag", "com.sun.tools.javac.code.Flags"),
         FRAGMENT("fragment", "Fragment", null),
         DIAGNOSTIC("diagnostic", "JCDiagnostic", "com.sun.tools.javac.util"),
         MODIFIER("modifier", "Modifier", "javax.lang.model.element"),
@@ -81,7 +84,7 @@ public interface MessageType {
         NAME("name", "Name", "com.sun.tools.javac.util"),
         NUMBER("number", "int", null),
         OPTION_NAME("option name", "Option", "com.sun.tools.javac.main"),
-        SOURCE_VERSION("source version", "Source", "com.sun.tools.javac.code"),
+        SOURCE_VERSION("source version", "SourceVersion", "javax.lang.model"),
         STRING("string", "String", null),
         SYMBOL("symbol", "Symbol", "com.sun.tools.javac.code"),
         SYMBOL_KIND("symbol kind", "Kind", "com.sun.tools.javac.code.Kinds"),
@@ -131,6 +134,7 @@ public interface MessageType {
          * Compound type kind.
          */
         public enum Kind {
+            COLLECTION("collection of", SimpleType.COLLECTION),
             LIST("list of", SimpleType.LIST),
             SET("set of", SimpleType.SET);
 
@@ -180,7 +184,7 @@ public interface MessageType {
          */
         public enum Kind {
             MESSAGE_SEGMENT("message segment", SimpleType.DIAGNOSTIC, SimpleType.FRAGMENT),
-            FILE_NAME("file name", SimpleType.FILE, SimpleType.FILE_OBJECT);
+            FILE_NAME("file name", SimpleType.FILE, SimpleType.FILE_OBJECT, SimpleType.PATH);
 
             final String kindName;
             final SimpleType[] choices;

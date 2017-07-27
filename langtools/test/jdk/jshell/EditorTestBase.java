@@ -73,7 +73,7 @@ public abstract class EditorTestBase extends ReplToolTesting {
         for (String edit : new String[] {"/ed", "/edit"}) {
             test(new String[]{"--no-startup"},
                     a -> assertCommandOutputStartsWith(a, edit + " 1",
-                            "|  No such snippet: 1"),
+                            "|  No snippet with id: 1"),
                     a -> assertCommandOutputStartsWith(a, edit + " unknown",
                             "|  No such snippet: unknown")
             );

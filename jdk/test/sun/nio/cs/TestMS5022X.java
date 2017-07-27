@@ -22,9 +22,10 @@
  */
 
 /* @test
-   @bug 6173388 6319716
-   @summary Check full coverage encode/decode for Microsoft
-            ISO2022_JP variants MS50220, MS50221 and MSISO2022JP
+ * @bug 6173388 6319716
+ * @summary Check full coverage encode/decode for Microsoft
+ *          ISO2022_JP variants MS50220, MS50221 and MSISO2022JP
+ * @modules jdk.charsets
  */
 
 import java.io.*;
