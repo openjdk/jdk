@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,20 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import com.sun.jdi.ClassLoaderReference;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
 
 public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
-                  implements ClassLoaderReference, VMListener  {
-
+                                      implements ClassLoaderReference
+{
     // This is cached only while the VM is suspended
     private static class Cache extends ObjectReferenceImpl.Cache {
         List<ReferenceType> visibleClasses = null;
@@ -50,7 +58,7 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
     }
 
     public List<ReferenceType> definedClasses() {
-        ArrayList<ReferenceType> definedClasses = new ArrayList<ReferenceType>();
+        ArrayList<ReferenceType> definedClasses = new ArrayList<>();
         for (ReferenceType type :  vm.allClasses()) {
             if (type.isPrepared() &&
                 equals(type.classLoader())) {
@@ -72,7 +80,7 @@ public class ClassLoaderReferenceImpl extends ObjectReferenceImpl
                 JDWP.ClassLoaderReference.VisibleClasses.ClassInfo[]
                   jdwpClasses = JDWP.ClassLoaderReference.VisibleClasses.
                                             process(vm, this).classes;
-                classes = new ArrayList<ReferenceType>(jdwpClasses.length);
+                classes = new ArrayList<>(jdwpClasses.length);
                 for (int i = 0; i < jdwpClasses.length; ++i) {
                     classes.add(vm.referenceType(jdwpClasses[i].typeID,
                                                  jdwpClasses[i].refTypeTag));

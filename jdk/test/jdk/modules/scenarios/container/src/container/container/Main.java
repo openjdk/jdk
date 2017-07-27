@@ -27,9 +27,7 @@ import java.io.File;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
@@ -43,7 +41,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         System.out.println("Boot layer");
-        Layer.boot()
+        ModuleLayer.boot()
              .modules()
              .stream()
              .map(Module::getName)
@@ -70,10 +68,10 @@ public class Main {
 
         ModuleFinder finder = ModuleFinder.of(paths);
 
-        Configuration cf = Layer.boot().configuration()
-            .resolveRequiresAndUses(finder,
-                                    ModuleFinder.of(),
-                                    Set.of(appModuleName));
+        Configuration cf = ModuleLayer.boot().configuration()
+            .resolveAndBind(finder,
+                            ModuleFinder.of(),
+                            Set.of(appModuleName));
 
         System.out.println("Resolved");
         cf.modules().stream()
@@ -81,9 +79,9 @@ public class Main {
           .sorted()
           .forEach(mn -> System.out.format("  %s%n", mn));
 
-        // reify the configuration as a Layer
+        // reify the configuration as a module layer
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = Layer.boot().defineModulesWithManyLoaders(cf, scl);
+        ModuleLayer layer = ModuleLayer.boot().defineModulesWithManyLoaders(cf, scl);
 
         // invoke application main method
         ClassLoader loader = layer.findLoader(appModuleName);

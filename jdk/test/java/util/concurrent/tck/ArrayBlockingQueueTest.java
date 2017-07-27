@@ -130,7 +130,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * Constructor throws IAE if capacity argument nonpositive
+     * Constructor throws IllegalArgumentException if capacity argument nonpositive
      */
     public void testConstructor_nonPositiveCapacity() {
         for (int i : new int[] { 0, -1, Integer.MIN_VALUE }) {
@@ -183,7 +183,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * Initializing from too large collection throws IAE
+     * Initializing from too large collection throws IllegalArgumentException
      */
     public void testConstructor_collectionTooLarge() {
         // just barely fits - succeeds
@@ -254,7 +254,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * add succeeds if not full; throws ISE if full
+     * add succeeds if not full; throws IllegalStateException if full
      */
     public void testAdd() {
         ArrayBlockingQueue q = new ArrayBlockingQueue(SIZE);
@@ -267,7 +267,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         ArrayBlockingQueue q = populatedQueue(SIZE);
@@ -293,7 +293,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll throws ISE if not enough room
+     * addAll throws IllegalStateException if not enough room
      */
     public void testAddAll_insufficientSpace() {
         int size = ThreadLocalRandom.current().nextInt(1, SIZE);
@@ -367,7 +367,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(SIZE, q.size());
@@ -389,6 +389,13 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
                 pleaseTake.countDown();
                 q.put(86);
 
+                Thread.currentThread().interrupt();
+                try {
+                    q.put(99);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
                 pleaseInterrupt.countDown();
                 try {
                     q.put(99);
@@ -402,7 +409,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         assertEquals(0, q.take());
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -411,7 +418,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     /**
      * timed offer times out if full and elements not taken
      */
-    public void testTimedOffer() throws InterruptedException {
+    public void testTimedOffer() {
         final ArrayBlockingQueue q = new ArrayBlockingQueue(2);
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
@@ -421,15 +428,24 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
                 long startTime = System.nanoTime();
                 assertFalse(q.offer(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+
+                Thread.currentThread().interrupt();
+                try {
+                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
                 pleaseInterrupt.countDown();
                 try {
                     q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -452,9 +468,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < SIZE; ++i) {
-                    assertEquals(i, q.take());
-                }
+                for (int i = 0; i < SIZE; i++) assertEquals(i, q.take());
 
                 Thread.currentThread().interrupt();
                 try {
@@ -472,7 +486,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -522,24 +536,32 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
      */
     public void testInterruptedTimedPoll() throws InterruptedException {
         final BlockingQueue<Integer> q = populatedQueue(SIZE);
-        final CountDownLatch aboutToWait = new CountDownLatch(1);
+        final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                for (int i = 0; i < SIZE; ++i) {
+                for (int i = 0; i < SIZE; i++)
                     assertEquals(i, (int) q.poll(LONG_DELAY_MS, MILLISECONDS));
-                }
-                aboutToWait.countDown();
+
+                Thread.currentThread().interrupt();
                 try {
                     q.poll(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
-                } catch (InterruptedException success) {
-                    assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
-                }
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
+                pleaseInterrupt.countDown();
+                try {
+                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
+                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
-        await(aboutToWait);
-        waitForThreadToEnterWaitState(t);
+        await(pleaseInterrupt);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,12 @@ import java.util.*;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -79,7 +78,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param packageElement PackageElement under consideration.
      */
-    public PackageFrameWriter(ConfigurationImpl configuration, PackageElement packageElement) {
+    public PackageFrameWriter(HtmlConfiguration configuration, PackageElement packageElement) {
         super(configuration, DocPath.forPackage(packageElement).resolve(DocPaths.PACKAGE_FRAME));
         this.packageElement = packageElement;
         if (configuration.getSpecifiedPackageElements().isEmpty()) {
@@ -96,7 +95,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param packageElement The package for which "pacakge-frame.html" is to be generated.
      * @throws DocFileIOException if there is a problem generating the package summary page
      */
-    public static void generate(ConfigurationImpl configuration, PackageElement packageElement)
+    public static void generate(HtmlConfiguration configuration, PackageElement packageElement)
             throws DocFileIOException {
         PackageFrameWriter packgen = new PackageFrameWriter(configuration, packageElement);
         String pkgName = configuration.utils.getPackageName(packageElement);
@@ -127,7 +126,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      * @param contentTree the content tree to which the listing will be added
      */
     protected void addClassListing(HtmlTree contentTree) {
-        Configuration config = configuration;
+        BaseConfiguration config = configuration;
         if (utils.isSpecified(packageElement)) {
             addClassKindListing(utils.getInterfaces(packageElement),
                 contents.interfaces, contentTree);

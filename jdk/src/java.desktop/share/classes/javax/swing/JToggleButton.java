@@ -372,6 +372,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
         /**
          * Sets the pressed state of the toggle button.
          */
+        @SuppressWarnings("deprecation")
         public void setPressed(boolean b) {
             if ((isPressed() == b) || !isEnabled()) {
                 return;

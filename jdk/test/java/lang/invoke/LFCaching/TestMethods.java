@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,8 @@
  * questions.
  */
 
-import com.oracle.testlibrary.jsr292.Helper;
+import test.java.lang.invoke.lib.Helper;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -41,462 +42,472 @@ import java.util.Map;
 public enum TestMethods {
 
     FOLD_ARGUMENTS("foldArguments") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
-                    data.put("modifierMHArgNum", modifierMHArgNum);
-                    Class<?> combinerReturnType;
-                    if (realArity == 0) {
-                        combinerReturnType = void.class;
-                    } else {
-                        combinerReturnType = Helper.RNG.nextBoolean() ? void.class : mtTarget.parameterType(0);
-                    }
-                    data.put("combinerReturnType", combinerReturnType);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
+            data.put("modifierMHArgNum", modifierMHArgNum);
+            Class<?> combinerReturnType;
+            if (realArity == 0) {
+                combinerReturnType = void.class;
+            } else {
+                combinerReturnType = Helper.RNG.nextBoolean() ?
+                        void.class : mtTarget.parameterType(0);
+            }
+            data.put("combinerReturnType", combinerReturnType);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> combinerReturnType = (Class) data.get("combinerReturnType");
-                    int modifierMHArgNum = (int) data.get("modifierMHArgNum");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    Class<?> rType = mtTarget.returnType();
-                    int combListStart = (combinerReturnType == void.class) ? 0 : 1;
-                    if (modifierMHArgNum < combListStart) {
-                        modifierMHArgNum = combListStart;
-                    }
-                    MethodHandle combiner = TestMethods.methodHandleGenerator(combinerReturnType,
-                            mtTarget.parameterList().subList(combListStart,
-                                    modifierMHArgNum), kind);
-                    return MethodHandles.foldArguments(target, combiner);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> combinerReturnType = (Class) data.get("combinerReturnType");
+            int modifierMHArgNum = (int) data.get("modifierMHArgNum");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            Class<?> rType = mtTarget.returnType();
+            int combListStart = (combinerReturnType == void.class) ? 0 : 1;
+            if (modifierMHArgNum < combListStart) {
+                modifierMHArgNum = combListStart;
+            }
+            MethodHandle combiner = TestMethods.methodHandleGenerator(combinerReturnType,
+                    mtTarget.parameterList().subList(combListStart,
+                            modifierMHArgNum), kind);
+            return MethodHandles.foldArguments(target, combiner);
+        }
+    },
     DROP_ARGUMENTS("dropArguments") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int dropArgsPos = Helper.RNG.nextInt(realArity + 1);
-                    data.put("dropArgsPos", dropArgsPos);
-                    MethodType mtDropArgs = TestMethods.randomMethodTypeGenerator(
-                            Helper.RNG.nextInt(super.maxArity - realArity));
-                    data.put("mtDropArgs", mtDropArgs);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int dropArgsPos = Helper.RNG.nextInt(realArity + 1);
+            data.put("dropArgsPos", dropArgsPos);
+            MethodType mtDropArgs = TestMethods.randomMethodTypeGenerator(
+                    Helper.RNG.nextInt(super.maxArity - realArity));
+            data.put("mtDropArgs", mtDropArgs);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtDropArgs = (MethodType) data.get("mtDropArgs");
-                    int dropArgsPos = (int) data.get("dropArgsPos");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    int mtTgtSlotsCount = TestMethods.argSlotsCount(mtTarget);
-                    int mtDASlotsCount = TestMethods.argSlotsCount(mtDropArgs);
-                    List<Class<?>> fakeParList;
-                    if (mtTgtSlotsCount + mtDASlotsCount > super.maxArity - 1) {
-                        fakeParList = TestMethods.reduceArgListToSlotsCount(mtDropArgs.parameterList(),
-                                super.maxArity - mtTgtSlotsCount - 1);
-                    } else {
-                        fakeParList = mtDropArgs.parameterList();
-                    }
-                    return MethodHandles.dropArguments(target, dropArgsPos, fakeParList);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtDropArgs = (MethodType) data.get("mtDropArgs");
+            int dropArgsPos = (int) data.get("dropArgsPos");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            int mtTgtSlotsCount = TestMethods.argSlotsCount(mtTarget);
+            int mtDASlotsCount = TestMethods.argSlotsCount(mtDropArgs);
+            List<Class<?>> fakeParList;
+            if (mtTgtSlotsCount + mtDASlotsCount > super.maxArity - 1) {
+                fakeParList = TestMethods.reduceArgListToSlotsCount(mtDropArgs.parameterList(),
+                        super.maxArity - mtTgtSlotsCount - 1);
+            } else {
+                fakeParList = mtDropArgs.parameterList();
+            }
+            return MethodHandles.dropArguments(target, dropArgsPos, fakeParList);
+        }
+    },
     EXPLICIT_CAST_ARGUMENTS("explicitCastArguments", Helper.MAX_ARITY / 2) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    MethodType mtExcplCastArgs = TestMethods.randomMethodTypeGenerator(realArity);
-                    if (mtTarget.returnType() == void.class) {
-                        mtExcplCastArgs = MethodType.methodType(void.class,
-                                mtExcplCastArgs.parameterArray());
-                    }
-                    if (mtExcplCastArgs.returnType() == void.class) {
-                        mtExcplCastArgs = MethodType.methodType(mtTarget.returnType(),
-                                mtExcplCastArgs.parameterArray());
-                    }
-                    data.put("mtExcplCastArgs", mtExcplCastArgs);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            MethodType mtExcplCastArgs = TestMethods.randomMethodTypeGenerator(realArity);
+            if (mtTarget.returnType() == void.class) {
+                mtExcplCastArgs = MethodType.methodType(void.class,
+                        mtExcplCastArgs.parameterArray());
+            }
+            if (mtExcplCastArgs.returnType() == void.class) {
+                mtExcplCastArgs = MethodType.methodType(mtTarget.returnType(),
+                        mtExcplCastArgs.parameterArray());
+            }
+            data.put("mtExcplCastArgs", mtExcplCastArgs);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtExcplCastArgs = (MethodType) data.get("mtExcplCastArgs");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    return MethodHandles.explicitCastArguments(target, mtExcplCastArgs);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtExcplCastArgs = (MethodType) data.get("mtExcplCastArgs");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            return MethodHandles.explicitCastArguments(target, mtExcplCastArgs);
+        }
+    },
     FILTER_ARGUMENTS("filterArguments", Helper.MAX_ARITY / 2) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int filterArgsPos = Helper.RNG.nextInt(realArity + 1);
-                    data.put("filterArgsPos", filterArgsPos);
-                    int filtersArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - filterArgsPos);
-                    data.put("filtersArgsArrayLength", filtersArgsArrayLength);
-                    MethodType mtFilter = TestMethods.randomMethodTypeGenerator(filtersArgsArrayLength);
-                    data.put("mtFilter", mtFilter);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int filterArgsPos = Helper.RNG.nextInt(realArity + 1);
+            data.put("filterArgsPos", filterArgsPos);
+            int filtersArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - filterArgsPos);
+            data.put("filtersArgsArrayLength", filtersArgsArrayLength);
+            MethodType mtFilter = TestMethods.randomMethodTypeGenerator(filtersArgsArrayLength);
+            data.put("mtFilter", mtFilter);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtFilter = (MethodType) data.get("mtFilter");
-                    int filterArgsPos = (int) data.get("filterArgsPos");
-                    int filtersArgsArrayLength = (int) data.get("filtersArgsArrayLength");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    MethodHandle[] filters = new MethodHandle[filtersArgsArrayLength];
-                    for (int i = 0; i < filtersArgsArrayLength; i++) {
-                        filters[i] = TestMethods.filterGenerator(mtFilter.parameterType(i),
-                                mtTarget.parameterType(filterArgsPos + i), kind);
-                    }
-                    return MethodHandles.filterArguments(target, filterArgsPos, filters);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtFilter = (MethodType) data.get("mtFilter");
+            int filterArgsPos = (int) data.get("filterArgsPos");
+            int filtersArgsArrayLength = (int) data.get("filtersArgsArrayLength");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            MethodHandle[] filters = new MethodHandle[filtersArgsArrayLength];
+            for (int i = 0; i < filtersArgsArrayLength; i++) {
+                filters[i] = TestMethods.filterGenerator(mtFilter.parameterType(i),
+                        mtTarget.parameterType(filterArgsPos + i), kind);
+            }
+            return MethodHandles.filterArguments(target, filterArgsPos, filters);
+        }
+    },
     FILTER_RETURN_VALUE("filterReturnValue") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int filterArgsPos = Helper.RNG.nextInt(realArity + 1);
-                    int filtersArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - filterArgsPos);
-                    MethodType mtFilter = TestMethods.randomMethodTypeGenerator(filtersArgsArrayLength);
-                    data.put("mtFilter", mtFilter);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int filterArgsPos = Helper.RNG.nextInt(realArity + 1);
+            int filtersArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - filterArgsPos);
+            MethodType mtFilter = TestMethods.randomMethodTypeGenerator(filtersArgsArrayLength);
+            data.put("mtFilter", mtFilter);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtFilter = (MethodType) data.get("mtFilter");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    MethodHandle filter = TestMethods.filterGenerator(mtTarget.returnType(),
-                            mtFilter.returnType(), kind);
-                    return MethodHandles.filterReturnValue(target, filter);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtFilter = (MethodType) data.get("mtFilter");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            MethodHandle filter = TestMethods.filterGenerator(mtTarget.returnType(),
+                    mtFilter.returnType(), kind);
+            return MethodHandles.filterReturnValue(target, filter);
+        }
+    },
     INSERT_ARGUMENTS("insertArguments", Helper.MAX_ARITY - 3) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int insertArgsPos = Helper.RNG.nextInt(realArity + 1);
-                    data.put("insertArgsPos", insertArgsPos);
-                    int insertArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - insertArgsPos);
-                    MethodType mtInsertArgs = MethodType.methodType(void.class, mtTarget.parameterList()
-                            .subList(insertArgsPos, insertArgsPos + insertArgsArrayLength));
-                    data.put("mtInsertArgs", mtInsertArgs);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int insertArgsPos = Helper.RNG.nextInt(realArity + 1);
+            data.put("insertArgsPos", insertArgsPos);
+            int insertArgsArrayLength = Helper.RNG.nextInt(realArity + 1 - insertArgsPos);
+            MethodType mtInsertArgs = MethodType.methodType(void.class, mtTarget.parameterList()
+                    .subList(insertArgsPos, insertArgsPos + insertArgsArrayLength));
+            data.put("mtInsertArgs", mtInsertArgs);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtInsertArgs = (MethodType) data.get("mtInsertArgs");
-                    int insertArgsPos = (int) data.get("insertArgsPos");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    Object[] insertList = Helper.randomArgs(mtInsertArgs.parameterList());
-                    return MethodHandles.insertArguments(target, insertArgsPos, insertList);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtInsertArgs = (MethodType) data.get("mtInsertArgs");
+            int insertArgsPos = (int) data.get("insertArgsPos");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            Object[] insertList = Helper.randomArgs(mtInsertArgs.parameterList());
+            return MethodHandles.insertArguments(target, insertArgsPos, insertList);
+        }
+    },
     PERMUTE_ARGUMENTS("permuteArguments", Helper.MAX_ARITY / 2) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int[] permuteArgsReorderArray = new int[realArity];
-                    int mtPermuteArgsNum = Helper.RNG.nextInt(Helper.MAX_ARITY);
-                    mtPermuteArgsNum = mtPermuteArgsNum == 0 ? 1 : mtPermuteArgsNum;
-                    MethodType mtPermuteArgs = TestMethods.randomMethodTypeGenerator(mtPermuteArgsNum);
-                    mtTarget = mtTarget.changeReturnType(mtPermuteArgs.returnType());
-                    for (int i = 0; i < realArity; i++) {
-                        int mtPermuteArgsParNum = Helper.RNG.nextInt(mtPermuteArgs.parameterCount());
-                        permuteArgsReorderArray[i] = mtPermuteArgsParNum;
-                        mtTarget = mtTarget.changeParameterType(
-                                i, mtPermuteArgs.parameterType(mtPermuteArgsParNum));
-                    }
-                    data.put("mtTarget", mtTarget);
-                    data.put("permuteArgsReorderArray", permuteArgsReorderArray);
-                    data.put("mtPermuteArgs", mtPermuteArgs);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int[] permuteArgsReorderArray = new int[realArity];
+            int mtPermuteArgsNum = Helper.RNG.nextInt(Helper.MAX_ARITY);
+            mtPermuteArgsNum = mtPermuteArgsNum == 0 ? 1 : mtPermuteArgsNum;
+            MethodType mtPermuteArgs = TestMethods.randomMethodTypeGenerator(mtPermuteArgsNum);
+            mtTarget = mtTarget.changeReturnType(mtPermuteArgs.returnType());
+            for (int i = 0; i < realArity; i++) {
+                int mtPermuteArgsParNum = Helper.RNG.nextInt(mtPermuteArgs.parameterCount());
+                permuteArgsReorderArray[i] = mtPermuteArgsParNum;
+                mtTarget = mtTarget.changeParameterType(
+                        i, mtPermuteArgs.parameterType(mtPermuteArgsParNum));
+            }
+            data.put("mtTarget", mtTarget);
+            data.put("permuteArgsReorderArray", permuteArgsReorderArray);
+            data.put("mtPermuteArgs", mtPermuteArgs);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    MethodType mtPermuteArgs = (MethodType) data.get("mtPermuteArgs");
-                    int[] permuteArgsReorderArray = (int[]) data.get("permuteArgsReorderArray");
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), kind);
-                    return MethodHandles.permuteArguments(target, mtPermuteArgs, permuteArgsReorderArray);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            MethodType mtPermuteArgs = (MethodType) data.get("mtPermuteArgs");
+            int[] permuteArgsReorderArray = (int[]) data.get("permuteArgsReorderArray");
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), kind);
+            return MethodHandles.permuteArguments(target, mtPermuteArgs, permuteArgsReorderArray);
+        }
+    },
     THROW_EXCEPTION("throwException") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> rType = mtTarget.returnType();
-                    return MethodHandles.throwException(rType, Exception.class
-                    );
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> rType = mtTarget.returnType();
+            return MethodHandles.throwException(rType, Exception.class
+            );
+        }
+    },
     GUARD_WITH_TEST("guardWithTest") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
-                    data.put("modifierMHArgNum", modifierMHArgNum);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
+            data.put("modifierMHArgNum", modifierMHArgNum);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    int modifierMHArgNum = (int) data.get("modifierMHArgNum");
-                    TestMethods.Kind targetKind;
-                    TestMethods.Kind fallbackKind;
-                    if (kind.equals(TestMethods.Kind.ONE)) {
-                        targetKind = TestMethods.Kind.ONE;
-                        fallbackKind = TestMethods.Kind.TWO;
-                    } else {
-                        targetKind = TestMethods.Kind.TWO;
-                        fallbackKind = TestMethods.Kind.ONE;
-                    }
-                    MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), targetKind);
-                    MethodHandle fallback = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                            mtTarget.parameterList(), fallbackKind);
-                    MethodHandle test = TestMethods.methodHandleGenerator(boolean.class,
-                            mtTarget.parameterList().subList(0, modifierMHArgNum), kind);
-                    return MethodHandles.guardWithTest(test, target, fallback);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            int modifierMHArgNum = (int) data.get("modifierMHArgNum");
+            TestMethods.Kind targetKind;
+            TestMethods.Kind fallbackKind;
+            if (kind.equals(TestMethods.Kind.ONE)) {
+                targetKind = TestMethods.Kind.ONE;
+                fallbackKind = TestMethods.Kind.TWO;
+            } else {
+                targetKind = TestMethods.Kind.TWO;
+                fallbackKind = TestMethods.Kind.ONE;
+            }
+            MethodHandle target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), targetKind);
+            MethodHandle fallback = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                    mtTarget.parameterList(), fallbackKind);
+            MethodHandle test = TestMethods.methodHandleGenerator(boolean.class,
+                    mtTarget.parameterList().subList(0, modifierMHArgNum), kind);
+            return MethodHandles.guardWithTest(test, target, fallback);
+        }
+    },
     CATCH_EXCEPTION("catchException") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
-                    data.put("modifierMHArgNum", modifierMHArgNum);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
+            data.put("modifierMHArgNum", modifierMHArgNum);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    int modifierMHArgNum = (int) data.get("modifierMHArgNum");
-                    MethodHandle target;
-                    if (kind.equals(TestMethods.Kind.ONE)) {
-                        target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                                mtTarget.parameterList(), TestMethods.Kind.ONE);
-                    } else {
-                        target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
-                                mtTarget.parameterList(), TestMethods.Kind.EXCEPT);
-                    }
-                    List<Class<?>> handlerParamList = new ArrayList<>(mtTarget.parameterCount() + 1);
-                    handlerParamList.add(Exception.class);
-                    handlerParamList.addAll(mtTarget.parameterList().subList(0, modifierMHArgNum));
-                    MethodHandle handler = TestMethods.methodHandleGenerator(
-                            mtTarget.returnType(), handlerParamList, TestMethods.Kind.TWO);
-                    return MethodHandles.catchException(target, Exception.class, handler);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+                throws NoSuchMethodException, IllegalAccessException {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            int modifierMHArgNum = (int) data.get("modifierMHArgNum");
+            MethodHandle target;
+            if (kind.equals(TestMethods.Kind.ONE)) {
+                target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                        mtTarget.parameterList(), TestMethods.Kind.ONE);
+            } else {
+                target = TestMethods.methodHandleGenerator(mtTarget.returnType(),
+                        mtTarget.parameterList(), TestMethods.Kind.EXCEPT);
+            }
+            List<Class<?>> handlerParamList = new ArrayList<>(mtTarget.parameterCount() + 1);
+            handlerParamList.add(Exception.class);
+            handlerParamList.addAll(mtTarget.parameterList().subList(0, modifierMHArgNum));
+            MethodHandle handler = TestMethods.methodHandleGenerator(
+                    mtTarget.returnType(), handlerParamList, TestMethods.Kind.TWO);
+            return MethodHandles.catchException(target, Exception.class, handler);
+        }
+    },
     INVOKER("invoker", Helper.MAX_ARITY - 1) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    return MethodHandles.invoker(mtTarget);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            return MethodHandles.invoker(mtTarget);
+        }
+    },
     EXACT_INVOKER("exactInvoker", Helper.MAX_ARITY - 1) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    return MethodHandles.exactInvoker(mtTarget);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            return MethodHandles.exactInvoker(mtTarget);
+        }
+    },
     SPREAD_INVOKER("spreadInvoker", Helper.MAX_ARITY - 1) {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    // Arity after reducing because of long and double take 2 slots.
-                    int realArity = mtTarget.parameterCount();
-                    int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
-                    data.put("modifierMHArgNum", modifierMHArgNum);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            // Arity after reducing because of long and double take 2 slots.
+            int realArity = mtTarget.parameterCount();
+            int modifierMHArgNum = Helper.RNG.nextInt(realArity + 1);
+            data.put("modifierMHArgNum", modifierMHArgNum);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    int modifierMHArgNum = (int) data.get("modifierMHArgNum");
-                    return MethodHandles.spreadInvoker(mtTarget, modifierMHArgNum);
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            int modifierMHArgNum = (int) data.get("modifierMHArgNum");
+            return MethodHandles.spreadInvoker(mtTarget, modifierMHArgNum);
+        }
+    },
     ARRAY_ELEMENT_GETTER("arrayElementGetter") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> rType = mtTarget.returnType();
-                    if (rType == void.class) {
-                        rType = Object.class;
-                    }
-                    return MethodHandles.arrayElementGetter(Array.newInstance(rType, 2).getClass());
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> rType = mtTarget.returnType();
+            if (rType == void.class) {
+                rType = Object.class;
+            }
+            return MethodHandles.arrayElementGetter(Array.newInstance(rType, 2).getClass());
+        }
+    },
     ARRAY_ELEMENT_SETTER("arrayElementSetter") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> rType = mtTarget.returnType();
-                    if (rType == void.class) {
-                        rType = Object.class;
-                    }
-                    return MethodHandles.arrayElementSetter(Array.newInstance(rType, 2).getClass());
-                }
-            },
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> rType = mtTarget.returnType();
+            if (rType == void.class) {
+                rType = Object.class;
+            }
+            return MethodHandles.arrayElementSetter(Array.newInstance(rType, 2).getClass());
+        }
+    },
     CONSTANT("constant") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> rType = mtTarget.returnType();
-                    if (rType == void.class) {
-                        rType = Object.class;
-                    }
-                    if (rType.equals(boolean.class)) {
-                        // There should be the same return values because for default values there are special "zero" forms
-                        return MethodHandles.constant(rType, true);
-                    } else {
-                        return MethodHandles.constant(rType, kind.getValue(rType));
-                    }
-                }
-            },
-    IDENTITY("identity") {
-                @Override
-                public Map<String, Object> getTestCaseData() {
-                    Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
-                    MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
-                    data.put("mtTarget", mtTarget);
-                    return data;
-                }
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> rType = mtTarget.returnType();
+            if (rType == void.class) {
+                rType = Object.class;
+            }
+            if (rType.equals(boolean.class)) {
+                // There should be the same return values because for default values there are special "zero" forms
+                return MethodHandles.constant(rType, true);
+            } else {
+                return MethodHandles.constant(rType, kind.getValue(rType));
+            }
+        }
+    },
+IDENTITY("identity") {
+        @Override
+        public Map<String, Object> getTestCaseData() {
+            Map<String, Object> data = new HashMap<>();
+            int desiredArity = Helper.RNG.nextInt(super.maxArity);
+            MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
+            data.put("mtTarget", mtTarget);
+            return data;
+        }
 
-                @Override
-                protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
-                    MethodType mtTarget = (MethodType) data.get("mtTarget");
-                    Class<?> rType = mtTarget.returnType();
-                    if (rType == void.class) {
-                        rType = Object.class;
-                    }
-                    return MethodHandles.identity(rType);
-                }
-            };
+        @Override
+        protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) {
+            MethodType mtTarget = (MethodType) data.get("mtTarget");
+            Class<?> rType = mtTarget.returnType();
+            if (rType == void.class) {
+                rType = Object.class;
+            }
+            return MethodHandles.identity(rType);
+        }
+    };
 
     /**
      * Test method's name.
@@ -514,8 +525,10 @@ public enum TestMethods {
         this(name, Helper.MAX_ARITY);
     }
 
-    protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
-        throw new UnsupportedOperationException("TESTBUG: getMH method is not implemented for test method " + this);
+    protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind)
+            throws NoSuchMethodException, IllegalAccessException {
+        throw new UnsupportedOperationException(
+                "TESTBUG: getMH method is not implemented for test method " + this);
     }
 
     /**
@@ -575,13 +588,15 @@ public enum TestMethods {
             return Helper.castToWrapper(value, cl);
         }
 
-        private MethodHandle getBasicMH(Class<?> rType) throws NoSuchMethodException, IllegalAccessException {
+        private MethodHandle getBasicMH(Class<?> rType)
+                throws NoSuchMethodException, IllegalAccessException {
             MethodHandle result = null;
             switch (this) {
                 case ONE:
                 case TWO:
                     if (rType.equals(void.class)) {
-                        result = MethodHandles.lookup().findVirtual(Kind.class, "returnVoid", MethodType.methodType(void.class));
+                        result = MethodHandles.lookup().findVirtual(Kind.class,
+                                "returnVoid", MethodType.methodType(void.class));
                         result = MethodHandles.insertArguments(result, 0, this);
                     } else {
                         result = MethodHandles.constant(rType, getValue(rType));

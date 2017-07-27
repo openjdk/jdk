@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.loader;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -257,7 +256,10 @@ public class ClassLoaders {
      */
     private static URL toFileURL(String s) {
         try {
-            return Paths.get(s).toRealPath().toUri().toURL();
+            // Use an intermediate File object to construct a URI/URL without
+            // authority component as URLClassPath can't handle URLs with a UNC
+            // server name in the authority component.
+            return Paths.get(s).toRealPath().toFile().toURI().toURL();
         } catch (InvalidPathException | IOException ignore) {
             // malformed path string or class path element does not exist
             return null;

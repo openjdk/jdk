@@ -450,32 +450,29 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      */
     static class Factory {
 
-        static final String JLO_SIG  = "Ljava/lang/Object;";
-        static final String JLS_SIG  = "Ljava/lang/String;";
-        static final String JLC_SIG  = "Ljava/lang/Class;";
-        static final String MH       = "java/lang/invoke/MethodHandle";
-        static final String MH_SIG   = "L"+MH+";";
-        static final String BMH      = "java/lang/invoke/BoundMethodHandle";
-        static final String BMH_SIG  = "L"+BMH+";";
-        static final String SPECIES_DATA     = "java/lang/invoke/BoundMethodHandle$SpeciesData";
-        static final String SPECIES_DATA_SIG = "L"+SPECIES_DATA+";";
-        static final String STABLE_SIG       = "Ljdk/internal/vm/annotation/Stable;";
+        private static final String JLO_SIG  = "Ljava/lang/Object;";
+        private static final String MH       = "java/lang/invoke/MethodHandle";
+        private static final String MH_SIG   = "L"+MH+";";
+        private static final String BMH      = "java/lang/invoke/BoundMethodHandle";
+        private static final String BMH_NAME = "java.lang.invoke.BoundMethodHandle";
+        private static final String BMH_SIG  = "L"+BMH+";";
+        private static final String SPECIES_DATA     = "java/lang/invoke/BoundMethodHandle$SpeciesData";
+        private static final String SPECIES_DATA_SIG = "L"+SPECIES_DATA+";";
+        private static final String STABLE_SIG       = "Ljdk/internal/vm/annotation/Stable;";
 
-        static final String SPECIES_PREFIX_NAME = "Species_";
-        static final String SPECIES_PREFIX_PATH = BMH + "$" + SPECIES_PREFIX_NAME;
-        static final String SPECIES_CLASS_PREFIX = SPECIES_PREFIX_PATH.replace('/', '.');
+        private static final String SPECIES_PREFIX_NAME = "Species_";
+        private static final String SPECIES_PREFIX_PATH = BMH + "$" + SPECIES_PREFIX_NAME;
+        private static final String SPECIES_CLASS_PREFIX = BMH_NAME + "$" + SPECIES_PREFIX_NAME;
 
-        static final String BMHSPECIES_DATA_EWI_SIG = "(B)" + SPECIES_DATA_SIG;
-        static final String BMHSPECIES_DATA_GFC_SIG = "(" + JLS_SIG + JLC_SIG + ")" + SPECIES_DATA_SIG;
-        static final String MYSPECIES_DATA_SIG = "()" + SPECIES_DATA_SIG;
-        static final String VOID_SIG   = "()V";
-        static final String INT_SIG    = "()I";
+        private static final String BMHSPECIES_DATA_EWI_SIG = "(B)" + SPECIES_DATA_SIG;
+        private static final String MYSPECIES_DATA_SIG = "()" + SPECIES_DATA_SIG;
+        private static final String INT_SIG    = "()I";
 
-        static final String SIG_INCIPIT = "(Ljava/lang/invoke/MethodType;Ljava/lang/invoke/LambdaForm;";
+        private static final String SIG_INCIPIT = "(Ljava/lang/invoke/MethodType;Ljava/lang/invoke/LambdaForm;";
 
-        static final String[] E_THROWABLE = new String[] { "java/lang/Throwable" };
+        private static final String[] E_THROWABLE = new String[] { "java/lang/Throwable" };
 
-        static final ConcurrentMap<String, Class<? extends BoundMethodHandle>> CLASS_CACHE = new ConcurrentHashMap<>();
+        private static final ConcurrentMap<String, Class<? extends BoundMethodHandle>> CLASS_CACHE = new ConcurrentHashMap<>();
 
         /**
          * Get a concrete subclass of BMH for a given combination of bound types.
@@ -830,15 +827,27 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         private static String makeSignature(String types, boolean ctor) {
             StringBuilder buf = new StringBuilder(SIG_INCIPIT);
-            for (char c : types.toCharArray()) {
-                buf.append(typeSig(c));
+            int len = types.length();
+            for (int i = 0; i < len; i++) {
+                buf.append(typeSig(types.charAt(i)));
             }
             return buf.append(')').append(ctor ? "V" : BMH_SIG).toString();
         }
 
+        private static MethodType makeConstructorType(String types) {
+            int length = types.length();
+            Class<?> ptypes[] = new Class<?>[length + 2];
+            ptypes[0] = MethodType.class;
+            ptypes[1] = LambdaForm.class;
+            for (int i = 0; i < length; i++) {
+                ptypes[i + 2] = BasicType.basicType(types.charAt(i)).basicTypeClass();
+            }
+            return MethodType.makeImpl(BoundMethodHandle.class, ptypes, true);
+        }
+
         static MethodHandle makeCbmhCtor(Class<? extends BoundMethodHandle> cbmh, String types) {
             try {
-                return LOOKUP.findStatic(cbmh, "make", MethodType.fromDescriptor(makeSignature(types, false), null));
+                return LOOKUP.findStatic(cbmh, "make", makeConstructorType(types));
             } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | TypeNotPresentException e) {
                 throw newInternalError(e);
             }

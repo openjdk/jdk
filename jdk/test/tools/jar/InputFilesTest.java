@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,10 @@
  *          options with/without a --release option.  Some input files are
  *          duplicates that sometimes cause exceptions and other times do not,
  *          demonstrating identical behavior to JDK 8 jar tool.
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.jartool
- * @build jdk.testlibrary.FileUtils
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng InputFilesTest
  */
 
@@ -51,7 +52,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import java.util.zip.ZipException;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class InputFilesTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")

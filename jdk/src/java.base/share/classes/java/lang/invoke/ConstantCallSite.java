@@ -30,6 +30,7 @@ package java.lang.invoke;
  * An {@code invokedynamic} instruction linked to a {@code ConstantCallSite} is permanently
  * bound to the call site's target.
  * @author John Rose, JSR 292 EG
+ * @since 1.7
  */
 public class ConstantCallSite extends CallSite {
     private final boolean isFrozen;
