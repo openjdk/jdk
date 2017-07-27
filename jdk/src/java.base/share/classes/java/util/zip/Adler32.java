@@ -136,4 +136,8 @@ class Adler32 implements Checksum {
     @HotSpotIntrinsicCandidate
     private static native int updateByteBuffer(int adler, long addr,
                                                int off, int len);
+
+    static {
+        ZipUtils.loadLibrary();
+    }
 }

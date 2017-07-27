@@ -167,12 +167,12 @@ public class Collection8Test extends JSR166TestCase {
         }
         if (c instanceof BlockingQueue) {
             BlockingQueue q = (BlockingQueue) c;
-            assertNull(q.poll(0L, MILLISECONDS));
+            assertNull(q.poll(randomExpiredTimeout(), randomTimeUnit()));
         }
         if (c instanceof BlockingDeque) {
             BlockingDeque q = (BlockingDeque) c;
-            assertNull(q.pollFirst(0L, MILLISECONDS));
-            assertNull(q.pollLast(0L, MILLISECONDS));
+            assertNull(q.pollFirst(randomExpiredTimeout(), randomTimeUnit()));
+            assertNull(q.pollLast(randomExpiredTimeout(), randomTimeUnit()));
         }
     }
 
