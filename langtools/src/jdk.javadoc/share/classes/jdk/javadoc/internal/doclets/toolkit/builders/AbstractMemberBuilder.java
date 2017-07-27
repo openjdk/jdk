@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.lang.model.element.Element;
-
-import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 
@@ -51,7 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
-    public final Comparator<Element> comparator;
     /**
      * Construct a SubBuilder.
      * @param context a context object, providing information used in this run
@@ -59,7 +49,6 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      */
     public AbstractMemberBuilder(Context context) {
         super(context);
-        comparator = utils.makeGeneralPurposeComparator();
     }
 
     /**
@@ -73,20 +62,14 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
         throw new AssertionError();
     }
 
-
     /**
-     * Builds the sub component if there is anything to document.
      *
-     * @param node the XML element that specifies which components to document.
-     * @param contentTree content tree to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
+     * Build the documentation.
+     *
+     * @param contentTree The content tree into which to add the documention
+     * @throws DocletException  if there is a problem building the documentation
      */
-    @Override
-    public void build(XMLNode node, Content contentTree) throws DocletException {
-        if (hasMembersToDocument()) {
-            super.build(node, contentTree);
-        }
-    }
+    public abstract void build(Content contentTree) throws DocletException;
 
     /**
      * Returns true if this subbuilder has anything to document.
@@ -94,10 +77,4 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      * @return true if this subbuilder has anything to document
      */
     public abstract boolean hasMembersToDocument();
-
-    public SortedSet<Element> asSortedSet(Collection<Element> members) {
-        SortedSet<Element> out = new TreeSet<>(comparator);
-        out.addAll(members);
-        return out;
-    }
 }

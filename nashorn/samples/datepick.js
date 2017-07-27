@@ -37,6 +37,7 @@ if (! $OPTIONS._fx) {
 }
 
 load("fx:controls.js");
+var Scene = Java.type("javafx.scene.Scene");
 
 function start(stage) {
     var picker = new DatePicker();

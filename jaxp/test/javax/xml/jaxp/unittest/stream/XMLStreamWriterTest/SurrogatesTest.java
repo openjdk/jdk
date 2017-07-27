@@ -45,8 +45,6 @@ import org.testng.annotations.DataProvider;
 /*
  * @test
  * @bug 8145974
- * @modules javax.xml
- * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.SurrogatesTest
  * @run testng/othervm stream.XMLStreamWriterTest.SurrogatesTest

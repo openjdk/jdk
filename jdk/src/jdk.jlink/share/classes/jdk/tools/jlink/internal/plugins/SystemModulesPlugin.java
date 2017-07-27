@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@ import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -41,16 +45,26 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 
 import jdk.internal.module.Checks;
+import jdk.internal.module.ClassFileAttributes;
+import jdk.internal.module.ClassFileConstants;
+import jdk.internal.module.IllegalAccessMaps;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
+import jdk.internal.module.ModuleTarget;
 import jdk.internal.module.SystemModules;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -106,6 +120,11 @@ public final class SystemModulesPlugin implements Plugin {
     @Override
     public boolean hasArguments() {
         return true;
+    }
+
+    @Override
+    public String getArgumentsDescription() {
+        return PluginsResourceBundle.getArgument(NAME);
     }
 
     @Override
@@ -171,10 +190,11 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     static class ModuleInfo {
+        private final ByteArrayInputStream bain;
         private final Attributes attrs;
         private final Set<String> packages;
-        private final ByteArrayInputStream bain;
         private final boolean dropModuleTarget;
+        private final boolean addModulePackages;
         private ModuleDescriptor descriptor;  // may be different that the original one
 
         ModuleInfo(byte[] bytes, Set<String> packages, boolean dropModuleTarget)
@@ -182,19 +202,24 @@ public final class SystemModulesPlugin implements Plugin {
         {
             this.bain = new ByteArrayInputStream(bytes);
             this.packages = packages;
-
             this.attrs = jdk.internal.module.ModuleInfo.read(bain, null);
+            // If ModulePackages attribute is present, the packages from this
+            // module descriptor returns the packages in that attribute.
+            // If it's not present, ModuleDescriptor::packages only contains
+            // the exported and open packages from module-info.class
             this.descriptor = attrs.descriptor();
             if (descriptor.isAutomatic()) {
                 throw new InternalError("linking automatic module is not supported");
             }
 
-            if (dropModuleTarget) {
-                // drop target attribute only if any OS property is present
-                this.dropModuleTarget =
-                    descriptor.osName().isPresent() ||
-                    descriptor.osArch().isPresent() ||
-                    descriptor.osVersion().isPresent();
+            // add ModulePackages attribute if this module contains some packages
+            // and ModulePackages is not present
+            this.addModulePackages = packages.size() > 0 && !hasModulePackages();
+
+            // drop target attribute only if any OS property is present
+            ModuleTarget target = attrs.target();
+            if (dropModuleTarget && target != null) {
+                this.dropModuleTarget = (target.targetPlatform() != null);
             } else {
                 this.dropModuleTarget = false;
             }
@@ -211,6 +236,10 @@ public final class SystemModulesPlugin implements Plugin {
 
         Set<String> packages() {
             return packages;
+        }
+
+        ModuleTarget target() {
+            return attrs.target();
         }
 
         ModuleHashes recordedHashes() {
@@ -276,51 +305,69 @@ public final class SystemModulesPlugin implements Plugin {
             }
         }
 
+        boolean hasModulePackages() throws IOException {
+            Set<String> attrTypes = new HashSet<>();
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+                @Override
+                public void visitAttribute(Attribute attr) {
+                    attrTypes.add(attr.type);
+                }
+            };
+
+            // prototype of attributes that should be parsed
+            Attribute[] attrs = new Attribute[] {
+                new ClassFileAttributes.ModulePackagesAttribute()
+            };
+
+            try (InputStream in = getInputStream()) {
+                // parse module-info.class
+                ClassReader cr = new ClassReader(in);
+                cr.accept(cv, attrs, 0);
+                return attrTypes.contains(ClassFileConstants.MODULE_PACKAGES);
+            }
+        }
+
         /**
          * Returns true if module-info.class should be written
          * 1. add ModulePackages attribute if not present; or
          * 2. drop ModuleTarget attribute except java.base
          */
         boolean shouldRewrite() {
-            return shouldAddModulePackages() || shouldDropModuleTarget();
-        }
-
-        boolean shouldAddModulePackages() {
-            return (descriptor.packages().isEmpty() && packages.size() > 0);
-        }
-
-        boolean shouldDropModuleTarget() {
-            return dropModuleTarget &&
-                        (descriptor.osName().isPresent() ||
-                         descriptor.osArch().isPresent() ||
-                         descriptor.osVersion().isPresent());
+            return addModulePackages || dropModuleTarget;
         }
 
         /**
          * Returns the bytes for the module-info.class with ModulePackages
-         * if it contains at least one package
+         * attribute added and/or with ModuleTarget attribute dropped.
          */
         byte[] getBytes() throws IOException {
-            bain.reset();
-
-            // add ModulePackages attribute if not exist
-            if (shouldRewrite()) {
-                ModuleInfoRewriter rewriter = new ModuleInfoRewriter(bain);
-                if (shouldAddModulePackages()) {
-                    rewriter.addModulePackages(packages);
+            try (InputStream in = getInputStream()) {
+                if (shouldRewrite()) {
+                    ModuleInfoRewriter rewriter = new ModuleInfoRewriter(in);
+                    if (addModulePackages) {
+                        rewriter.addModulePackages(packages);
+                    }
+                    if (dropModuleTarget) {
+                        rewriter.dropModuleTarget();
+                    }
+                    // rewritten module descriptor
+                    byte[] bytes = rewriter.getBytes();
+                    try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
+                        this.descriptor = ModuleDescriptor.read(bain);
+                    }
+                    return bytes;
+                } else {
+                    return in.readAllBytes();
                 }
-                if (shouldDropModuleTarget()) {
-                    rewriter.dropModuleTarget();
-                }
-                // rewritten module descriptor
-                byte[] bytes = rewriter.getBytes();
-                try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
-                     this.descriptor = ModuleDescriptor.read(bain);
-                }
-                return bytes;
-            } else {
-                return bain.readAllBytes();
             }
+        }
+
+        /*
+         * Returns the input stream of the module-info.class
+         */
+        InputStream getInputStream() {
+            bain.reset();
+            return bain;
         }
 
         class ModuleInfoRewriter extends ByteArrayOutputStream {
@@ -337,7 +384,7 @@ public final class SystemModulesPlugin implements Plugin {
             }
 
             void dropModuleTarget() {
-                extender.targetPlatform("", "", "");
+                extender.targetPlatform("");
             }
 
             byte[] getBytes() throws IOException {
@@ -364,6 +411,10 @@ public final class SystemModulesPlugin implements Plugin {
             "java/lang/module/ModuleDescriptor$Exports$Modifier";
         private static final String OPENS_MODIFIER_CLASSNAME =
             "java/lang/module/ModuleDescriptor$Opens$Modifier";
+        private static final String MODULE_TARGET_CLASSNAME  =
+            "jdk/internal/module/ModuleTarget";
+        private static final String MODULE_TARGET_ARRAY_SIGNATURE  =
+            "[Ljdk/internal/module/ModuleTarget;";
         private static final String MODULE_HASHES_ARRAY_SIGNATURE  =
             "[Ljdk/internal/module/ModuleHashes;";
         private static final String MODULE_RESOLUTION_CLASSNAME  =
@@ -379,6 +430,7 @@ public final class SystemModulesPlugin implements Plugin {
 
         private final int BUILDER_VAR    = 0;
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
+        private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
         private int nextLocalVar         = 2;  // index to next local variable
 
@@ -480,11 +532,9 @@ public final class SystemModulesPlugin implements Plugin {
             if (entry.moduleName().equals("java.base")) {
                 moduleInfo = new ModuleInfo(entry.contentBytes(), packages, false);
                 ModuleDescriptor md = moduleInfo.descriptor;
-                // drop Moduletarget attribute only if java.base has all OS properties
-                // otherwise, retain it
-                if (dropModuleTarget &&
-                        md.osName().isPresent() && md.osArch().isPresent() &&
-                        md.osVersion().isPresent()) {
+                // drop ModuleTarget attribute if java.base has all OS properties
+                ModuleTarget target = moduleInfo.target();
+                if (dropModuleTarget && target.targetPlatform() != null) {
                     dropModuleTarget = true;
                 } else {
                     dropModuleTarget = false;
@@ -499,7 +549,7 @@ public final class SystemModulesPlugin implements Plugin {
             moduleInfo.validatePackages();
 
             // module-info.class may be overridden for optimization
-            // 1. update ModuleTarget attribute to drop osName, osArch, osVersion
+            // 1. update ModuleTarget attribute to drop targetPlartform
             // 2. add/update ModulePackages attribute
             if (moduleInfo.shouldRewrite()) {
                 entry = entry.copyWithContent(moduleInfo.getBytes());
@@ -549,15 +599,24 @@ public final class SystemModulesPlugin implements Plugin {
 
             // generate SystemModules::descriptors
             genDescriptorsMethod();
+
+            // generate SystemModules::targets
+            genTargetsMethod();
+
             // generate SystemModules::hashes
             genHashesMethod();
+
             // generate SystemModules::moduleResolutions
             genModuleResolutionsMethod();
+
+            // generate SystemModules::concealedPackagesToOpen and
+            // SystemModules::exportedPackagesToOpen
+            genXXXPackagesToOpenMethods();
 
             return cw;
         }
 
-        /*
+        /**
          * Generate bytecode for SystemModules::descriptors method
          */
         private void genDescriptorsMethod() {
@@ -581,10 +640,46 @@ public final class SystemModulesPlugin implements Plugin {
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
-
         }
 
-        /*
+        /**
+         * Generate bytecode for SystemModules::targets method
+         */
+        private void genTargetsMethod() {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+                                              "targets",
+                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
+                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
+                                              null);
+            mv.visitCode();
+            pushInt(mv, moduleInfos.size());
+            mv.visitTypeInsn(ANEWARRAY, MODULE_TARGET_CLASSNAME);
+            mv.visitVarInsn(ASTORE, MT_VAR);
+
+            for (int index=0; index < moduleInfos.size(); index++) {
+                ModuleInfo minfo = moduleInfos.get(index);
+                if (minfo.target() != null && !minfo.dropModuleTarget) {
+                    mv.visitVarInsn(ALOAD, MT_VAR);
+                    pushInt(mv, index);
+
+                    // new ModuleTarget(String, String)
+                    mv.visitTypeInsn(NEW, MODULE_TARGET_CLASSNAME);
+                    mv.visitInsn(DUP);
+                    mv.visitLdcInsn(minfo.target().targetPlatform());
+                    mv.visitMethodInsn(INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
+                        "<init>", "(Ljava/lang/String;)V", false);
+
+                    mv.visitInsn(AASTORE);
+                }
+            }
+
+            mv.visitVarInsn(ALOAD, MT_VAR);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        /**
          * Generate bytecode for SystemModules::hashes method
          */
         private void genHashesMethod() {
@@ -612,10 +707,9 @@ public final class SystemModulesPlugin implements Plugin {
             hmv.visitInsn(ARETURN);
             hmv.visitMaxs(0, 0);
             hmv.visitEnd();
-
         }
 
-        /*
+        /**
          * Generate bytecode for SystemModules::methodResoultions method
          */
         private void genModuleResolutionsMethod() {
@@ -649,6 +743,96 @@ public final class SystemModulesPlugin implements Plugin {
             mresmv.visitInsn(ARETURN);
             mresmv.visitMaxs(0, 0);
             mresmv.visitEnd();
+        }
+
+        /**
+         * Generate SystemModules::concealedPackagesToOpen and
+         * SystemModules::exportedPackagesToOpen methods.
+         */
+        private void genXXXPackagesToOpenMethods() {
+            List<ModuleDescriptor> descriptors = moduleInfos.stream()
+                    .map(ModuleInfo::descriptor)
+                    .collect(Collectors.toList());
+            ModuleFinder finder = finderOf(descriptors);
+            IllegalAccessMaps maps = IllegalAccessMaps.generate(finder);
+            generate("concealedPackagesToOpen", maps.concealedPackagesToOpen());
+            generate("exportedPackagesToOpen", maps.exportedPackagesToOpen());
+        }
+
+        /**
+         * Generate SystemModules:XXXPackagesToOpen
+         */
+        private void generate(String methodName, Map<String, Set<String>> map) {
+            // Map<String, Set<String>> XXXPackagesToOpen()
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+                                              methodName,
+                                              "()Ljava/util/Map;",
+                                              "()Ljava/util/Map;",
+                                              null);
+            mv.visitCode();
+
+            // new Map$Entry[moduleCount]
+            pushInt(mv, map.size());
+            mv.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
+
+            int index = 0;
+            for (Map.Entry<String, Set<String>> e : map.entrySet()) {
+                String moduleName = e.getKey();
+                Set<String> packages = e.getValue();
+                int packageCount = packages.size();
+
+                mv.visitInsn(DUP);
+                pushInt(mv, index);
+                mv.visitLdcInsn(moduleName);
+
+                // use Set.of(Object[]) when there are more than 2 packages
+                // use Set.of(Object) or Set.of(Object, Object) when fewer packages
+                if (packageCount > 2) {
+                    pushInt(mv, packageCount);
+                    mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                    int i = 0;
+                    for (String pn : packages) {
+                        mv.visitInsn(DUP);
+                        pushInt(mv, i);
+                        mv.visitLdcInsn(pn);
+                        mv.visitInsn(AASTORE);
+                        i++;
+                    }
+                    mv.visitMethodInsn(INVOKESTATIC,
+                                       "java/util/Set",
+                                       "of",
+                                       "([Ljava/lang/Object;)Ljava/util/Set;",
+                                       true);
+                } else {
+                    StringBuilder sb = new StringBuilder("(");
+                    for (String pn : packages) {
+                        mv.visitLdcInsn(pn);
+                        sb.append("Ljava/lang/Object;");
+                    }
+                    sb.append(")Ljava/util/Set;");
+                    mv.visitMethodInsn(INVOKESTATIC,
+                                       "java/util/Set",
+                                       "of",
+                                       sb.toString(),
+                                       true);
+                }
+
+                String desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;";
+                mv.visitMethodInsn(INVOKESTATIC,
+                                   "java/util/Map",
+                                   "entry",
+                                   desc,
+                                   true);
+                mv.visitInsn(AASTORE);
+                index++;
+            }
+
+            // invoke Map.ofEntries(Map$Entry[])
+            mv.visitMethodInsn(INVOKESTATIC, "java/util/Map", "ofEntries",
+                    "([Ljava/util/Map$Entry;)Ljava/util/Map;", true);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
 
         public boolean isOverriddenClass(String path) {
@@ -714,6 +898,7 @@ public final class SystemModulesPlugin implements Plugin {
             final ModuleDescriptor md;
             final Set<String> packages;
             final int index;
+
             ModuleDescriptorBuilder(ModuleDescriptor md, Set<String> packages, int index) {
                 if (md.isAutomatic()) {
                     throw new InternalError("linking automatic module is not supported");
@@ -751,11 +936,6 @@ public final class SystemModulesPlugin implements Plugin {
                 // main class
                 md.mainClass().ifPresent(this::mainClass);
 
-                // os name, arch, version
-                targetPlatform(md.osName().orElse(null),
-                               md.osArch().orElse(null),
-                               md.osVersion().orElse(null));
-
                 putModuleDescriptor();
             }
 
@@ -771,8 +951,11 @@ public final class SystemModulesPlugin implements Plugin {
                 if (md.isOpen()) {
                     setModuleBit("open", true);
                 }
-                if (md.isSynthetic()) {
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC)) {
                     setModuleBit("synthetic", true);
+                }
+                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED)) {
+                    setModuleBit("mandated", true);
                 }
             }
 
@@ -1048,25 +1231,6 @@ public final class SystemModulesPlugin implements Plugin {
                 mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
                     "version", STRING_SIG, false);
                 mv.visitInsn(POP);
-            }
-
-            /*
-             * Invoke Builder.osName(String name)
-             *        Builder.osArch(String arch)
-             *        Builder.osVersion(String version)
-             */
-            void targetPlatform(String osName, String osArch, String osVersion) {
-                if (osName != null) {
-                    invokeBuilderMethod("osName", osName);
-                }
-
-                if (osArch != null) {
-                    invokeBuilderMethod("osArch", osArch);
-                }
-
-                if (osVersion != null) {
-                    invokeBuilderMethod("osVersion", osVersion);
-                }
             }
 
             void invokeBuilderMethod(String methodName, String value) {
@@ -1398,5 +1562,32 @@ public final class SystemModulesPlugin implements Plugin {
                                   "L" + className + ";");
             }
         }
+    }
+
+    static ModuleFinder finderOf(Iterable<ModuleDescriptor> descriptors) {
+        Map<String, ModuleReference> namesToReference = new HashMap<>();
+        for (ModuleDescriptor descriptor : descriptors) {
+            String name = descriptor.name();
+            URI uri = URI.create("module:/" + name);
+            ModuleReference mref = new ModuleReference(descriptor, uri) {
+                @Override
+                public ModuleReader open() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            namesToReference.putIfAbsent(name, mref);
+        }
+
+        return new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                Objects.requireNonNull(name);
+                return Optional.ofNullable(namesToReference.get(name));
+            }
+            @Override
+            public Set<ModuleReference> findAll() {
+                return new HashSet<>(namesToReference.values());
+            }
+        };
     }
 }

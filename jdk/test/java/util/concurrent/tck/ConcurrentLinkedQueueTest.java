@@ -41,7 +41,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ConcurrentLinkedQueueTest extends JSR166TestCase {
 
@@ -65,7 +64,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
      * Returns a new queue of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private ConcurrentLinkedQueue<Integer> populatedQueue(int n) {
+    private static ConcurrentLinkedQueue<Integer> populatedQueue(int n) {
         ConcurrentLinkedQueue<Integer> q = new ConcurrentLinkedQueue<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)
@@ -200,7 +199,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(null) throws NPE
+     * addAll(null) throws NullPointerException
      */
     public void testAddAll1() {
         ConcurrentLinkedQueue q = new ConcurrentLinkedQueue();
@@ -211,7 +210,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         ConcurrentLinkedQueue q = populatedQueue(SIZE);
@@ -222,7 +221,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll of a collection with null elements throws NPE
+     * addAll of a collection with null elements throws NullPointerException
      */
     public void testAddAll2() {
         ConcurrentLinkedQueue q = new ConcurrentLinkedQueue();

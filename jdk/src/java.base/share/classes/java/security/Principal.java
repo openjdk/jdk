@@ -35,6 +35,7 @@ import javax.security.auth.Subject;
  * @see java.security.cert.X509Certificate
  *
  * @author Li Gong
+ * @since 1.1
  */
 public interface Principal {
 

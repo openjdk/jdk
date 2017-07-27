@@ -85,7 +85,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
      * Returns a new queue of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private LinkedBlockingQueue<Integer> populatedQueue(int n) {
+    private static LinkedBlockingQueue<Integer> populatedQueue(int n) {
         LinkedBlockingQueue<Integer> q =
             new LinkedBlockingQueue<Integer>(n);
         assertTrue(q.isEmpty());
@@ -319,7 +319,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(SIZE, q.size());
@@ -341,6 +341,13 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
                 pleaseTake.countDown();
                 q.put(86);
 
+                Thread.currentThread().interrupt();
+                try {
+                    q.put(99);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
                 pleaseInterrupt.countDown();
                 try {
                     q.put(99);
@@ -354,7 +361,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
         assertEquals(0, q.take());
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
         assertEquals(0, q.remainingCapacity());
@@ -370,18 +377,28 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
             public void realRun() throws InterruptedException {
                 q.put(new Object());
                 q.put(new Object());
+
                 long startTime = System.nanoTime();
                 assertFalse(q.offer(new Object(), timeoutMillis(), MILLISECONDS));
                 assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+
+                Thread.currentThread().interrupt();
+                try {
+                    q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
                 pleaseInterrupt.countDown();
                 try {
                     q.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -404,9 +421,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < SIZE; ++i) {
-                    assertEquals(i, q.take());
-                }
+                for (int i = 0; i < SIZE; i++) assertEquals(i, q.take());
 
                 Thread.currentThread().interrupt();
                 try {
@@ -424,7 +439,7 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -473,24 +488,32 @@ public class LinkedBlockingQueueTest extends JSR166TestCase {
      */
     public void testInterruptedTimedPoll() throws InterruptedException {
         final BlockingQueue<Integer> q = populatedQueue(SIZE);
-        final CountDownLatch aboutToWait = new CountDownLatch(1);
+        final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                for (int i = 0; i < SIZE; ++i) {
+                for (int i = 0; i < SIZE; i++)
                     assertEquals(i, (int) q.poll(LONG_DELAY_MS, MILLISECONDS));
-                }
-                aboutToWait.countDown();
+
+                Thread.currentThread().interrupt();
                 try {
                     q.poll(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
-                } catch (InterruptedException success) {
-                    assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
-                }
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
+                pleaseInterrupt.countDown();
+                try {
+                    q.poll(LONG_DELAY_MS, MILLISECONDS);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
+
+                assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
-        await(aboutToWait);
-        waitForThreadToEnterWaitState(t);
+        await(pleaseInterrupt);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);

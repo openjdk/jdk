@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@ Java virtual machine and other components in the Java runtime.
 It allows both local and remote
 monitoring and management of the running Java virtual machine.
 
-<h4><a name="MXBean">Platform MXBean</a></h4>
+<h3><a id="MXBean">Platform MXBean</a></h3>
 <p>
 A platform MXBean is a <i>managed bean</i> that
-conforms to the <a href="../../../javax/management/package-summary.html">JMX</a>
+conforms to the {@linkplain javax.management JMX}
 Instrumentation Specification and only uses a set of basic data types.
 Each platform MXBean is a {@link java.lang.management.PlatformManagedObject}
 with a unique
 {@linkplain java.lang.management.PlatformManagedObject#getObjectName name}.
-<h4>ManagementFactory</h4>
+<h3>ManagementFactory</h3>
 
 <p>The {@link java.lang.management.ManagementFactory} class is the management
 factory class for the Java platform.  This class provides a set of
@@ -58,7 +58,7 @@ the specification of the management interface.
 This is a single MBeanServer that can be shared by different managed
 components running within the same Java virtual machine.
 
-<h4>Interoperability</h4>
+<h3>Interoperability</h3>
 
 <p>A management application and a platform MBeanServer of a running
 virtual machine can interoperate
@@ -69,10 +69,10 @@ server and the connector client are JMX
 this allows interoperation across versions.
 A data type used by the MXBean interfaces are mapped to an
 open type when being accessed via MBeanServer interface.
-See the <a href="../../../javax/management/MXBean.html#MXBean-spec">
+See the <a href="{@docRoot}/javax/management/MXBean.html#MXBean-spec">
 MXBean</a> specification for details.
 
-<h4><a name="examples">Ways to Access MXBeans</a></h4>
+<h3><a id="examples">Ways to Access MXBeans</a></h3>
 
 <p>An application can monitor the instrumentation of the
 Java virtual machine and the runtime in the following ways:
@@ -163,7 +163,7 @@ Java virtual machine and the runtime in the following ways:
 </ul>
 
 
-<h4><a name="extension">Platform Extension</a></h4>
+<h3><a id="extension">Platform Extension</a></h3>
 
 <p>A Java virtual machine implementation may add its platform extension to
 the management interface by defining platform-dependent
@@ -234,8 +234,7 @@ java.lang.NullPointerException NullPointerException} to be thrown.
 
 <p> The java.lang.management API is thread-safe.
 
-@see <a href="../../../javax/management/package-summary.html">
-     JMX Specification.</a>
+@see {@linkplain javax.management JMX Specification}
 
 @author  Mandy Chung
 @since   1.5

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1214,8 +1213,8 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         fGlobalStore[fGlobalStorePos++] = fName ;
         fGlobalStore[fGlobalStorePos++] = fTargetNamespace;
         // let's save ourselves a couple of objects...
-        fGlobalStore[fGlobalStorePos++] = new Integer((fDerivedBy << 16) + fFinal);
-        fGlobalStore[fGlobalStorePos++] = new Integer((fBlock << 16) + fContentType);
+        fGlobalStore[fGlobalStorePos++] = (fDerivedBy << 16) + fFinal;
+        fGlobalStore[fGlobalStorePos++] = (fBlock << 16) + fContentType;
         fGlobalStore[fGlobalStorePos++] = fBaseType;
         fGlobalStore[fGlobalStorePos++] = fAttrGrp;
         fGlobalStore[fGlobalStorePos++] = fParticle;
@@ -1229,15 +1228,15 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
         fParticle = (XSParticleDecl)fGlobalStore[--fGlobalStorePos];
         fAttrGrp = (XSAttributeGroupDecl)fGlobalStore[--fGlobalStorePos];
         fBaseType = (XSTypeDefinition)fGlobalStore[--fGlobalStorePos];
-        int i = ((Integer)(fGlobalStore[--fGlobalStorePos])).intValue();
+        int i = ((Integer)(fGlobalStore[--fGlobalStorePos]));
         fBlock = (short)(i >> 16);
         fContentType = (short)i;
-        i = ((Integer)(fGlobalStore[--fGlobalStorePos])).intValue();
+        i = ((Integer)(fGlobalStore[--fGlobalStorePos]));
         fDerivedBy = (short)(i >> 16);
         fFinal = (short)i;
         fTargetNamespace = (String)fGlobalStore[--fGlobalStorePos];
         fName = (String)fGlobalStore[--fGlobalStorePos];
-        fIsAbstract = ((Boolean)fGlobalStore[--fGlobalStorePos]).booleanValue();
+        fIsAbstract = ((Boolean)fGlobalStore[--fGlobalStorePos]);
         fComplexTypeDecl = (XSComplexTypeDecl)fGlobalStore[--fGlobalStorePos];
     }
 

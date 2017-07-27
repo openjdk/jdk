@@ -230,13 +230,15 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
     methodHandle    method,                      // the method/prototype if any (NULL, otherwise)
-    int             vtable_index                 // the vtable index if any, else negative
+    int             vtable_index,                // the vtable index if any, else negative
+    bool            sender_is_interface
   );
 
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method                       // the method to call
+    methodHandle    method,                      // the method to call
+    bool            sender_is_interface
   );
 
   void set_vtable_call(                          // sets entry to vtable index
@@ -359,7 +361,9 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
                                                    return (TosState)((_flags >> tos_state_shift) & tos_state_mask); }
 
   // Code generation support
-  static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / wordSize); }
+  static WordSize size()                         {
+    return in_WordSize(align_size_up(sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
+  }
   static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }
   static ByteSize f1_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f1); }

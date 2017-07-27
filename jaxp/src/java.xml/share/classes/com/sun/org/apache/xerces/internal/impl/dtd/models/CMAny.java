@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -108,7 +107,7 @@ public class CMAny
 
     public String toString()
     {
-        StringBuffer strRet = new StringBuffer();
+        StringBuilder strRet = new StringBuilder();
         strRet.append("(");
         strRet.append("##any:uri=");
         strRet.append(fURI);
@@ -118,7 +117,7 @@ public class CMAny
             strRet.append
             (
                 " (Pos:"
-                + new Integer(fPosition).toString()
+                + fPosition
                 + ")"
             );
         }
