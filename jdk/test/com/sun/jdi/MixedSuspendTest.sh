@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2015 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,14 @@
 # questions.
 #
 
-#  @test
-#  @bug 6224859
-#  @summary JDWP: Mixing application suspends and debugger suspends can cause hangs
-# 
-#  @author Jim Holmlund
-# 
-#  @key intermittent
-#  @modules jdk.jdi
-#  @run build TestScaffold VMConnection TargetListener TargetAdapter
-#  @run shell MixedSuspendTest.sh
+# @test
+# @bug 6224859
+# @key intermittent
+# @summary JDWP: Mixing application suspends and debugger suspends can cause hangs
+# @author Jim Holmlund
+#
+# @run build TestScaffold VMConnection TargetListener TargetAdapter
+# @run shell MixedSuspendTest.sh
 
 classname=MixedSuspendTarg
 
@@ -84,7 +82,7 @@ public class $classname extends Thread {
                 int i = 0;
             }
         }
-            
+
         System.out.println("Debuggee: end of thread");
     }
 
@@ -113,7 +111,7 @@ mysetup()
 
     for ii in . $TESTSRC $TESTSRC/.. ; do
         if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
+            . $ii/ShellScaffold.sh
             break
         fi
     done

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import java.util.*;
+import com.sun.jdi.ClassObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.VirtualMachine;
 
 public class ClassObjectReferenceImpl extends ObjectReferenceImpl
-                                      implements ClassObjectReference {
+                                      implements ClassObjectReference
+{
     private ReferenceType reflectedType;
 
     ClassObjectReferenceImpl(VirtualMachine vm, long ref) {

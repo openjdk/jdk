@@ -142,7 +142,7 @@ public class DelayQueueTest extends JSR166TestCase {
      * Returns a new queue of given size containing consecutive
      * PDelays 0 ... n - 1.
      */
-    private DelayQueue<PDelay> populatedQueue(int n) {
+    private static DelayQueue<PDelay> populatedQueue(int n) {
         DelayQueue<PDelay> q = new DelayQueue<>();
         assertTrue(q.isEmpty());
         for (int i = n - 1; i >= 0; i -= 2)
@@ -261,7 +261,7 @@ public class DelayQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         DelayQueue q = populatedQueue(SIZE);
@@ -365,9 +365,8 @@ public class DelayQueueTest extends JSR166TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < SIZE; ++i) {
+                for (int i = 0; i < SIZE; i++)
                     assertEquals(new PDelay(i), ((PDelay)q.take()));
-                }
 
                 Thread.currentThread().interrupt();
                 try {
@@ -385,7 +384,7 @@ public class DelayQueueTest extends JSR166TestCase {
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -438,10 +437,9 @@ public class DelayQueueTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime = System.nanoTime();
-                for (int i = 0; i < SIZE; ++i) {
+                for (int i = 0; i < SIZE; i++)
                     assertEquals(new PDelay(i),
                                  ((PDelay)q.poll(LONG_DELAY_MS, MILLISECONDS)));
-                }
 
                 Thread.currentThread().interrupt();
                 try {
@@ -456,11 +454,12 @@ public class DelayQueueTest extends JSR166TestCase {
                     shouldThrow();
                 } catch (InterruptedException success) {}
                 assertFalse(Thread.interrupted());
+
                 assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
         checkEmpty(q);
@@ -741,7 +740,9 @@ public class DelayQueueTest extends JSR166TestCase {
     public void testTimedPollDelayed() throws InterruptedException {
         DelayQueue q = new DelayQueue();
         q.add(new NanoDelay(LONG_DELAY_MS * 1000000L));
+        long startTime = System.nanoTime();
         assertNull(q.poll(timeoutMillis(), MILLISECONDS));
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
     }
 
     /**

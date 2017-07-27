@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,19 +74,24 @@ import java.io.IOException;
  * BasicFileAttributeView} and {@link FileOwnerAttributeView}, and in addition,
  * the following attributes are supported:
  * <blockquote>
- * <table border="1" cellpadding="8" summary="Supported attributes">
+ * <table class="striped">
+ * <caption style="display:none">Supported attributes</caption>
+ * <thead>
  *   <tr>
- *     <th> Name </th>
- *     <th> Type </th>
+ *     <th scope="col"> Name </th>
+ *     <th scope="col"> Type </th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *  <tr>
- *     <td> "permissions" </td>
+ *     <th scope="row"> "permissions" </th>
  *     <td> {@link Set}&lt;{@link PosixFilePermission}&gt; </td>
  *   </tr>
  *   <tr>
- *     <td> "group" </td>
+ *     <th scope="row"> "group" </th>
  *     <td> {@link GroupPrincipal} </td>
  *   </tr>
+ * </tbody>
  * </table>
  * </blockquote>
  *

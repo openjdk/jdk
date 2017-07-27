@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 6296125
- *  @summary  JDI: Disabling an EventRequest can cause a multi-threaded debuggee to hang
+ * @test
+ * @bug 6296125
+ * @summary  JDI: Disabling an EventRequest can cause a multi-threaded debuggee to hang
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g TwoThreadsTest.java
- *  @run driver TwoThreadsTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g TwoThreadsTest.java
+ * @run driver TwoThreadsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

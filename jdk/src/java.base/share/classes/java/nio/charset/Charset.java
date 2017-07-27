@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 
 package java.nio.charset;
 
+import jdk.internal.misc.VM;
+import sun.nio.cs.StandardCharsets;
+import sun.nio.cs.ThreadLocalCoders;
+import sun.security.action.GetPropertyAction;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.spi.CharsetProvider;
@@ -38,15 +43,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import jdk.internal.misc.VM;
-import sun.nio.cs.StandardCharsets;
-import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -67,7 +68,7 @@ import sun.security.action.GetPropertyAction;
  * concurrent threads.
  *
  *
- * <a name="names"></a><a name="charenc"></a>
+ * <a id="names"></a><a id="charenc"></a>
  * <h2>Charset names</h2>
  *
  * <p> Charsets are named by strings composed of the following characters:
@@ -113,14 +114,14 @@ import sun.security.action.GetPropertyAction;
  * The aliases of a charset are returned by the {@link #aliases() aliases}
  * method.
  *
- * <p><a name="hn">Some charsets have an <i>historical name</i> that is defined for
+ * <p><a id="hn">Some charsets have an <i>historical name</i> that is defined for
  * compatibility with previous versions of the Java platform.</a>  A charset's
  * historical name is either its canonical name or one of its aliases.  The
  * historical name is returned by the {@code getEncoding()} methods of the
  * {@link java.io.InputStreamReader#getEncoding InputStreamReader} and {@link
  * java.io.OutputStreamWriter#getEncoding OutputStreamWriter} classes.
  *
- * <p><a name="iana"> </a>If a charset listed in the <a
+ * <p><a id="iana"> </a>If a charset listed in the <a
  * href="http://www.iana.org/assignments/character-sets"><i>IANA Charset
  * Registry</i></a> is supported by an implementation of the Java platform then
  * its canonical name must be the name listed in the registry. Many charsets
@@ -142,29 +143,34 @@ import sun.security.action.GetPropertyAction;
  *
  *
  *
- * <p><a name="standard">Every implementation of the Java platform is required to support the
+ * <p><a id="standard">Every implementation of the Java platform is required to support the
  * following standard charsets.</a>  Consult the release documentation for your
  * implementation to see if any other charsets are supported.  The behavior
  * of such optional charsets may differ between implementations.
  *
- * <blockquote><table width="80%" summary="Description of standard charsets">
- * <tr><th align="left">Charset</th><th align="left">Description</th></tr>
- * <tr><td valign=top>{@code US-ASCII}</td>
+ * <blockquote><table class="striped" style="width:80%">
+ * <caption style="display:none">Description of standard charsets</caption>
+ * <thead>
+ * <tr><th scope="col" style="text-align:left">Charset</th><th scope="col" style="text-align:left">Description</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="vertical-align:top">{@code US-ASCII}</th>
  *     <td>Seven-bit ASCII, a.k.a. {@code ISO646-US},
  *         a.k.a. the Basic Latin block of the Unicode character set</td></tr>
- * <tr><td valign=top><code>ISO-8859-1&nbsp;&nbsp;</code></td>
+ * <tr><th scope="row" style="vertical-align:top"><code>ISO-8859-1&nbsp;&nbsp;</code></th>
  *     <td>ISO Latin Alphabet No. 1, a.k.a. {@code ISO-LATIN-1}</td></tr>
- * <tr><td valign=top>{@code UTF-8}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-8}</th>
  *     <td>Eight-bit UCS Transformation Format</td></tr>
- * <tr><td valign=top>{@code UTF-16BE}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16BE}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         big-endian byte&nbsp;order</td></tr>
- * <tr><td valign=top>{@code UTF-16LE}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16LE}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         little-endian byte&nbsp;order</td></tr>
- * <tr><td valign=top>{@code UTF-16}</td>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-16}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * <p> The {@code UTF-8} charset is specified by <a
@@ -276,19 +282,6 @@ public abstract class Charset
 
     /* -- Static methods -- */
 
-    private static volatile String bugLevel;
-
-    static boolean atBugLevel(String bl) {              // package-private
-        String level = bugLevel;
-        if (level == null) {
-            if (!VM.isBooted())
-                return false;
-            bugLevel = level = GetPropertyAction
-                    .privilegedGetProperty("sun.nio.cs.bugLevel", "");
-        }
-        return level.equals(bl);
-    }
-
     /**
      * Checks that the given string is a legal charset name. </p>
      *
@@ -300,9 +293,8 @@ public abstract class Charset
      */
     private static void checkName(String s) {
         int n = s.length();
-        if (!atBugLevel("1.4")) {
-            if (n == 0)
-                throw new IllegalCharsetNameException(s);
+        if (n == 0) {
+            throw new IllegalCharsetNameException(s);
         }
         for (int i = 0; i < n; i++) {
             char c = s.charAt(i);
@@ -319,7 +311,9 @@ public abstract class Charset
     }
 
     /* The standard set of charsets */
-    private static CharsetProvider standardProvider = new StandardCharsets();
+    private static final CharsetProvider standardProvider = new StandardCharsets();
+
+    private static final String[] zeroAliases = new String[0];
 
     // Cache of the most-recently-returned charsets,
     // along with the names that were used to find them
@@ -626,7 +620,6 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private final String[] zeroAliases = new String[0];
     private Set<String> aliasSet = null;
 
     /**
@@ -643,10 +636,19 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        checkName(canonicalName);
         String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
-        for (int i = 0; i < as.length; i++)
-            checkName(as[i]);
+
+        // Skip checks for the standard, built-in Charsets we always load
+        // during initialization.  Use of identity is intentional to be
+        // consistent with sun.nio.cs.StandardCharsets
+        if (canonicalName != StandardCharsets.ISO_8859_1
+                && canonicalName != StandardCharsets.US_ASCII
+                && canonicalName != StandardCharsets.UTF_8) {
+            checkName(canonicalName);
+            for (int i = 0; i < as.length; i++) {
+                checkName(as[i]);
+            }
+        }
         this.name = canonicalName;
         this.aliases = as;
     }

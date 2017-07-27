@@ -94,6 +94,7 @@ import sun.security.util.ResourcesMgr;
  * {@code Principal} implementations associated with Subjects
  * must implement {@code Serializable}.
  *
+ * @since 1.4
  * @see java.security.Principal
  * @see java.security.DomainCombiner
  */

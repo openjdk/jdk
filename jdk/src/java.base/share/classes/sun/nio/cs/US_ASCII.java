@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.util.Arrays;
 
 public class US_ASCII
     extends Charset
@@ -39,7 +38,7 @@ public class US_ASCII
 {
 
     public US_ASCII() {
-        super("US-ASCII", StandardCharsets.aliases_US_ASCII);
+        super(StandardCharsets.US_ASCII, StandardCharsets.aliases_US_ASCII);
     }
 
     public String historicalName() {

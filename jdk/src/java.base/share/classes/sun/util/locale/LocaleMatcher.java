@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import java.util.Locale.*;
 import static java.util.Locale.FilteringMode.*;
 import static java.util.Locale.LanguageRange.*;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Implementation for BCP47 Locale matching
@@ -126,12 +129,16 @@ public final class LocaleMatcher {
                 return new ArrayList<String>(tags);
             } else {
                 for (String tag : tags) {
-                    tag = tag.toLowerCase(Locale.ROOT);
-                    if (tag.startsWith(range)) {
+                    // change to lowercase for case-insensitive matching
+                    String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+                    if (lowerCaseTag.startsWith(range)) {
                         int len = range.length();
-                        if ((tag.length() == len || tag.charAt(len) == '-')
-                            && !list.contains(tag)
-                            && !shouldIgnoreFilterBasicMatch(zeroRanges, tag)) {
+                        if ((lowerCaseTag.length() == len
+                                || lowerCaseTag.charAt(len) == '-')
+                            && !caseInsensitiveMatch(list, lowerCaseTag)
+                            && !shouldIgnoreFilterBasicMatch(zeroRanges,
+                                    lowerCaseTag)) {
+                            // preserving the case of the input tag
                             list.add(tag);
                         }
                     }
@@ -152,18 +159,41 @@ public final class LocaleMatcher {
     private static Collection<String> removeTagsMatchingBasicZeroRange(
             List<LanguageRange> zeroRange, Collection<String> tags) {
         if (zeroRange.isEmpty()) {
+            tags = removeDuplicates(tags);
             return tags;
         }
 
         List<String> matchingTags = new ArrayList<>();
         for (String tag : tags) {
-            tag = tag.toLowerCase(Locale.ROOT);
-            if (!shouldIgnoreFilterBasicMatch(zeroRange, tag)) {
-                matchingTags.add(tag);
+            // change to lowercase for case-insensitive matching
+            String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+            if (!shouldIgnoreFilterBasicMatch(zeroRange, lowerCaseTag)
+                    && !caseInsensitiveMatch(matchingTags, lowerCaseTag)) {
+                matchingTags.add(tag); // preserving the case of the input tag
             }
         }
 
         return matchingTags;
+    }
+
+    /**
+     * Remove duplicate tags from the given {@code tags} by
+     * ignoring case considerations.
+     */
+    private static Collection<String> removeDuplicates(
+            Collection<String> tags) {
+        Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        return tags.stream().filter(x -> distinctTags.add(x))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns true if the given {@code list} contains an element which matches
+     * with the given {@code tag} ignoring case considerations.
+     */
+    private static boolean caseInsensitiveMatch(List<String> list, String tag) {
+        return list.stream().anyMatch((element)
+                -> (element.equalsIgnoreCase(tag)));
     }
 
     /**
@@ -216,8 +246,9 @@ public final class LocaleMatcher {
             }
             String[] rangeSubtags = range.split("-");
             for (String tag : tags) {
-                tag = tag.toLowerCase(Locale.ROOT);
-                String[] tagSubtags = tag.split("-");
+                // change to lowercase for case-insensitive matching
+                String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+                String[] tagSubtags = lowerCaseTag.split("-");
                 if (!rangeSubtags[0].equals(tagSubtags[0])
                     && !rangeSubtags[0].equals("*")) {
                     continue;
@@ -225,9 +256,11 @@ public final class LocaleMatcher {
 
                 int rangeIndex = matchFilterExtendedSubtags(rangeSubtags,
                         tagSubtags);
-                if (rangeSubtags.length == rangeIndex && !list.contains(tag)
-                        && !shouldIgnoreFilterExtendedMatch(zeroRanges, tag)) {
-                    list.add(tag);
+                if (rangeSubtags.length == rangeIndex
+                        && !caseInsensitiveMatch(list, lowerCaseTag)
+                        && !shouldIgnoreFilterExtendedMatch(zeroRanges,
+                                lowerCaseTag)) {
+                    list.add(tag); // preserve the case of the input tag
                 }
             }
         }
@@ -245,14 +278,17 @@ public final class LocaleMatcher {
     private static Collection<String> removeTagsMatchingExtendedZeroRange(
             List<LanguageRange> zeroRange, Collection<String> tags) {
         if (zeroRange.isEmpty()) {
+            tags = removeDuplicates(tags);
             return tags;
         }
 
         List<String> matchingTags = new ArrayList<>();
         for (String tag : tags) {
-            tag = tag.toLowerCase(Locale.ROOT);
-            if (!shouldIgnoreFilterExtendedMatch(zeroRange, tag)) {
-                matchingTags.add(tag);
+            // change to lowercase for case-insensitive matching
+            String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+            if (!shouldIgnoreFilterExtendedMatch(zeroRange, lowerCaseTag)
+                    && !caseInsensitiveMatch(matchingTags, lowerCaseTag)) {
+                matchingTags.add(tag); // preserve the case of the input tag
             }
         }
 
@@ -368,10 +404,11 @@ public final class LocaleMatcher {
             String rangeForRegex = range.replace("*", "\\p{Alnum}*");
             while (rangeForRegex.length() > 0) {
                 for (String tag : tags) {
-                    tag = tag.toLowerCase(Locale.ROOT);
-                    if (tag.matches(rangeForRegex)
-                            && !shouldIgnoreLookupMatch(zeroRanges, tag)) {
-                        return tag;
+                    // change to lowercase for case-insensitive matching
+                    String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+                    if (lowerCaseTag.matches(rangeForRegex)
+                            && !shouldIgnoreLookupMatch(zeroRanges, lowerCaseTag)) {
+                        return tag; // preserve the case of the input tag
                     }
                 }
 

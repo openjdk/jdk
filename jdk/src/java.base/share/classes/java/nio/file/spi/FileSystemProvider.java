@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -919,20 +919,24 @@ public abstract class FileSystemProvider {
      * according to all of access modes specified in the {@code modes} parameter
      * as follows:
      *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Value</th> <th>Description</th> </tr>
+     * <table class="striped">
+     * <caption style="display:none">Access Modes</caption>
+     * <thead>
+     * <tr> <th scope="col">Value</th> <th scope="col">Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td> {@link AccessMode#READ READ} </td>
+     *   <th scope="row"> {@link AccessMode#READ READ} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to read the file. </td>
      * </tr>
      * <tr>
-     *   <td> {@link AccessMode#WRITE WRITE} </td>
+     *   <th scope="row"> {@link AccessMode#WRITE WRITE} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to write to the file, </td>
      * </tr>
      * <tr>
-     *   <td> {@link AccessMode#EXECUTE EXECUTE} </td>
+     *   <th scope="row"> {@link AccessMode#EXECUTE EXECUTE} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to {@link Runtime#exec execute} the file. The semantics
      *     may differ when checking access to a directory. For example, on UNIX
@@ -940,6 +944,7 @@ public abstract class FileSystemProvider {
      *     virtual machine has permission to search the directory in order to
      *     access file or subdirectories. </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> If the {@code modes} parameter is of length zero, then the existence
