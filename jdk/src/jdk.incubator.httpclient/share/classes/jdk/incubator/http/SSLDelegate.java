@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
@@ -50,26 +51,33 @@ class SSLDelegate {
     final SSLParameters sslParameters;
     final SocketChannel chan;
     final HttpClientImpl client;
+    final String serverName;
 
-    SSLDelegate(SSLEngine eng, SocketChannel chan, HttpClientImpl client)
+    SSLDelegate(SSLEngine eng, SocketChannel chan, HttpClientImpl client, String sn)
     {
         this.engine = eng;
         this.chan = chan;
         this.client = client;
         this.wrapper = new EngineWrapper(chan, engine);
         this.sslParameters = engine.getSSLParameters();
+        this.serverName = sn;
     }
 
     // alpn[] may be null
-    SSLDelegate(SocketChannel chan, HttpClientImpl client, String[] alpn)
+    SSLDelegate(SocketChannel chan, HttpClientImpl client, String[] alpn, String sn)
         throws IOException
     {
+        serverName = sn;
         SSLContext context = client.sslContext();
         engine = context.createSSLEngine();
         engine.setUseClientMode(true);
         SSLParameters sslp = client.sslParameters()
                                    .orElseGet(context::getSupportedSSLParameters);
         sslParameters = Utils.copySSLParameters(sslp);
+        if (sn != null) {
+            SNIHostName sni = new SNIHostName(sn);
+            sslParameters.setServerNames(List.of(sni));
+        }
         if (alpn != null) {
             sslParameters.setApplicationProtocols(alpn);
             Log.logSSL("SSLDelegate: Setting application protocols: {0}" + Arrays.toString(alpn));

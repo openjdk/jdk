@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,9 +24,7 @@ import com.sun.org.apache.xerces.internal.parsers.DOMParserImpl;
 import com.sun.org.apache.xerces.internal.parsers.DTDConfiguration;
 import com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
-import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
-import com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -345,13 +342,7 @@ public class CoreDOMImplementationImpl
          * reference to the default error handler.
          */
         public LSSerializer createLSSerializer() {
-            try {
-                return new com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl();
-            }
-            catch (Exception e) {}
-            // Fall back to Xerces' deprecated serializer if
-            // the Xalan based serializer is unavailable.
-            return new DOMSerializerImpl();
+            return new com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl();
         }
 
         /**

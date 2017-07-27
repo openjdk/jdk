@@ -78,6 +78,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return NULL; }
+  static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
@@ -269,7 +270,7 @@ protected:
   const Type* load_array_final_field(const TypeKlassPtr *tkls,
                                      ciKlass* klass) const;
 
-  Node* can_see_arraycopy_value(Node* st, PhaseTransform* phase) const;
+  Node* can_see_arraycopy_value(Node* st, PhaseGVN* phase) const;
 
   // depends_only_on_test is almost always true, and needs to be almost always
   // true to enable key hoisting & commoning optimizations.  However, for the

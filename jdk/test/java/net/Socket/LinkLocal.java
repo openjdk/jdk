@@ -26,11 +26,13 @@
  * @bug 4469866
  * @summary Connecting to a link-local IPv6 address should not
  *          causes a SocketException to be thrown.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main LinkLocal
  */
-import jdk.testlibrary.NetworkConfiguration;
+
+import jdk.test.lib.NetworkConfiguration;
 
 import java.net.*;
 import java.util.List;

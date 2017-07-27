@@ -139,7 +139,7 @@ void metadata_Relocation::pd_fix_value(address x) {
 #ifdef AARCH64
 #ifdef COMPILER2
   NativeMovConstReg* ni = nativeMovConstReg_at(addr());
-  if (ni->is_movz()) {
+  if (ni->is_mov_slow()) {
     return;
   }
 #endif

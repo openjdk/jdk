@@ -1,2 +1,2 @@
-Z14.java:10:15: compiler.err.intf.annotation.cant.have.type.params
+Z14.java:10:15: compiler.err.intf.annotation.cant.have.type.params: An
 1 error

@@ -92,7 +92,7 @@ public class ExchangerTest extends JSR166TestCase {
     }
 
     /**
-     * interrupt during wait for exchange throws IE
+     * interrupt during wait for exchange throws InterruptedException
      */
     public void testExchange_InterruptedException() {
         final Exchanger e = new Exchanger();
@@ -109,7 +109,7 @@ public class ExchangerTest extends JSR166TestCase {
     }
 
     /**
-     * interrupt during wait for timed exchange throws IE
+     * interrupt during wait for timed exchange throws InterruptedException
      */
     public void testTimedExchange_InterruptedException() {
         final Exchanger e = new Exchanger();
@@ -160,12 +160,12 @@ public class ExchangerTest extends JSR166TestCase {
             public void realRun() throws InterruptedException {
                 assertSame(one, e.exchange(two));
                 exchanged.countDown();
-                interrupted.await();
+                await(interrupted);
                 assertSame(three, e.exchange(one));
             }});
         Thread t3 = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                interrupted.await();
+                await(interrupted);
                 assertSame(one, e.exchange(three));
             }});
 

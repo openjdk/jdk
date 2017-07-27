@@ -90,6 +90,50 @@ jbyteArray getEncodedBytes(JNIEnv *env, SECItem *hSECItem)
 
 /*
  * Class:     sun_security_ec_ECKeyPairGenerator
+ * Method:    isCurveSupported
+ * Signature: ([B)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_sun_security_ec_ECKeyPairGenerator_isCurveSupported
+  (JNIEnv *env, jclass clazz, jbyteArray encodedParams)
+{
+    SECKEYECParams params_item;
+    ECParams *ecparams = NULL;
+    jboolean result = JNI_FALSE;
+
+    // The curve is supported if we can get parameters for it
+    params_item.len = env->GetArrayLength(encodedParams);
+    params_item.data =
+        (unsigned char *) env->GetByteArrayElements(encodedParams, 0);
+    if (params_item.data == NULL) {
+        goto cleanup;
+    }
+
+    // Fill a new ECParams using the supplied OID
+    if (EC_DecodeParams(&params_item, &ecparams, 0) != SECSuccess) {
+        /* bad curve OID */
+        goto cleanup;
+    }
+
+    // If we make it to here, then the curve is supported
+    result = JNI_TRUE;
+
+cleanup:
+    {
+        if (params_item.data) {
+            env->ReleaseByteArrayElements(encodedParams,
+                (jbyte *) params_item.data, JNI_ABORT);
+        }
+        if (ecparams) {
+            FreeECParams(ecparams, true);
+        }
+    }
+
+    return result;
+}
+
+/*
+ * Class:     sun_security_ec_ECKeyPairGenerator
  * Method:    generateECKeyPair
  * Signature: (I[B[B)[[B
  */

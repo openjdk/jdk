@@ -37,6 +37,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -48,11 +50,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
@@ -265,7 +267,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             final Runnable task = new CheckedRunnable() {
                 public void realRun() { done.countDown(); }};
             p.execute(task);
-            assertTrue(done.await(LONG_DELAY_MS, MILLISECONDS));
+            await(done);
         }
     }
 
@@ -359,13 +361,13 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
                 public void realRun() throws InterruptedException {
                     threadStarted.countDown();
                     assertEquals(0, p.getCompletedTaskCount());
-                    threadProceed.await();
+                    await(threadProceed);
                     threadDone.countDown();
                 }});
             await(threadStarted);
             assertEquals(0, p.getCompletedTaskCount());
             threadProceed.countDown();
-            threadDone.await();
+            await(threadDone);
             long startTime = System.nanoTime();
             while (p.getCompletedTaskCount() != 1) {
                 if (millisElapsedSince(startTime) > LONG_DELAY_MS)
@@ -1156,88 +1158,71 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * execute throws RejectedExecutionException if saturated.
+     * Submitted tasks are rejected when saturated or shutdown
      */
-    public void testSaturatedExecute() {
-        final CountDownLatch done = new CountDownLatch(1);
+    public void testSubmittedTasksRejectedWhenSaturatedOrShutdown() throws InterruptedException {
         final ThreadPoolExecutor p =
             new CustomTPE(1, 1,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(1));
-        try (PoolCleaner cleaner = cleaner(p, done)) {
-            Runnable task = new CheckedRunnable() {
-                public void realRun() throws InterruptedException {
-                    await(done);
-                }};
-            for (int i = 0; i < 2; ++i)
-                p.execute(task);
-            for (int i = 0; i < 2; ++i) {
+        final int saturatedSize = saturatedSize(p);
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final CountDownLatch threadsStarted = new CountDownLatch(p.getMaximumPoolSize());
+        final CountDownLatch done = new CountDownLatch(1);
+        final Runnable r = () -> {
+            threadsStarted.countDown();
+            for (;;) {
                 try {
-                    p.execute(task);
-                    shouldThrow();
-                } catch (RejectedExecutionException success) {}
-                assertTrue(p.getTaskCount() <= 2);
+                    done.await();
+                    return;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
+        final Callable<Boolean> c = () -> {
+            threadsStarted.countDown();
+            for (;;) {
+                try {
+                    done.await();
+                    return Boolean.TRUE;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
+        final boolean shutdownNow = rnd.nextBoolean();
+
+        try (PoolCleaner cleaner = cleaner(p, done)) {
+            // saturate
+            for (int i = saturatedSize; i--> 0; ) {
+                switch (rnd.nextInt(4)) {
+                case 0: p.execute(r); break;
+                case 1: assertFalse(p.submit(r).isDone()); break;
+                case 2: assertFalse(p.submit(r, Boolean.TRUE).isDone()); break;
+                case 3: assertFalse(p.submit(c).isDone()); break;
+                }
             }
-        }
-    }
 
-    /**
-     * executor using CallerRunsPolicy runs task if saturated.
-     */
-    public void testSaturatedExecute2() {
-        final CountDownLatch done = new CountDownLatch(1);
-        final ThreadPoolExecutor p =
-            new CustomTPE(1, 1,
-                          LONG_DELAY_MS, MILLISECONDS,
-                          new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.CallerRunsPolicy());
-        try (PoolCleaner cleaner = cleaner(p, done)) {
-            Runnable blocker = new CheckedRunnable() {
-                public void realRun() throws InterruptedException {
-                    await(done);
-                }};
-            p.execute(blocker);
-            TrackedNoOpRunnable[] tasks = new TrackedNoOpRunnable[5];
-            for (int i = 0; i < tasks.length; i++)
-                tasks[i] = new TrackedNoOpRunnable();
-            for (int i = 0; i < tasks.length; i++)
-                p.execute(tasks[i]);
-            for (int i = 1; i < tasks.length; i++)
-                assertTrue(tasks[i].done);
-            assertFalse(tasks[0].done); // waiting in queue
-        }
-    }
+            await(threadsStarted);
+            assertTaskSubmissionsAreRejected(p);
 
-    /**
-     * executor using DiscardPolicy drops task if saturated.
-     */
-    public void testSaturatedExecute3() {
-        final TrackedNoOpRunnable[] tasks = new TrackedNoOpRunnable[5];
-        for (int i = 0; i < tasks.length; ++i)
-            tasks[i] = new TrackedNoOpRunnable();
-        final CountDownLatch done = new CountDownLatch(1);
-        final ThreadPoolExecutor p =
-            new CustomTPE(1, 1,
-                          LONG_DELAY_MS, MILLISECONDS,
-                          new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.DiscardPolicy());
-        try (PoolCleaner cleaner = cleaner(p, done)) {
-            p.execute(awaiter(done));
+            if (shutdownNow)
+                p.shutdownNow();
+            else
+                p.shutdown();
+            // Pool is shutdown, but not yet terminated
+            assertTaskSubmissionsAreRejected(p);
+            assertFalse(p.isTerminated());
 
-            for (TrackedNoOpRunnable task : tasks)
-                p.execute(task);
-            for (int i = 1; i < tasks.length; i++)
-                assertFalse(tasks[i].done);
+            done.countDown();   // release blocking tasks
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+
+            assertTaskSubmissionsAreRejected(p);
         }
-        for (int i = 1; i < tasks.length; i++)
-            assertFalse(tasks[i].done);
-        assertTrue(tasks[0].done); // was waiting in queue
+        assertEquals(saturatedSize(p)
+                     - (shutdownNow ? p.getQueue().remainingCapacity() : 0),
+                     p.getCompletedTaskCount());
     }
 
     /**
      * executor using DiscardOldestPolicy drops oldest task if saturated.
      */
-    public void testSaturatedExecute4() {
+    public void testSaturatedExecute_DiscardOldestPolicy() {
         final CountDownLatch done = new CountDownLatch(1);
         LatchAwaiter r1 = awaiter(done);
         LatchAwaiter r2 = awaiter(done);
@@ -1246,7 +1231,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             new CustomTPE(1, 1,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.DiscardOldestPolicy());
+                          new ThreadPoolExecutor.DiscardOldestPolicy());
         try (PoolCleaner cleaner = cleaner(p, done)) {
             assertEquals(LatchAwaiter.NEW, r1.state);
             assertEquals(LatchAwaiter.NEW, r2.state);
@@ -1264,57 +1249,6 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * execute throws RejectedExecutionException if shutdown
-     */
-    public void testRejectedExecutionExceptionOnShutdown() {
-        final ThreadPoolExecutor p =
-            new CustomTPE(1, 1,
-                          LONG_DELAY_MS, MILLISECONDS,
-                          new ArrayBlockingQueue<Runnable>(1));
-        try { p.shutdown(); } catch (SecurityException ok) { return; }
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.execute(new NoOpRunnable());
-                shouldThrow();
-            } catch (RejectedExecutionException success) {}
-        }
-    }
-
-    /**
-     * execute using CallerRunsPolicy drops task on shutdown
-     */
-    public void testCallerRunsOnShutdown() {
-        final ThreadPoolExecutor p =
-            new CustomTPE(1, 1,
-                          LONG_DELAY_MS, MILLISECONDS,
-                          new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.CallerRunsPolicy());
-        try { p.shutdown(); } catch (SecurityException ok) { return; }
-        try (PoolCleaner cleaner = cleaner(p)) {
-            TrackedNoOpRunnable r = new TrackedNoOpRunnable();
-            p.execute(r);
-            assertFalse(r.done);
-        }
-    }
-
-    /**
-     * execute using DiscardPolicy drops task on shutdown
-     */
-    public void testDiscardOnShutdown() {
-        final ThreadPoolExecutor p =
-            new CustomTPE(1, 1,
-                          LONG_DELAY_MS, MILLISECONDS,
-                          new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.DiscardPolicy());
-        try { p.shutdown(); } catch (SecurityException ok) { return; }
-        try (PoolCleaner cleaner = cleaner(p)) {
-            TrackedNoOpRunnable r = new TrackedNoOpRunnable();
-            p.execute(r);
-            assertFalse(r.done);
-        }
-    }
-
-    /**
      * execute using DiscardOldestPolicy drops task on shutdown
      */
     public void testDiscardOldestOnShutdown() {
@@ -1322,7 +1256,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             new CustomTPE(1, 1,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(1),
-                          new CustomTPE.DiscardOldestPolicy());
+                          new ThreadPoolExecutor.DiscardOldestPolicy());
 
         try { p.shutdown(); } catch (SecurityException ok) { return; }
         try (PoolCleaner cleaner = cleaner(p)) {
@@ -1333,18 +1267,15 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * execute(null) throws NPE
+     * Submitting null tasks throws NullPointerException
      */
-    public void testExecuteNull() {
+    public void testNullTaskSubmission() {
         final ThreadPoolExecutor p =
             new CustomTPE(1, 2,
                           1L, SECONDS,
                           new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.execute(null);
-                shouldThrow();
-            } catch (NullPointerException success) {}
+            assertNullTaskSubmissionThrowsNullPointerException(p);
         }
     }
 
@@ -1491,7 +1422,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * invokeAny(null) throws NPE
+     * invokeAny(null) throws NullPointerException
      */
     public void testInvokeAny1() throws Exception {
         final ExecutorService e =
@@ -1507,7 +1438,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * invokeAny(empty collection) throws IAE
+     * invokeAny(empty collection) throws IllegalArgumentException
      */
     public void testInvokeAny2() throws Exception {
         final ExecutorService e =
@@ -1597,15 +1528,17 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * invokeAll(empty collection) returns empty collection
+     * invokeAll(empty collection) returns empty list
      */
     public void testInvokeAll2() throws Exception {
         final ExecutorService e =
             new CustomTPE(2, 2,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(10));
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Future<String>> r = e.invokeAll(new ArrayList<Callable<String>>());
+            List<Future<String>> r = e.invokeAll(emptyCollection);
             assertTrue(r.isEmpty());
         }
     }
@@ -1680,7 +1613,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
                           new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAny(null, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
@@ -1698,24 +1631,25 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
-                e.invokeAny(l, MEDIUM_DELAY_MS, null);
+                e.invokeAny(l, randomTimeout(), null);
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
     }
 
     /**
-     * timed invokeAny(empty collection) throws IAE
+     * timed invokeAny(empty collection) throws IllegalArgumentException
      */
     public void testTimedInvokeAny2() throws Exception {
         final ExecutorService e =
             new CustomTPE(2, 2,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(10));
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAny(new ArrayList<Callable<String>>(),
-                            MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(emptyCollection, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (IllegalArgumentException success) {}
         }
@@ -1735,7 +1669,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
-                e.invokeAny(l, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(l, randomTimeout(), MILLISECONDS);
                 shouldThrow();
             } catch (NullPointerException success) {}
             latch.countDown();
@@ -1793,7 +1727,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
                           new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAll(null, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAll(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
@@ -1811,23 +1745,25 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
-                e.invokeAll(l, MEDIUM_DELAY_MS, null);
+                e.invokeAll(l, randomTimeout(), null);
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
     }
 
     /**
-     * timed invokeAll(empty collection) returns empty collection
+     * timed invokeAll(empty collection) returns empty list
      */
     public void testTimedInvokeAll2() throws Exception {
         final ExecutorService e =
             new CustomTPE(2, 2,
                           LONG_DELAY_MS, MILLISECONDS,
                           new ArrayBlockingQueue<Runnable>(10));
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Future<String>> r = e.invokeAll(new ArrayList<Callable<String>>(),
-                                                 MEDIUM_DELAY_MS, MILLISECONDS);
+            List<Future<String>> r =
+                e.invokeAll(emptyCollection, randomTimeout(), randomTimeUnit());
             assertTrue(r.isEmpty());
         }
     }
@@ -1845,7 +1781,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             l.add(new StringTask());
             l.add(null);
             try {
-                e.invokeAll(l, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAll(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
@@ -1953,7 +1889,7 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
                     public void realRun() {
                         done.countDown();
                     }});
-            assertTrue(done.await(LONG_DELAY_MS, MILLISECONDS));
+            await(done);
         }
     }
 

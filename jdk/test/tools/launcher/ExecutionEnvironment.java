@@ -25,6 +25,8 @@
  * @test
  * @bug 4780570 4731671 6354700 6367077 6670965 4882974
  * @summary Checks for LD_LIBRARY_PATH and execution  on *nixes
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file ExecutionEnvironment.java
  * @run main/othervm ExecutionEnvironment
  */

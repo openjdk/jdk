@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 5030265
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile  -XDignore.symbol.file UnicodeTest.java
  * @run main/othervm UnicodeTest
  * @summary Verify that the J2RE can handle all legal Unicode characters
