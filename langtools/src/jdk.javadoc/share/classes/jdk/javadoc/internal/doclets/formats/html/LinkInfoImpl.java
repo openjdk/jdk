@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ public class LinkInfoImpl extends LinkInfo {
         RECEIVER_TYPE
     }
 
-    public final ConfigurationImpl configuration;
+    public final HtmlConfiguration configuration;
 
     /**
      * The location of the link.
@@ -247,7 +247,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param ee   the member to link to.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration, Kind context, ExecutableElement ee) {
+    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, ExecutableElement ee) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.executableElement = ee;
@@ -269,7 +269,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param typeElement   the class to link to.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration, Kind context, TypeElement typeElement) {
+    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, TypeElement typeElement) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.typeElement = typeElement;
@@ -283,7 +283,7 @@ public class LinkInfoImpl extends LinkInfo {
      * @param context    the context of the link.
      * @param type       the class to link to.
      */
-    public LinkInfoImpl(ConfigurationImpl configuration, Kind context, TypeMirror type) {
+    public LinkInfoImpl(HtmlConfiguration configuration, Kind context, TypeMirror type) {
         this.configuration = configuration;
         this.utils = configuration.utils;
         this.type = type;

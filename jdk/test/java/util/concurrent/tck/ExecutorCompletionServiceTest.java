@@ -172,7 +172,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
         CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
         final CountDownLatch proceed = new CountDownLatch(1);
         cs.submit(new Callable() { public String call() throws Exception {
-            proceed.await();
+            await(proceed);
             return TEST_STRING;
         }});
         assertNull(cs.poll());

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /*
  * @test
  * @summary Test --no-man-pages and --no-header-files
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng ExcludeJmodSectionPluginTest
  */
 
@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

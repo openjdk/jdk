@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363
+ * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
@@ -134,7 +134,7 @@ public class TestUseOption extends JavadocTester {
             "<td class=\"colFirst\"><code>void</code></td>\n<th class=\"colSecond\" scope=\"row\"><span class="
             + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
             + "<a href=\"../../pkg1/C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
-            + "</a></span>()</code></th>"
+            + "</a></span>&#8203;()</code></th>"
         );
     }
 

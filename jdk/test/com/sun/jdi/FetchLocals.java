@@ -1,13 +1,37 @@
-/** hard coded linenumbers in test - DO NOT CHANGE
- *  @test/nodynamiccopyright/
- *  @bug 4386002 4429245
- *  @summary Test fix for: Incorrect values reported for some locals of type long
+/*
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  @author Tim Bell
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g FetchLocals.java
- *  @run driver FetchLocals
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+//    THIS TEST IS LINE NUMBER SENSITIVE
+
+/**
+ * @test
+ * @bug 4386002 4429245
+ * @summary Test fix for: Incorrect values reported for some locals of type long
+ * @author Tim Bell
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g FetchLocals.java
+ * @run driver FetchLocals
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -59,7 +83,7 @@ class FetchLocalsDebugee {
         System.out.println(f);
         System.out.print("d is: ");
         System.out.println(d);
-        System.out.println();   // Thie is Line 63...
+        System.out.println();   // This is FetchLocals::LINE
         if (w == 0xde00ad00be00ef00L) {
           System.out.print  ("The debugger was here.  w modified to: 0x");
           System.out.println(Long.toHexString(w));
@@ -87,6 +111,7 @@ class FetchLocalsDebugee {
 }
 
 public class FetchLocals extends TestScaffold {
+    static final int LINE = 86;
 
     FetchLocals (String args[]) {
         super(args);
@@ -355,7 +380,7 @@ public class FetchLocals extends TestScaffold {
          * Get to the bottom of testMethod():
          */
         try {
-            BreakpointEvent bpe = resumeTo("FetchLocalsDebugee", 63);
+            BreakpointEvent bpe = resumeTo("FetchLocalsDebugee", LINE);
             /*
              * Fetch values from fields; what did we get?
              */

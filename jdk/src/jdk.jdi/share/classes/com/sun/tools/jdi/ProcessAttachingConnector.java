@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,17 @@
 package com.sun.tools.jdi;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Properties;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
+import com.sun.jdi.connect.AttachingConnector;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.connect.spi.TransportService;
 
 /*
  * An AttachingConnector that connects to a debuggee by specifying the process
@@ -76,7 +79,6 @@ public class ProcessAttachingConnector
             }
         };
     }
-
 
     /**
      * Attach to a target VM using the specified address and Connector arguments.
@@ -162,5 +164,4 @@ public class ProcessAttachingConnector
         }
         return transport;
     }
-
 }

@@ -32,30 +32,30 @@ import jdk.xml.internal.SecuritySupport;
 
 /**
  * The CatalogFeatures holds a collection of features and properties.
- * <p>
  *
- * <center><h2><a name="CatalogFeatures">Catalog Features</a></h2></center></p>
  *
- * <table border="1">
+ * <table class="plain">
+ * <caption>Catalog Features</caption>
  * <thead>
  * <tr>
- * <th rowspan="2">Feature</th>
- * <th rowspan="2">Description</th>
- * <th rowspan="2">Property Name</th>
- * <th rowspan="2">System Property [1]</th>
- * <th rowspan="2">jaxp.properties [1]</th>
- * <th colspan="2" align="center">Value [2]</th>
- * <th rowspan="2">Action</th>
+ * <th scope="col" rowspan="2">Feature</th>
+ * <th scope="col" rowspan="2">Description</th>
+ * <th scope="col" rowspan="2">Property Name</th>
+ * <th scope="col" rowspan="2">System Property [1]</th>
+ * <th scope="col" rowspan="2">jaxp.properties [1]</th>
+ * <th scope="col" colspan="2" style="text-align:center">Value [2]</th>
+ * <th scope="col" rowspan="2">Action</th>
  * </tr>
  * <tr>
- * <th>Type</th>
- * <th>Value</th>
+ * <th scope="col">Type</th>
+ * <th scope="col">Value</th>
  * </tr>
  * </thead>
+ *
  * <tbody>
  *
  * <tr>
- * <td><a name="FILES">FILES</a></td>
+ * <th scope="row" style="font-weight:normal">FILES</th>
  * <td>A semicolon-delimited list of URIs to locate the catalog files.
  * The URIs must be absolute and have a URL protocol handler for the URI scheme.
  * </td>
@@ -63,7 +63,7 @@ import jdk.xml.internal.SecuritySupport;
  * <td>javax.xml.catalog.files</td>
  * <td>javax.xml.catalog.files</td>
  * <td>String</td>
- * <td>URIs</td>
+ * <th id="URIs" scope="row" style="font-weight:normal">URIs</th>
  * <td>
  * Reads the first catalog as the current catalog; Loads others if no match
  * is found in the current catalog including delegate catalogs if any.
@@ -71,25 +71,27 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <td rowspan="2"><a name="PREFER">PREFER</a></td>
+ * <th rowspan="2" scope="row" style="font-weight:normal">PREFER</th>
  * <td rowspan="2">Indicates the preference between the public and system
  * identifiers. The default value is public [3].</td>
  * <td rowspan="2">javax.xml.catalog.prefer</td>
  * <td rowspan="2">N/A</td>
  * <td rowspan="2">N/A</td>
  * <td rowspan="2">String</td>
- * <td>{@code system}</td>
- * <td>Searches system entries for a match; Searches public entries when
+ * <th scope="row" id="system" style="font-weight:normal">{@code system}</th>
+ * <td>
+ * Searches system entries for a match; Searches public entries when
  * external identifier specifies only a public identifier</td>
  * </tr>
  * <tr>
- * <td>{@code public}</td>
- * <td>Searches system entries for a match; Searches public entries when
+ * <th scope="row" id="public" style="font-weight:normal">{@code public}</th>
+ * <td>
+ * Searches system entries for a match; Searches public entries when
  * there is no matching system entry.</td>
  * </tr>
  *
  * <tr>
- * <td rowspan="2"><a name="DEFER">DEFER</a></td>
+ * <th rowspan="2" scope="row" style="font-weight:normal">DEFER</th>
  * <td rowspan="2">Indicates that the alternative catalogs including those
  * specified in delegate entries or nextCatalog are not read until they are
  * needed. The default value is true.</td>
@@ -97,35 +99,40 @@ import jdk.xml.internal.SecuritySupport;
  * <td rowspan="2">javax.xml.catalog.defer</td>
  * <td rowspan="2">javax.xml.catalog.defer</td>
  * <td rowspan="2">String</td>
- * <td>{@code true}</td>
- * <td>Loads alternative catalogs as needed.
+ * <th scope="row" id="true" style="font-weight:normal">{@code true}</th>
+ * <td>
+ * Loads alternative catalogs as needed.
  * </td>
  * </tr>
  * <tr>
- * <td>{@code false}</td>
- * <td>Loads all catalogs[5]. </td>
+ * <th scope="row" id="false" style="font-weight:normal">{@code false}</th>
+ * <td>
+ * Loads all catalogs[5]. </td>
  * </tr>
  *
  * <tr>
- * <td rowspan="3"><a name="RESOLVE">RESOLVE</a></td>
+ * <th rowspan="3" scope="row" style="font-weight:normal">RESOLVE</th>
  * <td rowspan="3">Determines the action if there is no matching entry found after
  * all of the specified catalogs are exhausted. The default is strict.</td>
  * <td rowspan="3">javax.xml.catalog.resolve [4]</td>
  * <td rowspan="3">javax.xml.catalog.resolve</td>
  * <td rowspan="3">javax.xml.catalog.resolve</td>
  * <td rowspan="3">String</td>
- * <td>{@code strict}</td>
- * <td>Throws CatalogException if there is no match.
+ * <th scope="row" id="strict" style="font-weight:normal">{@code strict}</th>
+ * <td>
+ * Throws CatalogException if there is no match.
  * </td>
  * </tr>
  * <tr>
- * <td>{@code continue}</td>
- * <td>Allows the XML parser to continue as if there is no match.
+ * <th scope="row" id="continue" style="font-weight:normal">{@code continue}</th>
+ * <td>
+ * Allows the XML parser to continue as if there is no match.
  * </td>
  * </tr>
  * <tr>
- * <td>{@code ignore}</td>
- * <td>Tells the XML parser to skip the external references if there no match.
+ * <th scope="row" id="ignore" style="font-weight:normal">{@code ignore}</th>
+ * <td>
+ * Tells the XML parser to skip the external references if there no match.
  * </td>
  * </tr>
  *
@@ -156,7 +163,7 @@ import jdk.xml.internal.SecuritySupport;
  * <b>[5]</b> If the intention is to share an entire catalog store, it may be desirable to
  * set the property {@code javax.xml.catalog.defer} to false to allow the entire
  * catalog to be pre-loaded.
- * <p>
+ *
  * <h3>Scope and Order</h3>
  * Features and properties can be set through the catalog file, the Catalog API,
  * system properties, and {@code jaxp.properties}, with a preference in the same order.
@@ -195,7 +202,6 @@ import jdk.xml.internal.SecuritySupport;
                         .build();
  * }</pre>
  *
- * <p>
  * <h3>JAXP XML Processor Support</h3>
  * The Catalog Features are supported throughout the JAXP processors, including
  * SAX and DOM ({@link javax.xml.parsers}), and StAX parsers ({@link javax.xml.stream}),
@@ -204,7 +210,7 @@ import jdk.xml.internal.SecuritySupport;
  * factories or processors that define a setProperty or setAttribute interface.
  * For example, the following code snippet sets a URI to a catalog file on a SAX
  * parser through the {@code javax.xml.catalog.files} property:
- * <p>
+ *
  * <pre>{@code
  *      SAXParserFactory spf = SAXParserFactory.newInstance();
  *      spf.setFeature(XMLConstants.USE_CATALOG, true); [1]
@@ -240,20 +246,20 @@ import jdk.xml.internal.SecuritySupport;
  * The Catalog support is available for any process in the JAXP library that
  * supports a resolver. The following table lists all such processes.
  *
- * <p>
- * <center><h3><a name="CatalogFeatures">Processes with Catalog Support</a></h3></center></p>
+ * <h3><a id="ProcessesWithCatalogSupport">Processes with Catalog Support</a></h3>
  *
- * <table border="1">
+ * <table class="striped">
+ * <caption>Processes with Catalog Support</caption>
  * <thead>
  * <tr>
- * <th>Process</th>
- * <th>Catalog Entry Type</th>
- * <th>Example</th>
+ * <th scope="col">Process</th>
+ * <th scope="col">Catalog Entry Type</th>
+ * <th scope="col">Example</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>DTDs and external entities</td>
+ * <th scope="row">DTDs and external entities</th>
  * <td>public, system</td>
  * <td>
  * <pre>{@literal
@@ -268,7 +274,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * </tr>
  * <tr>
- * <td>XInclude</td>
+ * <th scope="row">XInclude</th>
  * <td>uri</td>
  * <td>
  * <pre>{@literal
@@ -283,7 +289,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * </tr>
  * <tr>
- * <td>XSD import</td>
+ * <th scope="row">XSD import</th>
  * <td>uri</td>
  * <td>
  * <pre>{@literal
@@ -301,7 +307,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * </tr>
  * <tr>
- * <td>XSD include</td>
+ * <th scope="row">XSD include</th>
  * <td>uri</td>
  * <td>
  * <pre>{@literal
@@ -316,7 +322,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * </tr>
  * <tr>
- * <td>XSL import and include</td>
+ * <th scope="row">XSL import and include</th>
  * <td>uri</td>
  * <td>
  * <pre>{@literal
@@ -331,7 +337,7 @@ import jdk.xml.internal.SecuritySupport;
  * </td>
  * </tr>
  * <tr>
- * <td>XSL document function</td>
+ * <th scope="row">XSL document function</th>
  * <td>uri</td>
  * <td>
  * <pre>{@literal

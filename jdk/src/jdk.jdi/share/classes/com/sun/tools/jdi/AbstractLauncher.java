@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,34 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.tools.jdi.*;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import com.sun.jdi.*;
-
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.List;
-import java.util.ArrayList;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
-abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnector {
+import com.sun.jdi.Bootstrap;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.VirtualMachineManager;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.LaunchingConnector;
+import com.sun.jdi.connect.VMStartException;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.connect.spi.TransportService;
 
+abstract class AbstractLauncher extends ConnectorImpl
+                                implements LaunchingConnector
+{
     abstract public VirtualMachine
-        launch(Map<String,? extends Connector.Argument> arguments)
-                                 throws IOException,
-                                        IllegalConnectorArgumentsException,
-                                        VMStartException;
+        launch(Map<String, ? extends Connector.Argument> arguments)
+        throws IOException, IllegalConnectorArgumentsException,
+               VMStartException;
+
     abstract public String name();
+
     abstract public String description();
 
     ThreadGroup grp;
@@ -70,7 +78,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
                                                         true);
         String quoted = null;
         String pending = null;
-        List<String> tokenList = new ArrayList<String>();
+        List<String> tokenList = new ArrayList<>();
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();
             if (quoted != null) {
@@ -146,6 +154,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
      * one launch.
      */
     private class Helper {
+        @SuppressWarnings("unused")
         private final String address;
         private TransportService.ListenKey listenKey;
         private TransportService ts;
@@ -228,8 +237,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
         }
 
         Thread monitorTarget() {
-            Thread thread = new Thread(grp,
-                                       "launched target monitor") {
+            Thread thread = new Thread(grp, "launched target monitor") {
                 public void run() {
                     try {
                         process.waitFor();
@@ -248,8 +256,7 @@ abstract class AbstractLauncher extends ConnectorImpl implements LaunchingConnec
         }
 
         Thread acceptConnection() {
-            Thread thread = new Thread(grp,
-                                       "connection acceptor") {
+            Thread thread = new Thread(grp, "connection acceptor") {
                 public void run() {
                     try {
                         Connection connection = ts.accept(listenKey, 0, 0);

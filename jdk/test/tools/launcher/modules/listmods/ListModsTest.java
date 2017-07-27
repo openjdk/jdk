@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules java.se
- * @build ListModsTest CompilerUtils jdk.testlibrary.*
+ * @build ListModsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng ListModsTest
  * @summary Basic test for java --list-modules
  */
@@ -33,7 +33,8 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
 
 import org.testng.annotations.BeforeTest;
@@ -66,138 +67,80 @@ public class ListModsTest {
                 SRC_DIR.resolve("java.transaction"),
                 UPGRADEMODS_DIR.resolve("java.transaction"));
         assertTrue(compiled);
-
     }
-
 
     @Test
     public void testListAll() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldContain("java.xml");
-        assertTrue(output.getExitValue() == 0);
+        exec("--list-modules")
+                .shouldContain("java.base")
+                .shouldContain("java.xml")
+                .shouldHaveExitValue(0);
     }
-
-
-    @Test
-    public void testListOneModule() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--list-modules=java.base")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldContain("exports java.lang");
-        assertTrue(output.getExitValue() == 0);
-    }
-
-
-    @Test
-    public void testListTwoModules() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--list-modules", "java.base,java.xml")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldContain("exports java.lang");
-        output.shouldContain("java.xml");
-        output.shouldContain("exports javax.xml");
-        assertTrue(output.getExitValue() == 0);
-    }
-
-
-    @Test
-    public void testListUnknownModule() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--list-modules", "java.rhubarb")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldNotContain("java.base");
-        output.shouldContain("java.rhubarb not observable");
-        assertTrue(output.getExitValue() == 0);
-    }
-
 
     @Test
     public void testListWithModulePath() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--module-path", MODS_DIR.toString(), "--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldContain("m1");
-        assertTrue(output.getExitValue() == 0);
+        exec("--list-modules", "--module-path", MODS_DIR.toString())
+                .shouldContain("java.base")
+                .shouldContain("m1")
+                .shouldHaveExitValue(0);
     }
-
 
     @Test
     public void testListWithUpgradeModulePath() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--upgrade-module-path", UPGRADEMODS_DIR.toString(),
-                              "--list-modules", "java.transaction")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("exports javax.transaction.atomic");
-        assertTrue(output.getExitValue() == 0);
+        String dir = UPGRADEMODS_DIR.toString();
+        exec("--list-modules", "--upgrade-module-path", dir)
+                .shouldContain(UPGRADEMODS_DIR.toString())
+                .shouldHaveExitValue(0);
     }
-
 
     @Test
     public void testListWithLimitMods1() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--limit-modules", "java.management.rmi", "--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.rmi");
-        output.shouldContain("java.base");
-        output.shouldNotContain("java.scripting");
-        assertTrue(output.getExitValue() == 0);
+        exec("--limit-modules", "java.management.rmi", "--list-modules")
+                .shouldContain("java.rmi")
+                .shouldContain("java.base")
+                .shouldNotContain("java.scripting")
+                .shouldHaveExitValue(0);
     }
-
 
     @Test
     public void testListWithLimitMods2() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--module-path", MODS_DIR.toString(),
-                              "--limit-modules", "java.management",
-                              "--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldNotContain("m1");
-        assertTrue(output.getExitValue() == 0);
+        exec("--list-modules",
+                    "--module-path", MODS_DIR.toString(),
+                    "--limit-modules", "java.management")
+                .shouldContain("java.base")
+                .shouldNotContain("m1")
+                .shouldHaveExitValue(0);
     }
-
 
     /**
      * java -version --list-modules => should print version and exit
      */
     @Test
     public void testListWithPrintVersion1() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("-version", "--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out);
-        output.shouldNotContain("java.base");
-        output.shouldContain("Runtime Environment");
-        assertTrue(output.getExitValue() == 0);
+        exec("-version", "--list-modules")
+                .shouldNotContain("java.base")
+                .shouldContain("Runtime Environment")
+                .shouldHaveExitValue(0);
     }
-
 
     /**
      * java --list-modules -version => should list modules and exit
      */
     @Test
     public void testListWithPrintVersion2() throws Exception {
-        OutputAnalyzer output
-            = executeTestJava("--list-modules", "-version")
+        exec("--list-modules", "-version")
+                .shouldContain("java.base")
+                .shouldNotContain("Runtime Environment")
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * java args... returning the OutputAnalyzer to analyzer the output
+     */
+    private OutputAnalyzer exec(String... args) throws Exception {
+        return ProcessTools.executeTestJava(args)
                 .outputTo(System.out)
                 .errorTo(System.out);
-        output.shouldContain("java.base");
-        output.shouldNotContain("Runtime Environment");
-        assertTrue(output.getExitValue() == 0);
     }
 
 }

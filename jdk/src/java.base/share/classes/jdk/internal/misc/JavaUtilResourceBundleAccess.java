@@ -25,7 +25,6 @@
 
 package jdk.internal.misc;
 
-import java.lang.reflect.Module;
 import java.util.Locale;
 import java.util.ResourceBundle;
 

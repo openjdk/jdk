@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.UnsupportedOperationException;
 import sun.management.VMManagement;
 
 /**
@@ -132,19 +133,11 @@ public final class JdpController {
     }
 
     // Get the process id of the current running Java process
-    private static Integer getProcessId() {
+    private static Long getProcessId() {
         try {
-            // Get the current process id using a reflection hack
-            RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-            Field jvm = runtime.getClass().getDeclaredField("jvm");
-            jvm.setAccessible(true);
-
-            VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-            Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-            pid_method.setAccessible(true);
-            Integer pid = (Integer) pid_method.invoke(mgmt);
-            return pid;
-        } catch(Exception ex) {
+            // Get the current process id
+            return ProcessHandle.current().pid();
+        } catch(UnsupportedOperationException ex) {
             return null;
         }
     }
@@ -206,7 +199,7 @@ public final class JdpController {
         packet.setBroadcastInterval(Integer.toString(pause));
 
         // Set process id
-        Integer pid = getProcessId();
+        Long pid = getProcessId();
         if (pid != null) {
            packet.setProcessId(pid.toString());
         }
