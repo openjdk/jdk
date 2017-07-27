@@ -25,6 +25,7 @@
  * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
         6911753 8071447
  * @summary Check that registered charsets are actually registered
+ * @modules jdk.charsets
  */
 
 import java.io.*;

@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -520,7 +521,7 @@ public class RichDiagnosticFormatter extends
                 if (indexOf(t, WhereClauseKind.INTERSECTION) == -1) {
                     Type supertype = types.supertype(t);
                     List<Type> interfaces = types.interfaces(t);
-                    JCDiagnostic d = diags.fragment("where.intersection", t, interfaces.prepend(supertype));
+                    JCDiagnostic d = diags.fragment(Fragments.WhereIntersection(t, interfaces.prepend(supertype)));
                     whereClauses.get(WhereClauseKind.INTERSECTION).put(t, d);
                     visit(supertype);
                     visit(interfaces);
@@ -575,7 +576,7 @@ public class RichDiagnosticFormatter extends
                 } else {
                     Assert.check(!boundErroneous);
                     //this is a fresh (synthetic) tvar
-                    JCDiagnostic d = diags.fragment("where.fresh.typevar", t, bounds);
+                    JCDiagnostic d = diags.fragment(Fragments.WhereFreshTypevar(t, bounds));
                     whereClauses.get(WhereClauseKind.TYPEVAR).put(t, d);
                     visit(bounds);
                 }

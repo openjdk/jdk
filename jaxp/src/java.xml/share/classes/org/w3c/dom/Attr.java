@@ -111,30 +111,34 @@ package org.w3c.dom;
  * <p>The following table gives some examples of the relations between the
  * attribute value in the original document (parsed attribute), the value as
  * exposed in the DOM, and the serialization of the value:
- * <table border='1' cellpadding='3'>
+ * <table class="striped">
+ * <caption>Examples of the Original, Normalized and Serialized Values </caption>
+ * <thead>
  * <tr>
- * <th>Examples</th>
- * <th>Parsed
+ * <th scope="col">Examples</th>
+ * <th scope="col">Parsed
  * attribute value</th>
- * <th>Initial <code>Attr.value</code></th>
- * <th>Serialized attribute value</th>
+ * <th scope="col">Initial <code>Attr.value</code></th>
+ * <th scope="col">Serialized attribute value</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>
- * Character reference</td>
+ * <th scope="row" valign='top' rowspan='1' colspan='1'>
+ * Character reference</th>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>"x&amp;#178;=5"</pre>
  * </td>
  * <td valign='top' rowspan='1' colspan='1'>
- * <pre>"x\u00b2=5"</pre>
+ * <pre>"x&#178;=5"</pre>
  * </td>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>"x&amp;#178;=5"</pre>
  * </td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>Built-in
- * character entity</td>
+ * <th scope="row" valign='top' rowspan='1' colspan='1'>Built-in
+ * character entity</th>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>"y&amp;lt;6"</pre>
  * </td>
@@ -146,7 +150,7 @@ package org.w3c.dom;
  * </td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>Literal newline between</td>
+ * <th scope="row" valign='top' rowspan='1' colspan='1'>Literal newline between</th>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>
  * "x=5&amp;#10;y=6"</pre>
@@ -159,7 +163,7 @@ package org.w3c.dom;
  * </td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>Normalized newline between</td>
+ * <th scope="row" valign='top' rowspan='1' colspan='1'>Normalized newline between</th>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>"x=5
  * y=6"</pre>
@@ -172,7 +176,7 @@ package org.w3c.dom;
  * </td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>Entity <code>e</code> with literal newline</td>
+ * <th scope="row" valign='top' rowspan='1' colspan='1'>Entity <code>e</code> with literal newline</th>
  * <td valign='top' rowspan='1' colspan='1'>
  * <pre>
  * &lt;!ENTITY e '...&amp;#10;...'&gt; [...]&gt; "x=5&amp;e;y=6"</pre>
@@ -180,6 +184,7 @@ package org.w3c.dom;
  * <td valign='top' rowspan='1' colspan='1'><em>Dependent on Implementation and Load Options</em></td>
  * <td valign='top' rowspan='1' colspan='1'><em>Dependent on Implementation and Load/Save Options</em></td>
  * </tr>
+ * </tbody>
  * </table>
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
  */

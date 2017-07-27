@@ -217,7 +217,7 @@ public class AddReadsTest extends ModuleTestBase {
         new JavacTask(tb)
           .options("--class-path", jar.toString(),
                    "--add-reads", "java.base=ALL-UNNAMED",
-                   "-Xmodule:java.base")
+                   "--patch-module", "java.base=" + src)
           .outdir(classes)
           .files(src.resolve("impl").resolve("Impl.java"))
           .run()
@@ -237,7 +237,7 @@ public class AddReadsTest extends ModuleTestBase {
         new JavacTask(tb)
           .options("--add-modules", "java.desktop",
                    "--add-reads", "java.base=java.desktop",
-                   "-Xmodule:java.base")
+                   "--patch-module", "java.base=" + src)
           .outdir(classes)
           .files(findJavaFiles(src))
           .run()
@@ -304,7 +304,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         new JavacTask(tb)
           .options("--add-reads", "m1x=ALL-UNNAMED",
-                   "-Xmodule:m1x",
+                   "--patch-module", "m1x=" + unnamedSrc,
                    "--module-path", classes.toString())
           .outdir(unnamedClasses)
           .files(findJavaFiles(unnamedSrc))

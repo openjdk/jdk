@@ -34,6 +34,8 @@ package java.sql;
  *
  * <P>The SQLstate for a <code>DataTruncation</code> during read is <code>01004</code>.
  * <P>The SQLstate for a <code>DataTruncation</code> during write is <code>22001</code>.
+ *
+ * @since 1.1
  */
 
 public class DataTruncation extends SQLWarning {

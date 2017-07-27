@@ -38,7 +38,7 @@ package jdk.nashorn.api.tree;
  */
 public interface ForOfLoopTree extends LoopTree {
     /**
-     * The for..in left hand side expression.
+     * The for..of left hand side expression.
      *
      * @return the left hand side expression
      */
@@ -52,7 +52,7 @@ public interface ForOfLoopTree extends LoopTree {
     ExpressionTree getExpression();
 
     /**
-     * The statement contained in this for..in statement.
+     * The statement contained in this for..of statement.
      *
      * @return the statement
      */

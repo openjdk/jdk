@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,33 +31,44 @@
  * @bug 6956398
  * @summary make ephemeral DH key match the length of the certificate key
  * @run main/othervm
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1639 267
+ * @run main/othervm -Djsse.enableFFDHE=false
  *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=matched
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
  *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=legacy
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
  *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=1024
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
  *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA true 1255 75
  *
- * @run main/othervm
+ * @run main/othervm -Djsse.enableFFDHE=false
  *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA true 229 75
  *
- * @run main/othervm
+ * @run main/othervm -Djsse.enableFFDHE=false
  *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1383 139
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=legacy
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
  *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1319 107
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=matched
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
  *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1639 267
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=1024
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
  *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA  false 1383 139
  *
- * @run main/othervm
+ * @run main/othervm -Djsse.enableFFDHE=false
  *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=legacy
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=legacy
  *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 293 107
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=matched
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=matched
  *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
- * @run main/othervm -Djdk.tls.ephemeralDHKeySize=1024
+ * @run main/othervm -Djsse.enableFFDHE=false
+ *      -Djdk.tls.ephemeralDHKeySize=1024
  *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5  false 357 139
  */
 

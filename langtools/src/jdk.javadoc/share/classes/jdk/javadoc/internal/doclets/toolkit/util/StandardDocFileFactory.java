@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.util.Assert;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Implementation of DocFileFactory using a {@link StandardJavaFileManager}.
@@ -68,7 +68,7 @@ class StandardDocFileFactory extends DocFileFactory {
     private final StandardJavaFileManager fileManager;
     private Path destDir;
 
-    public StandardDocFileFactory(Configuration configuration) {
+    public StandardDocFileFactory(BaseConfiguration configuration) {
         super(configuration);
         fileManager = (StandardJavaFileManager) configuration.getFileManager();
     }

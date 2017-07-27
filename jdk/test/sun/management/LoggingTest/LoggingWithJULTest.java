@@ -26,11 +26,14 @@ import java.nio.file.Paths;
 /**
  * @test
  * @bug 8172971
- * @modules java.management java.logging
  * @summary Smoke test to check that logging in java.management works as expected.
+ * @author danielfuchs
+ *
+ * @modules java.management
+ *          java.logging
+ *
  * @build LoggingTest LoggingWithJULTest
  * @run main/othervm LoggingWithJULTest
- * @author danielfuchs
  */
 public class LoggingWithJULTest {
 

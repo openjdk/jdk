@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.jdi;
 
+import com.sun.jdi.request.BreakpointRequest;
+
 /**
  * A proxy used by a debugger to examine or manipulate some entity
  * in another virtual machine. Mirror is the root of the
@@ -33,10 +35,9 @@ package com.sun.jdi;
  * (for example, {@link IntegerValue}), types (for example,
  * {@link ReferenceType}), dynamic application state (for example,
  * {@link StackFrame}), and even debugger-specific constructs (for example,
- * {@link com.sun.jdi.request.BreakpointRequest}).
- * The {@link VirtualMachine} itself is also
- * considered a mirror, representing the composite state of the
- * target VM.
+ * {@link BreakpointRequest}).
+ * The {@link VirtualMachine} itself is also considered a mirror,
+ * representing the composite state of the target VM.
  * <P>
  * There is no guarantee that a particular entity in the target VM will map
  * to a single instance of Mirror. Implementors are free to decide
@@ -44,9 +45,9 @@ package com.sun.jdi;
  * of this interface should always use <code>equals</code> to compare
  * two mirrors for equality.
  * <p>
- * Any method on a {@link com.sun.jdi.Mirror} that takes a <code>Mirror</code> as an
+ * Any method on a {@link Mirror} that takes a <code>Mirror</code> as an
  * parameter directly or indirectly (e.g., as a element in a <code>List</code>) will
- * throw {@link com.sun.jdi.VMMismatchException} if the mirrors are from different
+ * throw {@link VMMismatchException} if the mirrors are from different
  * virtual machines.
  *
  * @see VirtualMachine
