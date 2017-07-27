@@ -31,6 +31,7 @@
  * @run main T8147801
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.FieldDoc;
@@ -143,13 +145,18 @@ public class T8147801 {
     }
 
     void initJar() throws IOException {
-        Path testClasses = Paths.get(System.getProperty("test.classes"));
+        String testClassPath = System.getProperty("test.class.path", "");
+        Path jarsrc = Stream.of(testClassPath.split(File.pathSeparator))
+                .map(Paths::get)
+                .filter(e -> e.endsWith("jarsrc"))
+                .findAny()
+                .orElseThrow(() -> new InternalError("jarsrc not found"));
         jarPath = Paths.get("lib.jar");
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jarPath))) {
             String[] classNames = {"Lib1.class", "Lib2.class"};
             for (String cn : classNames) {
                 out.putNextEntry(new JarEntry("lib/" + cn));
-                Path libClass = testClasses.resolve("jarsrc").resolve("lib").resolve(cn);
+                Path libClass = jarsrc.resolve("lib").resolve(cn);
                 out.write(Files.readAllBytes(libClass));
             }
         }

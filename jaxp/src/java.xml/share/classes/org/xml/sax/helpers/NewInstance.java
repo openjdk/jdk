@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 
 package org.xml.sax.helpers;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 /**
@@ -90,7 +91,11 @@ class NewInstance {
             driverClass = classLoader.loadClass(className);
         }
 
-        return type.cast(driverClass.newInstance());
+        try {
+            return type.cast(driverClass.getConstructor().newInstance());
+        } catch (NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+            throw new InstantiationException(ex.getMessage());
+        }
     }
 
 }

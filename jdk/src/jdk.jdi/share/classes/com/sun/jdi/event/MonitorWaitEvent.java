@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package com.sun.jdi.event;
 
-import com.sun.jdi.*;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ThreadReference;
 
 /**
  * Notification that a thread in the target VM is about to
@@ -52,12 +53,12 @@ public interface MonitorWaitEvent extends LocatableEvent {
      *
      * @return an {@link ObjectReference} for the monitor.
      */
-    public ObjectReference  monitor();
+    public ObjectReference monitor();
 
     /**
      * Returns the number of millisecond the thread will wait.
      *
      * @return a {@code jlong} containing monitor wait time in milliseconds.
      */
-    public long  timeout();
+    public long timeout();
 }

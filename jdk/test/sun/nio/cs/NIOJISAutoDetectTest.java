@@ -25,6 +25,7 @@
  * @test
  * @bug 4831163 5053096 5056440 8022224
  * @summary NIO charset basic verification of JISAutodetect decoder
+ * @modules jdk.charsets
  * @author Martin Buchholz
  */
 

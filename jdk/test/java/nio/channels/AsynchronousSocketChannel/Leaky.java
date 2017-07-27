@@ -24,6 +24,7 @@
 /* @test
  * @bug 4607272 6999915 7185340
  * @summary Unit test for AsynchronousSocketChannel
+ * @modules java.management
  * @run main/othervm -XX:+DisableExplicitGC -XX:MaxDirectMemorySize=75m Leaky
  */
 

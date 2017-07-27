@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ class FactoryFinder {
                 instance = newInstanceNoServiceLoader(type, providerClass);
             }
             if (instance == null) {
-                instance = providerClass.newInstance();
+                instance = providerClass.getConstructor().newInstance();
             }
             final ClassLoader clD = cl;
             dPrint(()->"created new instance of " + providerClass +

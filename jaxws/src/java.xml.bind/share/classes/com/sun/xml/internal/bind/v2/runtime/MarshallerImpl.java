@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
 
     @Override
     public void marshal(Object obj, XMLStreamWriter writer) throws JAXBException {
-        write(obj, XMLStreamWriterOutput.create(writer,context), new StAXPostInitAction(writer,serializer));
+        write(obj, XMLStreamWriterOutput.create(writer,context, escapeHandler), new StAXPostInitAction(writer,serializer));
     }
 
     @Override
@@ -371,6 +371,15 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
     }
 
 
+    /**
+     * Returns escape handler provided with JAXB context parameters.
+     *
+     * @return escape handler
+     */
+    CharacterEscapeHandler getEscapeHandler() {
+        return escapeHandler;
+    }
+
     //
     //
     // create XMLWriter by specifing various type of output.
@@ -436,13 +445,14 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
         if(encoding.equals("UTF-8")) {
             Encoded[] table = context.getUTF8NameTable();
             final UTF8XmlOutput out;
+            CharacterEscapeHandler ceh = createEscapeHandler(encoding);
             if(isFormattedOutput())
-                out = new IndentingUTF8XmlOutput(os, indent, table, escapeHandler);
+                out = new IndentingUTF8XmlOutput(os, indent, table, ceh);
             else {
                 if(c14nSupport)
-                    out = new C14nXmlOutput(os, table, context.c14nSupport, escapeHandler);
+                    out = new C14nXmlOutput(os, table, context.c14nSupport, ceh);
                 else
-                    out = new UTF8XmlOutput(os, table, escapeHandler);
+                    out = new UTF8XmlOutput(os, table, ceh);
             }
             if(header!=null)
                 out.setHeader(header);

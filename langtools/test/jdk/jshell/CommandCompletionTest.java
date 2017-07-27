@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -162,18 +162,22 @@ public class CommandCompletionTest extends ReplToolTesting {
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/? |", false,
                 "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,
                 "editor", "feedback", "format", "mode", "prompt", "start", "truncation"),
-                a -> assertCompletion(a, "/help /edit |", false)
+                a -> assertCompletion(a, "/help set |", false,
+                "editor", "feedback", "format", "mode", "prompt", "start", "truncation"),
+                a -> assertCompletion(a, "/help /edit |", false),
+                a -> assertCompletion(a, "/help dr|", false,
+                "drop ")
         );
     }
 

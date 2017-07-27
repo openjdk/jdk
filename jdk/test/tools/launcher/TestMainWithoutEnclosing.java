@@ -30,6 +30,8 @@ import java.util.List;
  * @test
  * @bug 8076264
  * @summary Launching app shouldn't require enclosing class for the main class.
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile TestMainWithoutEnclosing.java
  * @run main TestMainWithoutEnclosing
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -133,7 +133,7 @@ public class ValueTaglet extends BaseInlineTaglet {
      * return field that the value tag was used in. Return null if the name is null
      * or empty string and if the value tag is not used on a field.
      */
-    private VariableElement getVariableElement(Element holder, Configuration config, DocTree tag) {
+    private VariableElement getVariableElement(Element holder, BaseConfiguration config, DocTree tag) {
         Utils utils = config.utils;
         CommentHelper ch = utils.getCommentHelper(holder);
         String signature = ch.getReferencedSignature(tag);

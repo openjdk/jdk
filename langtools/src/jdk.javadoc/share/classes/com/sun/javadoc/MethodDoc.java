@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public interface MethodDoc extends ExecutableMemberDoc {
      * also said to <i>implement</i> the other.
      *
      * @param meth  the other method to examine
-     * @return <tt>true</tt> if this method overrides the other
+     * @return {@code true} if this method overrides the other
      * @since 1.5
      */
     boolean overrides(MethodDoc meth);

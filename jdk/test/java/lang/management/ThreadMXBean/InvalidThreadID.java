@@ -28,7 +28,6 @@
  *          if id <= 0 and returns -1 if the thread doesn't exist.
  * @author  Mandy Chung
  *
- * @modules java.management
  * @run main InvalidThreadID
  */
 

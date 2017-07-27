@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class ParallelProbes {
@@ -47,7 +48,8 @@ public class ParallelProbes {
     }
 
     private Path createTmpFile() throws IOException {
-        final Path p = Files.createTempFile("prefix", ".json");
+        Path dir = Paths.get(System.getProperty("test.dir", "."));
+        final Path p = Files.createTempFile(dir, "prefix", ".json");
         Files.write(p, "{\"test\"}".getBytes());
         System.out.println("Write test file <" + p + ">");
         return p;

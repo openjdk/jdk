@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.tools.jdi.*;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import com.sun.jdi.VirtualMachine;
-import java.util.Map;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
-public class RawCommandLineLauncher extends AbstractLauncher implements LaunchingConnector {
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.connect.Transport;
+import com.sun.jdi.connect.VMStartException;
+import com.sun.jdi.connect.spi.TransportService;
+
+public class RawCommandLineLauncher extends AbstractLauncher {
 
     static private final String ARG_COMMAND = "command";
     static private final String ARG_ADDRESS = "address";
@@ -53,10 +57,9 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
         super();
 
         try {
-            @SuppressWarnings("deprecation")
-            Object o =
-                Class.forName("com.sun.tools.jdi.SharedMemoryTransportService").newInstance();
-            transportService = (TransportService)o;
+            transportService = (TransportService)Class.
+                forName("com.sun.tools.jdi.SharedMemoryTransportService").
+                getDeclaredConstructor().newInstance();
             transport = new Transport() {
                 public String name() {
                     return "dt_shmem";
@@ -65,7 +68,9 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
         } catch (ClassNotFoundException |
                  UnsatisfiedLinkError |
                  InstantiationException |
-                 IllegalAccessException x) {
+                 InvocationTargetException |
+                 IllegalAccessException |
+                 NoSuchMethodException x) {
         };
 
         if (transportService == null) {
@@ -100,13 +105,12 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
 
 
     public VirtualMachine
-        launch(Map<String,? extends Connector.Argument> arguments)
+        launch(Map<String, ? extends Connector.Argument> arguments)
         throws IOException, IllegalConnectorArgumentsException,
                VMStartException
     {
         String command = argument(ARG_COMMAND, arguments).value();
         String address = argument(ARG_ADDRESS, arguments).value();
-
         String quote = argument(ARG_QUOTE, arguments).value();
 
         if (quote.length() > 1) {

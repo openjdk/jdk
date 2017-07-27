@@ -1,6 +1,6 @@
-## FontConfig v2.5
+## Fontconfig v2.5
 
-### FontConfig License
+### Fontconfig License
 <pre>
 
 Copyright 2001,2003 Keith Packard

@@ -117,7 +117,7 @@ ifeq ($(HAS_SPEC),)
     # Check that CONF_CHECK is valid.
     $(eval $(call ParseConfCheckOption))
 
-    # Check that the LOG given is valid, and set LOG_LEVEL, LOG_NOFILE and MAKE_LOG_FLAGS.
+    # Check that the LOG given is valid, and set LOG_LEVEL, LOG_NOFILE, MAKE_LOG_VARS and MAKE_LOG_FLAGS.
     $(eval $(call ParseLogLevel))
 
     # After this SPECS contain 1..N spec files (otherwise ParseConfAndSpec fails).
@@ -171,7 +171,7 @@ ifeq ($(HAS_SPEC),)
 
     MAKE_INIT_WITH_SPEC_ARGUMENTS := ACTUAL_TOPDIR=$(topdir) \
         USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
-        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) LOG_CMDLINES=$(LOG_CMDLINES) \
+        $(MAKE_LOG_VARS) \
         INIT_TARGETS="$(INIT_TARGETS)" \
         SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
         PARALLEL_TARGETS="$(PARALLEL_TARGETS)"
@@ -319,6 +319,7 @@ else # HAS_SPEC=true
 	    exit 1 ; \
 	  fi
 	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
+	  $(call ReportProfileTimes)
         endif
 
     on-failure:
@@ -327,6 +328,7 @@ else # HAS_SPEC=true
 	$(call ReportBuildTimes)
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
+	$(call ReportProfileTimes)
 	$(PRINTF) "Hint: See common/doc/building.html#troubleshooting for assistance.\n\n"
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
