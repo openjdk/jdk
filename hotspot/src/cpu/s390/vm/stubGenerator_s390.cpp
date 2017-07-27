@@ -291,7 +291,7 @@ class StubGenerator: public StubCodeGenerator {
       // Restore frame pointer.
       __ z_lg(r_entryframe_fp, _z_abi(callers_sp), Z_SP);
       // Pop frame. Done here to minimize stalls.
-      __ z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+      __ pop_frame();
 
       // Reload some volatile registers which we've spilled before the call
       // to frame manager / native entry.
@@ -563,6 +563,9 @@ class StubGenerator: public StubCodeGenerator {
   address generate_throw_exception(const char* name, address runtime_entry,
                                    bool restore_saved_exception_pc,
                                    Register arg1 = noreg, Register arg2 = noreg) {
+    assert_different_registers(arg1, Z_R0_scratch);  // would be destroyed by push_frame()
+    assert_different_registers(arg2, Z_R0_scratch);  // would be destroyed by push_frame()
+
     int insts_size = 256;
     int locs_size  = 0;
     CodeBuffer      code(name, insts_size, locs_size);
@@ -693,11 +696,13 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCTLogging:
-        // With G1, don't generate the call if we statically know that the target in uninitialized.
+        // With G1, don't generate the call if we statically know that the target is uninitialized.
         if (!dest_uninitialized) {
           // Is marking active?
           Label filtered;
-          Register Rtmp1 = Z_R0;
+          assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
+          assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
+          Register Rtmp1 = Z_R0_scratch;
           const int active_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
                                              SATBMarkQueue::byte_offset_of_active());
           if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
@@ -708,11 +713,11 @@ class StubGenerator: public StubCodeGenerator {
           }
           __ z_bre(filtered); // Activity indicator is zero, so there is no marking going on currently.
 
-          // __ push_frame_abi160(0);
+          // __ push_frame_abi160(0);  // implicitly done in save_live_registers()
           (void) RegisterSaver::save_live_registers(_masm, RegisterSaver::arg_registers);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), addr, count);
           (void) RegisterSaver::restore_live_registers(_masm, RegisterSaver::arg_registers);
-          // __ pop_frame();
+          // __ pop_frame();  // implicitly done in restore_live_registers()
 
           __ bind(filtered);
         }
@@ -739,16 +744,18 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           if (branchToEnd) {
-            // __ push_frame_abi160(0);
+            assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
+            assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
+            // __ push_frame_abi160(0);  // implicitly done in save_live_registers()
             (void) RegisterSaver::save_live_registers(_masm, RegisterSaver::arg_registers);
             __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
             (void) RegisterSaver::restore_live_registers(_masm, RegisterSaver::arg_registers);
-            // __ pop_frame();
+            // __ pop_frame();   // implicitly done in restore_live_registers()
           } else {
             // Tail call: call c and return to stub caller.
             address entry_point = CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post);
-            if (Z_ARG1 != addr) __ z_lgr(Z_ARG1, addr);
-            if (Z_ARG2 != count) __ z_lgr(Z_ARG2, count);
+            __ lgr_if_needed(Z_ARG1, addr);
+            __ lgr_if_needed(Z_ARG2, count);
             __ load_const(Z_R1, entry_point);
             __ z_br(Z_R1); // Branch without linking, callee will return to stub caller.
           }
@@ -1677,7 +1684,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Helper function which generates code to
   //  - load the function code in register fCode (== Z_R0)
-  //  - load the data block length (depends on cipher function) in register srclen if requested.
+  //  - load the data block length (depends on cipher function) into register srclen if requested.
   //  - is_decipher switches between cipher/decipher function codes
   //  - set_len requests (if true) loading the data block length in register srclen
   void generate_load_AES_fCode(Register keylen, Register fCode, Register srclen, bool is_decipher) {
@@ -1689,6 +1696,7 @@ class StubGenerator: public StubCodeGenerator {
                                   && (VM_Version::Cipher::_AES128_dataBlk == VM_Version::Cipher::_AES256_dataBlk);
       // Expanded key length is 44/52/60 * 4 bytes for AES-128/AES-192/AES-256.
       __ z_cghi(keylen, 52);
+
       __ z_lghi(fCode, VM_Version::Cipher::_AES256 + mode);
       if (!identical_dataBlk_len) {
         __ z_lghi(srclen, VM_Version::Cipher::_AES256_dataBlk);
@@ -1706,6 +1714,7 @@ class StubGenerator: public StubCodeGenerator {
         __ z_lghi(srclen, VM_Version::Cipher::_AES128_dataBlk);
       }
       // __ z_brl(fCode_set);  // keyLen <  52: AES128           // fallthru
+
       __ bind(fCode_set);
       if (identical_dataBlk_len) {
         __ z_lghi(srclen, VM_Version::Cipher::_AES128_dataBlk);
