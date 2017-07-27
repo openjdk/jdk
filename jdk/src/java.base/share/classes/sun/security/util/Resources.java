@@ -115,6 +115,7 @@ public class Resources extends java.util.ListResourceBundle {
                 "unable to perform substitution on alias, {0}"},
         {"substitution.value.prefix.unsupported",
                 "substitution value, {0}, unsupported"},
+        {"SPACE", " "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
         {"type.can.t.be.null","type can't be null"},

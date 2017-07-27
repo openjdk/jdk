@@ -100,6 +100,7 @@ import sun.security.util.ResourcesMgr;
  * "a.b.Principal" with the name, "duke", and "c.d.Principal", with the name,
  * "dukette".
  *
+ * @since 1.4
  */
 public final class PrivateCredentialPermission extends Permission {
 

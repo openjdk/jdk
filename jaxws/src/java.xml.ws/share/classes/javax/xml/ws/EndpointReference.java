@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,10 @@ public abstract class EndpointReference {
     //
     //Default constructor to be only called by derived types.
     //
+
+    /**
+     * Default constructor.
+     */
     protected EndpointReference(){}
 
     /**
@@ -150,6 +154,7 @@ public abstract class EndpointReference {
      * method can be used to manually configure handlers for this port.
      *
      *
+     * @param <T> Service endpoint interface
      * @param serviceEndpointInterface Service endpoint interface
      * @param features  An array of {@code WebServiceFeatures} to configure on the
      *                proxy.  Supported features not in the {@code features
@@ -183,7 +188,10 @@ public abstract class EndpointReference {
 
     /**
      * Displays EPR infoset for debugging convenience.
+     *
+     * @return a string representation of the object
      */
+    @Override
     public String toString() {
         StringWriter w = new StringWriter();
         writeTo(new StreamResult(w));

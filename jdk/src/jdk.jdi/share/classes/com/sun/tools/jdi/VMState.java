@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,21 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import com.sun.jdi.ThreadGroupReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
 
 class VMState {
     private final VirtualMachineImpl vm;
 
     // Listeners
-    private final List<WeakReference<VMListener>> listeners = new ArrayList<WeakReference<VMListener>>(); // synchronized (this)
+    private final List<WeakReference<VMListener>> listeners = new ArrayList<>(); // synchronized (this)
     private boolean notifyingListeners = false;  // synchronized (this)
 
     /*
@@ -241,5 +246,4 @@ class VMState {
         }
         return groups;
     }
-
 }

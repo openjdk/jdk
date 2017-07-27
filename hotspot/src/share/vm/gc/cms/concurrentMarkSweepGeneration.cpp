@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -488,9 +488,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
   _cms_start_registered(false)
 {
-  if (ExplicitGCInvokesConcurrentAndUnloadsClasses) {
-    ExplicitGCInvokesConcurrent = true;
-  }
   // Now expand the span and allocate the collection support structures
   // (MUT, marking bit map etc.) to cover both generations subject to
   // collection.
@@ -2559,10 +2556,8 @@ void CMSCollector::verify_overflow_empty() const {
 // Decide if we want to enable class unloading as part of the
 // ensuing concurrent GC cycle. We will collect and
 // unload classes if it's the case that:
-// (1) an explicit gc request has been made and the flag
-//     ExplicitGCInvokesConcurrentAndUnloadsClasses is set, OR
-// (2) (a) class unloading is enabled at the command line, and
-//     (b) old gen is getting really full
+//  (a) class unloading is enabled at the command line, and
+//  (b) old gen is getting really full
 // NOTE: Provided there is no change in the state of the heap between
 // calls to this method, it should have idempotent results. Moreover,
 // its results should be monotonically increasing (i.e. going from 0 to 1,
@@ -2575,11 +2570,7 @@ void CMSCollector::verify_overflow_empty() const {
 // below.
 void CMSCollector::update_should_unload_classes() {
   _should_unload_classes = false;
-  // Condition 1 above
-  if (_full_gc_requested && ExplicitGCInvokesConcurrentAndUnloadsClasses) {
-    _should_unload_classes = true;
-  } else if (CMSClassUnloadingEnabled) { // Condition 2.a above
-    // Disjuncts 2.b.(i,ii,iii) above
+  if (CMSClassUnloadingEnabled) {
     _should_unload_classes = (concurrent_cycles_since_last_unload() >=
                               CMSClassUnloadingMaxInterval)
                            || _cmsGen->is_too_full();

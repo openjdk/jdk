@@ -32,6 +32,7 @@ import java.io.IOException;
  * This class implements a stream filter for writing compressed data in
  * the GZIP file format.
  * @author      David Connelly
+ * @since 1.1
  *
  */
 public

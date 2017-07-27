@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,18 @@
 
 package com.sun.xml.internal.ws.api.message.saaj;
 
+import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.message.Header;
+import com.sun.xml.internal.ws.api.message.MessageHeaders;
+import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
+import com.sun.xml.internal.ws.message.saaj.SAAJHeader;
+
+import javax.xml.namespace.QName;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,19 +45,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
-
-import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.message.Header;
-import com.sun.xml.internal.ws.api.message.MessageHeaders;
-import com.sun.xml.internal.ws.binding.SOAPBindingImpl;
-import com.sun.xml.internal.ws.message.saaj.SAAJHeader;
 
 public class SAAJMessageHeaders implements MessageHeaders {
     SOAPMessage sm;
@@ -330,7 +329,7 @@ public class SAAJMessageHeaders implements MessageHeaders {
 
     private void addNonSAAJHeader(SOAPHeaderElement headerElem, Header header) {
         if (nonSAAJHeaders == null) {
-            nonSAAJHeaders = new HashMap<SOAPHeaderElement, Header>();
+            nonSAAJHeaders = new HashMap<>();
         }
         nonSAAJHeaders.put(headerElem, header);
     }

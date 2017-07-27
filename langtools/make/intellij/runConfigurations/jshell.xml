@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="jshell" type="Application" factoryName="Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-    <option name="MAIN_CLASS_NAME" value="jdk.internal.jshell.tool.JShellTool" />
+    <option name="MAIN_CLASS_NAME" value="jdk.internal.jshell.tool.JShellToolProvider" />
     <option name="VM_PARAMETERS" value='@XPATCH@ --add-exports=jdk.jshell/jdk.internal.jshell.tool=ALL-UNNAMED' />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />

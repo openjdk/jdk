@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,21 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.StringReference;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class StringReferenceImpl extends ObjectReferenceImpl
     implements StringReference
 {
     private String value;
 
-    StringReferenceImpl(VirtualMachine aVm,long aRef) {
-        super(aVm,aRef);
+    StringReferenceImpl(VirtualMachine aVm, long aRef) {
+        super(aVm, aRef);
     }
 
     public String value() {
-        if(value == null) {
+        if (value == null) {
             // Does not need synchronization, since worst-case
             // static info is fetched twice
             try {
