@@ -75,6 +75,7 @@ import java.io.IOException;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  *
  * @serial exclude
  */

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,6 +44,7 @@ import org.xml.sax.XMLReader;
  * coroutine protocol was not being used and was complicating design.
  * See {@link IncrementalSAXSource}.
  * */
+@Deprecated
 public interface CoroutineParser {
 
     /** @return the coroutine ID number for this CoroutineParser object.

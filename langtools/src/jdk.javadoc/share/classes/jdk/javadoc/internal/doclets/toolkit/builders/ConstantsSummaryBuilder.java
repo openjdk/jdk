@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
  * @author Bhavesh Patel (Modified)
  */
 public class ConstantsSummaryBuilder extends AbstractBuilder {
-
-    /**
-     * The root element of the constant summary XML is {@value}.
-     */
-    public static final String ROOT = "ConstantSummary";
 
     /**
      * The maximum number of package directories shown in the constant
@@ -133,27 +128,21 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(layoutParser.parseXML(ROOT), contentTree);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return ROOT;
+        buildConstantSummary(contentTree);
     }
 
     /**
      * Build the constant summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildConstantSummary(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildConstantSummary(Content contentTree) throws DocletException {
         contentTree = writer.getHeader();
-        buildChildren(node, contentTree);
+
+        buildContents(contentTree);
+        buildConstantSummaries(contentTree);
+
         writer.addFooter(contentTree);
         writer.printDocument(contentTree);
     }
@@ -161,10 +150,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the list of packages.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the content list will be added
      */
-    public void buildContents(XMLNode node, Content contentTree) {
+    protected void buildContents(Content contentTree) {
         Content contentListTree = writer.getContentsHeader();
         printedPackageHeaders.clear();
         for (PackageElement pkg : configuration.packages) {
@@ -178,18 +166,20 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for each documented package.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the tree to which the summaries will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildConstantSummaries(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildConstantSummaries(Content contentTree) throws DocletException {
         printedPackageHeaders.clear();
         Content summariesTree = writer.getConstantSummaries();
         for (PackageElement aPackage : configuration.packages) {
             if (hasConstantField(aPackage)) {
                 currentPackage = aPackage;
                 //Build the documentation for the current package.
-                buildChildren(node, summariesTree);
+
+                buildPackageHeader(summariesTree);
+                buildClassConstantSummary(summariesTree);
+
                 first = false;
             }
         }
@@ -199,10 +189,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the header for the given package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summariesTree the tree to which the package header will be added
      */
-    public void buildPackageHeader(XMLNode node, Content summariesTree) {
+    protected void buildPackageHeader(Content summariesTree) {
         PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(currentPackage);
         if (!printedPackageHeaders.contains(abbrevPkg)) {
             writer.addPackageName(currentPackage, summariesTree, first);
@@ -213,12 +202,11 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the current class.
      *
-     * @param node the XML element that specifies which components to document
      * @param summariesTree the tree to which the class constant summary will be added
      * @throws DocletException if there is a problem while building the documentation
      *
      */
-    public void buildClassConstantSummary(XMLNode node, Content summariesTree)
+    protected void buildClassConstantSummary(Content summariesTree)
             throws DocletException {
         SortedSet<TypeElement> classes = !currentPackage.isUnnamed()
                 ? utils.getAllClasses(currentPackage)
@@ -231,7 +219,9 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             }
             currentClass = te;
             //Build the documentation for the current class.
-            buildChildren(node, classConstantTree);
+
+            buildConstantMembers(classConstantTree);
+
         }
         writer.addClassConstant(summariesTree, classConstantTree);
     }
@@ -239,12 +229,11 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary of constant members in the class.
      *
-     * @param node the XML element that specifies which components to document
      * @param classConstantTree the tree to which the constant members table
      *                          will be added
      */
-    public void buildConstantMembers(XMLNode node, Content classConstantTree) {
-        new ConstantFieldBuilder(currentClass).buildMembersSummary(node, classConstantTree);
+    protected void buildConstantMembers(Content classConstantTree) {
+        new ConstantFieldBuilder(currentClass).buildMembersSummary(classConstantTree);
     }
 
     /**
@@ -273,8 +262,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @return true if the given package has constant fields to document.
      */
     private boolean hasConstantField (TypeElement typeElement) {
-        VisibleMemberMap visibleMemberMapFields = new VisibleMemberMap(typeElement,
-            VisibleMemberMap.Kind.FIELDS, configuration);
+        VisibleMemberMap visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
+            VisibleMemberMap.Kind.FIELDS);
         List<Element> fields = visibleMemberMapFields.getLeafMembers();
         for (Element f : fields) {
             VariableElement field = (VariableElement)f;
@@ -329,20 +318,19 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          */
         public ConstantFieldBuilder(TypeElement typeElement) {
             this.typeElement = typeElement;
-            visibleMemberMapFields = new VisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.FIELDS, configuration);
-            visibleMemberMapEnumConst = new VisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.ENUM_CONSTANTS, configuration);
+            visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.FIELDS);
+            visibleMemberMapEnumConst = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.ENUM_CONSTANTS);
         }
 
         /**
          * Builds the table of constants for a given class.
          *
-         * @param node the XML element that specifies which components to document
          * @param classConstantTree the tree to which the class constants table
          *                          will be added
          */
-        protected void buildMembersSummary(XMLNode node, Content classConstantTree) {
+        protected void buildMembersSummary(Content classConstantTree) {
             SortedSet<VariableElement> members = members();
             if (!members.isEmpty()) {
                 writer.addConstantMembers(typeElement, members, classConstantTree);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
 #include "utilities/ostream.hpp"
 
 #define UNNAMED_MODULE "Unnamed Module"
-#define JAVAPKG "java/"
-#define JAVAPKG_LEN 5
+#define JAVAPKG "java"
+#define JAVAPKG_LEN 4
 #define JAVA_BASE_NAME "java.base"
 
 class ModuleClosure;
@@ -45,7 +45,7 @@ class ModuleClosure;
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
 // It contains:
 //   - Symbol* containing the module's name.
-//   - pointer to the java.lang.reflect.Module for this module.
+//   - pointer to the java.lang.Module for this module.
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
 //   - a growable array containg other module entries that this module can read.
@@ -55,7 +55,7 @@ class ModuleClosure;
 // data structure.
 class ModuleEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
-  jobject _module;                     // java.lang.reflect.Module
+  jobject _module;                     // java.lang.Module
   jobject _pd;                         // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   ClassLoaderData* _loader_data;

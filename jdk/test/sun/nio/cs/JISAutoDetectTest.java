@@ -26,6 +26,7 @@
  * @bug 4087261 4184592
  * @summary Make sure to determine Japanese text encoding as correctly
  * as possible.
+ * @modules jdk.charsets
  */
 
 import java.nio.charset.*;

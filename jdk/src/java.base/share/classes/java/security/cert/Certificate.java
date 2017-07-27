@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import sun.security.x509.X509CertImpl;
  * @see CertificateFactory
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 
 public abstract class Certificate implements java.io.Serializable {
@@ -74,8 +75,8 @@ public abstract class Certificate implements java.io.Serializable {
      *
      * @param type the standard name of the certificate type.
      * See the CertificateFactory section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
      */
     protected Certificate(String type) {

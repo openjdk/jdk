@@ -77,6 +77,13 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
         endif
 
   TARGETS += $(FREETYPE_TARGET_LIB)
+
+  $(eval $(call SetupCopyFiles, COPY_FREETYPE_LICENSE, \
+      FILES := $(FREETYPE_LICENSE), \
+      DEST := $(LEGAL_DST_DIR), \
+  ))
+
+  TARGETS += $(COPY_FREETYPE_LICENSE)
 endif
 
 ################################################################################

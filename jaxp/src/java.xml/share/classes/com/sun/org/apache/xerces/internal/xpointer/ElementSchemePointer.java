@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -536,9 +535,9 @@ final class ElementSchemePointer implements XPointerPart {
         private Tokens(SymbolTable symbolTable) {
             fSymbolTable = symbolTable;
 
-            fTokenNames.put(new Integer(XPTRTOKEN_ELEM_NCNAME),
+            fTokenNames.put(XPTRTOKEN_ELEM_NCNAME,
                     "XPTRTOKEN_ELEM_NCNAME");
-            fTokenNames.put(new Integer(XPTRTOKEN_ELEM_CHILD),
+            fTokenNames.put(XPTRTOKEN_ELEM_CHILD,
                     "XPTRTOKEN_ELEM_CHILD");
         }
 
@@ -548,7 +547,7 @@ final class ElementSchemePointer implements XPointerPart {
          * @return String The token string
          */
         private String getTokenString(int token) {
-            return fTokenNames.get(new Integer(token));
+            return fTokenNames.get(token);
         }
 
         /**
@@ -560,7 +559,7 @@ final class ElementSchemePointer implements XPointerPart {
             String str = fTokenNames.get(tokenStr);
             Integer tokenInt = str == null ? null : Integer.parseInt(str);
             if (tokenInt == null) {
-                tokenInt = new Integer(fTokenNames.size());
+                tokenInt = fTokenNames.size();
                 fTokenNames.put(tokenInt, tokenStr);
             }
             addToken(tokenInt.intValue());
@@ -763,7 +762,7 @@ final class ElementSchemePointer implements XPointerPart {
                     // An invalid child sequence character
                     if (child == 0) {
                         reportError("InvalidChildSequenceCharacter",
-                                new Object[] { new Character((char) ch) });
+                                new Object[] { (char) ch });
                         return false;
                     }
 

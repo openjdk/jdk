@@ -32,7 +32,6 @@
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.HashSet;
 import java.util.concurrent.CancellationException;
@@ -111,14 +110,14 @@ public class ForkJoinPool8Test extends JSR166TestCase {
 
             Thread.currentThread().interrupt();
             try {
-                a.get(5L, SECONDS);
+                a.get(randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (InterruptedException success) {
             } catch (Throwable fail) { threadUnexpectedException(fail); }
         }
 
         try {
-            a.get(0L, SECONDS);
+            a.get(randomExpiredTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (TimeoutException success) {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
@@ -136,9 +135,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         assertFalse(a.cancel(true));
         try {
             assertNull(a.get());
-        } catch (Throwable fail) { threadUnexpectedException(fail); }
-        try {
-            assertNull(a.get(5L, SECONDS));
+            assertNull(a.get(randomTimeout(), randomTimeUnit()));
         } catch (Throwable fail) { threadUnexpectedException(fail); }
     }
 
@@ -163,7 +160,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         try {
-            a.get(5L, SECONDS);
+            a.get(randomTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (CancellationException success) {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
@@ -194,7 +191,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         try {
-            a.get(5L, SECONDS);
+            a.get(randomTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (ExecutionException success) {
             assertSame(t.getClass(), success.getCause().getClass());
@@ -206,7 +203,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         public FJException(Throwable cause) { super(cause); }
     }
 
-    // A simple recursive action for testing
+    /** A simple recursive action for testing. */
     final class FibAction extends CheckedRecursiveAction {
         final int number;
         int result;
@@ -224,7 +221,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         }
     }
 
-    // A recursive action failing in base case
+    /** A recursive action failing in base case. */
     static final class FailingFibAction extends RecursiveAction {
         final int number;
         int result;
@@ -383,7 +380,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
             protected void realCompute() throws Exception {
                 FibAction f = new FibAction(8);
                 assertSame(f, f.fork());
-                assertNull(f.get(5L, SECONDS));
+                assertNull(f.get(LONG_DELAY_MS, MILLISECONDS));
                 assertEquals(21, f.result);
                 checkCompletedNormally(f);
             }};
@@ -399,7 +396,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
                 FibAction f = new FibAction(8);
                 assertSame(f, f.fork());
                 try {
-                    f.get(5L, null);
+                    f.get(randomTimeout(), null);
                     shouldThrow();
                 } catch (NullPointerException success) {}
             }};
@@ -499,7 +496,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
                 FailingFibAction f = new FailingFibAction(8);
                 assertSame(f, f.fork());
                 try {
-                    f.get(5L, SECONDS);
+                    f.get(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (ExecutionException success) {
                     Throwable cause = success.getCause();
@@ -591,7 +588,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
                 assertTrue(f.cancel(true));
                 assertSame(f, f.fork());
                 try {
-                    f.get(5L, SECONDS);
+                    f.get(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (CancellationException success) {
                     checkCancelled(f);
@@ -932,7 +929,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
         }
     }
 
-    // Version of CCF with forced failure in left completions
+    /** Version of CCF with forced failure in left completions. */
     abstract static class FailingCCF extends CountedCompleter {
         int number;
         int rnumber;
@@ -1067,7 +1064,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
                 CCF f = new LCCF(null, 8);
                 assertSame(f, f.fork());
                 try {
-                    f.get(5L, null);
+                    f.get(randomTimeout(), null);
                     shouldThrow();
                 } catch (NullPointerException success) {}
             }};

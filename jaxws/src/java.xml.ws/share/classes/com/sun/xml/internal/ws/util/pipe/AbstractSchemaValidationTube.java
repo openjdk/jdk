@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,7 +483,7 @@ public abstract class AbstractSchemaValidationTube extends AbstractFilterTubeImp
         assert docs.size() > 1;
 
         final StringBuilder sb = new StringBuilder("<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'");
-        if (!"".equals(tns)) {
+        if (tns != null && !("".equals(tns)) && !("null".equals(tns))) {
             sb.append(" targetNamespace='").append(tns).append("'");
         }
         sb.append(">\n");

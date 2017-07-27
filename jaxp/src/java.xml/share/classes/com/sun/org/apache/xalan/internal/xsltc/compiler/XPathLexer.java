@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -875,7 +874,7 @@ return newSymbol(sym.EOF);
                                         case -21:
                                                 break;
                                         case 21:
-                                                { return newSymbol(sym.INT, new Long(yytext())); }
+                                                { return newSymbol(sym.INT, Long.valueOf(yytext())); }
                                         case -22:
                                                 break;
                                         case 22:
@@ -903,7 +902,7 @@ return newSymbol(sym.EOF);
                                         case -28:
                                                 break;
                                         case 28:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -29:
                                                 break;
                                         case 29:
@@ -929,7 +928,7 @@ return newSymbol(sym.EOF);
                                         case -34:
                                                 break;
                                         case 34:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -35:
                                                 break;
                                         case 35:
@@ -1057,11 +1056,11 @@ return newSymbol(sym.EOF);
                                         case -66:
                                                 break;
                                         case 67:
-                                                { return newSymbol(sym.INT, new Long(yytext())); }
+                                                { return newSymbol(sym.INT, Long.valueOf(yytext())); }
                                         case -67:
                                                 break;
                                         case 68:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -68:
                                                 break;
                                         case 70:

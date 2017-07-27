@@ -27,8 +27,9 @@
  * @summary Test that tasks are cancelled properly when
  *          monitors are started and stopped in a loop.
  * @author Luis-Miguel Alventosa
+ *
  * @library /lib/testlibrary
- * @modules java.management
+ *
  * @build jdk.testlibrary.*
  * @run clean StartStopTest
  * @run build StartStopTest

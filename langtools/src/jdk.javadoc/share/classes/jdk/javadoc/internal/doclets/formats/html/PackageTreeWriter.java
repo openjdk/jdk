@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @param prev the previous package
      * @param next the next package
      */
-    public PackageTreeWriter(ConfigurationImpl configuration,
+    public PackageTreeWriter(HtmlConfiguration configuration,
                              DocPath path,
                              PackageElement packageElement,
                              PackageElement prev, PackageElement next) {
@@ -98,7 +98,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * deprecated classe or interfaces.
      * @throws DocFileIOException if there is a problem generating the package tree page
      */
-    public static void generate(ConfigurationImpl configuration,
+    public static void generate(HtmlConfiguration configuration,
                                 PackageElement pkg, PackageElement prev,
                                 PackageElement next, boolean noDeprecated)
             throws DocFileIOException {

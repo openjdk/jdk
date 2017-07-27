@@ -36,7 +36,6 @@ import sun.management.LazyCompositeData;
  * @test
  * @bug 8139870
  * @summary sun.management.LazyCompositeData.isTypeMatched() fails for composite types with items of ArrayType
- * @modules java.management/sun.management
  * @author Jaroslav Bachorik
  */
 
@@ -161,3 +160,4 @@ public class LazyCompositeDataTest {
         System.out.println("=== PASSED");
     }
 }
+

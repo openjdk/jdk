@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "java_props.h"
 
 char *setupMacOSXLocale(int cat);
+const char *convertToPOSIXLocale(const char* src);
 void setOSNameAndVersion(java_props_t *sprops);
 void setUserHome(java_props_t *sprops);
 void setProxyProperties(java_props_t *sProps);
