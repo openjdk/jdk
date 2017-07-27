@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,19 +296,41 @@ void SensorInfo::trigger(int count, TRAPS) {
     Klass* k = Management::sun_management_Sensor_klass(CHECK);
     instanceKlassHandle sensorKlass (THREAD, k);
     Handle sensor_h(THREAD, _sensor_obj);
-    Handle usage_h = MemoryService::create_MemoryUsage_obj(_usage, CHECK);
+
+    Symbol* trigger_method_signature;
 
     JavaValue result(T_VOID);
     JavaCallArguments args(sensor_h);
     args.push_int((int) count);
-    args.push_oop(usage_h);
+
+    Handle usage_h = MemoryService::create_MemoryUsage_obj(_usage, THREAD);
+    // Call Sensor::trigger(int, MemoryUsage) to send notification to listeners.
+    // When OOME occurs and fails to allocate MemoryUsage object, call
+    // Sensor::trigger(int) instead.  The pending request will be processed
+    // but no notification will be sent.
+    if (HAS_PENDING_EXCEPTION) {
+       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOME here");
+       CLEAR_PENDING_EXCEPTION;
+       trigger_method_signature = vmSymbols::int_void_signature();
+    } else {
+       trigger_method_signature = vmSymbols::trigger_method_signature();
+       args.push_oop(usage_h);
+    }
 
     JavaCalls::call_virtual(&result,
-                            sensorKlass,
-                            vmSymbols::trigger_name(),
-                            vmSymbols::trigger_method_signature(),
-                            &args,
-                            CHECK);
+                        sensorKlass,
+                        vmSymbols::trigger_name(),
+                        trigger_method_signature,
+                        &args,
+                        THREAD);
+
+    if (HAS_PENDING_EXCEPTION) {
+       // We just clear the OOM pending exception that we might have encountered
+       // in Java's tiggerAction(), and continue with updating the counters since
+       // the Java counters have been updated too.
+       assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOME here");
+       CLEAR_PENDING_EXCEPTION;
+     }
   }
 
   {

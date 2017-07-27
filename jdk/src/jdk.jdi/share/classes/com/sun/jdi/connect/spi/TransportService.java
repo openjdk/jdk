@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.jdi.connect.spi;
 
 import java.io.IOException;
+
+import com.sun.jdi.connect.Transport;
 import com.sun.jdi.connect.TransportTimeoutException;
 
 /**
@@ -35,8 +37,8 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * <p> A transport service is a concrete subclass of this class
  * that has a zero-argument constructor and implements the abstract
  * methods specified below. It is the underlying service
- * used by a {@link com.sun.jdi.connect.Transport} for
- * connections between a debugger and a target VM.
+ * used by a {@link Transport} for connections between a debugger
+ * and a target VM.
  *
  * <p> A transport service is used to establish a connection
  * between a debugger and a target VM, and to transport Java
@@ -76,7 +78,6 @@ import com.sun.jdi.connect.TransportTimeoutException;
  *
  * @since 1.5
  */
-
 public abstract class TransportService {
 
     /**
@@ -107,7 +108,6 @@ public abstract class TransportService {
          *          service supports multiple connections.
          */
         public abstract boolean supportsMultipleConnections();
-
 
         /**
          * Tell whether or not this transport service supports a timeout
@@ -144,7 +144,6 @@ public abstract class TransportService {
          * @see #accept(TransportService.ListenKey,long,long)
          */
         public abstract boolean supportsHandshakeTimeout();
-
     }
 
     /**
@@ -373,5 +372,4 @@ public abstract class TransportService {
      */
     public abstract Connection accept(ListenKey listenKey, long acceptTimeout,
         long handshakeTimeout) throws IOException;
-
 }

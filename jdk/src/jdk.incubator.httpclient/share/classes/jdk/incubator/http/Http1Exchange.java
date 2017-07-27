@@ -96,7 +96,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
-        setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
                                                         returnConnectionToPool,
                                                         this::executeInline);
@@ -122,7 +121,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     {
         BodyProcessor<T> processor = handler.apply(response.responseCode(),
                                                    response.responseHeaders());
-        setClientForResponse(processor);
         CompletableFuture<T> bodyCF = response.readBody(processor,
                                                         returnConnectionToPool,
                                                         executor);

@@ -37,14 +37,14 @@ import java.security.BasicPermission;
  * <caption style="display:none">Table shows permission target name, what the permission allows, and associated risks</caption>
  * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- *   <td>hard</td>
+ *   <th scope="row">hard</th>
  *   <td> Ability to add an existing file to a directory. This is sometimes
  *   known as creating a link, or hard link. </td>
  *   <td> Extreme care should be taken when granting this permission. It allows
@@ -52,7 +52,7 @@ import java.security.BasicPermission;
  *   attacker access to all files. </td>
  * </tr>
  * <tr>
- *   <td>symbolic</td>
+ *   <th scope="row">symbolic</th>
  *   <td> Ability to create symbolic links. </td>
  *   <td> Extreme care should be taken when granting this permission. It allows
  *   linking to any file or directory in the file system thus allowing the

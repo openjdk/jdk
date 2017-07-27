@@ -20,8 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jdk.test.lib.Platform;
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.Platform;
 import jdk.testlibrary.ProcessTools;
 
 /*
@@ -29,7 +30,8 @@ import jdk.testlibrary.ProcessTools;
  * @bug 8132374
  * @summary Check that the value of the os.version property is equal
  *          to the value of the corresponding OS provided tools.
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
+ * @build jdk.test.lib.Platform
  * @run main OsVersionTest
  * @author Volker Simonis
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class ProviderVersionCheck {
 
         for (Provider p: Security.getProviders()) {
             System.out.print(p.getName() + " ");
-            if (p.getVersion() != 9.0d) {
+            if (p.getVersion() != 10.0d) {
                 System.out.println("failed. " + "Version received was " +
                         p.getVersion());
                 failure = true;

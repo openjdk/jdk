@@ -25,7 +25,10 @@
  * @bug 8014377
  * @summary Test for interference when two sockets are bound to the same
  *   port but joined to different multicast groups
- * @build Promiscuous  NetworkConfiguration
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        Promiscuous
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
  * @key randomness
@@ -37,6 +40,9 @@ import java.net.*;
 import static java.net.StandardProtocolFamily.*;
 import java.util.*;
 import java.io.IOException;
+import java.util.stream.Collectors;
+
+import jdk.test.lib.NetworkConfiguration;
 
 public class Promiscuous {
 
@@ -208,7 +214,8 @@ public class Promiscuous {
         InetAddress ip4Group1 = InetAddress.getByName("225.4.5.6");
         InetAddress ip4Group2 = InetAddress.getByName("225.4.6.6");
 
-        for (NetworkInterface nif: config.ip4Interfaces()) {
+        for (NetworkInterface nif: config.ip4MulticastInterfaces()
+                                         .collect(Collectors.toList())) {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET, nif, ip4Group1, ip4Group2);
 

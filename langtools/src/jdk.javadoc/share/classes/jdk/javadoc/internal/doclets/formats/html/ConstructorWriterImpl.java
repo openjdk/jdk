@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public ConstructorWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
 
-        VisibleMemberMap visibleMemberMap = new VisibleMemberMap(
+        VisibleMemberMap visibleMemberMap = configuration.getVisibleMemberMap(
                 typeElement,
-                VisibleMemberMap.Kind.CONSTRUCTORS, configuration);
+                VisibleMemberMap.Kind.CONSTRUCTORS);
         List<Element> constructors = visibleMemberMap.getMembers(typeElement);
         for (Element constructor : constructors) {
             if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
@@ -169,11 +169,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public void setSummaryColumnStyleAndScope(HtmlTree thTree) {
-        if (foundNonPubConstructor) {
-            thTree.addStyle(HtmlStyle.colSecond);
-        } else {
-            thTree.addStyle(HtmlStyle.colFirst);
-        }
+        thTree.addStyle(HtmlStyle.colConstructorName);
         thTree.addAttr(HtmlAttr.SCOPE, "row");
     }
 

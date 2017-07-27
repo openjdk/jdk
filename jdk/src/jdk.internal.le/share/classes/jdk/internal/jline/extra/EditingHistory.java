@@ -264,9 +264,8 @@ public abstract class EditingHistory implements History {
     }
 
     public boolean previousSnippet() {
-        for (int i = index() - 1; i >= 0; i--) {
-            if (get(i) instanceof NarrowingHistoryLine) {
-                moveTo(i);
+        while (previous()) {
+            if (current() instanceof NarrowingHistoryLine) {
                 return true;
             }
         }
@@ -275,19 +274,17 @@ public abstract class EditingHistory implements History {
     }
 
     public boolean nextSnippet() {
-        for (int i = index() + 1; i < size(); i++) {
-            if (get(i) instanceof NarrowingHistoryLine) {
-                moveTo(i);
+        boolean success = false;
+
+        while (next()) {
+            success = true;
+
+            if (current() instanceof NarrowingHistoryLine) {
                 return true;
             }
         }
 
-        if (index() < size()) {
-            moveToEnd();
-            return true;
-        }
-
-        return false;
+        return success;
     }
 
     public final void load(Iterable<? extends String> originalHistory) {
@@ -383,7 +380,10 @@ public abstract class EditingHistory implements History {
     }
 
     public void fullHistoryReplace(String source) {
-        fullHistory.replace(source);
+        fullHistory.removeLast();
+        for (String line : source.split("\\R")) {
+            fullHistory.add(line);
+        }
     }
 
     private class NarrowingHistoryLine implements CharSequence {

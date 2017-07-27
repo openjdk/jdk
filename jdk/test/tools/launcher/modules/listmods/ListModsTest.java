@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules java.se
- * @build ListModsTest CompilerUtils jdk.testlibrary.*
+ * @build ListModsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng ListModsTest
  * @summary Basic test for java --list-modules
  */
@@ -33,6 +33,7 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
 

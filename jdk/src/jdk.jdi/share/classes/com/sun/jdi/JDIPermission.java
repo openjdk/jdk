@@ -70,7 +70,7 @@ package com.sun.jdi;
  * @author  Tim Bell
  * @since   1.5
  *
- * @see com.sun.jdi.Bootstrap
+ * @see Bootstrap
  * @see java.security.BasicPermission
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -80,7 +80,9 @@ package com.sun.jdi;
  */
 
 public final class JDIPermission extends java.security.BasicPermission {
+
     private static final long serialVersionUID = -6988461416938786271L;
+
     /**
      * The {@code JDIPermission} class represents access rights to the
      * {@code VirtualMachineManager}

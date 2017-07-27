@@ -24,15 +24,21 @@
 /**
  * @test
  * @summary NOT A TEST. Captures the network interface configuration.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.NetworkConfiguration
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main NetworkConfigurationProbe
  */
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.NetworkInterface;
-import jdk.testlibrary.NetworkConfiguration;
+import jdk.test.lib.NetworkConfiguration;
 import static java.util.stream.Collectors.joining;
 import static java.lang.System.out;
 

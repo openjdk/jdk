@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  *      7003124 7085757 7028073 7171028 7189611 8000983 7195759 8004489 8006509
  *      7114053 7074882 7040556 8008577 8013836 8021121 6192407 6931564 8027695
  *      8017142 8037343 8055222 8042126 8074791 8075173 8080774 8129361 8134916
- *      8145136 8145952 8164784 8037111 8081643 7037368
+ *      8145136 8145952 8164784 8037111 8081643 7037368 8178872
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
  * @modules jdk.localedata
@@ -99,8 +99,15 @@
  *        LocaleNames/fr_FR/US=\u00c9tats-Unis
  *        LocaleNames/fr_FR/FR=France</pre>
  *
- *    You can use language tag with '-' in locale field like this:<pre>
- *        LocaleNames/sr-Latn/SR=Surinam
+ *    Second field which designates locale is in the form of:
+ *    1) Legacy locale notation using '_' as a locale component(language/country/variant) separator.
+ *    language is a mandatory component. country and variant are optional, however,
+ *    variant cannot exist without country. So for example, while "ja"/"ja_JP"/"ja_JP_JP" are valid,
+ *    "_JP"/"ja__JP" are invalid.
+ *
+ *    2) BCP47 language tag notation in which we can specify language tag with '-' as a subtag
+ *       separator. Language tag can be specified with '-' in locale field like this:
+ *       <pre>LocaleNames/sr-Latn/SR=Surinam
  *        FormatData/sr-Latn-BA/DayNames/2=utorak</pre>
  *
  *    The command-line syntax of this test is
@@ -276,16 +283,25 @@ public class LocaleDataTest
             throw new Exception("Malformed input file: \"" + key + "\" is missing locale name");
         localeName = key.substring(oldIndex, index);
         boolean use_tag = localeName.indexOf("-") != -1;
-
         if (use_tag == false && localeName.length() > 0) {
-            language = localeName.substring(0, 2);
-            if (localeName.length() > 3) {
-                country = localeName.substring(3, 5);
-                if (localeName.length() > 5)
-                    variant = localeName.substring(6);
+            String[] locDetails = localeName.split("_");
+            switch (locDetails.length) {
+                case 1:
+                    language = locDetails[0];
+                    break;
+                case 2:
+                    language = locDetails[0];
+                    country = locDetails[1];
+                    break;
+                case 3:
+                    language = locDetails[0];
+                    country = locDetails[1];
+                    variant = locDetails[2];
+                    break;
+                default:
+                    throw new Exception("locale not specified properly " + locDetails);
             }
         }
-
         oldIndex = index + 1;
         index = key.indexOf("/", oldIndex);
         if (index == -1)

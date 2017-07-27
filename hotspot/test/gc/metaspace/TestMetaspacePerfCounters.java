@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import jdk.test.lib.ByteCodeLoader;
-import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.Platform;
 
 import sun.management.ManagementFactoryHelper;

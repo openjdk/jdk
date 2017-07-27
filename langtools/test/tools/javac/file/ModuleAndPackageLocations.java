@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8171005
+ * @bug 8171005 8175560
  * @summary Verify behavior of JavaFileManager methods w.r.t. module/package oriented locations
  * @library /tools/lib
  * @modules java.compiler
@@ -99,7 +99,7 @@ public class ModuleAndPackageLocations extends TestRunner {
             Location cOutput = fm.getLocationForModule(StandardLocation.SOURCE_OUTPUT, "c");
             JavaFileObject testFO = fm.getJavaFileForOutput(cOutput, "test.Test", Kind.CLASS, null);
             testFO.openOutputStream().close();
-            Location cOutput2 = fm.getLocationForModule(StandardLocation.SOURCE_OUTPUT, testFO, "test");
+            Location cOutput2 = fm.getLocationForModule(StandardLocation.SOURCE_OUTPUT, testFO);
 
             if (cOutput != cOutput2) {
                 throw new AssertionError("Unexpected location: " + cOutput2 + ", expected: " +cOutput);
@@ -117,7 +117,6 @@ public class ModuleAndPackageLocations extends TestRunner {
             assertRefused(() -> fm.getJavaFileForOutput(StandardLocation.MODULE_SOURCE_PATH, "", Kind.SOURCE, null));
             assertRefused(() -> fm.getLocationForModule(StandardLocation.SOURCE_PATH, "test"));
             JavaFileObject out = fm.getJavaFileForInput(StandardLocation.CLASS_OUTPUT, "test.Test", Kind.CLASS);
-            assertRefused(() -> fm.getLocationForModule(StandardLocation.SOURCE_PATH, out, "test"));
             assertRefused(() -> fm.inferBinaryName(StandardLocation.MODULE_PATH, out));
             assertRefused(() -> fm.inferModuleName(StandardLocation.MODULE_SOURCE_PATH));
             assertRefused(() -> fm.list(StandardLocation.MODULE_SOURCE_PATH, "test", EnumSet.allOf(Kind.class), false));
@@ -131,10 +130,10 @@ public class ModuleAndPackageLocations extends TestRunner {
             Path msp1 = msp.resolve("1");
             Path msp2 = msp.resolve("2");
 
-            Files.createDirectories(msp1.resolve("a"));
+            touch(msp1.resolve("a/module-info.java"));
             Files.createDirectories(msp1.resolve("b"));
-            Files.createDirectories(msp2.resolve("b"));
-            Files.createDirectories(msp2.resolve("c"));
+            touch(msp2.resolve("b/module-info.java"));
+            touch(msp2.resolve("c/module-info.java"));
 
             Path mp  = base.resolve("mp");
             Path mp1 = mp.resolve("1");

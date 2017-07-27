@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1378,7 +1378,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Repeat lines "The number of entries in the line table for this method."
                 (Group LineInfo
                     (long lineCodeIndex "Initial code index of the line, "
-                                        "start <= lineCodeIndex < end")
+                                        "start &lt;= lineCodeIndex &lt; end")
                     (int lineNumber "Line number.")
                 )
             )
@@ -1409,13 +1409,13 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "First code index at which the variable is visible (unsigned). "
                         "Used in conjunction with <code>length</code>. "
                         "The variable can be get or set only when the current "
-                        "<code>codeIndex</code> <= current frame code index < <code>codeIndex + length</code> ")
+                        "<code>codeIndex</code> &lt;= current frame code index &lt; <code>codeIndex + length</code> ")
                     (string name "The variable's name.")
                     (string signature "The variable type's JNI signature.")
                     (int length
                         "Unsigned value used in conjunction with <code>codeIndex</code>. "
                         "The variable can be get or set only when the current "
-                        "<code>codeIndex</code> <= current frame code index < <code>code index + length</code> ")
+                        "<code>codeIndex</code> &lt;= current frame code index &lt; <code>code index + length</code> ")
                     (int slot "The local variable's index in its frame")
                 )
             )
@@ -1502,7 +1502,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "First code index at which the variable is visible (unsigned). "
                         "Used in conjunction with <code>length</code>. "
                         "The variable can be get or set only when the current "
-                        "<code>codeIndex</code> <= current frame code index < <code>codeIndex + length</code> ")
+                        "<code>codeIndex</code> &lt;= current frame code index &lt; <code>codeIndex + length</code> ")
                     (string name "The variable's name.")
                     (string signature "The variable type's JNI signature.")
                     (string genericSignature "The variable type's generic "
@@ -1510,7 +1510,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                     (int length
                         "Unsigned value used in conjunction with <code>codeIndex</code>. "
                         "The variable can be get or set only when the current "
-                        "<code>codeIndex</code> <= current frame code index < <code>code index + length</code> ")
+                        "<code>codeIndex</code> &lt;= current frame code index &lt; <code>code index + length</code> ")
                     (int slot "The local variable's index in its frame")
                 )
             )

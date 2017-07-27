@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.*;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -56,11 +56,16 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
 public class ModuleIndexWriter extends AbstractModuleIndexWriter {
 
     /**
-     * Set representing the modules.
+     * Map representing the group of modules as specified on the command line.
      *
      * @see Group
      */
-    private final SortedSet<ModuleElement> modules;
+    private final Map<String, SortedSet<ModuleElement>> groupModuleMap;
+
+    /**
+     * List to store the order groups as specified on the command line.
+     */
+    private final List<String> groupList;
 
     /**
      * HTML tree for main tag.
@@ -72,9 +77,10 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param configuration the configuration object
      * @param filename the name of the generated file
      */
-    public ModuleIndexWriter(ConfigurationImpl configuration, DocPath filename) {
+    public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
-        modules = configuration.modules;
+        groupModuleMap = configuration.group.groupModules(configuration.modules);
+        groupList = configuration.group.getGroupList();
     }
 
     /**
@@ -83,7 +89,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the module index page
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
         ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
         mdlgen.buildModuleIndexFile("doclet.Window_Overview_Summary", true);
@@ -96,11 +102,13 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     @Override
     protected void addIndex(Content body) {
-        if (modules != null && !modules.isEmpty()) {
-            addIndexContents(configuration.getText("doclet.Modules"),
-                    configuration.getText("doclet.Member_Table_Summary",
-                            configuration.getText("doclet.Module_Summary"),
-                            configuration.getText("doclet.modules")), body);
+        for (String groupname : groupList) {
+            SortedSet<ModuleElement> list = groupModuleMap.get(groupname);
+            if (list != null && !list.isEmpty()) {
+                addIndexContents(list,
+                        groupname, configuration.getText("doclet.Member_Table_Summary",
+                                groupname, configuration.getText("doclet.modules")), body);
+            }
         }
     }
 
@@ -111,7 +119,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param tableSummary summary for the table
      * @param body the document tree to which the index contents will be added
      */
-    protected void addIndexContents(String title, String tableSummary, Content body) {
+    protected void addIndexContents(Collection<ModuleElement> modules, String title, String tableSummary, Content body) {
         HtmlTree htmltree = (configuration.allowTag(HtmlTag.NAV))
                 ? HtmlTree.NAV()
                 : new HtmlTree(HtmlTag.DIV);
@@ -123,7 +131,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         }
         htmltree.addContent(ul);
         body.addContent(htmltree);
-        addModulesList(title, tableSummary, body);
+        addModulesList(modules, title, tableSummary, body);
     }
 
     /**
@@ -133,15 +141,17 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * @param tableSummary the summary of the table tag
      * @param body the content tree to which the module list will be added
      */
-    protected void addModulesList(String text, String tableSummary, Content body) {
+    protected void addModulesList(Collection<ModuleElement> modules, String text, String tableSummary, Content body) {
         Content table = (configuration.isOutputHtml5())
                 ? HtmlTree.TABLE(HtmlStyle.overviewSummary, getTableCaption(new RawHtml(text)))
                 : HtmlTree.TABLE(HtmlStyle.overviewSummary, tableSummary, getTableCaption(new RawHtml(text)));
         table.addContent(getSummaryTableHeader(moduleTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
-        addModulesList(tbody);
+        addModulesList(modules, tbody);
         table.addContent(tbody);
-        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+        Content anchor = getMarkerAnchor(text);
+        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, anchor);
+        div.addContent(table);
         if (configuration.allowTag(HtmlTag.MAIN)) {
             htmlTree.addContent(div);
         } else {
@@ -154,7 +164,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      *
      * @param tbody the documentation tree to which the list will be added
      */
-    protected void addModulesList(Content tbody) {
+    protected void addModulesList(Collection<ModuleElement> modules, Content tbody) {
         boolean altColor = true;
         for (ModuleElement mdle : modules) {
             if (!mdle.isUnnamed()) {
@@ -183,19 +193,9 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
-            subTitleDiv.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(configuration.overviewElement, subTitleDiv);
-            Content div = HtmlTree.DIV(HtmlStyle.header, subTitleDiv);
-            Content see = new ContentBuilder();
-            see.addContent(contents.seeLabel);
-            see.addContent(" ");
-            Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink(getDocLink(
-                    SectionName.OVERVIEW_DESCRIPTION),
-                    contents.descriptionLabel, "", "");
-            descPara.addContent(descLink);
-            div.addContent(descPara);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.contentContainer);
+            addOverviewComment(div);
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
             } else {
@@ -213,27 +213,19 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     protected void addOverviewComment(Content htmltree) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            htmltree.addContent(getMarkerAnchor(SectionName.OVERVIEW_DESCRIPTION));
             addInlineComment(configuration.overviewElement, htmltree);
         }
     }
 
     /**
-     * Adds the tag information as provided in the file specified by the
-     * "-overview" option on the command line.
+     * For HTML 5, add the htmlTree to the body. For HTML 4, do nothing.
      *
      * @param body the documentation tree to which the overview will be added
      */
     @Override
     protected void addOverview(Content body) {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
-        addOverviewComment(div);
         if (configuration.allowTag(HtmlTag.MAIN)) {
-            htmlTree.addContent(div);
             body.addContent(htmlTree);
-        } else {
-            body.addContent(div);
         }
     }
 
@@ -277,10 +269,5 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     @Override
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
             String tableSummary, Content body, ModuleElement mdle) {
-    }
-
-    @Override
-    protected void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
-            String tableSummary, Content body) {
     }
 }

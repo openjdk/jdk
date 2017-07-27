@@ -37,6 +37,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -164,14 +165,16 @@ public class DefineClassTest {
      */
     @Test
     public void testTwoProtectionDomains() throws Exception {
+        Path here = Paths.get("");
+
         // p.C1 in one exploded directory
-        Path dir1 = Files.createTempDirectory("classes");
+        Path dir1 = Files.createTempDirectory(here, "classes");
         Path p = Files.createDirectory(dir1.resolve("p"));
         Files.write(p.resolve("C1.class"), generateClass("p.C1"));
         URL url1 = dir1.toUri().toURL();
 
         // p.C2 in another exploded directory
-        Path dir2 = Files.createTempDirectory("classes");
+        Path dir2 = Files.createTempDirectory(here, "classes");
         p = Files.createDirectory(dir2.resolve("p"));
         Files.write(p.resolve("C2.class"), generateClass("p.C2"));
         URL url2 = dir2.toUri().toURL();
