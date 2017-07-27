@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * A symbolic reference obtained by cracking a direct method handle
  * into its consitutent symbolic parts.
  * To crack a direct method handle, call {@link Lookup#revealDirect Lookup.revealDirect}.
- * <h1><a name="directmh"></a>Direct Method Handles</h1>
+ * <h1><a id="directmh"></a>Direct Method Handles</h1>
  * A <em>direct method handle</em> represents a method, constructor, or field without
  * any intervening argument bindings or other transformations.
  * The method, constructor, or field referred to by a direct method handle is called
@@ -77,48 +77,53 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * handle with symbolic information (or caller binding) from an unexpected scope.
  * Use {@link java.lang.invoke.MethodHandles#reflectAs} to override this limitation.
  *
- * <h1><a name="refkinds"></a>Reference kinds</h1>
+ * <h1><a id="refkinds"></a>Reference kinds</h1>
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
  * correspond to all major use cases for methods, constructors, and fields.
  * These use cases may be distinguished using small integers as follows:
- * <table border=1 cellpadding=5 summary="reference kinds">
- * <tr><th>reference kind</th><th>descriptive name</th><th>scope</th><th>member</th><th>behavior</th></tr>
+ * <table class="striped">
+ * <caption style="display:none">reference kinds</caption>
+ * <thead>
+ * <tr><th scope="col">reference kind</th><th scope="col">descriptive name</th><th scope="col">scope</th><th scope="col">member</th><th scope="col">behavior</th></tr>
+ * </thead>
+ * <tbody>
  * <tr>
- *     <td>{@code 1}</td><td>{@code REF_getField}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 1}</th><td>{@code REF_getField}</td><td>{@code class}</td>
  *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 2}</td><td>{@code REF_getStatic}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 2}</th><td>{@code REF_getStatic}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (T) C.f;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 3}</td><td>{@code REF_putField}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 3}</th><td>{@code REF_putField}</td><td>{@code class}</td>
  *     <td>{@code FT f;}</td><td>{@code this.f = x;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 4}</td><td>{@code REF_putStatic}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 4}</th><td>{@code REF_putStatic}</td><td>{@code class}</td>
  *     <td>{@code static}<br>{@code FT f;}</td><td>{@code C.f = arg;}</td>
  * </tr>
  * <tr>
- *     <td>{@code 5}</td><td>{@code REF_invokeVirtual}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 5}</th><td>{@code REF_invokeVirtual}</td><td>{@code class}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 6}</td><td>{@code REF_invokeStatic}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 6}</th><td>{@code REF_invokeStatic}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code static}<br>{@code T m(A*);}</td><td>{@code (T) C.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 7}</td><td>{@code REF_invokeSpecial}</td><td>{@code class} or {@code interface}</td>
+ *     <th scope="row">{@code 7}</th><td>{@code REF_invokeSpecial}</td><td>{@code class} or {@code interface}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) super.m(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 8}</td><td>{@code REF_newInvokeSpecial}</td><td>{@code class}</td>
+ *     <th scope="row">{@code 8}</th><td>{@code REF_newInvokeSpecial}</td><td>{@code class}</td>
  *     <td>{@code C(A*);}</td><td>{@code new C(arg*);}</td>
  * </tr>
  * <tr>
- *     <td>{@code 9}</td><td>{@code REF_invokeInterface}</td><td>{@code interface}</td>
+ *     <th scope="row">{@code 9}</th><td>{@code REF_invokeInterface}</td><td>{@code interface}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
  * </tr>
+ * </tbody>
  * </table>
  * @since 1.8
  */

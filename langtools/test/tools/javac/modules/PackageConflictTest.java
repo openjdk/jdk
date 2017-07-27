@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,4 +277,57 @@ public class PackageConflictTest extends ModuleTestBase {
             throw new Exception("expected output not found");
         }
     }
+
+    @Test
+    public void testConflictInDependenciesInUnnamed(Path base) throws Exception {
+        Path msp = base.resolve("module-path-source");
+        Path m1 = msp.resolve("m1x");
+        Path m2 = msp.resolve("m2x");
+        tb.writeJavaFiles(m1,
+                          "module m1x { exports test; }",
+                          "package test; public class A { }");
+        tb.writeJavaFiles(m2,
+                          "module m2x { exports test; }",
+                          "package test; public class B { }");
+        Path mp = base.resolve("module-path");
+        Files.createDirectories(mp);
+
+        new JavacTask(tb)
+            .options("--module-source-path", msp.toString())
+            .outdir(mp)
+            .files(findJavaFiles(msp))
+            .run()
+            .writeAll();
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "package impl; public class Impl { }");
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        List<String> log = new JavacTask(tb)
+                       .options("-XDrawDiagnostic",
+                                "--module-path", mp.toString(),
+                                "--add-modules", "ALL-MODULE-PATH")
+                       .outdir(out)
+                       .files(findJavaFiles(src))
+                       .run(Task.Expect.FAIL)
+                       .writeAll()
+                       .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected1 =
+                Arrays.asList("error: the unnamed module reads package test from both m1x and m2x",
+                              "1 error");
+
+        List<String> expected2 =
+                Arrays.asList("error: the unnamed module reads package test from both m2x and m1x",
+                              "1 error");
+
+        if (!expected1.equals(log) && !expected2.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
+    }
+
 }

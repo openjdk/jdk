@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -116,7 +116,7 @@ final class SecuritySupport {
         return ((Boolean)
                 AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
-                        return new Boolean(f.exists());
+                        return f.exists();
                     }
                 })).booleanValue();
     }
@@ -125,7 +125,7 @@ final class SecuritySupport {
         return ((Long)
                 AccessController.doPrivileged(new PrivilegedAction() {
                     public Object run() {
-                        return new Long(f.lastModified());
+                        return f.lastModified();
                     }
                 })).longValue();
     }

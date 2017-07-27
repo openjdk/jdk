@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.ServiceLoader;
 import jdk.nashorn.api.scripting.AbstractJSObject;
+import jdk.internal.editor.spi.BuildInEditorProvider;
 import jdk.nashorn.internal.runtime.JSType;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -116,7 +118,24 @@ final class EditObject extends AbstractJSObject {
         if (editor != null && !editor.isEmpty()) {
             ExternalEditor.edit(editor, errorHandler, initText, saveHandler, console);
         } else if (! Main.HEADLESS) {
-            EditPad.edit(errorHandler, initText, saveHandler);
+            try {
+                ServiceLoader<BuildInEditorProvider> sl
+                        = ServiceLoader.load(BuildInEditorProvider.class);
+                //find the highest ranking provider
+                BuildInEditorProvider provider = null;
+                for (BuildInEditorProvider p : sl){
+                    if (provider == null || p.rank() > provider.rank()) {
+                        provider = p;
+                    }
+                }
+                if (provider != null) {
+                    provider.edit(null, initText, saveHandler, errorHandler);
+                } else {
+                    errorHandler.accept(Main.getMessage("jjs.err.no.builtin.editor"));
+                }
+            } catch (RuntimeException ex) {
+                errorHandler.accept(Main.getMessage("jjs.err.cant.launch.editor"));
+            }
         } else {
             errorHandler.accept(Main.getMessage("no.editor"));
         }

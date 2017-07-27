@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.Types;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 
 /**
  * Map all class uses for a given class.
@@ -190,7 +190,7 @@ public class ClassUseMapper {
     private final Types typeUtils;
     private final Utils utils;
 
-    public ClassUseMapper(ConfigurationImpl configuration, ClassTree classtree) {
+    public ClassUseMapper(HtmlConfiguration configuration, ClassTree classtree) {
         docEnv = configuration.docEnv;
         elementUtils = docEnv.getElementUtils();
         typeUtils = docEnv.getTypeUtils();

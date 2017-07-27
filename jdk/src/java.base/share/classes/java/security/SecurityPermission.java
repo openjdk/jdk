@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,19 @@ import java.util.StringTokenizer;
  * target names, and for each provides a description of what the permission
  * allows and a discussion of the risks of granting code the permission.
  *
- * <table border=1 cellpadding=5 summary="target name,what the permission allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
+ * <tbody>
  *
  * <tr>
- *   <td>authProvider.{provider name}</td>
+ *   <th scope="row">authProvider.{provider name}</th>
  *   <td>Allow the named provider to be an AuthProvider for login and
  * logout operations. </td>
  *   <td>This allows the named provider to perform login and logout
@@ -64,7 +68,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>createAccessControlContext</td>
+ *   <th scope="row">createAccessControlContext</th>
  *   <td>Creation of an AccessControlContext</td>
  *   <td>This allows someone to instantiate an AccessControlContext
  * with a {@code DomainCombiner}.  Extreme care must be taken when
@@ -74,7 +78,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>getDomainCombiner</td>
+ *   <th scope="row">getDomainCombiner</th>
  *   <td>Retrieval of an AccessControlContext's DomainCombiner</td>
  *   <td>This allows someone to retrieve an AccessControlContext's
  * {@code DomainCombiner}.  Since DomainCombiners may contain
@@ -82,7 +86,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>getPolicy</td>
+ *   <th scope="row">getPolicy</th>
  *   <td>Retrieval of the system-wide security policy (specifically, of the
  * currently-installed Policy object)</td>
  *   <td>This allows someone to query the policy via the
@@ -95,7 +99,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setPolicy</td>
+ *   <th scope="row">setPolicy</th>
  *   <td>Setting of the system-wide security policy (specifically,
  * the Policy object)</td>
  *   <td>Granting this permission is extremely dangerous, as malicious
@@ -104,7 +108,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>createPolicy.{policy type}</td>
+ *   <th scope="row">createPolicy.{policy type}</th>
  *   <td>Getting an instance of a Policy implementation from a provider</td>
  *   <td>Granting this permission enables code to obtain a Policy object.
  * Malicious code may query the Policy object to determine what permissions
@@ -112,7 +116,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>getProperty.{key}</td>
+ *   <th scope="row">getProperty.{key}</th>
  *   <td>Retrieval of the security property with the specified key</td>
  *   <td>Depending on the particular key for which access has
  * been granted, the code may have access to the list of security
@@ -125,7 +129,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setProperty.{key}</td>
+ *   <th scope="row">setProperty.{key}</th>
  *   <td>Setting of the security property with the specified key</td>
  *   <td>This could include setting a security provider or defining
  * the location of the system-wide security policy.  Malicious
@@ -140,7 +144,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>insertProvider</td>
+ *   <th scope="row">insertProvider</th>
  *   <td>Addition of a new provider</td>
  *   <td>This would allow somebody to introduce a possibly
  * malicious provider (e.g., one that discloses the private keys passed
@@ -154,7 +158,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>removeProvider.{provider name}</td>
+ *   <th scope="row">removeProvider.{provider name}</th>
  *   <td>Removal of the specified provider</td>
  *   <td>This may change the behavior or disable execution of other
  * parts of the program. If a provider subsequently requested by the
@@ -167,7 +171,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>clearProviderProperties.{provider name}</td>
+ *   <th scope="row">clearProviderProperties.{provider name}</th>
  *   <td>"Clearing" of a Provider so that it no longer contains the properties
  * used to look up services implemented by the provider</td>
  *   <td>This disables the lookup of services implemented by the provider.
@@ -177,7 +181,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>putProviderProperty.{provider name}</td>
+ *   <th scope="row">putProviderProperty.{provider name}</th>
  *   <td>Setting of properties for the specified Provider</td>
  *   <td>The provider properties each specify the name and location
  * of a particular service implemented by the provider. By granting
@@ -186,7 +190,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>removeProviderProperty.{provider name}</td>
+ *   <th scope="row">removeProviderProperty.{provider name}</th>
  *   <td>Removal of properties from the specified Provider</td>
  *   <td>This disables the lookup of services implemented by the
  * provider. They are no longer accessible due to removal of the properties
@@ -196,6 +200,7 @@ import java.util.StringTokenizer;
  * described under the "removeProvider.{provider name}" permission.</td>
  * </tr>
  *
+ * </tbody>
  * </table>
  *
  * <P>
@@ -204,15 +209,19 @@ import java.util.StringTokenizer;
  * {@link IdentityScope}, {@link Signer}. Use of them is discouraged. See the
  * applicable classes for more information.
  *
- * <table border=1 cellpadding=5 summary="target name,what the permission allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
  *
+ * <tbody>
  * <tr>
- *   <td>insertProvider.{provider name}</td>
+ *   <th scope="row">insertProvider.{provider name}</th>
  *   <td>Addition of a new provider, with the specified name</td>
  *   <td>Use of this permission is discouraged from further use because it is
  * possible to circumvent the name restrictions by overriding the
@@ -229,7 +238,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setSystemScope</td>
+ *   <th scope="row">setSystemScope</th>
  *   <td>Setting of the system identity scope</td>
  *   <td>This would allow an attacker to configure the system identity scope with
  * certificates that should not be trusted, thereby granting applet or
@@ -238,7 +247,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setIdentityPublicKey</td>
+ *   <th scope="row">setIdentityPublicKey</th>
  *   <td>Setting of the public key for an Identity</td>
  *   <td>If the identity is marked as "trusted", this allows an attacker to
  * introduce a different public key (e.g., its own) that is not trusted
@@ -248,7 +257,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setIdentityInfo</td>
+ *   <th scope="row">setIdentityInfo</th>
  *   <td>Setting of a general information string for an Identity</td>
  *   <td>This allows attackers to set the general description for
  * an identity.  This may trick applications into using a different
@@ -257,7 +266,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>addIdentityCertificate</td>
+ *   <th scope="row">addIdentityCertificate</th>
  *   <td>Addition of a certificate for an Identity</td>
  *   <td>This allows attackers to set a certificate for
  * an identity's public key.  This is dangerous because it affects
@@ -266,7 +275,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>removeIdentityCertificate</td>
+ *   <th scope="row">removeIdentityCertificate</th>
  *   <td>Removal of a certificate for an Identity</td>
  *   <td>This allows attackers to remove a certificate for
  * an identity's public key. This is dangerous because it affects
@@ -275,7 +284,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *  <td>printIdentity</td>
+ *  <th scope="row">printIdentity</th>
  *  <td>Viewing the name of a principal
  * and optionally the scope in which it is used, and whether
  * or not it is considered "trusted" in that scope</td>
@@ -287,7 +296,7 @@ import java.util.StringTokenizer;
  *</tr>
  *
  * <tr>
- *   <td>getSignerPrivateKey</td>
+ *   <th scope="row">getSignerPrivateKey</th>
  *   <td>Retrieval of a Signer's private key</td>
  *   <td>It is very dangerous to allow access to a private key; private
  * keys are supposed to be kept secret. Otherwise, code can use the
@@ -296,7 +305,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setSignerKeyPair</td>
+ *   <th scope="row">setSignerKeyPair</th>
  *   <td>Setting of the key pair (public key and private key) for a Signer</td>
  *   <td>This would allow an attacker to replace somebody else's (the "target's")
  * keypair with a possibly weaker keypair (e.g., a keypair of a smaller
@@ -308,6 +317,7 @@ import java.util.StringTokenizer;
  * data encrypted under that session key.</td>
  * </tr>
  *
+ * </tbody>
  * </table>
  *
  * @implNote
@@ -323,6 +333,7 @@ import java.util.StringTokenizer;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class SecurityPermission extends BasicPermission {

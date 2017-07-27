@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
-
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 
 package com.sun.org.apache.xerces.internal.impl;
 
@@ -404,7 +405,7 @@ public class XMLNSDocumentScannerImpl
         if (DEBUG_START_END_ELEMENT) System.out.println(this.getClass().toString() +">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTENAME);
 
         // equals
         fEntityScanner.skipSpaces();
