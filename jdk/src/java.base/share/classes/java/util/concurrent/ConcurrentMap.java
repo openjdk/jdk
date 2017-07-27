@@ -42,8 +42,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link java.util.Map} providing thread safety and atomicity
- * guarantees.
+ * A {@link Map} providing thread safety and atomicity guarantees.
  *
  * <p>To maintain the specified guarantees, default implementations of
  * methods including {@link #putIfAbsent} inherited from {@link Map}
