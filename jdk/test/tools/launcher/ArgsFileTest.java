@@ -25,6 +25,8 @@
  * @test
  * @bug 8027634
  * @summary Argument parsing from file
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @build TestHelper
  * @run main ArgsFileTest
  */
