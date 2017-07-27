@@ -149,23 +149,13 @@
  *     <li>xs:unsignedShort</li>
  * </ul>
  *
- * <hr>
- *
- * <ul>
- *     <li>Author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a></li>
- *     <li>See <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
+ * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @see <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
  *             W3C XML Schema 1.0 Part 2, Section 3.2.7-14</a>
- *     </li>
- *     <li>See <a href="http://www.w3.org/TR/xpath-datamodel#dt-dayTimeDuration">
+ * @see <a href="http://www.w3.org/TR/xpath-datamodel#dt-dayTimeDuration">
  *             XQuery 1.0 and XPath 2.0 Data Model, xdt:dayTimeDuration</a>
- *     </li>
- *     <li>See <a href="http://www.w3.org/TR/xpath-datamodel#dt-yearMonthDuration">
+ * @see <a href="http://www.w3.org/TR/xpath-datamodel#dt-yearMonthDuration">
  *             XQuery 1.0 and XPath 2.0 Data Model, xdt:yearMonthDuration</a>
- *     </li>
- *     <li>Since 1.5</li>
- * </ul>
- *
- * <hr>
  * @since 1.5
  */
 
