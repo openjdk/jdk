@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package javax.management.remote;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Module;
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -137,10 +136,9 @@ import sun.reflect.misc.ReflectUtil;
  * <code><em>protocol</em></code>, or it will throw a
  * <code>MalformedURLException</code> if there is none.  An
  * implementation may choose to find providers by other means.  For
- * example, it may support the <a
- * href="{@docRoot}/../technotes/guides/jar/jar.html#Service%20Provider">
- * JAR conventions for service providers</a>, where the service
- * interface is <code>JMXConnectorProvider</code>.</p>
+ * example, it may support <a
+ * href="{@docRoot}/java/util/ServiceLoader.html#developing-service-providers">service providers</a>,
+ * where the service interface is <code>JMXConnectorProvider</code>.</p>
  *
  * <p>Every implementation must support the RMI connector protocol with
  * the default RMI transport, specified with string <code>rmi</code>.

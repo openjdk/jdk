@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4134,28 +4134,33 @@ void MacroAssembler::vabsss(XMMRegister dst, XMMRegister nds, XMMRegister src, A
   if ((dst_enc < 16) && (nds_enc < 16)) {
     vandps(dst, nds, negate_field, vector_len);
   } else if ((src_enc < 16) && (dst_enc < 16)) {
-    movss(src, nds);
+    evmovdqul(src, nds, Assembler::AVX_512bit);
     vandps(dst, src, negate_field, vector_len);
   } else if (src_enc < 16) {
-    movss(src, nds);
+    evmovdqul(src, nds, Assembler::AVX_512bit);
     vandps(src, src, negate_field, vector_len);
-    movss(dst, src);
+    evmovdqul(dst, src, Assembler::AVX_512bit);
   } else if (dst_enc < 16) {
-    movdqu(src, xmm0);
-    movss(xmm0, nds);
+    evmovdqul(src, xmm0, Assembler::AVX_512bit);
+    evmovdqul(xmm0, nds, Assembler::AVX_512bit);
     vandps(dst, xmm0, negate_field, vector_len);
-    movdqu(xmm0, src);
-  } else if (nds_enc < 16) {
-    movdqu(src, xmm0);
-    vandps(xmm0, nds, negate_field, vector_len);
-    movss(dst, xmm0);
-    movdqu(xmm0, src);
+    evmovdqul(xmm0, src, Assembler::AVX_512bit);
   } else {
-    movdqu(src, xmm0);
-    movss(xmm0, nds);
-    vandps(xmm0, xmm0, negate_field, vector_len);
-    movss(dst, xmm0);
-    movdqu(xmm0, src);
+    if (src_enc != dst_enc) {
+      evmovdqul(src, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, nds, Assembler::AVX_512bit);
+      vandps(xmm0, xmm0, negate_field, vector_len);
+      evmovdqul(dst, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, src, Assembler::AVX_512bit);
+    } else {
+      subptr(rsp, 64);
+      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, nds, Assembler::AVX_512bit);
+      vandps(xmm0, xmm0, negate_field, vector_len);
+      evmovdqul(dst, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
+      addptr(rsp, 64);
+    }
   }
 }
 
@@ -4166,28 +4171,33 @@ void MacroAssembler::vabssd(XMMRegister dst, XMMRegister nds, XMMRegister src, A
   if ((dst_enc < 16) && (nds_enc < 16)) {
     vandpd(dst, nds, negate_field, vector_len);
   } else if ((src_enc < 16) && (dst_enc < 16)) {
-    movsd(src, nds);
+    evmovdqul(src, nds, Assembler::AVX_512bit);
     vandpd(dst, src, negate_field, vector_len);
   } else if (src_enc < 16) {
-    movsd(src, nds);
+    evmovdqul(src, nds, Assembler::AVX_512bit);
     vandpd(src, src, negate_field, vector_len);
-    movsd(dst, src);
+    evmovdqul(dst, src, Assembler::AVX_512bit);
   } else if (dst_enc < 16) {
-    movdqu(src, xmm0);
-    movsd(xmm0, nds);
+    evmovdqul(src, xmm0, Assembler::AVX_512bit);
+    evmovdqul(xmm0, nds, Assembler::AVX_512bit);
     vandpd(dst, xmm0, negate_field, vector_len);
-    movdqu(xmm0, src);
-  } else if (nds_enc < 16) {
-    movdqu(src, xmm0);
-    vandpd(xmm0, nds, negate_field, vector_len);
-    movsd(dst, xmm0);
-    movdqu(xmm0, src);
+    evmovdqul(xmm0, src, Assembler::AVX_512bit);
   } else {
-    movdqu(src, xmm0);
-    movsd(xmm0, nds);
-    vandpd(xmm0, xmm0, negate_field, vector_len);
-    movsd(dst, xmm0);
-    movdqu(xmm0, src);
+    if (src_enc != dst_enc) {
+      evmovdqul(src, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, nds, Assembler::AVX_512bit);
+      vandpd(xmm0, xmm0, negate_field, vector_len);
+      evmovdqul(dst, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, src, Assembler::AVX_512bit);
+    } else {
+      subptr(rsp, 64);
+      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, nds, Assembler::AVX_512bit);
+      vandpd(xmm0, xmm0, negate_field, vector_len);
+      evmovdqul(dst, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
+      addptr(rsp, 64);
+    }
   }
 }
 
@@ -4934,6 +4944,24 @@ void MacroAssembler::punpcklbw(XMMRegister dst, XMMRegister src) {
   }
 }
 
+void MacroAssembler::pshufd(XMMRegister dst, Address src, int mode) {
+  if (VM_Version::supports_avx512vl()) {
+    Assembler::pshufd(dst, src, mode);
+  } else {
+    int dst_enc = dst->encoding();
+    if (dst_enc < 16) {
+      Assembler::pshufd(dst, src, mode);
+    } else {
+      subptr(rsp, 64);
+      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      Assembler::pshufd(xmm0, src, mode);
+      evmovdqul(dst, xmm0, Assembler::AVX_512bit);
+      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
+      addptr(rsp, 64);
+    }
+  }
+}
+
 // This instruction exists within macros, ergo we cannot control its input
 // when emitted through those patterns.
 void MacroAssembler::pshuflw(XMMRegister dst, XMMRegister src, int mode) {
@@ -5128,6 +5156,43 @@ void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+
+void MacroAssembler::resolve_jobject(Register value,
+                                     Register thread,
+                                     Register tmp) {
+  assert_different_registers(value, thread, tmp);
+  Label done, not_weak;
+  testptr(value, value);
+  jcc(Assembler::zero, done);                // Use NULL as-is.
+  testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
+  jcc(Assembler::zero, not_weak);
+  // Resolve jweak.
+  movptr(value, Address(value, -JNIHandles::weak_tag_value));
+  verify_oop(value);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    g1_write_barrier_pre(noreg /* obj */,
+                         value /* pre_val */,
+                         thread /* thread */,
+                         tmp /* tmp */,
+                         true /* tosca_live */,
+                         true /* expand_call */);
+  }
+#endif // INCLUDE_ALL_GCS
+  jmp(done);
+  bind(not_weak);
+  // Resolve (untagged) jobject.
+  movptr(value, Address(value, 0));
+  verify_oop(value);
+  bind(done);
+}
+
+void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
+  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+  // The inverted mask is sign-extended
+  andptr(possibly_jweak, inverted_jweak_mask);
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 #if INCLUDE_ALL_GCS

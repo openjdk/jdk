@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -962,6 +961,7 @@ class ConsoleIOContext extends IOContext {
             this.input = input;
         }
 
+        @Override
         public boolean isRaw() {
             try {
                 return getSettings().get("-a").contains("-icanon");
@@ -1053,17 +1053,33 @@ class ConsoleIOContext extends IOContext {
     private static final class TestTerminal extends TerminalSupport {
 
         private final StopDetectingInputStream input;
+        private final int height;
 
         public TestTerminal(StopDetectingInputStream input) throws Exception {
             super(true);
             setAnsiSupported(false);
             setEchoEnabled(false);
             this.input = input;
+            int h = DEFAULT_HEIGHT;
+            try {
+                String hp = System.getProperty("test.terminal.height");
+                if (hp != null && !hp.isEmpty()) {
+                    h = Integer.parseInt(hp);
+                }
+            } catch (Throwable ex) {
+                // ignore
+            }
+            this.height = h;
         }
 
         @Override
         public InputStream wrapInIfNeeded(InputStream in) throws IOException {
             return input.setInputStream(super.wrapInIfNeeded(in));
+        }
+
+        @Override
+        public int getHeight() {
+            return height;
         }
 
     }

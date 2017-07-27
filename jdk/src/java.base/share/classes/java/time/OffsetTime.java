@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ import java.util.Objects;
  * viewed as hour-minute-second-offset.
  * This class stores all time fields, to a precision of nanoseconds,
  * as well as a zone offset.
- * For example, the value "13:45.30.123456789+02:00" can be stored
+ * For example, the value "13:45:30.123456789+02:00" can be stored
  * in an {@code OffsetTime}.
  *
  * <p>

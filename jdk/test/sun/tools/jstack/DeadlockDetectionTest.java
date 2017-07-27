@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.apps.LingeredAppWithDeadlock;
+import jdk.test.lib.Platform;
 
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.Platform;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
@@ -40,7 +40,7 @@ import jdk.testlibrary.ProcessTools;
  * @library /test/lib
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
- * @build jdk.test.lib.apps.*
+ * @build jdk.test.lib.apps.* jdk.test.lib.Platform
  * @build DeadlockDetectionTest
  * @run main DeadlockDetectionTest
  */

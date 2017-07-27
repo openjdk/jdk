@@ -141,14 +141,14 @@ public abstract class BooleanControl extends Control {
          * Represents a control for the mute status of a line. Note that mute
          * status does not affect gain.
          */
-        public static final Type MUTE                           = new Type("Mute");
+        public static final Type MUTE = new Type("Mute");
 
         /**
          * Represents a control for whether reverberation is applied to a line.
          * Note that the status of this control not affect the reverberation
          * settings for a line, but does affect whether these settings are used.
          */
-        public static final Type APPLY_REVERB           = new Type("Apply Reverb");
+        public static final Type APPLY_REVERB = new Type("Apply Reverb");
 
         /**
          * Constructs a new boolean control type.

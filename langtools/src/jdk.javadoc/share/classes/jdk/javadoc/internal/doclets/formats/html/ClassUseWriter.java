@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @param filename the file to be generated.
      */
-    public ClassUseWriter(ConfigurationImpl configuration,
+    public ClassUseWriter(HtmlConfiguration configuration,
                           ClassUseMapper mapper, DocPath filename,
                           TypeElement typeElement) {
         super(configuration, filename);
@@ -177,7 +177,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param classtree the class tree hierarchy
      * @throws DocFileIOException if there is an error while generating the documentation
      */
-    public static void generate(ConfigurationImpl configuration, ClassTree classtree) throws DocFileIOException  {
+    public static void generate(HtmlConfiguration configuration, ClassTree classtree) throws DocFileIOException  {
         ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
         for (TypeElement aClass : configuration.getIncludedTypeElements()) {
             // If -nodeprecated option is set and the containing package is marked
@@ -220,7 +220,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      *
      * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    public static void generate(ConfigurationImpl configuration, ClassUseMapper mapper,
+    public static void generate(HtmlConfiguration configuration, ClassUseMapper mapper,
                                 TypeElement typeElement) throws DocFileIOException {
         ClassUseWriter clsgen;
         DocPath path = DocPath.forPackage(configuration.utils, typeElement)

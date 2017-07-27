@@ -162,7 +162,7 @@ public class Contents {
      * @param configuration the configuration in which to find the
      * resources used to look up resource keys, and other details.
      */
-    Contents(ConfigurationImpl configuration) {
+    Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getResources();
 
         allClassesLabel = getNonBreakContent("doclet.All_Classes");

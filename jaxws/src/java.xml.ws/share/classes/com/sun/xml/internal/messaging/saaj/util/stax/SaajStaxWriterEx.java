@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class SaajStaxWriterEx extends SaajStaxWriter implements XMLStreamWriterE
         super(msg, uri);
     }
 
+    @Override
     public void writeStartElement(String prefix, String ln, String ns) throws XMLStreamException {
         if (xopNS.equals(ns) && Include.equals(ln)) {
             state = State.xopInclude;
@@ -108,31 +109,41 @@ public class SaajStaxWriterEx extends SaajStaxWriter implements XMLStreamWriterE
     @Override
     public NamespaceContextEx getNamespaceContext() {
         return new NamespaceContextEx() {
+            @Override
             public String getNamespaceURI(String prefix) {
                 return currentElement.getNamespaceURI(prefix);
             }
+            @Override
             public String getPrefix(String namespaceURI) {
                 return currentElement.lookupPrefix(namespaceURI);
             }
+            @Override
             public Iterator getPrefixes(final String namespaceURI) {
                 return new Iterator<String>() {
                     String prefix = getPrefix(namespaceURI);
+                    @Override
                     public boolean hasNext() {
                         return (prefix != null);
                     }
+                    @Override
                     public String next() {
                         if (prefix == null) throw new java.util.NoSuchElementException();
                         String next = prefix;
                         prefix = null;
                         return next;
                     }
+                    @Override
                     public void remove() {}
                 };
             }
+            @Override
             public Iterator<Binding> iterator() {
                 return new Iterator<Binding>() {
+                    @Override
                     public boolean hasNext() { return false; }
+                    @Override
                     public Binding next() { return null; }
+                    @Override
                     public void remove() {}
                 };
             }
@@ -208,6 +219,7 @@ public class SaajStaxWriterEx extends SaajStaxWriter implements XMLStreamWriterE
         return hrefOrCid;
     }
 
+    @Override
     public AttachmentMarshaller getAttachmentMarshaller() {
         return new AttachmentMarshaller() {
             @Override

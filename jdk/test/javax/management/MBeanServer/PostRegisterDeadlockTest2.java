@@ -26,7 +26,7 @@
  * @bug 6417044
  * @summary Test that a failing MBean registration does not lead to a deadlock
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run main PostRegisterDeadlockTest2
  */
 
