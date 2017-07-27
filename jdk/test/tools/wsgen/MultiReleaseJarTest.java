@@ -25,18 +25,18 @@
  * @test
  * @summary Test Multi-Release jar support in wsgen tool
  * @library /test/lib
- * @library /lib/testlibrary
  * @modules jdk.compiler java.xml.ws
  * @build jdk.test.lib.JDKToolFinder jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.Utils
- *        CompilerUtils MultiReleaseJarTest
+ *        jdk.test.lib.compiler.CompilerUtils MultiReleaseJarTest
  * @run testng MultiReleaseJarTest
  */
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import org.testng.annotations.BeforeClass;
@@ -56,7 +56,7 @@ public class MultiReleaseJarTest {
 
     @DataProvider(name = "jarFiles")
     public Object[][] jarFiles() {
-        return new Object[][]{{"MV_BOTH.jar", 9},
+        return new Object[][]{{"MV_BOTH.jar", Math.min(10, Runtime.version().major())},
                 {"MV_ONLY_9.jar", 9},
                 {"NON_MV.jar", 8}};
     }
@@ -118,3 +118,4 @@ public class MultiReleaseJarTest {
         }
     }
 }
+

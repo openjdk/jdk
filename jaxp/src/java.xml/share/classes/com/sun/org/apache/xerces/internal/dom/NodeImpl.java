@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -763,6 +763,7 @@ public abstract class NodeImpl
      * @since DOM Level 3
      * @deprecated
      */
+    @Deprecated
     public short compareTreePosition(Node other) {
         // Questions of clarification for this method - to be answered by the
         // DOM WG.   Current assumptions listed - LM

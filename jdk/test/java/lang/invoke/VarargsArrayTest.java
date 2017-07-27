@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,20 @@
  * questions.
  */
 
+import sun.invoke.util.Wrapper;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleHelper;
 import java.lang.invoke.MethodType;
-import sun.invoke.util.Wrapper;
 import java.util.Arrays;
 import java.util.Collections;
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 /* @test
  * @summary unit tests for varargs array methods: MethodHandleInfo.varargsArray(int),
  *          MethodHandleInfo.varargsArray(Class,int) & MethodHandleInfo.varargsList(int)
  * @modules java.base/sun.invoke.util
- * @library /lib/testlibrary /lib/testlibrary/jsr292
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @compile/module=java.base java/lang/invoke/MethodHandleHelper.java
  * @run main/bootclasspath VarargsArrayTest
  * @run main/bootclasspath/othervm -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250
@@ -46,9 +46,12 @@ import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
  */
 public class VarargsArrayTest {
     private static final Class<?> CLASS = VarargsArrayTest.class;
-    private static final int MAX_ARITY = Integer.getInteger(CLASS.getSimpleName()+".MAX_ARITY", 40);
-    private static final int START_ARITY = Integer.getInteger(CLASS.getSimpleName()+".START_ARITY", 0);
-    private static final boolean EXHAUSTIVE = Boolean.getBoolean(CLASS.getSimpleName()+".EXHAUSTIVE");
+    private static final int MAX_ARITY = Integer.getInteger(
+            CLASS.getSimpleName()+".MAX_ARITY", 40);
+    private static final int START_ARITY = Integer.getInteger(
+            CLASS.getSimpleName()+".START_ARITY", 0);
+    private static final boolean EXHAUSTIVE = Boolean.getBoolean(
+            CLASS.getSimpleName()+".EXHAUSTIVE");
 
     public static void main(String[] args) throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(VarargsArrayTest::test);
@@ -211,7 +214,8 @@ public class VarargsArrayTest {
             }
             return;
         }
-        throw new AssertionError(Arrays.deepToString(arr1) + " != " + Arrays.deepToString(arr2));
+        throw new AssertionError(Arrays.deepToString(arr1)
+                + " != " + Arrays.deepToString(arr2));
     }
 
     public static void assertEquals(Object o1, Object o2) {

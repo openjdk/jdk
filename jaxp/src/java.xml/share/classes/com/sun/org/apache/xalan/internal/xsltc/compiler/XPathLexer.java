@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: xpath.lex,v 1.12 2005/08/02 02:59:03 mcnamara Exp $
  */
 /*
  * @author Jacek Ambroziak
@@ -877,7 +874,7 @@ return newSymbol(sym.EOF);
                                         case -21:
                                                 break;
                                         case 21:
-                                                { return newSymbol(sym.INT, new Long(yytext())); }
+                                                { return newSymbol(sym.INT, Long.valueOf(yytext())); }
                                         case -22:
                                                 break;
                                         case 22:
@@ -905,7 +902,7 @@ return newSymbol(sym.EOF);
                                         case -28:
                                                 break;
                                         case 28:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -29:
                                                 break;
                                         case 29:
@@ -931,7 +928,7 @@ return newSymbol(sym.EOF);
                                         case -34:
                                                 break;
                                         case 34:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -35:
                                                 break;
                                         case 35:
@@ -1059,11 +1056,11 @@ return newSymbol(sym.EOF);
                                         case -66:
                                                 break;
                                         case 67:
-                                                { return newSymbol(sym.INT, new Long(yytext())); }
+                                                { return newSymbol(sym.INT, Long.valueOf(yytext())); }
                                         case -67:
                                                 break;
                                         case 68:
-                                                { return newSymbol(sym.REAL, new Double(yytext())); }
+                                                { return newSymbol(sym.REAL, Double.valueOf(yytext())); }
                                         case -68:
                                                 break;
                                         case 70:

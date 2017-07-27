@@ -982,52 +982,6 @@
           </df>
         </df>
         <df name="src">
-          <df name="demo">
-            <df name="share">
-              <df name="jvmti">
-                <df name="agent_util">
-                  <in>agent_util.c</in>
-                </df>
-                <df name="compiledMethodLoad">
-                  <in>compiledMethodLoad.c</in>
-                </df>
-                <df name="gctest">
-                  <in>gctest.c</in>
-                </df>
-                <df name="heapTracker">
-                  <in>heapTracker.c</in>
-                </df>
-                <df name="heapViewer">
-                  <in>heapViewer.c</in>
-                </df>
-                <df name="java_crw_demo">
-                  <in>java_crw_demo.c</in>
-                </df>
-                <df name="minst">
-                  <in>minst.c</in>
-                </df>
-                <df name="mtrace">
-                  <in>mtrace.c</in>
-                </df>
-                <df name="versionCheck">
-                  <in>versionCheck.c</in>
-                </df>
-                <df name="waiters">
-                  <in>Agent.cpp</in>
-                  <in>Monitor.cpp</in>
-                  <in>Thread.cpp</in>
-                  <in>waiters.cpp</in>
-                </df>
-              </df>
-            </df>
-            <df name="solaris">
-              <df name="jni">
-                <df name="Poller">
-                  <in>Poller.c</in>
-                </df>
-              </df>
-            </df>
-          </df>
           <df name="java.base">
             <df name="linux">
               <df name="native">
@@ -1223,7 +1177,7 @@
                   <in>check_format.c</in>
                 </df>
                 <df name="libzip">
-                  <df name="zlib-1.2.8">
+                  <df name="zlib">
                     <in>compress.c</in>
                     <in>deflate.c</in>
                     <in>gzclose.c</in>
@@ -3563,7 +3517,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -10616,7 +10569,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -18273,7 +18225,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -20833,7 +20784,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -21533,89 +21483,6 @@
           </incDir>
         </ccTool>
       </item>
-      <item path="../../jdk/src/demo/share/jvmti/agent_util/agent_util.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/compiledMethodLoad/compiledMethodLoad.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/gctest/gctest.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapTracker/heapTracker.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapViewer/heapViewer.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/java_crw_demo/java_crw_demo.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/minst/minst.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/mtrace/mtrace.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/versionCheck/versionCheck.c"
-            ex="false"
-            tool="0"
-            flavor2="3">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Agent.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Monitor.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Thread.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/waiters.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-      </item>
       <item path="../../jdk/src/java.base/macosx/native/libjava/HostLocaleProviderAdapter_md.c"
             ex="false"
             tool="0"
@@ -21660,7 +21527,6 @@
             <Elem>ARCHPROPNAME="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="java_props_macosx.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23154,7 +23020,6 @@
             <Elem>ARCHPROPNAME="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="java_props_md.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23233,7 +23098,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="ExtendedOptionsImpl.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23610,7 +23474,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="SocketDispatcher.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -30116,7 +29979,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30198,7 +30060,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30233,7 +30094,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
             <Elem>_GNU_SOURCE</Elem>
@@ -30276,7 +30136,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30340,7 +30199,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30403,7 +30261,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30470,7 +30327,6 @@
           <preprocessorList>
             <Elem>ARCH="x86_64"</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="agent_util.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -30483,7 +30339,6 @@
           <preprocessorList>
             <Elem>ARCH="x86_64"</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="Agent.cpp"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -30506,113 +30361,6 @@
           <incDir>
             <pElem>../../jdk/make/src/native/genconstants/fs</pElem>
             <pElem>../../jdk/make/gensrc</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo">
-        <cTool>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/waiters</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/agent_util">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/compiledMethodLoad">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/compiledMethodLoad</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/gctest">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/gctest</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapTracker">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapViewer">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/heapViewer</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/java_crw_demo">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/minst">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/minst</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/mtrace">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/mtrace</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/versionCheck">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/versionCheck</pElem>
-            <pElem>../../jdk/src/java.base/macosx/native/include</pElem>
-            <pElem>../../jdk/make</pElem>
           </incDir>
         </cTool>
       </folder>
@@ -36906,106 +36654,6 @@
         <cTool flags="3">
         </cTool>
       </item>
-      <item path="../../jdk/src/demo/share/jvmti/agent_util/agent_util.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/compiledMethodLoad/compiledMethodLoad.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/gctest/gctest.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapTracker/heapTracker.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapViewer/heapViewer.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/java_crw_demo/java_crw_demo.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/minst/minst.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/mtrace/mtrace.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/versionCheck/versionCheck.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="5">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Agent.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Monitor.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="2">
-          <preprocessorList>
-            <Elem>THIS_FILE="Monitor.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Thread.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="2">
-          <preprocessorList>
-            <Elem>THIS_FILE="Thread.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/waiters.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="2">
-          <preprocessorList>
-            <Elem>THIS_FILE="waiters.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="../../jdk/src/java.base/linux/native/libjava/ProcessHandleImpl_linux.c"
             ex="false"
             tool="0"
@@ -38283,7 +37931,7 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -38304,7 +37952,7 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -38325,7 +37973,7 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -38346,7 +37994,7 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -38367,7 +38015,7 @@
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../build/support/headers/java.base</pElem>
             <pElem>../../make</pElem>
           </incDir>
@@ -38377,14 +38025,14 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/compress.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/compress.c"
             ex="false"
             tool="0"
             flavor2="0">
         <cTool flags="4">
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/deflate.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/deflate.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38394,7 +38042,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/gzclose.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/gzclose.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38404,7 +38052,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/gzlib.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/gzlib.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38414,7 +38062,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/gzread.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/gzread.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38424,7 +38072,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/gzwrite.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/gzwrite.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38434,7 +38082,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/infback.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/infback.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38444,7 +38092,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/inffast.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/inffast.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38454,7 +38102,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/inflate.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/inflate.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38464,7 +38112,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/inftrees.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/inftrees.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38474,7 +38122,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/trees.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/trees.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38484,7 +38132,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/uncompr.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/uncompr.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38494,7 +38142,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/zadler32.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/zadler32.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38504,7 +38152,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/zcrc32.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/zcrc32.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -38514,7 +38162,7 @@
           </preprocessorList>
         </cTool>
       </item>
-      <item path="../../jdk/src/java.base/share/native/libzip/zlib-1.2.8/zutil.c"
+      <item path="../../jdk/src/java.base/share/native/libzip/zlib/zutil.c"
             ex="false"
             tool="0"
             flavor2="0">
@@ -41203,7 +40851,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41232,7 +40880,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41261,7 +40909,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41290,7 +40938,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41319,7 +40967,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41348,7 +40996,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41377,7 +41025,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41406,7 +41054,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41435,7 +41083,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41464,7 +41112,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41493,7 +41141,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41522,7 +41170,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41551,7 +41199,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41580,7 +41228,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41609,7 +41257,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41638,7 +41286,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41667,7 +41315,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41696,7 +41344,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41725,7 +41373,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41754,7 +41402,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41783,7 +41431,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41812,7 +41460,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41841,7 +41489,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41870,7 +41518,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41899,7 +41547,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41928,7 +41576,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41957,7 +41605,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -41986,7 +41634,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42015,7 +41663,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42044,7 +41692,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42073,7 +41721,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42102,7 +41750,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42131,7 +41779,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42160,7 +41808,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42189,7 +41837,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42218,7 +41866,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42247,7 +41895,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42276,7 +41924,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42305,7 +41953,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42334,7 +41982,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42363,7 +42011,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42413,7 +42061,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42442,7 +42090,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -42471,7 +42119,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -46197,183 +45845,6 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/demo">
-        <cTool>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/waiters</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/agent_util">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/compiledMethodLoad">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/compiledMethodLoad</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="compiledMethodLoad.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/gctest">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/gctest</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="gctest.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapTracker">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="heapTracker.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapViewer">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapViewer</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="heapViewer.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/java_crw_demo">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="java_crw_demo.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/minst">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/minst</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="minst.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/mtrace">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/mtrace</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="mtrace.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/versionCheck">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/versionCheck</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/linux/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="versionCheck.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
       <folder path="0/jdk/src/java.base">
         <cTool>
           <preprocessorList>
@@ -46557,7 +46028,7 @@
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjli</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjli</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>
@@ -46639,7 +46110,7 @@
           </preprocessorList>
         </cTool>
       </folder>
-      <folder path="0/jdk/src/java.base/share/native/libzip/zlib-1.2.8">
+      <folder path="0/jdk/src/java.base/share/native/libzip/zlib">
         <cTool>
           <incDir>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/giflib</pElem>
@@ -46647,7 +46118,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -46712,7 +46183,7 @@
           <incDir>
             <pElem>../../jdk/src/java.base/unix/native/libjli</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjli</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../make</pElem>
           </incDir>
           <preprocessorList>
@@ -47250,7 +46721,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -47598,7 +47069,7 @@
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen</pElem>
             <pElem>../../jdk/src/java.desktop/share/native/libsplashscreen/libpng</pElem>
             <pElem>../../jdk/src/java.desktop/unix/native/libsplashscreen</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/linux/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
@@ -47996,7 +47467,7 @@
             <pElem>../../jdk/src/jdk.pack/share/native/common-unpack</pElem>
             <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
             <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libzip/zlib-1.2.8</pElem>
+            <pElem>../../jdk/src/java.base/share/native/libzip/zlib</pElem>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
             <pElem>../../jdk/src/java.base/linux/native/include</pElem>
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
@@ -55234,113 +54705,6 @@
             flavor2="0">
         <ccTool flags="0">
         </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/agent_util/agent_util.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/compiledMethodLoad/compiledMethodLoad.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/gctest/gctest.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapTracker/heapTracker.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/heapViewer/heapViewer.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/java_crw_demo/java_crw_demo.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/minst/minst.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/mtrace/mtrace.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/versionCheck/versionCheck.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="3">
-        </cTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Agent.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Monitor.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="0">
-          <preprocessorList>
-            <Elem>THIS_FILE="Monitor.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/Thread.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="0">
-          <preprocessorList>
-            <Elem>THIS_FILE="Thread.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/share/jvmti/waiters/waiters.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-        <ccTool flags="0">
-          <preprocessorList>
-            <Elem>THIS_FILE="waiters.cpp"</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="../../jdk/src/demo/solaris/jni/Poller/Poller.c"
-            ex="false"
-            tool="0"
-            flavor2="0">
-        <cTool flags="2">
-        </cTool>
       </item>
       <item path="../../jdk/src/java.base/share/native/launcher/main.c"
             ex="false"
@@ -64674,8 +64038,6 @@
         </cTool>
         <ccTool>
           <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/waiters</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
             <pElem>../../jdk/src/java.base/share/native/include</pElem>
             <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
             <pElem>../../jdk/src/java.base/unix/native/include</pElem>
@@ -64698,189 +64060,6 @@
             <Elem>i586</Elem>
           </preprocessorList>
         </ccTool>
-      </folder>
-      <folder path="0/jdk/src/demo">
-        <cTool>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </cTool>
-        <ccTool>
-          <preprocessorList>
-            <Elem>DEBUG</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/agent_util">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/compiledMethodLoad">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/compiledMethodLoad</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="compiledMethodLoad.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/gctest">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/gctest</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="gctest.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapTracker">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="heapTracker.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/heapViewer">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapViewer</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="heapViewer.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/java_crw_demo">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/heapTracker</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="java_crw_demo.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/minst">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/minst</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="minst.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/mtrace">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/mtrace</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/java_crw_demo</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="mtrace.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/share/jvmti/versionCheck">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/demo/share/jvmti/versionCheck</pElem>
-            <pElem>../../jdk/src/demo/share/jvmti/agent_util</pElem>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="versionCheck.c"</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/jdk/src/demo/solaris">
-        <cTool>
-          <incDir>
-            <pElem>../../jdk/src/java.base/share/native/include</pElem>
-            <pElem>../../jdk/src/java.base/solaris/native/include</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/include</pElem>
-            <pElem>../../jdk/src/java.base/share/native/libjava</pElem>
-            <pElem>../../jdk/src/java.base/unix/native/libjava</pElem>
-            <pElem>../../build/support/demos/classes/jni/Poller</pElem>
-            <pElem>../../jdk/make</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>THIS_FILE="Poller.c"</Elem>
-          </preprocessorList>
-        </cTool>
       </folder>
       <folder path="0/jdk/src/java.base">
         <cTool>

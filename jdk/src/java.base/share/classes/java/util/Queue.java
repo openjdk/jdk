@@ -37,37 +37,36 @@ package java.util;
 
 /**
  * A collection designed for holding elements prior to processing.
- * Besides basic {@link java.util.Collection Collection} operations,
- * queues provide additional insertion, extraction, and inspection
- * operations.  Each of these methods exists in two forms: one throws
- * an exception if the operation fails, the other returns a special
- * value (either {@code null} or {@code false}, depending on the
- * operation).  The latter form of the insert operation is designed
- * specifically for use with capacity-restricted {@code Queue}
- * implementations; in most implementations, insert operations cannot
- * fail.
+ * Besides basic {@link Collection} operations, queues provide
+ * additional insertion, extraction, and inspection operations.
+ * Each of these methods exists in two forms: one throws an exception
+ * if the operation fails, the other returns a special value (either
+ * {@code null} or {@code false}, depending on the operation).  The
+ * latter form of the insert operation is designed specifically for
+ * use with capacity-restricted {@code Queue} implementations; in most
+ * implementations, insert operations cannot fail.
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of Queue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td ALIGN=CENTER><em>Throws exception</em></td>
- *    <td ALIGN=CENTER><em>Returns special value</em></td>
+ *    <td style="text-align:center"><em>Throws exception</em></td>
+ *    <td style="text-align:center"><em>Returns special value</em></td>
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link Queue#add add(e)}</td>
- *    <td>{@link Queue#offer offer(e)}</td>
+ *    <td>{@link #add(Object) add(e)}</td>
+ *    <td>{@link #offer(Object) offer(e)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
- *    <td>{@link Queue#remove remove()}</td>
- *    <td>{@link Queue#poll poll()}</td>
+ *    <td>{@link #remove() remove()}</td>
+ *    <td>{@link #poll() poll()}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link Queue#element element()}</td>
- *    <td>{@link Queue#peek peek()}</td>
+ *    <td>{@link #element() element()}</td>
+ *    <td>{@link #peek() peek()}</td>
  *  </tr>
  * </table>
  *
@@ -77,7 +76,7 @@ package java.util;
  * comparator, or the elements' natural ordering, and LIFO queues (or
  * stacks) which order the elements LIFO (last-in-first-out).
  * Whatever the ordering used, the <em>head</em> of the queue is that
- * element which would be removed by a call to {@link #remove() } or
+ * element which would be removed by a call to {@link #remove()} or
  * {@link #poll()}.  In a FIFO queue, all new elements are inserted at
  * the <em>tail</em> of the queue. Other kinds of queues may use
  * different placement rules.  Every {@code Queue} implementation
@@ -125,7 +124,7 @@ package java.util;
  * ordering properties.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -173,8 +172,8 @@ public interface Queue<E> extends Collection<E> {
 
     /**
      * Retrieves and removes the head of this queue.  This method differs
-     * from {@link #poll poll} only in that it throws an exception if this
-     * queue is empty.
+     * from {@link #poll() poll()} only in that it throws an exception if
+     * this queue is empty.
      *
      * @return the head of this queue
      * @throws NoSuchElementException if this queue is empty

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class JstatGcCapacityResults extends JstatResults {
     /**
      * Checks the overall consistency of the results reported by the tool
      */
+    @Override
     public void assertConsistency() {
 
         // Check exit code
@@ -117,8 +118,6 @@ public class JstatGcCapacityResults extends JstatResults {
         float MC = getFloatValue("MC");
         assertThat(MC >= MCMN, "MC < MCMN (generation capacity < min generation capacity)");
         assertThat(MC <= MCMX, "MGC > MCMX (generation capacity > max generation capacity)");
-
-
     }
 
     /**
@@ -139,21 +138,4 @@ public class JstatGcCapacityResults extends JstatResults {
         }
         return false;
     }
-
-    private static final float FLOAT_COMPARISON_TOLERANCE = 0.0011f;
-
-    private static boolean checkFloatIsSum(float sum, float... floats) {
-        for (float f : floats) {
-            sum -= f;
-        }
-
-        return Math.abs(sum) <= FLOAT_COMPARISON_TOLERANCE;
-    }
-
-    private void assertThat(boolean b, String message) {
-        if (!b) {
-            throw new RuntimeException(message);
-        }
-    }
-
 }

@@ -172,75 +172,79 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * are not localized.
  *
  * <blockquote>
- * <table border=0 cellspacing=3 cellpadding=0 summary="Chart showing symbol,
- *  location, localized, and meaning.">
- *     <tr style="background-color: rgb(204, 204, 255);">
- *          <th align=left>Symbol
- *          <th align=left>Location
- *          <th align=left>Localized?
- *          <th align=left>Meaning
- *     <tr valign=top>
- *          <td><code>0</code>
+ * <table class="striped">
+ * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
+ * <thead>
+ *     <tr>
+ *          <th scope="col" style="text-align:left">Symbol
+ *          <th scope="col" style="text-align:left">Location
+ *          <th scope="col" style="text-align:left">Localized?
+ *          <th scope="col" style="text-align:left">Meaning
+ * </thead>
+ * <tbody>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>0</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *          <td><code>#</code>
+ *     <tr style="vertical-align: top">
+ *          <th scope="row"><code>#</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit, zero shows as absent
- *     <tr valign=top>
- *          <td><code>.</code>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>.</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Decimal separator or monetary decimal separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *          <td><code>-</code>
+ *     <tr style="vertical-align: top">
+ *          <th scope="row"><code>-</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Minus sign
- *     <tr valign=top>
- *          <td><code>,</code>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>,</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Grouping separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *          <td><code>E</code>
+ *     <tr style="vertical-align: top">
+ *          <th scope="row"><code>E</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Separates mantissa and exponent in scientific notation.
  *              <em>Need not be quoted in prefix or suffix.</em>
- *     <tr valign=top>
- *          <td><code>;</code>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>;</code>
  *          <td>Subpattern boundary
  *          <td>Yes
  *          <td>Separates positive and negative subpatterns
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *          <td><code>%</code>
+ *     <tr style="vertical-align: top">
+ *          <th scope="row"><code>%</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 100 and show as percentage
- *     <tr valign=top>
- *          <td><code>&#92;u2030</code>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>&#92;u2030</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 1000 and show as per mille value
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
- *          <td><code>&#164;</code> (<code>&#92;u00A4</code>)
+ *     <tr style="vertical-align: top">
+ *          <th scope="row"><code>&#164;</code> (<code>&#92;u00A4</code>)
  *          <td>Prefix or suffix
  *          <td>No
  *          <td>Currency sign, replaced by currency symbol.  If
  *              doubled, replaced by international currency symbol.
  *              If present in a pattern, the monetary decimal separator
  *              is used instead of the decimal separator.
- *     <tr valign=top>
- *          <td><code>'</code>
+ *     <tr style="vertical-align:top">
+ *          <th scope="row"><code>'</code>
  *          <td>Prefix or suffix
  *          <td>No
  *          <td>Used to quote special characters in a prefix or suffix,
  *              for example, <code>"'#'#"</code> formats 123 to
  *              <code>"#123"</code>.  To create a single quote
  *              itself, use two in a row: <code>"# o''clock"</code>.
+ * </tbody>
  * </table>
  * </blockquote>
  *
@@ -327,7 +331,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and <code>isParseIntegerOnly()</code> are false.
  * </ul>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Decimal formats are generally not synchronized.
@@ -377,6 +381,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @see          ParsePosition
  * @author       Mark Davis
  * @author       Alan Liu
+ * @since 1.1
  */
 public class DecimalFormat extends NumberFormat {
 
@@ -3197,13 +3202,6 @@ public class DecimalFormat extends NumberFormat {
         isCurrencyFormat = false;
         useExponentialNotation = false;
 
-        // Two variables are used to record the subrange of the pattern
-        // occupied by phase 1.  This is used during the processing of the
-        // second pattern (the one representing negative numbers) to ensure
-        // that no deviation exists in phase 1 between the two patterns.
-        int phaseOneStart = 0;
-        int phaseOneLength = 0;
-
         int start = 0;
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
             boolean inQuote = false;
@@ -3254,9 +3252,6 @@ public class DecimalFormat extends NumberFormat {
                             ch == groupingSeparator ||
                             ch == decimalSeparator) {
                             phase = 1;
-                            if (j == 1) {
-                                phaseOneStart = pos;
-                            }
                             --pos; // Reprocess this character
                             continue;
                         } else if (ch == CURRENCY_SIGN) {
@@ -3327,17 +3322,29 @@ public class DecimalFormat extends NumberFormat {
                     break;
 
                 case 1:
-                    // Phase one must be identical in the two sub-patterns. We
-                    // enforce this by doing a direct comparison. While
-                    // processing the first sub-pattern, we just record its
-                    // length. While processing the second, we compare
-                    // characters.
-                    if (j == 1) {
-                        ++phaseOneLength;
-                    } else {
-                        if (--phaseOneLength == 0) {
-                            phase = 2;
-                            affix = suffix;
+                    // The negative subpattern (j = 0) serves only to specify the
+                    // negative prefix and suffix, so all the phase 1 characters
+                    // e.g. digits, zeroDigit, groupingSeparator,
+                    // decimalSeparator, exponent are ignored
+                    if (j == 0) {
+                        while (pos < pattern.length()) {
+                            char negPatternChar = pattern.charAt(pos);
+                            if (negPatternChar == digit
+                                    || negPatternChar == zeroDigit
+                                    || negPatternChar == groupingSeparator
+                                    || negPatternChar == decimalSeparator) {
+                                ++pos;
+                            } else if (pattern.regionMatches(pos, exponent,
+                                    0, exponent.length())) {
+                                pos = pos + exponent.length();
+                            } else {
+                                // Not a phase 1 character, consider it as
+                                // suffix and parse it in phase 2
+                                --pos; //process it again in outer loop
+                                phase = 2;
+                                affix = suffix;
+                                break;
+                            }
                         }
                         continue;
                     }
@@ -3391,7 +3398,6 @@ public class DecimalFormat extends NumberFormat {
                          while (pos < pattern.length() &&
                                pattern.charAt(pos) == zeroDigit) {
                             ++minExponentDigits;
-                            ++phaseOneLength;
                             ++pos;
                         }
 
@@ -3410,7 +3416,6 @@ public class DecimalFormat extends NumberFormat {
                         phase = 2;
                         affix = suffix;
                         --pos;
-                        --phaseOneLength;
                         continue;
                     }
                     break;

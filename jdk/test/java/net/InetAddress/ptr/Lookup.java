@@ -28,8 +28,12 @@
  * @summary Test that reverse lookups of IPv4 addresses work when IPv6
  *          is enabled
  * @library /test/lib
- * @build jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.process.OutputAnalyzer
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  *        Lookup
  * @run main Lookup root
  *

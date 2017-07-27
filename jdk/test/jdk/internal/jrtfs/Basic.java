@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,11 @@ public class Basic {
     @BeforeClass
     public void setup() {
         theFileSystem = FileSystems.getFileSystem(URI.create("jrt:/"));
-        Path javaHomeDir = Paths.get(System.getProperty("java.home"));
-        Path jrtJarPath = javaHomeDir.resolve("jrt-fs.jar");
-        Path modulesPath = javaHomeDir.resolve("lib/modules");
-        isExplodedBuild = !Files.exists(jrtJarPath)
-                && !Files.exists(modulesPath);
-        if (Files.notExists(jrtJarPath)
-                && Files.notExists(modulesPath)) {
-            System.out.printf("Following files not exist: %s, %s",
-                    jrtJarPath.toString(), modulesPath.toString());
+        Path modulesPath = Paths.get(System.getProperty("java.home"),
+                "lib", "modules");
+        isExplodedBuild = Files.notExists(modulesPath);
+        if (isExplodedBuild) {
+            System.out.printf("%s doesn't exist.", modulesPath.toString());
             System.out.println();
             System.out.println("It is most probably an exploded build."
                     + " Skip non-default FileSystem testing.");

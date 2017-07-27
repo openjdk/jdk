@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /**
-  * This is a test description for the moduleA module.<br>
+  * This is a test description for the moduletags module.<br>
   * Type Link: {@link testpkgmdltags.TestClassInModuleTags}.<br>
   * Member Link: {@link testpkgmdltags.TestClassInModuleTags#testMethod(String)}.<br>
   * Package Link: {@link testpkgmdltags}.<br>

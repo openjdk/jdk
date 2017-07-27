@@ -24,11 +24,10 @@
 /*
  * @test
  * @bug     6173675
+ * @key randomness
  * @summary Basic test of ThreadMXBean.getThreadCpuTime(long[]) and
  *          getThreadUserTime(long[]).
  * @author  Paul Hohensee
- * @key randomness
- * @modules jdk.management
  */
 
 import java.lang.management.*;

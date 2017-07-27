@@ -133,7 +133,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * put(null) throws NullPointerException
+     * addAll(null) throws NullPointerException
      */
     public void testAddAllNull() throws InterruptedException {
         final Collection q = emptyCollection();
@@ -272,7 +272,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
 
         barrier.await();
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -294,7 +294,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
             }});
 
         await(threadStarted);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.WAITING);
         t.interrupt();
         awaitTermination(t);
     }
@@ -335,7 +335,7 @@ public abstract class BlockingQueueTest extends JSR166TestCase {
             }});
 
         await(threadStarted);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, Thread.State.TIMED_WAITING);
         t.interrupt();
         awaitTermination(t);
     }

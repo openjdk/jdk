@@ -23,8 +23,6 @@
 
 package crules;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,14 +67,15 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
         task.addTaskListener(new PostAnalyzeTaskListener(
                 new MutableFieldsAnalyzer(task),
                 new AssertCheckAnalyzer(task),
-                new DefinedByAnalyzer(task)
+                new DefinedByAnalyzer(task),
+                new LegacyLogMethodAnalyzer(task)
         ));
     }
 
     private void addExports(String moduleName, String... packageNames) {
         for (String packageName : packageNames) {
             try {
-                Layer layer = Layer.boot();
+                ModuleLayer layer = ModuleLayer.boot();
                 Optional<Module> m = layer.findModule(moduleName);
                 if (!m.isPresent())
                     throw new Error("module not found: " + moduleName);

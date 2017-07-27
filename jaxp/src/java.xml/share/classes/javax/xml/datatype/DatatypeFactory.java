@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,41 +774,37 @@ public abstract class DatatypeFactory {
     /**
      * Create an {@code XMLGregorianCalendar} from a {@link GregorianCalendar}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Field by Field Conversion from
+     *          {@link GregorianCalendar} to an {@link XMLGregorianCalendar}</caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="2">
-     *          Field by Field Conversion from
-     *          {@link GregorianCalendar} to an {@link XMLGregorianCalendar}
-     *       </th>
-     *     </tr>
-     *     <tr>
-     *        <th>{@code java.util.GregorianCalendar} field</th>
-     *        <th>{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
+     *        <th scope="col">{@code java.util.GregorianCalendar} field</th>
+     *        <th scope="col">{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>{@code ERA == GregorianCalendar.BC ? -YEAR : YEAR}</td>
+     *       <th scope="row">{@code ERA == GregorianCalendar.BC ? -YEAR : YEAR}</th>
      *       <td>{@link XMLGregorianCalendar#setYear(int year)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code MONTH + 1}</td>
+     *       <th scope="row">{@code MONTH + 1}</th>
      *       <td>{@link XMLGregorianCalendar#setMonth(int month)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code DAY_OF_MONTH}</td>
+     *       <th scope="row">{@code DAY_OF_MONTH}</th>
      *       <td>{@link XMLGregorianCalendar#setDay(int day)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND}</td>
+     *       <th scope="row">{@code HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND}</th>
      *       <td>{@link XMLGregorianCalendar#setTime(int hour, int minute, int second, BigDecimal fractional)}</td>
      *     </tr>
      *     <tr>
-     *       <td>
+     *       <th scope="row">
      *         {@code (ZONE_OFFSET + DST_OFFSET) / (60*1000)}<br>
      *         <em>(in minutes)</em>
-     *       </td>
+     *       </th>
      *       <td>{@link XMLGregorianCalendar#setTimezone(int offset)}<sup><em>*</em></sup>
      *       </td>
      *     </tr>
