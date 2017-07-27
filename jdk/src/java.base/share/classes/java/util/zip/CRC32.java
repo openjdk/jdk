@@ -38,6 +38,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * a {@link NullPointerException} to be thrown.</p>
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class CRC32 implements Checksum {
@@ -170,5 +171,9 @@ class CRC32 implements Checksum {
         if (addr == 0L) {
             throw new NullPointerException();
         }
+    }
+
+    static {
+        ZipUtils.loadLibrary();
     }
 }

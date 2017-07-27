@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -100,6 +100,7 @@ public final class BasisLibrary {
      * @deprecated This method exists only for backwards compatibility with old
      *             translets.  New code should not reference it.
      */
+    @Deprecated
     public static int positionF(DTMAxisIterator iterator) {
         return iterator.isReverse()
                      ? iterator.getLast() - iterator.getPosition() + 1
@@ -745,11 +746,11 @@ public final class BasisLibrary {
             // If node-boolean comparison -> convert node to boolean
             if (left instanceof Node || right instanceof Node) {
                 if (left instanceof Boolean) {
-                    right = new Boolean(booleanF(right));
+                    right = booleanF(right);
                     hasSimpleArgs = true;
                 }
                 if (right instanceof Boolean) {
-                    left = new Boolean(booleanF(left));
+                    left = booleanF(left);
                     hasSimpleArgs = true;
                 }
             }

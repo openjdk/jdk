@@ -108,8 +108,8 @@ public class TestAnonymousClassUnloading {
      */
     static public void main(String[] args) throws Exception {
         // (1) Load an anonymous version of this class using the corresponding Unsafe method
-        URL classUrl = TestAnonymousClassUnloading.class.getResource(
-                TestAnonymousClassUnloading.class.getName().replace('.', '/') + ".class");
+        String rn = TestAnonymousClassUnloading.class.getSimpleName() + ".class";
+        URL classUrl = TestAnonymousClassUnloading.class.getResource(rn);
         URLConnection connection = classUrl.openConnection();
 
         int length = connection.getContentLength();

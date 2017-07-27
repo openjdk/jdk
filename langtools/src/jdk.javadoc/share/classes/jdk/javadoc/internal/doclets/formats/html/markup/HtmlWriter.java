@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@ import java.io.*;
 import java.util.*;
 
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.ModulePackageTypes;
 import jdk.javadoc.internal.doclets.toolkit.util.TableTabTypes;
 
 
@@ -63,7 +62,7 @@ public class HtmlWriter {
     /**
      * The configuration
      */
-    protected Configuration configuration;
+    protected BaseConfiguration configuration;
 
     /**
      * Header for table displaying modules and description.
@@ -88,7 +87,7 @@ public class HtmlWriter {
     /**
      * Header for tables displaying modules and exported packages.
      */
-    protected final List<String> additionalPackagesTableHeader;
+    protected final List<String> indirectPackagesTableHeader;
 
     /**
      * Header for tables displaying types and description.
@@ -121,7 +120,7 @@ public class HtmlWriter {
      * @param path The directory path to be created for this file
      *             or null if none to be created.
      */
-    public HtmlWriter(Configuration configuration, DocPath path) {
+    public HtmlWriter(BaseConfiguration configuration, DocPath path) {
         docFile = DocFile.createFileForOutput(configuration, path);
         this.configuration = configuration;
 
@@ -136,18 +135,18 @@ public class HtmlWriter {
         packageTableHeader.add(resources.getText("doclet.Package"));
         packageTableHeader.add(resources.getText("doclet.Description"));
         requiresTableHeader = new ArrayList<>();
-        requiresTableHeader.add(resources.getText("doclet.Modifier"));
+            requiresTableHeader.add(resources.getText("doclet.Modifier"));
         requiresTableHeader.add(resources.getText("doclet.Module"));
         requiresTableHeader.add(resources.getText("doclet.Description"));
         exportedPackagesTableHeader = new ArrayList<>();
         exportedPackagesTableHeader.add(resources.getText("doclet.Package"));
         if (configuration.docEnv.getModuleMode() == ModuleMode.ALL) {
-        exportedPackagesTableHeader.add(resources.getText("doclet.Module"));
+            exportedPackagesTableHeader.add(resources.getText("doclet.Module"));
         }
         exportedPackagesTableHeader.add(resources.getText("doclet.Description"));
-        additionalPackagesTableHeader = new ArrayList<>();
-        additionalPackagesTableHeader.add(resources.getText("doclet.Module"));
-        additionalPackagesTableHeader.add(resources.getText("doclet.Packages"));
+        indirectPackagesTableHeader = new ArrayList<>();
+        indirectPackagesTableHeader.add(resources.getText("doclet.From"));
+        indirectPackagesTableHeader.add(resources.getText("doclet.Packages"));
         usesTableHeader = new ArrayList<>();
         usesTableHeader.add(resources.getText("doclet.Type"));
         usesTableHeader.add(resources.getText("doclet.Description"));

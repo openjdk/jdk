@@ -225,7 +225,10 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Similar to ConvI2LNode::Ideal() for the same reasons
-  if (can_reshape && !phase->C->major_progress()) {
+  // Do not narrow the type of range check dependent CastIINodes to
+  // avoid corruption of the graph if a CastII is replaced by TOP but
+  // the corresponding range check is not removed.
+  if (can_reshape && !_range_check_dependency && !phase->C->major_progress()) {
     const TypeInt* this_type = this->type()->is_int();
     const TypeInt* in_type = phase->type(in(1))->isa_int();
     if (in_type != NULL && this_type != NULL &&

@@ -25,14 +25,14 @@ import java.io.IOException;
 
 /**
  * @test
- * @library /lib/testlibrary
  * @bug 6557093
  * @summary Check SSL config file permission for out-of-the-box management
- * @modules jdk.management.agent
- * @build jdk.testlibrary.* AbstractFilePermissionTest Dummy
- * @run main/timeout=300 PasswordFilePermissionTest
- *
  * @author Taras Ledkov
+ *
+ * @library /lib/testlibrary /test/lib
+ *
+ * @build jdk.testlibrary.* jdk.test.lib.Platform AbstractFilePermissionTest Dummy
+ * @run main/timeout=300 PasswordFilePermissionTest
  */
 public class PasswordFilePermissionTest extends AbstractFilePermissionTest {
 

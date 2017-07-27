@@ -1099,6 +1099,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   BASIC_PATH_PROGS(HG, hg)
   BASIC_PATH_PROGS(STAT, stat)
   BASIC_PATH_PROGS(TIME, time)
+  BASIC_PATH_PROGS(FLOCK, flock)
   # Dtrace is usually found in /usr/sbin on Solaris, but that directory may not
   # be in the user path.
   BASIC_PATH_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)

@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 4756416
+ * @bug 4756416 7170058
  * @summary generics: erasure clash not detected
  * @author gafter
  *

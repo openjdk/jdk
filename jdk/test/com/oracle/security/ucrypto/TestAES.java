@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,24 @@
 
 /*
  * @test
- * @bug 7088989 8014374 8167512
+ * @bug 7088989 8014374 8167512 8173708
  * @summary Ensure the AES ciphers of OracleUcrypto provider works correctly
  * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.Utils
  * @run main TestAES
- * @run main/othervm/java.security.policy==empty.policy TestAES
+ * @run main/othervm -Dpolicy=empty.policy TestAES
  */
 
-import java.io.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 
 public class TestAES extends UcryptoTest {
 
@@ -55,8 +60,27 @@ public class TestAES extends UcryptoTest {
     private static final SecretKey CIPHER_KEY =
         new SecretKeySpec(new byte[16], "AES");
 
+    private static final boolean IS_BAD_SOLARIS = isBadSolaris();
+
     public static void main(String[] args) throws Exception {
+        // It has to determine Solaris version before enabling security manager.
+        // Because that needs some permissions, like java.io.FilePermission.
+        String policy = System.getProperty("policy");
+        if (policy != null) {
+            enableSecurityManager(policy);
+        }
+
         main(new TestAES(), null);
+    }
+
+    // Enables security manager and uses the specified policy file to override
+    // the default one.
+    private static void enableSecurityManager(String policy) {
+        String policyURL = "file://" + System.getProperty("test.src", ".") + "/"
+                + policy;
+        System.out.println("policyURL: " + policyURL);
+        Security.setProperty("policy.url.1", policyURL);
+        System.setSecurityManager(new SecurityManager());
     }
 
     public void doTest(Provider prov) throws Exception {
@@ -136,11 +160,18 @@ public class TestAES extends UcryptoTest {
         boolean testPassed = true;
         byte[] in = new byte[16];
         (new SecureRandom()).nextBytes(in);
-        int blockSize = 16;
 
-        for (int j = 1; j < (in.length - 1); j++) {
-            System.out.println("Input offset size: " + j);
-            for (int i = 0; i < algos.length; i++) {
+        for (int i = 0; i < algos.length; i++) {
+            if (IS_BAD_SOLARIS
+                    && algos[i].indexOf("CFB128") != -1
+                    && p.getName().equals("OracleUcrypto")) {
+                System.out.println("Ignore cases on CFB128 due to a pre-S11.3 bug");
+                continue;
+            }
+
+            for (int j = 1; j < (in.length - 1); j++) {
+                System.out.println("Input offset size: " + j);
+
                 try {
                     // check ENC
                     Cipher c;
@@ -255,7 +286,6 @@ public class TestAES extends UcryptoTest {
         }
     }
 
-
     private static void testCipherGCM(SecretKey key,
                                       Provider p) {
         boolean testPassed = true;
@@ -342,5 +372,13 @@ public class TestAES extends UcryptoTest {
             equal = false;
         }
         return equal;
+    }
+
+    // The cases on CFB128 mode have to be skipped on pre-S11.3.
+    private static boolean isBadSolaris() {
+        return Platform.isSolaris()
+                && Platform.getOsVersionMajor() <= 5
+                && Platform.getOsVersionMinor() <= 11
+                && Utils.distro().compareTo("11.3") < 0;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,30 @@
 
 /*
  * @test
- * @bug 8087112
+ * @bug 8087112 8180044
  * @modules jdk.incubator.httpclient
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext EchoHandler
+ * @build jdk.testlibrary.SimpleSSLContext
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
+ * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl ManyRequests
+ * @run main/othervm/timeout=40 -Dtest.insertDelay=true ManyRequests
+ * @run main/othervm/timeout=40 -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=40 -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
  * @summary Send a large number of requests asynchronously
  */
+ // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl ManyRequests
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import java.net.InetSocketAddress;
@@ -65,7 +73,10 @@ public class ManyRequests {
         Logger logger = Logger.getLogger("com.sun.net.httpserver");
         logger.setLevel(Level.ALL);
         logger.info("TEST");
-
+        System.out.println("Sending " + REQUESTS
+                         + " requests; delay=" + INSERT_DELAY
+                         + ", chunks=" + CHUNK_SIZE
+                         + ", XFixed=" + XFIXED);
         SSLContext ctx = new SimpleSSLContext().get();
 
         InetSocketAddress addr = new InetSocketAddress(0);
@@ -86,11 +97,36 @@ public class ManyRequests {
 
     //static final int REQUESTS = 1000;
     static final int REQUESTS = 20;
+    static final boolean INSERT_DELAY = Boolean.getBoolean("test.insertDelay");
+    static final int CHUNK_SIZE = Math.max(0,
+           Integer.parseInt(System.getProperty("test.chunkSize", "0")));
+    static final boolean XFIXED = Boolean.getBoolean("test.XFixed");
+
+    static class TestEchoHandler extends EchoHandler {
+        final Random rand = new Random();
+        @Override
+        public void handle(HttpExchange e) throws IOException {
+            System.out.println("Server: received " + e.getRequestURI());
+            super.handle(e);
+        }
+        protected void close(OutputStream os) throws IOException {
+            if (INSERT_DELAY) {
+                try { Thread.sleep(rand.nextInt(200)); } catch (InterruptedException e) {}
+            }
+            super.close(os);
+        }
+        protected void close(InputStream is) throws IOException {
+            if (INSERT_DELAY) {
+                try { Thread.sleep(rand.nextInt(200)); } catch (InterruptedException e) {}
+            }
+            super.close(is);
+        }
+    }
 
     static void test(HttpsServer server, HttpClient client) throws Exception {
         int port = server.getAddress().getPort();
-        URI uri = new URI("https://127.0.0.1:" + port + "/foo/x");
-        server.createContext("/foo", new EchoHandler());
+        URI baseURI = new URI("https://127.0.0.1:" + port + "/foo/x");
+        server.createContext("/foo", new TestEchoHandler());
         server.start();
 
         RequestLimiter limiter = new RequestLimiter(40);
@@ -99,24 +135,32 @@ public class ManyRequests {
         HashMap<HttpRequest,byte[]> bodies = new HashMap<>();
 
         for (int i=0; i<REQUESTS; i++) {
-            byte[] buf = new byte[i+1];  // different size bodies
+            byte[] buf = new byte[(i+1)*CHUNK_SIZE+i+1];  // different size bodies
             rand.nextBytes(buf);
+            URI uri = new URI(baseURI.toString() + String.valueOf(i+1));
             HttpRequest r = HttpRequest.newBuilder(uri)
+                                       .header("XFixed", "true")
                                        .POST(fromByteArray(buf))
                                        .build();
             bodies.put(r, buf);
 
             results[i] =
                 limiter.whenOkToSend()
-                       .thenCompose((v) -> client.sendAsync(r, asByteArray()))
+                       .thenCompose((v) -> {
+                           System.out.println("Client: sendAsync: " + r.uri());
+                           return client.sendAsync(r, asByteArray());
+                       })
                        .thenCompose((resp) -> {
                            limiter.requestComplete();
                            if (resp.statusCode() != 200) {
                                String s = "Expected 200, got: " + resp.statusCode();
+                               System.out.println(s + " from "
+                                                  + resp.request().uri().getPath());
                                return completedWithIOException(s);
                            } else {
                                counter++;
-                               System.out.println("Result from " + counter);
+                               System.out.println("Result (" + counter + ") from "
+                                                   + resp.request().uri().getPath());
                            }
                            return CompletableFuture.completedStage(resp.body())
                                       .thenApply((b) -> new Pair<>(resp, b));

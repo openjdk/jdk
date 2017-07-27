@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,23 +36,19 @@ import javax.xml.transform.Result;
  * Each property varies in the level of support required by each implementation.
  * The level of support required is described in the 'Required' column.
  *
- *     <table border="2" rules="all" cellpadding="4">
+ *     <table class="striped">
+ *     <caption>Configuration Parameters</caption>
  *     <thead>
  *      <tr>
- *        <th align="center" colspan="2">
- *          Configuration parameters
- *        </th>
- *      </tr>
+ *        <th scope="col">Property Name</th>
+ *        <th scope="col">Behavior</th>
+ *        <th scope="col">Return type</th>
+ *        <th scope="col">Default Value</th>
+ *        <th scope="col">Required</th>
+ *              </tr>
  *    </thead>
  *    <tbody>
- *      <tr>
- *        <th>Property Name</th>
- *        <th>Behavior</th>
- *        <th>Return type</th>
- *        <th>Default Value</th>
- *        <th>Required</th>
- *              </tr>
- *         <tr><td>javax.xml.stream.isRepairingNamespaces</td><td>defaults prefixes
+ *         <tr><th scope="row">javax.xml.stream.isRepairingNamespaces</th><td>defaults prefixes
  *                 on the output side</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
  *      </tbody>
  *   </table>
@@ -193,10 +189,6 @@ public abstract class XMLOutputFactory {
    * <p>
    * Once an application has obtained a reference to a XMLOutputFactory it
    * can use the factory to configure and obtain stream instances.
-   * <p>
-   * Note that this is a new method that replaces the deprecated newInstance() method.
-   *   No changes in behavior are defined by this replacement method relative to the
-   *   deprecated method.
    *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
@@ -222,7 +214,7 @@ public abstract class XMLOutputFactory {
    *              Use the new method {@link #newFactory(java.lang.String,
    *              java.lang.ClassLoader)} instead.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {
