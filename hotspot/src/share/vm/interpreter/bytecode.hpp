@@ -178,11 +178,11 @@ class Bytecode_tableswitch: public Bytecode {
 
 class Bytecode_member_ref: public Bytecode {
  protected:
-  const methodHandle _method;                          // method containing the bytecode
+  const Method* _method;                          // method containing the bytecode
 
-  Bytecode_member_ref(const methodHandle& method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
+  Bytecode_member_ref(const methodHandle& method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method()) {}
 
-  methodHandle method() const                    { return _method; }
+  const Method* method() const                 { return _method; }
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
   ConstantPoolCacheEntry* cpcache_entry() const;
@@ -312,15 +312,15 @@ class Bytecode_anewarray: public Bytecode {
 // Abstraction for ldc, ldc_w and ldc2_w
 class Bytecode_loadconstant: public Bytecode {
  private:
-  const methodHandle _method;
+  const Method* _method;
 
   int raw_index() const;
 
  public:
-  Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method) { verify(); }
+  Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method()) { verify(); }
 
   void verify() const {
-    assert(_method.not_null(), "must supply method");
+    assert(_method != NULL, "must supply method");
     Bytecodes::Code stdc = Bytecodes::java_code(code());
     assert(stdc == Bytecodes::_ldc ||
            stdc == Bytecodes::_ldc_w ||

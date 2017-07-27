@@ -1887,7 +1887,7 @@ static void clear_pending_exception_if_not_oom(TRAPS) {
  *
  * TODO:  This should be a private method in a CompileTheWorld class.
  */
-static bool can_be_compiled(methodHandle m, int comp_level) {
+static bool can_be_compiled(const methodHandle& m, int comp_level) {
   assert(CompileTheWorld, "must be");
 
   // It's not valid to compile a native wrapper for MethodHandle methods

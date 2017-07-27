@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   CompLevel loop_event(Method* method, CompLevel cur_level, JavaThread* thread);
-  void print_counters(const char* prefix, methodHandle mh);
+  void print_counters(const char* prefix, const methodHandle& mh);
 protected:
   int c1_count() const     { return _c1_count; }
   int c2_count() const     { return _c2_count; }
@@ -65,9 +65,9 @@ protected:
   void set_c2_count(int x) { _c2_count = x;    }
 
   enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
-  void print_event(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
+  void print_event(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
   // Print policy-specific information if necessary
-  virtual void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level) { }
+  virtual void print_specific(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level) { }
   // Check if the method can be compiled, change level if necessary
   void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Submit a given method for compilation

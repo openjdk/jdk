@@ -235,7 +235,7 @@ void CallInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
 
-LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, methodHandle current_method, TRAPS) {
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS) {
    // resolve klass
   _resolved_klass = pool->klass_ref_at(index, CHECK);
 
@@ -315,9 +315,11 @@ void LinkResolver::check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
 
 // Look up method in klasses, including static methods
 // Then look up local default methods
-methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
-                                                    bool checkpolymorphism,
-                                                    bool in_imethod_resolve, TRAPS) {
+Method* LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
+                                               bool checkpolymorphism,
+                                               bool in_imethod_resolve) {
+  NoSafepointVerifier nsv;  // Method* returned may not be reclaimed
+
   Klass* klass = link_info.resolved_klass();
   Symbol* name = link_info.name();
   Symbol* signature = link_info.signature();
@@ -327,7 +329,7 @@ methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
 
   if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
-    return methodHandle(THREAD, result);
+    return result;
   }
 
   InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -363,7 +365,7 @@ methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
       return NULL;
     }
   }
-  return methodHandle(THREAD, result);
+  return result;
 }
 
 // returns first instance method
@@ -418,15 +420,13 @@ int LinkResolver::vtable_index_of_interface_method(Klass* klass,
   return vtable_index;
 }
 
-methodHandle LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info, TRAPS) {
+Method* LinkResolver::lookup_method_in_interfaces(const LinkInfo& cp_info) {
   InstanceKlass *ik = InstanceKlass::cast(cp_info.resolved_klass());
 
   // Specify 'true' in order to skip default methods when searching the
   // interfaces.  Function lookup_method_in_klasses() already looked for
   // the method in the default methods table.
-  return methodHandle(THREAD,
-    ik->lookup_method_in_all_interfaces(cp_info.name(), cp_info.signature(),
-    Klass::skip_defaults));
+  return ik->lookup_method_in_all_interfaces(cp_info.name(), cp_info.signature(), Klass::skip_defaults);
 }
 
 methodHandle LinkResolver::lookup_polymorphic_method(
@@ -713,13 +713,12 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-
   // 3. lookup method in resolved klass and its super klasses
-  methodHandle resolved_method = lookup_method_in_klasses(link_info, true, false, CHECK_NULL);
+  methodHandle resolved_method(THREAD, lookup_method_in_klasses(link_info, true, false));
 
   // 4. lookup method in all the interfaces implemented by the resolved klass
   if (resolved_method.is_null() && !resolved_klass->is_array_klass()) { // not found in the class hierarchy
-    resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
+    resolved_method = methodHandle(THREAD, lookup_method_in_interfaces(link_info));
 
     if (resolved_method.is_null()) {
       // JSR 292:  see if this is an implicitly generated method MethodHandle.linkToVirtual(*...), etc
@@ -817,11 +816,11 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info, B
 
   // lookup method in this interface or its super, java.lang.Object
   // JDK8: also look for static methods
-  methodHandle resolved_method = lookup_method_in_klasses(link_info, false, true, CHECK_NULL);
+  methodHandle resolved_method(THREAD, lookup_method_in_klasses(link_info, false, true));
 
   if (resolved_method.is_null() && !resolved_klass->is_array_klass()) {
     // lookup method in all the super-interfaces
-    resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
+    resolved_method = methodHandle(THREAD, lookup_method_in_interfaces(link_info));
   }
 
   if (resolved_method.is_null()) {

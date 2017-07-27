@@ -35,7 +35,7 @@
 
 #ifdef TIERED
 
-void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) {
+void SimpleThresholdPolicy::print_counters(const char* prefix, const methodHandle& mh) {
   int invocation_count = mh->invocation_count();
   int backedge_count = mh->backedge_count();
   MethodData* mdh = mh->method_data();
@@ -56,7 +56,7 @@ void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) 
 }
 
 // Print an event.
-void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodHandle imh,
+void SimpleThresholdPolicy::print_event(EventType type, const methodHandle& mh, const methodHandle& imh,
                                         int bci, CompLevel level) {
   bool inlinee_event = mh() != imh();
 

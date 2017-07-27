@@ -1408,7 +1408,7 @@ JRT_LEAF(void, Deoptimization::popframe_preserve_args(JavaThread* thread, int by
 JRT_END
 
 MethodData*
-Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
+Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
                                 bool create_if_missing) {
   Thread* THREAD = thread;
   MethodData* mdo = m()->method_data();

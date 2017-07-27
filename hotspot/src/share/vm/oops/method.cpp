@@ -175,7 +175,7 @@ char* Method::name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol
   return buf;
 }
 
-int Method::fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS) {
+int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS) {
   // exception table holds quadruple entries of the form (beg_bci, end_bci, handler_bci, klass_index)
   // access exception table
   ExceptionTable table(mh());
@@ -1078,7 +1078,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 
 }
 
-address Method::make_adapters(methodHandle mh, TRAPS) {
+address Method::make_adapters(const methodHandle& mh, TRAPS) {
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
@@ -1147,7 +1147,7 @@ bool Method::check_code() const {
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(methodHandle mh, CompiledMethod *code) {
+void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
@@ -1350,7 +1350,7 @@ Klass* Method::check_non_bcp_klass(Klass* klass) {
 }
 
 
-methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
+methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                                 u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS) {
   // Code below does not work for native methods - they should never get rewritten anyway
   assert(!m->is_native(), "cannot rewrite native methods");
@@ -1545,7 +1545,7 @@ void Method::init_intrinsic_id() {
 }
 
 // These two methods are static since a GC may move the Method
-bool Method::load_signature_classes(methodHandle m, TRAPS) {
+bool Method::load_signature_classes(const methodHandle& m, TRAPS) {
   if (!THREAD->can_call_java()) {
     // There is nothing useful this routine can do from within the Compile thread.
     // Hopefully, the signature contains only well-known classes.
@@ -1579,7 +1579,7 @@ bool Method::load_signature_classes(methodHandle m, TRAPS) {
   return sig_is_loaded;
 }
 
-bool Method::has_unloaded_classes_in_signature(methodHandle m, TRAPS) {
+bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
   Handle class_loader(THREAD, m->method_holder()->class_loader());
   Handle protection_domain(THREAD, m->method_holder()->protection_domain());
   ResourceMark rm(THREAD);

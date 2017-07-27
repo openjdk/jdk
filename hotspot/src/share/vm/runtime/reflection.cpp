@@ -762,7 +762,7 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 }
 
 // Utility method converting a single SignatureStream element into java.lang.Class instance
-static oop get_mirror_from_signature(methodHandle method,
+static oop get_mirror_from_signature(const methodHandle& method,
                                      SignatureStream* ss,
                                      TRAPS) {
 
@@ -788,7 +788,7 @@ static oop get_mirror_from_signature(methodHandle method,
   return java_lang_Class::primitive_mirror(ss->type());
 }
 
-static objArrayHandle get_parameter_types(methodHandle method,
+static objArrayHandle get_parameter_types(const methodHandle& method,
                                           int parameter_count,
                                           oop* return_type,
                                           TRAPS) {
@@ -814,7 +814,7 @@ static objArrayHandle get_parameter_types(methodHandle method,
   return mirrors;
 }
 
-static objArrayHandle get_exception_types(methodHandle method, TRAPS) {
+static objArrayHandle get_exception_types(const methodHandle& method, TRAPS) {
   return method->resolved_checked_exceptions(THREAD);
 }
 
@@ -1052,7 +1052,7 @@ static void narrow(jvalue* value, BasicType narrow_type, TRAPS) {
 
 // Method call (shared by invoke_method and invoke_constructor)
 static oop invoke(InstanceKlass* klass,
-                  methodHandle reflected_method,
+                  const methodHandle& reflected_method,
                   Handle receiver,
                   bool override,
                   objArrayHandle ptypes,

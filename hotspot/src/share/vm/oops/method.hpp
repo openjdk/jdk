@@ -133,7 +133,7 @@ class Method : public Metadata {
   void set_constMethod(ConstMethod* xconst)    { _constMethod = xconst; }
 
 
-  static address make_adapters(methodHandle mh, TRAPS);
+  static address make_adapters(const methodHandle& mh, TRAPS);
   volatile address from_compiled_entry() const   { return (address)OrderAccess::load_ptr_acquire(&_from_compiled_entry); }
   volatile address from_compiled_entry_no_trampoline() const;
   volatile address from_interpreted_entry() const{ return (address)OrderAccess::load_ptr_acquire(&_from_interpreted_entry); }
@@ -324,7 +324,7 @@ class Method : public Metadata {
   // exception handler which caused the exception to be thrown, which
   // is needed for proper retries. See, for example,
   // InterpreterRuntime::exception_handler_for_exception.
-  static int fast_exception_handler_bci_for(methodHandle mh, Klass* ex_klass, int throw_bci, TRAPS);
+  static int fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS);
 
   // method data access
   MethodData* method_data() const              {
@@ -452,7 +452,7 @@ class Method : public Metadata {
   bool check_code() const;      // Not inline to avoid circular ref
   CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code); }
   void clear_code(bool acquire_lock = true);    // Clear out any compiled code
-  static void set_code(methodHandle mh, CompiledMethod* code);
+  static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
   }
@@ -776,7 +776,7 @@ class Method : public Metadata {
   void set_is_prefixed_native()                     { _access_flags.set_is_prefixed_native(); }
 
   // Rewriting support
-  static methodHandle clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
+  static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                           u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS);
 
   // jmethodID handling
@@ -954,10 +954,10 @@ class Method : public Metadata {
   void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
 
   // Resolve all classes in signature, return 'true' if successful
-  static bool load_signature_classes(methodHandle m, TRAPS);
+  static bool load_signature_classes(const methodHandle& m, TRAPS);
 
   // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(methodHandle m, TRAPS);
+  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
 
   // Printing
   void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM

@@ -53,7 +53,7 @@ class JavaCallWrapper: StackObj {
 
  public:
   // Construction/destruction
-   JavaCallWrapper(methodHandle callee_method, Handle receiver, JavaValue* result, TRAPS);
+   JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS);
   ~JavaCallWrapper();
 
   // Accessors

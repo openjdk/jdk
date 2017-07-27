@@ -1207,7 +1207,7 @@ static void rt_call(MacroAssembler* masm, address dest, int gpargs, int fpargs, 
 }
 
 static void verify_oop_args(MacroAssembler* masm,
-                            methodHandle method,
+                            const methodHandle& method,
                             const BasicType* sig_bt,
                             const VMRegPair* regs) {
   Register temp_reg = r19;  // not part of any compiled calling seq
@@ -1229,7 +1229,7 @@ static void verify_oop_args(MacroAssembler* masm,
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
-                                 methodHandle method,
+                                 const methodHandle& method,
                                  const BasicType* sig_bt,
                                  const VMRegPair* regs) {
   verify_oop_args(masm, method, sig_bt, regs);

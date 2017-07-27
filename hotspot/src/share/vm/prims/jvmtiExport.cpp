@@ -195,7 +195,7 @@ public:
 
   jclass to_jclass(Klass* klass) { return (klass == NULL ? NULL : (jclass)to_jobject(klass->java_mirror())); }
 
-  jmethodID to_jmethodID(methodHandle method) { return method->jmethod_id(); }
+  jmethodID to_jmethodID(const methodHandle& method) { return method->jmethod_id(); }
 
   JNIEnv* jni_env() { return _jni_env; }
 };
@@ -229,7 +229,7 @@ private:
   jmethodID _mid;
 
 public:
-  JvmtiMethodEventMark(JavaThread *thread, methodHandle method) :
+  JvmtiMethodEventMark(JavaThread *thread, const methodHandle& method) :
     JvmtiThreadEventMark(thread),
     _mid(to_jmethodID(method)) {};
   jmethodID jni_methodID() { return _mid; }
@@ -240,7 +240,7 @@ private:
   jlocation _loc;
 
 public:
-  JvmtiLocationEventMark(JavaThread *thread, methodHandle method, address location) :
+  JvmtiLocationEventMark(JavaThread *thread, const methodHandle& method, address location) :
     JvmtiMethodEventMark(thread, method),
     _loc(location - method->code_base()) {};
   jlocation location() { return _loc; }
@@ -251,7 +251,7 @@ private:
   jobject _exc;
 
 public:
-  JvmtiExceptionEventMark(JavaThread *thread, methodHandle method, address location, Handle exception) :
+  JvmtiExceptionEventMark(JavaThread *thread, const methodHandle& method, address location, Handle exception) :
     JvmtiLocationEventMark(thread, method, location),
     _exc(to_jobject(exception())) {};
   jobject exception() { return _exc; }
