@@ -56,11 +56,13 @@ import java.util.function.DoubleBinaryOperator;
  *
  * <p>The supplied accumulator function should be side-effect-free,
  * since it may be re-applied when attempted updates fail due to
- * contention among threads. The function is applied with the current
- * value as its first argument, and the given update as the second
- * argument.  For example, to maintain a running maximum value, you
- * could supply {@code Double::max} along with {@code
- * Double.NEGATIVE_INFINITY} as the identity. The order of
+ * contention among threads.  For predictable results, the accumulator
+ * function should be commutative and associative within the floating
+ * point tolerance required in usage contexts. The function is applied
+ * with an existing value (or identity) as one argument, and a given
+ * update as the other argument. For example, to maintain a running
+ * maximum value, you could supply {@code Double::max} along with
+ * {@code Double.NEGATIVE_INFINITY} as the identity. The order of
  * accumulation within or across threads is not guaranteed. Thus, this
  * class may not be applicable if numerical stability is required,
  * especially when combining values of substantially different orders

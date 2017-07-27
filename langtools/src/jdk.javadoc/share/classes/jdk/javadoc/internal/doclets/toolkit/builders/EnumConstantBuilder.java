@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
@@ -108,14 +108,6 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return "EnumConstantDetails";
-    }
-
-    /**
      * Returns whether or not there are members to document.
      *
      * @return whether or not there are members to document
@@ -126,13 +118,20 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void build(Content contentTree) throws DocletException {
+        buildEnumConstant(contentTree);
+    }
+
+    /**
      * Build the enum constant documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException is there is a problem while building the documentation
      */
-    public void buildEnumConstant(XMLNode node, Content memberDetailsTree) throws DocletException {
+    protected void buildEnumConstant(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
@@ -144,7 +143,12 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
                 currentElement = (VariableElement)enumConstant;
                 Content enumConstantsTree = writer.getEnumConstantsTreeHeader(currentElement,
                         enumConstantsDetailsTree);
-                buildChildren(node, enumConstantsTree);
+
+                buildSignature(enumConstantsTree);
+                buildDeprecationInfo(enumConstantsTree);
+                buildEnumConstantComments(enumConstantsTree);
+                buildTagInfo(enumConstantsTree);
+
                 enumConstantsDetailsTree.addContent(writer.getEnumConstants(
                         enumConstantsTree, currentElement == lastElement));
             }
@@ -156,31 +160,28 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content enumConstantsTree) {
+    protected void buildSignature(Content enumConstantsTree) {
         enumConstantsTree.addContent(writer.getSignature(currentElement));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content enumConstantsTree) {
+    protected void buildDeprecationInfo(Content enumConstantsTree) {
         writer.addDeprecated(currentElement, enumConstantsTree);
     }
 
     /**
      * Build the comments for the enum constant.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
-    public void buildEnumConstantComments(XMLNode node, Content enumConstantsTree) {
+    protected void buildEnumConstantComments(Content enumConstantsTree) {
         if (!configuration.nocomment) {
             writer.addComments(currentElement, enumConstantsTree);
         }
@@ -189,10 +190,9 @@ public class EnumConstantBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param enumConstantsTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content enumConstantsTree) {
+    protected void buildTagInfo(Content enumConstantsTree) {
         writer.addTags(currentElement, enumConstantsTree);
     }
 

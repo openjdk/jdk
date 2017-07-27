@@ -23,6 +23,8 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.File;
 
 import javax.xml.transform.Source;
@@ -58,7 +60,7 @@ public class Bug4892774 {
 
     private final String XML_FILE = "catalog.xml";
     private final String XML10_FILE = "catalog_10.xml"; // 1.0 version document
-    private final String TEMP_FILE = "tmp.xml";
+    private final String TEMP_FILE = USER_DIR + "tmp.xml";
     private final String EXPECTED_VERSION = "1.1";
     static private Transformer idTransform = null;
 

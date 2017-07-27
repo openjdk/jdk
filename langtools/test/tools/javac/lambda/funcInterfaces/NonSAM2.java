@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8003280
+ * @bug 8003280 7170058
  * @summary Add lambda tests
  *   This test is for identifying a non-SAM type: Having more than one methods due to inheritance, and none of them has a subsignature of all other methods
  * @compile/fail/ref=NonSAM2.out -XDrawDiagnostics NonSAM2.java Helper.java

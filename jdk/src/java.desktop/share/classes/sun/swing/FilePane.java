@@ -1831,6 +1831,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private class Handler implements MouseListener {
         private MouseListener doubleClickListener;
 
+        @SuppressWarnings("deprecation")
         public void mouseClicked(MouseEvent evt) {
             JComponent source = (JComponent)evt.getSource();
 

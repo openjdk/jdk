@@ -27,7 +27,7 @@
  * @summary Check that setting the wrong type of an attribute in a Standard
  * MBean or MXBean causes InvalidAttributeValueException
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean SetWrongTypeAttributeTest
  * @run build SetWrongTypeAttributeTest
  * @run main SetWrongTypeAttributeTest

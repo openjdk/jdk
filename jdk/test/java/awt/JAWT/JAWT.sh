@@ -85,7 +85,7 @@ case "$OS" in
     MAKEFILE="Makefile.win"
     CC="cl"
 	MAKE="nmake"
-	${TESTJAVA}${FS}bin${FS}java -d64 -version 2>&1 | grep '64-Bit' > $NULL
+	${TESTJAVA}${FS}bin${FS}java -version 2>&1 | grep '64-Bit' > $NULL
     if [ "$?" -eq '0' ]
     then
         ARCH="amd64"
@@ -100,7 +100,7 @@ case "$OS" in
     FS="/"
     MAKEFILE="Makefile.cygwin"
     CC="gcc"
-	${TESTJAVA}${FS}bin${FS}java -d64 -version 2>&1 | grep '64-Bit' > $NULL
+	${TESTJAVA}${FS}bin${FS}java -version 2>&1 | grep '64-Bit' > $NULL
     if [ "$?" -eq '0' ]
     then
         ARCH="amd64"

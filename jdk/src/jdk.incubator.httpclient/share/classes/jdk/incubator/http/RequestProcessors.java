@@ -38,29 +38,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 import jdk.incubator.http.internal.common.Utils;
 
 class RequestProcessors {
-    // common base class for Publisher and Subscribers used here
-    abstract static class ProcessorBase {
-        HttpClientImpl client;
 
-        synchronized void setClient(HttpClientImpl client) {
-            this.client = client;
-        }
-
-        synchronized HttpClientImpl getClient() {
-            return client;
-        }
-    }
-
-    static class ByteArrayProcessor extends ProcessorBase
-        implements HttpRequest.BodyProcessor
-    {
+    static class ByteArrayProcessor implements HttpRequest.BodyProcessor {
         private volatile Flow.Publisher<ByteBuffer> delegate;
         private final int length;
         private final byte[] content;
@@ -105,9 +90,7 @@ class RequestProcessors {
     }
 
     // This implementation has lots of room for improvement.
-    static class IterableProcessor extends ProcessorBase
-        implements HttpRequest.BodyProcessor
-    {
+    static class IterableProcessor implements HttpRequest.BodyProcessor {
         private volatile Flow.Publisher<ByteBuffer> delegate;
         private final Iterable<byte[]> content;
         private volatile long contentLength;
@@ -202,8 +185,7 @@ class RequestProcessors {
         }
     }
 
-    static class EmptyProcessor extends ProcessorBase implements HttpRequest.BodyProcessor
-    {
+    static class EmptyProcessor implements HttpRequest.BodyProcessor {
         PseudoPublisher<ByteBuffer> delegate = new PseudoPublisher<>();
 
         @Override
@@ -303,9 +285,7 @@ class RequestProcessors {
 
     }
 
-    static class InputStreamProcessor extends ProcessorBase
-        implements HttpRequest.BodyProcessor
-    {
+    static class InputStreamProcessor implements HttpRequest.BodyProcessor {
         private final Supplier<? extends InputStream> streamSupplier;
         private Flow.Publisher<ByteBuffer> delegate;
 
@@ -315,11 +295,7 @@ class RequestProcessors {
 
         @Override
         public synchronized void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-            if (!(subscriber instanceof ProcessorBase)) {
-                throw new UnsupportedOperationException();
-            }
-            ProcessorBase base = (ProcessorBase)subscriber;
-            HttpClientImpl client = base.getClient();
+
             InputStream is = streamSupplier.get();
             if (is == null) {
                 throw new UncheckedIOException(new IOException("no inputstream supplied"));

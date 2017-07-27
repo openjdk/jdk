@@ -444,6 +444,7 @@ public class Main {
             } else if (collator.compare(flags, "-strict") ==0) {
                 strict = true;
             } else if (collator.compare(flags, "-h") == 0 ||
+                        collator.compare(flags, "-?") == 0 ||
                         collator.compare(flags, "-help") == 0) {
                 fullusage();
             } else {

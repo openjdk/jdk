@@ -42,7 +42,7 @@ import javax.tools.StandardJavaFileManager;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 
@@ -194,7 +194,7 @@ public class TagletManager {
      */
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, boolean javafx,
-                         Configuration configuration) {
+                         BaseConfiguration configuration) {
         overridenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug     7091528 8029145 8037484
  * @summary ensures javadoc parses unique source files and ignores all class files
  * @modules jdk.javadoc/com.sun.tools.doclets.standard
+ * @library /tools/javadoc/lib
+ * @build ToyDoclet
  * @compile p/C1.java p/q/C2.java
  * @run main T7091528
  */
@@ -42,22 +44,22 @@ public class T7091528 {
         File testSrc = new File(System.getProperty("test.src"));
         File testClasses = new File(System.getProperty("test.classes"));
         // 7091528, tests if class files are being ignored
-        runTest("-d", ".",
+        runTest(
             "-sourcepath", testClasses + File.pathSeparator + testSrc,
             "-subpackages",
             "p");
         // 8029145, tests if unique source files are parsed
-        runTest("-d", ".",
+        runTest(
             "-sourcepath", testSrc.getAbsolutePath(),
             "-subpackages",
             "p:p.q");
         File testPkgDir = new File(testSrc, "p");
         File testFile = new File(testPkgDir, "C3.java");
-        runTest("-d", ".",
+        runTest(
             "-sourcepath", testSrc.getAbsolutePath(),
             testFile.getAbsolutePath(),
             "p");
-        runTest("-d", ".",
+        runTest(
             "-classpath", testSrc.getAbsolutePath(),
             testFile.getAbsolutePath(),
             "p");
@@ -66,8 +68,8 @@ public class T7091528 {
     void runTest(String... args) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String doclet = com.sun.tools.doclets.standard.Standard.class.getName();
-        int rc = com.sun.tools.javadoc.Main.execute("javadoc", pw, pw, pw, doclet, args);
+        int rc = com.sun.tools.javadoc.Main.execute("example", pw, pw, pw,
+                "ToyDoclet", getClass().getClassLoader(), args);
         pw.close();
 
         String out = sw.toString();
@@ -80,8 +82,5 @@ public class T7091528 {
 
         if (out.matches("(?s).*p/[^ ]+\\.class.*"))
             throw new Error("reading .class files");
-
-        if (!new File("index.html").exists())
-            throw new Error("index.html not found");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,6 +267,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
      * Ensures that the password bytes of this key are
      * erased when there are no more references to it.
      */
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable {
         try {
             if (this.passwd != null) {

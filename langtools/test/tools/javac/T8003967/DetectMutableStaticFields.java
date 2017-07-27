@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class DetectMutableStaticFields {
 
     static {
         ignore("javax/tools/ToolProvider", "instance");
+        ignore("jdk/javadoc/internal/tool/Start", "versionRB");
         ignore("com/sun/tools/javah/JavahTask", "versionRB");
         ignore("com/sun/tools/classfile/Dependencies$DefaultFilter", "instance");
         ignore("com/sun/tools/javap/JavapTask", "versionRB");

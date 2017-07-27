@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
  */
 
 package com.sun.jdi;
+
 import java.util.List;
+
+import com.sun.jdi.event.EventSet;
 
 /**
  * A thread object from the target VM.
@@ -37,6 +40,7 @@ import java.util.List;
  * @since  1.3
  */
 public interface ThreadReference extends ObjectReference {
+
     /** Thread status is unknown */
     public final int THREAD_STATUS_UNKNOWN  =-1;
     /** Thread has completed execution */
@@ -82,6 +86,7 @@ public interface ThreadReference extends ObjectReference {
      * through {@link java.lang.Thread#resume}.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
      */
+    @SuppressWarnings("javadoc")
     void suspend();
 
     /**
@@ -92,7 +97,7 @@ public interface ThreadReference extends ObjectReference {
      * suspends on this thread is decremented. If it is decremented to 0,
      * the thread will continue to execute.
      * Note: the normal way to resume from an event related suspension is
-     * via {@link com.sun.jdi.event.EventSet#resume}.
+     * via {@link EventSet#resume}.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
      */
     void resume();
@@ -115,6 +120,7 @@ public interface ThreadReference extends ObjectReference {
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
      * @see java.lang.Thread#stop(Throwable)
      */
+    @SuppressWarnings("javadoc")
     void stop(ObjectReference throwable) throws InvalidTypeException;
 
     /**
@@ -389,7 +395,6 @@ public interface ThreadReference extends ObjectReference {
      *
      * @since 1.4 */
     void popFrames(StackFrame frame) throws IncompatibleThreadStateException;
-
 
     /**
      * Force a method to return before it reaches a return

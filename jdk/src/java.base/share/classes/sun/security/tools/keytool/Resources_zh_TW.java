@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,8 +357,6 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "\u8F38\u5165\u5225\u540D\u540D\u7A31:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN \u5982\u679C\u548C <{0}> \u7684\u76F8\u540C)"},
-        {".PATTERN.printX509Cert",
-                "\u64C1\u6709\u8005: {0}\n\u767C\u51FA\u8005: {1}\n\u5E8F\u865F: {2}\n\u6709\u6548\u671F\u81EA: {3} \u5230: {4}\n\u6191\u8B49\u6307\u7D0B:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7C3D\u7AE0\u6F14\u7B97\u6CD5\u540D\u7A31: {7}\n\u4E3B\u9AD4\u516C\u958B\u91D1\u9470\u6F14\u7B97\u6CD5: {8} ({9,number,#})\n\u7248\u672C: {10}"},
         {"What.is.your.first.and.last.name.",
                 "\u60A8\u7684\u540D\u5B57\u8207\u59D3\u6C0F\u70BA\u4F55\uFF1F"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -421,15 +419,12 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
         {"Please.provide.keysize.for.secret.key.generation",
                 "\u8ACB\u63D0\u4F9B -keysize \u4EE5\u7522\u751F\u79D8\u5BC6\u91D1\u9470"},
 
-        {"verified.by.s.in.s", "\u7531 %s \u9A57\u8B49 (\u5728 %s \u4E2D)"},
         {"warning.not.verified.make.sure.keystore.is.correct",
             "\u8B66\u544A: \u672A\u9A57\u8B49\u3002\u8ACB\u78BA\u5B9A -keystore \u6B63\u78BA\u3002"},
 
         {"Extensions.", "\u64F4\u5145\u5957\u4EF6: "},
         {".Empty.value.", "(\u7A7A\u767D\u503C)"},
         {"Extension.Request.", "\u64F4\u5145\u5957\u4EF6\u8981\u6C42:"},
-        {"PKCS.10.Certificate.Request.Version.1.0.Subject.s.Public.Key.s.format.s.key.",
-                "PKCS #10 \u6191\u8B49\u8981\u6C42 (\u7248\u672C 1.0)\n\u4E3B\u9AD4: %s\n\u516C\u7528\u91D1\u9470: %s \u683C\u5F0F %s \u91D1\u9470\n"},
         {"Unknown.keyUsage.type.", "\u4E0D\u660E\u7684 keyUsage \u985E\u578B: "},
         {"Unknown.extendedkeyUsage.type.", "\u4E0D\u660E\u7684 extendedkeyUsage \u985E\u578B: "},
         {"Unknown.AccessDescription.type.", "\u4E0D\u660E\u7684 AccessDescription \u985E\u578B: "},
@@ -438,7 +433,33 @@ public class Resources_zh_TW extends java.util.ListResourceBundle {
                  "\u6B64\u64F4\u5145\u5957\u4EF6\u7121\u6CD5\u6A19\u793A\u70BA\u95DC\u9375\u3002"},
         {"Odd.number.of.hex.digits.found.", "\u627E\u5230\u5341\u516D\u9032\u4F4D\u6578\u5B57\u7684\u5947\u6578: "},
         {"Unknown.extension.type.", "\u4E0D\u660E\u7684\u64F4\u5145\u5957\u4EF6\u985E\u578B: "},
-        {"command.{0}.is.ambiguous.", "\u547D\u4EE4 {0} \u4E0D\u660E\u78BA:"}
+        {"command.{0}.is.ambiguous.", "\u547D\u4EE4 {0} \u4E0D\u660E\u78BA:"},
+
+        // 8171319: keytool should print out warnings when reading or
+        // generating cert/cert req using weak algorithms
+        {"the.certificate.request", "\u6191\u8B49\u8981\u6C42"},
+        {"the.issuer", "\u767C\u884C\u4EBA"},
+        {"the.generated.certificate", "\u7522\u751F\u7684\u6191\u8B49"},
+        {"the.generated.crl", "\u7522\u751F\u7684 CRL"},
+        {"the.generated.certificate.request", "\u7522\u751F\u7684\u6191\u8B49\u8981\u6C42"},
+        {"the.certificate", "\u6191\u8B49"},
+        {"the.crl", "CRL"},
+        {"the.tsa.certificate", "TSA \u6191\u8B49"},
+        {"the.input", "\u8F38\u5165"},
+        {"reply", "\u56DE\u8986"},
+        {"one.in.many", "%s #%d / %d"},
+        {"alias.in.cacerts", "cacerts \u4E2D\u7684\u767C\u884C\u4EBA <%s>"},
+        {"alias.in.keystore", "\u767C\u884C\u4EBA <%s>"},
+        {"with.weak", "%s (\u4F4E\u5F37\u5EA6)"},
+        {"key.bit", "%d \u4F4D\u5143\u7684 %s \u91D1\u9470"},
+        {"key.bit.weak", "%d \u4F4D\u5143\u7684 %s \u91D1\u9470 (\u4F4E\u5F37\u5EA6)"},
+        {".PATTERN.printX509Cert.with.weak",
+                "\u64C1\u6709\u8005: {0}\n\u767C\u884C\u4EBA: {1}\n\u5E8F\u865F: {2}\n\u6709\u6548\u671F\u81EA: {3} \u5230: {4}\n\u6191\u8B49\u6307\u7D0B:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7C3D\u7AE0\u6F14\u7B97\u6CD5\u540D\u7A31: {7}\n\u4E3B\u9AD4\u516C\u958B\u91D1\u9470\u6F14\u7B97\u6CD5: {8}\n\u7248\u672C: {9}"},
+        {"PKCS.10.with.weak",
+                "PKCS #10 \u6191\u8B49\u8981\u6C42 (\u7248\u672C 1.0)\n\u4E3B\u9AD4: %s\n\u683C\u5F0F: %s\n\u516C\u7528\u91D1\u9470: %s\n\u7C3D\u7AE0\u6F14\u7B97\u6CD5: %s\n"},
+        {"verified.by.s.in.s.weak", "\u7531 %2$s \u4E2D\u7684 %1$s \u4EE5 %3$s \u9A57\u8B49"},
+        {"whose.sigalg.risk", "%s \u4F7F\u7528\u7684 %s \u7C3D\u7AE0\u6F14\u7B97\u6CD5\u5B58\u5728\u5B89\u5168\u98A8\u96AA\u3002"},
+        {"whose.key.risk", "%s \u4F7F\u7528\u7684 %s \u5B58\u5728\u5B89\u5168\u98A8\u96AA\u3002"},
     };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,13 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -147,6 +151,28 @@ public class TestExtraTime {
         // ZipFile
         Path zpath = Paths.get(System.getProperty("test.dir", "."),
                                "TestExtraTime.zip");
+        Path zparent = zpath.getParent();
+        if (zparent != null && !Files.isWritable(zparent)) {
+            System.err.format("zpath %s parent %s is not writable%n",
+                zpath, zparent);
+        }
+        if (Files.exists(zpath)) {
+            System.err.format("zpath %s already exists%n", zpath);
+            if (Files.isDirectory(zpath)) {
+                System.err.format("%n%s contents:%n", zpath);
+                Files.list(zpath).forEach(System.err::println);
+            }
+            FileOwnerAttributeView foav = Files.getFileAttributeView(zpath,
+                FileOwnerAttributeView.class);
+            System.err.format("zpath %s owner: %s%n", zpath, foav.getOwner());
+            System.err.format("zpath %s permissions:%n", zpath);
+            Set<PosixFilePermission> perms =
+                Files.getPosixFilePermissions(zpath);
+            perms.stream().forEach(System.err::println);
+        }
+        if (Files.isSymbolicLink(zpath)) {
+            System.err.format("zpath %s is a symbolic link%n", zpath);
+        }
         Files.copy(new ByteArrayInputStream(baos.toByteArray()), zpath);
         try (ZipFile zf = new ZipFile(zpath.toFile())) {
             ze = zf.getEntry("TestExtraTime.java");

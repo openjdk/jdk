@@ -30,12 +30,13 @@
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.code
- *          jdk.vm.ci/jdk.vm.ci.meta
- *          jdk.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.services
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyBootstrapFinishedEventTest.config
  *     ./META-INF/services/jdk.vm.ci.services.JVMCIServiceLocator

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -94,7 +94,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
         if (_currentDocumentNode != rootNode) {
             _currentDocumentNode = rootNode;
             _index = new HashMap<>();
-            _rootToIndexMap.put(new Integer(rootNode), _index);
+            _rootToIndexMap.put(rootNode, _index);
         }
 
         IntegerArray nodes = _index.get(value);
@@ -115,6 +115,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * Merge the current value's nodeset set by lookupKey() with _nodes.
      * @deprecated
      */
+    @Deprecated
     public void merge(KeyIndex other) {
         if (other == null) return;
 
@@ -136,6 +137,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * key() function.
      * @deprecated
      */
+    @Deprecated
     public void lookupId(Object value) {
         // Clear _nodes array
         _nodes = null;
@@ -176,7 +178,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
             int ident = _enhancedDOM.getElementById(id);
 
             if (ident != DTM.NULL) {
-                Integer root = new Integer(_enhancedDOM.getDocument());
+                Integer root = _enhancedDOM.getDocument();
                 Map<String, IntegerArray> index = _rootToIndexMap.get(root);
 
                 if (index == null) {
@@ -205,6 +207,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public void lookupKey(Object value) {
         IntegerArray nodes = _index.get(value);
         _nodes = (nodes != null) ? (IntegerArray) nodes.clone() : null;
@@ -217,6 +220,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public int next() {
         if (_nodes == null) return DTMAxisIterator.END;
 
@@ -243,7 +247,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
 
         // Get the mapping table for the document containing the context node
         Map<String, IntegerArray> index =
-            _rootToIndexMap.get(new Integer(rootHandle));
+            _rootToIndexMap.get(rootHandle);
 
         // Split argument to id function into XML whitespace separated tokens
         final StringTokenizer values = new StringTokenizer(string, " \n\t");
@@ -294,7 +298,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
 
         // Get the mapping table for the document containing the context node
         Map<String,IntegerArray> index =
-                    _rootToIndexMap.get(new Integer(rootHandle));
+                    _rootToIndexMap.get(rootHandle);
 
         // Check whether the context node is present in the set of nodes
         // returned by the key function
@@ -313,6 +317,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public DTMAxisIterator reset() {
         _position = 0;
         return this;
@@ -324,6 +329,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public int getLast() {
         return (_nodes == null) ? 0 : _nodes.cardinality();
     }
@@ -334,6 +340,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public int getPosition() {
         return _position;
     }
@@ -344,6 +351,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public void setMark() {
         _markedPosition = _position;
     }
@@ -354,6 +362,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public void gotoMark() {
         _position = _markedPosition;
     }
@@ -365,6 +374,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public DTMAxisIterator setStartNode(int start) {
         if (start == DTMAxisIterator.END) {
             _nodes = null;
@@ -382,6 +392,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public int getStartNode() {
         return 0;
     }
@@ -392,6 +403,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public boolean isReverse() {
         return(false);
     }
@@ -402,6 +414,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
      * <b>deprecated.</b></em></p>
      * @deprecated
      */
+    @Deprecated
     public DTMAxisIterator cloneIterator() {
         KeyIndex other = new KeyIndex(0);
         other._index = _index;
@@ -688,7 +701,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
             IntegerArray result = null;
 
             // Get mapping from key values/IDs to DTM nodes for this document
-            Map<String, IntegerArray> index = _rootToIndexMap.get(new Integer(root));
+            Map<String, IntegerArray> index = _rootToIndexMap.get(root);
 
             if (!_isKeyIterator) {
                 // For id function, tokenize argument as whitespace separated

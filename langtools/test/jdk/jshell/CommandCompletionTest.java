@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -162,13 +162,13 @@ public class CommandCompletionTest extends ReplToolTesting {
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/? |", false,
                 "/! ", "/-<n> ", "/<id> ", "/? ", "/drop ",
                 "/edit ", "/env ", "/exit ",
                 "/help ", "/history ", "/imports ",
                 "/list ", "/methods ", "/open ", "/reload ", "/reset ",
-                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "shortcuts "),
+                "/save ", "/set ", "/types ", "/vars ", "context ", "intro ", "rerun ", "shortcuts "),
                 a -> assertCompletion(a, "/help /s|", false,
                 "/save ", "/set "),
                 a -> assertCompletion(a, "/help /set |", false,

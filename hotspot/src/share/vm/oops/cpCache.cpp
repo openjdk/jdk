@@ -140,7 +140,8 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
 
 void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
                                                        methodHandle method,
-                                                       int vtable_index) {
+                                                       int vtable_index,
+                                                       bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
   assert(method->interpreter_entry() != NULL, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
@@ -204,7 +205,13 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
   if (byte_no == 1) {
     assert(invoke_code != Bytecodes::_invokevirtual &&
            invoke_code != Bytecodes::_invokeinterface, "");
+    // Don't mark invokespecial to method as resolved if sender is an interface.  The receiver
+    // has to be checked that it is a subclass of the current class every time this bytecode
+    // is executed.
+    if (invoke_code != Bytecodes::_invokespecial || !sender_is_interface ||
+        method->name() == vmSymbols::object_initializer_name()) {
     set_bytecode_1(invoke_code);
+    }
   } else if (byte_no == 2)  {
     if (change_to_virtual) {
       assert(invoke_code == Bytecodes::_invokeinterface, "");
@@ -234,17 +241,18 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
   NOT_PRODUCT(verify(tty));
 }
 
-void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, methodHandle method) {
+void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, methodHandle method,
+                                             bool sender_is_interface) {
   int index = Method::nonvirtual_vtable_index;
   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
-  set_direct_or_vtable_call(invoke_code, method, index);
+  set_direct_or_vtable_call(invoke_code, method, index, sender_is_interface);
 }
 
 void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
   // either the method is a miranda or its holder should accept the given index
   assert(method->method_holder()->is_interface() || method->method_holder()->verify_vtable_index(index), "");
   // index >= 0; FIXME: inline and customize set_direct_or_vtable_call
-  set_direct_or_vtable_call(invoke_code, method, index);
+  set_direct_or_vtable_call(invoke_code, method, index, false);
 }
 
 void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {

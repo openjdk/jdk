@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
@@ -111,15 +111,6 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return "AnnotationTypeFieldDetails";
-    }
-
-
-    /**
      * Returns whether or not there are members to document.
      * @return whether or not there are members to document
      */
@@ -129,25 +120,31 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void build(Content contentTree) throws DocletException {
+        buildAnnotationTypeField(contentTree);
+    }
+
+    /**
      * Build the annotation type field documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildAnnotationTypeField(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeField(Content memberDetailsTree)
             throws DocletException {
-        buildAnnotationTypeMember(node, memberDetailsTree);
+        buildAnnotationTypeMember(memberDetailsTree);
     }
 
     /**
      * Build the member documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildAnnotationTypeMember(XMLNode node, Content memberDetailsTree)
+    protected void buildAnnotationTypeMember(Content memberDetailsTree)
             throws DocletException {
         if (writer == null) {
             return;
@@ -162,7 +159,12 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
                 writer.addAnnotationDetailsTreeHeader(typeElement, detailsTree);
                 Content annotationDocTree = writer.getAnnotationDocTreeHeader(currentMember,
                         detailsTree);
-                buildChildren(node, annotationDocTree);
+
+                buildSignature(annotationDocTree);
+                buildDeprecationInfo(annotationDocTree);
+                buildMemberComments(annotationDocTree);
+                buildTagInfo(annotationDocTree);
+
                 detailsTree.addContent(writer.getAnnotationDoc(
                         annotationDocTree, currentMember == lastElement));
                 memberDetailsTree.addContent(writer.getAnnotationDetails(detailsTree));
@@ -173,10 +175,9 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content annotationDocTree) {
+    protected void buildSignature(Content annotationDocTree) {
         annotationDocTree.addContent(
                 writer.getSignature(currentMember));
     }
@@ -184,22 +185,20 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content annotationDocTree) {
+    protected void buildDeprecationInfo(Content annotationDocTree) {
         writer.addDeprecated(currentMember, annotationDocTree);
     }
 
     /**
      * Build the comments for the member.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildMemberComments(XMLNode node, Content annotationDocTree) {
-        if(! configuration.nocomment){
+    protected void buildMemberComments(Content annotationDocTree) {
+        if (!configuration.nocomment) {
             writer.addComments(currentMember, annotationDocTree);
         }
     }
@@ -207,10 +206,9 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param annotationDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content annotationDocTree) {
+    protected void buildTagInfo(Content annotationDocTree) {
         writer.addTags(currentMember, annotationDocTree);
     }
 

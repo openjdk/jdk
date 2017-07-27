@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -50,11 +50,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
  * @author Bhavesh Patel (Modified)
  */
 public class ConstructorBuilder extends AbstractMemberBuilder {
-
-    /**
-     * The name of this builder.
-     */
-    public static final String NAME = "ConstructorDetails";
 
     /**
      * The current constructor that is being documented at this point in time.
@@ -85,7 +80,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * Construct a new ConstructorBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      */
     private ConstructorBuilder(Context context,
@@ -108,21 +103,13 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      * Construct a new ConstructorBuilder.
      *
      * @param context  the build context.
-     * @param typeElement the class whoses members are being documented.
+     * @param typeElement the class whose members are being documented.
      * @param writer the doclet specific writer.
      * @return the new ConstructorBuilder
      */
     public static ConstructorBuilder getInstance(Context context,
             TypeElement typeElement, ConstructorWriter writer) {
         return new ConstructorBuilder(context, typeElement, writer);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return NAME;
     }
 
     /**
@@ -143,13 +130,20 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void build(Content contentTree) throws DocletException {
+        buildConstructorDoc(contentTree);
+    }
+
+    /**
      * Build the constructor documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException is there is a problem while building the documentation
      */
-    public void buildConstructorDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
+    protected void buildConstructorDoc(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
@@ -161,7 +155,12 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
             for (Element contructor : constructors) {
                 currentConstructor = (ExecutableElement)contructor;
                 Content constructorDocTree = writer.getConstructorDocTreeHeader(currentConstructor, constructorDetailsTree);
-                buildChildren(node, constructorDocTree);
+
+                buildSignature(constructorDocTree);
+                buildDeprecationInfo(constructorDocTree);
+                buildConstructorComments(constructorDocTree);
+                buildTagInfo(constructorDocTree);
+
                 constructorDetailsTree.addContent(writer.getConstructorDoc(constructorDocTree,
                         currentConstructor == lastElement));
             }
@@ -173,31 +172,28 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param constructorDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content constructorDocTree) {
+    protected void buildSignature(Content constructorDocTree) {
         constructorDocTree.addContent(writer.getSignature(currentConstructor));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param constructorDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content constructorDocTree) {
+    protected void buildDeprecationInfo(Content constructorDocTree) {
         writer.addDeprecated(currentConstructor, constructorDocTree);
     }
 
     /**
      * Build the comments for the constructor.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param constructorDocTree the content tree to which the documentation will be added
      */
-    public void buildConstructorComments(XMLNode node, Content constructorDocTree) {
+    protected void buildConstructorComments(Content constructorDocTree) {
         if (!configuration.nocomment) {
             writer.addComments(currentConstructor, constructorDocTree);
         }
@@ -206,10 +202,9 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param constructorDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content constructorDocTree) {
+    protected void buildTagInfo(Content constructorDocTree) {
         writer.addTags(currentConstructor, constructorDocTree);
     }
 }

@@ -64,7 +64,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param configuration  The current configuration
      * @param filename Name of the package index file to be generated.
      */
-    public AbstractPackageIndexWriter(ConfigurationImpl configuration,
+    public AbstractPackageIndexWriter(HtmlConfiguration configuration,
                                       DocPath filename) {
         super(configuration, filename);
         packages = configuration.packages;

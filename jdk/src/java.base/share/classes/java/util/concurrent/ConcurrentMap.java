@@ -42,8 +42,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A {@link java.util.Map} providing thread safety and atomicity
- * guarantees.
+ * A {@link Map} providing thread safety and atomicity guarantees.
  *
  * <p>To maintain the specified guarantees, default implementations of
  * methods including {@link #putIfAbsent} inherited from {@link Map}
@@ -61,7 +60,7 @@ import java.util.function.Function;
  * the {@code ConcurrentMap} in another thread.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5

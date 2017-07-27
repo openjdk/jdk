@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Type;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.VoidValue;
 
 public class VoidValueImpl extends ValueImpl implements VoidValue {
 
@@ -49,7 +52,8 @@ public class VoidValueImpl extends ValueImpl implements VoidValue {
     }
 
     ValueImpl prepareForAssignmentTo(ValueContainer destination)
-                    throws InvalidTypeException {
+        throws InvalidTypeException
+    {
         if ("void".equals(destination.typeName())) {
             return this;
         }

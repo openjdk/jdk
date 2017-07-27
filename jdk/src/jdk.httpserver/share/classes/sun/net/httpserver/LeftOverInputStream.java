@@ -41,8 +41,8 @@ import com.sun.net.httpserver.spi.*;
  * isEOF() returns true, when all expected bytes have been read
  */
 abstract class LeftOverInputStream extends FilterInputStream {
-    ExchangeImpl t;
-    ServerImpl server;
+    final ExchangeImpl t;
+    final ServerImpl server;
     protected boolean closed = false;
     protected boolean eof = false;
     byte[] one = new byte [1];
@@ -109,6 +109,9 @@ abstract class LeftOverInputStream extends FilterInputStream {
         int bufSize = 2048;
         byte[] db = new byte [bufSize];
         while (l > 0) {
+            if (server.isFinishing()) {
+                break;
+            }
             long len = readImpl (db, 0, bufSize);
             if (len == -1) {
                 eof = true;

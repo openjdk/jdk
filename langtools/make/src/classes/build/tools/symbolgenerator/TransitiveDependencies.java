@@ -59,13 +59,14 @@ public class TransitiveDependencies {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         List<String> options = Arrays.asList("-source", "9",
                                              "-target", "9",
+                                             "-proc:only",
                                              "--system", "none",
                                              "--module-source-path", args[0],
                                              "--add-modules", Arrays.stream(args)
                                                                     .skip(1)
                                                                     .collect(Collectors.joining(",")));
         List<String> jlObjectList = Arrays.asList("java.lang.Object");
-        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, d -> {}, options, jlObjectList, null);
+        JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, jlObjectList, null);
         task.enter();
         Elements elements = task.getElements();
         List<String> todo = new LinkedList<>();

@@ -86,7 +86,7 @@ $(function() {
             $(this).val(watermark).addClass('watermark');
         }
     });
-    $("#search").keydown(function() {
+    $("#search").on('click keydown', function() {
         if ($(this).val() == watermark) {
             $(this).val('').removeClass('watermark');
         }

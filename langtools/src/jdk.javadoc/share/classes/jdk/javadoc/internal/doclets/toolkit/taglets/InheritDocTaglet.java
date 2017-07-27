@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -135,7 +135,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
     private Content retrieveInheritedDocumentation(TagletWriter writer,
             Element e, DocTree holderTag, boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
-        Configuration configuration = writer.configuration();
+        BaseConfiguration configuration = writer.configuration();
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(e);
