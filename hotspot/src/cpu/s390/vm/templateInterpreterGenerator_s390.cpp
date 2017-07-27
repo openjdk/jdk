@@ -121,9 +121,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   // We use target_sp for storing arguments in the C frame.
   __ save_return_pc();
-
-  __ z_stmg(Z_R10,Z_R13,-32,Z_SP);
-  __ push_frame_abi160(32);
+  __ push_frame_abi160(4*BytesPerWord);                 // Reserve space to save the tmp_[1..4] registers.
+  __ z_stmg(Z_R10, Z_R13, frame::z_abi_160_size, Z_SP); // Save registers only after frame is pushed.
 
   __ z_lgr(arg_java, Z_ARG1);
 
@@ -341,9 +340,9 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   // Method exit, all arguments proocessed.
   __ bind(loop_end);
+  __ z_lmg(Z_R10, Z_R13, frame::z_abi_160_size, Z_SP); // restore registers before frame is popped.
   __ pop_frame();
   __ restore_return_pc();
-  __ z_lmg(Z_R10,Z_R13,-32,Z_SP);
   __ z_br(Z_R14);
 
   // Copy int arguments.
@@ -1232,13 +1231,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
     // Advance local_addr to point behind locals (creates positive incr. in loop).
     __ z_lg(Z_R1_scratch, Address(Z_method, Method::const_offset()));
-    __ z_llgh(Z_R0_scratch,
-              Address(Z_R1_scratch, ConstMethod::size_of_locals_offset()));
-    if (Z_R0_scratch == Z_R0) {
-      __ z_aghi(Z_R0_scratch, -1);
-    } else {
-      __ add2reg(Z_R0_scratch, -1);
-    }
+    __ z_llgh(Z_R0_scratch, Address(Z_R1_scratch, ConstMethod::size_of_locals_offset()));
+    __ add2reg(Z_R0_scratch, -1);
+
     __ z_lgr(local_addr/*locals*/, Z_locals);
     __ z_sllg(Z_R0_scratch, Z_R0_scratch, LogBytesPerWord);
     __ z_sllg(local_count, local_count, LogBytesPerWord); // Local_count are non param locals.

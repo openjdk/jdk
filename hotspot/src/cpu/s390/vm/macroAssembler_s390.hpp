@@ -440,9 +440,21 @@ class MacroAssembler: public Assembler {
   // Get current PC + offset. Offset given in bytes, must be even!
   address get_PC(Register result, int64_t offset);
 
+  // Accessing, and in particular modifying, a stack location is only safe if
+  // the stack pointer (Z_SP) is set such that the accessed stack location is
+  // in the reserved range.
+  //
+  // From a performance point of view, it is desirable not to change the SP
+  // first and then immediately use it to access the freshly reserved space.
+  // That opens a small gap, though. If, just after storing some value (the
+  // frame pointer) into the to-be-reserved space, an interrupt is caught,
+  // the handler might use the space beyond Z_SP for it's own purpose.
+  // If that happens, the stored value might get altered.
+
   // Resize current frame either relatively wrt to current SP or absolute.
   void resize_frame_sub(Register offset, Register fp, bool load_fp=true);
-  void resize_frame_absolute(Register addr, Register fp, bool load_fp=true);
+  void resize_frame_abs_with_offset(Register newSP, Register fp, int offset, bool load_fp);
+  void resize_frame_absolute(Register addr, Register fp, bool load_fp);
   void resize_frame(RegisterOrConstant offset, Register fp, bool load_fp=true);
 
   // Push a frame of size bytes, if copy_sp is false, old_sp must already
@@ -461,6 +473,8 @@ class MacroAssembler: public Assembler {
 
   // Pop current C frame.
   void pop_frame();
+  // Pop current C frame and restore return PC register (Z_R14).
+  void pop_frame_restore_retPC(int frame_size_in_bytes);
 
   //
   // Calls
