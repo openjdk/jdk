@@ -3328,4 +3328,19 @@ public class Utils {
             return out;
         }
     }
+
+    /**
+     * A simple pair container.
+     * @param <K> first a value
+     * @param <L> second another value
+     */
+    public static class Pair<K, L> {
+        public final K first;
+        public final L second;
+
+        public Pair(K first, L second) {
+            this.first = first;
+            this.second = second;
+        }
+    }
 }
