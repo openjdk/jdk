@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,14 @@ import javax.imageio.ImageIO;
 
 /**
  * @test
+ * @key headful
  * @bug 8145174 8151787 8168657
  * @summary HiDPI splash screen support on Linux
  * @modules java.desktop/sun.java2d
  * @requires (os.family == "linux")
  * @run main UnixMultiResolutionSplashTest
  */
+
 public class UnixMultiResolutionSplashTest {
 
     private static final int IMAGE_WIDTH = 300;

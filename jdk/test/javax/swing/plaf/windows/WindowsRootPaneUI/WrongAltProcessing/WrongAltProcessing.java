@@ -21,12 +21,15 @@
  * questions.
  */
 
-/* @test
-   @bug 8001633 8028271 8039888
-   @summary Wrong alt processing during switching between windows
-   @author mikhail.cherkasov@oracle.com
-   @run main WrongAltProcessing
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 8001633 8028271 8039888
+ * @summary Wrong alt processing during switching between windows
+ * @author mikhail.cherkasov@oracle.com
+ * @requires (os.family == "windows")
+ * @run main WrongAltProcessing
+ */
 
 import javax.swing.*;
 import java.awt.*;

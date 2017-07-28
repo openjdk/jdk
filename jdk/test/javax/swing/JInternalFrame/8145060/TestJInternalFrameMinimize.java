@@ -21,14 +21,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8145060
  * @summary Minimizing a JInternalFrame not shifting focus to frame below it
  * @library ../../regtesthelpers
  * @build Util
  * @run main TestJInternalFrameMinimize
  */
+
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;

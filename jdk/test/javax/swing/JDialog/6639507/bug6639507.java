@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6639507
-   @summary Title of javax.swing.JDialog is null while spec says it's empty
-   @author Pavel Porvatov
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 6639507
+ * @summary Title of javax.swing.JDialog is null while spec says it's empty
+ * @author Pavel Porvatov
+ */
+
 import javax.swing.*;
 import java.awt.*;
 

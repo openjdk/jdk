@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key printer
  * @bug 6387255
  * @summary  Tests conflict of Media values returned by isAttrValueSupported and getSupportedAttrValues.  No runtime exception should be thrown.
  * @run main AttributeTest
  */
+
 import javax.print.*;
 import javax.print.attribute.standard.*;
 import javax.print.attribute.*;

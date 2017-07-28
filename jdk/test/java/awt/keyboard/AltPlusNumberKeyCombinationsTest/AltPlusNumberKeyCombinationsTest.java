@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * Test that it is possible to type "Alt code" on Windows.
- * Windows-only test.
+ * @test
+ * @key headful
+ * @summary Test that it is possible to type "Alt code" on Windows.
+ * @requires (os.family == "windows")
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main AltPlusNumberKeyCombinationsTest
  */
-/*
-@test
-@summary Test that it is possible to type "Alt code" on Windows.
-@library ../../../../lib/testlibrary
-@build ExtendedRobot
-@run main AltPlusNumberKeyCombinationsTest
-*/
+
 public class AltPlusNumberKeyCombinationsTest {
 
     private Frame frame;
