@@ -55,6 +55,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.MetaKeywords;
 import jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.TypeElementCatalog;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.GetterSetter;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
@@ -66,11 +67,11 @@ import static javax.tools.Diagnostic.Kind.*;
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the 1.1 doclet and the standard
  * doclet.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * <p>
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  *
  * @author Robert Field.
  * @author Atul Dambalkar.
@@ -240,7 +241,6 @@ public abstract class BaseConfiguration {
 
     /**
      * Sourcepath from where to read the source files. Default is classpath.
-     *
      */
     public String sourcepath = "";
 
@@ -266,7 +266,7 @@ public abstract class BaseConfiguration {
      * True if user wants to suppress time stamp in output.
      * Default is false.
      */
-    public boolean notimestamp= false;
+    public boolean notimestamp = false;
 
     /**
      * The package grouping instance.
@@ -278,7 +278,7 @@ public abstract class BaseConfiguration {
      */
     public final Extern extern = new Extern(this);
 
-    public  Reporter reporter;
+    public Reporter reporter;
 
     public Locale locale;
 
@@ -287,21 +287,21 @@ public abstract class BaseConfiguration {
      */
     public boolean quiet = false;
 
-    private String urlForLink;
+    // A list containing urls
+    private final List<String> linkList = new ArrayList<>();
 
-    private String pkglistUrlForLink;
+     // A list of pairs containing urls and package list
+    private final List<Pair<String, String>> linkOfflineList = new ArrayList<>();
 
-    private String urlForLinkOffline;
-
-    private String pkglistUrlForLinkOffline;
 
     public boolean dumpOnError = false;
 
-    private List<GroupContainer> groups;
+    private List<Pair<String, String>> groupPairs;
 
     private final Map<TypeElement, EnumMap<Kind, Reference<VisibleMemberMap>>> typeElementMemberCache;
 
     public abstract Messages getMessages();
+
     public abstract Resources getResources();
 
     /**
@@ -342,15 +342,17 @@ public abstract class BaseConfiguration {
      */
     public SortedMap<ModuleElement, Set<PackageElement>> modulePackages;
 
-   /**
-    * The list of known modules, that should be documented.
-    */
+    /**
+     * The list of known modules, that should be documented.
+     */
     public SortedSet<ModuleElement> modules;
 
     protected static final String sharedResourceBundleName =
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
+
     /**
      * Constructs the configurations needed by the doclet.
+     *
      * @param doclet the doclet that created this configuration
      */
     public BaseConfiguration(Doclet doclet) {
@@ -359,7 +361,7 @@ public abstract class BaseConfiguration {
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
         metakeywords = new MetaKeywords(this);
-        groups = new ArrayList<>(0);
+        groupPairs = new ArrayList<>(0);
         typeElementMemberCache = new HashMap<>();
     }
 
@@ -400,31 +402,37 @@ public abstract class BaseConfiguration {
     }
 
     private Set<ModuleElement> specifiedModuleElements;
+
     public Set<ModuleElement> getSpecifiedModuleElements() {
         return specifiedModuleElements;
     }
 
     private Set<PackageElement> specifiedPackageElements;
+
     public Set<PackageElement> getSpecifiedPackageElements() {
         return specifiedPackageElements;
     }
 
     private Set<TypeElement> specifiedTypeElements;
+
     public Set<TypeElement> getSpecifiedTypeElements() {
         return specifiedTypeElements;
     }
 
     private Set<ModuleElement> includedModuleElements;
+
     public Set<ModuleElement> getIncludedModuleElements() {
         return includedModuleElements;
     }
 
     private Set<PackageElement> includedPackageElements;
+
     public Set<PackageElement> getIncludedPackageElements() {
         return includedPackageElements;
     }
 
     private Set<TypeElement> includedTypeElements;
+
     public Set<TypeElement> getIncludedTypeElements() {
         return includedTypeElements;
     }
@@ -435,7 +443,7 @@ public abstract class BaseConfiguration {
         modules.addAll(getSpecifiedModuleElements());
 
         modulePackages = new TreeMap<>(utils.makeModuleComparator());
-        for (PackageElement p: packages) {
+        for (PackageElement p : packages) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
@@ -444,7 +452,7 @@ public abstract class BaseConfiguration {
             }
         }
 
-        for (PackageElement p: getIncludedPackageElements()) {
+        for (PackageElement p : getIncludedPackageElements()) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
@@ -474,207 +482,205 @@ public abstract class BaseConfiguration {
     public Set<Doclet.Option> getSupportedOptions() {
         Resources resources = getResources();
         Doclet.Option[] options = {
-            new Option(resources, "-author") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    showauthor = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-d", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    destDirName = addTrailingFileSep(args.get(0));
-                    return true;
-                }
-            },
-            new Option(resources, "-docencoding", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    docencoding = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-docfilessubdirs") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    copydocfilesubdirs = true;
-                    return true;
-                }
-            },
-            new Hidden(resources, "-encoding", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    encoding = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-excludedocfilessubdir", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    addToSet(excludedDocFileDirs, args.get(0));
-                    return true;
-                }
-            },
-            new Option(resources, "-group", 2) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    groups.add(new GroupContainer(args.get(0), args.get(1)));
-                    return true;
-                }
-            },
-            new Option(resources, "--javafx -javafx") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    javafx = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-keywords") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    keywords = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-link", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    urlForLink = args.get(0);
-                    pkglistUrlForLink = urlForLink;
-                    return true;
-                }
-            },
-            new Option(resources, "-linksource") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    linksource = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-linkoffline", 2) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    urlForLinkOffline = args.get(0);
-                    pkglistUrlForLinkOffline = args.get(1);
-                    return true;
-                }
-            },
-            new Option(resources, "-nocomment") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    nocomment = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-nodeprecated") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    nodeprecated = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-nosince") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    nosince = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-notimestamp") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    notimestamp = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-noqualifier", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    addToSet(excludedQualifiers, args.get(0));
-                    return true;
-                }
-            },
-            new Hidden(resources, "-quiet") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    quiet = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-serialwarn") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    serialwarn = true;
-                    return true;
-                }
-            },
-            new Option(resources, "-sourcetab", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    linksource = true;
-                    try {
-                        setTabWidth(Integer.parseInt(args.get(0)));
-                    } catch (NumberFormatException e) {
-                             //Set to -1 so that warning will be printed
-                        //to indicate what is valid argument.
-                        sourcetab = -1;
+                new Option(resources, "-author") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        showauthor = true;
+                        return true;
                     }
-                    if (sourcetab <= 0) {
-                        getMessages().warning("doclet.sourcetab_warning");
-                        setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
+                },
+                new Option(resources, "-d", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        destDirName = addTrailingFileSep(args.get(0));
+                        return true;
                     }
-                    return true;
+                },
+                new Option(resources, "-docencoding", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        docencoding = args.get(0);
+                        return true;
+                    }
+                },
+                new Option(resources, "-docfilessubdirs") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        copydocfilesubdirs = true;
+                        return true;
+                    }
+                },
+                new Hidden(resources, "-encoding", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        encoding = args.get(0);
+                        return true;
+                    }
+                },
+                new Option(resources, "-excludedocfilessubdir", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        addToSet(excludedDocFileDirs, args.get(0));
+                        return true;
+                    }
+                },
+                new Option(resources, "-group", 2) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        groupPairs.add(new Pair<>(args.get(0), args.get(1)));
+                        return true;
+                    }
+                },
+                new Option(resources, "--javafx -javafx") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        javafx = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-keywords") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        keywords = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-link", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        linkList.add(args.get(0));
+                        return true;
+                    }
+                },
+                new Option(resources, "-linksource") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        linksource = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-linkoffline", 2) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        linkOfflineList.add(new Pair<String, String>(args.get(0), args.get(1)));
+                        return true;
+                    }
+                },
+                new Option(resources, "-nocomment") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        nocomment = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-nodeprecated") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        nodeprecated = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-nosince") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        nosince = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-notimestamp") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        notimestamp = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-noqualifier", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        addToSet(excludedQualifiers, args.get(0));
+                        return true;
+                    }
+                },
+                new Hidden(resources, "-quiet") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        quiet = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-serialwarn") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        serialwarn = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "-sourcetab", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        linksource = true;
+                        try {
+                            setTabWidth(Integer.parseInt(args.get(0)));
+                        } catch (NumberFormatException e) {
+                            //Set to -1 so that warning will be printed
+                            //to indicate what is valid argument.
+                            sourcetab = -1;
+                        }
+                        if (sourcetab <= 0) {
+                            getMessages().warning("doclet.sourcetab_warning");
+                            setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
+                        }
+                        return true;
+                    }
+                },
+                new Option(resources, "-tag", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        ArrayList<String> list = new ArrayList<>();
+                        list.add(opt);
+                        list.add(args.get(0));
+                        customTagStrs.add(list);
+                        return true;
+                    }
+                },
+                new Option(resources, "-taglet", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        ArrayList<String> list = new ArrayList<>();
+                        list.add(opt);
+                        list.add(args.get(0));
+                        customTagStrs.add(list);
+                        return true;
+                    }
+                },
+                new Option(resources, "-tagletpath", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        tagletpath = args.get(0);
+                        return true;
+                    }
+                },
+                new Option(resources, "-version") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        showversion = true;
+                        return true;
+                    }
+                },
+                new Hidden(resources, "--dump-on-error") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        dumpOnError = true;
+                        return true;
+                    }
+                },
+                new Option(resources, "--allow-script-in-comments") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        allowScriptInComments = true;
+                        return true;
+                    }
                 }
-            },
-            new Option(resources, "-tag", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    ArrayList<String> list = new ArrayList<>();
-                    list.add(opt);
-                    list.add(args.get(0));
-                    customTagStrs.add(list);
-                    return true;
-                }
-            },
-             new Option(resources, "-taglet", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    ArrayList<String> list = new ArrayList<>();
-                    list.add(opt);
-                    list.add(args.get(0));
-                    customTagStrs.add(list);
-                    return true;
-                }
-            },
-            new Option(resources, "-tagletpath", 1) {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    tagletpath = args.get(0);
-                    return true;
-                }
-            },
-            new Option(resources, "-version") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    showversion = true;
-                    return true;
-                }
-            },
-            new Hidden(resources, "--dump-on-error") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    dumpOnError = true;
-                    return true;
-                }
-            },
-            new Option(resources, "--allow-script-in-comments") {
-                @Override
-                public boolean process(String opt, List<String> args) {
-                    allowScriptInComments = true;
-                    return true;
-                }
-            }
         };
         Set<Doclet.Option> set = new TreeSet<>();
         set.addAll(Arrays.asList(options));
@@ -689,20 +695,22 @@ public abstract class BaseConfiguration {
      */
     private void finishOptionSettings0() throws DocletException {
         initDestDirectory();
-        if (urlForLink != null && pkglistUrlForLink != null)
-            extern.link(urlForLink, pkglistUrlForLink, reporter, false);
-        if (urlForLinkOffline != null && pkglistUrlForLinkOffline != null)
-            extern.link(urlForLinkOffline, pkglistUrlForLinkOffline, reporter, true);
+        for (String link : linkList) {
+            extern.link(link, reporter);
+        }
+        for (Pair<String, String> linkOfflinePair : linkOfflineList) {
+            extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
+        }
         if (docencoding == null) {
             docencoding = encoding;
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(customTagStrs);
-        groups.stream().forEach((grp) -> {
+        groupPairs.stream().forEach((grp) -> {
             if (showModules) {
-                group.checkModuleGroups(grp.value1, grp.value2);
+                group.checkModuleGroups(grp.first, grp.second);
             } else {
-                group.checkPackageGroups(grp.value1, grp.value2);
+                group.checkPackageGroups(grp.first, grp.second);
             }
         });
     }
@@ -748,12 +756,12 @@ public abstract class BaseConfiguration {
      * be in the following format:  "[tag name]:[location str]:[heading]".
      *
      * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
-     * either -tag or -taglet arguments.
+     *                      either -tag or -taglet arguments.
      */
     private void initTagletManager(Set<List<String>> customTagStrs) {
         tagletManager = tagletManager == null ?
-            new TagletManager(nosince, showversion, showauthor, javafx, this) :
-            tagletManager;
+                new TagletManager(nosince, showversion, showauthor, javafx, this) :
+                tagletManager;
         for (List<String> args : customTagStrs) {
             if (args.get(0).equals("-taglet")) {
                 tagletManager.addCustomTag(args.get(1), getFileManager(), tagletpath);
@@ -793,12 +801,11 @@ public abstract class BaseConfiguration {
      * @param maxTokens the maximum number of tokens returned.  If the
      *                  max is reached, the remaining part of s is appended
      *                  to the end of the last token.
-     *
      * @return an array of tokens.
      */
     private List<String> tokenize(String s, char separator, int maxTokens) {
         List<String> tokens = new ArrayList<>();
-        StringBuilder  token = new StringBuilder ();
+        StringBuilder token = new StringBuilder();
         boolean prevIsEscapeChar = false;
         for (int i = 0; i < s.length(); i += Character.charCount(i)) {
             int currentChar = s.codePointAt(i);
@@ -806,7 +813,7 @@ public abstract class BaseConfiguration {
                 // Case 1:  escaped character
                 token.appendCodePoint(currentChar);
                 prevIsEscapeChar = false;
-            } else if (currentChar == separator && tokens.size() < maxTokens-1) {
+            } else if (currentChar == separator && tokens.size() < maxTokens - 1) {
                 // Case 2:  separator
                 tokens.add(token.toString());
                 token = new StringBuilder();
@@ -824,10 +831,10 @@ public abstract class BaseConfiguration {
         return tokens;
     }
 
-    private void addToSet(Set<String> s, String str){
+    private void addToSet(Set<String> s, String str) {
         StringTokenizer st = new StringTokenizer(str, ":");
         String current;
-        while(st.hasMoreTokens()){
+        while (st.hasMoreTokens()) {
             current = st.nextToken();
             s.add(current);
         }
@@ -847,7 +854,7 @@ public abstract class BaseConfiguration {
         int indexDblfs;
         while ((indexDblfs = path.indexOf(dblfs, 1)) >= 0) {
             path = path.substring(0, indexDblfs) +
-                path.substring(indexDblfs + fs.length());
+                    path.substring(indexDblfs + fs.length());
         }
         if (!path.endsWith(fs))
             path += fs;
@@ -855,7 +862,6 @@ public abstract class BaseConfiguration {
     }
 
     /**
-     *
      * This checks for the validity of the options used by the user.
      * As of this writing, this checks only docencoding.
      *
@@ -883,7 +889,7 @@ public abstract class BaseConfiguration {
      * @param reporter    used to report errors.
      */
     private boolean checkOutputFileEncoding(String docencoding) {
-        OutputStream ost= new ByteArrayOutputStream();
+        OutputStream ost = new ByteArrayOutputStream();
         OutputStreamWriter osw = null;
         try {
             osw = new OutputStreamWriter(ost, docencoding);
@@ -908,7 +914,7 @@ public abstract class BaseConfiguration {
      * @param docfilesubdir the doc-files subdirectory to check.
      * @return true if the directory is excluded.
      */
-    public boolean shouldExcludeDocFileDir(String docfilesubdir){
+    public boolean shouldExcludeDocFileDir(String docfilesubdir) {
         return excludedDocFileDirs.contains(docfilesubdir);
     }
 
@@ -918,10 +924,10 @@ public abstract class BaseConfiguration {
      * @param qualifier the qualifier to check.
      * @return true if the qualifier should be excluded
      */
-    public boolean shouldExcludeQualifier(String qualifier){
+    public boolean shouldExcludeQualifier(String qualifier) {
         if (excludedQualifiers.contains("all") ||
-            excludedQualifiers.contains(qualifier) ||
-            excludedQualifiers.contains(qualifier + ".*")) {
+                excludedQualifiers.contains(qualifier) ||
+                excludedQualifiers.contains(qualifier + ".*")) {
             return true;
         } else {
             int index = -1;
@@ -956,7 +962,7 @@ public abstract class BaseConfiguration {
      * @param key the key for the desired string
      * @return the string for the given key
      * @throws MissingResourceException if the key is not found in either
-     *  bundle.
+     *                                  bundle.
      */
     public abstract String getText(String key);
 
@@ -965,11 +971,11 @@ public abstract class BaseConfiguration {
      * {@link Resources resources}.
      * Equivalent to <code>getResources.getText(key, args);</code>.
      *
-     * @param key the key for the desired string
+     * @param key  the key for the desired string
      * @param args values to be substituted into the resulting string
      * @return the string for the given key
      * @throws MissingResourceException if the key is not found in either
-     *  bundle.
+     *                                  bundle.
      */
     public abstract String getText(String key, String... args);
 
@@ -997,8 +1003,8 @@ public abstract class BaseConfiguration {
      * {@link Resources resources} as a {@code Content} object.
      *
      * @param key the key for the desired string
-     * @param o1 resource argument
-     * @param o2 resource argument
+     * @param o1  resource argument
+     * @param o2  resource argument
      * @return a content tree for the text
      */
     public abstract Content getContent(String key, Object o1, Object o2);
@@ -1045,8 +1051,8 @@ public abstract class BaseConfiguration {
      */
     public InputStream getBuilderXML() throws DocFileIOException {
         return builderXMLPath == null ?
-            BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
-            DocFile.createFileForInput(this, builderXMLPath).openInputStream();
+                BaseConfiguration.class.getResourceAsStream(DEFAULT_BUILDER_XML) :
+                DocFile.createFileForInput(this, builderXMLPath).openInputStream();
     }
 
     /**
@@ -1203,18 +1209,6 @@ public abstract class BaseConfiguration {
     }
 
     /*
-     * Stores a pair of Strings.
-     */
-    protected static class GroupContainer {
-        final String value1;
-        final String value2;
-        public GroupContainer(String value1, String value2) {
-            this.value1 = value1;
-            this.value2 = value2;
-        }
-    }
-
-    /*
      * Splits the elements in a collection to its individual
      * collection.
      */
@@ -1267,6 +1261,7 @@ public abstract class BaseConfiguration {
     /**
      * Returns whether or not to allow JavaScript in comments.
      * Default is off; can be set true from a command line option.
+     *
      * @return the allowScriptInComments
      */
     public boolean isAllowScriptInComments() {
