@@ -31,8 +31,6 @@
 #include "classfile/compactHashtable.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/loaderConstraints.hpp"
-#include "classfile/placeholders.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeBlob.hpp"
@@ -193,10 +191,8 @@ typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
 typedef Hashtable<Symbol*, mtSymbol>          SymbolHashtable;
 typedef HashtableEntry<Symbol*, mtClass>      SymbolHashtableEntry;
 typedef Hashtable<oop, mtSymbol>              StringHashtable;
-typedef TwoOopHashtable<InstanceKlass*, mtClass> KlassTwoOopHashtable;
 typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
 typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
-typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
 
@@ -250,7 +246,6 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
-  nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
@@ -291,6 +286,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _next_link,                                    Klass*)                                \
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
+  nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
@@ -607,46 +603,16 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-     static_field(SystemDictionary,            _dictionary,                                   Dictionary*)                           \
-     static_field(SystemDictionary,            _placeholders,                                 PlaceholderTable*)                     \
      static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                           \
      static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
-     static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)                \
      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Class_klass),                         InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(System_klass),                        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Error_klass),                         InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  InstanceKlass*)                        \
-     static_field(SystemDictionary,            _box_klasses[0],                               InstanceKlass*)                        \
      static_field(SystemDictionary,            _java_system_loader,                           oop)                                   \
                                                                                                                                      \
   /*************/                                                                                                                    \
@@ -681,42 +647,13 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
-  /* DictionaryEntry */                                                                                                              \
+  /* ClassLoaderData */                                                                                                              \
   /*******************/                                                                                                              \
-                                                                                                                                     \
-  nonstatic_field(DictionaryEntry,             _loader_data,                                  ClassLoaderData*)                      \
-  nonstatic_field(DictionaryEntry,             _pd_set,                                       ProtectionDomainEntry*)                \
-                                                                                                                                     \
-  /********************/                                                                                                             \
-                                                                                                                                     \
-  nonstatic_field(PlaceholderEntry,            _loader_data,                                  ClassLoaderData*)                      \
-                                                                                                                                     \
-  /**************************/                                                                                                       \
-  /* ProtectionDomainEntry  */                                                                                                       \
-  /**************************/                                                                                                       \
-                                                                                                                                     \
-  nonstatic_field(ProtectionDomainEntry,       _next,                                         ProtectionDomainEntry*)                \
-  nonstatic_field(ProtectionDomainEntry,       _pd_cache,                                     ProtectionDomainCacheEntry*)           \
-                                                                                                                                     \
-  /*******************************/                                                                                                  \
-  /* ProtectionDomainCacheEntry  */                                                                                                  \
-  /*******************************/                                                                                                  \
-                                                                                                                                     \
-  nonstatic_field(ProtectionDomainCacheEntry,  _literal,                                      oop)                                   \
-                                                                                                                                     \
-  /*************************/                                                                                                        \
-  /* LoaderConstraintEntry */                                                                                                        \
-  /*************************/                                                                                                        \
-                                                                                                                                     \
-  nonstatic_field(LoaderConstraintEntry,       _name,                                         Symbol*)                               \
-  nonstatic_field(LoaderConstraintEntry,       _num_loaders,                                  int)                                   \
-  nonstatic_field(LoaderConstraintEntry,       _max_loaders,                                  int)                                   \
-  nonstatic_field(LoaderConstraintEntry,       _loaders,                                      ClassLoaderData**)                     \
-                                                                                                                                     \
   nonstatic_field(ClassLoaderData,             _class_loader,                                 oop)                                   \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _is_anonymous,                                 bool)                                  \
+  volatile_nonstatic_field(ClassLoaderData,    _dictionary,                                   Dictionary*)                           \
                                                                                                                                      \
      static_field(ClassLoaderDataGraph,        _head,                                         ClassLoaderData*)                      \
                                                                                                                                      \
@@ -1610,20 +1547,13 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
     declare_type(RehashableSymbolHashtable, BasicHashtable<mtSymbol>)     \
   declare_type(SymbolTable, SymbolHashtable)                              \
   declare_type(StringTable, StringHashtable)                              \
-    declare_type(LoaderConstraintTable, KlassHashtable)                   \
-    declare_type(KlassTwoOopHashtable, KlassHashtable)                    \
-    declare_type(Dictionary, KlassTwoOopHashtable)                        \
-    declare_type(PlaceholderTable, SymbolTwoOopHashtable)                 \
+    declare_type(Dictionary, KlassHashtable)                              \
   declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
   declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
     declare_type(DictionaryEntry, KlassHashtableEntry)                    \
-    declare_type(PlaceholderEntry, SymbolHashtableEntry)                  \
-    declare_type(LoaderConstraintEntry, KlassHashtableEntry)              \
   declare_toplevel_type(HashtableBucket<mtInternal>)                      \
   declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmSymbols)                                        \
-  declare_toplevel_type(ProtectionDomainEntry)                            \
-  declare_toplevel_type(ProtectionDomainCacheEntry)                       \
                                                                           \
   declare_toplevel_type(GenericGrowableArray)                             \
   declare_toplevel_type(GrowableArray<int>)                               \
@@ -2355,12 +2285,6 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_preprocessor_constant("PERFDATA_BIG_ENDIAN", PERFDATA_BIG_ENDIAN)       \
   declare_preprocessor_constant("PERFDATA_LITTLE_ENDIAN", PERFDATA_LITTLE_ENDIAN) \
                                                                           \
-  /***********************************/                                   \
-  /* LoaderConstraintTable constants */                                   \
-  /***********************************/                                   \
-                                                                          \
-  declare_constant(LoaderConstraintTable::_loader_constraint_size)        \
-  declare_constant(LoaderConstraintTable::_nof_buckets)                   \
                                                                           \
   /************************************************************/          \
   /* HotSpot specific JVM_ACC constants from global anon enum */          \

@@ -312,13 +312,13 @@ void CounterDecay::decay() {
   // and hence GC's will not be going on, all Java mutators are suspended
   // at this point and hence SystemDictionary_lock is also not needed.
   assert(SafepointSynchronize::is_at_safepoint(), "can only be executed at a safepoint");
-  int nclasses = SystemDictionary::number_of_classes();
+  int nclasses = InstanceKlass::number_of_instance_classes();
   double classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
                                         CounterHalfLifeTime);
   for (int i = 0; i < classes_per_tick; i++) {
-    Klass* k = SystemDictionary::try_get_next_class();
-    if (k != NULL && k->is_instance_klass()) {
-      InstanceKlass::cast(k)->methods_do(do_method);
+    InstanceKlass* k = ClassLoaderDataGraph::try_get_next_class();
+    if (k != NULL) {
+      k->methods_do(do_method);
     }
   }
 }

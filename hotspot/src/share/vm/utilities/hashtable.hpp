@@ -253,18 +253,20 @@ public:
   // Debugging
   void print()               PRODUCT_RETURN;
 
-protected:
-
-  unsigned int compute_hash(Symbol* name) {
+  unsigned int compute_hash(const Symbol* name) const {
     return (unsigned int) name->identity_hash();
   }
 
-  int index_for(Symbol* name) {
+  int index_for(const Symbol* name) const {
     return this->hash_to_index(compute_hash(name));
   }
 
+protected:
+
   // Table entry management
   HashtableEntry<T, F>* new_entry(unsigned int hashValue, T obj);
+  // Don't create and use freelist of HashtableEntry.
+  HashtableEntry<T, F>* allocate_new_entry(unsigned int hashValue, T obj);
 
   // The following method is MT-safe and may be used with caution.
   HashtableEntry<T, F>* bucket(int i) const {
@@ -323,32 +325,5 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
 template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
 template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::seed() { return _seed; };
 template <class T, MEMFLAGS F> bool  RehashableHashtable<T, F>::use_alternate_hashcode() { return _seed != 0; };
-
-// Versions of hashtable where two handles are used to compute the index.
-
-template <class T, MEMFLAGS F> class TwoOopHashtable : public Hashtable<T, F> {
-  friend class VMStructs;
-protected:
-  TwoOopHashtable(int table_size, int entry_size)
-    : Hashtable<T, F>(table_size, entry_size) {}
-
-  TwoOopHashtable(int table_size, int entry_size, HashtableBucket<F>* t,
-                  int number_of_entries)
-    : Hashtable<T, F>(table_size, entry_size, t, number_of_entries) {}
-
-public:
-  unsigned int compute_hash(const Symbol* name, const ClassLoaderData* loader_data) const {
-    unsigned int name_hash = name->identity_hash();
-    // loader is null with CDS
-    assert(loader_data != NULL || UseSharedSpaces || DumpSharedSpaces,
-           "only allowed with shared spaces");
-    unsigned int loader_hash = loader_data == NULL ? 0 : loader_data->identity_hash();
-    return name_hash ^ loader_hash;
-  }
-
-  int index_for(Symbol* name, ClassLoaderData* loader_data) {
-    return this->hash_to_index(compute_hash(name, loader_data));
-  }
-};
 
 #endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

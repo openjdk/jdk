@@ -548,14 +548,13 @@ void Universe::reinitialize_vtable_of(Klass* ko, TRAPS) {
 }
 
 
-void initialize_itable_for_klass(Klass* k, TRAPS) {
-  InstanceKlass::cast(k)->itable().initialize_itable(false, CHECK);
+void initialize_itable_for_klass(InstanceKlass* k, TRAPS) {
+  k->itable().initialize_itable(false, CHECK);
 }
 
 
 void Universe::reinitialize_itables(TRAPS) {
-  SystemDictionary::classes_do(initialize_itable_for_klass, CHECK);
-
+  ClassLoaderDataGraph::dictionary_classes_do(initialize_itable_for_klass, CHECK);
 }
 
 

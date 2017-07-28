@@ -417,10 +417,6 @@ const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == 
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
-// Default ProtectionDomainCacheSize values
-
-const int defaultProtectionDomainCacheSize = NOT_LP64(137) LP64_ONLY(2017);
-
 //----------------------------------------------------------------------------------------------------
 // Default and minimum StringTableSize values
 

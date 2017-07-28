@@ -91,7 +91,6 @@ public class InstanceKlass extends Klass {
     fields               = type.getAddressField("_fields");
     javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
     constants            = new MetadataField(type.getAddressField("_constants"), 0);
-    classLoaderData      = type.getAddressField("_class_loader_data");
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
     innerClasses         = type.getAddressField("_inner_classes");
     sourceFileNameIndex  = new CIntField(type.getCIntegerField("_source_file_name_index"), 0);
@@ -166,7 +165,6 @@ public class InstanceKlass extends Klass {
   private static AddressField fields;
   private static CIntField javaFieldsCount;
   private static MetadataField constants;
-  private static AddressField  classLoaderData;
   private static AddressField  sourceDebugExtension;
   private static AddressField  innerClasses;
   private static CIntField sourceFileNameIndex;
@@ -328,7 +326,7 @@ public class InstanceKlass extends Klass {
       // MetaspaceObj in the CDS shared archive.
       Dictionary sharedDictionary = vm.getSystemDictionary().sharedDictionary();
       if (sharedDictionary != null) {
-        if (sharedDictionary.contains(this, null)) {
+        if (sharedDictionary.contains(this)) {
           return true;
         }
       }
@@ -448,8 +446,6 @@ public class InstanceKlass extends Klass {
     return allFieldsCount;
   }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
-  public ClassLoaderData getClassLoaderData() { return                ClassLoaderData.instantiateWrapperFor(classLoaderData.getValue(getAddress())); }
-  public Oop       getClassLoader()         { return                getClassLoaderData().getClassLoader(); }
   public Symbol    getSourceFileName()      { return                getConstants().getSymbolAt(sourceFileNameIndex.getValue(this)); }
   public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getAddress())); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
