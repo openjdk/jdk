@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import javax.swing.UIManager;
 
-/* @test
+/**
+ * @test
+ * @key headful
  * @bug 8073320
  * @summary  Windows HiDPI support
  * @author Alexander Scherbatiy
@@ -40,6 +42,7 @@ import javax.swing.UIManager;
  * @run main/othervm -Dsun.java2d.win.uiScaleX=3 -Dsun.java2d.win.uiScaleY=2
  *                    HiDPIRobotScreenCaptureTest
  */
+
 public class HiDPIRobotScreenCaptureTest {
 
     private static final Color[] COLORS = {

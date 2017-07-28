@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
-/* @test
- @bug 8067346
- @summary Submenu has a changed offset on Windows7 with Windows look and feel
- @requires (os.family == "windows")
- @run main bug8067346
+/**
+ * @test
+ * @key headful
+ * @bug 8067346
+ * @summary Submenu has a changed offset on Windows7 with Windows look and feel
+ * @requires (os.family == "windows")
+ * @run main bug8067346
  */
+
 import java.awt.Insets;
 import javax.swing.JFrame;
 import javax.swing.JMenu;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,13 @@
  * questions.
  */
 
-/* @test
+/**
+ * @test
+ * @key headful
  * @bug 6940863
  * @summary Textarea within scrollpane shows vertical scrollbar
  * @author Pavel Porvatov
+ * @requires (os.family == "windows")
  * @library ../../../../lib/testlibrary
  * @build jdk.testlibrary.OSInfo
  * @run main bug6940863

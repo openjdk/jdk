@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 7199180
  * @summary [macosx] Dead keys handling for input methods
  * @author alexandr.scherbatiy area=awt.event
@@ -30,6 +31,7 @@
  * @build jdk.testlibrary.OSInfo
  * @run main DeadKeyMacOSXInputText
  */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.KeyEvent;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8160248 8160332
  * @summary Dragged internal frame leaves artifacts for floating point ui scale
  * @run main/othervm -Dsun.java2d.uiScale=1.2 JInternalFrameDraggingTest
@@ -42,6 +43,7 @@ import javax.swing.SwingUtilities;
  * @run main/othervm -Dsun.java2d.uiScale=1 JInternalFrameDraggingTest
  * @run main/othervm -Dsun.java2d.uiScale=2.5 JInternalFrameDraggingTest
  */
+
 public class JInternalFrameDraggingTest {
 
     private static JFrame frame;

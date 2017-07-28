@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,17 @@
  * questions.
  */
 
-/* @test
-   @bug 8016356
-   @summary Any swing frame resizes ugly.
-   @author Oleg Pekhovskiy
-   @library ../../../../lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run main bug8016356
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 8016356
+ * @summary Any swing frame resizes ugly.
+ * @author Oleg Pekhovskiy
+ * @requires (os.family == "windows")
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main bug8016356
+ */
 
 import java.awt.AWTException;
 import java.awt.Color;

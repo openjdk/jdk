@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8161483
  * @summary Implement AccessibleAction in JList.AccessibleJList.AccessibleJListChild
  * @run main Bug8161483
@@ -39,7 +40,7 @@ import javax.swing.SwingUtilities;
 
 public class Bug8161483 extends JFrame {
 
-    private static JFrame frame;
+    private static JFrame frame = null;
     private static volatile Exception exception = null;
     private JList<String> countryList;
 
@@ -96,7 +97,7 @@ public class Bug8161483 extends JFrame {
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
-                frame.dispose();
+                if (frame != null) { frame.dispose(); }
             });
         }
     }
