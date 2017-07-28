@@ -490,20 +490,27 @@ public class DerValue {
      * @return the octet string held in this DER value
      */
     public byte[] getOctetString() throws IOException {
-        byte[] bytes;
 
         if (tag != tag_OctetString && !isConstructed(tag_OctetString)) {
             throw new IOException(
                 "DerValue.getOctetString, not an Octet String: " + tag);
         }
-        bytes = new byte[length];
-        // Note: do not tempt to call buffer.read(bytes) at all. There's a
+        // Note: do not attempt to call buffer.read(bytes) at all. There's a
         // known bug that it returns -1 instead of 0.
         if (length == 0) {
-            return bytes;
+            return new byte[0];
         }
-        if (buffer.read(bytes) != length)
+
+        // Only allocate the array if there are enough bytes available.
+        // This only works for ByteArrayInputStream.
+        // The assignment below ensures that buffer has the required type.
+        ByteArrayInputStream arrayInput = buffer;
+        if (arrayInput.available() < length) {
             throw new IOException("short read on DerValue buffer");
+        }
+        byte[] bytes = new byte[length];
+        arrayInput.read(bytes);
+
         if (isConstructed()) {
             DerInputStream in = new DerInputStream(bytes, 0, bytes.length,
                 buffer.allowBER);
