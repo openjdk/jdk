@@ -33,7 +33,7 @@
 // Dictionary entry pd_set point to entries in this hashtable.   Please refer
 // to dictionary.hpp pd_set for more information about how protection domain entries
 // are used.
-// This table is walked during GC, rather than the entire system dictionary
+// This table is walked during GC, rather than the class loader data graph dictionaries.
 class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
   friend class VMStructs;
  public:
@@ -55,7 +55,7 @@ class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
   void verify();
 };
 
-// The ProtectionDomainCacheTable contains all protection domain oops. The system
+// The ProtectionDomainCacheTable contains all protection domain oops. The
 // dictionary entries reference its entries instead of having references to oops
 // directly.
 // This is used to speed up system dictionary iteration: the oops in the

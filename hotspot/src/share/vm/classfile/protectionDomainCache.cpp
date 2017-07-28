@@ -88,14 +88,14 @@ void ProtectionDomainCacheTable::print() {
     for (ProtectionDomainCacheEntry* probe = bucket(index);
                                      probe != NULL;
                                      probe = probe->next()) {
+      tty->print("%4d: ", index);
       probe->print();
     }
   }
 }
 
 void ProtectionDomainCacheEntry::print() {
-  tty->print_cr("entry " PTR_FORMAT " value " PTR_FORMAT " next " PTR_FORMAT,
-                p2i(this), p2i(literal()), p2i(next()));
+  tty->print_cr("protection_domain: " PTR_FORMAT, p2i(literal()));
 }
 #endif
 

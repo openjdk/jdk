@@ -69,6 +69,7 @@ public:
   }
 
   static void init_shared_dictionary_entry(Klass* k, DictionaryEntry* entry) {}
+  static bool is_builtin(DictionaryEntry* entry) { return true; }
 
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,

@@ -172,7 +172,7 @@ void PlaceholderTable::find_and_remove(int index, unsigned int hash,
   }
 
 PlaceholderTable::PlaceholderTable(int table_size)
-    : TwoOopHashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
+    : Hashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
 }
 
 #ifndef PRODUCT

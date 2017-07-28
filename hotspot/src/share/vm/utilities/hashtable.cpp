@@ -84,6 +84,17 @@ template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(
   return entry;
 }
 
+// Version of hashtable entry allocation that allocates in the C heap directly.
+// The allocator in blocks is preferable but doesn't have free semantics.
+template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::allocate_new_entry(unsigned int hashValue, T obj) {
+  HashtableEntry<T, F>* entry = (HashtableEntry<T, F>*) NEW_C_HEAP_ARRAY(char, this->entry_size(), F);
+
+  entry->set_hash(hashValue);
+  entry->set_literal(obj);
+  entry->set_next(NULL);
+  return entry;
+}
+
 // Check to see if the hashtable is unbalanced.  The caller set a flag to
 // rehash at the next safepoint.  If this bucket is 60 times greater than the
 // expected average bucket length, it's an unbalanced hashtable.
@@ -357,6 +368,7 @@ template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<oop, mtClass>;
+template class Hashtable<Symbol*, mtModule>;
 #if defined(SOLARIS) || defined(CHECK_UNHANDLED_OOPS)
 template class Hashtable<oop, mtSymbol>;
 template class RehashableHashtable<oop, mtSymbol>;

@@ -46,9 +46,8 @@
 // used by the dynamic linker to allocate the runtime representation of all
 // the types it defines.
 //
-// ClassLoaderData are stored in the runtime representation of classes and the
-// system dictionary, are roots of garbage collection, and provides iterators
-// for root tracing and other GC operations.
+// ClassLoaderData are stored in the runtime representation of classes,
+// and provides iterators for root tracing and other GC operations.
 
 class ClassLoaderData;
 class JNIMethodBlock;
@@ -57,6 +56,8 @@ class ModuleEntry;
 class PackageEntry;
 class ModuleEntryTable;
 class PackageEntryTable;
+class DictionaryEntry;
+class Dictionary;
 
 // GC root for walking class loader data created
 
@@ -64,6 +65,7 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderData;
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
+  friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
@@ -108,6 +110,22 @@ class ClassLoaderDataGraph : public AllStatic {
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading(BoolObjectClosure* is_alive, bool clean_previous_versions);
+
+  // dictionary do
+  // Iterate over all klasses in dictionary, but
+  // just the classes from defining class loaders.
+  static void dictionary_classes_do(void f(InstanceKlass*));
+  // Added for initialize_itable_for_klass to handle exceptions.
+  static void dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
+
+  // Iterate all classes and their class loaders, including initiating class loaders.
+  static void dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*));
+
+  // VM_CounterDecay iteration support
+  static InstanceKlass* try_get_next_class();
+
+  static void verify_dictionary();
+  static void print_dictionary(bool details);
 
   // CMS support.
   static void remember_new_clds(bool remember) { _saved_head = (remember ? _head : NULL); }
@@ -193,6 +211,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   friend class ClassLoaderDataGraph;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
+  friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class MetaDataFactory;
   friend class Method;
@@ -221,8 +240,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
+  ModuleEntryTable*  volatile _modules;  // The modules defined by the class loader.
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
-  ModuleEntryTable* volatile _modules;   // The modules defined by the class loader.
+  Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
 
   // These method IDs are created for the class loader and set to NULL when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
@@ -269,6 +289,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Allocate out of this class loader data
   MetaWord* allocate(size_t size);
 
+  Dictionary* create_dictionary();
  public:
 
   bool is_alive(BoolObjectClosure* is_alive_closure) const;
@@ -324,17 +345,20 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void inc_keep_alive();
   void dec_keep_alive();
 
-  inline unsigned int identity_hash() const;
+  inline unsigned int identity_hash() const { return (unsigned int)(((intptr_t)this) >> 3); }
 
   // Used when tracing from klasses.
   void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
 
   void classes_do(KlassClosure* klass_closure);
+  Klass* klasses() { return _klasses; }
 
   JNIMethodBlock* jmethod_ids() const              { return _jmethod_ids; }
   void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
 
-  void print_value() { print_value_on(tty); }
+  void print()                                     { print_on(tty); }
+  void print_on(outputStream* out) const;
+  void print_value()                               { print_value_on(tty); }
   void print_value_on(outputStream* out) const;
   void dump(outputStream * const out) PRODUCT_RETURN;
   void verify();
@@ -351,6 +375,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
   bool modules_defined() { return (_modules != NULL); }
+
+  // Loaded class dictionary
+  Dictionary* dictionary() const { return _dictionary; }
 
   void add_to_deallocate_list(Metadata* m);
 

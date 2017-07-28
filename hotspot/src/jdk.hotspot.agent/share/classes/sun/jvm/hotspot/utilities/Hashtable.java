@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
 public class Hashtable extends BasicHashtable {
@@ -46,6 +47,10 @@ public class Hashtable extends BasicHashtable {
   // derived class may return Class<? extends HashtableEntry>
   protected Class getHashtableEntryClass() {
     return HashtableEntry.class;
+  }
+
+  public int computeHash(Symbol name) {
+    return (int) name.identityHash();
   }
 
   public int hashToIndex(long fullHash) {
