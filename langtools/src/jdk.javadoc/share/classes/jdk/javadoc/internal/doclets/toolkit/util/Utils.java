@@ -679,10 +679,11 @@ public class Utils {
         }
     }
 
-   /**
+    /**
      * Get the signature. It is the parameter list, type is qualified.
      * For instance, for a method {@code mymethod(String x, int y)},
      * it will return {@code(java.lang.String,int)}.
+     *
      * @param e
      * @return String
      */
@@ -1674,19 +1675,24 @@ public class Utils {
         }
     }
 
+    private Comparator<Element> moduleComparator = null;
     /**
      * Comparator for ModuleElements, simply compares the fully qualified names
      * @return a Comparator
      */
     public Comparator<Element> makeModuleComparator() {
-        return new Utils.ElementComparator<Element>() {
-            @Override
-            public int compare(Element mod1, Element mod2) {
-                return compareFullyQualifiedNames(mod1, mod2);
-            }
-        };
+        if (moduleComparator == null) {
+            moduleComparator = new Utils.ElementComparator() {
+                @Override
+                public int compare(Element mod1, Element mod2) {
+                    return compareFullyQualifiedNames(mod1, mod2);
+                }
+            };
+        }
+        return moduleComparator;
     }
 
+    private Comparator<Element> allClassesComparator = null;
     /**
      * Returns a Comparator for all classes, compares the simple names of
      * TypeElement, if equal then the fully qualified names.
@@ -1694,42 +1700,53 @@ public class Utils {
      * @return Comparator
      */
     public Comparator<Element> makeAllClassesComparator() {
-        return new Utils.ElementComparator<Element>() {
-            @Override
-            public int compare(Element e1, Element e2) {
-                int result =  compareNames(e1, e2);
-                if (result == 0)
-                    result =  compareFullyQualifiedNames(e1, e2);
+        if (allClassesComparator == null) {
+            allClassesComparator = new Utils.ElementComparator() {
+                @Override
+                public int compare(Element e1, Element e2) {
+                    int result = compareNames(e1, e2);
+                    if (result == 0)
+                        result = compareFullyQualifiedNames(e1, e2);
 
-                return result;
-            }
-        };
+                    return result;
+                }
+            };
+        }
+        return allClassesComparator;
     }
 
+    private Comparator<Element> packageComparator = null;
     /**
      * Returns a Comparator for packages, by comparing the fully qualified names.
      *
      * @return a Comparator
      */
     public Comparator<Element> makePackageComparator() {
-        return new Utils.ElementComparator<Element>() {
-            @Override
-            public int compare(Element pkg1, Element pkg2) {
-                return compareFullyQualifiedNames(pkg1, pkg2);
-            }
-        };
+        if (packageComparator == null) {
+            packageComparator = new Utils.ElementComparator() {
+                @Override
+                public int compare(Element pkg1, Element pkg2) {
+                    return compareFullyQualifiedNames(pkg1, pkg2);
+                }
+            };
+        }
+        return packageComparator;
     }
 
+    private Comparator<SerialFieldTree> serialFieldTreeComparator = null;
     /**
      * Returns a Comparator for SerialFieldTree.
      * @return a Comparator
      */
     public Comparator<SerialFieldTree> makeSerialFieldTreeComparator() {
-        return (SerialFieldTree o1, SerialFieldTree o2) -> {
-            String s1 = o1.getName().toString();
-            String s2 = o2.getName().toString();
-            return s1.compareTo(s2);
-        };
+        if (serialFieldTreeComparator == null) {
+            serialFieldTreeComparator = (SerialFieldTree o1, SerialFieldTree o2) -> {
+                String s1 = o1.getName().toString();
+                String s2 = o2.getName().toString();
+                return s1.compareTo(s2);
+            };
+        }
+        return serialFieldTreeComparator;
     }
 
     /**
@@ -1740,6 +1757,7 @@ public class Utils {
         return makeClassUseComparator();
     }
 
+    private Comparator<Element> overrideUseComparator = null;
     /**
      * Returns a Comparator for overrides and implements,
      * used primarily on methods, compares the name first,
@@ -1748,33 +1766,38 @@ public class Utils {
      * @return a Comparator
      */
     public Comparator<Element> makeOverrideUseComparator() {
-        return new Utils.ElementComparator<Element>() {
-            @Override
-            public int compare(Element o1, Element o2) {
-                int result = compareStrings(getSimpleName(o1), getSimpleName(o2));
-                if (result != 0) {
-                    return result;
-                }
-                if (!isTypeElement(o1) && !isTypeElement(o2) && !isPackage(o1) && !isPackage(o2)) {
-                    TypeElement t1 = getEnclosingTypeElement(o1);
-                    TypeElement t2 = getEnclosingTypeElement(o2);
-                    result = compareStrings(getSimpleName(t1), getSimpleName(t2));
+        if (overrideUseComparator == null) {
+            overrideUseComparator = new Utils.ElementComparator() {
+                @Override
+                public int compare(Element o1, Element o2) {
+                    int result = compareStrings(getSimpleName(o1), getSimpleName(o2));
+                    if (result != 0) {
+                        return result;
+                    }
+                    if (!isTypeElement(o1) && !isTypeElement(o2) && !isPackage(o1) && !isPackage(o2)) {
+                        TypeElement t1 = getEnclosingTypeElement(o1);
+                        TypeElement t2 = getEnclosingTypeElement(o2);
+                        result = compareStrings(getSimpleName(t1), getSimpleName(t2));
+                        if (result != 0)
+                            return result;
+                    }
+                    result = compareStrings(getFullyQualifiedName(o1), getFullyQualifiedName(o2));
                     if (result != 0)
                         return result;
+                    return compareElementTypeKinds(o1, o2);
                 }
-                result = compareStrings(getFullyQualifiedName(o1), getFullyQualifiedName(o2));
-                if (result != 0)
-                    return result;
-                return compareElementTypeKinds(o1, o2);
-            }
-        };
+            };
+        }
+        return overrideUseComparator;
     }
 
+    private Comparator<Element> indexUseComparator = null;
     /**
-     * Returns a Comparator for index file presentations, and are sorted as follows.
-     *  If comparing modules and packages then simply compare the qualified names, if comparing a module
-     *  or a package with a type/member then compare the FullyQualifiedName of the module or a package
-     *  with the SimpleName of the entity, otherwise
+     *  Returns a Comparator for index file presentations, and are sorted as follows.
+     *  If comparing modules and/or packages then simply compare the qualified names,
+     *  if comparing a module or a package with a type/member then compare the
+     *  FullyQualifiedName of the module or a package with the SimpleName of the entity,
+     *  otherwise:
      *  1. compare the ElementKind ex: Module, Package, Interface etc.
      *  2a. if equal and if the type is of ExecutableElement(Constructor, Methods),
      *      a case insensitive comparison of parameter the type signatures
@@ -1783,73 +1806,76 @@ public class Utils {
      * @return a comparator for index file use
      */
     public Comparator<Element> makeIndexUseComparator() {
-        return new Utils.ElementComparator<Element>() {
-            /**
-             * Compare two given elements, if comparing two modules or two packages, return the
-             * comparison of FullyQualifiedName, if comparing a module or a package with a
-             * type/member then compare the FullyQualifiedName of the module or the package
-             * with the SimpleName of the entity, then sort on the kinds, then on
-             * the parameters only if the type is an ExecutableElement,
-             * the parameters are compared and finally the qualified names.
-             *
-             * @param e1 - an element.
-             * @param e2 - an element.
-             * @return a negative integer, zero, or a positive integer as the first
-             *         argument is less than, equal to, or greater than the second.
-             */
-            @Override
-            public int compare(Element e1, Element e2) {
-                int result = 0;
-                if ((isModule(e1) || isPackage(e1)) && (isModule(e2) || isPackage(e2))) {
-                    result = compareFullyQualifiedNames(e1, e2);
+        if (indexUseComparator == null) {
+            indexUseComparator = new Utils.ElementComparator() {
+                /**
+                 * Compares two elements.
+                 *
+                 * @param e1 - an element.
+                 * @param e2 - an element.
+                 * @return a negative integer, zero, or a positive integer as the first
+                 * argument is less than, equal to, or greater than the second.
+                 */
+                @Override
+                public int compare(Element e1, Element e2) {
+                    int result;
+                    // first, compare names as appropriate
+                    if ((isModule(e1) || isPackage(e1)) && (isModule(e2) || isPackage(e2))) {
+                        result = compareFullyQualifiedNames(e1, e2);
+                    } else if (isModule(e1) || isPackage(e1)) {
+                        result = compareStrings(getFullyQualifiedName(e1), getSimpleName(e2));
+                    } else if (isModule(e2) || isPackage(e2)) {
+                        result = compareStrings(getSimpleName(e1), getFullyQualifiedName(e2));
+                    } else {
+                        result = compareNames(e1, e2);
+                    }
                     if (result != 0) {
                         return result;
                     }
-                    return compareElementTypeKinds(e1, e2);
-                }
-                if (isModule(e1) || isPackage(e1)) {
-                    result = compareStrings(getFullyQualifiedName(e1), getSimpleName(e2));
-                } else if (isModule(e2) || isPackage(e2)) {
-                    result = compareStrings(getSimpleName(e1), getFullyQualifiedName(e2));
-                } else {
-                    result = compareNames(e1, e2);
-                }
-                if (result != 0) {
-                    return result;
-                }
-                result = compareElementTypeKinds(e1, e2);
-                if (result != 0) {
-                    return result;
-                }
-                if (hasParameters(e1)) {
-                    List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
-                    List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
-                    result = compareParameters(false, parameters1, parameters2);
+                    // if names are the same, compare element kinds
+                    result = compareElementTypeKinds(e1, e2);
                     if (result != 0) {
                         return result;
                     }
-                    result = compareParameters(true, parameters1, parameters2);
-                    if (result != 0) {
-                        return result;
+                    // if element kinds are the same, and are methods,
+                    // compare the method parameters
+                    if (hasParameters(e1)) {
+                        List<? extends VariableElement> parameters1 = ((ExecutableElement)e1).getParameters();
+                        List<? extends VariableElement> parameters2 = ((ExecutableElement)e2).getParameters();
+                        result = compareParameters(false, parameters1, parameters2);
+                        if (result != 0) {
+                            return result;
+                        }
+                        result = compareParameters(true, parameters1, parameters2);
+                        if (result != 0) {
+                            return result;
+                        }
                     }
+                    // else fall back on fully qualified names
+                    return compareFullyQualifiedNames(e1, e2);
                 }
-                return compareFullyQualifiedNames(e1, e2);
-            }
-        };
+            };
+        }
+        return indexUseComparator;
     }
 
+    private Comparator<TypeMirror> typeMirrorClassUseComparator = null;
     /**
      * Compares the FullyQualifiedNames of two TypeMirrors
      * @return
      */
     public Comparator<TypeMirror> makeTypeMirrorClassUseComparator() {
-        return (TypeMirror type1, TypeMirror type2) -> {
-            String s1 = getQualifiedTypeName(type1);
-            String s2 = getQualifiedTypeName(type2);
-            return compareStrings(s1, s2);
-        };
+        if (typeMirrorClassUseComparator == null) {
+            typeMirrorClassUseComparator = (TypeMirror type1, TypeMirror type2) -> {
+                String s1 = getQualifiedTypeName(type1);
+                String s2 = getQualifiedTypeName(type2);
+                return compareStrings(s1, s2);
+            };
+        }
+        return typeMirrorClassUseComparator;
     }
 
+    private Comparator<TypeMirror> typeMirrorIndexUseComparator = null;
     /**
      * Compares the SimpleNames of TypeMirrors if equal then the
      * FullyQualifiedNames of TypeMirrors.
@@ -1857,12 +1883,15 @@ public class Utils {
      * @return
      */
     public Comparator<TypeMirror> makeTypeMirrorIndexUseComparator() {
-        return (TypeMirror t1, TypeMirror t2) -> {
-            int result = compareStrings(getTypeName(t1, false), getTypeName(t2, false));
-            if (result != 0)
-                return result;
-            return compareStrings(getQualifiedTypeName(t1), getQualifiedTypeName(t2));
-        };
+        if (typeMirrorIndexUseComparator == null) {
+            typeMirrorIndexUseComparator = (TypeMirror t1, TypeMirror t2) -> {
+                int result = compareStrings(getTypeName(t1, false), getTypeName(t2, false));
+                if (result != 0)
+                    return result;
+                return compareStrings(getQualifiedTypeName(t1), getQualifiedTypeName(t2));
+            };
+        }
+        return typeMirrorIndexUseComparator;
     }
 
     /**
@@ -1936,6 +1965,7 @@ public class Utils {
         }.visit(e);
     }
 
+    private Comparator<Element> classUseComparator = null;
     /**
      * Comparator for ClassUse presentations, and sorts as follows:
      * 1. member names
@@ -1945,51 +1975,52 @@ public class Utils {
      * @return a comparator to sort classes and members for class use
      */
     public Comparator<Element> makeClassUseComparator() {
-        return new Utils.ElementComparator<Element>() {
-            /**
-             * Compare two Elements, first sort on simple name, and if
-             * applicable on the fully qualified name, and finally if applicable
-             * on the parameter types.
-             * @param e1 - an element.
-             * @param e2 - an element.
-             * @return a negative integer, zero, or a positive integer as the first
-             *         argument is less than, equal to, or greater than the second.
-             */
-            @Override
-            public int compare(Element e1, Element e2) {
-                int result = compareNames(e1, e2);
-                if (result != 0) {
-                    return result;
-                }
-                result = compareFullyQualifiedNames(e1, e2);
-                if (result != 0) {
-                    return result;
-                }
-                if (hasParameters(e1) && hasParameters(e2)) {
-                    @SuppressWarnings("unchecked")
-                    List<VariableElement> parameters1 = (List<VariableElement>) ((ExecutableElement)e1).getParameters();
-                    @SuppressWarnings("unchecked")
-                    List<VariableElement> parameters2 = (List<VariableElement>) ((ExecutableElement)e2).getParameters();
-                    result =  compareParameters(false, parameters1, parameters2);
+        if (classUseComparator == null) {
+            classUseComparator = new Utils.ElementComparator() {
+                /**
+                 * Compares two Elements.
+                 *
+                 * @param e1 - an element.
+                 * @param e2 - an element.
+                 * @return a negative integer, zero, or a positive integer as the first
+                 * argument is less than, equal to, or greater than the second.
+                 */
+                @Override
+                public int compare(Element e1, Element e2) {
+                    int result = compareNames(e1, e2);
                     if (result != 0) {
                         return result;
                     }
-                    result =  compareParameters(true, parameters1, parameters2);
+                    result = compareFullyQualifiedNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    if (hasParameters(e1) && hasParameters(e2)) {
+                        @SuppressWarnings("unchecked")
+                        List<VariableElement> parameters1 = (List<VariableElement>)((ExecutableElement)e1).getParameters();
+                        @SuppressWarnings("unchecked")
+                        List<VariableElement> parameters2 = (List<VariableElement>)((ExecutableElement)e2).getParameters();
+                        result = compareParameters(false, parameters1, parameters2);
+                        if (result != 0) {
+                            return result;
+                        }
+                        result = compareParameters(true, parameters1, parameters2);
+                    }
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareElementTypeKinds(e1, e2);
                 }
-                if (result != 0) {
-                    return result;
-                }
-                return compareElementTypeKinds(e1, e2);
-            }
-        };
+            };
+        }
+        return classUseComparator;
     }
 
     /**
      * A general purpose comparator to sort Element entities, basically provides the building blocks
      * for creating specific comparators for an use-case.
-     * @param <T> an Element
      */
-    private abstract class ElementComparator<T extends Element> implements Comparator<Element> {
+    private abstract class ElementComparator implements Comparator<Element> {
         /**
          * compares two parameter arrays by first comparing the length of the arrays, and
          * then each Type of the parameter in the array.
@@ -2097,8 +2128,6 @@ public class Utils {
         /**
          * The fully qualified names of the entities, used solely by the comparator.
          *
-         * @param p1 the first Element.
-         * @param p2 the first Element.
          * @return a negative integer, zero, or a positive integer as the first argument is less
          * than, equal to, or greater than the second.
          */
