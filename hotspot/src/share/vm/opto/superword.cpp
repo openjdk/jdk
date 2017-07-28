@@ -3199,7 +3199,15 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   if (align_to_ref_p.invar() != NULL) {
     // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* aref     = new URShiftINode(align_to_ref_p.invar(), log2_elt);
+    Node* invar = align_to_ref_p.invar();
+    if (_igvn.type(invar)->isa_long()) {
+      // Computations are done % (vector width/element size) so it's
+      // safe to simply convert invar to an int and loose the upper 32
+      // bit half.
+      invar = new ConvL2INode(invar);
+      _igvn.register_new_node_with_optimizer(invar);
+    }
+    Node* aref = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
     if (align_to_ref_p.negate_invar()) {
@@ -3644,12 +3652,10 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         n = n->in(1);
       }
     }
-    if (n->bottom_type()->isa_int()) {
-      _negate_invar = negate;
-      _invar = n;
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-      return true;
-    }
+    _negate_invar = negate;
+    _invar = n;
+    NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+    return true;
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
