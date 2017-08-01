@@ -339,7 +339,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         ConcurrentLinkedDeque q = populatedDeque(SIZE);

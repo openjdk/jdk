@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,28 @@
 
 import java.net.URI;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 
 public class WithSecurityManager {
     public static void main(String[] args) throws Exception {
+        Path modulesPath = Paths.get(System.getProperty("java.home"),
+                "lib", "modules");
+        if (Files.notExists(modulesPath)) {
+            System.out.printf("%s doesn't exist.", modulesPath.toString());
+            System.out.println();
+            System.out.println("It is most probably an exploded build."
+                    + " Skip the test.");
+            return;
+        }
+
         boolean allow = args[0].equals("allow");
 
         // set security policy to allow access
         if (allow) {
+
             String testSrc = System.getProperty("test.src");
             if (testSrc == null)
                 testSrc = ".";

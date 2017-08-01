@@ -176,60 +176,60 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
  * <thead>
  *     <tr>
- *          <th style="text-align:left">Symbol
- *          <th style="text-align:left">Location
- *          <th style="text-align:left">Localized?
- *          <th style="text-align:left">Meaning
+ *          <th scope="col" style="text-align:left">Symbol
+ *          <th scope="col" style="text-align:left">Location
+ *          <th scope="col" style="text-align:left">Localized?
+ *          <th scope="col" style="text-align:left">Meaning
  * </thead>
  * <tbody>
  *     <tr style="vertical-align:top">
- *          <td><code>0</code>
+ *          <th scope="row"><code>0</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit
  *     <tr style="vertical-align: top">
- *          <td><code>#</code>
+ *          <th scope="row"><code>#</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit, zero shows as absent
  *     <tr style="vertical-align:top">
- *          <td><code>.</code>
+ *          <th scope="row"><code>.</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Decimal separator or monetary decimal separator
  *     <tr style="vertical-align: top">
- *          <td><code>-</code>
+ *          <th scope="row"><code>-</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Minus sign
  *     <tr style="vertical-align:top">
- *          <td><code>,</code>
+ *          <th scope="row"><code>,</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Grouping separator
  *     <tr style="vertical-align: top">
- *          <td><code>E</code>
+ *          <th scope="row"><code>E</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Separates mantissa and exponent in scientific notation.
  *              <em>Need not be quoted in prefix or suffix.</em>
  *     <tr style="vertical-align:top">
- *          <td><code>;</code>
+ *          <th scope="row"><code>;</code>
  *          <td>Subpattern boundary
  *          <td>Yes
  *          <td>Separates positive and negative subpatterns
  *     <tr style="vertical-align: top">
- *          <td><code>%</code>
+ *          <th scope="row"><code>%</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 100 and show as percentage
  *     <tr style="vertical-align:top">
- *          <td><code>&#92;u2030</code>
+ *          <th scope="row"><code>&#92;u2030</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 1000 and show as per mille value
  *     <tr style="vertical-align: top">
- *          <td><code>&#164;</code> (<code>&#92;u00A4</code>)
+ *          <th scope="row"><code>&#164;</code> (<code>&#92;u00A4</code>)
  *          <td>Prefix or suffix
  *          <td>No
  *          <td>Currency sign, replaced by currency symbol.  If
@@ -237,7 +237,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              If present in a pattern, the monetary decimal separator
  *              is used instead of the decimal separator.
  *     <tr style="vertical-align:top">
- *          <td><code>'</code>
+ *          <th scope="row"><code>'</code>
  *          <td>Prefix or suffix
  *          <td>No
  *          <td>Used to quote special characters in a prefix or suffix,

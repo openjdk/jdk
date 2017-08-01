@@ -191,7 +191,7 @@ class FactoryFinder {
             if (!type.isAssignableFrom(providerClass)) {
                 throw new ClassCastException(className + " cannot be cast to " + type.getName());
             }
-            Object instance = providerClass.newInstance();
+            Object instance = providerClass.getConstructor().newInstance();
             final ClassLoader clD = cl;
             dPrint(()->"created new instance of " + providerClass +
                        " using ClassLoader: " + clD);

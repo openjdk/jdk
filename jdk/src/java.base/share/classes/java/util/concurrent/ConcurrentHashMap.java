@@ -159,8 +159,7 @@ import jdk.internal.misc.Unsafe;
  * ordering, or on any other objects or values that may transiently
  * change while computation is in progress; and except for forEach
  * actions, should ideally be side-effect-free. Bulk operations on
- * {@link java.util.Map.Entry} objects do not support method {@code
- * setValue}.
+ * {@link Map.Entry} objects do not support method {@code setValue}.
  *
  * <ul>
  * <li>forEach: Performs a given action on each element.

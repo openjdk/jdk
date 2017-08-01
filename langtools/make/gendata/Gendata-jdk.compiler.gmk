@@ -60,7 +60,8 @@ endif
 
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
     $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(LANGTOOLS_TOPDIR)/make/data/symbols/*)
+    $(wildcard $(LANGTOOLS_TOPDIR)/make/data/symbols/*) \
+    $(MODULE_INFOS)
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating ct.sym classes

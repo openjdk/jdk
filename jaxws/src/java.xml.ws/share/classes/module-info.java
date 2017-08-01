@@ -27,7 +27,7 @@
  * Defines the Java API for XML-Based Web Services (JAX-WS), and
  * the Web Services Metadata API.
  *
- * <p> This module is upgradeble.
+ * <p> This module is upgradeable.
  *
  * @uses javax.xml.soap.MessageFactory
  * @uses javax.xml.soap.SAAJMetaFactory

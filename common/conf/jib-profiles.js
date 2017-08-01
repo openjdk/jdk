@@ -436,7 +436,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: ["devkit"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system"),
+            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+                "--with-macosx-version-max=10.7.0"),
         },
 
         "solaris-x64": {
@@ -615,6 +616,8 @@ var getJibProfilesProfiles = function (input, common, data) {
     }
     var testOnlyProfilesPrebuilt = {
         "run-test-prebuilt": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
             src: "src.conf",
             dependencies: [ "jtreg", "gnumake", "boot_jdk", "jib", testedProfile + ".jdk",
                 testedProfile + ".test", "src.full"
@@ -635,12 +638,13 @@ var getJibProfilesProfiles = function (input, common, data) {
     if (input.profile == "run-test-prebuilt") {
         if (profiles[testedProfile] == null) {
             error("testedProfile is not defined: " + testedProfile);
-        } else {
-            testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
-                = profiles[testedProfile]["target_os"];
-            testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
-                = profiles[testedProfile]["target_cpu"];
         }
+    }
+    if (profiles[testedProfile] != null) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
+            = profiles[testedProfile]["target_os"];
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
+            = profiles[testedProfile]["target_cpu"];
     }
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
 

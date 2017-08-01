@@ -32,6 +32,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,6 +54,11 @@ public class SetDefaultProvider {
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
         );
+
+    private static Path createTempDirectory(String prefix) throws IOException {
+        Path testDir = Paths.get(System.getProperty("test.dir", "."));
+        return Files.createTempDirectory(testDir, prefix);
+    }
 
     /**
      * Test override of default FileSystemProvider with the main application
@@ -91,7 +97,7 @@ public class SetDefaultProvider {
      * is a module that is patched by an exploded patch.
      */
     public void testExplodedModuleWithExplodedPatch() throws Exception {
-        Path patchdir = Files.createTempDirectory("patch");
+        Path patchdir = createTempDirectory("patch");
         String modulePath = System.getProperty("jdk.module.path");
         int exitValue = exec(SET_DEFAULT_FSP,
                              "--patch-module", "m=" + patchdir,
@@ -105,7 +111,7 @@ public class SetDefaultProvider {
      * is a module that is patched by an exploded patch.
      */
     public void testExplodedModuleWithJarPatch() throws Exception {
-        Path patchdir = Files.createTempDirectory("patch");
+        Path patchdir = createTempDirectory("patch");
         Files.createDirectory(patchdir.resolve("m.properties"));
         Path patch = createJarFile(patchdir);
         String modulePath = System.getProperty("jdk.module.path");
@@ -142,7 +148,7 @@ public class SetDefaultProvider {
      * Creates a JAR file containing the entries in the given file tree.
      */
     private Path createJarFile(Path dir) throws Exception {
-        Path jar = Files.createTempDirectory("tmp").resolve("m.jar");
+        Path jar = createTempDirectory("tmp").resolve("m.jar");
         String[] args = { "--create", "--file=" + jar, "-C", dir.toString(), "." };
         int ret = JAR_TOOL.run(System.out, System.out, args);
         assertTrue(ret == 0);

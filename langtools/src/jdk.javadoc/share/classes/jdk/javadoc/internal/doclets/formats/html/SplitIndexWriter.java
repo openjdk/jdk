@@ -107,12 +107,16 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         Set<Character> keys = new TreeSet<>(indexbuilder.getIndexMap().keySet());
         keys.addAll(configuration.tagSearchIndexKeys);
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
+        int prev;
+        int next;
         while (li.hasNext()) {
+            prev = (li.hasPrevious()) ? li.previousIndex() + 1 : -1;
             Object ch = li.next();
+            next = (li.hasNext()) ? li.nextIndex() + 1 : -1;
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                     path.resolve(filename),
-                    indexbuilder, keys, li.previousIndex(), li.nextIndex());
+                    indexbuilder, keys, prev, next);
             indexgen.generateIndexFile((Character) ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();

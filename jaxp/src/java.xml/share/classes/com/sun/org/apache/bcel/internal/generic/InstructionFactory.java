@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -455,7 +454,7 @@ public class InstructionFactory
 
       Instruction i = null;
       try {
-        i = (Instruction)java.lang.Class.forName(name).newInstance();
+        i = (Instruction)java.lang.Class.forName(name).getConstructor().newInstance();
       } catch(Exception e) {
         throw new RuntimeException("Could not find instruction: " + name);
       }

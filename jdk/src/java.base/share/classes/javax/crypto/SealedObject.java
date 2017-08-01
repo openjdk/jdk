@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.NoSuchProviderException;
  * <p> Given any Serializable object, one can create a SealedObject
  * that encapsulates the original object, in serialized
  * format (i.e., a "deep copy"), and seals (encrypts) its serialized contents,
- * using a cryptographic algorithm such as DES, to protect its
+ * using a cryptographic algorithm such as AES, to protect its
  * confidentiality.  The encrypted content can later be decrypted (with
  * the corresponding algorithm using the correct decryption key) and
  * de-serialized, yielding the original object.

@@ -340,6 +340,8 @@ public class ClassFinder {
         JavaFileObject classfile = c.classfile;
         if (classfile != null) {
             JavaFileObject previousClassFile = currentClassFile;
+            Symbol prevOwner = c.owner;
+            Name prevName = c.fullname;
             try {
                 if (reader.filling) {
                     Assert.error("Filling " + classfile.toUri() + " during " + previousClassFile);
@@ -360,6 +362,21 @@ public class ClassFinder {
                                                         + classfile.toUri());
                     }
                 }
+            } catch (BadClassFile cf) {
+                //the symbol may be partially initialized, purge it:
+                c.owner = prevOwner;
+                c.members_field.getSymbols(sym -> sym.kind == TYP).forEach(sym -> {
+                    ClassSymbol csym = (ClassSymbol) sym;
+                    csym.owner = sym.packge();
+                    csym.owner.members().enter(sym);
+                    csym.fullname = sym.flatName();
+                    csym.name = Convert.shortName(sym.flatName());
+                    csym.reset();
+                });
+                c.fullname = prevName;
+                c.name = Convert.shortName(prevName);
+                c.reset();
+                throw cf;
             } finally {
                 currentClassFile = previousClassFile;
             }

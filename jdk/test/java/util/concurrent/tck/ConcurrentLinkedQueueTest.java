@@ -199,7 +199,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(null) throws NPE
+     * addAll(null) throws NullPointerException
      */
     public void testAddAll1() {
         ConcurrentLinkedQueue q = new ConcurrentLinkedQueue();
@@ -210,7 +210,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         ConcurrentLinkedQueue q = populatedQueue(SIZE);
@@ -221,7 +221,7 @@ public class ConcurrentLinkedQueueTest extends JSR166TestCase {
     }
 
     /**
-     * addAll of a collection with null elements throws NPE
+     * addAll of a collection with null elements throws NullPointerException
      */
     public void testAddAll2() {
         ConcurrentLinkedQueue q = new ConcurrentLinkedQueue();
