@@ -337,8 +337,8 @@ public enum TimeUnit {
      * This is a convenience method that converts timeout arguments
      * into the form required by the {@code Object.wait} method.
      *
-     * <p>For example, you could implement a blocking {@code poll}
-     * method (see {@link BlockingQueue#poll BlockingQueue.poll})
+     * <p>For example, you could implement a blocking {@code poll} method
+     * (see {@link BlockingQueue#poll(long, TimeUnit) BlockingQueue.poll})
      * using:
      *
      * <pre> {@code

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1831,7 +1830,7 @@ public class DOMNormalizer implements XMLDocumentHandler {
                                         //       flag to "true" which may overwrite a "false"
                                         //       value from the attribute list.
                                         boolean specified = attr.getSpecified();
-                                        attr.setValue(attrPSVI.getSchemaNormalizedValue());
+                                        attr.setValue(attrPSVI.getSchemaValue().getNormalizedValue());
                                         if (!specified) {
                                                 ((AttrImpl) attr).setSpecified(specified);
                                         }
@@ -1972,7 +1971,7 @@ public class DOMNormalizer implements XMLDocumentHandler {
                                 ((PSVIElementNSImpl) fCurrentNode).setPSVI(elementPSVI);
                         }
                         // include element default content (if one is available)
-                        String normalizedValue = elementPSVI.getSchemaNormalizedValue();
+                        String normalizedValue = elementPSVI.getSchemaValue().getNormalizedValue();
                         if ((fConfiguration.features & DOMConfigurationImpl.DTNORMALIZATION) != 0) {
                     if (normalizedValue !=null)
                                     elementNode.setTextContent(normalizedValue);

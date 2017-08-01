@@ -328,9 +328,7 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         head.addContent(getGeneratedBy(!configuration.notimestamp));
         Content windowTitle = HtmlTree.TITLE(new StringContent(title));
         head.addContent(windowTitle);
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
-                (configuration.charset.length() > 0) ?
-                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
         head.addContent(meta);
         head.addContent(getStyleSheetProperties(configuration));
         head.addContent(getFramesJavaScript());

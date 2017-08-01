@@ -467,7 +467,8 @@ public class EdgeCases extends ModuleTestBase {
 
         List<String> expected = Arrays.asList(
                 "- compiler.err.cant.access: m1x.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.name.mismatch: other, m1x))",
-                "1 error");
+                "module-info.java:1:1: compiler.err.module.not.found: m1x",
+                "2 errors");
 
         if (!expected.equals(log)) {
             throw new AssertionError("Unexpected output: " + log);

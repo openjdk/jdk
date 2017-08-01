@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -134,7 +133,7 @@ public class XBoolean extends XObject
   public Object object()
   {
     if(null == m_obj)
-      setObject(new Boolean(m_val));
+      setObject(m_val);
     return m_obj;
   }
 

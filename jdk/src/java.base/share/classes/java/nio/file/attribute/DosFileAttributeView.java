@@ -45,25 +45,25 @@ import java.io.IOException;
  * <caption style="display:none">Supported attributes</caption>
  * <thead>
  *   <tr>
- *     <th> Name </th>
- *     <th> Type </th>
+ *     <th scope="col"> Name </th>
+ *     <th scope="col"> Type </th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td> readonly </td>
+ *     <th scope="row"> readonly </th>
  *     <td> {@link Boolean} </td>
  *   </tr>
  *   <tr>
- *     <td> hidden </td>
+ *     <th scope="row"> hidden </th>
  *     <td> {@link Boolean} </td>
  *   </tr>
  *   <tr>
- *     <td> system </td>
+ *     <th scope="row"> system </th>
  *     <td> {@link Boolean} </td>
  *   </tr>
  *   <tr>
- *     <td> archive </td>
+ *     <th scope="row"> archive </th>
  *     <td> {@link Boolean} </td>
  *   </tr>
  * </tbody>

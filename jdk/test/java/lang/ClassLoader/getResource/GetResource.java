@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,45 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 6760902
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.ProcessTools
+ * @run testng GetResource
+ * @summary Empty path on bootclasspath is not default to current working
+ *          directory for both class lookup and resource lookup whereas
+ *          empty path on classpath is default to current working directory.
+ */
+
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jdk.testlibrary.JDKToolFinder;
+import static jdk.testlibrary.ProcessTools.*;
+
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 public class GetResource {
+    private static final Path CWD = Paths.get(System.getProperty("user.dir"));
+    private static final String DIR_A = "a";
+    private static final String DIR_B = "b";
+
     private static final String RESOURCE_NAME = "test.properties";
-    public static void main(String[] args) {
+    private static final String GETRESOURCE_CLASS = "GetResource.class";
+
+    public static void main(String... args) {
         String expect = args[0] + "/" + RESOURCE_NAME;
         URL url = GetResource.class.getResource(RESOURCE_NAME);
         System.out.println("getResource found: " + url);
@@ -39,4 +73,99 @@ public class GetResource {
             throw new RuntimeException(url + " != expected resource " + expect);
         }
     }
+
+    @BeforeTest
+    public void setup() throws IOException {
+        // setup two directories "a" and "b"
+        // each directory contains both test.properties and this test class
+        Path testSrc = Paths.get(System.getProperty("test.src"));
+        Path testClasses = Paths.get(System.getProperty("test.classes"));
+
+        Files.createDirectories(Paths.get(DIR_A));
+        Files.createDirectories(Paths.get(DIR_B));
+
+        Files.copy(testSrc.resolve(RESOURCE_NAME),
+                   Paths.get(DIR_A, RESOURCE_NAME));
+        Files.copy(testSrc.resolve(RESOURCE_NAME),
+                   Paths.get(DIR_B, RESOURCE_NAME));
+
+        Files.copy(testClasses.resolve(GETRESOURCE_CLASS),
+                   Paths.get(DIR_A, GETRESOURCE_CLASS));
+        Files.copy(testClasses.resolve(GETRESOURCE_CLASS),
+                   Paths.get(DIR_B, GETRESOURCE_CLASS));
+    }
+
+    private String concat(String... dirs) {
+        return Stream.of(dirs).collect(Collectors.joining(File.pathSeparator));
+    }
+
+    @DataProvider
+    public Object[][] options() {
+        return new Object[][] {
+            new Object[] { List.of("-Xbootclasspath/a:a"), "a"},
+            new Object[] { List.of("-Xbootclasspath/a:b"), "b"},
+            new Object[] { List.of("-Xbootclasspath/a:" + concat("a", "b")), "a"},
+            new Object[] { List.of("-Xbootclasspath/a:" + concat("b", "a")), "b"},
+
+            new Object[] { List.of("-cp", "a"), "a"},
+            new Object[] { List.of("-cp", "b"), "b"},
+            new Object[] { List.of("-cp", concat("a", "b")), "a"},
+            new Object[] { List.of("-cp", concat("b", "a")), "b"},
+        };
+    }
+
+    @Test(dataProvider = "options")
+    public void test(List<String> options, String expected) throws Throwable {
+        runTest(CWD, options, expected);
+    }
+
+    @DataProvider
+    public Object[][] dirA() {
+        String dirB = ".." + File.separator + "b";
+        return new Object[][] {
+            new Object[] { List.of("-Xbootclasspath/a:."), "a"},
+
+            // "b" is the expected result when JDK-8185540 is resolved
+            new Object[] { List.of("-Xbootclasspath/a:" + dirB), "a"},
+            // empty path in first element
+            new Object[] { List.of("-Xbootclasspath/a:" + File.pathSeparator + dirB), "a"},
+
+            new Object[] { List.of("-cp", File.pathSeparator), "a"},
+            new Object[] { List.of("-cp", dirB), "b"},
+            new Object[] { List.of("-cp", File.pathSeparator + dirB), "a"},
+        };
+    }
+
+    @Test(dataProvider = "dirA")
+    public void testCurrentDirA(List<String> options, String expected) throws Throwable {
+        // current working directory is "a"
+        runTest(CWD.resolve(DIR_A), options, expected);
+    }
+
+    private void runTest(Path dir, List<String> options, String expected)
+        throws Throwable
+    {
+        String javapath = JDKToolFinder.getJDKTool("java");
+
+        List<String> cmdLine = new ArrayList<>();
+        cmdLine.add(javapath);
+        options.forEach(cmdLine::add);
+
+        cmdLine.add("GetResource");
+        cmdLine.add(expected);
+
+        System.out.println("Command line: " + cmdLine);
+        ProcessBuilder pb =
+            new ProcessBuilder(cmdLine.stream().toArray(String[]::new));
+
+        // change working directory
+        pb.directory(dir.toFile());
+
+        // remove CLASSPATH environment variable
+        Map<String,String> env = pb.environment();
+        String value = env.remove("CLASSPATH");
+
+        executeCommand(pb).shouldHaveExitValue(0);
+    }
+
 }

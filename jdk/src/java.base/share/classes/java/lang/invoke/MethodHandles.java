@@ -282,66 +282,66 @@ public class MethodHandles {
      * <caption style="display:none">lookup method behaviors</caption>
      * <thead>
      * <tr>
-     *     <th><a id="equiv"></a>lookup expression</th>
-     *     <th>member</th>
-     *     <th>bytecode behavior</th>
+     *     <th scope="col"><a id="equiv"></a>lookup expression</th>
+     *     <th scope="col">member</th>
+     *     <th scope="col">bytecode behavior</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</th>
      *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</th>
      *     <td>{@code static}<br>{@code FT f;}</td><td>{@code (T) C.f;}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findSetter lookup.findSetter(C.class,"f",FT.class)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findSetter lookup.findSetter(C.class,"f",FT.class)}</th>
      *     <td>{@code FT f;}</td><td>{@code this.f = x;}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStaticSetter lookup.findStaticSetter(C.class,"f",FT.class)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStaticSetter lookup.findStaticSetter(C.class,"f",FT.class)}</th>
      *     <td>{@code static}<br>{@code FT f;}</td><td>{@code C.f = arg;}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findVirtual lookup.findVirtual(C.class,"m",MT)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findVirtual lookup.findVirtual(C.class,"m",MT)}</th>
      *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findStatic lookup.findStatic(C.class,"m",MT)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStatic lookup.findStatic(C.class,"m",MT)}</th>
      *     <td>{@code static}<br>{@code T m(A*);}</td><td>{@code (T) C.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findSpecial lookup.findSpecial(C.class,"m",MT,this.class)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findSpecial lookup.findSpecial(C.class,"m",MT,this.class)}</th>
      *     <td>{@code T m(A*);}</td><td>{@code (T) super.m(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findConstructor lookup.findConstructor(C.class,MT)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findConstructor lookup.findConstructor(C.class,MT)}</th>
      *     <td>{@code C(A*);}</td><td>{@code new C(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter lookup.unreflectGetter(aField)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter lookup.unreflectGetter(aField)}</th>
      *     <td>({@code static})?<br>{@code FT f;}</td><td>{@code (FT) aField.get(thisOrNull);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter lookup.unreflectSetter(aField)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter lookup.unreflectSetter(aField)}</th>
      *     <td>({@code static})?<br>{@code FT f;}</td><td>{@code aField.set(thisOrNull, arg);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</th>
      *     <td>({@code static})?<br>{@code T m(A*);}</td><td>{@code (T) aMethod.invoke(thisOrNull, arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor lookup.unreflectConstructor(aConstructor)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor lookup.unreflectConstructor(aConstructor)}</th>
      *     <td>{@code C(A*);}</td><td>{@code (C) aConstructor.newInstance(arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#unreflect lookup.unreflect(aMethod)}</th>
      *     <td>({@code static})?<br>{@code T m(A*);}</td><td>{@code (T) aMethod.invoke(thisOrNull, arg*);}</td>
      * </tr>
      * <tr>
-     *     <td>{@link java.lang.invoke.MethodHandles.Lookup#findClass lookup.findClass("C")}</td>
+     *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findClass lookup.findClass("C")}</th>
      *     <td>{@code class C { ... }}</td><td>{@code C.class;}</td>
      * </tr>
      * </tbody>
@@ -2476,7 +2476,7 @@ return mh1;
                 return false;
             }
             ClassLoader loader = defc.getClassLoader();
-            if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
+            if (loader != null) {
                 ClassLoader sysl = ClassLoader.getSystemClassLoader();
                 boolean found = false;
                 while (sysl != null) {

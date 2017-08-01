@@ -125,18 +125,18 @@ public abstract class Duration {
      *         <i>(timezone is optional for all date/time datatypes)</i></caption>
      *   <thead>
      *     <tr>
-     *       <th>Datatype</th>
-     *       <th>year</th>
-     *       <th>month</th>
-     *       <th>day</th>
-     *       <th>hour</th>
-     *       <th>minute</th>
-     *       <th>second</th>
+     *       <th scope="col">Datatype</th>
+     *       <th scope="col">year</th>
+     *       <th scope="col">month</th>
+     *       <th scope="col">day</th>
+     *       <th scope="col">hour</th>
+     *       <th scope="col">minute</th>
+     *       <th scope="col">second</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td>X</td>
@@ -145,7 +145,7 @@ public abstract class Duration {
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION_DAYTIME}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION_DAYTIME}</th>
      *       <td></td>
      *       <td></td>
      *       <td>X</td>
@@ -154,7 +154,7 @@ public abstract class Duration {
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION_YEARMONTH}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION_YEARMONTH}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td></td>

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -170,7 +169,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             if (name == null) {
                 String fmsg = XSLMessages.createXPATHMessage(
                         XPATHErrorResources.ER_FEATURE_NAME_NULL,
-                        new Object[] { CLASS_NAME, new Boolean( value) } );
+                        new Object[] { CLASS_NAME,  value } );
                 throw new NullPointerException( fmsg );
              }
 
@@ -179,7 +178,7 @@ public  class XPathFactoryImpl extends XPathFactory {
                 if ((_isSecureMode) && (!value)) {
                     String fmsg = XSLMessages.createXPATHMessage(
                             XPATHErrorResources.ER_SECUREPROCESSING_FEATURE,
-                            new Object[] { name, CLASS_NAME, new Boolean(value) } );
+                            new Object[] { name, CLASS_NAME, value } );
                     throw new XPathFactoryConfigurationException( fmsg );
                 }
 
@@ -207,7 +206,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             // unknown feature
             String fmsg = XSLMessages.createXPATHMessage(
                     XPATHErrorResources.ER_FEATURE_UNKNOWN,
-                    new Object[] { name, CLASS_NAME, new Boolean(value) } );
+                    new Object[] { name, CLASS_NAME, value } );
             throw new XPathFactoryConfigurationException( fmsg );
         }
 

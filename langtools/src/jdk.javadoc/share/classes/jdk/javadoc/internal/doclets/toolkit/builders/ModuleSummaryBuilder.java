@@ -111,7 +111,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildModuleDoc(Content contentTree) throws DocletException {
-        contentTree = moduleWriter.getModuleHeader(mdle.getSimpleName().toString());
+        contentTree = moduleWriter.getModuleHeader(mdle.getQualifiedName().toString());
 
         buildContent(contentTree);
 

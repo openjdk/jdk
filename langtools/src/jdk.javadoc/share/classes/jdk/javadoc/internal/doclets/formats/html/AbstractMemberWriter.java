@@ -532,7 +532,7 @@ public abstract class AbstractMemberWriter {
         tdDesc.addStyle(HtmlStyle.colLast);
         writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
         tr.addContent(tdDesc);
-        if (utils.isMethod(member) && !utils.isAnnotationType(member)) {
+        if (utils.isMethod(member) && !utils.isAnnotationType(member) && !utils.isProperty(name(member))) {
             int methodType = utils.isStatic(member) ? MethodTypes.STATIC.tableTabs().value() :
                     MethodTypes.INSTANCE.tableTabs().value();
             if (utils.isInterface(member.getEnclosingElement())) {

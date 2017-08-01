@@ -78,16 +78,20 @@ public interface Tag {
      * the following table lists those cases where there is more
      * than one tag of a given kind:
      *
-     * <table border="1">
+     * <table class="striped">
      * <caption>Related Tags</caption>
-     * <tr><th>{@code kind()  }</th>  <th>{@code name()      }</th></tr>
-     * <tr><td>{@code @throws }</td>  <td>{@code @throws     }</td></tr>
-     * <tr><td>{@code @throws }</td>  <td>{@code @exception  }</td></tr>
-     * <tr><td>{@code @see    }</td>  <td>{@code @see        }</td></tr>
-     * <tr><td>{@code @see    }</td>  <td>{@code @link       }</td></tr>
-     * <tr><td>{@code @see    }</td>  <td>{@code @linkplain  }</td></tr>
-     * <tr><td>{@code @serial }</td>  <td>{@code @serial     }</td></tr>
-     * <tr><td>{@code @serial }</td>  <td>{@code @serialData }</td></tr>
+     * <thead>
+     * <tr><th scope="col">{@code name()  }  <th scope="col">{@code kind()      }
+     * </thead>
+     * <tbody style="text-align:left">
+     * <tr><th scope="row">{@code @exception  }  <td>{@code @throws }
+     * <tr><th scope="row">{@code @link       }  <td>{@code @see    }
+     * <tr><th scope="row">{@code @linkplain  }  <td>{@code @see    }
+     * <tr><th scope="row">{@code @see        }  <td>{@code @see    }
+     * <tr><th scope="row">{@code @serial     }  <td>{@code @serial }
+     * <tr><th scope="row">{@code @serialData }  <td>{@code @serial }
+     * <tr><th scope="row">{@code @throws     }  <td>{@code @throws }
+     * </tbody>
      * </table>
      *
      * @return the kind of this tag.
