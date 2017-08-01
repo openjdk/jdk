@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class MethodCounters : public Metadata {
   u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
-  MethodCounters(methodHandle mh) :
+  MethodCounters(const methodHandle& mh) :
 #if INCLUDE_AOT
                                     _method(mh()),
 #endif
@@ -112,7 +112,7 @@ class MethodCounters : public Metadata {
  public:
   virtual bool is_methodCounters() const volatile { return true; }
 
-  static MethodCounters* allocate(methodHandle mh, TRAPS);
+  static MethodCounters* allocate(const methodHandle& mh, TRAPS);
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
 

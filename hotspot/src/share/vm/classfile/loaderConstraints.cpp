@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "logging/log.hpp"
@@ -36,8 +37,8 @@ void LoaderConstraintEntry::set_loader(int i, oop p) {
   set_loader_data(i, ClassLoaderData::class_loader_data(p));
 }
 
-LoaderConstraintTable::LoaderConstraintTable(int nof_buckets)
-  : Hashtable<InstanceKlass*, mtClass>(nof_buckets, sizeof(LoaderConstraintEntry)) {};
+LoaderConstraintTable::LoaderConstraintTable(int table_size)
+  : Hashtable<InstanceKlass*, mtClass>(table_size, sizeof(LoaderConstraintEntry)) {};
 
 
 LoaderConstraintEntry* LoaderConstraintTable::new_entry(
@@ -315,7 +316,7 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
   if (p != NULL && p->klass() != NULL) {
     assert(p->klass()->is_instance_klass(), "sanity");
-    if (p->klass()->is_loaded()) {
+    if (!p->klass()->is_loaded()) {
       // Only return fully loaded classes.  Classes found through the
       // constraints might still be in the process of loading.
       return NULL;
@@ -425,10 +426,9 @@ void LoaderConstraintTable::merge_loader_constraints(
 }
 
 
-void LoaderConstraintTable::verify(Dictionary* dictionary,
-                                   PlaceholderTable* placeholders) {
+void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
   Thread *thread = Thread::current();
-  for (int cindex = 0; cindex < _loader_constraint_size; cindex++) {
+  for (int cindex = 0; cindex < table_size(); cindex++) {
     for (LoaderConstraintEntry* probe = bucket(cindex);
                                 probe != NULL;
                                 probe = probe->next()) {
@@ -437,17 +437,18 @@ void LoaderConstraintTable::verify(Dictionary* dictionary,
         guarantee(ik->name() == probe->name(), "name should match");
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
-        unsigned int d_hash = dictionary->compute_hash(name, loader_data);
+        Dictionary* dictionary = loader_data->dictionary();
+        unsigned int d_hash = dictionary->compute_hash(name);
         int d_index = dictionary->hash_to_index(d_hash);
-        InstanceKlass* k = dictionary->find_class(d_index, d_hash, name, loader_data);
+        InstanceKlass* k = dictionary->find_class(d_index, d_hash, name);
         if (k != NULL) {
-          // We found the class in the system dictionary, so we should
+          // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
           guarantee(k == probe->klass(), "klass should be in dictionary");
         } else {
-          // If we don't find the class in the system dictionary, it
+          // If we don't find the class in the dictionary, it
           // has to be in the placeholders table.
-          unsigned int p_hash = placeholders->compute_hash(name, loader_data);
+          unsigned int p_hash = placeholders->compute_hash(name);
           int p_index = placeholders->hash_to_index(p_hash);
           PlaceholderEntry* entry = placeholders->get_entry(p_index, p_hash,
                                                             name, loader_data);
@@ -471,8 +472,9 @@ void LoaderConstraintTable::verify(Dictionary* dictionary,
 void LoaderConstraintTable::print() {
   ResourceMark rm;
   assert_locked_or_safepoint(SystemDictionary_lock);
-  tty->print_cr("Java loader constraints (entries=%d)", _loader_constraint_size);
-  for (int cindex = 0; cindex < _loader_constraint_size; cindex++) {
+  tty->print_cr("Java loader constraints (entries=%d, constraints=%d)",
+                table_size(), number_of_entries());
+  for (int cindex = 0; cindex < table_size(); cindex++) {
     for (LoaderConstraintEntry* probe = bucket(cindex);
                                 probe != NULL;
                                 probe = probe->next()) {

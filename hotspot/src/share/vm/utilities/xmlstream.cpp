@@ -380,7 +380,7 @@ void xmlStream::stamp() {
 // ------------------------------------------------------------------
 // Output a method attribute, in the form " method='pkg/cls name sig'".
 // This is used only when there is no ciMethod available.
-void xmlStream::method(methodHandle method) {
+void xmlStream::method(const methodHandle& method) {
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;
   print_raw(" method='");
@@ -408,7 +408,7 @@ void xmlStream::method(methodHandle method) {
   }
 }
 
-void xmlStream::method_text(methodHandle method) {
+void xmlStream::method_text(const methodHandle& method) {
   ResourceMark rm;
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;

@@ -287,7 +287,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 // Therefore: all package private methods need their own vtable entries for
 // them to be the root of an inheritance overriding decision
 // Package private methods may also override other vtable entries
-InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method,
+InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper, const methodHandle& target_method,
                             int vtable_index, Handle target_loader, Symbol* target_classname, Thread * THREAD) {
   InstanceKlass* superk = initialsuper;
   while (superk != NULL && superk->super() != NULL) {
@@ -329,7 +329,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
   return superk;
 }
 
-static void log_vtables(int i, bool overrides, methodHandle target_method,
+static void log_vtables(int i, bool overrides, const methodHandle& target_method,
                         Klass* target_klass, Method* super_method,
                         Thread* thread) {
 #ifndef PRODUCT
@@ -357,7 +357,7 @@ static void log_vtables(int i, bool overrides, methodHandle target_method,
 // OR return true if a new vtable entry is required.
 // Only called for InstanceKlass's, i.e. not for arrays
 // If that changed, could not use _klass as handle for klass
-bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle target_method,
+bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method,
                                           int super_vtable_len, int default_index,
                                           bool checkconstraints, TRAPS) {
   ResourceMark rm;
@@ -576,7 +576,7 @@ void klassVtable::put_method_at(Method* m, int index) {
 // superclass has been loaded.
 // However, the vtable entries are filled in at link time, and therefore
 // the superclass' vtable may not yet have been filled in.
-bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
+bool klassVtable::needs_new_vtable_entry(const methodHandle& target_method,
                                          const Klass* super,
                                          Handle classloader,
                                          Symbol* classname,
@@ -1569,7 +1569,7 @@ class VtableStats : AllStatic {
   }
 
   static void compute() {
-    SystemDictionary::classes_do(do_class);
+    ClassLoaderDataGraph::classes_do(do_class);
     fixed  = no_klasses * oopSize;      // vtable length
     // filler size is a conservative approximation
     filler = oopSize * (no_klasses - no_instance_klasses) * (sizeof(InstanceKlass) - sizeof(ArrayKlass) - 1);

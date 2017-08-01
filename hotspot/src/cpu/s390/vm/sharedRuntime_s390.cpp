@@ -312,7 +312,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   __ save_return_pc(return_pc);
 
   // Push a new frame (includes stack linkage).
-  __ push_frame(frame_size_in_bytes);
+  // use return_pc as scratch for push_frame. Z_R0_scratch (the default) and Z_R1_scratch are
+  // illegally used to pass parameters (SAPJVM extension) by RangeCheckStub::emit_code().
+  __ push_frame(frame_size_in_bytes, return_pc);
+  // We have to restore return_pc right away.
+  // Nobody else will. Furthermore, return_pc isn't necessarily the default (Z_R14).
+  // Nobody else knows which register we saved.
+  __ z_lg(return_pc, _z_abi16(return_pc) + frame_size_in_bytes, Z_SP);
 
   // Register save area in new frame starts above z_abi_160 area.
   int offset = register_save_offset;
@@ -542,7 +548,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
   }
 }
 
-#if INCLUDE_CDS
 size_t SharedRuntime::trampoline_size() {
   return MacroAssembler::load_const_size() + 2;
 }
@@ -552,7 +557,6 @@ void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destinatio
   __ load_const(Z_R1_scratch, destination);
   __ z_br(Z_R1_scratch);
 }
-#endif
 
 // ---------------------------------------------------------------------------
 void SharedRuntime::save_native_result(MacroAssembler * masm,

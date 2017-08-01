@@ -68,7 +68,7 @@
 // ciMethod::ciMethod
 //
 // Loaded method.
-ciMethod::ciMethod(methodHandle h_m, ciInstanceKlass* holder) :
+ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   ciMetadata(h_m()),
   _holder(holder)
 {
@@ -979,7 +979,7 @@ bool ciMethod::has_member_arg() const {
 //
 // Generate new MethodData* objects at compile time.
 // Return true if allocation was successful or no MDO is required.
-bool ciMethod::ensure_method_data(methodHandle h_m) {
+bool ciMethod::ensure_method_data(const methodHandle& h_m) {
   EXCEPTION_CONTEXT;
   if (is_native() || is_abstract() || h_m()->is_accessor()) {
     return true;

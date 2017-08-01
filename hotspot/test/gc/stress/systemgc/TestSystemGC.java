@@ -182,9 +182,11 @@ public class TestSystemGC {
     }
 
     public static void main(String[] args) {
-        // First allocate the long lived objects and then run all phases twice.
+        // First allocate the long lived objects and then run all phases.
         populateLongLived();
         runAllPhases();
-        runAllPhases();
+        if (args.length > 0 && args[0].equals("long")) {
+            runAllPhases();
+        }
     }
 }

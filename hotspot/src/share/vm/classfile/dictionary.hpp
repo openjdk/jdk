@@ -36,21 +36,16 @@ class DictionaryEntry;
 class BoolObjectClosure;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// The data structure for the system dictionary (and the shared system
+// The data structure for the class loader data dictionaries (and the shared system
 // dictionary).
 
-class Dictionary : public TwoOopHashtable<InstanceKlass*, mtClass> {
+class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   friend class VMStructs;
-private:
-  // current iteration index.
-  static int                    _current_class_index;
-  // pointer to the current hash table entry.
-  static DictionaryEntry*       _current_class_entry;
 
-  ProtectionDomainCacheTable*   _pd_cache_table;
+  ClassLoaderData* _loader_data;  // backpointer to owning loader
+  ClassLoaderData* loader_data() const { return _loader_data; }
 
-  DictionaryEntry* get_entry(int index, unsigned int hash,
-                             Symbol* name, ClassLoaderData* loader_data);
+  DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
 
 protected:
   DictionaryEntry* bucket(int i) const {
@@ -66,60 +61,47 @@ protected:
     Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
   }
 
-  static size_t entry_size();
-public:
-  Dictionary(int table_size);
-  Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
-
-  DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass, ClassLoaderData* loader_data);
-
   void free_entry(DictionaryEntry* entry);
 
-  void add_klass(Symbol* class_name, ClassLoaderData* loader_data, InstanceKlass* obj);
+  static size_t entry_size();
+public:
+  Dictionary(ClassLoaderData* loader_data, int table_size);
+  Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
+  ~Dictionary();
 
-  InstanceKlass* find_class(int index, unsigned int hash,
-                            Symbol* name, ClassLoaderData* loader_data);
+  DictionaryEntry* new_entry(unsigned int hash, InstanceKlass* klass);
+
+  void add_klass(int index, unsigned int hash, Symbol* class_name, InstanceKlass* obj);
+
+  InstanceKlass* find_class(int index, unsigned int hash, Symbol* name);
 
   InstanceKlass* find_shared_class(int index, unsigned int hash, Symbol* name);
-
-  // Compiler support
-  InstanceKlass* try_get_next_class();
 
   // GC support
   void oops_do(OopClosure* f);
   void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
-  void classes_do(void f(Klass*));
-  void classes_do(void f(Klass*, TRAPS), TRAPS);
-  void classes_do(void f(Klass*, ClassLoaderData*));
+  void classes_do(void f(InstanceKlass*));
+  void classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
+  void all_entries_do(void f(InstanceKlass*, ClassLoaderData*));
 
   void unlink(BoolObjectClosure* is_alive);
   void remove_classes_in_error_state();
 
-  // Classes loaded by the bootstrap loader are always strongly reachable.
-  // If we're not doing class unloading, all classes are strongly reachable.
-  static bool is_strongly_reachable(ClassLoaderData* loader_data, Klass* klass) {
-    assert (klass != NULL, "should have non-null klass");
-    return (loader_data->is_the_null_class_loader_data() || !ClassUnloading);
-  }
-
-  // Unload (that is, break root links to) all unmarked classes and loaders.
+  // Unload classes whose defining loaders are unloaded
   void do_unloading();
 
   // Protection domains
-  InstanceKlass* find(int index, unsigned int hash, Symbol* name,
-                      ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  InstanceKlass* find(int index, unsigned int hash, Symbol* name, Handle protection_domain);
   bool is_valid_protection_domain(int index, unsigned int hash,
-                                  Symbol* name, ClassLoaderData* loader_data,
+                                  Symbol* name,
                                   Handle protection_domain);
   void add_protection_domain(int index, unsigned int hash,
-                             InstanceKlass* klass, ClassLoaderData* loader_data,
+                             InstanceKlass* klass,
                              Handle protection_domain, TRAPS);
 
   // Sharing support
   void reorder_dictionary();
-
-  ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
 
   void print(bool details = true);
 #ifdef ASSERT
@@ -128,14 +110,14 @@ public:
   void verify();
 };
 
-// An entry in the system dictionary, this describes a class as
-// { InstanceKlass*, loader, protection_domain }.
+// An entry in the class loader data dictionaries, this describes a class as
+// { InstanceKlass*, protection_domain }.
 
 class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   friend class VMStructs;
  private:
   // Contains the set of approved protection domains that can access
-  // this system dictionary entry.
+  // this dictionary entry.
   //
   // This protection domain set is a set of tuples:
   //
@@ -155,7 +137,6 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // ClassLoader.checkPackageAccess().
   //
   ProtectionDomainEntry* _pd_set;
-  ClassLoaderData*       _loader_data;
 
  public:
   // Tells whether a protection is in the approved set.
@@ -163,7 +144,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // Adds a protection domain to the approved set.
   void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
-  InstanceKlass* klass() const { return (InstanceKlass*)literal(); }
+  InstanceKlass* instance_klass() const { return literal(); }
 
   DictionaryEntry* next() const {
     return (DictionaryEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
@@ -173,13 +154,10 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
-  ClassLoaderData* loader_data() const { return _loader_data; }
-  void set_loader_data(ClassLoaderData* loader_data) { _loader_data = loader_data; }
-
   ProtectionDomainEntry* pd_set() const { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
 
-  // Tells whether the initiating class' protection can access the this _klass
+  // Tells whether the initiating class' protection domain can access the klass in this entry
   bool is_valid_protection_domain(Handle protection_domain) {
     if (!ProtectionDomainVerification) return true;
     if (!SystemDictionary::has_checkPackageAccess()) return true;
@@ -197,9 +175,9 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     }
   }
 
-  bool equals(const Symbol* class_name, ClassLoaderData* loader_data) const {
+  bool equals(const Symbol* class_name) const {
     InstanceKlass* klass = (InstanceKlass*)literal();
-    return (klass->name() == class_name && _loader_data == loader_data);
+    return (klass->name() == class_name);
   }
 
   void print_count(outputStream *st) {

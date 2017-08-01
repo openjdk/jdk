@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void CompilationPolicy::completed_vm_startup() {
 // Returns true if m must be compiled before executing it
 // This is intended to force compiles for methods (usually for
 // debugging) that would otherwise be interpreted for some reason.
-bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
+bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) {
   // Don't allow Xcomp to cause compiles in replay mode
   if (ReplayCompiles) return false;
 
@@ -107,7 +107,7 @@ bool CompilationPolicy::must_be_compiled(methodHandle m, int comp_level) {
          (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
-void CompilationPolicy::compile_if_required(methodHandle selected_method, TRAPS) {
+void CompilationPolicy::compile_if_required(const methodHandle& selected_method, TRAPS) {
   if (must_be_compiled(selected_method)) {
     // This path is unusual, mostly used by the '-Xcomp' stress test mode.
 
@@ -135,7 +135,7 @@ void CompilationPolicy::compile_if_required(methodHandle selected_method, TRAPS)
 }
 
 // Returns true if m is allowed to be compiled
-bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
+bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
   // allow any levels for WhiteBox
   assert(WhiteBoxAPI || comp_level == CompLevel_all || is_compile(comp_level), "illegal compilation level");
 
@@ -166,7 +166,7 @@ bool CompilationPolicy::can_be_compiled(methodHandle m, int comp_level) {
 }
 
 // Returns true if m is allowed to be osr compiled
-bool CompilationPolicy::can_be_osr_compiled(methodHandle m, int comp_level) {
+bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, int comp_level) {
   bool result = false;
   if (comp_level == CompLevel_all) {
     if (TieredCompilation) {
@@ -312,13 +312,13 @@ void CounterDecay::decay() {
   // and hence GC's will not be going on, all Java mutators are suspended
   // at this point and hence SystemDictionary_lock is also not needed.
   assert(SafepointSynchronize::is_at_safepoint(), "can only be executed at a safepoint");
-  int nclasses = SystemDictionary::number_of_classes();
+  int nclasses = InstanceKlass::number_of_instance_classes();
   double classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
                                         CounterHalfLifeTime);
   for (int i = 0; i < classes_per_tick; i++) {
-    Klass* k = SystemDictionary::try_get_next_class();
-    if (k != NULL && k->is_instance_klass()) {
-      InstanceKlass::cast(k)->methods_do(do_method);
+    InstanceKlass* k = ClassLoaderDataGraph::try_get_next_class();
+    if (k != NULL) {
+      k->methods_do(do_method);
     }
   }
 }

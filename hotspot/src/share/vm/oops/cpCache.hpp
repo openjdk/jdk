@@ -222,7 +222,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     int             orig_field_index,            // the original field index in the field holder
     int             field_offset,                // the field offset in words in the field holder
     TosState        field_type,                  // the (machine) field type
-    bool            is_final,                     // the field is final
+    bool            is_final,                    // the field is final
     bool            is_volatile,                 // the field is volatile
     Klass*          root_klass                   // needed by the GC to dirty the klass
   );
@@ -230,7 +230,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
  private:
   void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // the method/prototype if any (NULL, otherwise)
+    const methodHandle& method,                  // the method/prototype if any (NULL, otherwise)
     int             vtable_index,                // the vtable index if any, else negative
     bool            sender_is_interface
   );
@@ -238,13 +238,13 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // the method to call
+    const methodHandle& method,                  // the method to call
     bool            sender_is_interface
   );
 
   void set_vtable_call(                          // sets entry to vtable index
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // resolved method which declares the vtable index
+    const methodHandle& method,                  // resolved method which declares the vtable index
     int             vtable_index                 // the vtable index
   );
 

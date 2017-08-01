@@ -339,12 +339,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
                                          Symbol* version, Symbol* location,
                                          ClassLoaderData* loader_data) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
-
-  // Initialize everything BasicHashtable would
-  entry->set_next(NULL);
-  entry->set_hash(hash);
-  entry->set_literal(name);
+  ModuleEntry* entry = (ModuleEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
 
   // Initialize fields specific to a ModuleEntry
   entry->init();

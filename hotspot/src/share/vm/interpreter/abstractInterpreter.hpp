@@ -130,11 +130,11 @@ class AbstractInterpreter: AllStatic {
 
 
   // Method activation
-  static MethodKind method_kind(methodHandle m);
+  static MethodKind method_kind(const methodHandle& m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
-  static address    entry_for_method(methodHandle m)            { return entry_for_kind(method_kind(m)); }
+  static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
 
-  static address entry_for_cds_method(methodHandle m) {
+  static address entry_for_cds_method(const methodHandle& m) {
     MethodKind k = method_kind(m);
     assert(0 <= k && k < number_of_method_entries, "illegal kind");
     return _cds_entry_table[k];

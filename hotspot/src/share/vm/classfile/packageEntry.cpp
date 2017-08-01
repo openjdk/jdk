@@ -198,12 +198,7 @@ PackageEntryTable::~PackageEntryTable() {
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
-  PackageEntry* entry = (PackageEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
-
-  // Initialize everything BasicHashtable would
-  entry->set_next(NULL);
-  entry->set_hash(hash);
-  entry->set_literal(name);
+  PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
 
   TRACE_INIT_ID(entry);
 

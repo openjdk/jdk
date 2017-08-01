@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class ciMethod : public ciMetadata {
   BCEscapeAnalyzer*   _bcea;
 #endif
 
-  ciMethod(methodHandle h_m, ciInstanceKlass* holder);
+  ciMethod(const methodHandle& h_m, ciInstanceKlass* holder);
   ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
   oop loader() const                             { return _holder->loader(); }
@@ -112,7 +112,7 @@ class ciMethod : public ciMetadata {
 
   void load_code();
 
-  bool ensure_method_data(methodHandle h_m);
+  bool ensure_method_data(const methodHandle& h_m);
 
   void code_at_put(int bci, Bytecodes::Code code) {
     Bytecodes::check(code);

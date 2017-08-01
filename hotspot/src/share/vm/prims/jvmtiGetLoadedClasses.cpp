@@ -70,7 +70,7 @@ public:
 
 // The closure for GetClassLoaderClasses
 class JvmtiGetLoadedClassesClosure : public StackObj {
-  // Since the SystemDictionary::classes_do callback
+  // Since the ClassLoaderDataGraph::dictionary_all_entries_do callback
   // doesn't pass a closureData pointer,
   // we use a thread-local slot to hold a pointer to
   // a stack allocated instance of this structure.
@@ -203,7 +203,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  static void increment_with_loader(Klass* k, ClassLoaderData* loader_data) {
+  static void increment_with_loader(InstanceKlass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     oop class_loader = loader_data->class_loader();
     if (class_loader == JNIHandles::resolve(that->get_initiatingLoader())) {
@@ -213,7 +213,7 @@ class JvmtiGetLoadedClassesClosure : public StackObj {
     }
   }
 
-  static void add_with_loader(Klass* k, ClassLoaderData* loader_data) {
+  static void add_with_loader(InstanceKlass* k, ClassLoaderData* loader_data) {
     JvmtiGetLoadedClassesClosure* that = JvmtiGetLoadedClassesClosure::get_this();
     if (that->available()) {
       oop class_loader = loader_data->class_loader();
@@ -285,26 +285,26 @@ JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jcla
 jvmtiError
 JvmtiGetLoadedClasses::getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLoader,
                                              jint* classCountPtr, jclass** classesPtr) {
-  // Since SystemDictionary::classes_do only takes a function pointer
+  // Since ClassLoaderDataGraph::dictionary_all_entries_do only takes a function pointer
   // and doesn't call back with a closure data pointer,
   // we can only pass static methods.
   JvmtiGetLoadedClassesClosure closure(initiatingLoader);
   {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't created, and SystemDictionary_lock to ensure that
-    // classes aren't added to the system dictionary,
+    // classes aren't added to the class loader data dictionaries.
     MutexLocker ma(MultiArray_lock);
     MutexLocker sd(SystemDictionary_lock);
-    // First, count the classes in the system dictionary which have this loader recorded
+    // First, count the classes in the class loader data dictionaries which have this loader recorded
     // as an initiating loader. For basic type arrays this information is not recorded
     // so GetClassLoaderClasses will return all of the basic type arrays. This is okay
     // because the defining loader for basic type arrays is always the boot class loader
     // and these classes are "visible" to all loaders.
-    SystemDictionary::classes_do(&JvmtiGetLoadedClassesClosure::increment_with_loader);
+    ClassLoaderDataGraph::dictionary_all_entries_do(&JvmtiGetLoadedClassesClosure::increment_with_loader);
     Universe::basic_type_classes_do(&JvmtiGetLoadedClassesClosure::increment_for_basic_type_arrays);
     // Next, fill in the classes
     closure.allocate();
-    SystemDictionary::classes_do(&JvmtiGetLoadedClassesClosure::add_with_loader);
+    ClassLoaderDataGraph::dictionary_all_entries_do(&JvmtiGetLoadedClassesClosure::add_with_loader);
     Universe::basic_type_classes_do(&JvmtiGetLoadedClassesClosure::add_for_basic_type_arrays);
     // Drop the SystemDictionary_lock, so the results could be wrong from here,
     // but we still have a snapshot.

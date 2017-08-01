@@ -25,28 +25,22 @@
 #ifndef SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
 #define SHARE_VM_CLASSFILE_LOADERCONSTRAINTS_HPP
 
-#include "classfile/dictionary.hpp"
 #include "classfile/placeholders.hpp"
 #include "utilities/hashtable.hpp"
 
+class ClassLoaderData;
 class LoaderConstraintEntry;
 class Symbol;
 
 class LoaderConstraintTable : public Hashtable<InstanceKlass*, mtClass> {
-  friend class VMStructs;
+
 private:
-
-  enum Constants {
-    _loader_constraint_size = 107,                     // number of entries in constraint table
-    _nof_buckets            = 1009                     // number of buckets in hash table
-  };
-
   LoaderConstraintEntry** find_loader_constraint(Symbol* name,
                                                  Handle loader);
 
 public:
 
-  LoaderConstraintTable(int nof_buckets);
+  LoaderConstraintTable(int table_size);
 
   LoaderConstraintEntry* new_entry(unsigned int hash, Symbol* name,
                                    InstanceKlass* klass, int num_loaders,
@@ -84,14 +78,13 @@ public:
 
   void purge_loader_constraints();
 
-  void verify(Dictionary* dictionary, PlaceholderTable* placeholders);
+  void verify(PlaceholderTable* placeholders);
 #ifndef PRODUCT
   void print();
 #endif
 };
 
 class LoaderConstraintEntry : public HashtableEntry<InstanceKlass*, mtClass> {
-  friend class VMStructs;
 private:
   Symbol*                _name;                   // class name
   int                    _num_loaders;

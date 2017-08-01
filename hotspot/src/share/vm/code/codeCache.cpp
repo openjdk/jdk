@@ -1285,7 +1285,7 @@ void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
 
 
 // Flushes compiled methods dependent on dependee
-void CodeCache::flush_dependents_on_method(methodHandle m_h) {
+void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
