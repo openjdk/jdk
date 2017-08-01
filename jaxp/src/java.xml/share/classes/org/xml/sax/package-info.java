@@ -48,16 +48,20 @@
  * <em>setFeature</em>.  Those standard identifiers are:
  *
  *
- * <table border="1" cellpadding="3" cellspacing="0" width="100%">
- *     <tr align="center" bgcolor="#ccccff">
- *      <th>Feature ID</th>
- *      <th>Access</th>
- *      <th>Default</th>
- *      <th>Description</th>
- *      </tr>
- *
+ * <table class="striped">
+ *     <caption>Standard Features</caption>
+ *     <thead>
  *     <tr>
- *      <td>external-general-entities</td>
+ *      <th scope="col">Feature ID</th>
+ *      <th scope="col">Access</th>
+ *      <th scope="col">Default</th>
+ *      <th scope="col">Description</th>
+ *      </tr>
+ *     </thead>
+ *
+ *     <tbody>
+ *     <tr>
+ *      <th scope="row">external-general-entities</th>
  *      <td><em>read/write</em></td>
  *      <td><em>unspecified</em></td>
  *      <td> Reports whether this parser processes external
@@ -66,7 +70,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>external-parameter-entities</td>
+ *      <th scope="row">external-parameter-entities</th>
  *      <td><em>read/write</em></td>
  *      <td><em>unspecified</em></td>
  *      <td> Reports whether this parser processes external
@@ -75,7 +79,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>is-standalone</td>
+ *      <th scope="row">is-standalone</th>
  *      <td>(parsing) <em>read-only</em>, (not parsing) <em>none</em></td>
  *      <td>not applicable</td>
  *      <td> May be examined only during a parse, after the
@@ -86,7 +90,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>lexical-handler/parameter-entities</td>
+ *      <th scope="row">lexical-handler/parameter-entities</th>
  *      <td><em>read/write</em></td>
  *      <td><em>unspecified</em></td>
  *      <td> A value of "true" indicates that the LexicalHandler will report
@@ -95,7 +99,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>namespaces</td>
+ *      <th scope="row">namespaces</th>
  *      <td><em>read/write</em></td>
  *      <td>true</td>
  *      <td> A value of "true" indicates namespace URIs and unprefixed local names
@@ -104,7 +108,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>namespace-prefixes</td>
+ *      <th scope="row">namespace-prefixes</th>
  *      <td><em>read/write</em></td>
  *      <td>false</td>
  *      <td> A value of "true" indicates that XML qualified names (with prefixes) and
@@ -113,7 +117,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>resolve-dtd-uris</td>
+ *      <th scope="row">resolve-dtd-uris</th>
  *      <td><em>read/write</em></td>
  *      <td><em>true</em></td>
  *      <td> A value of "true" indicates that system IDs in declarations will
@@ -135,7 +139,7 @@
  *      </tr>
  *
  *     <tr>
- *      <td>string-interning</td>
+ *      <th scope="row">string-interning</th>
  *      <td><em>read/write</em></td>
  *      <td><em>unspecified</em></td>
  *      <td> Has a value of "true" if all XML names (for elements, prefixes,
@@ -148,7 +152,7 @@
  *      </tr>
  *
  *     <tr>
- *     <td>unicode-normalization-checking</td>
+ *     <th scope="row">unicode-normalization-checking</th>
  *     <td><em>read/write</em></td>
  *     <td><em>false</em></td>
  *     <td> Controls whether the parser reports Unicode normalization
@@ -161,7 +165,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>use-attributes2</td>
+ *      <th scope="row">use-attributes2</th>
  *      <td><em>read-only</em></td>
  *      <td>not applicable</td>
  *      <td> Returns "true" if the <em>Attributes</em> objects passed by
@@ -175,7 +179,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>use-locator2</td>
+ *      <th scope="row">use-locator2</th>
  *      <td><em>read-only</em></td>
  *      <td>not applicable</td>
  *      <td> Returns "true" if the <em>Locator</em> objects passed by
@@ -188,7 +192,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>use-entity-resolver2</td>
+ *      <th scope="row">use-entity-resolver2</th>
  *      <td><em>read/write</em></td>
  *      <td><em>true</em></td>
  *      <td> Returns "true" if, when <em>setEntityResolver</em> is given
@@ -200,7 +204,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>validation</td>
+ *      <th scope="row">validation</th>
  *      <td><em>read/write</em></td>
  *      <td><em>unspecified</em></td>
  *      <td> Controls whether the parser is reporting all validity
@@ -209,7 +213,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>xmlns-uris</td>
+ *      <th scope="row">xmlns-uris</th>
  *      <td><em>read/write</em></td>
  *      <td><em>false</em></td>
  *      <td> Controls whether, when the <em>namespace-prefixes</em> feature
@@ -225,13 +229,14 @@
  *     </tr>
  *
  *     <tr>
- *         <td>xml-1.1</td>
+ *         <th scope="row">xml-1.1</th>
  *         <td><em>read-only</em></td>
  *         <td>not applicable</td>
  *         <td> Returns "true" if the parser supports both XML 1.1 and XML 1.0.
  *             Returns "false" if the parser supports only XML 1.0.
  *         </td>
  *     </tr>
+ *     </tbody>
  * </table>
  *
  * <p>
@@ -262,14 +267,18 @@
  * <code>dom-node</code>.  Manage those properties using
  * <em>setProperty()</em>.  Those identifiers are:
  *
- * <table border="1" cellpadding="3" cellspacing="0" width="100%">
- *     <tr align="center" bgcolor="#ccccff">
- *      <th>Property ID</th>
- *      <th>Description</th>
- *      </tr>
- *
+ * <table class="striped">
+ *     <caption>Standard Property IDs</caption>
+ *     <thead>
  *     <tr>
- *      <td>declaration-handler</td>
+ *      <th scope="col">Property ID</th>
+ *      <th scope="col">Description</th>
+ *      </tr>
+ *      </thead>
+ *
+ *     <tbody>
+ *     <tr>
+ *      <th scope="row">declaration-handler</th>
  *      <td> Used to see most DTD declarations except those treated
  *          as lexical ("document element name is ...") or which are
  *          mandatory for all SAX parsers (<em>DTDHandler</em>).
@@ -279,7 +288,7 @@
  *     </tr>
  *
  *     <tr>
- *         <td>document-xml-version</td>
+ *         <th scope="row">document-xml-version</th>
  *         <td> May be examined only during a parse, after the startDocument()
  *             callback has been completed; read-only. This property is a
  *             literal string describing the actual XML version of the document,
@@ -288,7 +297,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>dom-node</td>
+ *      <th scope="row">dom-node</th>
  *      <td> For "DOM Walker" style parsers, which ignore their
  *          <em>parser.parse()</em> parameters, this is used to
  *          specify the DOM (sub)tree being walked by the parser.
@@ -298,7 +307,7 @@
  *     </tr>
  *
  *     <tr>
- *      <td>lexical-handler</td>
+ *      <th scope="row">lexical-handler</th>
  *      <td> Used to see some syntax events that are essential in some
  *          applications:  comments, CDATA delimiters, selected general
  *          entity inclusions, and the start and end of the DTD
@@ -309,11 +318,12 @@
  *     </tr>
  *
  *     <tr>
- *      <td>xml-string</td>
+ *      <th scope="row">xml-string</th>
  *      <td> Readable only during a parser callback, this exposes a <b>TBS</b>
  *          chunk of characters responsible for the current event.
  *         </td>
  *     </tr>
+ *     </tbody>
  * </table>
  *
  * <p>

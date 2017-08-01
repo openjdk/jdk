@@ -323,39 +323,13 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Returns first element only if it is expired.
-     * Used only by drainTo.  Call only when holding lock.
-     */
-    private E peekExpired() {
-        // assert lock.isHeldByCurrentThread();
-        E first = q.peek();
-        return (first == null || first.getDelay(NANOSECONDS) > 0) ?
-            null : first;
-    }
-
-    /**
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws ClassCastException            {@inheritDoc}
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public int drainTo(Collection<? super E> c) {
-        Objects.requireNonNull(c);
-        if (c == this)
-            throw new IllegalArgumentException();
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            int n = 0;
-            for (E e; (e = peekExpired()) != null;) {
-                c.add(e);       // In this order, in case add() throws.
-                q.poll();
-                ++n;
-            }
-            return n;
-        } finally {
-            lock.unlock();
-        }
+        return drainTo(c, Integer.MAX_VALUE);
     }
 
     /**
@@ -374,8 +348,11 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
         lock.lock();
         try {
             int n = 0;
-            for (E e; n < maxElements && (e = peekExpired()) != null;) {
-                c.add(e);       // In this order, in case add() throws.
+            for (E first;
+                 n < maxElements
+                     && (first = q.peek()) != null
+                     && first.getDelay(NANOSECONDS) <= 0;) {
+                c.add(first);   // In this order, in case add() throws.
                 q.poll();
                 ++n;
             }

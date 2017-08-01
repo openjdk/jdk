@@ -224,7 +224,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected List<SearchIndexItem> packageSearchIndex = new ArrayList<>();
 
-    protected List<SearchIndexItem> tagSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> tagSearchIndex = new TreeSet<>(makeSearchTagComparator());
 
     protected List<SearchIndexItem> typeSearchIndex = new ArrayList<>();
 
@@ -346,6 +346,16 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public boolean allowTag(HtmlTag htmlTag) {
         return htmlTag.allowTag(this.htmlVersion);
+    }
+
+    public Comparator<SearchIndexItem> makeSearchTagComparator() {
+        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
+            int result = (sii1.getLabel()).compareTo(sii2.getLabel());
+            if (result == 0) {
+                result = (sii1.getHolder()).compareTo(sii2.getHolder());
+            }
+            return result;
+        };
     }
 
     /**

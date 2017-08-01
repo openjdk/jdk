@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 8180375
+# @bug 8180375 8185251
 # @summary Tests resource bundles are correctly loaded from
 #   modules through "<packageName>.spi.<simpleName>Provider" types.
 

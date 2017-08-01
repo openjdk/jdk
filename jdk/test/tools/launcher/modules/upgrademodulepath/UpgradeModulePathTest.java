@@ -24,7 +24,8 @@
 /**
  * @test
  * @library /lib/testlibrary /test/lib
- * @modules jdk.compiler
+ * @modules java.transaction
+ *          jdk.compiler
  * @build UpgradeModulePathTest jdk.testlibrary.*
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng UpgradeModulePathTest

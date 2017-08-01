@@ -582,67 +582,67 @@ public final class System {
      * <table class="striped">
      * <caption style="display:none">Shows property keys and associated values</caption>
      * <thead>
-     * <tr><th>Key</th>
-     *     <th>Description of Associated Value</th></tr>
+     * <tr><th scope="col">Key</th>
+     *     <th scope="col">Description of Associated Value</th></tr>
      * </thead>
      * <tbody>
-     * <tr><td><code>java.version</code></td>
+     * <tr><th scope="row"><code>java.version</code></th>
      *     <td>Java Runtime Environment version which may be interpreted
      *     as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vendor</code></td>
+     * <tr><th scope="row"><code>java.vendor</code></th>
      *     <td>Java Runtime Environment vendor</td></tr>
-     * <tr><td><code>java.vendor.url</code></td>
+     * <tr><th scope="row"><code>java.vendor.url</code></th>
      *     <td>Java vendor URL</td></tr>
-     * <tr><td><code>java.home</code></td>
+     * <tr><th scope="row"><code>java.home</code></th>
      *     <td>Java installation directory</td></tr>
-     * <tr><td><code>java.vm.specification.version</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.version</code></th>
      *     <td>Java Virtual Machine specification version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vm.specification.vendor</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.vendor</code></th>
      *     <td>Java Virtual Machine specification vendor</td></tr>
-     * <tr><td><code>java.vm.specification.name</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.name</code></th>
      *     <td>Java Virtual Machine specification name</td></tr>
-     * <tr><td><code>java.vm.version</code></td>
+     * <tr><th scope="row"><code>java.vm.version</code></th>
      *     <td>Java Virtual Machine implementation version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vm.vendor</code></td>
+     * <tr><th scope="row"><code>java.vm.vendor</code></th>
      *     <td>Java Virtual Machine implementation vendor</td></tr>
-     * <tr><td><code>java.vm.name</code></td>
+     * <tr><th scope="row"><code>java.vm.name</code></th>
      *     <td>Java Virtual Machine implementation name</td></tr>
-     * <tr><td><code>java.specification.version</code></td>
+     * <tr><th scope="row"><code>java.specification.version</code></th>
      *     <td>Java Runtime Environment specification version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.specification.vendor</code></td>
+     * <tr><th scope="row"><code>java.specification.vendor</code></th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
-     * <tr><td><code>java.specification.name</code></td>
+     * <tr><th scope="row"><code>java.specification.name</code></th>
      *     <td>Java Runtime Environment specification  name</td></tr>
-     * <tr><td><code>java.class.version</code></td>
+     * <tr><th scope="row"><code>java.class.version</code></th>
      *     <td>Java class format version number</td></tr>
-     * <tr><td><code>java.class.path</code></td>
+     * <tr><th scope="row"><code>java.class.path</code></th>
      *     <td>Java class path</td></tr>
-     * <tr><td><code>java.library.path</code></td>
+     * <tr><th scope="row"><code>java.library.path</code></th>
      *     <td>List of paths to search when loading libraries</td></tr>
-     * <tr><td><code>java.io.tmpdir</code></td>
+     * <tr><th scope="row"><code>java.io.tmpdir</code></th>
      *     <td>Default temp file path</td></tr>
-     * <tr><td><code>java.compiler</code></td>
+     * <tr><th scope="row"><code>java.compiler</code></th>
      *     <td>Name of JIT compiler to use</td></tr>
-     * <tr><td><code>os.name</code></td>
+     * <tr><th scope="row"><code>os.name</code></th>
      *     <td>Operating system name</td></tr>
-     * <tr><td><code>os.arch</code></td>
+     * <tr><th scope="row"><code>os.arch</code></th>
      *     <td>Operating system architecture</td></tr>
-     * <tr><td><code>os.version</code></td>
+     * <tr><th scope="row"><code>os.version</code></th>
      *     <td>Operating system version</td></tr>
-     * <tr><td><code>file.separator</code></td>
+     * <tr><th scope="row"><code>file.separator</code></th>
      *     <td>File separator ("/" on UNIX)</td></tr>
-     * <tr><td><code>path.separator</code></td>
+     * <tr><th scope="row"><code>path.separator</code></th>
      *     <td>Path separator (":" on UNIX)</td></tr>
-     * <tr><td><code>line.separator</code></td>
+     * <tr><th scope="row"><code>line.separator</code></th>
      *     <td>Line separator ("\n" on UNIX)</td></tr>
-     * <tr><td><code>user.name</code></td>
+     * <tr><th scope="row"><code>user.name</code></th>
      *     <td>User's account name</td></tr>
-     * <tr><td><code>user.home</code></td>
+     * <tr><th scope="row"><code>user.home</code></th>
      *     <td>User's home directory</td></tr>
-     * <tr><td><code>user.dir</code></td>
+     * <tr><th scope="row"><code>user.dir</code></th>
      *     <td>User's current working directory</td></tr>
      * </tbody>
      * </table>
@@ -659,17 +659,17 @@ public final class System {
      * <table class="striped">
      * <caption style="display:none">Shows property keys and associated values</caption>
      * <thead>
-     * <tr><th>Key</th>
-     *     <th>Description of Associated Value</th></tr>
+     * <tr><th scope="col">Key</th>
+     *     <th scope="col">Description of Associated Value</th></tr>
      * </thead>
      * <tbody>
-     * <tr><td>{@code jdk.module.path}</td>
+     * <tr><th scope="row">{@code jdk.module.path}</th>
      *     <td>The application module path</td></tr>
-     * <tr><td>{@code jdk.module.upgrade.path}</td>
+     * <tr><th scope="row">{@code jdk.module.upgrade.path}</th>
      *     <td>The upgrade module path</td></tr>
-     * <tr><td>{@code jdk.module.main}</td>
+     * <tr><th scope="row">{@code jdk.module.main}</th>
      *     <td>The module name of the initial/main module</td></tr>
-     * <tr><td>{@code jdk.module.main.class}</td>
+     * <tr><th scope="row">{@code jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
      * </tbody>
      * </table>
@@ -1959,10 +1959,6 @@ public final class System {
         setIn0(new BufferedInputStream(fdIn));
         setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
         setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
-
-        // Load the zip library now in order to keep java.util.zip.ZipFile
-        // from trying to use itself to load this library later.
-        loadLibrary("zip");
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();

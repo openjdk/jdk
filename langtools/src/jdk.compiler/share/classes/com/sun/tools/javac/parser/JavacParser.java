@@ -2243,8 +2243,20 @@ public class JavacParser implements Parser {
                 }
             }
 
-            JCNewArray na = toP(F.at(newpos).NewArray(elemtype, dims.toList(), null));
+            List<JCExpression> elems = null;
+            int errpos = token.pos;
+
+            if (token.kind == LBRACE) {
+                elems = arrayInitializerElements(newpos, elemtype);
+            }
+
+            JCNewArray na = toP(F.at(newpos).NewArray(elemtype, dims.toList(), elems));
             na.dimAnnotations = dimAnnotations.toList();
+
+            if (elems != null) {
+                return syntaxError(errpos, List.of(na), "illegal.array.creation.both.dimension.and.initialization");
+            }
+
             return na;
         }
     }
@@ -2270,6 +2282,11 @@ public class JavacParser implements Parser {
     /** ArrayInitializer = "{" [VariableInitializer {"," VariableInitializer}] [","] "}"
      */
     JCExpression arrayInitializer(int newpos, JCExpression t) {
+        List<JCExpression> elems = arrayInitializerElements(newpos, t);
+        return toP(F.at(newpos).NewArray(t, List.nil(), elems));
+    }
+
+    List<JCExpression> arrayInitializerElements(int newpos, JCExpression t) {
         accept(LBRACE);
         ListBuffer<JCExpression> elems = new ListBuffer<>();
         if (token.kind == COMMA) {
@@ -2283,7 +2300,7 @@ public class JavacParser implements Parser {
             }
         }
         accept(RBRACE);
-        return toP(F.at(newpos).NewArray(t, List.nil(), elems.toList()));
+        return elems.toList();
     }
 
     /** VariableInitializer = ArrayInitializer | Expression

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -101,7 +100,7 @@ public class CMLeaf
 
     public String toString()
     {
-        StringBuffer strRet = new StringBuffer(fElement.toString());
+        StringBuilder strRet = new StringBuilder(fElement.toString());
         strRet.append(" (");
         strRet.append(fElement.uri);
         strRet.append(',');
@@ -112,7 +111,7 @@ public class CMLeaf
             strRet.append
             (
                 " (Pos:"
-                + new Integer(fPosition).toString()
+                + fPosition
                 + ")"
             );
         }

@@ -61,44 +61,44 @@ import java.nio.channels.spi.SelectorProvider;
  * <caption style="display:none">Socket options</caption>
  * <thead>
  *   <tr>
- *     <th>Option Name</th>
- *     <th>Description</th>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </th>
  *     <td> The size of the socket send buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </th>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </th>
  *     <td> Re-use address </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_BROADCAST SO_BROADCAST} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_BROADCAST SO_BROADCAST} </th>
  *     <td> Allow transmission of broadcast datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#IP_TOS IP_TOS} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_TOS IP_TOS} </th>
  *     <td> The Type of Service (ToS) octet in the Internet Protocol (IP) header </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_IF IP_MULTICAST_IF} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_IF IP_MULTICAST_IF} </th>
  *     <td> The network interface for Internet Protocol (IP) multicast datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL
- *       IP_MULTICAST_TTL} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_TTL
+ *       IP_MULTICAST_TTL} </th>
  *     <td> The <em>time-to-live</em> for Internet Protocol (IP) multicast
  *       datagrams </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP
- *       IP_MULTICAST_LOOP} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#IP_MULTICAST_LOOP
+ *       IP_MULTICAST_LOOP} </th>
  *     <td> Loopback for Internet Protocol (IP) multicast datagrams </td>
  *   </tr>
  * </tbody>

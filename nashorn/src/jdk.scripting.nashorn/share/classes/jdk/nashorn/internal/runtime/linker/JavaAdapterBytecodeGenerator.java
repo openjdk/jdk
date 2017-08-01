@@ -666,7 +666,6 @@ final class JavaAdapterBytecodeGenerator {
 
         // Load the creatingGlobal object
         loadField(mv, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
-
         // stack: [creatingGlobal]
         SET_GLOBAL.invoke(mv);
         // stack: [runnable]
@@ -726,6 +725,11 @@ final class JavaAdapterBytecodeGenerator {
             mv.ifeq(defaultBehavior);
         }
 
+        loadField(mv, DELEGATE_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        //For the cases like scripted overridden methods invoked from super constructors get adapter global/delegate fields as null, since we
+        //cannot set these fields before invoking super constructor better solution is opt out of scripted overridden method if global/delegate fields
+        //are null and invoke super method instead
+        mv.ifnull(defaultBehavior);
         loadField(mv, DELEGATE_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
         mv.dup();
         // stack: [delegate, delegate]

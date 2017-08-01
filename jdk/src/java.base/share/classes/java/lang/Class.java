@@ -364,9 +364,9 @@ public final class Class<T> implements java.io.Serializable,
             // Reflective call to get caller class is only needed if a security manager
             // is present.  Avoid the overhead of making this call otherwise.
             caller = Reflection.getCallerClass();
-            if (VM.isSystemDomainLoader(loader)) {
+            if (loader == null) {
                 ClassLoader ccl = ClassLoader.getClassLoader(caller);
-                if (!VM.isSystemDomainLoader(ccl)) {
+                if (ccl != null) {
                     sm.checkPermission(
                         SecurityConstants.GET_CLASSLOADER_PERMISSION);
                 }

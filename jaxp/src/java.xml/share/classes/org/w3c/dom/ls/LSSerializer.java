@@ -136,7 +136,7 @@ import org.w3c.dom.DOMException;
  * <p> Within markup, but outside of attributes, any occurrence of a character
  * that cannot be represented in the output character encoding is reported
  * as a <code>DOMError</code> fatal error. An example would be serializing
- * the element &lt;LaCa\u00f1ada/&gt; with <code>encoding="us-ascii"</code>.
+ * the element &lt;LaCa&ntilde;ada/&gt; with <code>encoding="us-ascii"</code>.
  * This will result with a generation of a <code>DOMError</code>
  * "wf-invalid-character-in-node-name" (as proposed in "<a href='http://www.w3.org/TR/DOM-Level-3-Core/core.html#parameter-well-formed'>
  * well-formed</a>").

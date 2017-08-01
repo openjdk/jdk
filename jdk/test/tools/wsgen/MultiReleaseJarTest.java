@@ -56,7 +56,7 @@ public class MultiReleaseJarTest {
 
     @DataProvider(name = "jarFiles")
     public Object[][] jarFiles() {
-        return new Object[][]{{"MV_BOTH.jar", 9},
+        return new Object[][]{{"MV_BOTH.jar", Math.min(10, Runtime.version().major())},
                 {"MV_ONLY_9.jar", 9},
                 {"NON_MV.jar", 8}};
     }

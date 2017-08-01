@@ -746,11 +746,11 @@ public final class BasisLibrary {
             // If node-boolean comparison -> convert node to boolean
             if (left instanceof Node || right instanceof Node) {
                 if (left instanceof Boolean) {
-                    right = new Boolean(booleanF(right));
+                    right = booleanF(right);
                     hasSimpleArgs = true;
                 }
                 if (right instanceof Boolean) {
-                    left = new Boolean(booleanF(left));
+                    left = booleanF(left);
                     hasSimpleArgs = true;
                 }
             }
