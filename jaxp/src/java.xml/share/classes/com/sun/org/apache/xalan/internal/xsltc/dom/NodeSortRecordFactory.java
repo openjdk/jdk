@@ -26,6 +26,7 @@ import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.LocaleUtility;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.text.Collator;
 
@@ -148,10 +149,17 @@ public class NodeSortRecordFactory {
                SecurityException,
                TransletException {
 
-        final NodeSortRecord sortRecord =
-            (NodeSortRecord)_class.newInstance();
-        sortRecord.initialize(node, last, _dom, _sortSettings);
-        return sortRecord;
+        try {
+            final NodeSortRecord sortRecord;
+            //NodeSortRecord subclasses are generated with a public empty constructor
+            // refer to com.sun.org.apache.xalan.internal.xsltc.compiler.Sort::compileInit
+            sortRecord = (NodeSortRecord)_class.getConstructor().newInstance();
+            sortRecord.initialize(node, last, _dom, _sortSettings);
+            return sortRecord;
+        } catch (NoSuchMethodException | IllegalArgumentException |
+                InvocationTargetException ex) {
+            throw new InstantiationException(ex.getMessage());
+        }
     }
 
     public String getClassName() {

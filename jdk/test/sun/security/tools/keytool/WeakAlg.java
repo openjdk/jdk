@@ -571,7 +571,7 @@ public class WeakAlg {
 
     static OutputAnalyzer genkeypair(String alias, String options) {
         return kt("-genkeypair -alias " + alias + " -dname CN=" + alias
-                + " -keyalg RSA -storetype JKS " + options);
+                + " -storetype JKS " + options);
     }
 
     static OutputAnalyzer certreq(String alias, String options) {

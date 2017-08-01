@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -101,6 +100,6 @@ public final class ConstantLong extends Constant implements ConstantObject {
   /** @return Long object
    */
   public Object getConstantValue(ConstantPool cp) {
-    return new Long(bytes);
+    return bytes;
   }
 }

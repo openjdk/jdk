@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,7 +53,7 @@ public class FCONST extends Instruction
     value = f;
   }
 
-  public Number getValue() { return new Float(value); }
+  public Number getValue() { return Float.valueOf(value); }
 
   /** @return Type.FLOAT
    */

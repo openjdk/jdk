@@ -25,7 +25,7 @@
  * @test
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218 8175823 8166306
- *      8178043
+ *      8178043 8181622
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -372,7 +372,20 @@ public class TestModules extends JavadocTester {
                 "--module", "moduleB",
                 "testpkg2mdlB", "testpkgmdlB");
         checkExit(Exit.OK);
-        //checkOverviewSummaryPackages();
+        checkGroupOptionSingleModule();
+    }
+
+    /**
+     * Test -group option for a single module.
+     */
+    @Test
+    void testModuleName() {
+        javadoc("-d", "out-modulename", "-use",
+                "--module-source-path", testSrc,
+                "--module", "moduleB,test.moduleFullName",
+                "testpkg2mdlB", "testpkgmdlB", "testpkgmdlfullname");
+        checkExit(Exit.OK);
+        checkModuleName(true);
     }
 
     void checkDescription(boolean found) {
@@ -381,7 +394,7 @@ public class TestModules extends JavadocTester {
                 + "<a name=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the moduleA module. Search "
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
                 + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB-summary.html", found,
                 "<!-- ============ MODULE DESCRIPTION =========== -->\n"
@@ -441,7 +454,7 @@ public class TestModules extends JavadocTester {
                 + "<a id=\"module.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\">This is a test description for the moduleA module. Search "
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
                 + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>");
         checkOutput("moduleB-summary.html", found,
                 "<section role=\"region\">\n"
@@ -742,7 +755,8 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colFirst\">transitive</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">This is a test description for the moduleA module.</div>\n"
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
                 + "</td>\n"
                 + "</tr>\n"
                 + "<tr class=\"rowColor\">\n"
@@ -826,7 +840,8 @@ public class TestModules extends JavadocTester {
                 "<dl>\n"
                 + "<dt><a href=\"moduleA-summary.html\">moduleA</a> - module moduleA</dt>\n"
                 + "<dd>\n"
-                + "<div class=\"block\">This is a test description for the moduleA module.</div>\n"
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
                 + "</dd>\n"
                 + "<dt><a href=\"moduleB-summary.html\">moduleB</a> - module moduleB</dt>\n"
                 + "<dd>\n"
@@ -841,13 +856,21 @@ public class TestModules extends JavadocTester {
                 + "search_word</a></span> - Search tag in moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
                 + "</dl>");
+        checkOutput("index-all.html", false,
+                "<dt><span class=\"searchTagLink\"><a href=\"moduleA-summary.html#searchphrase\">"
+                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "<dd>with description</dd>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"moduleA-summary.html#searchphrase\">"
+                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "<dd>with description</dd>");
     }
 
     void checkModuleModeCommon() {
         checkOutput("overview-summary.html", true,
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">This is a test description for the moduleA module.</div>\n"
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
                 + "</td>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\">\n"
@@ -855,7 +878,7 @@ public class TestModules extends JavadocTester {
                 + "</td>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduletags-summary.html\">moduletags</a></th>\n"
                 + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">This is a test description for the moduleA module.<br>\n"
+                + "<div class=\"block\">This is a test description for the moduletags module.<br>\n"
                 + " Type Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html\" title=\"class in testpkgmdltags\"><code>TestClassInModuleTags</code></a>.<br>\n"
                 + " Member Link: <a href=\"testpkgmdltags/TestClassInModuleTags.html#testMethod-java.lang.String-\"><code>testMethod(String)</code></a>.<br>\n"
                 + " Package Link: <a href=\"testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.<br></div>\n"
@@ -883,7 +906,8 @@ public class TestModules extends JavadocTester {
                 "<td class=\"colFirst\">transitive static</td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"moduleA-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
-                + "<div class=\"block\">This is a test description for the moduleA module.</div>\n"
+                + "<div class=\"block\">This is a test description for the moduleA module with a Search "
+                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
                 + "</td>",
                 "<table class=\"requiresSummary\" summary=\"Requires table, listing modules, and an explanation\">\n"
                 + "<caption><span>Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -1089,4 +1113,35 @@ public class TestModules extends JavadocTester {
                 "<table class=\"overviewSummary\" summary=\"Modules table, listing modules, and an explanation\">\n"
                 + "<caption><span>Modules</span><span class=\"tabEnd\">&nbsp;</span></caption>");
     }
+
+    void checkModuleName(boolean found) {
+        checkOutput("test.moduleFullName-summary.html", found,
+                "<div class=\"header\">\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;test.moduleFullName</h1>\n"
+                + "</div>");
+        checkOutput("index-all.html", found,
+                "<h2 class=\"title\">T</h2>\n"
+                + "<dl>\n"
+                + "<dt><a href=\"test.moduleFullName-summary.html\">test.moduleFullName</a> - module test.moduleFullName</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
+                + "</dd>");
+        checkOutput("module-overview-frame.html", found,
+                "<h2 title=\"Modules\">Modules</h2>\n"
+                + "<ul title=\"Modules\">\n"
+                + "<li><a href=\"moduleB-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('moduleB-type-frame.html','moduleB-summary.html');\">moduleB</a></li>\n"
+                + "<li><a href=\"test.moduleFullName-frame.html\" target=\"packageListFrame\" onclick=\"updateModuleFrame('test.moduleFullName-type-frame.html','test.moduleFullName-summary.html');\">test.moduleFullName</a></li>\n"
+                + "</ul>");
+        checkOutput("test.moduleFullName-summary.html", !found,
+                "<div class=\"header\">\n"
+                + "<h1 title=\"Module\" class=\"title\">Module&nbsp;moduleFullName</h1>\n"
+                + "</div>");
+        checkOutput("index-all.html", !found,
+                "<dl>\n"
+                + "<dt><a href=\"test.moduleFullName-summary.html\">moduleFullName</a> - module moduleFullName</dt>\n"
+                + "<dd>\n"
+                + "<div class=\"block\">This is a test description for the test.moduleFullName.</div>\n"
+                + "</dd>\n"
+                + "</dl>");
+}
 }

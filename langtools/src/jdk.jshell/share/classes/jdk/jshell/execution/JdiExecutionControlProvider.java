@@ -90,33 +90,37 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
      * {@code ExecutionControlProvider}. The map can optionally be modified;
      * Modified or unmodified it can be passed to
      * {@link #generate(jdk.jshell.spi.ExecutionEnv, java.util.Map) }.
-     * <table>
+     * <table class="striped">
      * <caption>Parameters</caption>
+     *   <thead>
      *   <tr>
-     *     <th>Parameter</th>
-     *     <th>Description</th>
-     *     <th>Constant Field</th>
+     *     <th scope="col">Parameter</th>
+     *     <th scope="col">Description</th>
+     *     <th scope="col">Constant Field</th>
      *   </tr>
+     *   </thead>
+     *   <tbody>
      *   <tr>
-     *     <td>remoteAgent</td>
+     *     <th scope="row">remoteAgent</th>
      *     <td>the remote agent to launch</td>
      *     <td>{@link #PARAM_REMOTE_AGENT}</td>
      *   </tr>
      *   <tr>
-     *     <td>timeout</td>
+     *     <th scope="row">timeout</th>
      *     <td>milliseconds before connect timeout</td>
      *     <td>{@link #PARAM_TIMEOUT}</td>
      *   </tr>
      *   <tr>
-     *     <td>launch</td>
+     *     <th scope="row">launch</th>
      *     <td>"true" for JDI controlled launch</td>
      *     <td>{@link #PARAM_LAUNCH}</td>
      *   </tr>
      *   <tr>
-     *     <td>hostname</td>
+     *     <th scope="row">hostname</th>
      *     <td>connect to the named of the local host ("" for discovered)</td>
      *     <td>{@link #PARAM_HOST_NAME}</td>
      *   </tr>
+     *   </tbody>
      * </table>
      *
      * @return the default parameter map

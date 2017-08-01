@@ -2695,6 +2695,30 @@ operand flagsRegL_LEGT() %{
   format %{ "apsr_L_LEGT" %}
   interface(REG_INTER);
 %}
+
+operand flagsRegUL_LTGE() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+
+  format %{ "apsr_UL_LTGE" %}
+  interface(REG_INTER);
+%}
+
+operand flagsRegUL_EQNE() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+
+  format %{ "apsr_UL_EQNE" %}
+  interface(REG_INTER);
+%}
+
+operand flagsRegUL_LEGT() %{
+  constraint(ALLOC_IN_RC(int_flags));
+  match(RegFlags);
+
+  format %{ "apsr_UL_LEGT" %}
+  interface(REG_INTER);
+%}
 #endif
 
 // Condition Code Register, floating comparisons, unordered same as "less".
@@ -3248,6 +3272,39 @@ operand cmpOpL_commute() %{
     no_overflow(0x0); // unsupported/unimplemented
   %}
 %}
+
+operand cmpOpUL() %{
+  match(Bool);
+
+  format %{ "UL" %}
+  interface(COND_INTER) %{
+    equal(0x0);
+    not_equal(0x1);
+    less(0x3);
+    greater_equal(0x2);
+    less_equal(0x9);
+    greater(0x8);
+    overflow(0x0); // unsupported/unimplemented
+    no_overflow(0x0); // unsupported/unimplemented
+  %}
+%}
+
+operand cmpOpUL_commute() %{
+  match(Bool);
+
+  format %{ "UL" %}
+  interface(COND_INTER) %{
+    equal(0x0);
+    not_equal(0x1);
+    less(0x8);
+    greater_equal(0x9);
+    less_equal(0x2);
+    greater(0x3);
+    overflow(0x0); // unsupported/unimplemented
+    no_overflow(0x0); // unsupported/unimplemented
+  %}
+%}
+
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
@@ -10467,6 +10524,17 @@ instruct compL_reg_reg(flagsReg xcc, iRegL op1, iRegL op2)
   %}
   ins_pipe(ialu_cconly_reg_reg);
 %}
+
+instruct compUL_iReg(flagsRegU xcc, iRegL op1, iRegL op2) %{
+  match(Set xcc (CmpUL op1 op2));
+
+  size(4);
+  format %{ "CMP     $op1,$op2\t! unsigned long" %}
+  ins_encode %{
+    __ cmp($op1$$Register, $op2$$Register);
+  %}
+  ins_pipe(ialu_cconly_reg_reg);
+%}
 #else
 instruct compL_reg_reg_LTGE(flagsRegL_LTGE xcc, iRegL op1, iRegL op2, iRegL tmp) %{
   match(Set xcc (CmpL op1 op2));
@@ -10474,6 +10542,20 @@ instruct compL_reg_reg_LTGE(flagsRegL_LTGE xcc, iRegL op1, iRegL op2, iRegL tmp)
 
   size(8);
   format %{ "SUBS    $tmp,$op1.low,$op2.low\t\t! long\n\t"
+            "SBCS    $tmp,$op1.hi,$op2.hi" %}
+  ins_encode %{
+    __ subs($tmp$$Register, $op1$$Register, $op2$$Register);
+    __ sbcs($tmp$$Register->successor(), $op1$$Register->successor(), $op2$$Register->successor());
+  %}
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+instruct compUL_reg_reg_LTGE(flagsRegUL_LTGE xcc, iRegL op1, iRegL op2, iRegL tmp) %{
+  match(Set xcc (CmpUL op1 op2));
+  effect(DEF xcc, USE op1, USE op2, TEMP tmp);
+
+  size(8);
+  format %{ "SUBS    $tmp,$op1.low,$op2.low\t\t! unsigned long\n\t"
             "SBCS    $tmp,$op1.hi,$op2.hi" %}
   ins_encode %{
     __ subs($tmp$$Register, $op1$$Register, $op2$$Register);
@@ -10490,6 +10572,19 @@ instruct compL_reg_con(flagsReg xcc, iRegL op1, aimmL con) %{
 
   size(8);
   format %{ "CMP     $op1,$con\t\t! long"  %}
+  ins_encode %{
+    __ cmp($op1$$Register, $con$$constant);
+  %}
+
+  ins_pipe(ialu_cconly_reg_imm);
+%}
+
+instruct compUL_reg_con(flagsRegU xcc, iRegL op1, aimmL con) %{
+  match(Set xcc (CmpUL op1 con));
+  effect(DEF xcc, USE op1, USE con);
+
+  size(8);
+  format %{ "CMP     $op1,$con\t\t! unsigned long"  %}
   ins_encode %{
     __ cmp($op1$$Register, $con$$constant);
   %}
@@ -10567,6 +10662,85 @@ instruct compL_reg_con_LEGT(flagsRegL_LEGT xcc, iRegL op1, immLlowRot con, iRegL
 
   size(8);
   format %{ "RSBS    $tmp,$op1.low,$con\t\t! long\n\t"
+            "RSCS    $tmp,$op1.hi,0" %}
+  ins_encode %{
+    __ rsbs($tmp$$Register, $op1$$Register, $con$$constant);
+    __ rscs($tmp$$Register->successor(), $op1$$Register->successor(), 0);
+  %}
+
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+instruct compUL_reg_reg_EQNE(flagsRegUL_EQNE xcc, iRegL op1, iRegL op2) %{
+  match(Set xcc (CmpUL op1 op2));
+  effect(DEF xcc, USE op1, USE op2);
+
+  size(8);
+  format %{ "TEQ    $op1.hi,$op2.hi\t\t! unsigned long\n\t"
+            "TEQ.eq $op1.lo,$op2.lo" %}
+  ins_encode %{
+    __ teq($op1$$Register->successor(), $op2$$Register->successor());
+    __ teq($op1$$Register, $op2$$Register, eq);
+  %}
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+instruct compUL_reg_reg_LEGT(flagsRegUL_LEGT xcc, iRegL op1, iRegL op2, iRegL tmp) %{
+  match(Set xcc (CmpUL op1 op2));
+  effect(DEF xcc, USE op1, USE op2, TEMP tmp);
+
+  size(8);
+  format %{ "SUBS    $tmp,$op2.low,$op1.low\t\t! unsigned long\n\t"
+            "SBCS    $tmp,$op2.hi,$op1.hi" %}
+  ins_encode %{
+    __ subs($tmp$$Register, $op2$$Register, $op1$$Register);
+    __ sbcs($tmp$$Register->successor(), $op2$$Register->successor(), $op1$$Register->successor());
+  %}
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+// TODO: try immLRot2 instead, (0, $con$$constant) becomes
+// (hi($con$$constant), lo($con$$constant)) becomes
+instruct compUL_reg_con_LTGE(flagsRegUL_LTGE xcc, iRegL op1, immLlowRot con, iRegL tmp) %{
+  match(Set xcc (CmpUL op1 con));
+  effect(DEF xcc, USE op1, USE con, TEMP tmp);
+
+  size(8);
+  format %{ "SUBS    $tmp,$op1.low,$con\t\t! unsigned long\n\t"
+            "SBCS    $tmp,$op1.hi,0" %}
+  ins_encode %{
+    __ subs($tmp$$Register, $op1$$Register, $con$$constant);
+    __ sbcs($tmp$$Register->successor(), $op1$$Register->successor(), 0);
+  %}
+
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+// TODO: try immLRot2 instead, (0, $con$$constant) becomes
+// (hi($con$$constant), lo($con$$constant)) becomes
+instruct compUL_reg_con_EQNE(flagsRegUL_EQNE xcc, iRegL op1, immLlowRot con) %{
+  match(Set xcc (CmpUL op1 con));
+  effect(DEF xcc, USE op1, USE con);
+
+  size(8);
+  format %{ "TEQ    $op1.hi,0\t\t! unsigned long\n\t"
+            "TEQ.eq $op1.lo,$con" %}
+  ins_encode %{
+    __ teq($op1$$Register->successor(), 0);
+    __ teq($op1$$Register, $con$$constant, eq);
+  %}
+
+  ins_pipe(ialu_cconly_reg_reg);
+%}
+
+// TODO: try immLRot2 instead, (0, $con$$constant) becomes
+// (hi($con$$constant), lo($con$$constant)) becomes
+instruct compUL_reg_con_LEGT(flagsRegUL_LEGT xcc, iRegL op1, immLlowRot con, iRegL tmp) %{
+  match(Set xcc (CmpUL op1 con));
+  effect(DEF xcc, USE op1, USE con, TEMP tmp);
+
+  size(8);
+  format %{ "RSBS    $tmp,$op1.low,$con\t\t! unsigned long\n\t"
             "RSCS    $tmp,$op1.hi,0" %}
   ins_encode %{
     __ rsbs($tmp$$Register, $op1$$Register, $con$$constant);
@@ -11117,6 +11291,48 @@ instruct branchConL_LEGT(cmpOpL_commute cmp, flagsRegL_LEGT xcc, label labl) %{
   match(If cmp xcc);
   effect(USE labl);
   predicate( _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le );
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "B$cmp  $xcc,$labl" %}
+  ins_encode %{
+    __ b(*($labl$$label), (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(br_cc);
+%}
+
+instruct branchConUL_LTGE(cmpOpUL cmp, flagsRegUL_LTGE xcc, label labl) %{
+  match(If cmp xcc);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "B$cmp  $xcc,$labl" %}
+  ins_encode %{
+    __ b(*($labl$$label), (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(br_cc);
+%}
+
+instruct branchConUL_EQNE(cmpOpUL cmp, flagsRegUL_EQNE xcc, label labl) %{
+  match(If cmp xcc);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "B$cmp  $xcc,$labl" %}
+  ins_encode %{
+    __ b(*($labl$$label), (AsmCondition)($cmp$$cmpcode));
+  %}
+  ins_pipe(br_cc);
+%}
+
+instruct branchConUL_LEGT(cmpOpUL_commute cmp, flagsRegUL_LEGT xcc, label labl) %{
+  match(If cmp xcc);
+  effect(USE labl);
+  predicate(_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt || _kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le);
 
   size(4);
   ins_cost(BRANCH_COST);
