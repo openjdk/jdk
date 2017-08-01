@@ -59,7 +59,7 @@ import sun.security.jca.*;
  * <p>A <i>transformation</i> is a string that describes the operation (or
  * set of operations) to be performed on the given input, to produce some
  * output. A transformation always includes the name of a cryptographic
- * algorithm (e.g., <i>DES</i>), and may be followed by a feedback mode and
+ * algorithm (e.g., <i>AES</i>), and may be followed by a feedback mode and
  * padding scheme.
  *
  * <p> A transformation is of the form:
@@ -75,17 +75,19 @@ import sun.security.jca.*;
  * For example, the following is a valid transformation:
  *
  * <pre>
- *     Cipher c = Cipher.getInstance("<i>DES/CBC/PKCS5Padding</i>");
+ *     Cipher c = Cipher.getInstance("<i>AES/CBC/PKCS5Padding</i>");
  * </pre>
  *
  * Using modes such as {@code CFB} and {@code OFB}, block
  * ciphers can encrypt data in units smaller than the cipher's actual
  * block size.  When requesting such a mode, you may optionally specify
  * the number of bits to be processed at a time by appending this number
- * to the mode name as shown in the "{@code DES/CFB8/NoPadding}" and
- * "{@code DES/OFB32/PKCS5Padding}" transformations. If no such
- * number is specified, a provider-specific default is used. (For
- * example, the SunJCE provider uses a default of 64 bits for DES.)
+ * to the mode name as shown in the "{@code AES/CFB8/NoPadding}" and
+ * "{@code AES/OFB32/PKCS5Padding}" transformations. If no such
+ * number is specified, a provider-specific default is used.
+ * (See the
+ * {@extLink security_guide_jdk_providers JDK Providers Documentation}
+ * for the JDK Providers default values.)
  * Thus, block ciphers can be turned into byte-oriented stream ciphers by
  * using an 8 bit mode such as CFB8 or OFB8.
  * <p>
@@ -308,7 +310,7 @@ public class Cipher {
         /*
          * array containing the components of a Cipher transformation:
          *
-         * index 0: algorithm component (e.g., DES)
+         * index 0: algorithm component (e.g., AES)
          * index 1: feedback component (e.g., CFB)
          * index 2: padding component (e.g., PKCS5Padding)
          */
@@ -354,8 +356,8 @@ public class Cipher {
         // transform string to lookup in the provider
         final String transform;
         // the mode/padding suffix in upper case. for example, if the algorithm
-        // to lookup is "DES/CBC/PKCS5Padding" suffix is "/CBC/PKCS5PADDING"
-        // if loopup is "DES", suffix is the empty string
+        // to lookup is "AES/CBC/PKCS5Padding" suffix is "/CBC/PKCS5PADDING"
+        // if lookup is "AES", suffix is the empty string
         // needed because aliases prevent straight transform.equals()
         final String suffix;
         // value to pass to setMode() or null if no such call required
@@ -440,11 +442,11 @@ public class Cipher {
         }
 
         if ((mode == null) && (pad == null)) {
-            // DES
+            // AES
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
         } else { // if ((mode != null) && (pad != null)) {
-            // DES/CBC/PKCS5Padding
+            // AES/CBC/PKCS5Padding
             List<Transform> list = new ArrayList<>(4);
             list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
             list.add(new Transform(alg, "/" + mode, null, pad));
@@ -488,7 +490,7 @@ public class Cipher {
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param transformation the name of the transformation, e.g.,
-     * <i>DES/CBC/PKCS5Padding</i>.
+     * <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
      *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
      * Java Security Standard Algorithm Names Specification</a>
@@ -566,7 +568,7 @@ public class Cipher {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param transformation the name of the transformation,
-     * e.g., <i>DES/CBC/PKCS5Padding</i>.
+     * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
      *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
      * Java Security Standard Algorithm Names Specification</a>
@@ -626,7 +628,7 @@ public class Cipher {
      * does not have to be registered in the provider list.
      *
      * @param transformation the name of the transformation,
-     * e.g., <i>DES/CBC/PKCS5Padding</i>.
+     * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
      *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
      * Java Security Standard Algorithm Names Specification</a>
