@@ -71,6 +71,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.rtm.cpu", vmRTMCPU());
         map.put("vm.rtm.os", vmRTMOS());
         map.put("vm.aot", vmAOT());
+        // vm.cds is true if the VM is compiled with cds support.
+        map.put("vm.cds", vmCDS());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -275,6 +277,19 @@ public class VMProps implements Callable<Map<String, String>> {
             jaotc = bin.resolve("jaotc");
         }
         return "" + Files.exists(jaotc);
+    }
+
+    /**
+     * Check for CDS support.
+     *
+     * @return true if CDS is supported by the VM to be tested.
+     */
+    protected String vmCDS() {
+        if (WB.isCDSIncludedInVmBuild()) {
+            return "true";
+        } else {
+            return "false";
+        }
     }
 
     /**

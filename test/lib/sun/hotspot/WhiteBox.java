@@ -523,6 +523,7 @@ public class WhiteBox {
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
+  public native boolean isCDSIncludedInVmBuild();
 
   // Compiler Directive
   public native int addCompilerDirective(String compDirect);
