@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1005,7 +1005,7 @@ public class Parser implements Constants, ContentHandler {
         if (className != null) {
             try {
                 final Class<?> clazz = ObjectFactory.findProviderClass(className, true);
-                node = (SyntaxTreeNode)clazz.newInstance();
+                node = (SyntaxTreeNode)clazz.getDeclaredConstructor().newInstance();
                 node.setQName(qname);
                 node.setParser(this);
                 if (_locator != null) {

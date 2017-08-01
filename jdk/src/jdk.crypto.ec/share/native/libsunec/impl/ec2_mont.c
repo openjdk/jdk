@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -35,6 +35,7 @@
  *   Stephen Fung <fungstep@hotmail.com>, and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories.
  *
+ *  Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "ec2.h"
@@ -181,10 +182,12 @@ gf2m_Mxy(const mp_int *x, const mp_int *y, mp_int *x1, mp_int *z1,
 /* Computes R = nP based on algorithm 2P of Lopex, J. and Dahab, R.  "Fast
  * multiplication on elliptic curves over GF(2^m) without
  * precomputation". Elliptic curve points P and R can be identical. Uses
- * Montgomery projective coordinates. */
+ * Montgomery projective coordinates. The timing parameter is ignored
+ * because this algorithm resists timing attacks by default. */
 mp_err
 ec_GF2m_pt_mul_mont(const mp_int *n, const mp_int *px, const mp_int *py,
-                                        mp_int *rx, mp_int *ry, const ECGroup *group)
+                                        mp_int *rx, mp_int *ry, const ECGroup *group,
+                                        int timing)
 {
         mp_err res = MP_OKAY;
         mp_int x1, x2, z1, z2;

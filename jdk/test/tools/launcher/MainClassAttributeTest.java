@@ -26,6 +26,8 @@
  * @bug 7067922
  * @author sogoel
  * @summary Test negative scenarios for main class attribute
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @build MainClassAttributeTest
  * @run main MainClassAttributeTest
  */

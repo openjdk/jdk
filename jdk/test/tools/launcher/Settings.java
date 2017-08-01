@@ -27,6 +27,8 @@ import java.io.IOException;
  * @test
  * @bug 6994753 7123582
  * @summary tests -XshowSettings options
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file Settings.java
  * @run main Settings
  * @author ksrini

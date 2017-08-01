@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.nio.charset.CodingErrorAction;
 class UTF_8 extends Unicode
 {
     public UTF_8() {
-        super("UTF-8", StandardCharsets.aliases_UTF_8);
+        super(StandardCharsets.UTF_8, StandardCharsets.aliases_UTF_8);
     }
 
     public String historicalName() {

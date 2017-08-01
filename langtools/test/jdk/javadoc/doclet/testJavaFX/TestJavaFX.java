@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
- *      8167967 8172528 8175200 8178830
+ *      8167967 8172528 8175200 8178830 8182257
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -137,7 +137,10 @@ public class TestJavaFX extends JavadocTester {
                 "<h3>Property Summary</h3>\n"
                 + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>",
-                "");
+                "<tr class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
+                "<tr class=\"rowColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
 
         checkOutput("pkg1/C.html", false,
                 "A()",
@@ -147,7 +150,11 @@ public class TestJavaFX extends JavadocTester {
                 + "</span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">Instance Methods</a>"
                 + "</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span>"
                 + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>");
+                + "</caption>",
+                "<tr id=\"i0\" class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
+                "<tr id=\"i1\" class=\"rowColor\">\n"
+                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
 
         checkOutput("index-all.html", true,
                 "<div class=\"block\">Gets the value of the property paused.</div>",

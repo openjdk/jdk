@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -257,6 +256,7 @@ public class XSElementDecl implements XSElementDeclaration {
      * A value constraint: The actual value (with respect to the {type
      * definition})
      */
+    @Deprecated
     public String getConstraintValue() {
         // REVISIT: SCAPI: what's the proper representation
         return getConstraintType() == XSConstants.VC_NONE ?
@@ -368,18 +368,21 @@ public class XSElementDecl implements XSElementDeclaration {
         fNamespaceItem = namespaceItem;
     }
 
+    @Deprecated
     public Object getActualVC() {
         return getConstraintType() == XSConstants.VC_NONE ?
                null :
                fDefault.actualValue;
     }
 
+    @Deprecated
     public short getActualVCType() {
         return getConstraintType() == XSConstants.VC_NONE ?
                XSConstants.UNAVAILABLE_DT :
                fDefault.actualValueType;
     }
 
+    @Deprecated
     public ShortList getItemValueTypes() {
         return getConstraintType() == XSConstants.VC_NONE ?
                null :
