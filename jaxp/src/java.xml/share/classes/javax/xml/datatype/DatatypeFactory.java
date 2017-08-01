@@ -34,7 +34,7 @@ import com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl;
 
 /**
  * Factory that creates new {@code javax.xml.datatype} {@code Object}s that map XML to/from Java {@code Object}s.
- * <p>
+ * <p id="DatatypeFactory.newInstance">
  * A new instance of the {@code DatatypeFactory} is created through the {@link #newInstance()} method
  * that uses the following implementation resolution mechanisms to determine an implementation:
  * <ol>
@@ -779,32 +779,32 @@ public abstract class DatatypeFactory {
      *          {@link GregorianCalendar} to an {@link XMLGregorianCalendar}</caption>
      *   <thead>
      *     <tr>
-     *        <th>{@code java.util.GregorianCalendar} field</th>
-     *        <th>{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
+     *        <th scope="col">{@code java.util.GregorianCalendar} field</th>
+     *        <th scope="col">{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>{@code ERA == GregorianCalendar.BC ? -YEAR : YEAR}</td>
+     *       <th scope="row">{@code ERA == GregorianCalendar.BC ? -YEAR : YEAR}</th>
      *       <td>{@link XMLGregorianCalendar#setYear(int year)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code MONTH + 1}</td>
+     *       <th scope="row">{@code MONTH + 1}</th>
      *       <td>{@link XMLGregorianCalendar#setMonth(int month)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code DAY_OF_MONTH}</td>
+     *       <th scope="row">{@code DAY_OF_MONTH}</th>
      *       <td>{@link XMLGregorianCalendar#setDay(int day)}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND}</td>
+     *       <th scope="row">{@code HOUR_OF_DAY, MINUTE, SECOND, MILLISECOND}</th>
      *       <td>{@link XMLGregorianCalendar#setTime(int hour, int minute, int second, BigDecimal fractional)}</td>
      *     </tr>
      *     <tr>
-     *       <td>
+     *       <th scope="row">
      *         {@code (ZONE_OFFSET + DST_OFFSET) / (60*1000)}<br>
      *         <em>(in minutes)</em>
-     *       </td>
+     *       </th>
      *       <td>{@link XMLGregorianCalendar#setTimezone(int offset)}<sup><em>*</em></sup>
      *       </td>
      *     </tr>

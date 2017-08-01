@@ -344,7 +344,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
                 // add the algorithm checker
                 checkers.add(new AlgorithmChecker(builder.trustAnchor,
-                        buildParams.date(), null));
+                        buildParams.date(), buildParams.variant()));
 
                 BasicChecker basicChecker = null;
                 if (nextState.keyParamsNeeded()) {

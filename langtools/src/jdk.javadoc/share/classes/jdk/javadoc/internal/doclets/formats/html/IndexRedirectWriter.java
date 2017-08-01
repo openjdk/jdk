@@ -78,9 +78,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         Content windowTitle = HtmlTree.TITLE(new StringContent(title));
         head.addContent(windowTitle);
-        Content metaContentType = HtmlTree.META("Content", CONTENT_TYPE,
-                (configuration.charset.length() > 0) ?
-                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        Content metaContentType = HtmlTree.META("Content", CONTENT_TYPE, configuration.charset);
         head.addContent(metaContentType);
 
         String topFilePath = configuration.topFile.getPath();

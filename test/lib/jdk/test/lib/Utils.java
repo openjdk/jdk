@@ -686,6 +686,27 @@ public final class Utils {
         return prop;
     }
 
+    /*
+     * Run uname with specified arguments.
+     */
+    public static OutputAnalyzer uname(String... args) throws Throwable {
+        String[] cmds = new String[args.length + 1];
+        cmds[0] = "uname";
+        System.arraycopy(args, 0, cmds, 1, args.length);
+        return ProcessTools.executeCommand(cmds);
+    }
+
+    /*
+     * Returns the system distro.
+     */
+    public static String distro() {
+        try {
+            return uname("-v").asLines().get(0);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to determine distro.", t);
+        }
+    }
+
     // This method is intended to be called from a jtreg test.
     // It will identify the name of the test by means of stack walking.
     // It can handle both jtreg tests and a testng tests wrapped inside jtreg tests.

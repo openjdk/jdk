@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,6 +41,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * in this class should allow easy garbage collection of source
  * trees (not yet!), and should centralize parsing for those source trees.
  */
+@SuppressWarnings("deprecation")
 public class SourceTreeManager
 {
 

@@ -24,10 +24,10 @@
  */
 
 /**
- * This package contains Oracle Corporation's platform extension to
- * the implementation of the
+ * This package contains the JDK's extension to
+ * the standard implementation of the
  * {@link java.lang.management} API and also defines the management
- * interface for some other components for the platform.
+ * interface for some other components of the platform.
  *
  * <p>
  * All platform MBeans are registered in the <em>platform MBeanServer</em>

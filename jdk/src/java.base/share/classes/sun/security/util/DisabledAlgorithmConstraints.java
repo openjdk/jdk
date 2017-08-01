@@ -752,7 +752,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         private int minSize;            // the minimal available key size
         private int maxSize;            // the maximal available key size
         private int prohibitedSize = -1;    // unavailable key sizes
-        private int size;
 
         public KeySizeConstraint(String algo, Operator operator, int length) {
             algorithm = algo;
@@ -811,8 +810,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     return;
                 }
                 throw new CertPathValidatorException(
-                        "Algorithm constraints check failed on keysize limits. "
-                        + algorithm + " " + size + "bit key" + extendedMsg(cp),
+                        "Algorithm constraints check failed on keysize limits. " +
+                        algorithm + " " + KeyUtil.getKeySize(key) + "bit key" +
+                        extendedMsg(cp),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
         }
@@ -864,7 +864,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 return true;
             }
 
-            size = KeyUtil.getKeySize(key);
+            int size = KeyUtil.getKeySize(key);
             if (size == 0) {
                 return false;    // we don't allow any key of size 0.
             } else if (size > 0) {

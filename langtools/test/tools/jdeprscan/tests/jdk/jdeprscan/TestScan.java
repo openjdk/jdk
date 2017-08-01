@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import com.sun.tools.jdeprscan.Main;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -50,6 +51,7 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.testng.Assert;
 
 import org.testng.annotations.Test;
@@ -65,9 +67,16 @@ public class TestScan {
 
     @Test
     public void testScanAgainstReferenceFile() throws IOException {
-        String testclasses = System.getProperty("test.classes");
-        String deprcases = testclasses + "/../../../cases";
-        String deprusage = testclasses + "/../../../usage";
+        String[] testClassPath = System.getProperty("test.class.path", "")
+                .split(File.pathSeparator);
+        String deprcases = Stream.of(testClassPath)
+                .filter(e -> e.endsWith("cases"))
+                .findAny()
+                .orElseThrow(() -> new InternalError("cases not found"));
+        String deprusage = Stream.of(testClassPath)
+                .filter(e -> e.endsWith("usage"))
+                .findAny()
+                .orElseThrow(() -> new InternalError("usage not found"));
 
         Set<String> expected = loadExpected();
         System.out.println("expected = " + expected);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,18 @@ public class IOUtils {
      * Read up to <code>length</code> of bytes from <code>in</code>
      * until EOF is detected.
      * @param is input stream, must not be null
-     * @param length number of bytes to read, -1 or Integer.MAX_VALUE means
-     *        read as much as possible
+     * @param length number of bytes to read
      * @param readAll if true, an EOFException will be thrown if not enough
-     *        bytes are read. Ignored when length is -1 or Integer.MAX_VALUE
+     *        bytes are read.
      * @return bytes read
      * @throws IOException Any IO error or a premature EOF is detected
      */
     public static byte[] readFully(InputStream is, int length, boolean readAll)
             throws IOException {
+        if (length < 0) {
+            throw new IOException("Invalid length");
+        }
         byte[] output = {};
-        if (length == -1) length = Integer.MAX_VALUE;
         int pos = 0;
         while (pos < length) {
             int bytesToRead;
@@ -64,7 +65,7 @@ public class IOUtils {
             }
             int cc = is.read(output, pos, bytesToRead);
             if (cc < 0) {
-                if (readAll && length != Integer.MAX_VALUE) {
+                if (readAll) {
                     throw new EOFException("Detect premature EOF");
                 } else {
                     if (output.length != pos) {

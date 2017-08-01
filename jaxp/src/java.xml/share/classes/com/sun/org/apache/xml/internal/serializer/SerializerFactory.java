@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -125,7 +124,7 @@ public final class SerializerFactory
 
         // _serializers.put(method, cls);
 
-        Object obj = cls.newInstance();
+        Object obj = cls.getConstructor().newInstance();
 
         if (obj instanceof SerializationHandler)
         {
@@ -151,7 +150,7 @@ public final class SerializerFactory
                   className = SerializerConstants.DEFAULT_SAX_SERIALIZER;
                   cls = ObjectFactory.findProviderClass(className, true);
                   SerializationHandler sh =
-                      (SerializationHandler) cls.newInstance();
+                      (SerializationHandler) cls.getConstructor().newInstance();
                   sh.setContentHandler( (ContentHandler) obj);
                   sh.setOutputFormat(format);
 

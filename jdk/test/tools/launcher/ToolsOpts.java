@@ -28,6 +28,8 @@
  * javac as a test launcher. Create a dummy javac and intercept options to check
  * reception of options as passed through the launcher without having to launch
  * javac. Only -J and -cp ./* options should be consumed by the launcher.
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @run main ToolsOpts
  * @author ssides
  */

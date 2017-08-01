@@ -50,6 +50,7 @@ import org.w3c.dom.DOMImplementation;
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -183,9 +184,13 @@ public final class DOMImplementationRegistry {
                 } else {
                     sourceClass = Class.forName(sourceName);
                 }
-                DOMImplementationSource source =
-                    (DOMImplementationSource) sourceClass.newInstance();
-                sources.addElement(source);
+                try {
+                    DOMImplementationSource source =
+                        (DOMImplementationSource) sourceClass.getConstructor().newInstance();
+                    sources.addElement(source);
+                } catch (NoSuchMethodException | InvocationTargetException e) {
+                    throw new InstantiationException(e.getMessage());
+                }
             }
         }
         return new DOMImplementationRegistry(sources);

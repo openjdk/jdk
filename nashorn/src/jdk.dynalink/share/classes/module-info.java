@@ -32,8 +32,8 @@
  * useful for implementing programming languages where at least some expressions
  * have dynamic types (that is, types that can not be decided statically), and
  * the operations on dynamic types are expressed as
- * {@link java.lang.invoke.CallSite call sites}. These call sites will be
- * linked to appropriate target {@link java.lang.invoke.MethodHandle method handles}
+ * {@linkplain java.lang.invoke.CallSite call sites}. These call sites will be
+ * linked to appropriate target {@linkplain java.lang.invoke.MethodHandle method handles}
  * at run time based on actual types of the values the expressions evaluated to.
  * These can change between invocations, necessitating relinking the call site
  * multiple times to accommodate new types; Dynalink handles all that and more.
@@ -205,7 +205,7 @@
  * on how it links the various operations.
  * <h2>Cross-language interoperability</h2>
  * A {@code DynamicLinkerFactory} can be configured with a
- * {@link jdk.dynalink.DynamicLinkerFactory#setClassLoader(ClassLoader) class
+ * {@linkplain jdk.dynalink.DynamicLinkerFactory#setClassLoader(ClassLoader) class
  * loader}. It will try to instantiate all
  * {@link jdk.dynalink.linker.GuardingDynamicLinkerExporter} classes visible to
  * that class loader and compose the linkers they provide into the

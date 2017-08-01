@@ -286,6 +286,10 @@ public class JavaCompiler {
      */
     protected Attr attr;
 
+    /** The analyzer
+     */
+    protected Analyzer analyzer;
+
     /** The attributor.
      */
     protected Check chk;
@@ -396,11 +400,10 @@ public class JavaCompiler {
         } catch (CompletionFailure ex) {
             // inlined Check.completionError as it is not initialized yet
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
-            if (ex instanceof ClassFinder.BadClassFile)
-                throw new Abort();
         }
         source = Source.instance(context);
         attr = Attr.instance(context);
+        analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
         gen = Gen.instance(context);
         flow = Flow.instance(context);
@@ -1391,6 +1394,8 @@ public class JavaCompiler {
 
                 if (shouldStop(CompileState.FLOW))
                     return;
+
+                analyzer.flush(env);
 
                 results.add(env);
             }

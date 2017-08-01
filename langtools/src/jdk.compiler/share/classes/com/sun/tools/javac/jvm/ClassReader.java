@@ -1425,7 +1425,7 @@ public class ClassReader {
         ClassSymbol c = readClassSymbol(nextChar());
         NameAndType nt = readNameAndType(nextChar());
 
-        if (c.members_field == null)
+        if (c.members_field == null || c.kind != TYP)
             throw badClassFile("bad.enclosing.class", self, c);
 
         MethodSymbol m = findMethod(nt, c.members_field, self.flags());

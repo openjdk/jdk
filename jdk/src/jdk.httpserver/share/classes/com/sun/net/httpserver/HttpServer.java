@@ -59,21 +59,29 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * Paths are matched literally, which means that the strings are compared
  * case sensitively, and with no conversion to or from any encoded forms.
  * For example. Given a HttpServer with the following HttpContexts configured.
- * <table><caption style="display:none">description</caption>
- * <tr><td><i>Context</i></td><td><i>Context path</i></td></tr>
- * <tr><td>ctx1</td><td>"/"</td></tr>
- * <tr><td>ctx2</td><td>"/apps/"</td></tr>
- * <tr><td>ctx3</td><td>"/apps/foo/"</td></tr>
+ * <table class="striped"><caption style="display:none">description</caption>
+ * <thead>
+ * <tr><th scope="col"><i>Context</i></th><th scope="col"><i>Context path</i></th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">ctx1</th><td>"/"</td></tr>
+ * <tr><th scope="row">ctx2</th><td>"/apps/"</td></tr>
+ * <tr><th scope="row">ctx3</th><td>"/apps/foo/"</td></tr>
+ * </tbody>
  * </table>
  * <p>
  * the following table shows some request URIs and which, if any context they would
  * match with.
- * <table><caption style="display:none">description</caption>
- * <tr><td><i>Request URI</i></td><td><i>Matches context</i></td></tr>
- * <tr><td>"http://foo.com/apps/foo/bar"</td><td>ctx3</td></tr>
- * <tr><td>"http://foo.com/apps/Foo/bar"</td><td>no match, wrong case</td></tr>
- * <tr><td>"http://foo.com/apps/app1"</td><td>ctx2</td></tr>
- * <tr><td>"http://foo.com/foo"</td><td>ctx1</td></tr>
+ * <table class="striped"><caption style="display:none">description</caption>
+ * <thead>
+ * <tr><th scope="col"><i>Request URI</i></th><th scope="col"><i>Matches context</i></th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">"http://foo.com/apps/foo/bar"</th><td>ctx3</td></tr>
+ * <tr><th scope="row">"http://foo.com/apps/Foo/bar"</th><td>no match, wrong case</td></tr>
+ * <tr><th scope="row">"http://foo.com/apps/app1"</th><td>ctx2</td></tr>
+ * <tr><th scope="row">"http://foo.com/foo"</th><td>ctx1</td></tr>
+ * </tbody>
  * </table>
  * <p>
  * <b>Note about socket backlogs</b><p>
