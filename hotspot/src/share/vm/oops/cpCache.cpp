@@ -139,7 +139,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
 }
 
 void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
-                                                       methodHandle method,
+                                                       const methodHandle& method,
                                                        int vtable_index,
                                                        bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
@@ -241,14 +241,14 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
   NOT_PRODUCT(verify(tty));
 }
 
-void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, methodHandle method,
+void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, const methodHandle& method,
                                              bool sender_is_interface) {
   int index = Method::nonvirtual_vtable_index;
   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
   set_direct_or_vtable_call(invoke_code, method, index, sender_is_interface);
 }
 
-void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
+void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {
   // either the method is a miranda or its holder should accept the given index
   assert(method->method_holder()->is_interface() || method->method_holder()->verify_vtable_index(index), "");
   // index >= 0; FIXME: inline and customize set_direct_or_vtable_call

@@ -232,7 +232,7 @@ IRT_END
 // Exceptions
 
 void InterpreterRuntime::note_trap_inner(JavaThread* thread, int reason,
-                                         methodHandle trap_method, int trap_bci, TRAPS) {
+                                         const methodHandle& trap_method, int trap_bci, TRAPS) {
   if (trap_method.not_null()) {
     MethodData* trap_mdo = trap_method->method_data();
     if (trap_mdo == NULL) {

@@ -142,6 +142,7 @@
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \
+  LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
   LOG_TAG(workgang) \
   LOG_TAG_LIST_EXT

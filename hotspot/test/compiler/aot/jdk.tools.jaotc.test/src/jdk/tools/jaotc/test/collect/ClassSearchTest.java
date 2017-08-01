@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key aot
  * @modules jdk.aot/jdk.tools.jaotc
  *          jdk.aot/jdk.tools.jaotc.collect
  * @run junit/othervm jdk.tools.jaotc.test.collect.ClassSearchTest

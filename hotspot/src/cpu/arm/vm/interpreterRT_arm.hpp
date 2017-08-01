@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 #endif
  public:
   // Creation
-  SignatureHandlerGenerator(methodHandle method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
     _masm = new MacroAssembler(buffer);
     _abi_offset = 0;
     _ireg = is_static() ? 2 : 1;

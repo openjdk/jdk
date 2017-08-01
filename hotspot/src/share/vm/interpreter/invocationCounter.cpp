@@ -104,7 +104,7 @@ const char* InvocationCounter::state_as_short_string(State state) {
 }
 
 
-static address do_nothing(methodHandle method, TRAPS) {
+static address do_nothing(const methodHandle& method, TRAPS) {
   // dummy action for inactive invocation counters
   MethodCounters* mcs = method->method_counters();
   assert(mcs != NULL, "");
@@ -114,7 +114,7 @@ static address do_nothing(methodHandle method, TRAPS) {
 }
 
 
-static address do_decay(methodHandle method, TRAPS) {
+static address do_decay(const methodHandle& method, TRAPS) {
   // decay invocation counters so compilation gets delayed
   MethodCounters* mcs = method->method_counters();
   assert(mcs != NULL, "");
@@ -130,7 +130,7 @@ void InvocationCounter::def(State state, int init, Action action) {
   _action[state] = action;
 }
 
-address dummy_invocation_counter_overflow(methodHandle m, TRAPS) {
+address dummy_invocation_counter_overflow(const methodHandle& m, TRAPS) {
   ShouldNotReachHere();
   return NULL;
 }

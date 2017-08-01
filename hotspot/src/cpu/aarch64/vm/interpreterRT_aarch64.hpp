@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +47,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 
  public:
   // Creation
-  SignatureHandlerGenerator(methodHandle method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
     _masm = new MacroAssembler(buffer);
     _num_int_args = (method->is_static() ? 1 : 0);
     _num_fp_args = 0;

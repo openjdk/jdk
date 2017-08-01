@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,6 +49,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -113,6 +114,12 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
     }
   } else {
     _unnamed_module = NULL;
+  }
+
+  if (!is_anonymous) {
+    _dictionary = create_dictionary();
+  } else {
+    _dictionary = NULL;
   }
   TRACE_INIT_ID(this);
 }
@@ -450,10 +457,82 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
   }
 }
 
+// Class iterator used by the compiler.  It gets some number of classes at
+// a safepoint to decay invocation counters on the methods.
+class ClassLoaderDataGraphKlassIteratorStatic {
+  ClassLoaderData* _current_loader_data;
+  Klass*           _current_class_entry;
+ public:
+
+  ClassLoaderDataGraphKlassIteratorStatic() : _current_loader_data(NULL), _current_class_entry(NULL) {}
+
+  InstanceKlass* try_get_next_class() {
+    assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+    int max_classes = InstanceKlass::number_of_instance_classes();
+    for (int i = 0; i < max_classes; i++) {
+
+      if (_current_class_entry != NULL) {
+        Klass* k = _current_class_entry;
+        _current_class_entry = _current_class_entry->next_link();
+
+        if (k->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(k);
+          // Only return loaded classes
+          if (ik->is_loaded()) {
+            return ik;
+          }
+        }
+      } else {
+        // Go to next CLD
+        if (_current_loader_data != NULL) {
+          _current_loader_data = _current_loader_data->next();
+        }
+        // Start at the beginning
+        if (_current_loader_data == NULL) {
+          _current_loader_data = ClassLoaderDataGraph::_head;
+        }
+
+        _current_class_entry = _current_loader_data->klasses();
+      }
+    }
+    // should never be reached: an InstanceKlass should be returned above
+    ShouldNotReachHere();
+    return NULL;   // Object_klass not even loaded?
+  }
+
+  // If the current class for the static iterator is a class being unloaded or
+  // deallocated, adjust the current class.
+  void adjust_saved_class(ClassLoaderData* cld) {
+    if (_current_loader_data == cld) {
+      _current_loader_data = cld->next();
+      if (_current_loader_data != NULL) {
+        _current_class_entry = _current_loader_data->klasses();
+      }  // else try_get_next_class will start at the head
+    }
+  }
+
+  void adjust_saved_class(Klass* klass) {
+    if (_current_class_entry == klass) {
+      _current_class_entry = klass->next_link();
+    }
+  }
+};
+
+static ClassLoaderDataGraphKlassIteratorStatic static_klass_iterator;
+
+InstanceKlass* ClassLoaderDataGraph::try_get_next_class() {
+  return static_klass_iterator.try_get_next_class();
+}
+
+
 // Remove a klass from the _klasses list for scratch_class during redefinition
 // or parsed class in the case of an error.
 void ClassLoaderData::remove_class(Klass* scratch_class) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+
+  // Adjust global class iterator.
+  static_klass_iterator.adjust_saved_class(scratch_class);
+
   Klass* prev = NULL;
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     if (k == scratch_class) {
@@ -493,6 +572,9 @@ void ClassLoaderData::unload() {
   // In some rare cases items added to this list will not be freed elsewhere.
   // To keep it simple, just free everything in it here.
   free_deallocate_list();
+
+  // Clean up global class iterator for compiler
+  static_klass_iterator.adjust_saved_class(this);
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
@@ -515,6 +597,45 @@ ModuleEntryTable* ClassLoaderData::modules() {
   return modules;
 }
 
+const int _boot_loader_dictionary_size    = 1009;
+const int _default_loader_dictionary_size = 107;
+const int _prime_array_size         = 8;                       // array of primes for system dictionary size
+const int _average_depth_goal       = 3;                       // goal for lookup length
+const int _primelist[_prime_array_size] = {107, 1009, 2017, 4049, 5051, 10103, 20201, 40423};
+
+// Calculate a "good" dictionary size based
+// on predicted or current loaded classes count.
+static int calculate_dictionary_size(int classcount) {
+  int newsize = _primelist[0];
+  if (classcount > 0 && !DumpSharedSpaces) {
+    int index = 0;
+    int desiredsize = classcount/_average_depth_goal;
+    for (newsize = _primelist[index]; index < _prime_array_size -1;
+         newsize = _primelist[++index]) {
+      if (desiredsize <=  newsize) {
+        break;
+      }
+    }
+  }
+  return newsize;
+}
+
+Dictionary* ClassLoaderData::create_dictionary() {
+  assert(!is_anonymous(), "anonymous class loader data do not have a dictionary");
+  int size;
+  if (_the_null_class_loader_data == NULL) {
+    size = _boot_loader_dictionary_size;
+  } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+    size = 1;  // there's only one class in relection class loader and no initiated classes
+  } else if (is_system_class_loader_data()) {
+    size = calculate_dictionary_size(PredictedLoadedClassCount);
+  } else {
+    size = _default_loader_dictionary_size;
+  }
+  return new Dictionary(this, size);
+}
+
+// Unloading support
 oop ClassLoaderData::keep_alive_object() const {
   assert_locked_or_safepoint(_metaspace_lock);
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
@@ -544,6 +665,13 @@ ClassLoaderData::~ClassLoaderData() {
     // Destroy the table itself
     delete _modules;
     _modules = NULL;
+  }
+
+  // Release C heap allocated hashtable for the dictionary
+  if (_dictionary != NULL) {
+    // Destroy the table itself
+    delete _dictionary;
+    _dictionary = NULL;
   }
 
   if (_unnamed_module != NULL) {
@@ -974,6 +1102,46 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   }
 }
 
+#define FOR_ALL_DICTIONARY(X) for (ClassLoaderData* X = _head; X != NULL; X = X->next()) \
+                                if (X->dictionary() != NULL)
+
+// Walk classes in the loaded class dictionaries in various forms.
+// Only walks the classes defined in this class loader.
+void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->classes_do(f);
+  }
+}
+
+// Only walks the classes defined in this class loader.
+void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->classes_do(f, CHECK);
+  }
+}
+
+// Walks all entries in the dictionary including entries initiated by this class loader.
+void ClassLoaderDataGraph::dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->all_entries_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::verify_dictionary() {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->verify();
+  }
+}
+
+void ClassLoaderDataGraph::print_dictionary(bool details) {
+  FOR_ALL_DICTIONARY(cld) {
+    tty->print("Dictionary for class loader ");
+    cld->print_value();
+    tty->cr();
+    cld->dictionary()->print(details);
+  }
+}
+
 GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   assert(_head == NULL || _saved_head != NULL, "remember_new_clds(true) not called?");
 
@@ -1074,14 +1242,19 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   }
 
   if (seen_dead_loader) {
-    // Walk a ModuleEntry's reads and a PackageEntry's exports lists
-    // to determine if there are modules on those lists that are now
-    // dead and should be removed.  A module's life cycle is equivalent
-    // to its defining class loader's life cycle.  Since a module is
-    // considered dead if its class loader is dead, these walks must
-    // occur after each class loader's aliveness is determined.
     data = _head;
     while (data != NULL) {
+      // Remove entries in the dictionary of live class loader that have
+      // initiated loading classes in a dead class loader.
+      if (data->dictionary() != NULL) {
+        data->dictionary()->do_unloading();
+      }
+      // Walk a ModuleEntry's reads, and a PackageEntry's exports
+      // lists to determine if there are modules on those lists that are now
+      // dead and should be removed.  A module's life cycle is equivalent
+      // to its defining class loader's life cycle.  Since a module is
+      // considered dead if its class loader is dead, these walks must
+      // occur after each class loader's aliveness is determined.
       if (data->packages() != NULL) {
         data->packages()->purge_all_package_exports();
       }
@@ -1250,6 +1423,15 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
   } else {
     out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_value_on(out);
+  }
+}
+
+void ClassLoaderData::print_on(outputStream* out) const {
+  if (class_loader() == NULL) {
+    out->print("NULL class_loader");
+  } else {
+    out->print("class loader " INTPTR_FORMAT " ", p2i(this));
+    class_loader()->print_on(out);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities.soql;
 import java.util.*;
 import javax.script.ScriptException;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -166,11 +167,12 @@ public class JSJavaHeap extends DefaultScriptObject {
         }
 
       final Callable finalFunc = func;
-        SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+        ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
         if (withLoader) {
-            sysDict.classesDo(new SystemDictionary.ClassAndLoaderVisitor() {
-                    public void visit(Klass kls, Oop loader) {
+            cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
+                    public void visit(Klass kls) {
                         JSJavaKlass  jk = factory.newJSJavaKlass(kls);
+                        Oop loader = kls.getClassLoader();
                         if (jk == null) {
                             return;
                         }
@@ -189,7 +191,7 @@ public class JSJavaHeap extends DefaultScriptObject {
                 });
 
         } else {
-            sysDict.classesDo(new SystemDictionary.ClassVisitor() {
+            cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                     public void visit(Klass kls) {
                         JSJavaKlass jk = factory.newJSJavaKlass(kls);
                         if (jk == null) {

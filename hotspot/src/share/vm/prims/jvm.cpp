@@ -1686,7 +1686,7 @@ JVM_ENTRY(jbyteArray, JVM_GetFieldTypeAnnotations(JNIEnv *env, jobject field))
   return (jbyteArray) JNIHandles::make_local(env, Annotations::make_java_array(fd.type_annotations(), THREAD));
 JVM_END
 
-static void bounds_check(constantPoolHandle cp, jint index, TRAPS) {
+static void bounds_check(const constantPoolHandle& cp, jint index, TRAPS) {
   if (!cp->is_within_bounds(index)) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Constant pool index out of bounds");
   }
@@ -1794,7 +1794,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 }
 JVM_END
 
-static bool select_method(methodHandle method, bool want_constructor) {
+static bool select_method(const methodHandle& method, bool want_constructor) {
   if (want_constructor) {
     return (method->is_initializer() && !method->is_static());
   } else {
@@ -1963,7 +1963,7 @@ JVM_ENTRY(jclass, JVM_ConstantPoolGetClassAtIfLoaded(JNIEnv *env, jobject obj, j
 }
 JVM_END
 
-static jobject get_method_at_helper(constantPoolHandle cp, jint index, bool force_resolution, TRAPS) {
+static jobject get_method_at_helper(const constantPoolHandle& cp, jint index, bool force_resolution, TRAPS) {
   constantTag tag = cp->tag_at(index);
   if (!tag.is_method() && !tag.is_interface_method()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");

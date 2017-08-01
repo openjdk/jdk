@@ -152,6 +152,9 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Free list computation
   void rebuild_free_list();
 
+  // No more handles in the both the current and following blocks
+  void clear() { _top = 0; }
+
  public:
   // Handle allocation
   jobject allocate_handle(oop obj);

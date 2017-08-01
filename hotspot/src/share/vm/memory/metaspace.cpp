@@ -3735,10 +3735,13 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
              is_class_space_allocation(mdtype) ? "class" : "data", word_size);
     ResourceMark rm;
-    LogStream ls(log.info());
-    if (loader_data->metaspace_or_null() != NULL) {
-      loader_data->dump(&ls);
+    if (log.is_debug()) {
+      if (loader_data->metaspace_or_null() != NULL) {
+        LogStream ls(log.debug());
+        loader_data->dump(&ls);
+      }
     }
+    LogStream ls(log.info());
     MetaspaceAux::dump(&ls);
     ChunkManager::print_all_chunkmanagers(&ls);
   }

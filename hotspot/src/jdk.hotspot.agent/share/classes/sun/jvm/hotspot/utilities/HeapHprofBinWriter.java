@@ -586,23 +586,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     private void writeClassDumpRecords() throws IOException {
-        SystemDictionary sysDict = VM.getVM().getSystemDictionary();
         ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
-            sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
-                            public void visit(Klass k) {
-                                try {
-                                    writeHeapRecordPrologue();
-                                    writeClassDumpRecord(k);
-                                    writeHeapRecordEpilogue();
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        });
-             // Add the anonymous classes also which are not present in the
-             // System Dictionary
-             cldGraph.allAnonymousKlassesDo(new ClassLoaderDataGraph.KlassVisitor() {
+             cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                             public void visit(Klass k) {
                                 try {
                                     writeHeapRecordPrologue();
@@ -1088,26 +1074,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private void writeClasses() throws IOException {
         // write class list (id, name) association
-        SystemDictionary sysDict = VM.getVM().getSystemDictionary();
         ClassLoaderDataGraph cldGraph = VM.getVM().getClassLoaderDataGraph();
         try {
-            sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
-                public void visit(Klass k) {
-                    try {
-                        Instance clazz = k.getJavaMirror();
-                        writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));
-                        out.writeInt(serialNum);
-                        writeObjectID(clazz);
-                        KlassMap.add(serialNum - 1, k);
-                        out.writeInt(DUMMY_STACK_TRACE_ID);
-                        writeSymbolID(k.getName());
-                        serialNum++;
-                    } catch (IOException exp) {
-                        throw new RuntimeException(exp);
-                    }
-                }
-            });
-            cldGraph.allAnonymousKlassesDo(new ClassLoaderDataGraph.KlassVisitor() {
+            cldGraph.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                 public void visit(Klass k) {
                     try {
                         Instance clazz = k.getJavaMirror();

@@ -181,7 +181,7 @@ class MetaspaceShared : AllStatic {
   static intptr_t* clone_cpp_vtables(intptr_t* p);
   static void zero_cpp_vtable_clones_for_writing();
   static void patch_cpp_vtable_pointers();
-  static bool is_valid_shared_method(const Method* m);
+  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
 
   static void serialize(SerializeClosure* sc, GrowableArray<MemRegion> *string_space,
                         size_t* space_size);

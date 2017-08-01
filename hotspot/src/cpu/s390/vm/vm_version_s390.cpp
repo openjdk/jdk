@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,10 @@ void VM_Version::initialize() {
   }
   if (UseAESIntrinsics && !has_Crypto_AES()) {
     warning("AES intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+  }
+  if (UseAESIntrinsics && !UseAES) {
+    warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 

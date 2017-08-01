@@ -42,7 +42,7 @@ BiasedLockingCounters BiasedLocking::_counters;
 static GrowableArray<Handle>*  _preserved_oop_stack  = NULL;
 static GrowableArray<markOop>* _preserved_mark_stack = NULL;
 
-static void enable_biased_locking(Klass* k) {
+static void enable_biased_locking(InstanceKlass* k) {
   k->set_prototype_header(markOopDesc::biased_locking_prototype());
 }
 
@@ -56,9 +56,9 @@ class VM_EnableBiasedLocking: public VM_Operation {
   bool is_cheap_allocated() const { return _is_cheap_allocated; }
 
   void doit() {
-    // Iterate the system dictionary enabling biased locking for all
-    // currently loaded classes
-    SystemDictionary::classes_do(enable_biased_locking);
+    // Iterate the class loader data dictionaries enabling biased locking for all
+    // currently loaded classes.
+    ClassLoaderDataGraph::dictionary_classes_do(enable_biased_locking);
     // Indicate that future instances should enable it as well
     _biased_locking_enabled = true;
 

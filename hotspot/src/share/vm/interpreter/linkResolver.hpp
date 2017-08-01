@@ -152,7 +152,7 @@ class LinkInfo : public StackObj {
     skip_access_check
   };
 
-  LinkInfo(const constantPoolHandle& pool, int index, methodHandle current_method, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS);
   LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
 
   // Condensed information from other call sites within the vm.
@@ -163,7 +163,7 @@ class LinkInfo : public StackObj {
     _name(name), _signature(signature), _current_klass(current_klass), _current_method(methodHandle()),
     _check_access(check_access == needs_access_check), _tag(tag) {}
 
-  LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, methodHandle current_method,
+  LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = needs_access_check,
            constantTag tag = JVM_CONSTANT_Invalid) :
     _resolved_klass(resolved_klass),
@@ -201,10 +201,11 @@ class LinkResolver: AllStatic {
 
  private:
 
-  static methodHandle lookup_method_in_klasses(const LinkInfo& link_info,
-                                               bool checkpolymorphism,
-                                               bool in_imethod_resolve, TRAPS);
-  static methodHandle lookup_method_in_interfaces(const LinkInfo& link_info, TRAPS);
+  static Method* lookup_method_in_klasses(const LinkInfo& link_info,
+                                          bool checkpolymorphism,
+                                          bool in_imethod_resolve);
+  static Method* lookup_method_in_interfaces(const LinkInfo& link_info);
+
   static methodHandle lookup_polymorphic_method(const LinkInfo& link_info,
                                                 Handle *appendix_result_or_null,
                                                 Handle *method_type_result, TRAPS);

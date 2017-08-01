@@ -34,8 +34,7 @@ class PlaceholderEntry;
 // being loaded, as well as arrays of primitives.
 //
 
-class PlaceholderTable : public TwoOopHashtable<Symbol*, mtClass> {
-  friend class VMStructs;
+class PlaceholderTable : public Hashtable<Symbol*, mtClass> {
 
 public:
   PlaceholderTable(int table_size);
@@ -149,8 +148,6 @@ public:
 // The system dictionary is the only user of this class.
 
 class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
-  friend class VMStructs;
-
 
  private:
   ClassLoaderData*  _loader_data;   // initiating loader

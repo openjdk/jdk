@@ -49,7 +49,7 @@
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
 
-JavaCallWrapper::JavaCallWrapper(methodHandle callee_method, Handle receiver, JavaValue* result, TRAPS) {
+JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
   JavaThread* thread = (JavaThread *)THREAD;
   bool clear_pending_exception = true;
 

@@ -35,31 +35,34 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-// The system dictionary stores all loaded classes and maps:
+// The dictionary in each ClassLoaderData stores all loaded classes, either
+// initiatied by its class loader or defined by its class loader:
 //
-//   [class name,class loader] -> class   i.e.  [Symbol*,oop] -> Klass*
+//   class loader -> ClassLoaderData -> [class, protection domain set]
 //
 // Classes are loaded lazily. The default VM class loader is
 // represented as NULL.
 
-// The underlying data structure is an open hash table with a fixed number
-// of buckets. During loading the loader object is locked, (for the VM loader
-// a private lock object is used). Class loading can thus be done concurrently,
-// but only by different loaders.
+// The underlying data structure is an open hash table (Dictionary) per
+// ClassLoaderData with a fixed number of buckets. During loading the
+// class loader object is locked, (for the VM loader a private lock object is used).
+// The global SystemDictionary_lock is held for all additions into the ClassLoaderData
+// dictionaries.  TODO: fix lock granularity so that class loading can
+// be done concurrently, but only by different loaders.
 //
 // During loading a placeholder (name, loader) is temporarily placed in
 // a side data structure, and is used to detect ClassCircularityErrors
 // and to perform verification during GC.  A GC can occur in the midst
 // of class loading, as we call out to Java, have to take locks, etc.
 //
-// When class loading is finished, a new entry is added to the system
-// dictionary and the place holder is removed. Note that the protection
-// domain field of the system dictionary has not yet been filled in when
-// the "real" system dictionary entry is created.
+// When class loading is finished, a new entry is added to the dictionary
+// of the class loader and the placeholder is removed. Note that the protection
+// domain field of the dictionary entry has not yet been filled in when
+// the "real" dictionary entry is created.
 //
 // Clients of this class who are interested in finding if a class has
 // been completely loaded -- not classes in the process of being loaded --
-// can read the SystemDictionary unlocked. This is safe because
+// can read the dictionary unlocked. This is safe because
 //    - entries are only deleted at safepoints
 //    - readers cannot come to a safepoint while actively examining
 //         an entry  (an entry cannot be deleted from under a reader)
@@ -78,6 +81,8 @@ class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
+class ProtectionDomainCacheTable;
+class ProtectionDomainCacheEntry;
 class GCTimer;
 
 // Certain classes are preloaded, such as java.lang.Object and java.lang.String.
@@ -281,7 +286,7 @@ public:
                                       bool is_superclass,
                                       TRAPS);
 
-  // Parse new stream. This won't update the system dictionary or
+  // Parse new stream. This won't update the dictionary or
   // class hierarchy, simply parse the stream. Used by JVMTI RedefineClasses.
   // Also used by Unsafe_DefineAnonymousClass
   static InstanceKlass* parse_stream(Symbol* class_name,
@@ -348,14 +353,6 @@ public:
                                                            Handle class_loader,
                                                            TRAPS);
 
-  // Iterate over all klasses in dictionary
-  // Just the classes from defining class loaders
-  static void classes_do(void f(Klass*));
-  // Added for initialize_itable_for_klass to handle exceptions
-  static void classes_do(void f(Klass*, TRAPS), TRAPS);
-  // All classes, and their class loaders, including initiating class loaders
-  static void classes_do(void f(Klass*, ClassLoaderData*));
-
   // Iterate over all methods in all klasses
   static void methods_do(void f(Method*));
 
@@ -393,11 +390,6 @@ public:
   // Printing
   static void print(bool details = true);
   static void print_shared(bool details = true);
-
-  // Number of contained klasses
-  // This is both fully loaded classes and classes in the process
-  // of being loaded
-  static int number_of_classes();
 
   // Monotonically increasing counter which grows as classes are
   // loaded or modifications such as hot-swapping or setting/removing
@@ -558,28 +550,21 @@ public:
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
                                        Symbol** message);
 
+
+  static ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
+
  protected:
 
   enum Constants {
     _loader_constraint_size = 107,                     // number of entries in constraint table
     _resolution_error_size  = 107,                     // number of entries in resolution error table
     _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _nof_buckets            = 1009,                    // number of buckets in hash table for placeholders
-    _old_default_sdsize     = 1009,                    // backward compat for system dictionary size
-    _prime_array_size       = 8,                       // array of primes for system dictionary size
-    _average_depth_goal     = 3                        // goal for lookup length
+    _shared_dictionary_size = 1009,                    // number of entries in shared dictionary
+    _placeholder_table_size = 1009                     // number of entries in hash table for placeholders
   };
 
 
-  // Static variables
-
-  // hashtable sizes for system dictionary to allow growth
-  // prime numbers for system dictionary size
-  static int                     _sdgeneration;
-  static const int               _primelist[_prime_array_size];
-
-  // Hashtable holding loaded classes.
-  static Dictionary*            _dictionary;
+  // Static tables owned by the SystemDictionary
 
   // Hashtable holding placeholders for classes being loaded.
   static PlaceholderTable*       _placeholders;
@@ -588,7 +573,7 @@ public:
   static Dictionary*             _shared_dictionary;
 
   // Monotonically increasing counter which grows with
-  // _number_of_classes as well as hot-swapping and breakpoint setting
+  // loading classes as well as hot-swapping and breakpoint setting
   // and removal.
   static int                     _number_of_modifications;
 
@@ -604,10 +589,8 @@ public:
   // Invoke methods (JSR 292)
   static SymbolPropertyTable*    _invoke_method_table;
 
-public:
-  // for VM_CounterDecay iteration support
-  friend class CounterDecay;
-  static Klass* try_get_next_class();
+  // ProtectionDomain cache
+  static ProtectionDomainCacheTable*   _pd_cache_table;
 
 protected:
   static void validate_protection_domain(InstanceKlass* klass,
@@ -616,7 +599,6 @@ protected:
 
   friend class VM_PopulateDumpSharedSpace;
   friend class TraversePlaceholdersClosure;
-  static Dictionary*         dictionary() { return _dictionary; }
   static Dictionary*         shared_dictionary() { return _shared_dictionary; }
   static PlaceholderTable*   placeholders() { return _placeholders; }
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
@@ -666,7 +648,7 @@ protected:
 
   // Basic find on loaded classes
   static InstanceKlass* find_class(int index, unsigned int hash,
-                                   Symbol* name, ClassLoaderData* loader_data);
+                                   Symbol* name, Dictionary* dictionary);
   static InstanceKlass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
