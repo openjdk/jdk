@@ -38,6 +38,9 @@
 #include <mmsystem.h>
 #include "Ports.h"
 
+/* include to prevent charset problem */
+#include "PLATFORM_API_WinOS_Charset_Util.h"
+
 #if USE_PORTS == TRUE
 
 typedef struct tag_PortControlID PortControlID;
@@ -353,10 +356,9 @@ int lineHasControls(HMIXER handle, MIXERLINE* line, MIXERLINECONTROLS* controls)
 ///// implemented functions of Ports.h
 
 INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* description) {
-    MIXERCAPS mixerCaps;
-    if (mixerGetDevCaps(mixerIndex, &mixerCaps, sizeof(MIXERCAPS)) == MMSYSERR_NOERROR) {
-        strncpy(description->name, mixerCaps.szPname, PORT_STRING_LENGTH-1);
-        description->name[PORT_STRING_LENGTH-1] = 0;
+    MIXERCAPSW mixerCaps;
+    if (mixerGetDevCapsW(mixerIndex, &mixerCaps, sizeof(MIXERCAPS)) == MMSYSERR_NOERROR) {
+        UnicodeToUTF8AndCopy(description->name, mixerCaps.szPname, PORT_STRING_LENGTH);
         sprintf(description->version, "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
         strncpy(description->description, "Port Mixer", PORT_STRING_LENGTH-1);
         return TRUE;
