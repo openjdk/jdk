@@ -35,6 +35,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -885,6 +886,7 @@ final class CollSer implements Serializable {
             throw new InvalidObjectException("negative length " + len);
         }
 
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(ois, Object[].class, len);
         Object[] a = new Object[len];
         for (int i = 0; i < len; i++) {
             a[i] = ois.readObject();
