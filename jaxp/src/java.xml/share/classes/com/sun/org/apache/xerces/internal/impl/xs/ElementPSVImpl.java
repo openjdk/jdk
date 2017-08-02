@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -154,6 +153,7 @@ public class ElementPSVImpl implements ElementPSVI {
      * @return The canonical lexical representation of the declaration's {value constraint} value.
      * @see <a href="http://www.w3.org/TR/xmlschema-1/#e-schema_default>XML Schema Part 1: Structures [schema default]</a>
      */
+    @SuppressWarnings("deprecation")
     public String getSchemaDefault() {
         return fDeclaration == null ? null : fDeclaration.getConstraintValue();
     }
@@ -165,6 +165,7 @@ public class ElementPSVImpl implements ElementPSVI {
      * @see <a href="http://www.w3.org/TR/xmlschema-1/#e-schema_normalized_value>XML Schema Part 1: Structures [schema normalized value]</a>
      * @return the normalized value of this item after validation
      */
+    @Deprecated
     public String getSchemaNormalizedValue() {
         return fValue.getNormalizedValue();
     }
@@ -296,6 +297,7 @@ public class ElementPSVImpl implements ElementPSVI {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValue()
      */
+    @Deprecated
     public Object getActualNormalizedValue() {
         return fValue.getActualValue();
     }
@@ -303,6 +305,7 @@ public class ElementPSVImpl implements ElementPSVI {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValueType()
      */
+    @Deprecated
     public short getActualNormalizedValueType() {
         return fValue.getActualValueType();
     }
@@ -310,6 +313,7 @@ public class ElementPSVImpl implements ElementPSVI {
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getItemValueTypes()
      */
+    @Deprecated
     public ShortList getItemValueTypes() {
         return fValue.getListValueTypes();
     }

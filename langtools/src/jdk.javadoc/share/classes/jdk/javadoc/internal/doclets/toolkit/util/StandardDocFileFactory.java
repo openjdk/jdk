@@ -202,11 +202,7 @@ class StandardDocFileFactory extends DocFileFactory {
 
             try {
                 OutputStream out = getFileObjectForOutput(path).openOutputStream();
-                if (configuration.docencoding == null) {
-                    return new BufferedWriter(new OutputStreamWriter(out));
-                } else {
-                    return new BufferedWriter(new OutputStreamWriter(out, configuration.docencoding));
-                }
+                return new BufferedWriter(new OutputStreamWriter(out, configuration.docencoding));
             } catch (IOException e) {
                 throw new DocFileIOException(this, DocFileIOException.Mode.WRITE, e);
             }

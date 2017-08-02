@@ -23,14 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "code/relocInfo.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"
-#include "code/relocInfo.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsCompiler.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
 
 Flag::Error AliasLevelConstraintFunc(intx value, bool verbose) {

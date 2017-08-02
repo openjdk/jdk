@@ -466,27 +466,24 @@ void LoaderConstraintTable::verify(PlaceholderTable* placeholders) {
   }
 }
 
-#ifndef PRODUCT
-
 // Called with the system dictionary lock held
-void LoaderConstraintTable::print() {
+void LoaderConstraintTable::print_on(outputStream* st) const {
   ResourceMark rm;
   assert_locked_or_safepoint(SystemDictionary_lock);
-  tty->print_cr("Java loader constraints (entries=%d, constraints=%d)",
-                table_size(), number_of_entries());
+  st->print_cr("Java loader constraints (table_size=%d, constraints=%d)",
+               table_size(), number_of_entries());
   for (int cindex = 0; cindex < table_size(); cindex++) {
     for (LoaderConstraintEntry* probe = bucket(cindex);
                                 probe != NULL;
                                 probe = probe->next()) {
-      tty->print("%4d: ", cindex);
-      probe->name()->print();
-      tty->print(" , loaders:");
+      st->print("%4d: ", cindex);
+      probe->name()->print_on(st);
+      st->print(" , loaders:");
       for (int n = 0; n < probe->num_loaders(); n++) {
-        probe->loader_data(n)->print_value();
-        tty->print(", ");
+        probe->loader_data(n)->print_value_on(st);
+        st->print(", ");
       }
-      tty->cr();
+      st->cr();
     }
   }
 }
-#endif

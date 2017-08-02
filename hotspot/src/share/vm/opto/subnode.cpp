@@ -738,6 +738,60 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
   return TypeInt::CC;           // else use worst case results
 }
 
+
+// Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
+// If both inputs are constants, compare them.
+const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
+  assert(!t1->isa_ptr(), "obsolete usage of CmpUL");
+
+  // comparing two unsigned longs
+  const TypeLong* r0 = t1->is_long();   // Handy access
+  const TypeLong* r1 = t2->is_long();
+
+  // Current installed version
+  // Compare ranges for non-overlap
+  julong lo0 = r0->_lo;
+  julong hi0 = r0->_hi;
+  julong lo1 = r1->_lo;
+  julong hi1 = r1->_hi;
+
+  // If either one has both negative and positive values,
+  // it therefore contains both 0 and -1, and since [0..-1] is the
+  // full unsigned range, the type must act as an unsigned bottom.
+  bool bot0 = ((jlong)(lo0 ^ hi0) < 0);
+  bool bot1 = ((jlong)(lo1 ^ hi1) < 0);
+
+  if (bot0 || bot1) {
+    // All unsigned values are LE -1 and GE 0.
+    if (lo0 == 0 && hi0 == 0) {
+      return TypeInt::CC_LE;            //   0 <= bot
+    } else if ((jlong)lo0 == -1 && (jlong)hi0 == -1) {
+      return TypeInt::CC_GE;            // -1 >= bot
+    } else if (lo1 == 0 && hi1 == 0) {
+      return TypeInt::CC_GE;            // bot >= 0
+    } else if ((jlong)lo1 == -1 && (jlong)hi1 == -1) {
+      return TypeInt::CC_LE;            // bot <= -1
+    }
+  } else {
+    // We can use ranges of the form [lo..hi] if signs are the same.
+    assert(lo0 <= hi0 && lo1 <= hi1, "unsigned ranges are valid");
+    // results are reversed, '-' > '+' for unsigned compare
+    if (hi0 < lo1) {
+      return TypeInt::CC_LT;            // smaller
+    } else if (lo0 > hi1) {
+      return TypeInt::CC_GT;            // greater
+    } else if (hi0 == lo1 && lo0 == hi1) {
+      return TypeInt::CC_EQ;            // Equal results
+    } else if (lo0 >= hi1) {
+      return TypeInt::CC_GE;
+    } else if (hi0 <= lo1) {
+      return TypeInt::CC_LE;
+    }
+  }
+
+  return TypeInt::CC;                   // else use worst case results
+}
+
 //=============================================================================
 //------------------------------sub--------------------------------------------
 // Simplify an CmpP (compare 2 pointers) node, based on local information.

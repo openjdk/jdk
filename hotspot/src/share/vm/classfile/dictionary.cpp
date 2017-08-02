@@ -435,16 +435,13 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 // ----------------------------------------------------------------------------
 
-void Dictionary::print(bool details) {
+void Dictionary::print_on(outputStream* st) const {
   ResourceMark rm;
 
   assert(loader_data() != NULL, "loader data should not be null");
-  if (details) {
-    tty->print_cr("Java dictionary (table_size=%d, classes=%d)",
-                   table_size(), number_of_entries());
-    tty->print_cr("^ indicates that initiating loader is different from "
-                  "defining loader");
-  }
+  st->print_cr("Java dictionary (table_size=%d, classes=%d)",
+               table_size(), number_of_entries());
+  st->print_cr("^ indicates that initiating loader is different from defining loader");
 
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
@@ -453,17 +450,15 @@ void Dictionary::print(bool details) {
       Klass* e = probe->instance_klass();
       bool is_defining_class =
          (loader_data() == e->class_loader_data());
-      if (details) {
-        tty->print("%4d: ", index);
+      st->print("%4d: %s%s, loader ", index, is_defining_class ? " " : "^", e->external_name());
+      ClassLoaderData* loader_data = e->class_loader_data();
+      if (loader_data == NULL) {
+        // Shared class not restored yet in shared dictionary
+        st->print("<shared, not restored>");
+      } else {
+        loader_data->print_value_on(st);
       }
-      tty->print("%s%s", ((!details) || is_defining_class) ? " " : "^",
-                 e->external_name());
-
-      if (details) {
-        tty->print(", loader ");
-        e->class_loader_data()->print_value();
-      }
-      tty->cr();
+      st->cr();
     }
   }
   tty->cr();
@@ -493,4 +488,3 @@ void Dictionary::verify() {
   tempst.print("System Dictionary for %s", cld->loader_name());
   verify_table<DictionaryEntry>(tempst.as_string());
 }
-

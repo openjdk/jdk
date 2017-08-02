@@ -36,6 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 // --------------------------------------------------------------------------
@@ -550,7 +551,7 @@ void SymbolTable::verify() {
 
 void SymbolTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    the_table()->dump_table(st, "SymbolTable");
+    the_table()->print_table_statistics(st, "SymbolTable");
   } else {
     st->print_cr("VERSION: 1.0");
     for (int i = 0; i < the_table()->table_size(); ++i) {

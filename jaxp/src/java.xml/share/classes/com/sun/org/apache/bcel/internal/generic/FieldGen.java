@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -95,56 +94,56 @@ public class FieldGen extends FieldGenOrMethodGen {
     checkType(Type.LONG);
 
     if(l != 0L)
-      value = new Long(l);
+      value = Long.valueOf(l);
   }
 
   public void setInitValue(int i) {
     checkType(Type.INT);
 
     if(i != 0)
-      value = new Integer(i);
+      value = Integer.valueOf(i);
   }
 
   public void setInitValue(short s) {
     checkType(Type.SHORT);
 
     if(s != 0)
-      value = new Integer(s);
+      value = Integer.valueOf(s);
   }
 
   public void setInitValue(char c) {
     checkType(Type.CHAR);
 
     if(c != 0)
-      value = new Integer(c);
+      value = Integer.valueOf(c);
   }
 
   public void setInitValue(byte b) {
     checkType(Type.BYTE);
 
     if(b != 0)
-      value = new Integer(b);
+      value = Integer.valueOf(b);
   }
 
   public void setInitValue(boolean b) {
     checkType(Type.BOOLEAN);
 
     if(b)
-      value = new Integer(1);
+      value = Integer.valueOf(1);
   }
 
   public void setInitValue(float f) {
     checkType(Type.FLOAT);
 
     if(f != 0.0)
-      value = new Float(f);
+      value = Float.valueOf(f);
   }
 
   public void setInitValue(double d) {
     checkType(Type.DOUBLE);
 
     if(d != 0.0)
-      value = new Double(d);
+      value = Double.valueOf(d);
   }
 
   /** Remove any initial value.

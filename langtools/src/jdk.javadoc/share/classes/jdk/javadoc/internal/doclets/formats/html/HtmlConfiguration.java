@@ -40,10 +40,12 @@ import com.sun.tools.doclint.DocLint;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
@@ -162,6 +164,11 @@ public class HtmlConfiguration extends BaseConfiguration {
     public boolean createtree = true;
 
     /**
+     * The META charset tag used for cross-platform viewing.
+     */
+    public String charset = null;
+
+    /**
      * True if command line option "-nodeprecated" is used. Default value is
      * false.
      */
@@ -224,7 +231,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected List<SearchIndexItem> packageSearchIndex = new ArrayList<>();
 
-    protected List<SearchIndexItem> tagSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> tagSearchIndex = new TreeSet<>(makeSearchTagComparator());
 
     protected List<SearchIndexItem> typeSearchIndex = new ArrayList<>();
 
@@ -346,6 +353,16 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public boolean allowTag(HtmlTag htmlTag) {
         return htmlTag.allowTag(this.htmlVersion);
+    }
+
+    public Comparator<SearchIndexItem> makeSearchTagComparator() {
+        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
+            int result = (sii1.getLabel()).compareTo(sii2.getLabel());
+            if (result == 0) {
+                result = (sii1.getHolder()).compareTo(sii2.getHolder());
+            }
+            return result;
+        };
     }
 
     /**
@@ -786,5 +803,24 @@ public class HtmlConfiguration extends BaseConfiguration {
         oset.addAll(Arrays.asList(options));
         oset.addAll(super.getSupportedOptions());
         return oset;
+    }
+
+    @Override
+    protected boolean finishOptionSettings0() throws DocletException {
+        if (docencoding == null) {
+            if (charset == null) {
+                docencoding = charset = (encoding == null) ? HtmlConstants.HTML_DEFAULT_CHARSET : encoding;
+            } else {
+                docencoding = charset;
+            }
+        } else {
+            if (charset == null) {
+                charset = docencoding;
+            } else if (!charset.equals(docencoding)) {
+                reporter.print(ERROR, getText("doclet.Option_conflict", "-charset", "-docencoding"));
+                return false;
+            }
+        }
+        return super.finishOptionSettings0();
     }
 }

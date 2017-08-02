@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 6253145
- * @key intermittent
  * @summary Test FileChannel.transferTo with file positions up to 8GB
  * @run testng/timeout=300 TransferTo6GBFile
  */

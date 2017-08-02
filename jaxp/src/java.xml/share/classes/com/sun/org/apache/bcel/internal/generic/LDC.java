@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -96,10 +95,10 @@ public class LDC extends CPInstruction
         return ((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8)c).getBytes();
 
     case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Float:
-        return new Float(((com.sun.org.apache.bcel.internal.classfile.ConstantFloat)c).getBytes());
+        return Float.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantFloat)c).getBytes());
 
     case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Integer:
-        return new Integer(((com.sun.org.apache.bcel.internal.classfile.ConstantInteger)c).getBytes());
+        return Integer.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantInteger)c).getBytes());
 
     default: // Never reached
       throw new RuntimeException("Unknown or invalid constant type at " + index);

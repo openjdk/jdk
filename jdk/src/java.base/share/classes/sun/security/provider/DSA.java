@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,13 @@ abstract class DSA extends SignatureSpi {
 
     /* Are we debugging? */
     private static final boolean debug = false;
+
+    /* The number of bits used in exponent blinding */
+    private static final int BLINDING_BITS = 7;
+
+    /* The constant component of the exponent blinding value */
+    private static final BigInteger BLINDING_CONSTANT =
+        BigInteger.valueOf(1 << BLINDING_BITS);
 
     /* The parameter object */
     private DSAParams params;
@@ -368,8 +375,19 @@ abstract class DSA extends SignatureSpi {
         return null;
     }
 
+
     private BigInteger generateR(BigInteger p, BigInteger q, BigInteger g,
                          BigInteger k) {
+
+        // exponent blinding to hide information from timing channel
+        SecureRandom random = getSigningRandom();
+        // start with a random blinding component
+        BigInteger blindingValue = new BigInteger(BLINDING_BITS, random);
+        // add the fixed blinding component
+        blindingValue = blindingValue.add(BLINDING_CONSTANT);
+        // replace k with a blinded value that is congruent (mod q)
+        k = k.add(q.multiply(blindingValue));
+
         BigInteger temp = g.modPow(k, p);
         return temp.mod(q);
     }
@@ -434,43 +452,8 @@ abstract class DSA extends SignatureSpi {
         byte[] kValue = new byte[(q.bitLength() + 7)/8 + 8];
 
         random.nextBytes(kValue);
-        BigInteger k = new BigInteger(1, kValue).mod(
+        return new BigInteger(1, kValue).mod(
                 q.subtract(BigInteger.ONE)).add(BigInteger.ONE);
-
-        // Using an equivalent exponent of fixed length (same as q or 1 bit
-        // less than q) to keep the kG timing relatively constant.
-        //
-        // Note that this is an extra step on top of the approach defined in
-        // FIPS 186-4 AppendixB.2.1 so as to make a fixed length K.
-        k = k.add(q).divide(BigInteger.TWO);
-
-        // An alternative implementation based on FIPS 186-4 AppendixB2.2
-        // with fixed-length K.
-        //
-        // Please keep it here as we may need to switch to it in the future.
-        //
-        // SecureRandom random = getSigningRandom();
-        // byte[] kValue = new byte[(q.bitLength() + 7)/8];
-        // BigInteger d = q.subtract(BigInteger.TWO);
-        // BigInteger k;
-        // do {
-        //     random.nextBytes(kValue);
-        //     BigInteger c = new BigInteger(1, kValue);
-        //     if (c.compareTo(d) <= 0) {
-        //         k = c.add(BigInteger.ONE);
-        //         // Using an equivalent exponent of fixed length to keep
-        //         // the g^k timing relatively constant.
-        //         //
-        //         // Note that this is an extra step on top of the approach
-        //         // defined in FIPS 186-4 AppendixB.2.2 so as to make a
-        //         // fixed length K.
-        //         if (k.bitLength() >= q.bitLength()) {
-        //             break;
-        //         }
-        //     }
-        // } while (true);
-
-        return k;
     }
 
     // Use the application-specified SecureRandom Object if provided.

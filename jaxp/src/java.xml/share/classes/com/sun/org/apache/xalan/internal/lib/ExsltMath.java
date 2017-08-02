@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -375,7 +374,7 @@ public class ExsltMath extends ExsltBase
 
      if (value != null)
      {
-       int bits = new Double(precision).intValue();
+       int bits = (int)precision;
 
        if (bits <= value.length())
          value = value.substring(0, bits);

@@ -388,8 +388,10 @@ public:
   static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
-  static void print(bool details = true);
-  static void print_shared(bool details = true);
+  static void print() { return print_on(tty); }
+  static void print_on(outputStream* st);
+  static void print_shared(outputStream* st);
+  static void dump(outputStream* st, bool verbose);
 
   // Monotonically increasing counter which grows as classes are
   // loaded or modifications such as hot-swapping or setting/removing
