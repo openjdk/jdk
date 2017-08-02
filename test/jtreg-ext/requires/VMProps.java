@@ -24,6 +24,7 @@ package requires;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -69,6 +70,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cpu.features", cpuFeatures());
         map.put("vm.rtm.cpu", vmRTMCPU());
         map.put("vm.rtm.os", vmRTMOS());
+        map.put("vm.aot", vmAOT());
         vmGC(map); // vm.gc.X = true/false
 
         VMProps.dump(map);
@@ -236,6 +238,22 @@ public class VMProps implements Callable<Map<String, String>> {
         boolean vmRTMCPU = (Platform.isPPC() ? CPUInfo.hasFeature("tcheck") : CPUInfo.hasFeature("rtm"));
 
         return "" + vmRTMCPU;
+    }
+
+    /**
+     * @return true if VM supports AOT and false otherwise
+     */
+    protected String vmAOT() {
+        // builds with aot have jaotc in <JDK>/bin
+        Path bin = Paths.get(System.getProperty("java.home"))
+                        .resolve("bin");
+        Path jaotc;
+        if (Platform.isWindows()) {
+            jaotc = bin.resolve("jaotc.exe");
+        } else {
+            jaotc = bin.resolve("jaotc");
+        }
+        return "" + Files.exists(jaotc);
     }
 
     /**
