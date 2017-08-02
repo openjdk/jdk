@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class SecuritySupport  {
     return ((Boolean)
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    return new Boolean(f.exists());
+                    return f.exists();
                 }
             })).booleanValue();
     }

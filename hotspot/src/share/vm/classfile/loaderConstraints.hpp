@@ -47,7 +47,7 @@ public:
                                    int max_loaders);
   void free_entry(LoaderConstraintEntry *entry);
 
-  LoaderConstraintEntry* bucket(int i) {
+  LoaderConstraintEntry* bucket(int i) const {
     return (LoaderConstraintEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
   }
 
@@ -79,9 +79,7 @@ public:
   void purge_loader_constraints();
 
   void verify(PlaceholderTable* placeholders);
-#ifndef PRODUCT
-  void print();
-#endif
+  void print_on(outputStream* st) const;
 };
 
 class LoaderConstraintEntry : public HashtableEntry<InstanceKlass*, mtClass> {

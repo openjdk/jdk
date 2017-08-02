@@ -103,10 +103,7 @@ public:
   // Sharing support
   void reorder_dictionary();
 
-  void print(bool details = true);
-#ifdef ASSERT
-  void printPerformanceInfoDetails();
-#endif // ASSERT
+  void print_on(outputStream* st) const;
   void verify();
 };
 
@@ -223,7 +220,7 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
     return (SymbolPropertyEntry**)HashtableEntry<Symbol*, mtSymbol>::next_addr();
   }
 
-  void print_on(outputStream* st) const {
+  void print_entry(outputStream* st) const {
     symbol()->print_value_on(st);
     st->print("/mode=" INTX_FORMAT, symbol_mode());
     st->print(" -> ");
@@ -306,9 +303,6 @@ public:
   // Sharing support
   void reorder_dictionary();
 
-#ifndef PRODUCT
-  void print();
-#endif
   void verify();
 };
 #endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP

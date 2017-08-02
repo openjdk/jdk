@@ -662,6 +662,11 @@ pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
         return -1;
     }
 
+    // Validate the pid before returning the info in case /proc/pid is racy
+    if (kill(pid, 0) < 0) {
+        return -1;
+    }
+
     *totalTime = psinfo.pr_time.tv_sec * 1000000000L + psinfo.pr_time.tv_nsec;
 
     *startTime = psinfo.pr_start.tv_sec * (jlong)1000 +

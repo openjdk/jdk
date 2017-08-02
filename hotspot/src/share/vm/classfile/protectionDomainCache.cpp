@@ -80,24 +80,17 @@ void ProtectionDomainCacheTable::oops_do(OopClosure* f) {
   }
 }
 
-#ifndef PRODUCT
-void ProtectionDomainCacheTable::print() {
-  tty->print_cr("Protection domain cache table (table_size=%d, classes=%d)",
-                table_size(), number_of_entries());
+void ProtectionDomainCacheTable::print_on(outputStream* st) const {
+  st->print_cr("Protection domain cache table (table_size=%d, classes=%d)",
+               table_size(), number_of_entries());
   for (int index = 0; index < table_size(); index++) {
     for (ProtectionDomainCacheEntry* probe = bucket(index);
                                      probe != NULL;
                                      probe = probe->next()) {
-      tty->print("%4d: ", index);
-      probe->print();
+      st->print_cr("%4d: protection_domain: " PTR_FORMAT, index, p2i(probe->literal()));
     }
   }
 }
-
-void ProtectionDomainCacheEntry::print() {
-  tty->print_cr("protection_domain: " PTR_FORMAT, p2i(literal()));
-}
-#endif
 
 void ProtectionDomainCacheTable::verify() {
   verify_table<ProtectionDomainCacheEntry>("Protection Domain Table");

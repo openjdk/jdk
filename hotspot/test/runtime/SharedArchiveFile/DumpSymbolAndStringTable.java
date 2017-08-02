@@ -56,5 +56,25 @@ public class DumpSymbolAndStringTable {
         } catch (RuntimeException e) {
             output.shouldContain("Unknown diagnostic command");
         }
+
+        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary"});
+        output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
+        try {
+            output.shouldContain("System Dictionary for jdk/internal/loader/ClassLoaders$AppClassLoader statistics:");
+            output.shouldContain("Number of buckets");
+            output.shouldContain("Number of entries");
+            output.shouldContain("Maximum bucket size");
+        } catch (RuntimeException e) {
+            output.shouldContain("Unknown diagnostic command");
+        }
+
+        pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary", "-verbose"});
+        output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
+        try {
+            output.shouldContain("Dictionary for class loader 0x");
+            output.shouldContain("^java.lang.String");
+        } catch (RuntimeException e) {
+            output.shouldContain("Unknown diagnostic command");
+        }
     }
 }

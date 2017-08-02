@@ -29,6 +29,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "prims/jvm.h"
+#include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
 

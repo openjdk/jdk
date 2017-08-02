@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,6 +35,7 @@ import com.sun.org.apache.xpath.internal.operations.Plus;
 import com.sun.org.apache.xpath.internal.operations.Quo;
 import com.sun.org.apache.xpath.internal.operations.Variable;
 
+@SuppressWarnings("deprecation")
 public class HasPositionalPredChecker extends XPathVisitor
 {
         private boolean m_hasPositionalPred = false;

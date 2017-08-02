@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1295,11 +1294,11 @@ public class XPathContext extends DTMManager // implements ExpressionContext
       m_DTMXRTreeFrags = new HashMap();
     }
 
-    if(m_DTMXRTreeFrags.containsKey(new Integer(dtmIdentity))){
-       return (DTMXRTreeFrag)m_DTMXRTreeFrags.get(new Integer(dtmIdentity));
+    if(m_DTMXRTreeFrags.containsKey(dtmIdentity)){
+       return (DTMXRTreeFrag)m_DTMXRTreeFrags.get(dtmIdentity);
     }else{
       final DTMXRTreeFrag frag = new DTMXRTreeFrag(dtmIdentity,this);
-      m_DTMXRTreeFrags.put(new Integer(dtmIdentity),frag);
+      m_DTMXRTreeFrags.put(dtmIdentity,frag);
       return frag ;
     }
   }

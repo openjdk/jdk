@@ -1670,7 +1670,7 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
 // process the same monitor lists concurrently.
 //
 // See also ParallelSPCleanupTask and
-// SafepointSynchronizer::do_cleanup_tasks() in safepoint.cpp and
+// SafepointSynchronize::do_cleanup_tasks() in safepoint.cpp and
 // Threads::parallel_java_threads_do() in thread.cpp.
 int ObjectSynchronizer::deflate_monitor_list(ObjectMonitor** listHeadp,
                                              ObjectMonitor** freeHeadp,

@@ -91,7 +91,7 @@ public class CompletableFutureTest extends JSR166TestCase {
             assertNull(f.getNow(null));
         } catch (Throwable fail) { threadUnexpectedException(fail); }
         try {
-            f.get(0L, SECONDS);
+            f.get(randomExpiredTimeout(), randomTimeUnit());
             shouldThrow();
         }
         catch (TimeoutException success) {}
@@ -103,11 +103,7 @@ public class CompletableFutureTest extends JSR166TestCase {
 
         try {
             assertEquals(value, f.join());
-        } catch (Throwable fail) { threadUnexpectedException(fail); }
-        try {
             assertEquals(value, f.getNow(null));
-        } catch (Throwable fail) { threadUnexpectedException(fail); }
-        try {
             assertEquals(value, f.get());
         } catch (Throwable fail) { threadUnexpectedException(fail); }
         assertTrue(f.isDone());
@@ -1269,6 +1265,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         r.assertInvoked();
     }}
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testRunAsync_rejectingExecutor() {
         CountingRejectingExecutor e = new CountingRejectingExecutor();
         try {
@@ -1315,6 +1312,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         r.assertInvoked();
     }}
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testSupplyAsync_rejectingExecutor() {
         CountingRejectingExecutor e = new CountingRejectingExecutor();
         try {
@@ -3265,6 +3263,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     /**
      * Completion methods throw NullPointerException with null arguments
      */
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testNPE() {
         CompletableFuture<Integer> f = new CompletableFuture<>();
         CompletableFuture<Integer> g = new CompletableFuture<>();
@@ -4326,6 +4325,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     }
 
     /** Test long recursive chains of CompletableFutures with cascading completions */
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testRecursiveChains() throws Throwable {
         for (ExecutionMode m : ExecutionMode.values())
         for (boolean addDeadEnds : new boolean[] { true, false })
@@ -4350,6 +4350,7 @@ public class CompletableFutureTest extends JSR166TestCase {
      * A single CompletableFuture with many dependents.
      * A demo of scalability - runtime is O(n).
      */
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testManyDependents() throws Throwable {
         final int n = expensiveTests ? 1_000_000 : 10;
         final CompletableFuture<Void> head = new CompletableFuture<>();
@@ -4379,6 +4380,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     }
 
     /** ant -Dvmoptions=-Xmx8m -Djsr166.expensiveTests=true -Djsr166.tckTestClass=CompletableFutureTest tck */
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testCoCompletionGarbageRetention() throws Throwable {
         final int n = expensiveTests ? 1_000_000 : 10;
         final CompletableFuture<Integer> incomplete = new CompletableFuture<>();

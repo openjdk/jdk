@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,7 @@
  * questions.
  */
 
-package sun.net.www.protocol.https;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
 /**
- * <code>HostnameVerifier</code> provides a callback mechanism so that
- * implementers of this interface can supply a policy for
- * handling the case where the host to connect to and
- * the server name from the certificate mismatch.
- *
- * The default implementation will deny such connections.
- *
- * @author Xuelei Fan
+ * Test pkg used for testing index files.
  */
-public final class DefaultHostnameVerifier implements HostnameVerifier {
-    public boolean verify(String hostname, SSLSession session) {
-        return false;
-    }
-}
+package pkg;

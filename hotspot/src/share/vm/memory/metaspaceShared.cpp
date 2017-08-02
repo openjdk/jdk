@@ -30,6 +30,7 @@
 #include "classfile/placeholders.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "code/codeCache.hpp"
@@ -1328,7 +1329,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (PrintSharedArchiveAndExit) {
     if (PrintSharedDictionary) {
       tty->print_cr("\nShared classes:\n");
-      SystemDictionary::print_shared(false);
+      SystemDictionary::print_shared(tty);
     }
     if (_archive_loading_failed) {
       tty->print_cr("archive is invalid");

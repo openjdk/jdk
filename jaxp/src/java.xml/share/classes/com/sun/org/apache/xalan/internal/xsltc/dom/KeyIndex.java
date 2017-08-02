@@ -94,7 +94,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
         if (_currentDocumentNode != rootNode) {
             _currentDocumentNode = rootNode;
             _index = new HashMap<>();
-            _rootToIndexMap.put(new Integer(rootNode), _index);
+            _rootToIndexMap.put(rootNode, _index);
         }
 
         IntegerArray nodes = _index.get(value);
@@ -178,7 +178,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
             int ident = _enhancedDOM.getElementById(id);
 
             if (ident != DTM.NULL) {
-                Integer root = new Integer(_enhancedDOM.getDocument());
+                Integer root = _enhancedDOM.getDocument();
                 Map<String, IntegerArray> index = _rootToIndexMap.get(root);
 
                 if (index == null) {
@@ -247,7 +247,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
 
         // Get the mapping table for the document containing the context node
         Map<String, IntegerArray> index =
-            _rootToIndexMap.get(new Integer(rootHandle));
+            _rootToIndexMap.get(rootHandle);
 
         // Split argument to id function into XML whitespace separated tokens
         final StringTokenizer values = new StringTokenizer(string, " \n\t");
@@ -298,7 +298,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
 
         // Get the mapping table for the document containing the context node
         Map<String,IntegerArray> index =
-                    _rootToIndexMap.get(new Integer(rootHandle));
+                    _rootToIndexMap.get(rootHandle);
 
         // Check whether the context node is present in the set of nodes
         // returned by the key function
@@ -701,7 +701,7 @@ public class KeyIndex extends DTMAxisIteratorBase {
             IntegerArray result = null;
 
             // Get mapping from key values/IDs to DTM nodes for this document
-            Map<String, IntegerArray> index = _rootToIndexMap.get(new Integer(root));
+            Map<String, IntegerArray> index = _rootToIndexMap.get(root);
 
             if (!_isKeyIterator) {
                 // For id function, tokenize argument as whitespace separated

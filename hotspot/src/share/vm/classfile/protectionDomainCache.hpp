@@ -51,7 +51,6 @@ class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
     f->do_oop(literal_addr());
   }
 
-  void print() PRODUCT_RETURN;
   void verify();
 };
 
@@ -67,7 +66,7 @@ class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
 class ProtectionDomainCacheTable : public Hashtable<oop, mtClass> {
   friend class VMStructs;
 private:
-  ProtectionDomainCacheEntry* bucket(int i) {
+  ProtectionDomainCacheEntry* bucket(int i) const {
     return (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::bucket(i);
   }
 
@@ -96,7 +95,7 @@ public:
   // GC support
   void oops_do(OopClosure* f);
 
-  void print() PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
   void verify();
 };
 

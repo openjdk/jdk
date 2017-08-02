@@ -27,6 +27,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -101,7 +102,13 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   // the above lines.
   _pool->initialize_resolved_references(loader_data, _resolved_references_map,
                                         _resolved_reference_limit,
-                                        CHECK);
+                                        THREAD);
+
+  // Clean up constant pool cache if initialize_resolved_references() failed.
+  if (HAS_PENDING_EXCEPTION) {
+    MetadataFactory::free_metadata(loader_data, cache);
+    _pool->set_cache(NULL);  // so the verifier isn't confused
+  }
 }
 
 

@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -439,7 +440,7 @@ void StringTable::verify() {
 
 void StringTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    the_table()->dump_table(st, "StringTable");
+    the_table()->print_table_statistics(st, "StringTable");
   } else {
     Thread* THREAD = Thread::current();
     st->print_cr("VERSION: 1.1");

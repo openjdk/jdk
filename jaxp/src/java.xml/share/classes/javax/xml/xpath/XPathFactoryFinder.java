@@ -26,6 +26,7 @@
 package javax.xml.xpath;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlContext;
@@ -297,26 +298,16 @@ class XPathFactoryFinder  {
                 xPathFactory = newInstanceNoServiceLoader(clazz);
             }
             if (xPathFactory == null) {
-                xPathFactory = (XPathFactory) clazz.newInstance();
+                xPathFactory = (XPathFactory) clazz.getConstructor().newInstance();
             }
-        } catch (ClassCastException classCastException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        classCastException.printStackTrace();
-                }
-                return null;
-        } catch (IllegalAccessException illegalAccessException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        illegalAccessException.printStackTrace();
-                }
-                return null;
-        } catch (InstantiationException instantiationException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        instantiationException.printStackTrace();
-                }
-                return null;
+        } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
+            InstantiationException | InvocationTargetException | NoSuchMethodException |
+            SecurityException ex) {
+            debugPrintln(()->"could not instantiate " + clazz.getName());
+            if (debug) {
+                    ex.printStackTrace();
+            }
+            return null;
         }
 
         return xPathFactory;

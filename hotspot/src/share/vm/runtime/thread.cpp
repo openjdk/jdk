@@ -848,6 +848,13 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   }
 }
 
+void Thread::print_value_on(outputStream* st) const {
+  if (is_Named_thread()) {
+    st->print(" \"%s\" ", name());
+  }
+  st->print(INTPTR_FORMAT, p2i(this));   // print address
+}
+
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
   Monitor *cur = _owned_locks;
@@ -3392,6 +3399,13 @@ void Threads::parallel_java_threads_do(ThreadClosure* tc) {
       tc->do_thread(p);
     }
   }
+  // Thread claiming protocol requires us to claim the same interesting
+  // threads on all paths. Notably, Threads::possibly_parallel_threads_do
+  // claims all Java threads *and* the VMThread. To avoid breaking the
+  // claiming protocol, we have to claim VMThread on this path too, even
+  // if we do not apply the closure to the VMThread.
+  VMThread* vmt = VMThread::vm_thread();
+  (void)vmt->claim_oops_do(true, cp);
 }
 
 // The system initialization in the library has three phases.
@@ -4357,6 +4371,10 @@ void Threads::assert_all_threads_claimed() {
     assert((thread_parity == _thread_claim_parity),
            "Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity);
   }
+  VMThread* vmt = VMThread::vm_thread();
+  const int thread_parity = vmt->oops_do_parity();
+  assert((thread_parity == _thread_claim_parity),
+         "VMThread " PTR_FORMAT " has incorrect parity %d != %d", p2i(vmt), thread_parity, _thread_claim_parity);
 }
 #endif // ASSERT
 

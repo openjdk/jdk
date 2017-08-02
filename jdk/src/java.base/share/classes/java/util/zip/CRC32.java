@@ -172,4 +172,8 @@ class CRC32 implements Checksum {
             throw new NullPointerException();
         }
     }
+
+    static {
+        ZipUtils.loadLibrary();
+    }
 }
