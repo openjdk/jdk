@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @key aot
+ * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.cli.DisabledAOTWithLibraryTest
