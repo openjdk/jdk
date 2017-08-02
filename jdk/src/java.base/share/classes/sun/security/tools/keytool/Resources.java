@@ -42,6 +42,8 @@ public class Resources extends java.util.ListResourceBundle {
         // keytool: Help part
         {".OPTION.", " [OPTION]..."},
         {"Options.", "Options:"},
+        {"option.1.set.twice", "The %s option is specified multiple times. All except the last one will be ignored."},
+        {"multiple.commands.1.2", "Only one command is allowed: both %1$s and %2$s were specified."},
         {"Use.keytool.help.for.all.available.commands",
                  "Use \"keytool -help\" for all available commands"},
         {"Key.and.Certificate.Management.Tool",

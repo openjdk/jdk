@@ -51,11 +51,10 @@ import sun.security.jca.GetInstance.Instance;
  * authentication and integrity assurance of digital data.
  *
  * <p> The signature algorithm can be, among others, the NIST standard
- * DSA, using DSA and SHA-1. The DSA algorithm using the
- * SHA-1 message digest algorithm can be specified as {@code SHA1withDSA}.
- * In the case of RSA, there are multiple choices for the message digest
- * algorithm, so the signing algorithm could be specified as, for example,
- * {@code MD2withRSA}, {@code MD5withRSA}, or {@code SHA1withRSA}.
+ * DSA, using DSA and SHA-256. The DSA algorithm using the
+ * SHA-256 message digest algorithm can be specified as {@code SHA256withDSA}.
+ * In the case of RSA the signing algorithm could be specified as, for example,
+ * {@code SHA256withRSA}.
  * The algorithm name must be specified, as there is no default.
  *
  * <p> A Signature object can be used to generate and verify digital

@@ -14394,7 +14394,7 @@ instruct compL_reg_reg(rFlagsReg cr, iRegL op1, iRegL op2)
   ins_pipe(icmp_reg_reg);
 %}
 
-instruct compL_reg_immI0(rFlagsReg cr, iRegL op1, immI0 zero)
+instruct compL_reg_immL0(rFlagsReg cr, iRegL op1, immL0 zero)
 %{
   match(Set cr (CmpL op1 zero));
 
@@ -14425,6 +14425,62 @@ instruct compL_reg_immLAddSub(rFlagsReg cr, iRegL op1, immLAddSub op2)
 instruct compL_reg_immL(rFlagsReg cr, iRegL op1, immL op2)
 %{
   match(Set cr (CmpL op1 op2));
+
+  effect(DEF cr, USE op1);
+
+  ins_cost(INSN_COST * 2);
+  format %{ "cmp  $op1, $op2" %}
+
+  ins_encode(aarch64_enc_cmp_imm(op1, op2));
+
+  ins_pipe(icmp_reg_imm);
+%}
+
+instruct compUL_reg_reg(rFlagsRegU cr, iRegL op1, iRegL op2)
+%{
+  match(Set cr (CmpUL op1 op2));
+
+  effect(DEF cr, USE op1, USE op2);
+
+  ins_cost(INSN_COST);
+  format %{ "cmp  $op1, $op2" %}
+
+  ins_encode(aarch64_enc_cmp(op1, op2));
+
+  ins_pipe(icmp_reg_reg);
+%}
+
+instruct compUL_reg_immL0(rFlagsRegU cr, iRegL op1, immL0 zero)
+%{
+  match(Set cr (CmpUL op1 zero));
+
+  effect(DEF cr, USE op1);
+
+  ins_cost(INSN_COST);
+  format %{ "tst  $op1" %}
+
+  ins_encode(aarch64_enc_cmp_imm_addsub(op1, zero));
+
+  ins_pipe(icmp_reg_imm);
+%}
+
+instruct compUL_reg_immLAddSub(rFlagsRegU cr, iRegL op1, immLAddSub op2)
+%{
+  match(Set cr (CmpUL op1 op2));
+
+  effect(DEF cr, USE op1);
+
+  ins_cost(INSN_COST);
+  format %{ "cmp  $op1, $op2" %}
+
+  ins_encode(aarch64_enc_cmp_imm_addsub(op1, op2));
+
+  ins_pipe(icmp_reg_imm);
+%}
+
+instruct compUL_reg_immL(rFlagsRegU cr, iRegL op1, immL op2)
+%{
+  match(Set cr (CmpUL op1 op2));
 
   effect(DEF cr, USE op1);
 
@@ -14920,7 +14976,7 @@ instruct cmpUI_imm0_branch(cmpOpUEqNeLtGe cmp, iRegIorL2I op1, immI0 op2, label 
 %}
 
 instruct cmpUL_imm0_branch(cmpOpUEqNeLtGe cmp, iRegL op1, immL0 op2, label labl, rFlagsRegU cr) %{
-  match(If cmp (CmpU op1 op2));
+  match(If cmp (CmpUL op1 op2));
   effect(USE labl);
 
   ins_cost(BRANCH_COST);

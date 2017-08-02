@@ -187,11 +187,11 @@ public abstract class NodeSortRecord {
                                                    translet, _last);
             Double num;
             try {
-                num = new Double(str);
+                num = Double.parseDouble(str);
             }
             // Treat number as NaN if it cannot be parsed as a double
             catch (NumberFormatException e) {
-                num = new Double(Double.NEGATIVE_INFINITY);
+                num = Double.NEGATIVE_INFINITY;
             }
             _values[_scanned++] = num;
             return(num);

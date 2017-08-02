@@ -112,7 +112,7 @@ public class CommandInfo {
      * this method will check if it implements the
      * java.io.Externalizable interface. If it does, the bean's
      * readExternal method will be called if an InputStream
-     * can be acquired from the DataHandler.<p>
+     * can be acquired from the DataHandler.
      *
      * @param dh        The DataHandler that describes the data to be
      *                  passed to the command.

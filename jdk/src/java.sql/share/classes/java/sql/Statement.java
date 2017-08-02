@@ -1379,17 +1379,17 @@ public interface Statement extends Wrapper, AutoCloseable {
      * single quote within the string will be replaced by two single quotes.
      *
      * <blockquote>
-     * <table class="striped" >
+     * <table class="striped">
      * <caption>Examples of the conversion:</caption>
      * <thead>
-     * <tr><th>Value</th><th>Result</th></tr>
+     * <tr><th scope="col">Value</th><th scope="col">Result</th></tr>
      * </thead>
      * <tbody style="text-align:center">
-     * <tr> <td>Hello</td> <td>'Hello'</td> </tr>
-     * <tr> <td>G'Day</td> <td>'G''Day'</td> </tr>
-     * <tr> <td>'G''Day'</td>
+     * <tr> <th scope="row">Hello</th> <td>'Hello'</td> </tr>
+     * <tr> <th scope="row">G'Day</th> <td>'G''Day'</td> </tr>
+     * <tr> <th scope="row">'G''Day'</th>
      * <td>'''G''''Day'''</td> </tr>
-     * <tr> <td>I'''M</td> <td>'I''''''M'</td>
+     * <tr> <th scope="row">I'''M</th> <td>'I''''''M'</td>
      * </tr>
      *
      * </tbody>
@@ -1454,48 +1454,48 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <caption>Examples of the conversion:</caption>
      * <thead>
      * <tr>
-     * <th>identifier</th>
-     * <th>alwaysQuote</th>
-     * <th>Result</th></tr>
+     * <th scope="col">identifier</th>
+     * <th scope="col">alwaysQuote</th>
+     * <th scope="col">Result</th></tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td>Hello</td>
+     * <th scope="row">Hello</th>
      * <td>false</td>
      * <td>Hello</td>
      * </tr>
      * <tr>
-     * <td>Hello</td>
+     * <th scope="row">Hello</th>
      * <td>true</td>
      * <td>"Hello"</td>
      * </tr>
      * <tr>
-     * <td>G'Day</td>
+     * <th scope="row">G'Day</th>
      * <td>false</td>
      * <td>"G'Day"</td>
      * </tr>
      * <tr>
-     * <td>"Bruce Wayne"</td>
+     * <th scope="row">"Bruce Wayne"</th>
      * <td>false</td>
      * <td>"Bruce Wayne"</td>
      * </tr>
      * <tr>
-     * <td>"Bruce Wayne"</td>
+     * <th scope="row">"Bruce Wayne"</th>
      * <td>true</td>
      * <td>"Bruce Wayne"</td>
      * </tr>
      * <tr>
-     * <td>GoodDay$</td>
+     * <th scope="row">GoodDay$</th>
      * <td>false</td>
      * <td>"GoodDay$"</td>
      * </tr>
      * <tr>
-     * <td>Hello"World</td>
+     * <th scope="row">Hello"World</th>
      * <td>false</td>
      * <td>SQLException</td>
      * </tr>
      * <tr>
-     * <td>"Hello"World"</td>
+     * <th scope="row">"Hello"World"</th>
      * <td>false</td>
      * <td>SQLException</td>
      * </tr>
@@ -1554,33 +1554,33 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <caption>Examples of the conversion:</caption>
      * <thead>
      * <tr>
-     * <th>identifier</th>
-     * <th>Simple Identifier</th>
+     * <th scope="col">identifier</th>
+     * <th scope="col">Simple Identifier</th>
      * </thead>
      *
      * <tbody>
      * <tr>
-     * <td>Hello</td>
+     * <th scope="row">Hello</th>
      * <td>true</td>
      * </tr>
      * <tr>
-     * <td>G'Day</td>
+     * <th scope="row">G'Day</th>
      * <td>false</td>
      * </tr>
      * <tr>
-     * <td>"Bruce Wayne"</td>
+     * <th scope="row">"Bruce Wayne"</th>
      * <td>false</td>
      * </tr>
      * <tr>
-     * <td>GoodDay$</td>
+     * <th scope="row">GoodDay$</th>
      * <td>false</td>
      * </tr>
      * <tr>
-     * <td>Hello"World</td>
+     * <th scope="row">Hello"World</th>
      * <td>false</td>
      * </tr>
      * <tr>
-     * <td>"Hello"World"</td>
+     * <th scope="row">"Hello"World"</th>
      * <td>false</td>
      * </tr>
      * </tbody>
@@ -1613,17 +1613,17 @@ public interface Statement extends Wrapper, AutoCloseable {
     * <caption>Examples of the conversion:</caption>
     * <thead>
     * <tr>
-    * <th>Value</th>
-    * <th>Result</th>
+    * <th scope="col">Value</th>
+    * <th scope="col">Result</th>
     * </tr>
     * </thead>
     * <tbody>
-    * <tr> <td>Hello</td> <td>N'Hello'</td> </tr>
-    * <tr> <td>G'Day</td> <td>N'G''Day'</td> </tr>
-    * <tr> <td>'G''Day'</td>
+    * <tr> <th scope="row">Hello</th> <td>N'Hello'</td> </tr>
+    * <tr> <th scope="row">G'Day</th> <td>N'G''Day'</td> </tr>
+    * <tr> <th scope="row">'G''Day'</th>
     * <td>N'''G''''Day'''</td> </tr>
-    * <tr> <td>I'''M</td> <td>N'I''''''M'</td>
-    * <tr> <td>N'Hello'</td> <td>N'N''Hello'''</td> </tr>
+    * <tr> <th scope="row">I'''M</th> <td>N'I''''''M'</td>
+    * <tr> <th scope="row">N'Hello'</th> <td>N'N''Hello'''</td> </tr>
     *
     * </tbody>
     * </table>

@@ -88,17 +88,17 @@ import org.xml.sax.SAXParseException;
  *   <caption>URIs for Supported Schema languages</caption>
  *   <thead>
  *     <tr>
- *       <th>value</th>
- *       <th>language</th>
+ *       <th scope="col">value</th>
+ *       <th scope="col">language</th>
  *     </tr>
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td>{@link javax.xml.XMLConstants#W3C_XML_SCHEMA_NS_URI} ("{@code http://www.w3.org/2001/XMLSchema}")</td>
+ *       <th scope="row">{@link javax.xml.XMLConstants#W3C_XML_SCHEMA_NS_URI} ("{@code http://www.w3.org/2001/XMLSchema}")</th>
  *       <td><a href="http://www.w3.org/TR/xmlschema-1">W3C XML Schema 1.0</a></td>
  *     </tr>
  *     <tr>
- *       <td>{@link javax.xml.XMLConstants#RELAXNG_NS_URI} ("{@code http://relaxng.org/ns/structure/1.0}")</td>
+ *       <th scope="row">{@link javax.xml.XMLConstants#RELAXNG_NS_URI} ("{@code http://relaxng.org/ns/structure/1.0}")</th>
  *       <td><a href="http://www.relaxng.org/">RELAX NG 1.0</a></td>
  *     </tr>
  *   </tbody>

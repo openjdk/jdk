@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +22,6 @@ package com.sun.org.apache.bcel.internal.generic;
 
 
 import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.classfile.Utility;
 import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 import java.io.*;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
@@ -165,7 +163,7 @@ public abstract class Instruction implements Cloneable, Serializable {
     }
 
     try {
-      obj = (Instruction)clazz.newInstance();
+      obj = (Instruction)clazz.getConstructor().newInstance();
 
       if(wide && !((obj instanceof LocalVariableInstruction) ||
                    (obj instanceof IINC) ||

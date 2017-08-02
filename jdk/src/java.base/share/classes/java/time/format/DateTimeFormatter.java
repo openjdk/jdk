@@ -154,103 +154,103 @@ import java.util.Set;
  * <caption>Predefined Formatters</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left">Formatter</th>
- * <th style="text-align:left">Description</th>
- * <th style="text-align:left">Example</th>
+ * <th scope="col" style="text-align:left">Formatter</th>
+ * <th scope="col" style="text-align:left">Description</th>
+ * <th scope="col" style="text-align:left">Example</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>{@link #ofLocalizedDate ofLocalizedDate(dateStyle)} </td>
+ * <th scope="row">{@link #ofLocalizedDate ofLocalizedDate(dateStyle)} </th>
  * <td> Formatter with date style from the locale </td>
  * <td> '2011-12-03'</td>
  * </tr>
  * <tr>
- * <td> {@link #ofLocalizedTime ofLocalizedTime(timeStyle)} </td>
+ * <th scope="row"> {@link #ofLocalizedTime ofLocalizedTime(timeStyle)} </th>
  * <td> Formatter with time style from the locale </td>
  * <td> '10:15:30'</td>
  * </tr>
  * <tr>
- * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateTimeStyle)} </td>
+ * <th scope="row"> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateTimeStyle)} </th>
  * <td> Formatter with a style for date and time from the locale</td>
  * <td> '3 Jun 2008 11:05:30'</td>
  * </tr>
  * <tr>
- * <td> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateStyle,timeStyle)}
- * </td>
+ * <th scope="row"> {@link #ofLocalizedDateTime ofLocalizedDateTime(dateStyle,timeStyle)}
+ * </th>
  * <td> Formatter with date and time styles from the locale </td>
  * <td> '3 Jun 2008 11:05'</td>
  * </tr>
  * <tr>
- * <td> {@link #BASIC_ISO_DATE}</td>
+ * <th scope="row"> {@link #BASIC_ISO_DATE}</th>
  * <td>Basic ISO date </td> <td>'20111203'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_LOCAL_DATE}</td>
+ * <th scope="row"> {@link #ISO_LOCAL_DATE}</th>
  * <td> ISO Local Date </td>
  * <td>'2011-12-03'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_OFFSET_DATE}</td>
+ * <th scope="row"> {@link #ISO_OFFSET_DATE}</th>
  * <td> ISO Date with offset </td>
  * <td>'2011-12-03+01:00'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_DATE}</td>
+ * <th scope="row"> {@link #ISO_DATE}</th>
  * <td> ISO Date with or without offset </td>
  * <td> '2011-12-03+01:00'; '2011-12-03'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_LOCAL_TIME}</td>
+ * <th scope="row"> {@link #ISO_LOCAL_TIME}</th>
  * <td> Time without offset </td>
  * <td>'10:15:30'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_OFFSET_TIME}</td>
+ * <th scope="row"> {@link #ISO_OFFSET_TIME}</th>
  * <td> Time with offset </td>
  * <td>'10:15:30+01:00'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_TIME}</td>
+ * <th scope="row"> {@link #ISO_TIME}</th>
  * <td> Time with or without offset </td>
  * <td>'10:15:30+01:00'; '10:15:30'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_LOCAL_DATE_TIME}</td>
+ * <th scope="row"> {@link #ISO_LOCAL_DATE_TIME}</th>
  * <td> ISO Local Date and Time </td>
  * <td>'2011-12-03T10:15:30'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_OFFSET_DATE_TIME}</td>
+ * <th scope="row"> {@link #ISO_OFFSET_DATE_TIME}</th>
  * <td> Date Time with Offset
  * </td><td>2011-12-03T10:15:30+01:00'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_ZONED_DATE_TIME}</td>
+ * <th scope="row"> {@link #ISO_ZONED_DATE_TIME}</th>
  * <td> Zoned Date Time </td>
  * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_DATE_TIME}</td>
+ * <th scope="row"> {@link #ISO_DATE_TIME}</th>
  * <td> Date and time with ZoneId </td>
  * <td>'2011-12-03T10:15:30+01:00[Europe/Paris]'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_ORDINAL_DATE}</td>
+ * <th scope="row"> {@link #ISO_ORDINAL_DATE}</th>
  * <td> Year and day of year </td>
  * <td>'2012-337'</td>
  * </tr>
  * <tr>
- * <td> {@link #ISO_WEEK_DATE}</td>
+ * <th scope="row"> {@link #ISO_WEEK_DATE}</th>
  * <td> Year and Week </td>
  * <td>2012-W48-6'</td></tr>
  * <tr>
- * <td> {@link #ISO_INSTANT}</td>
+ * <th scope="row"> {@link #ISO_INSTANT}</th>
  * <td> Date and Time of an Instant </td>
  * <td>'2011-12-03T10:15:30Z' </td>
  * </tr>
  * <tr>
- * <td> {@link #RFC_1123_DATE_TIME}</td>
+ * <th scope="row"> {@link #RFC_1123_DATE_TIME}</th>
  * <td> RFC 1123 / RFC 822 </td>
  * <td>'Tue, 3 Jun 2008 11:05:30 GMT'</td>
  * </tr>

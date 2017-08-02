@@ -359,7 +359,7 @@ public class Semaphore implements java.io.Serializable {
      * This &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to honor
      * the fairness setting, then use
-     * {@link #tryAcquire(long, TimeUnit) tryAcquire(0, TimeUnit.SECONDS) }
+     * {@link #tryAcquire(long, TimeUnit) tryAcquire(0, TimeUnit.SECONDS)}
      * which is almost equivalent (it also detects interruption).
      *
      * @return {@code true} if a permit was acquired and {@code false}
@@ -523,7 +523,7 @@ public class Semaphore implements java.io.Serializable {
      * &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to
      * honor the fairness setting, then use {@link #tryAcquire(int,
-     * long, TimeUnit) tryAcquire(permits, 0, TimeUnit.SECONDS) }
+     * long, TimeUnit) tryAcquire(permits, 0, TimeUnit.SECONDS)}
      * which is almost equivalent (it also detects interruption).
      *
      * @param permits the number of permits to acquire

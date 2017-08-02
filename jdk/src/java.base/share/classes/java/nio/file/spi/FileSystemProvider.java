@@ -922,21 +922,21 @@ public abstract class FileSystemProvider {
      * <table class="striped">
      * <caption style="display:none">Access Modes</caption>
      * <thead>
-     * <tr> <th>Value</th> <th>Description</th> </tr>
+     * <tr> <th scope="col">Value</th> <th scope="col">Description</th> </tr>
      * </thead>
      * <tbody>
      * <tr>
-     *   <td> {@link AccessMode#READ READ} </td>
+     *   <th scope="row"> {@link AccessMode#READ READ} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to read the file. </td>
      * </tr>
      * <tr>
-     *   <td> {@link AccessMode#WRITE WRITE} </td>
+     *   <th scope="row"> {@link AccessMode#WRITE WRITE} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to write to the file, </td>
      * </tr>
      * <tr>
-     *   <td> {@link AccessMode#EXECUTE EXECUTE} </td>
+     *   <th scope="row"> {@link AccessMode#EXECUTE EXECUTE} </th>
      *   <td> Checks that the file exists and that the Java virtual machine has
      *     permission to {@link Runtime#exec execute} the file. The semantics
      *     may differ when checking access to a directory. For example, on UNIX
