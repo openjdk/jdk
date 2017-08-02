@@ -143,11 +143,6 @@ public abstract class BaseConfiguration {
     public boolean backwardCompatibility = true;
 
     /**
-     * The META charset tag used for cross-platform viewing.
-     */
-    public String charset = "";
-
-    /**
      * True if user wants to add member names as meta keywords.
      * Set to false because meta keywords are ignored in general
      * by most Internet search engines.
@@ -693,16 +688,13 @@ public abstract class BaseConfiguration {
      * when this is called all the option have been set, this method,
      * initializes certain components before anything else is started.
      */
-    private void finishOptionSettings0() throws DocletException {
+    protected boolean finishOptionSettings0() throws DocletException {
         initDestDirectory();
         for (String link : linkList) {
             extern.link(link, reporter);
         }
         for (Pair<String, String> linkOfflinePair : linkOfflineList) {
             extern.link(linkOfflinePair.first, linkOfflinePair.second, reporter);
-        }
-        if (docencoding == null) {
-            docencoding = encoding;
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
         initTagletManager(customTagStrs);
@@ -713,6 +705,7 @@ public abstract class BaseConfiguration {
                 group.checkPackageGroups(grp.first, grp.second);
             }
         });
+        return true;
     }
 
     /**
@@ -724,8 +717,7 @@ public abstract class BaseConfiguration {
     public boolean setOptions() throws DocletException {
         initPackages();
         initModules();
-        finishOptionSettings0();
-        if (!finishOptionSettings())
+        if (!finishOptionSettings0() || !finishOptionSettings())
             return false;
 
         return true;
