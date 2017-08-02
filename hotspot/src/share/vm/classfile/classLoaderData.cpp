@@ -469,7 +469,8 @@ class ClassLoaderDataGraphKlassIteratorStatic {
   InstanceKlass* try_get_next_class() {
     assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
     int max_classes = InstanceKlass::number_of_instance_classes();
-    for (int i = 0; i < max_classes; i++) {
+    assert(max_classes > 0, "should not be called with no instance classes");
+    for (int i = 0; i < max_classes; ) {
 
       if (_current_class_entry != NULL) {
         Klass* k = _current_class_entry;
@@ -477,7 +478,9 @@ class ClassLoaderDataGraphKlassIteratorStatic {
 
         if (k->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(k);
-          // Only return loaded classes
+          i++;  // count all instance classes found
+          // Not yet loaded classes are counted in max_classes
+          // but only return loaded classes.
           if (ik->is_loaded()) {
             return ik;
           }
@@ -495,9 +498,9 @@ class ClassLoaderDataGraphKlassIteratorStatic {
         _current_class_entry = _current_loader_data->klasses();
       }
     }
-    // should never be reached: an InstanceKlass should be returned above
-    ShouldNotReachHere();
-    return NULL;   // Object_klass not even loaded?
+    // Should never be reached unless all instance classes have failed or are not fully loaded.
+    // Caller handles NULL.
+    return NULL;
   }
 
   // If the current class for the static iterator is a class being unloaded or
