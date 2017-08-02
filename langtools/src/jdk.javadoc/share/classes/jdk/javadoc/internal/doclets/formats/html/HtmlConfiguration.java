@@ -40,10 +40,12 @@ import com.sun.tools.doclint.DocLint;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlVersion;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
@@ -160,6 +162,11 @@ public class HtmlConfiguration extends BaseConfiguration {
      * False if command line option "-notree" is used. Default value is true.
      */
     public boolean createtree = true;
+
+    /**
+     * The META charset tag used for cross-platform viewing.
+     */
+    public String charset = null;
 
     /**
      * True if command line option "-nodeprecated" is used. Default value is
@@ -796,5 +803,24 @@ public class HtmlConfiguration extends BaseConfiguration {
         oset.addAll(Arrays.asList(options));
         oset.addAll(super.getSupportedOptions());
         return oset;
+    }
+
+    @Override
+    protected boolean finishOptionSettings0() throws DocletException {
+        if (docencoding == null) {
+            if (charset == null) {
+                docencoding = charset = (encoding == null) ? HtmlConstants.HTML_DEFAULT_CHARSET : encoding;
+            } else {
+                docencoding = charset;
+            }
+        } else {
+            if (charset == null) {
+                charset = docencoding;
+            } else if (!charset.equals(docencoding)) {
+                reporter.print(ERROR, getText("doclet.Option_conflict", "-charset", "-docencoding"));
+                return false;
+            }
+        }
+        return super.finishOptionSettings0();
     }
 }
