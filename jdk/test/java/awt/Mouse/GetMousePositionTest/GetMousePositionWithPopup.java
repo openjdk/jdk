@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.awt.event.MouseMotionAdapter;
 /**
  * @test
  * @key headful
- * @bug 8012026
+ * @bug 8012026 8027154
  * @summary Component.getMousePosition() does not work in an applet on MacOS
  * @author Petr Pchelko
  * @library ../../regtesthelpers
@@ -80,31 +80,29 @@ public class GetMousePositionWithPopup {
         frame1.setBounds(100, 100, 100, 100);
         frame1.addMouseMotionListener(new MouseMotionAdapter() {
 
-            private boolean shown = false;
-
             @Override
             public void mouseMoved(MouseEvent e) {
-                if (shown) {
-                    return;
-                }
-
-                shown = true;
-
                 frame2 = new Frame();
                 frame2.setBounds(120, 120, 120, 120);
+
+                frame2.addMouseMotionListener(new MouseMotionAdapter() {
+                    @Override
+                    public void mouseMoved(MouseEvent e)
+                    {
+                        Point positionInFrame2 = frame2.getMousePosition();
+                        if (positionInFrame2.x != 30 || positionInFrame2.y != 30) {
+                            throw new RuntimeException("Wrong position reported. Should be [30, 30] but was [" +
+                                    positionInFrame2.x + ", " + positionInFrame2.y + "]");
+                        }
+
+                        Point positionInFrame1 = frame1.getMousePosition();
+                        if (positionInFrame1 != null) {
+                            throw new RuntimeException("Wrong position reported. Should be null");
+                        }
+                    }
+                });
+
                 frame2.setVisible(true);
-
-                Point positionInFrame2 = frame2.getMousePosition();
-                if (positionInFrame2.x != 30 || positionInFrame2.y != 30) {
-                    throw new RuntimeException("Wrong position reported. Should be [30, 30] but was [" +
-                            positionInFrame2.x + ", " + positionInFrame2.y + "]");
-                }
-
-                Point positionInFrame1 = frame1.getMousePosition();
-                if (positionInFrame1 != null) {
-                    throw new RuntimeException("Wrong position reported. Should be null");
-                }
-
             }
         });
         frame1.setVisible(true);
