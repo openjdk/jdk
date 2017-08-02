@@ -848,6 +848,13 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   }
 }
 
+void Thread::print_value_on(outputStream* st) const {
+  if (is_Named_thread()) {
+    st->print(" \"%s\" ", name());
+  }
+  st->print(INTPTR_FORMAT, p2i(this));   // print address
+}
+
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
   Monitor *cur = _owned_locks;

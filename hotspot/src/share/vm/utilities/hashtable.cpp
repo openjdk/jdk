@@ -231,24 +231,42 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
   }
 }
 
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(Symbol *symbol) {
+// For oops and Strings the size of the literal is interesting. For other types, nobody cares.
+static int literal_size(ConstantPool*) { return 0; }
+static int literal_size(Klass*)        { return 0; }
+#if INCLUDE_ALL_GCS
+static int literal_size(nmethod*)      { return 0; }
+#endif
+
+static int literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
 }
 
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(oop oop) {
+static int literal_size(oop obj) {
   // NOTE: this would over-count if (pre-JDK8) java_lang_Class::has_offset_field() is true,
   // and the String.value array is shared by several Strings. However, starting from JDK8,
   // the String.value array is not shared anymore.
-  assert(oop != NULL && oop->klass() == SystemDictionary::String_klass(), "only strings are supported");
-  return (oop->size() + java_lang_String::value(oop)->size()) * HeapWordSize;
+  if (obj == NULL) {
+    return 0;
+  } else if (obj->klass() == SystemDictionary::String_klass()) {
+    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
+  } else {
+    return obj->size();
+  }
 }
+
 
 // Dump footprint and bucket length statistics
 //
 // Note: if you create a new subclass of Hashtable<MyNewType, F>, you will need to
-// add a new function Hashtable<T, F>::literal_size(MyNewType lit)
+// add a new function static int literal_size(MyNewType lit)
+// because I can't get template <class T> int literal_size(T) to pick the specializations for Symbol and oop.
+//
+// The StringTable and SymbolTable dumping print how much footprint is used by the String and Symbol
+// literals.
 
-template <class T, MEMFLAGS F> void RehashableHashtable<T, F>::dump_table(outputStream* st, const char *table_name) {
+template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outputStream* st,
+                                                                            const char *table_name) {
   NumberSeq summary;
   int literal_bytes = 0;
   for (int i = 0; i < this->table_size(); ++i) {
@@ -267,14 +285,16 @@ template <class T, MEMFLAGS F> void RehashableHashtable<T, F>::dump_table(output
   int entry_bytes  = (int)num_entries * sizeof(HashtableEntry<T, F>);
   int total_bytes = literal_bytes +  bucket_bytes + entry_bytes;
 
-  double bucket_avg  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
-  double entry_avg   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
-  double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
+  int bucket_size  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
+  int entry_size   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
 
   st->print_cr("%s statistics:", table_name);
-  st->print_cr("Number of buckets       : %9d = %9d bytes, avg %7.3f", (int)num_buckets, bucket_bytes,  bucket_avg);
-  st->print_cr("Number of entries       : %9d = %9d bytes, avg %7.3f", (int)num_entries, entry_bytes,   entry_avg);
-  st->print_cr("Number of literals      : %9d = %9d bytes, avg %7.3f", (int)num_entries, literal_bytes, literal_avg);
+  st->print_cr("Number of buckets       : %9d = %9d bytes, each %d", (int)num_buckets, bucket_bytes,  bucket_size);
+  st->print_cr("Number of entries       : %9d = %9d bytes, each %d", (int)num_entries, entry_bytes,   entry_size);
+  if (literal_bytes != 0) {
+    double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
+    st->print_cr("Number of literals      : %9d = %9d bytes, avg %7.3f", (int)num_entries, literal_bytes, literal_avg);
+  }
   st->print_cr("Total footprint         : %9s = %9d bytes", "", total_bytes);
   st->print_cr("Average bucket size     : %9.3f", summary.avg());
   st->print_cr("Variance of bucket size : %9.3f", summary.variance());
@@ -299,7 +319,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end
   _buckets = (HashtableBucket<F>*)memcpy(*top, (void*)_buckets, len);
   *top += len;
 }
-
 
 #ifndef PRODUCT
 
@@ -398,4 +417,3 @@ template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
 template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);
-

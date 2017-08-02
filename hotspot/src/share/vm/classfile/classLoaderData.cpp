@@ -1136,12 +1136,22 @@ void ClassLoaderDataGraph::verify_dictionary() {
   }
 }
 
-void ClassLoaderDataGraph::print_dictionary(bool details) {
+void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
-    tty->print("Dictionary for class loader ");
-    cld->print_value();
-    tty->cr();
-    cld->dictionary()->print(details);
+    st->print("Dictionary for ");
+    cld->print_value_on(st);
+    st->cr();
+    cld->dictionary()->print_on(st);
+    st->cr();
+  }
+}
+
+void ClassLoaderDataGraph::print_dictionary_statistics(outputStream* st) {
+  FOR_ALL_DICTIONARY(cld) {
+    ResourceMark rm;
+    stringStream tempst;
+    tempst.print("System Dictionary for %s", cld->loader_name());
+    cld->dictionary()->print_table_statistics(st, tempst.as_string());
   }
 }
 
@@ -1422,7 +1432,7 @@ void ClassLoaderDataGraph::dump_on(outputStream * const out) {
 
 void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
-    out->print("NULL class_loader");
+    out->print("NULL class loader");
   } else {
     out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_value_on(out);
@@ -1431,7 +1441,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 
 void ClassLoaderData::print_on(outputStream* out) const {
   if (class_loader() == NULL) {
-    out->print("NULL class_loader");
+    out->print("NULL class loader");
   } else {
     out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_on(out);

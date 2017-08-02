@@ -125,7 +125,8 @@ class ClassLoaderDataGraph : public AllStatic {
   static InstanceKlass* try_get_next_class();
 
   static void verify_dictionary();
-  static void print_dictionary(bool details);
+  static void print_dictionary(outputStream* st);
+  static void print_dictionary_statistics(outputStream* st);
 
   // CMS support.
   static void remember_new_clds(bool remember) { _saved_head = (remember ? _head : NULL); }
