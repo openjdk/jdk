@@ -313,7 +313,7 @@ void CounterDecay::decay() {
   // at this point and hence SystemDictionary_lock is also not needed.
   assert(SafepointSynchronize::is_at_safepoint(), "can only be executed at a safepoint");
   int nclasses = InstanceKlass::number_of_instance_classes();
-  double classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
+  int classes_per_tick = nclasses * (CounterDecayMinIntervalLength * 1e-3 /
                                         CounterHalfLifeTime);
   for (int i = 0; i < classes_per_tick; i++) {
     InstanceKlass* k = ClassLoaderDataGraph::try_get_next_class();
