@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.util;
 
 import java.util.function.Consumer;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * An unbounded priority {@linkplain Queue queue} based on a priority heap.
@@ -795,6 +796,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         // Read in (and discard) array length
         s.readInt();
 
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, size);
         queue = new Object[size];
 
         // Read in all elements.

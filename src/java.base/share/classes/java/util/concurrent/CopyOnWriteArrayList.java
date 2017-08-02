@@ -51,6 +51,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
@@ -933,6 +934,7 @@ public class CopyOnWriteArrayList<E>
 
         // Read in array length and allocate array
         int len = s.readInt();
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, len);
         Object[] elements = new Object[len];
 
         // Read in all elements in the proper order.

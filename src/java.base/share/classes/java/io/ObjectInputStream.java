@@ -1283,6 +1283,33 @@ public class ObjectInputStream
     }
 
     /**
+     * Checks the given array type and length to ensure that creation of such
+     * an array is permitted by this ObjectInputStream. The arrayType argument
+     * must represent an actual array type.
+     *
+     * This private method is called via SharedSecrets.
+     *
+     * @param arrayType the array type
+     * @param arrayLength the array length
+     * @throws NullPointerException if arrayType is null
+     * @throws IllegalArgumentException if arrayType isn't actually an array type
+     * @throws NegativeArraySizeException if arrayLength is negative
+     * @throws InvalidClassException if the filter rejects creation
+     */
+    private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
+        Objects.requireNonNull(arrayType);
+        if (! arrayType.isArray()) {
+            throw new IllegalArgumentException("not an array type");
+        }
+
+        if (arrayLength < 0) {
+            throw new NegativeArraySizeException();
+        }
+
+        filterCheck(arrayType, arrayLength);
+    }
+
+    /**
      * Provide access to the persistent fields read from the input stream.
      */
     public abstract static class GetField {
@@ -3980,6 +4007,10 @@ public class ObjectInputStream
         } else {
             throw new AssertionError();
         }
+    }
+
+    static {
+        SharedSecrets.setJavaObjectInputStreamAccess(ObjectInputStream::checkArray);
     }
 
     private void validateDescriptor(ObjectStreamClass descriptor) {
