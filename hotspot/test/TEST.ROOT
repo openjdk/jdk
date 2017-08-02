@@ -27,7 +27,7 @@
 # It also contains test-suite configuration information.
 
 # The list of keywords supported in this test suite
-keys=aot cte_test jcmd nmt regression gc stress
+keys=cte_test jcmd nmt regression gc stress
 
 groups=TEST.groups [closed/TEST.groups]
 
@@ -50,7 +50,8 @@ requires.properties= \
     vm.cpu.features \
     vm.debug \
     vm.rtm.cpu \
-    vm.rtm.os
+    vm.rtm.os \
+    vm.aot
 
 # Tests using jtreg 4.2 b07 features
 requiredVersion=4.2 b07

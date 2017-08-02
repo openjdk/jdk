@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key aot
+ * @requires vm.aot
  * @modules jdk.aot/jdk.tools.jaotc
  *          jdk.aot/jdk.tools.jaotc.collect
  * @build jdk.tools.jaotc.test.collect.Utils
