@@ -574,6 +574,7 @@ protected:
   virtual void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
+  void print_value_on(outputStream* st) const;
 
   // Debug-only code
 #ifdef ASSERT

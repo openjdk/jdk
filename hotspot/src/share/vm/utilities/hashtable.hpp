@@ -226,14 +226,14 @@ protected:
   // is mt-safe wrt. to other calls of this method.
   void bulk_free_entries(BucketUnlinkContext* context);
 public:
-  int table_size() { return _table_size; }
+  int table_size() const { return _table_size; }
   void set_entry(int index, BasicHashtableEntry<F>* entry);
 
   void add_entry(int index, BasicHashtableEntry<F>* entry);
 
   void free_entry(BasicHashtableEntry<F>* entry);
 
-  int number_of_entries() { return _number_of_entries; }
+  int number_of_entries() const { return _number_of_entries; }
 
   template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
@@ -261,7 +261,9 @@ public:
     return this->hash_to_index(compute_hash(name));
   }
 
-protected:
+  void print_table_statistics(outputStream* st, const char *table_name);
+
+ protected:
 
   // Table entry management
   HashtableEntry<T, F>* new_entry(unsigned int hashValue, T obj);
@@ -305,18 +307,6 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
   void move_to(RehashableHashtable<T, F>* new_table);
   static bool use_alternate_hashcode();
   static juint seed();
-
-  static int literal_size(Symbol *symbol);
-  static int literal_size(oop oop);
-
-  // The following two are currently not used, but are needed anyway because some
-  // C++ compilers (MacOS and Solaris) force the instantiation of
-  // Hashtable<ConstantPool*, mtClass>::dump_table() even though we never call this function
-  // in the VM code.
-  static int literal_size(ConstantPool *cp) {Unimplemented(); return 0;}
-  static int literal_size(Klass *k)         {Unimplemented(); return 0;}
-
-  void dump_table(outputStream* st, const char *table_name);
 
  private:
   static juint _seed;

@@ -42,7 +42,7 @@ public:
   PlaceholderEntry* new_entry(int hash, Symbol* name, ClassLoaderData* loader_data, bool havesupername, Symbol* supername);
   void free_entry(PlaceholderEntry* entry);
 
-  PlaceholderEntry* bucket(int i) {
+  PlaceholderEntry* bucket(int i) const {
     return (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::bucket(i);
   }
 
@@ -97,9 +97,7 @@ public:
                        Symbol* name, ClassLoaderData* loader_data,
                        classloadAction action, Thread* thread);
 
-#ifndef PRODUCT
-  void print();
-#endif
+  void print_on(outputStream* st) const;
   void verify();
 };
 
@@ -129,16 +127,14 @@ public:
    void set_next(SeenThread *seen) { _stnext = seen; }
    void set_prev(SeenThread *seen) { _stprev = seen; }
 
-#ifndef PRODUCT
-  void printActionQ() {
+  void print_action_queue(outputStream* st) {
     SeenThread* seen = this;
     while (seen != NULL) {
-      seen->thread()->print_value();
-      tty->print(", ");
+      seen->thread()->print_value_on(st);
+      st->print(", ");
       seen = seen->next();
     }
   }
-#endif // PRODUCT
 };
 
 // Placeholder objects represent classes currently being loaded.
@@ -321,7 +317,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   }
 
   // Print method doesn't append a cr
-  void print() const  PRODUCT_RETURN;
+  void print_entry(outputStream* st) const;
   void verify() const;
 };
 

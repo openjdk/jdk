@@ -26,6 +26,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"

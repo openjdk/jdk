@@ -74,6 +74,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
@@ -2808,32 +2809,31 @@ void SystemDictionary::copy_table(char** top, char* end) {
 }
 
 // ----------------------------------------------------------------------------
-void SystemDictionary::print_shared(bool details) {
-  shared_dictionary()->print(details);
+void SystemDictionary::print_shared(outputStream *st) {
+  shared_dictionary()->print_on(st);
 }
 
-void SystemDictionary::print(bool details) {
+void SystemDictionary::print_on(outputStream *st) {
   if (shared_dictionary() != NULL) {
     tty->print_cr("Shared Dictionary");
-    shared_dictionary()->print(details);
+    shared_dictionary()->print_on(st);
   }
 
   GCMutexLocker mu(SystemDictionary_lock);
 
-  ClassLoaderDataGraph::print_dictionary(details);
+  ClassLoaderDataGraph::print_dictionary(st);
 
   // Placeholders
-  placeholders()->print();
-  tty->cr();
+  placeholders()->print_on(st);
+  st->cr();
 
   // loader constraints - print under SD_lock
-  constraints()->print();
-  tty->cr();
+  constraints()->print_on(st);
+  st->cr();
 
-  _pd_cache_table->print();
-  tty->cr();
+  _pd_cache_table->print_on(st);
+  st->cr();
 }
-
 
 void SystemDictionary::verify() {
   guarantee(constraints() != NULL,
@@ -2854,6 +2854,44 @@ void SystemDictionary::verify() {
 
   _pd_cache_table->verify();
 }
+
+void SystemDictionary::dump(outputStream *st, bool verbose) {
+  assert_locked_or_safepoint(SystemDictionary_lock);
+  if (verbose) {
+    print_on(st);
+  } else {
+    ClassLoaderDataGraph::print_dictionary_statistics(st);
+    placeholders()->print_table_statistics(st, "Placeholder Table");
+    constraints()->print_table_statistics(st, "LoaderConstraints Table");
+    _pd_cache_table->print_table_statistics(st, "ProtectionDomainCache Table");
+  }
+}
+
+// Utility for dumping dictionaries.
+SystemDictionaryDCmd::SystemDictionaryDCmd(outputStream* output, bool heap) :
+                                 DCmdWithParser(output, heap),
+  _verbose("-verbose", "Dump the content of each dictionary entry for all class loaders",
+           "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+void SystemDictionaryDCmd::execute(DCmdSource source, TRAPS) {
+  VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSysDict,
+                         _verbose.value());
+  VMThread::execute(&dumper);
+}
+
+int SystemDictionaryDCmd::num_arguments() {
+  ResourceMark rm;
+  SystemDictionaryDCmd* dcmd = new SystemDictionaryDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
 
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const oop loader) {
