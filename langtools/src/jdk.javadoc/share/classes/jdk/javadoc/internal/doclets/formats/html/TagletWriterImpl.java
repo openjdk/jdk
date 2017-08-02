@@ -115,7 +115,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
                     si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getSimpleName(element));
+                    si.setHolder(utils.getFullyQualifiedName(element));
                     return null;
                 }
 

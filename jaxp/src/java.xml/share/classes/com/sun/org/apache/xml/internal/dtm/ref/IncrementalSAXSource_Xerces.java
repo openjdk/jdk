@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -113,7 +112,7 @@ public class IncrementalSAXSource_Xerces
                         Class xniStdConfigClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.parsers.StandardParserConfiguration",
                             true);
-                        fPullParserConfig=xniStdConfigClass.newInstance();
+                        fPullParserConfig=xniStdConfigClass.getConstructor().newInstance();
                         Object[] args2={fPullParserConfig};
                         fIncrementalParser = (SAXParser)ctor.newInstance(args2);
 
@@ -386,6 +385,7 @@ public class IncrementalSAXSource_Xerces
   /** Simple unit test. Attempt coroutine parsing of document indicated
    * by first argument (as a URI), report progress.
    */
+  @Deprecated
   public static void _main(String args[])
   {
     System.out.println("Starting...");

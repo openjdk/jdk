@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,50 @@ jbyteArray getEncodedBytes(JNIEnv *env, SECItem *hSECItem)
         return NULL;
     }
     return jEncodedBytes;
+}
+
+/*
+ * Class:     sun_security_ec_ECKeyPairGenerator
+ * Method:    isCurveSupported
+ * Signature: ([B)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_sun_security_ec_ECKeyPairGenerator_isCurveSupported
+  (JNIEnv *env, jclass clazz, jbyteArray encodedParams)
+{
+    SECKEYECParams params_item;
+    ECParams *ecparams = NULL;
+    jboolean result = JNI_FALSE;
+
+    // The curve is supported if we can get parameters for it
+    params_item.len = env->GetArrayLength(encodedParams);
+    params_item.data =
+        (unsigned char *) env->GetByteArrayElements(encodedParams, 0);
+    if (params_item.data == NULL) {
+        goto cleanup;
+    }
+
+    // Fill a new ECParams using the supplied OID
+    if (EC_DecodeParams(&params_item, &ecparams, 0) != SECSuccess) {
+        /* bad curve OID */
+        goto cleanup;
+    }
+
+    // If we make it to here, then the curve is supported
+    result = JNI_TRUE;
+
+cleanup:
+    {
+        if (params_item.data) {
+            env->ReleaseByteArrayElements(encodedParams,
+                (jbyte *) params_item.data, JNI_ABORT);
+        }
+        if (ecparams) {
+            FreeECParams(ecparams, true);
+        }
+    }
+
+    return result;
 }
 
 /*
@@ -196,7 +240,7 @@ cleanup:
  */
 JNIEXPORT jbyteArray
 JNICALL Java_sun_security_ec_ECDSASignature_signDigest
-  (JNIEnv *env, jclass clazz, jbyteArray digest, jbyteArray privateKey, jbyteArray encodedParams, jbyteArray seed)
+  (JNIEnv *env, jclass clazz, jbyteArray digest, jbyteArray privateKey, jbyteArray encodedParams, jbyteArray seed, jint timing)
 {
     jbyte* pDigestBuffer = NULL;
     jint jDigestLength = env->GetArrayLength(digest);
@@ -256,7 +300,7 @@ JNICALL Java_sun_security_ec_ECDSASignature_signDigest
 
     // Sign the digest (using the supplied seed)
     if (ECDSA_SignDigest(&privKey, &signature_item, &digest_item,
-        (unsigned char *) pSeedBuffer, jSeedLength, 0) != SECSuccess) {
+        (unsigned char *) pSeedBuffer, jSeedLength, 0, timing) != SECSuccess) {
         ThrowException(env, KEY_EXCEPTION);
         goto cleanup;
     }

@@ -26,7 +26,7 @@
 /**
  * Defines the JavaBeans Activation Framework (JAF) API.
  *
- * <p> This module is upgradeble.
+ * <p> This module is upgradeable.
  *
  * @moduleGraph
  * @since 9

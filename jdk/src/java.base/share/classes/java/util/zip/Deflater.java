@@ -154,7 +154,7 @@ class Deflater {
     public static final int FULL_FLUSH = 3;
 
     static {
-        /* Zip library is loaded from System.initializeSystemClass */
+        ZipUtils.loadLibrary();
         initIDs();
     }
 

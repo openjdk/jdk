@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -378,7 +377,7 @@ public class XNumber extends XObject
   public Object object()
   {
     if(null == m_obj)
-      setObject(new Double(m_val));
+      setObject(m_val);
     return m_obj;
   }
 
