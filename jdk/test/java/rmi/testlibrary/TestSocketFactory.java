@@ -512,9 +512,8 @@ public class TestSocketFactory extends RMISocketFactory
             } else {
                 if (matchIndex > 0) {
                     // mismatch, write out any that matched already
-                    if (matchIndex > 0) // Only non-trivial matches
-                        DEBUG( "Partial match %s matched %d bytes at offset: %d (0x%04x), expected: x%02x, actual: x%02x%n",
-                                name, matchIndex, bytesOut, bytesOut,  matchBytes[matchIndex], b);
+                    DEBUG("Partial match %s matched %d bytes at offset: %d (0x%04x), expected: x%02x, actual: x%02x%n",
+                            name, matchIndex, bytesOut, bytesOut, matchBytes[matchIndex], b);
                     out.write(matchBytes, 0, matchIndex);
                     log.write(matchBytes, 0, matchIndex);
                     bytesOut += matchIndex;
@@ -527,6 +526,19 @@ public class TestSocketFactory extends RMISocketFactory
                     log.write(b);
                     bytesOut++;
                 }
+            }
+        }
+
+        public void flush() throws IOException {
+            if (matchIndex > 0) {
+                // write out any that matched already to avoid consumer hang.
+                // Match/replace across a flush is not supported.
+                DEBUG( "Flush partial match %s matched %d bytes at offset: %d (0x%04x)%n",
+                        name, matchIndex, bytesOut, bytesOut);
+                out.write(matchBytes, 0, matchIndex);
+                log.write(matchBytes, 0, matchIndex);
+                bytesOut += matchIndex;
+                matchIndex = 0;
             }
         }
 
