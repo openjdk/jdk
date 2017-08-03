@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8059510
- * @summary Test jcmd VM.symboltable and VM.stringtable options
+ * @summary Test jcmd VM.symboltable, VM.stringtable and VM.systemdictionary options
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

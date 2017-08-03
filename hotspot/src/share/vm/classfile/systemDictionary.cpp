@@ -2833,8 +2833,9 @@ void SystemDictionary::print_shared(outputStream *st) {
 
 void SystemDictionary::print_on(outputStream *st) {
   if (shared_dictionary() != NULL) {
-    tty->print_cr("Shared Dictionary");
+    st->print_cr("Shared Dictionary");
     shared_dictionary()->print_on(st);
+    st->cr();
   }
 
   GCMutexLocker mu(SystemDictionary_lock);
@@ -2878,6 +2879,9 @@ void SystemDictionary::dump(outputStream *st, bool verbose) {
   if (verbose) {
     print_on(st);
   } else {
+    if (shared_dictionary() != NULL) {
+      shared_dictionary()->print_table_statistics(st, "Shared Dictionary");
+    }
     ClassLoaderDataGraph::print_dictionary_statistics(st);
     placeholders()->print_table_statistics(st, "Placeholder Table");
     constraints()->print_table_statistics(st, "LoaderConstraints Table");
