@@ -22,12 +22,13 @@
  *
  */
 #include "precompiled.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/handles.inline.hpp"
 
 MethodCounters* MethodCounters::allocate(const methodHandle& mh, TRAPS) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  return new(loader_data, size(), false, MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
+  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
 }
 
 void MethodCounters::clear_counters() {
@@ -73,6 +74,12 @@ void MethodCounters::set_highest_osr_comp_level(int level) {
 #endif
 }
 
+void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(MethodCounters): %p", this);
+#if INCLUDE_AOT
+  it->push(&_method);
+#endif
+}
 
 void MethodCounters::print_value_on(outputStream* st) const {
   assert(is_methodCounters(), "must be methodCounters");

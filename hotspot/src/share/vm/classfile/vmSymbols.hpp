@@ -1511,6 +1511,7 @@ class vmSymbols: AllStatic {
 
   // Sharing support
   static void symbols_do(SymbolClosure* f);
+  static void metaspace_pointers_do(MetaspaceClosure *it);
   static void serialize(SerializeClosure* soc);
 
   static Symbol* type_signature(BasicType t) {

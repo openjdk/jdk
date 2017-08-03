@@ -74,7 +74,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
         (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     end_ptr - ptr,
-                                                    ent == NULL ? NULL : ent->_name,
+                                                    ent == NULL ? NULL : ent->name(),
                                                     ClassFileStream::verify);
       ClassFileParser parser(stream,
                              class_name,
@@ -229,8 +229,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
       len = stream->length();
       bytes = stream->buffer();
     }
-    p = (JvmtiCachedClassFileData*)MetaspaceShared::optional_data_space_alloc(
-                    offset_of(JvmtiCachedClassFileData, data) + len);
+    p = (JvmtiCachedClassFileData*)os::malloc(offset_of(JvmtiCachedClassFileData, data) + len, mtInternal);
     p->length = len;
     memcpy(p->data, bytes, len);
     result->set_archived_class_data(p);

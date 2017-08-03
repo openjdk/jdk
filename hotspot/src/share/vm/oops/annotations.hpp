@@ -43,6 +43,8 @@ typedef Array<u1> AnnotationArray;
 // a type_annotation instance.
 
 class Annotations: public MetaspaceObj {
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to Annotations::metaspace_pointers_do().
 
   // Annotations for this class, or null if none.
   AnnotationArray*             _class_annotations;
@@ -63,6 +65,10 @@ class Annotations: public MetaspaceObj {
 
   // Sizing (in words)
   static int size()    { return sizeof(Annotations) / wordSize; }
+
+  // Annotations should be stored in the read-only region of CDS archive.
+  static bool is_read_only_by_default() { return true; }
+
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
@@ -87,6 +93,9 @@ class Annotations: public MetaspaceObj {
   static typeArrayOop make_java_array(AnnotationArray* annotations, TRAPS);
 
   bool is_klass() const { return false; }
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return AnnotationsType; }
+
  private:
   static julong count_bytes(Array<AnnotationArray*>* p);
  public:

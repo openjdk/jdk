@@ -162,8 +162,8 @@ public:
   static void shared_oops_do(OopClosure* f);
   static bool copy_shared_string(GrowableArray<MemRegion> *string_space,
                                  CompactStringTableWriter* ch_table);
-  static void serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
-                        size_t* space_size);
+  static void write_to_archive(GrowableArray<MemRegion> *string_space);
+  static void serialize(SerializeClosure* soc);
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();

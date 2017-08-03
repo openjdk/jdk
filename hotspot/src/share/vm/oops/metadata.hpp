@@ -48,8 +48,10 @@ class Metadata : public MetaspaceObj {
   virtual bool is_methodData()         const volatile { return false; }
   virtual bool is_constantPool()       const volatile { return false; }
   virtual bool is_methodCounters()     const volatile { return false; }
-
+  virtual int  size()                  const = 0;
+  virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
 
   void print()       const { print_on(tty); }
   void print_value() const { print_value_on(tty); }

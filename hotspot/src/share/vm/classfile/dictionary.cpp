@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -241,6 +242,20 @@ void Dictionary::all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
   }
 }
 
+// Used to scan and relocate the classes during CDS archive dump.
+void Dictionary::classes_do(MetaspaceClosure* it) {
+  assert(DumpSharedSpaces, "dump-time only");
+  for (int index = 0; index < table_size(); index++) {
+    for (DictionaryEntry* probe = bucket(index);
+                          probe != NULL;
+                          probe = probe->next()) {
+      it->push(probe->klass_addr());
+      ((SharedDictionaryEntry*)probe)->metaspace_pointers_do(it);
+    }
+  }
+}
+
+
 
 // Add a loaded class to the dictionary.
 // Readers of the SystemDictionary aren't always locked, so _buckets
@@ -342,7 +357,7 @@ bool Dictionary::is_valid_protection_domain(int index, unsigned int hash,
 }
 
 
-void Dictionary::reorder_dictionary() {
+void Dictionary::reorder_dictionary_for_sharing() {
 
   // Copy all the dictionary entries into a single master list.
 

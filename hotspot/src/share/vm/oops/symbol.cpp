@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
@@ -50,13 +52,6 @@ void* Symbol::operator new(size_t sz, int len, TRAPS) throw() {
 void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) throw() {
   int alloc_size = size(len)*wordSize;
   address res = (address)arena->Amalloc_4(alloc_size);
-  return res;
-}
-
-void* Symbol::operator new(size_t sz, int len, ClassLoaderData* loader_data, TRAPS) throw() {
-  address res;
-  res = (address) Metaspace::allocate(loader_data, size(len), true,
-                                      MetaspaceObj::SymbolType, CHECK_NULL);
   return res;
 }
 
@@ -232,6 +227,15 @@ void Symbol::decrement_refcount() {
     }
 #endif
     (void)new_value;
+  }
+}
+
+void Symbol::metaspace_pointers_do(MetaspaceClosure* it) {
+  if (log_is_enabled(Trace, cds)) {
+    LogStream trace_stream(Log(cds)::trace());
+    trace_stream.print("Iter(Symbol): %p ", this);
+    print_value_on(&trace_stream);
+    trace_stream.cr();
   }
 }
 

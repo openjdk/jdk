@@ -119,9 +119,13 @@ class Symbol : public MetaspaceObj {
     max_symbol_length = (1 << 16) -1
   };
 
+  static int byte_size(int length) {
+    // minimum number of natural words needed to hold these bits (no non-heap version)
+    return (int)(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
+  }
   static int size(int length) {
     // minimum number of natural words needed to hold these bits (no non-heap version)
-    return (int)heap_word_size(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
+    return (int)heap_word_size(byte_size(length));
   }
 
   void byte_at_put(int index, int value) {
@@ -141,6 +145,10 @@ class Symbol : public MetaspaceObj {
   const jbyte* base() const { return &_body[0]; }
 
   int size()                { return size(utf8_length()); }
+  int byte_size()           { return byte_size(utf8_length()); }
+
+  // Symbols should be stored in the read-only region of CDS archive.
+  static bool is_read_only_by_default() { return true; }
 
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
@@ -163,6 +171,9 @@ class Symbol : public MetaspaceObj {
     if (_refcount != PERM_REFCOUNT) {
       _refcount = PERM_REFCOUNT;
     }
+  }
+  bool is_permanent() {
+    return (_refcount == PERM_REFCOUNT);
   }
 
   int byte_at(int index) const {
@@ -226,6 +237,9 @@ class Symbol : public MetaspaceObj {
   // See Klass::external_name()
   const char* as_klass_external_name() const;
   const char* as_klass_external_name(char* buf, int size) const;
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return SymbolType; }
 
   // Printing
   void print_symbol_on(outputStream* st = NULL) const;

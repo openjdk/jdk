@@ -404,6 +404,8 @@ class ConstantPoolCache: public MetaspaceObj {
   friend class VMStructs;
   friend class MetadataFactory;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
@@ -443,6 +445,8 @@ class ConstantPoolCache: public MetaspaceObj {
   bool is_constantPoolCache() const { return true; }
 
   int length() const                             { return _length; }
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const                { return ConstantPoolCacheType; }
 
   jobject resolved_references()           { return _resolved_references; }
   void set_resolved_references(jobject s) { _resolved_references = s; }

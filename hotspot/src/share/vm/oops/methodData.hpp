@@ -2154,6 +2154,9 @@ private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
 
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to MethodData::metaspace_pointers_do().
+
   // Back pointer to the Method*
   Method* _method;
 
@@ -2590,6 +2593,9 @@ public:
   static ByteSize parameters_type_data_di_offset() {
     return byte_offset_of(MethodData, _parameters_type_data_di);
   }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return MethodDataType; }
 
   // Deallocation support - no pointer fields to deallocate
   void deallocate_contents(ClassLoaderData* loader_data) {}

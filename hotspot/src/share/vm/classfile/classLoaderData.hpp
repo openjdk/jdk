@@ -314,9 +314,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     _the_null_class_loader_data = new ClassLoaderData(Handle(), false, Dependencies());
     ClassLoaderDataGraph::_head = _the_null_class_loader_data;
     assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
-    if (DumpSharedSpaces) {
-      _the_null_class_loader_data->initialize_shared_metaspaces();
-    }
   }
 
   bool is_the_null_class_loader_data() const {
@@ -386,11 +383,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(oop loader, TRAPS);
   static void print_loader(ClassLoaderData *loader_data, outputStream *out);
-
-  // CDS support
-  Metaspace* ro_metaspace();
-  Metaspace* rw_metaspace();
-  void initialize_shared_metaspaces();
 
   TRACE_DEFINE_TRACE_ID_METHODS;
 };

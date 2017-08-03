@@ -31,6 +31,8 @@
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -162,8 +164,7 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
 }
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             MetaspaceObj::ClassType, THREAD);
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 // "Normal" instantiation is preceeded by a MetaspaceObj allocation
@@ -483,6 +484,29 @@ void Klass::klass_oop_store(volatile oop* p, oop v) {
 
 void Klass::oops_do(OopClosure* cl) {
   cl->do_oop(&_java_mirror);
+}
+
+void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
+  if (log_is_enabled(Trace, cds)) {
+    ResourceMark rm;
+    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+  }
+
+  it->push(&_name);
+  it->push(&_secondary_super_cache);
+  it->push(&_secondary_supers);
+  for (int i = 0; i < _primary_super_limit; i++) {
+    it->push(&_primary_supers[i]);
+  }
+  it->push(&_super);
+  it->push(&_subklass);
+  it->push(&_next_sibling);
+  it->push(&_next_link);
+
+  vtableEntry* vt = start_of_vtable();
+  for (int i=0; i<vtable_length(); i++) {
+    it->push(vt[i].method_addr());
+  }
 }
 
 void Klass::remove_unshareable_info() {

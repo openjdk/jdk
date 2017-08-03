@@ -99,6 +99,8 @@ class ConstantPool : public Metadata {
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ConstantPool::metaspace_pointers_do().
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
@@ -211,6 +213,9 @@ class ConstantPool : public Metadata {
   // Interpreter runtime support
   ConstantPoolCache* cache() const        { return _cache; }
   void set_cache(ConstantPoolCache* cache){ _cache = cache; }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return ConstantPoolType; }
 
   // Create object cache in the constant pool
   void initialize_resolved_references(ClassLoaderData* loader_data,
@@ -764,6 +769,9 @@ class ConstantPool : public Metadata {
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
+
+  // ConstantPools should be stored in the read-only region of CDS archive.
+  static bool is_read_only_by_default() { return true; }
 
   friend class ClassFileParser;
   friend class SystemDictionary;

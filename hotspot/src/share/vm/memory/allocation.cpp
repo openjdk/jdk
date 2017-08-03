@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ void* _ValueObj::operator new [](size_t size) throw() { ShouldNotCallThis(); ret
 void  _ValueObj::operator delete [](void* p)          { ShouldNotCallThis(); }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
-                                 size_t word_size, bool read_only,
+                                 size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has it's own operator new
-  return Metaspace::allocate(loader_data, word_size, read_only, type, THREAD);
+  return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
 bool MetaspaceObj::is_shared() const {

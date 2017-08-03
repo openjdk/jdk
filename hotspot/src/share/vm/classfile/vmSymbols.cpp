@@ -26,6 +26,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
@@ -180,6 +181,15 @@ void vmSymbols::symbols_do(SymbolClosure* f) {
   }
   for (int i = 0; i < T_VOID+1; i++) {
     f->do_symbol(&_type_signatures[i]);
+  }
+}
+
+void vmSymbols::metaspace_pointers_do(MetaspaceClosure *it) {
+  for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+    it->push(&_symbols[index]);
+  }
+  for (int i = 0; i < T_VOID+1; i++) {
+    it->push(&_type_signatures[i]);
   }
 }
 

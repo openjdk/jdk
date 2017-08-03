@@ -49,6 +49,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -1952,6 +1953,18 @@ void SystemDictionary::oops_do(OopClosure* f) {
   ResolvedMethodTable::oops_do(f);
 }
 
+// CDS: scan and relocate all classes in the system dictionary.
+void SystemDictionary::classes_do(MetaspaceClosure* it) {
+  ClassLoaderData::the_null_class_loader_data()->dictionary()->classes_do(it);
+}
+
+// CDS: scan and relocate all classes referenced by _well_known_klasses[].
+void SystemDictionary::well_known_klasses_do(MetaspaceClosure* it) {
+  for (int id = FIRST_WKID; id < WKID_LIMIT; id++) {
+    it->push(well_known_klass_addr((WKID)id));
+  }
+}
+
 void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
   ClassLoaderDataGraph::methods_do(f);
@@ -2793,18 +2806,23 @@ ProtectionDomainCacheEntry* SystemDictionary::cache_get(Handle protection_domain
   return _pd_cache_table->get(protection_domain);
 }
 
-
-void SystemDictionary::reorder_dictionary() {
-  ClassLoaderData::the_null_class_loader_data()->dictionary()->reorder_dictionary();
+void SystemDictionary::reorder_dictionary_for_sharing() {
+  ClassLoaderData::the_null_class_loader_data()->dictionary()->reorder_dictionary_for_sharing();
 }
 
+size_t SystemDictionary::count_bytes_for_buckets() {
+  return ClassLoaderData::the_null_class_loader_data()->dictionary()->count_bytes_for_buckets();
+}
 
-void SystemDictionary::copy_buckets(char** top, char* end) {
+size_t SystemDictionary::count_bytes_for_table() {
+  return ClassLoaderData::the_null_class_loader_data()->dictionary()->count_bytes_for_table();
+}
+
+void SystemDictionary::copy_buckets(char* top, char* end) {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->copy_buckets(top, end);
 }
 
-
-void SystemDictionary::copy_table(char** top, char* end) {
+void SystemDictionary::copy_table(char* top, char* end) {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->copy_table(top, end);
 }
 

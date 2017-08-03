@@ -65,6 +65,9 @@ class Klass : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  protected:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to Klass::metaspace_pointers_do().
+
   // note: put frequently-used fields together at start of klass structure
   // for better cache behavior (may not make much of a difference but sure won't hurt)
   enum { _primary_super_limit = 8 };
@@ -596,6 +599,9 @@ protected:
 
   // garbage collection support
   void oops_do(OopClosure* cl);
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return ClassType; }
 
   // Iff the class loader (or mirror for anonymous classes) is alive the
   // Klass is considered alive.

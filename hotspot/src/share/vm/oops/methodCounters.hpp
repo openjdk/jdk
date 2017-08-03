@@ -35,6 +35,8 @@ class MethodCounters : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to MethodCounters::metaspace_pointers_do().
 #if INCLUDE_AOT
   Method*           _method;                     // Back link to Method
 #endif
@@ -118,10 +120,14 @@ class MethodCounters : public Metadata {
 
   AOT_ONLY(Method* method() const { return _method; })
 
-  static int size() {
+  static int method_counters_size() {
     return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
   }
-
+  virtual int size() const {
+    return method_counters_size();
+  }
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return MethodCountersType; }
   void clear_counters();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI

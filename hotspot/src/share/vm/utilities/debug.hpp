@@ -184,19 +184,6 @@ template<> struct STATIC_ASSERT_FAILURE<true> { enum { value = 1 }; };
   typedef char PASTE_TOKENS(STATIC_ASSERT_DUMMY_TYPE_, __LINE__)[ \
     STATIC_ASSERT_FAILURE< (Cond) >::value ]
 
-// out of shared space reporting
-enum SharedSpaceType {
-  SharedReadOnly,
-  SharedReadWrite,
-  SharedMiscData,
-  SharedMiscCode,
-  SharedOptional
-};
-
-void report_out_of_shared_space(SharedSpaceType space_type);
-
-void report_insufficient_metaspace(size_t required_size);
-
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
 

@@ -397,6 +397,7 @@ class ClassLoader: AllStatic {
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
+    assert(n >= 0 && n < _num_entries, "sanity");
     if (n == 0) {
       assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
       return ClassLoader::_jrt_entry;
@@ -413,6 +414,10 @@ class ClassLoader: AllStatic {
       }
       return e;
     }
+  }
+
+  static int number_of_classpath_entries() {
+    return _num_entries;
   }
 
   static bool is_in_patch_mod_entries(Symbol* module_name);

@@ -3111,8 +3111,8 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
 
 void CDSAdapterHandlerEntry::init() {
   assert(DumpSharedSpaces, "used during dump time only");
-  _c2i_entry_trampoline = (address)MetaspaceShared::misc_data_space_alloc(SharedRuntime::trampoline_size());
-  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_data_space_alloc(sizeof(AdapterHandlerEntry*));
+  _c2i_entry_trampoline = (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
+  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
 };
 
 #endif // INCLUDE_CDS

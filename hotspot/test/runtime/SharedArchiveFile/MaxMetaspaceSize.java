@@ -35,11 +35,9 @@ import jdk.test.lib.process.ProcessTools;
 
 public class MaxMetaspaceSize {
   public static void main(String[] args) throws Exception {
-      String msg = "is not large enough.\n" +
-          "Either don't specify the -XX:MaxMetaspaceSize=<size>\n" +
-          "or increase the size to at least";
+    String msg = "OutOfMemoryError: Metaspace";
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxMetaspaceSize=10m", "-Xshare:dump");
-    CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(2);
+        "-XX:MaxMetaspaceSize=1m", "-Xshare:dump");
+    CDSTestUtils.executeAndLog(pb, "dump").shouldContain(msg).shouldHaveExitValue(1);
   }
 }

@@ -196,6 +196,7 @@ class vtableEntry VALUE_OBJ_CLASS_SPEC {
 
   static int method_offset_in_bytes() { return offset_of(vtableEntry, _method); }
   Method* method() const    { return _method; }
+  Method** method_addr()    { return &_method; }
 
  private:
   Method* _method;
@@ -236,6 +237,7 @@ class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
   int      _offset;
  public:
   Klass* interface_klass() const { return _interface; }
+  Klass**interface_klass_addr()  { return &_interface; }
   int      offset() const          { return _offset; }
 
   static itableMethodEntry* method_entry(Klass* k, int offset) { return (itableMethodEntry*)(((address)k) + offset); }
@@ -258,6 +260,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 
  public:
   Method* method() const { return _method; }
+  Method**method_addr() { return &_method; }
 
   void clear()             { _method = NULL; }
 
