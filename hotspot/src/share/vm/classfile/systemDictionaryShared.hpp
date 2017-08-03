@@ -91,4 +91,9 @@ public:
                                               TRAPS) {}
 };
 
+class SharedDictionaryEntry : public DictionaryEntry {
+public:
+  void metaspace_pointers_do(MetaspaceClosure* it) {}
+};
+
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

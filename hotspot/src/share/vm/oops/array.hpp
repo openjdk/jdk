@@ -36,6 +36,7 @@
 template <typename T>
 class Array: public MetaspaceObj {
   friend class MetadataFactory;
+  friend class MetaspaceShared;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MethodHandleCompiler;           // special case
@@ -53,13 +54,16 @@ protected:
   Array(const Array<T>&);
   void operator=(const Array<T>&);
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, int length, bool read_only, TRAPS) throw() {
+  void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {
     size_t word_size = Array::size(length);
-    return (void*) Metaspace::allocate(loader_data, word_size, read_only,
+    return (void*) Metaspace::allocate(loader_data, word_size,
                                        MetaspaceObj::array_type(sizeof(T)), THREAD);
   }
 
-  static size_t byte_sizeof(int length) { return sizeof(Array<T>) + MAX2(length - 1, 0) * sizeof(T); }
+  static size_t byte_sizeof(int length, size_t elm_byte_size) {
+    return sizeof(Array<T>) + MAX2(length - 1, 0) * elm_byte_size;
+  }
+  static size_t byte_sizeof(int length) { return byte_sizeof(length, sizeof(T)); }
 
   // WhiteBox API helper.
   // Can't distinguish between array of length 0 and length 1,
@@ -129,6 +133,9 @@ protected:
     assert(words <= INT_MAX, "Overflow: " SIZE_FORMAT, words);
 
     return (int)words;
+  }
+  static int size(int length, int elm_byte_size) {
+    return align_size_up(byte_sizeof(length, elm_byte_size), BytesPerWord) / BytesPerWord; // FIXME
   }
 
   int size() {

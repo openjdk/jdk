@@ -46,6 +46,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -1998,6 +1999,49 @@ void InstanceKlass::store_fingerprint(uint64_t fingerprint) {
   }
 }
 
+void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
+  Klass::metaspace_pointers_do(it);
+
+  if (log_is_enabled(Trace, cds)) {
+    ResourceMark rm;
+    log_trace(cds)("Iter(InstanceKlass): %p (%s)", this, external_name());
+  }
+
+  it->push(&_annotations);
+  it->push((Klass**)&_array_klasses);
+  it->push(&_constants);
+  it->push(&_inner_classes);
+  it->push(&_array_name);
+#if INCLUDE_JVMTI
+  it->push(&_previous_versions);
+#endif
+  it->push(&_methods);
+  it->push(&_default_methods);
+  it->push(&_local_interfaces);
+  it->push(&_transitive_interfaces);
+  it->push(&_method_ordering);
+  it->push(&_default_vtable_indices);
+  it->push(&_fields);
+
+  if (itable_length() > 0) {
+    itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
+    int method_table_offset_in_words = ioe->offset()/wordSize;
+    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
+                         / itableOffsetEntry::size();
+
+    for (int i = 0; i < nof_interfaces; i ++, ioe ++) {
+      if (ioe->interface_klass() != NULL) {
+        it->push(ioe->interface_klass_addr());
+        itableMethodEntry* ime = ioe->first_method_entry(this);
+        int n = klassItable::method_count_for_interface(ioe->interface_klass());
+        for (int index = 0; index < n; index ++) {
+          it->push(ime[index].method_addr());
+        }
+      }
+    }
+  }
+}
+
 void InstanceKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
 
@@ -2018,12 +2062,26 @@ void InstanceKlass::remove_unshareable_info() {
 
   constants()->remove_unshareable_info();
 
-  assert(_dep_context == DependencyContext::EMPTY, "dependency context is not shareable");
-
   for (int i = 0; i < methods()->length(); i++) {
     Method* m = methods()->at(i);
     m->remove_unshareable_info();
   }
+
+  // These are not allocated from metaspace, but they should should all be empty
+  // during dump time, so we don't need to worry about them in InstanceKlass::metaspace_pointers_do().
+  guarantee(_source_debug_extension == NULL, "must be");
+  guarantee(_oop_map_cache == NULL, "must be");
+  guarantee(_init_thread == NULL, "must be");
+  guarantee(_oop_map_cache == NULL, "must be");
+  guarantee(_jni_ids == NULL, "must be");
+  guarantee(_methods_jmethod_ids == NULL, "must be");
+  guarantee(_dep_context == DependencyContext::EMPTY, "must be");
+  guarantee(_osr_nmethods_head == NULL, "must be");
+
+#if INCLUDE_JVMTI
+  guarantee(_breakpoints == NULL, "must be");
+  guarantee(_previous_versions == NULL, "must be");
+#endif
 }
 
 static void restore_unshareable_in_class(Klass* k, TRAPS) {
@@ -3664,11 +3722,15 @@ unsigned char * InstanceKlass::get_cached_class_file_bytes() {
 
 #if INCLUDE_CDS
 JvmtiCachedClassFileData* InstanceKlass::get_archived_class_data() {
-  assert(this->is_shared(), "class should be shared");
-  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+  if (DumpSharedSpaces) {
     return _cached_class_file;
   } else {
-    return NULL;
+    assert(this->is_shared(), "class should be shared");
+    if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+      return _cached_class_file;
+    } else {
+      return NULL;
+    }
   }
 }
 #endif

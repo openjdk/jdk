@@ -37,6 +37,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -79,7 +80,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           method_type,
                                           CHECK_NULL);
   int size = Method::size(access_flags.is_native());
-  return new (loader_data, size, false, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
+  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
 }
 
 Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
@@ -304,6 +305,14 @@ Symbol* Method::klass_name() const {
   return method_holder()->name();
 }
 
+
+void Method::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(Method): %p", this);
+
+  it->push(&_constMethod);
+  it->push(&_method_data);
+  it->push(&_method_counters);
+}
 
 // Attempt to return method oop to original state.  Clear any pointers
 // (to objects outside the shared spaces).  We won't be able to predict

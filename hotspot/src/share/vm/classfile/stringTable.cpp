@@ -33,6 +33,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -731,6 +732,9 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
 
       // add to the compact table
       writer->add(hash, new_s);
+
+      MetaspaceShared::relocate_klass_ptr(new_s);
+      MetaspaceShared::relocate_klass_ptr(new_v);
     }
   }
 
@@ -740,35 +744,33 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   return true;
 }
 
-void StringTable::serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
-                            size_t* space_size) {
-#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
+void StringTable::write_to_archive(GrowableArray<MemRegion> *string_space) {
+#if INCLUDE_CDS
   _shared_table.reset();
-  if (soc->writing()) {
-    if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
+  if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
       log_info(cds)(
-          "Shared strings are excluded from the archive as UseG1GC, "
-          "UseCompressedOops and UseCompressedClassPointers are required."
-          "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-          BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-          BOOL_TO_STR(UseCompressedClassPointers));
-    } else {
-      int num_buckets = the_table()->number_of_entries() /
-                             SharedSymbolTableBucketSize;
-      // calculation of num_buckets can result in zero buckets, we need at least one
-      CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
-                                      &MetaspaceShared::stats()->string);
+        "Shared strings are excluded from the archive as UseG1GC, "
+        "UseCompressedOops and UseCompressedClassPointers are required."
+        "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+        BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+        BOOL_TO_STR(UseCompressedClassPointers));
+  } else {
+    int num_buckets = the_table()->number_of_entries() /
+                           SharedSymbolTableBucketSize;
+    // calculation of num_buckets can result in zero buckets, we need at least one
+    CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
+                                    &MetaspaceShared::stats()->string);
 
-      // Copy the interned strings into the "string space" within the java heap
-      if (copy_shared_string(string_space, &writer)) {
-        for (int i = 0; i < string_space->length(); i++) {
-          *space_size += string_space->at(i).byte_size();
-        }
-        writer.dump(&_shared_table);
-      }
+    // Copy the interned strings into the "string space" within the java heap
+    if (copy_shared_string(string_space, &writer)) {
+      writer.dump(&_shared_table);
     }
   }
+#endif
+}
 
+void StringTable::serialize(SerializeClosure* soc) {
+#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
   _shared_table.set_type(CompactHashtable<oop, char>::_string_table);
   _shared_table.serialize(soc);
 

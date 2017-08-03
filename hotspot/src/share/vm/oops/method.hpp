@@ -66,6 +66,8 @@ class Method : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to Method::metaspace_pointers_do().
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
@@ -470,6 +472,9 @@ class Method : public Metadata {
   void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return MethodType; }
 
   // vtable index
   enum VtableIndexFlag {

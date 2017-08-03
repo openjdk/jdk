@@ -198,30 +198,39 @@ template <MEMFLAGS F> void BasicHashtable<F>::bulk_free_entries(BucketUnlinkCont
   }
   Atomic::add(-context->_num_removed, &_number_of_entries);
 }
-
 // Copy the table to the shared space.
+template <MEMFLAGS F> size_t BasicHashtable<F>::count_bytes_for_table() {
+  size_t bytes = 0;
+  bytes += sizeof(intptr_t); // len
 
-template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) {
+  for (int i = 0; i < _table_size; ++i) {
+    for (BasicHashtableEntry<F>** p = _buckets[i].entry_addr();
+         *p != NULL;
+         p = (*p)->next_addr()) {
+      bytes += entry_size();
+    }
+  }
 
-  // Dump the hash table entries.
+  return bytes;
+}
 
-  intptr_t *plen = (intptr_t*)(*top);
-  *top += sizeof(*plen);
+// Dump the hash table entries (into CDS archive)
+template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char* top, char* end) {
+  assert(is_aligned(top, sizeof(intptr_t)), "bad alignment");
+  intptr_t *plen = (intptr_t*)(top);
+  top += sizeof(*plen);
 
   int i;
   for (i = 0; i < _table_size; ++i) {
     for (BasicHashtableEntry<F>** p = _buckets[i].entry_addr();
-                              *p != NULL;
-                               p = (*p)->next_addr()) {
-      if (*top + entry_size() > end) {
-        report_out_of_shared_space(SharedMiscData);
-      }
-      *p = (BasicHashtableEntry<F>*)memcpy(*top, (void*)*p, entry_size());
-      *top += entry_size();
+         *p != NULL;
+         p = (*p)->next_addr()) {
+      *p = (BasicHashtableEntry<F>*)memcpy(top, (void*)*p, entry_size());
+      top += entry_size();
     }
   }
-  *plen = (char*)(*top) - (char*)plen - sizeof(*plen);
-
+  *plen = (char*)(top) - (char*)plen - sizeof(*plen);
+  assert(top == end, "count_bytes_for_table is wrong");
   // Set the shared bit.
 
   for (i = 0; i < _table_size; ++i) {
@@ -272,7 +281,7 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outp
   for (int i = 0; i < this->table_size(); ++i) {
     int count = 0;
     for (HashtableEntry<T, F>* e = this->bucket(i);
-       e != NULL; e = e->next()) {
+         e != NULL; e = e->next()) {
       count++;
       literal_bytes += literal_size(e->literal());
     }
@@ -305,19 +314,29 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outp
 
 // Dump the hash table buckets.
 
-template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end) {
+template <MEMFLAGS F> size_t BasicHashtable<F>::count_bytes_for_buckets() {
+  size_t bytes = 0;
+  bytes += sizeof(intptr_t); // len
+  bytes += sizeof(intptr_t); // _number_of_entries
+  bytes += _table_size * sizeof(HashtableBucket<F>); // the buckets
+
+  return bytes;
+}
+
+// Dump the buckets (into CDS archive)
+template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char* top, char* end) {
+  assert(is_aligned(top, sizeof(intptr_t)), "bad alignment");
   intptr_t len = _table_size * sizeof(HashtableBucket<F>);
-  *(intptr_t*)(*top) = len;
-  *top += sizeof(intptr_t);
+  *(intptr_t*)(top) = len;
+  top += sizeof(intptr_t);
 
-  *(intptr_t*)(*top) = _number_of_entries;
-  *top += sizeof(intptr_t);
+  *(intptr_t*)(top) = _number_of_entries;
+  top += sizeof(intptr_t);
 
-  if (*top + len > end) {
-    report_out_of_shared_space(SharedMiscData);
-  }
-  _buckets = (HashtableBucket<F>*)memcpy(*top, (void*)_buckets, len);
-  *top += len;
+  _buckets = (HashtableBucket<F>*)memcpy(top, (void*)_buckets, len);
+  top += len;
+
+  assert(top == end, "count_bytes_for_buckets is wrong");
 }
 
 #ifndef PRODUCT
@@ -397,6 +416,7 @@ template class Hashtable<Symbol*, mtClass>;
 template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
 template class HashtableEntry<oop, mtSymbol>;
+template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;
 template class BasicHashtable<mtClass>;

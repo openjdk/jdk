@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -715,7 +716,7 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
 MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS) {
   int size = MethodData::compute_allocation_size_in_words(method);
 
-  return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
+  return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
     MethodData(method(), size, THREAD);
 }
 
@@ -1632,6 +1633,11 @@ bool MethodData::profile_parameters_for_method(const methodHandle& m) {
 
   assert(profile_parameters_jsr292_only(), "inconsistent");
   return m->is_compiled_lambda_form();
+}
+
+void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(MethodData): %p", this);
+  it->push(&_method);
 }
 
 void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) {

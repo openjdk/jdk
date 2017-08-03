@@ -65,6 +65,8 @@ MetaWord* last_allocated = 0;
 size_t Metaspace::_compressed_class_space_size;
 const MetaspaceTracer* Metaspace::_tracer = NULL;
 
+DEBUG_ONLY(bool Metaspace::_frozen = false;)
+
 // Used in declarations in SpaceManager and ChunkManager
 enum ChunkIndex {
   ZeroIndex = 0,
@@ -502,34 +504,8 @@ static bool should_commit_large_pages_when_reserving(size_t bytes) {
   // byte_size is the size of the associated virtualspace.
 VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(), _container_count(0) {
   assert_is_aligned(bytes, Metaspace::reserve_alignment());
-
-#if INCLUDE_CDS
-  // This allocates memory with mmap.  For DumpSharedspaces, try to reserve
-  // configurable address, generally at the top of the Java heap so other
-  // memory addresses don't conflict.
-  if (DumpSharedSpaces) {
-    bool large_pages = false; // No large pages when dumping the CDS archive.
-    char* shared_base = align_up((char*)SharedBaseAddress, Metaspace::reserve_alignment());
-
-    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages, shared_base);
-    if (_rs.is_reserved()) {
-      assert(shared_base == 0 || _rs.base() == shared_base, "should match");
-    } else {
-      // Get a mmap region anywhere if the SharedBaseAddress fails.
-      _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
-    }
-    if (!_rs.is_reserved()) {
-      vm_exit_during_initialization("Unable to allocate memory for shared space",
-        err_msg(SIZE_FORMAT " bytes.", bytes));
-    }
-    MetaspaceShared::initialize_shared_rs(&_rs);
-  } else
-#endif
-  {
-    bool large_pages = should_commit_large_pages_when_reserving(bytes);
-
-    _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
-  }
+  bool large_pages = should_commit_large_pages_when_reserving(bytes);
+  _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
 
   if (_rs.is_reserved()) {
     assert(_rs.base() != NULL, "Catch if we get a NULL address");
@@ -2148,8 +2124,6 @@ size_t SpaceManager::get_initial_chunk_size(Metaspace::MetaspaceType type) const
   if (is_class()) {
     switch (type) {
     case Metaspace::BootMetaspaceType:       requested = Metaspace::first_class_chunk_word_size(); break;
-    case Metaspace::ROMetaspaceType:         requested = ClassSpecializedChunk; break;
-    case Metaspace::ReadWriteMetaspaceType:  requested = ClassSpecializedChunk; break;
     case Metaspace::AnonymousMetaspaceType:  requested = ClassSpecializedChunk; break;
     case Metaspace::ReflectionMetaspaceType: requested = ClassSpecializedChunk; break;
     default:                                 requested = ClassSmallChunk; break;
@@ -2157,8 +2131,6 @@ size_t SpaceManager::get_initial_chunk_size(Metaspace::MetaspaceType type) const
   } else {
     switch (type) {
     case Metaspace::BootMetaspaceType:       requested = Metaspace::first_chunk_word_size(); break;
-    case Metaspace::ROMetaspaceType:         requested = SharedReadOnlySize / wordSize; break;
-    case Metaspace::ReadWriteMetaspaceType:  requested = SharedReadWriteSize / wordSize; break;
     case Metaspace::AnonymousMetaspaceType:  requested = SpecializedChunk; break;
     case Metaspace::ReflectionMetaspaceType: requested = SpecializedChunk; break;
     default:                                 requested = SmallChunk; break;
@@ -2651,15 +2623,6 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
   // Is there space in the current chunk?
   MetaWord* result = NULL;
 
-  // For DumpSharedSpaces, only allocate out of the current chunk which is
-  // never null because we gave it the size we wanted.   Caller reports out
-  // of memory if this returns null.
-  if (DumpSharedSpaces) {
-    assert(current_chunk() != NULL, "should never happen");
-    inc_used_metrics(word_size);
-    return current_chunk()->allocate(word_size); // caller handles null result
-  }
-
   if (current_chunk() != NULL) {
     result = current_chunk()->allocate(word_size);
   }
@@ -3113,6 +3076,7 @@ ChunkManager* Metaspace::_chunk_manager_class = NULL;
 static const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
 
 void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address cds_base) {
+  assert(!DumpSharedSpaces, "narrow_klass is set by MetaspaceShared class.");
   // Figure out the narrow_klass_base and the narrow_klass_shift.  The
   // narrow_klass_base is the lower of the metaspace base and the cds base
   // (if cds is enabled).  The narrow_klass_shift depends on the distance
@@ -3121,7 +3085,7 @@ void Metaspace::set_narrow_klass_base_and_shift(address metaspace_base, address 
   address higher_address;
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
-    higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
+    higher_address = MAX2((address)(cds_base + MetaspaceShared::core_spaces_size()),
                           (address)(metaspace_base + compressed_class_space_size()));
     lower_base = MIN2(metaspace_base, cds_base);
   } else
@@ -3155,7 +3119,7 @@ bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cd
   assert(cds_base != 0 && UseSharedSpaces, "Only use with CDS");
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   address lower_base = MIN2((address)metaspace_base, cds_base);
-  address higher_address = MAX2((address)(cds_base + FileMapInfo::shared_spaces_size()),
+  address higher_address = MAX2((address)(cds_base + MetaspaceShared::core_spaces_size()),
                                 (address)(metaspace_base + compressed_class_space_size()));
   return ((uint64_t)(higher_address - lower_base) <= UnscaledClassSpaceMax);
 }
@@ -3163,6 +3127,7 @@ bool Metaspace::can_use_cds_with_metaspace_addr(char* metaspace_base, address cd
 
 // Try to allocate the metaspace at the requested addr.
 void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base) {
+  assert(!DumpSharedSpaces, "compress klass space is allocated by MetaspaceShared class.");
   assert(using_class_space(), "called improperly");
   assert(UseCompressedClassPointers, "Only use with CompressedKlassPtrs");
   assert(compressed_class_space_size() < KlassEncodingMetaspaceMax,
@@ -3358,116 +3323,73 @@ void Metaspace::ergo_initialize() {
 void Metaspace::global_initialize() {
   MetaspaceGC::initialize();
 
-  // Initialize the alignment for shared spaces.
-  int max_alignment = os::vm_allocation_granularity();
-  size_t cds_total = 0;
-
-  MetaspaceShared::set_max_alignment(max_alignment);
-
+#if INCLUDE_CDS
   if (DumpSharedSpaces) {
-#if INCLUDE_CDS
-    MetaspaceShared::estimate_regions_size();
+    MetaspaceShared::initialize_shared_rs();
+  } else if (UseSharedSpaces) {
+    // If using shared space, open the file that contains the shared space
+    // and map in the memory before initializing the rest of metaspace (so
+    // the addresses don't conflict)
+    address cds_address = NULL;
+    FileMapInfo* mapinfo = new FileMapInfo();
 
-    SharedReadOnlySize  = align_up(SharedReadOnlySize,  max_alignment);
-    SharedReadWriteSize = align_up(SharedReadWriteSize, max_alignment);
-    SharedMiscDataSize  = align_up(SharedMiscDataSize,  max_alignment);
-    SharedMiscCodeSize  = align_up(SharedMiscCodeSize,  max_alignment);
-
-    // Initialize with the sum of the shared space sizes.  The read-only
-    // and read write metaspace chunks will be allocated out of this and the
-    // remainder is the misc code and data chunks.
-    cds_total = FileMapInfo::shared_spaces_size();
-    cds_total = align_up(cds_total, _reserve_alignment);
-    _space_list = new VirtualSpaceList(cds_total/wordSize);
-    _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
-
-    if (!_space_list->initialization_succeeded()) {
-      vm_exit_during_initialization("Unable to dump shared archive.", NULL);
-    }
-
+    // Open the shared archive file, read and validate the header. If
+    // initialization fails, shared spaces [UseSharedSpaces] are
+    // disabled and the file is closed.
+    // Map in spaces now also
+    if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
+      size_t cds_total = MetaspaceShared::core_spaces_size();
+      cds_address = (address)mapinfo->header()->region_addr(0);
 #ifdef _LP64
-    if (cds_total + compressed_class_space_size() > UnscaledClassSpaceMax) {
-      vm_exit_during_initialization("Unable to dump shared archive.",
-          err_msg("Size of archive (" SIZE_FORMAT ") + compressed class space ("
-                  SIZE_FORMAT ") == total (" SIZE_FORMAT ") is larger than compressed "
-                  "klass limit: " UINT64_FORMAT, cds_total, compressed_class_space_size(),
-                  cds_total + compressed_class_space_size(), UnscaledClassSpaceMax));
-    }
-
-    // Set the compressed klass pointer base so that decoding of these pointers works
-    // properly when creating the shared archive.
-    assert(UseCompressedOops && UseCompressedClassPointers,
-      "UseCompressedOops and UseCompressedClassPointers must be set");
-    Universe::set_narrow_klass_base((address)_space_list->current_virtual_space()->bottom());
-    log_develop_trace(gc, metaspace)("Setting_narrow_klass_base to Address: " PTR_FORMAT,
-                                     p2i(_space_list->current_virtual_space()->bottom()));
-
-    Universe::set_narrow_klass_shift(0);
-#endif // _LP64
-#endif // INCLUDE_CDS
-  } else {
-#if INCLUDE_CDS
-    if (UseSharedSpaces) {
-      // If using shared space, open the file that contains the shared space
-      // and map in the memory before initializing the rest of metaspace (so
-      // the addresses don't conflict)
-      address cds_address = NULL;
-      FileMapInfo* mapinfo = new FileMapInfo();
-
-      // Open the shared archive file, read and validate the header. If
-      // initialization fails, shared spaces [UseSharedSpaces] are
-      // disabled and the file is closed.
-      // Map in spaces now also
-      if (mapinfo->initialize() && MetaspaceShared::map_shared_spaces(mapinfo)) {
-        cds_total = FileMapInfo::shared_spaces_size();
-        cds_address = (address)mapinfo->header()->region_addr(0);
-#ifdef _LP64
-        if (using_class_space()) {
-          char* cds_end = (char*)(cds_address + cds_total);
-          cds_end = align_up(cds_end, _reserve_alignment);
-          // If UseCompressedClassPointers is set then allocate the metaspace area
-          // above the heap and above the CDS area (if it exists).
-          allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-          // Map the shared string space after compressed pointers
-          // because it relies on compressed class pointers setting to work
-          mapinfo->map_string_regions();
-        }
-#endif // _LP64
-      } else {
-        assert(!mapinfo->is_open() && !UseSharedSpaces,
-               "archive file not closed or shared spaces not disabled.");
+      if (using_class_space()) {
+        char* cds_end = (char*)(cds_address + cds_total);
+        cds_end = (char *)align_up(cds_end, _reserve_alignment);
+        // If UseCompressedClassPointers is set then allocate the metaspace area
+        // above the heap and above the CDS area (if it exists).
+        allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
+        // Map the shared string space after compressed pointers
+        // because it relies on compressed class pointers setting to work
+        mapinfo->map_string_regions();
       }
+#endif // _LP64
+    } else {
+      assert(!mapinfo->is_open() && !UseSharedSpaces,
+             "archive file not closed or shared spaces not disabled.");
     }
+  }
 #endif // INCLUDE_CDS
 
 #ifdef _LP64
-    if (!UseSharedSpaces && using_class_space()) {
+  if (!UseSharedSpaces && using_class_space()) {
+    if (DumpSharedSpaces) {
+      // Already initialized inside MetaspaceShared::initialize_shared_rs()
+    } else {
       char* base = (char*)align_up(Universe::heap()->reserved_region().end(), _reserve_alignment);
       allocate_metaspace_compressed_klass_ptrs(base, 0);
     }
+  }
 #endif // _LP64
 
-    // Initialize these before initializing the VirtualSpaceList
-    _first_chunk_word_size = InitialBootClassLoaderMetaspaceSize / BytesPerWord;
-    _first_chunk_word_size = align_word_size_up(_first_chunk_word_size);
-    // Make the first class chunk bigger than a medium chunk so it's not put
-    // on the medium chunk list.   The next chunk will be small and progress
-    // from there.  This size calculated by -version.
-    _first_class_chunk_word_size = MIN2((size_t)MediumChunk*6,
-                                       (CompressedClassSpaceSize/BytesPerWord)*2);
-    _first_class_chunk_word_size = align_word_size_up(_first_class_chunk_word_size);
-    // Arbitrarily set the initial virtual space to a multiple
-    // of the boot class loader size.
-    size_t word_size = VIRTUALSPACEMULTIPLIER * _first_chunk_word_size;
-    word_size = align_up(word_size, Metaspace::reserve_alignment_words());
+  // Initialize these before initializing the VirtualSpaceList
+  _first_chunk_word_size = InitialBootClassLoaderMetaspaceSize / BytesPerWord;
+  _first_chunk_word_size = align_word_size_up(_first_chunk_word_size);
+  // Make the first class chunk bigger than a medium chunk so it's not put
+  // on the medium chunk list.   The next chunk will be small and progress
+  // from there.  This size calculated by -version.
+  _first_class_chunk_word_size = MIN2((size_t)MediumChunk*6,
+                                     (CompressedClassSpaceSize/BytesPerWord)*2);
+  _first_class_chunk_word_size = align_word_size_up(_first_class_chunk_word_size);
+  // Arbitrarily set the initial virtual space to a multiple
+  // of the boot class loader size.
+  size_t word_size = VIRTUALSPACEMULTIPLIER * _first_chunk_word_size;
+  word_size = align_up(word_size, Metaspace::reserve_alignment_words());
 
-    // Initialize the list of virtual spaces.
-    _space_list = new VirtualSpaceList(word_size);
-    _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
+  // Initialize the list of virtual spaces.
+  _space_list = new VirtualSpaceList(word_size);
+  _chunk_manager_metadata = new ChunkManager(SpecializedChunk, SmallChunk, MediumChunk);
 
-    if (!_space_list->initialization_succeeded()) {
-      vm_exit_during_initialization("Unable to setup metadata virtual space list.", NULL);
-    }
+  if (!_space_list->initialization_succeeded()) {
+    vm_exit_during_initialization("Unable to setup metadata virtual space list.", NULL);
   }
 
   _tracer = new MetaspaceTracer();
@@ -3494,11 +3416,6 @@ Metachunk* Metaspace::get_initialization_chunk(MetaspaceType type, MetadataType 
   if (chunk == NULL) {
     chunk = get_space_list(mdtype)->get_new_chunk(chunk_word_size,
                                                   get_space_manager(mdtype)->medium_chunk_bunch());
-  }
-
-  // For dumping shared archive, report error if allocation has failed.
-  if (DumpSharedSpaces && chunk == NULL) {
-    report_insufficient_metaspace(MetaspaceAux::committed_bytes() + chunk_word_size * BytesPerWord);
   }
 
   return chunk;
@@ -3534,9 +3451,6 @@ void Metaspace::initialize(Mutex* lock, MetaspaceType type) {
   if (using_class_space()) {
     initialize_first_chunk(type, ClassType);
   }
-
-  _alloc_record_head = NULL;
-  _alloc_record_tail = NULL;
 }
 
 size_t Metaspace::align_word_size_up(size_t word_size) {
@@ -3545,8 +3459,8 @@ size_t Metaspace::align_word_size_up(size_t word_size) {
 }
 
 MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
-  // DumpSharedSpaces doesn't use class metadata area (yet)
-  // Also, don't use class_vsm() unless UseCompressedClassPointers is true.
+  assert(!_frozen, "sanity");
+  // Don't use class_vsm() unless UseCompressedClassPointers is true.
   if (is_class_space_allocation(mdtype)) {
     return  class_vsm()->allocate(word_size);
   } else {
@@ -3555,6 +3469,7 @@ MetaWord* Metaspace::allocate(size_t word_size, MetadataType mdtype) {
 }
 
 MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) {
+  assert(!_frozen, "sanity");
   size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size * BytesPerWord);
   assert(delta_bytes > 0, "Must be");
 
@@ -3580,13 +3495,6 @@ MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) 
   return res;
 }
 
-// Space allocated in the Metaspace.  This may
-// be across several metadata virtual spaces.
-char* Metaspace::bottom() const {
-  assert(DumpSharedSpaces, "only useful and valid for dumping shared spaces");
-  return (char*)vsm()->current_chunk()->bottom();
-}
-
 size_t Metaspace::used_words_slow(MetadataType mdtype) const {
   if (mdtype == ClassType) {
     return using_class_space() ? class_vsm()->sum_used_in_chunks_in_use() : 0;
@@ -3596,6 +3504,7 @@ size_t Metaspace::used_words_slow(MetadataType mdtype) const {
 }
 
 size_t Metaspace::free_words_slow(MetadataType mdtype) const {
+  assert(!_frozen, "sanity");
   if (mdtype == ClassType) {
     return using_class_space() ? class_vsm()->sum_free_in_chunks_in_use() : 0;
   } else {
@@ -3635,12 +3544,9 @@ size_t Metaspace::allocated_chunks_bytes() const {
 }
 
 void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
+  assert(!_frozen, "sanity");
   assert(!SafepointSynchronize::is_at_safepoint()
          || Thread::current()->is_VM_thread(), "should be the VM thread");
-
-  if (DumpSharedSpaces && log_is_enabled(Info, cds)) {
-    record_deallocation(ptr, vsm()->get_allocation_word_size(word_size));
-  }
 
   MutexLockerEx ml(vsm()->lock(), Mutex::_no_safepoint_check_flag);
 
@@ -3651,9 +3557,9 @@ void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   }
 }
 
-
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              bool read_only, MetaspaceObj::Type type, TRAPS) {
+                              MetaspaceObj::Type type, TRAPS) {
+  assert(!_frozen, "sanity");
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
     return NULL;  // caller does a CHECK_NULL too
@@ -3661,26 +3567,6 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
-
-  // Allocate in metaspaces without taking out a lock, because it deadlocks
-  // with the SymbolTable_lock.  Dumping is single threaded for now.  We'll have
-  // to revisit this for application class data sharing.
-  if (DumpSharedSpaces) {
-    assert(type > MetaspaceObj::UnknownType && type < MetaspaceObj::_number_of_types, "sanity");
-    Metaspace* space = read_only ? loader_data->ro_metaspace() : loader_data->rw_metaspace();
-    MetaWord* result = space->allocate(word_size, NonClassType);
-    if (result == NULL) {
-      report_out_of_shared_space(read_only ? SharedReadOnly : SharedReadWrite);
-    }
-    if (log_is_enabled(Info, cds)) {
-      space->record_allocation(result, type, space->vsm()->get_allocation_word_size(word_size));
-    }
-
-    // Zero initialize.
-    Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
-    return result;
-  }
 
   MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
 
@@ -3785,78 +3671,6 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
     default:
       assert(false, "Got bad mdtype: %d", (int) mdtype);
       return NULL;
-  }
-}
-
-void Metaspace::record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size) {
-  assert(DumpSharedSpaces, "sanity");
-
-  int byte_size = (int)word_size * wordSize;
-  AllocRecord *rec = new AllocRecord((address)ptr, type, byte_size);
-
-  if (_alloc_record_head == NULL) {
-    _alloc_record_head = _alloc_record_tail = rec;
-  } else if (_alloc_record_tail->_ptr + _alloc_record_tail->_byte_size == (address)ptr) {
-    _alloc_record_tail->_next = rec;
-    _alloc_record_tail = rec;
-  } else {
-    // slow linear search, but this doesn't happen that often, and only when dumping
-    for (AllocRecord *old = _alloc_record_head; old; old = old->_next) {
-      if (old->_ptr == ptr) {
-        assert(old->_type == MetaspaceObj::DeallocatedType, "sanity");
-        int remain_bytes = old->_byte_size - byte_size;
-        assert(remain_bytes >= 0, "sanity");
-        old->_type = type;
-
-        if (remain_bytes == 0) {
-          delete(rec);
-        } else {
-          address remain_ptr = address(ptr) + byte_size;
-          rec->_ptr = remain_ptr;
-          rec->_byte_size = remain_bytes;
-          rec->_type = MetaspaceObj::DeallocatedType;
-          rec->_next = old->_next;
-          old->_byte_size = byte_size;
-          old->_next = rec;
-        }
-        return;
-      }
-    }
-    assert(0, "reallocating a freed pointer that was not recorded");
-  }
-}
-
-void Metaspace::record_deallocation(void* ptr, size_t word_size) {
-  assert(DumpSharedSpaces, "sanity");
-
-  for (AllocRecord *rec = _alloc_record_head; rec; rec = rec->_next) {
-    if (rec->_ptr == ptr) {
-      assert(rec->_byte_size == (int)word_size * wordSize, "sanity");
-      rec->_type = MetaspaceObj::DeallocatedType;
-      return;
-    }
-  }
-
-  assert(0, "deallocating a pointer that was not recorded");
-}
-
-void Metaspace::iterate(Metaspace::AllocRecordClosure *closure) {
-  assert(DumpSharedSpaces, "unimplemented for !DumpSharedSpaces");
-
-  address last_addr = (address)bottom();
-
-  for (AllocRecord *rec = _alloc_record_head; rec; rec = rec->_next) {
-    address ptr = rec->_ptr;
-    if (last_addr < ptr) {
-      closure->doit(last_addr, MetaspaceObj::UnknownType, ptr - last_addr);
-    }
-    closure->doit(ptr, rec->_type, rec->_byte_size);
-    last_addr = ptr + rec->_byte_size;
-  }
-
-  address top = ((address)bottom()) + used_bytes_slow(Metaspace::NonClassType);
-  if (last_addr < top) {
-    closure->doit(last_addr, MetaspaceObj::UnknownType, top - last_addr);
   }
 }
 

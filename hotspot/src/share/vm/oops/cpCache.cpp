@@ -26,6 +26,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/cpCache.hpp"
@@ -566,7 +567,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
 
-  return new (loader_data, size, false, MetaspaceObj::ConstantPoolCacheType, THREAD)
+  return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
     ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map);
 }
 
@@ -652,6 +653,11 @@ void ConstantPoolCache::dump_cache() {
 }
 #endif // INCLUDE_JVMTI
 
+void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ConstantPoolCache): %p", this);
+  it->push(&_constant_pool);
+  it->push(&_reference_map);
+}
 
 // Printing
 

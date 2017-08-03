@@ -35,6 +35,8 @@ class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ObjArrayKlass::metaspace_pointers_do().
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
@@ -79,6 +81,8 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Compute protection domain
   oop protection_domain() const { return bottom_klass()->protection_domain(); }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.

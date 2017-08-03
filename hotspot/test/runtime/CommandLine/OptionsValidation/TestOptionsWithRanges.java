@@ -77,12 +77,6 @@ public class TestOptionsWithRanges {
 
         allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
 
-        /* Shared flags can cause JVM to exit with error code 2 */
-        setAllowedExitCodes("SharedReadWriteSize", 2);
-        setAllowedExitCodes("SharedReadOnlySize", 2);
-        setAllowedExitCodes("SharedMiscDataSize", 2);
-        setAllowedExitCodes("SharedMiscCodeSize", 2);
-
         /*
          * Remove CICompilerCount from testing because currently it can hang system
          */

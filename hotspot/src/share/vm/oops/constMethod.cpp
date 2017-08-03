@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
@@ -42,7 +43,7 @@ ConstMethod* ConstMethod::allocate(ClassLoaderData* loader_data,
                                    MethodType method_type,
                                    TRAPS) {
   int size = ConstMethod::size(byte_code_size, sizes);
-  return new (loader_data, size, true, MetaspaceObj::ConstMethodType, THREAD) ConstMethod(
+  return new (loader_data, size, MetaspaceObj::ConstMethodType, THREAD) ConstMethod(
       byte_code_size, sizes, method_type, size);
 }
 
@@ -399,6 +400,25 @@ void ConstMethod::copy_annotations_from(ClassLoaderData* loader_data, ConstMetho
     assert(has_default_annotations(), "should be allocated already");
     a = copy_annotations(loader_data, cm->default_annotations(), CHECK);
     set_default_annotations(a);
+  }
+}
+
+void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ConstMethod): %p", this);
+
+  it->push(&_constants);
+  it->push(&_stackmap_data);
+  if (has_method_annotations()) {
+    it->push(method_annotations_addr());
+  }
+  if (has_parameter_annotations()) {
+      it->push(parameter_annotations_addr());
+  }
+  if (has_type_annotations()) {
+      it->push(type_annotations_addr());
+  }
+  if (has_default_annotations()) {
+      it->push(default_annotations_addr());
   }
 }
 

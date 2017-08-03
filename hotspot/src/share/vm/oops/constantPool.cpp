@@ -32,6 +32,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
@@ -48,9 +49,9 @@
 #include "utilities/copy.hpp"
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
-  Array<u1>* tags = MetadataFactory::new_writeable_array<u1>(loader_data, length, 0, CHECK_NULL);
+  Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
   int size = ConstantPool::size(length);
-  return new (loader_data, size, true, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
+  return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
 #ifdef ASSERT
@@ -108,6 +109,26 @@ void ConstantPool::release_C_heap_structures() {
   unreference_symbols();
 }
 
+void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ConstantPool): %p", this);
+
+  it->push(&_tags, MetaspaceClosure::_writable);
+  it->push(&_cache);
+  it->push(&_pool_holder);
+  it->push(&_operands);
+  it->push(&_resolved_klasses, MetaspaceClosure::_writable);
+
+  for (int i = 0; i < length(); i++) {
+    // The only MSO's embedded in the CP entries are Symbols:
+    //   JVM_CONSTANT_String (normal and pseudo)
+    //   JVM_CONSTANT_Utf8
+    constantTag ctag = tag_at(i);
+    if (ctag.is_string() || ctag.is_utf8()) {
+      it->push(symbol_at_addr(i));
+    }
+  }
+}
+
 objArrayOop ConstantPool::resolved_references() const {
   return (objArrayOop)JNIHandles::resolve(_cache->resolved_references());
 }
@@ -154,7 +175,7 @@ void ConstantPool::allocate_resolved_klasses(ClassLoaderData* loader_data, int n
   // UnresolvedKlass entries that are temporarily created during class redefinition.
   assert(num_klasses < CPKlassSlot::_temp_resolved_klass_index, "sanity");
   assert(resolved_klasses() == NULL, "sanity");
-  Array<Klass*>* rk = MetadataFactory::new_writeable_array<Klass*>(loader_data, num_klasses, CHECK);
+  Array<Klass*>* rk = MetadataFactory::new_array<Klass*>(loader_data, num_klasses, CHECK);
   set_resolved_klasses(rk);
 }
 

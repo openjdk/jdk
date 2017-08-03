@@ -67,6 +67,7 @@ class LatestMethodCache : public CHeapObj<mtClass> {
   void serialize(SerializeClosure* f) {
     f->do_ptr((void**)&_klass);
   }
+  void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
 
@@ -102,6 +103,7 @@ class Universe: AllStatic {
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
+  friend class MetaspaceShared;
 
   friend jint  universe_init();
   friend void  universe2_init();
@@ -474,6 +476,7 @@ class Universe: AllStatic {
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
   static void basic_type_classes_do(void f(Klass*));
+  static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Debugging
   enum VERIFY_FLAGS {

@@ -148,8 +148,10 @@ public:
                  HashtableBucket<F>* buckets, int number_of_entries);
 
   // Sharing support.
-  void copy_buckets(char** top, char* end);
-  void copy_table(char** top, char* end);
+  size_t count_bytes_for_buckets();
+  size_t count_bytes_for_table();
+  void copy_buckets(char* top, char* end);
+  void copy_table(char* top, char* end);
 
   // Bucket handling
   int hash_to_index(unsigned int full_hash) const {

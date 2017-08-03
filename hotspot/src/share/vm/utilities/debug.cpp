@@ -275,42 +275,6 @@ void report_untested(const char* file, int line, const char* message) {
 #endif // !PRODUCT
 }
 
-void report_out_of_shared_space(SharedSpaceType shared_space) {
-  if (shared_space == SharedOptional) {
-    // The estimated shared_optional_space size is large enough
-    // for all class bytes.  It should not run out of space.
-    ShouldNotReachHere();
-  }
-
-  static const char* name[] = {
-    "shared read only space",
-    "shared read write space",
-    "shared miscellaneous data space",
-    "shared miscellaneous code space"
-  };
-  static const char* flag[] = {
-    "SharedReadOnlySize",
-    "SharedReadWriteSize",
-    "SharedMiscDataSize",
-    "SharedMiscCodeSize"
-  };
-
-   warning("\nThe %s is not large enough\n"
-           "to preload requested classes. Use -XX:%s=<size>\n"
-           "to increase the initial size of %s.\n",
-           name[shared_space], flag[shared_space], name[shared_space]);
-   exit(2);
-}
-
-
-void report_insufficient_metaspace(size_t required_size) {
-  warning("\nThe MaxMetaspaceSize of " SIZE_FORMAT " bytes is not large enough.\n"
-          "Either don't specify the -XX:MaxMetaspaceSize=<size>\n"
-          "or increase the size to at least " SIZE_FORMAT ".\n",
-          MaxMetaspaceSize, required_size);
-  exit(2);
-}
-
 void report_java_out_of_memory(const char* message) {
   static jint out_of_memory_reported = 0;
 

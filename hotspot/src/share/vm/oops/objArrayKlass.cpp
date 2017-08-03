@@ -32,6 +32,7 @@
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/arrayKlass.inline.hpp"
@@ -396,6 +397,12 @@ bool ObjArrayKlass::compute_is_subtype_of(Klass* k) {
 
 void ObjArrayKlass::initialize(TRAPS) {
   bottom_klass()->initialize(THREAD);  // dispatches to either InstanceKlass or TypeArrayKlass
+}
+
+void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
+  ArrayKlass::metaspace_pointers_do(it);
+  it->push(&_element_klass);
+  it->push(&_bottom_klass);
 }
 
 // JVM support

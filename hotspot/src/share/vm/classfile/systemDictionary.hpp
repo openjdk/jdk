@@ -353,7 +353,9 @@ public:
                                                            Handle class_loader,
                                                            TRAPS);
 
+  static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
+
   static void methods_do(void f(Method*));
 
   // Garbage collection support
@@ -382,9 +384,11 @@ public:
 
 public:
   // Sharing support.
-  static void reorder_dictionary();
-  static void copy_buckets(char** top, char* end);
-  static void copy_table(char** top, char* end);
+  static void reorder_dictionary_for_sharing();
+  static size_t count_bytes_for_buckets();
+  static size_t count_bytes_for_table();
+  static void copy_buckets(char* top, char* end);
+  static void copy_table(char* top, char* end);
   static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
@@ -442,6 +446,7 @@ public:
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
     return &_well_known_klasses[id];
   }
+  static void well_known_klasses_do(MetaspaceClosure* it);
 
   // Local definition for direct access to the private array:
   #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]

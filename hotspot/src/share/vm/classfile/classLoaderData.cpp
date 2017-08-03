@@ -726,7 +726,6 @@ bool ClassLoaderData::is_builtin_class_loader_data() const {
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
-  assert(!DumpSharedSpaces, "wrong metaspace!");
   // If the metaspace has not been allocated, create a new one.  Might want
   // to create smaller arena for Reflection class loaders also.
   // The reason for the delayed allocation is because some class loaders are
@@ -1313,37 +1312,6 @@ void ClassLoaderDataGraph::post_class_unload_events() {
     Tracing::on_unloading_classes();
   }
 #endif
-}
-
-// CDS support
-
-// Global metaspaces for writing information to the shared archive.  When
-// application CDS is supported, we may need one per metaspace, so this
-// sort of looks like it.
-Metaspace* ClassLoaderData::_ro_metaspace = NULL;
-Metaspace* ClassLoaderData::_rw_metaspace = NULL;
-static bool _shared_metaspaces_initialized = false;
-
-// Initialize shared metaspaces (change to call from somewhere not lazily)
-void ClassLoaderData::initialize_shared_metaspaces() {
-  assert(DumpSharedSpaces, "only use this for dumping shared spaces");
-  assert(this == ClassLoaderData::the_null_class_loader_data(),
-         "only supported for null loader data for now");
-  assert (!_shared_metaspaces_initialized, "only initialize once");
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  _ro_metaspace = new Metaspace(_metaspace_lock, Metaspace::ROMetaspaceType);
-  _rw_metaspace = new Metaspace(_metaspace_lock, Metaspace::ReadWriteMetaspaceType);
-  _shared_metaspaces_initialized = true;
-}
-
-Metaspace* ClassLoaderData::ro_metaspace() {
-  assert(_ro_metaspace != NULL, "should already be initialized");
-  return _ro_metaspace;
-}
-
-Metaspace* ClassLoaderData::rw_metaspace() {
-  assert(_rw_metaspace != NULL, "should already be initialized");
-  return _rw_metaspace;
 }
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()

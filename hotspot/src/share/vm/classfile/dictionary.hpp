@@ -84,6 +84,7 @@ public:
   void classes_do(void f(InstanceKlass*));
   void classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
   void all_entries_do(void f(InstanceKlass*, ClassLoaderData*));
+  void classes_do(MetaspaceClosure* it);
 
   void unlink(BoolObjectClosure* is_alive);
   void remove_classes_in_error_state();
@@ -101,7 +102,7 @@ public:
                              Handle protection_domain, TRAPS);
 
   // Sharing support
-  void reorder_dictionary();
+  void reorder_dictionary_for_sharing();
 
   void print_on(outputStream* st) const;
   void verify();
@@ -142,6 +143,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   void add_protection_domain(Dictionary* dict, Handle protection_domain);
 
   InstanceKlass* instance_klass() const { return literal(); }
+  InstanceKlass** klass_addr() { return (InstanceKlass**)literal_addr(); }
 
   DictionaryEntry* next() const {
     return (DictionaryEntry*)HashtableEntry<InstanceKlass*, mtClass>::next();
@@ -299,9 +301,6 @@ public:
   void oops_do(OopClosure* f);
 
   void methods_do(void f(Method*));
-
-  // Sharing support
-  void reorder_dictionary();
 
   void verify();
 };

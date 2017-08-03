@@ -142,6 +142,9 @@ class InstanceKlass: public Klass {
   static InstanceKlass* allocate_instance_klass(const ClassFileParser& parser, TRAPS);
 
  protected:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to InstanceKlass::metaspace_pointers_do().
+
   // Annotations for this class
   Annotations*    _annotations;
   // Package this class is defined in
@@ -1340,6 +1343,8 @@ public:
 public:
   // JVMTI support
   jint jvmti_class_status() const;
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
 
  public:
   // Printing

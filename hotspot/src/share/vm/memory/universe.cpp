@@ -44,6 +44,7 @@
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -221,6 +222,37 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_allocation_context_notification_obj);
   f->do_oop((oop*)&_reference_pending_list);
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
+}
+
+void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_klass);
+}
+
+void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_boolArrayKlassObj);
+  it->push(&_byteArrayKlassObj);
+  it->push(&_charArrayKlassObj);
+  it->push(&_intArrayKlassObj);
+  it->push(&_shortArrayKlassObj);
+  it->push(&_longArrayKlassObj);
+  it->push(&_singleArrayKlassObj);
+  it->push(&_doubleArrayKlassObj);
+  for (int i = 0; i < T_VOID+1; i++) {
+    it->push(&_typeArrayKlassObjs[i]);
+  }
+  it->push(&_objectArrayKlassObj);
+
+  it->push(&_the_empty_int_array);
+  it->push(&_the_empty_short_array);
+  it->push(&_the_empty_klass_array);
+  it->push(&_the_empty_method_array);
+  it->push(&_the_array_interfaces_array);
+
+  _finalizer_register_cache->metaspace_pointers_do(it);
+  _loader_addClass_cache->metaspace_pointers_do(it);
+  _pd_implies_cache->metaspace_pointers_do(it);
+  _throw_illegal_access_error_cache->metaspace_pointers_do(it);
+  _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
 // Serialize metadata in and out of CDS archive, not oops.

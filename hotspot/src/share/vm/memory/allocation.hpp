@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,7 @@ class _ValueObj {
 //
 
 class ClassLoaderData;
+class MetaspaceClosure;
 
 class MetaspaceObj {
  public:
@@ -260,9 +261,8 @@ class MetaspaceObj {
   f(MethodData) \
   f(ConstantPool) \
   f(ConstantPoolCache) \
-  f(Annotation) \
-  f(MethodCounters) \
-  f(Deallocated)
+  f(Annotations) \
+  f(MethodCounters)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
 #define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
@@ -294,10 +294,15 @@ class MetaspaceObj {
   }
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
-                     size_t word_size, bool read_only,
+                     size_t word_size,
                      Type type, Thread* thread) throw();
                      // can't use TRAPS from this header file.
   void operator delete(void* p) { ShouldNotCallThis(); }
+
+  // Declare a *static* method with the same signature in any subclass of MetaspaceObj
+  // that should be read-only by default. See symbol.hpp for an example. This function
+  // is used by the templates in metaspaceClosure.hpp
+  static bool is_read_only_by_default() { return false; }
 };
 
 // Base class for classes that constitute name spaces.

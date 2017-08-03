@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/arrayKlass.hpp"
@@ -171,6 +172,17 @@ jint ArrayKlass::compute_modifier_flags(TRAPS) const {
 
 jint ArrayKlass::jvmti_class_status() const {
   return JVMTI_CLASS_STATUS_ARRAY;
+}
+
+void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
+  Klass::metaspace_pointers_do(it);
+
+  ResourceMark rm;
+  log_trace(cds)("Iter(ArrayKlass): %p (%s)", this, external_name());
+
+  // need to cast away volatile
+  it->push((Klass**)&_higher_dimension);
+  it->push((Klass**)&_lower_dimension);
 }
 
 void ArrayKlass::remove_unshareable_info() {
