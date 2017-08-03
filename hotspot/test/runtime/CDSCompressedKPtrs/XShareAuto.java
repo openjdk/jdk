@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @bug 8005933
  * @summary Test that -Xshare:auto uses CDS when explicitly specified with -server.
  * @library /test/lib
