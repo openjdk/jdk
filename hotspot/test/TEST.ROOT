@@ -51,7 +51,8 @@ requires.properties= \
     vm.debug \
     vm.rtm.cpu \
     vm.rtm.os \
-    vm.aot
+    vm.aot \
+    vm.cds
 
 # Tests using jtreg 4.2 b07 features
 requiredVersion=4.2 b07
