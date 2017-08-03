@@ -377,6 +377,7 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
   public native boolean metaspaceShouldConcurrentCollect();
+  public native long metaspaceReserveAlignment();
 
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
