@@ -110,57 +110,15 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
   bool do_object_b(oop obj);
 };
 
-// A generic CM bit map.  This is essentially a wrapper around the BitMap
-// class, with one bit per (1<<_shifter) HeapWords.
+// Closure for iteration over bitmaps
+class G1CMBitMapClosure VALUE_OBJ_CLASS_SPEC {
+private:
+  G1ConcurrentMark* const _cm;
+  G1CMTask* const _task;
+public:
+  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : _task(task), _cm(cm) { }
 
-class G1CMBitMapRO VALUE_OBJ_CLASS_SPEC {
- protected:
-  HeapWord*  _bmStartWord; // base address of range covered by map
-  size_t     _bmWordSize;  // map size (in #HeapWords covered)
-  const int  _shifter;     // map to char or bit
-  BitMapView _bm;          // the bit map itself
-
- public:
-  // constructor
-  G1CMBitMapRO(int shifter);
-
-  // inquiries
-  HeapWord* startWord()   const { return _bmStartWord; }
-  // the following is one past the last word in space
-  HeapWord* endWord()     const { return _bmStartWord + _bmWordSize; }
-
-  // read marks
-
-  bool isMarked(HeapWord* addr) const {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    return _bm.at(heapWordToOffset(addr));
-  }
-
-  // iteration
-  inline bool iterate(BitMapClosure* cl, MemRegion mr);
-
-  // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextMarkedWordAddress(const HeapWord* addr,
-                                     const HeapWord* limit = NULL) const;
-
-  // conversion utilities
-  HeapWord* offsetToHeapWord(size_t offset) const {
-    return _bmStartWord + (offset << _shifter);
-  }
-  size_t heapWordToOffset(const HeapWord* addr) const {
-    return pointer_delta(addr, _bmStartWord) >> _shifter;
-  }
-
-  // The argument addr should be the start address of a valid object
-  inline HeapWord* nextObject(HeapWord* addr);
-
-  void print_on_error(outputStream* st, const char* prefix) const;
-
-  // debugging
-  NOT_PRODUCT(bool covers(MemRegion rs) const;)
+  bool do_addr(HeapWord* const addr);
 };
 
 class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
@@ -174,11 +132,29 @@ class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-class G1CMBitMap : public G1CMBitMapRO {
- private:
+// A generic mark bitmap for concurrent marking.  This is essentially a wrapper
+// around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
+class G1CMBitMap VALUE_OBJ_CLASS_SPEC {
+private:
+  MemRegion _covered;    // The heap area covered by this bitmap.
+
+  const int _shifter;    // Shift amount from heap index to bit index in the bitmap.
+
+  BitMapView _bm;        // The actual bitmap.
+
   G1CMBitMapMappingChangedListener _listener;
 
- public:
+  inline void check_mark(HeapWord* addr) NOT_DEBUG_RETURN;
+
+  // Convert from bit offset to address.
+  HeapWord* offset_to_addr(size_t offset) const {
+    return _covered.start() + (offset << _shifter);
+  }
+  // Convert from address to bit offset.
+  size_t addr_to_offset(const HeapWord* addr) const {
+    return pointer_delta(addr, _covered.start()) >> _shifter;
+  }
+public:
   static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
   static size_t mark_distance();
@@ -188,15 +164,37 @@ class G1CMBitMap : public G1CMBitMapRO {
     return mark_distance();
   }
 
-  G1CMBitMap() : G1CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
+  G1CMBitMap() : _covered(), _bm(), _shifter(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
 
   // Initializes the underlying BitMap to cover the given area.
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
+  // read marks
+  bool is_marked(HeapWord* addr) const {
+    assert(_covered.contains(addr),
+           "Address " PTR_FORMAT " is outside underlying space from " PTR_FORMAT " to " PTR_FORMAT,
+           p2i(addr), p2i(_covered.start()), p2i(_covered.end()));
+    return _bm.at(addr_to_offset(addr));
+  }
+
+  // Apply the closure to the addresses that correspond to marked bits in the bitmap.
+  inline bool iterate(G1CMBitMapClosure* cl, MemRegion mr);
+
+  // Return the address corresponding to the next marked bit at or after
+  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
+  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
+  inline HeapWord* get_next_marked_addr(const HeapWord* addr,
+                                        const HeapWord* limit) const;
+
+  // The argument addr should be the start address of a valid object
+  inline HeapWord* addr_after_obj(HeapWord* addr);
+
+  void print_on_error(outputStream* st, const char* prefix) const;
+
   // Write marks.
   inline void mark(HeapWord* addr);
   inline void clear(HeapWord* addr);
-  inline bool parMark(HeapWord* addr);
+  inline bool par_mark(HeapWord* addr);
 
   void clear_range(MemRegion mr);
 };
@@ -396,7 +394,7 @@ protected:
   // Concurrent marking support structures
   G1CMBitMap              _markBitMap1;
   G1CMBitMap              _markBitMap2;
-  G1CMBitMapRO*           _prevMarkBitMap; // Completed mark bitmap
+  G1CMBitMap*             _prevMarkBitMap; // Completed mark bitmap
   G1CMBitMap*             _nextMarkBitMap; // Under-construction mark bitmap
 
   // Heap bounds
@@ -626,8 +624,8 @@ public:
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
 
-  G1CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
-  G1CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
+  const G1CMBitMap* const prevMarkBitMap() const { return _prevMarkBitMap; }
+  G1CMBitMap* nextMarkBitMap() const { return _nextMarkBitMap; }
 
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW

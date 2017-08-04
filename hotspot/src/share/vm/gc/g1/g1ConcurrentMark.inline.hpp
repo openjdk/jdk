@@ -33,63 +33,61 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1ConcurrentMark::par_mark(oop obj) {
-  return _nextMarkBitMap->parMark((HeapWord*)obj);
+  return _nextMarkBitMap->par_mark((HeapWord*)obj);
 }
 
-inline bool G1CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
-  HeapWord* start_addr = MAX2(startWord(), mr.start());
-  HeapWord* end_addr = MIN2(endWord(), mr.end());
+inline bool G1CMBitMap::iterate(G1CMBitMapClosure* cl, MemRegion mr) {
+  assert(!mr.is_empty(), "Does not support empty memregion to iterate over");
+  assert(_covered.contains(mr),
+         "Given MemRegion from " PTR_FORMAT " to " PTR_FORMAT " not contained in heap area",
+         p2i(mr.start()), p2i(mr.end()));
 
-  if (end_addr > start_addr) {
-    // Right-open interval [start-offset, end-offset).
-    BitMap::idx_t start_offset = heapWordToOffset(start_addr);
-    BitMap::idx_t end_offset = heapWordToOffset(end_addr);
+  BitMap::idx_t const end_offset = addr_to_offset(mr.end());
+  BitMap::idx_t offset = _bm.get_next_one_offset(addr_to_offset(mr.start()), end_offset);
 
-    start_offset = _bm.get_next_one_offset(start_offset, end_offset);
-    while (start_offset < end_offset) {
-      if (!cl->do_bit(start_offset)) {
-        return false;
-      }
-      HeapWord* next_addr = MIN2(nextObject(offsetToHeapWord(start_offset)), end_addr);
-      BitMap::idx_t next_offset = heapWordToOffset(next_addr);
-      start_offset = _bm.get_next_one_offset(next_offset, end_offset);
+  while (offset < end_offset) {
+    HeapWord* const addr = offset_to_addr(offset);
+    if (!cl->do_addr(addr)) {
+      return false;
     }
+    size_t const obj_size = (size_t)((oop)addr)->size();
+    offset = _bm.get_next_one_offset(offset + (obj_size >> _shifter), end_offset);
   }
   return true;
 }
 
-// The argument addr should be the start address of a valid object
-HeapWord* G1CMBitMapRO::nextObject(HeapWord* addr) {
-  oop obj = (oop) addr;
-  HeapWord* res =  addr + obj->size();
-  assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
-  return res;
+inline HeapWord* G1CMBitMap::get_next_marked_addr(const HeapWord* addr,
+                                                  const HeapWord* limit) const {
+  assert(limit != NULL, "limit must not be NULL");
+  // Round addr up to a possible object boundary to be safe.
+  size_t const addr_offset = addr_to_offset(align_up(addr, HeapWordSize << _shifter));
+  size_t const limit_offset = addr_to_offset(limit);
+  size_t const nextOffset = _bm.get_next_one_offset(addr_offset, limit_offset);
+  return offset_to_addr(nextOffset);
 }
 
-#define check_mark(addr)                                                       \
-  assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
-         "outside underlying space?");                                         \
-  assert(G1CollectedHeap::heap()->is_in_exact(addr),                           \
-         "Trying to access not available bitmap " PTR_FORMAT                   \
-         " corresponding to " PTR_FORMAT " (%u)",                              \
-         p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr));
+#ifdef ASSERT
+inline void G1CMBitMap::check_mark(HeapWord* addr) {
+  assert(G1CollectedHeap::heap()->is_in_exact(addr),
+         "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
+         p2i(this), p2i(addr));
+}
+#endif
 
 inline void G1CMBitMap::mark(HeapWord* addr) {
   check_mark(addr);
-  _bm.set_bit(heapWordToOffset(addr));
+  _bm.set_bit(addr_to_offset(addr));
 }
 
 inline void G1CMBitMap::clear(HeapWord* addr) {
   check_mark(addr);
-  _bm.clear_bit(heapWordToOffset(addr));
+  _bm.clear_bit(addr_to_offset(addr));
 }
 
-inline bool G1CMBitMap::parMark(HeapWord* addr) {
+inline bool G1CMBitMap::par_mark(HeapWord* addr) {
   check_mark(addr);
-  return _bm.par_set_bit(heapWordToOffset(addr));
+  return _bm.par_set_bit(addr_to_offset(addr));
 }
-
-#undef check_mark
 
 #ifndef PRODUCT
 template<typename Fn>
@@ -122,7 +120,7 @@ inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.obj())), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
-  assert(task_entry.is_array_slice() || _nextMarkBitMap->isMarked((HeapWord*)task_entry.obj()), "invariant");
+  assert(task_entry.is_array_slice() || _nextMarkBitMap->is_marked((HeapWord*)task_entry.obj()), "invariant");
 
   if (!_task_queue->push(task_entry)) {
     // The local task queue looks full. We need to push some entries
@@ -170,7 +168,7 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 template<bool scan>
 inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
   assert(scan || (task_entry.is_oop() && task_entry.obj()->is_typeArray()), "Skipping scan of grey non-typeArray");
-  assert(task_entry.is_array_slice() || _nextMarkBitMap->isMarked((HeapWord*)task_entry.obj()),
+  assert(task_entry.is_array_slice() || _nextMarkBitMap->is_marked((HeapWord*)task_entry.obj()),
          "Any stolen object should be a slice or marked");
 
   if (scan) {
@@ -240,7 +238,7 @@ inline void G1CMTask::deal_with_reference(oop obj) {
   assert(obj->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   if (_g1h->is_in_g1_reserved(objAddr)) {
     assert(obj != NULL, "null check is implicit");
-    if (!_nextMarkBitMap->isMarked(objAddr)) {
+    if (!_nextMarkBitMap->is_marked(objAddr)) {
       // Only get the containing region if the object is not marked on the
       // bitmap (otherwise, it's a waste of time since we won't do
       // anything with it).
@@ -253,19 +251,13 @@ inline void G1CMTask::deal_with_reference(oop obj) {
 }
 
 inline void G1ConcurrentMark::markPrev(oop p) {
-  assert(!_prevMarkBitMap->isMarked((HeapWord*) p), "sanity");
-  // Note we are overriding the read-only view of the prev map here, via
-  // the cast.
-  ((G1CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
+  assert(!_prevMarkBitMap->is_marked((HeapWord*) p), "sanity");
+ _prevMarkBitMap->mark((HeapWord*) p);
 }
 
 bool G1ConcurrentMark::isPrevMarked(oop p) const {
   assert(p != NULL && p->is_oop(), "expected an oop");
-  HeapWord* addr = (HeapWord*)p;
-  assert(addr >= _prevMarkBitMap->startWord() ||
-         addr < _prevMarkBitMap->endWord(), "in a region");
-
-  return _prevMarkBitMap->isMarked(addr);
+  return _prevMarkBitMap->is_marked((HeapWord*)p);
 }
 
 inline void G1ConcurrentMark::grayRoot(oop obj, HeapRegion* hr) {
@@ -282,7 +274,7 @@ inline void G1ConcurrentMark::grayRoot(oop obj, HeapRegion* hr) {
   assert(!hr->is_continues_humongous(), "sanity");
 
   if (addr < hr->next_top_at_mark_start()) {
-    if (!_nextMarkBitMap->isMarked(addr)) {
+    if (!_nextMarkBitMap->is_marked(addr)) {
       par_mark(obj);
     }
   }

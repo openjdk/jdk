@@ -221,7 +221,7 @@ public:
     }
     if (hr->is_humongous()) {
       HeapRegion* start_region = hr->humongous_start_region();
-      if (mark_bitmap->isMarked(start_region->bottom())) {
+      if (mark_bitmap->is_marked(start_region->bottom())) {
         mark_card_bitmap_range(start, hr->top());
         return pointer_delta(hr->top(), start, 1);
       } else {
@@ -236,7 +236,7 @@ public:
            p2i(start), p2i(ntams), p2i(hr->end()));
 
     // Find the first marked object at or after "start".
-    start = mark_bitmap->getNextMarkedWordAddress(start, ntams);
+    start = mark_bitmap->get_next_marked_addr(start, ntams);
     while (start < ntams) {
       oop obj = oop(start);
       size_t obj_size = obj->size();
@@ -250,7 +250,7 @@ public:
       marked_bytes += obj_size * HeapWordSize;
 
       // Find the next marked object after this one.
-      start = mark_bitmap->getNextMarkedWordAddress(obj_end, ntams);
+      start = mark_bitmap->get_next_marked_addr(obj_end, ntams);
     }
 
     return marked_bytes;
