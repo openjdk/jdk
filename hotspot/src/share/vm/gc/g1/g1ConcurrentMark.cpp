@@ -60,43 +60,21 @@
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
 
-void G1CMBitMap::print_on_error(outputStream* st, const char* prefix) const {
-  _bm.print_on_error(st, prefix);
-}
+bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
+  assert(addr < _cm->finger(), "invariant");
+  assert(addr >= _task->finger(), "invariant");
 
-size_t G1CMBitMap::compute_size(size_t heap_size) {
-  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
-}
+  // We move that task's local finger along.
+  _task->move_finger_to(addr);
 
-size_t G1CMBitMap::mark_distance() {
-  return MinObjAlignmentInBytes * BitsPerByte;
-}
+  _task->scan_task_entry(G1TaskQueueEntry::from_oop(oop(addr)));
+  // we only partially drain the local queue and global stack
+  _task->drain_local_queue(true);
+  _task->drain_global_stack(true);
 
-void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  _covered = heap;
-
-  _bm = BitMapView((BitMap::bm_word_t*) storage->reserved().start(), _covered.word_size() >> _shifter);
-
-  storage->set_mapping_changed_listener(&_listener);
-}
-
-void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions, bool zero_filled) {
-  if (zero_filled) {
-    return;
-  }
-  // We need to clear the bitmap on commit, removing any existing information.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
-  _bm->clear_range(mr);
-}
-
-void G1CMBitMap::clear_range(MemRegion mr) {
-  MemRegion intersection = mr.intersection(_covered);
-  assert(!intersection.is_empty(),
-         "Given range from " PTR_FORMAT " to " PTR_FORMAT " is completely outside the heap",
-         p2i(mr.start()), p2i(mr.end()));
-  // convert address range into offset range
-  _bm.at_put_range(addr_to_offset(intersection.start()),
-                   addr_to_offset(intersection.end()), false);
+  // if the has_aborted flag has been raised, we need to bail out of
+  // the iteration
+  return !_task->has_aborted();
 }
 
 G1CMMarkStack::G1CMMarkStack() :
@@ -2120,23 +2098,6 @@ void G1ConcurrentMark::print_on_error(outputStream* st) const {
       p2i(_prevMarkBitMap), p2i(_nextMarkBitMap));
   _prevMarkBitMap->print_on_error(st, " Prev Bits: ");
   _nextMarkBitMap->print_on_error(st, " Next Bits: ");
-}
-
-bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
-  assert(addr < _cm->finger(), "invariant");
-  assert(addr >= _task->finger(), "invariant");
-
-  // We move that task's local finger along.
-  _task->move_finger_to(addr);
-
-  _task->scan_task_entry(G1TaskQueueEntry::from_oop(oop(addr)));
-  // we only partially drain the local queue and global stack
-  _task->drain_local_queue(true);
-  _task->drain_global_stack(true);
-
-  // if the has_aborted flag has been raised, we need to bail out of
-  // the iteration
-  return !_task->has_aborted();
 }
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
