@@ -25,7 +25,9 @@
  * @test
  * @bug 8185151
  * @summary test that navigation summary links are not linked when there are no dependencies
- * @modules jdk.javadoc/jdk.javadoc.internal.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @library ../lib /tools/lib
  * @build toolbox.ToolBox toolbox.ModuleBuilder JavadocTester
