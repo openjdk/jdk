@@ -56,7 +56,7 @@
 // room for filler objects to pad out to the end of the region.
 
 class G1CollectedHeap;
-class G1CMBitMapRO;
+class G1CMBitMap;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;
@@ -225,7 +225,7 @@ class HeapRegion: public G1ContiguousSpace {
   // May
   // - only called with obj < top()
   // - not called on humongous objects or archive regions
-  inline bool is_obj_dead_with_size(const oop obj, G1CMBitMapRO* prev_bitmap, size_t* size) const;
+  inline bool is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const;
 
  protected:
   // The index of this region in the heap region sequence.
@@ -301,7 +301,7 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Returns the block size of the given (dead, potentially having its class unloaded) object
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
-  inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMapRO* prev_bitmap) const;
+  inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
  public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
@@ -349,7 +349,7 @@ class HeapRegion: public G1ContiguousSpace {
   bool block_is_obj(const HeapWord* p) const;
 
   // Returns whether the given object is dead based on TAMS and bitmap.
-  bool is_obj_dead(const oop obj, const G1CMBitMapRO* prev_bitmap) const;
+  bool is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const;
 
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()

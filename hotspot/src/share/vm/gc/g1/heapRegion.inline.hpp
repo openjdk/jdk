@@ -113,7 +113,7 @@ G1ContiguousSpace::block_start_const(const void* p) const {
   return _bot_part.block_start_const(p);
 }
 
-inline bool HeapRegion::is_obj_dead_with_size(const oop obj, G1CMBitMapRO* prev_bitmap, size_t* size) const {
+inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
   HeapWord* addr = (HeapWord*) obj;
 
   assert(addr < top(), "must be");
@@ -145,7 +145,7 @@ HeapRegion::block_is_obj(const HeapWord* p) const {
   return p < top();
 }
 
-inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMapRO* prev_bitmap) const {
+inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
   assert(ClassUnloadingWithConcurrentMark,
          "All blocks should be objects if class unloading isn't used, so this method should not be called. "
          "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
@@ -154,15 +154,15 @@ inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1
 
   // Old regions' dead objects may have dead classes
   // We need to find the next live object using the bitmap
-  HeapWord* next = prev_bitmap->getNextMarkedWordAddress(addr, prev_top_at_mark_start());
+  HeapWord* next = prev_bitmap->get_next_marked_addr(addr, prev_top_at_mark_start());
 
   assert(next > addr, "must get the next live object");
   return pointer_delta(next, addr);
 }
 
-inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMapRO* prev_bitmap) const {
+inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-  return !obj_allocated_since_prev_marking(obj) && !prev_bitmap->isMarked((HeapWord*)obj);
+  return !obj_allocated_since_prev_marking(obj) && !prev_bitmap->is_marked((HeapWord*)obj);
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
@@ -331,7 +331,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
   }
 #endif
 
-  G1CMBitMapRO* bitmap = g1h->concurrent_mark()->prevMarkBitMap();
+  const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prevMarkBitMap();
   do {
     oop obj = oop(cur);
     assert(obj->is_oop(true), "Not an oop at " PTR_FORMAT, p2i(cur));

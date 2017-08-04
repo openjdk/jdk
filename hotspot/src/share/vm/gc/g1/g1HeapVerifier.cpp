@@ -598,11 +598,11 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   _g1h->collection_set()->iterate(&cl);
 }
 
-bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,
+bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, const G1CMBitMap* const bitmap,
                                                HeapWord* tams, HeapWord* end) {
   guarantee(tams <= end,
             "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
-  HeapWord* result = bitmap->getNextMarkedWordAddress(tams, end);
+  HeapWord* result = bitmap->get_next_marked_addr(tams, end);
   if (result < end) {
     log_error(gc, verify)("## wrong marked address on %s bitmap: " PTR_FORMAT, bitmap_name, p2i(result));
     log_error(gc, verify)("## %s tams: " PTR_FORMAT " end: " PTR_FORMAT, bitmap_name, p2i(tams), p2i(end));
@@ -612,10 +612,9 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMa
 }
 
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  G1CMBitMapRO* prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
-  G1CMBitMapRO* next_bitmap = (G1CMBitMapRO*) _g1h->concurrent_mark()->nextMarkBitMap();
+  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
+  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->nextMarkBitMap();
 
-  HeapWord* bottom = hr->bottom();
   HeapWord* ptams  = hr->prev_top_at_mark_start();
   HeapWord* ntams  = hr->next_top_at_mark_start();
   HeapWord* end    = hr->end();
