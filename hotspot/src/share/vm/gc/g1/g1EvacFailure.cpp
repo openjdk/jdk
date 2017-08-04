@@ -124,7 +124,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->grayRoot(obj, _hr);
+        _cm->mark_in_next_bitmap(_hr, obj);
       }
       size_t obj_size = obj->size();
 

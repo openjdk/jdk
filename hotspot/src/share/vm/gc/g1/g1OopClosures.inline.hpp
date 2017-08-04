@@ -95,11 +95,11 @@ inline void G1CMOopClosure::do_oop_nv(T* p) {
 template <class T>
 inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    HeapRegion* hr = _g1h->heap_region_containing((HeapWord*) obj);
-    _cm->grayRoot(obj, hr);
+  if (oopDesc::is_null(heap_oop)) {
+    return;
   }
+  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  _cm->mark_in_next_bitmap(obj);
 }
 
 template <class T>
@@ -205,8 +205,7 @@ void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
 void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  // We know that the object is not moving so it's safe to read its size.
-  _cm->grayRoot(obj);
+  _cm->mark_in_next_bitmap(obj);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
@@ -217,11 +216,7 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
   assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  // The object might be in the process of being copied by another
-  // worker so we cannot trust that its to-space image is
-  // well-formed. So we have to read its size from its from-space
-  // image which we know should not be changing.
-  _cm->grayRoot(to_obj);
+  _cm->mark_in_next_bitmap(to_obj);
 }
 
 template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>

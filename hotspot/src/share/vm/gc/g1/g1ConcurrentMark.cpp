@@ -1722,15 +1722,8 @@ private:
   // circumspect about treating the argument as an object.
   void do_entry(void* entry) const {
     _task->increment_refs_reached();
-    HeapRegion* hr = _g1h->heap_region_containing(entry);
-    if (entry < hr->next_top_at_mark_start()) {
-      // Until we get here, we don't know whether entry refers to a valid
-      // object; it could instead have been a stale reference.
-      oop obj = static_cast<oop>(entry);
-      assert(obj->is_oop(true /* ignore mark word */),
-             "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(obj));
-      _task->make_reference_grey(obj);
-    }
+    oop const obj = static_cast<oop>(entry);
+    _task->make_reference_grey(obj);
   }
 
 public:
