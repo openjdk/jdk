@@ -26,13 +26,13 @@
 #define SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
 
 #include "classfile/javaClasses.hpp"
+#include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
 
 class G1CollectedHeap;
-class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
 class ConcurrentGCTimer;
@@ -108,97 +108,6 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
   G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
 
   bool do_object_b(oop obj);
-};
-
-// A generic CM bit map.  This is essentially a wrapper around the BitMap
-// class, with one bit per (1<<_shifter) HeapWords.
-
-class G1CMBitMapRO VALUE_OBJ_CLASS_SPEC {
- protected:
-  HeapWord*  _bmStartWord; // base address of range covered by map
-  size_t     _bmWordSize;  // map size (in #HeapWords covered)
-  const int  _shifter;     // map to char or bit
-  BitMapView _bm;          // the bit map itself
-
- public:
-  // constructor
-  G1CMBitMapRO(int shifter);
-
-  // inquiries
-  HeapWord* startWord()   const { return _bmStartWord; }
-  // the following is one past the last word in space
-  HeapWord* endWord()     const { return _bmStartWord + _bmWordSize; }
-
-  // read marks
-
-  bool isMarked(HeapWord* addr) const {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    return _bm.at(heapWordToOffset(addr));
-  }
-
-  // iteration
-  inline bool iterate(BitMapClosure* cl, MemRegion mr);
-
-  // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextMarkedWordAddress(const HeapWord* addr,
-                                     const HeapWord* limit = NULL) const;
-
-  // conversion utilities
-  HeapWord* offsetToHeapWord(size_t offset) const {
-    return _bmStartWord + (offset << _shifter);
-  }
-  size_t heapWordToOffset(const HeapWord* addr) const {
-    return pointer_delta(addr, _bmStartWord) >> _shifter;
-  }
-
-  // The argument addr should be the start address of a valid object
-  inline HeapWord* nextObject(HeapWord* addr);
-
-  void print_on_error(outputStream* st, const char* prefix) const;
-
-  // debugging
-  NOT_PRODUCT(bool covers(MemRegion rs) const;)
-};
-
-class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
- private:
-  G1CMBitMap* _bm;
- public:
-  G1CMBitMapMappingChangedListener() : _bm(NULL) {}
-
-  void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
-
-  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
-};
-
-class G1CMBitMap : public G1CMBitMapRO {
- private:
-  G1CMBitMapMappingChangedListener _listener;
-
- public:
-  static size_t compute_size(size_t heap_size);
-  // Returns the amount of bytes on the heap between two marks in the bitmap.
-  static size_t mark_distance();
-  // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
-  // mark bitmap corresponds to. This is the same as the mark distance above.
-  static size_t heap_map_factor() {
-    return mark_distance();
-  }
-
-  G1CMBitMap() : G1CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
-
-  // Initializes the underlying BitMap to cover the given area.
-  void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
-
-  // Write marks.
-  inline void mark(HeapWord* addr);
-  inline void clear(HeapWord* addr);
-  inline bool parMark(HeapWord* addr);
-
-  void clear_range(MemRegion mr);
 };
 
 // Represents the overflow mark stack used by concurrent marking.
@@ -396,7 +305,7 @@ protected:
   // Concurrent marking support structures
   G1CMBitMap              _markBitMap1;
   G1CMBitMap              _markBitMap2;
-  G1CMBitMapRO*           _prevMarkBitMap; // Completed mark bitmap
+  G1CMBitMap*             _prevMarkBitMap; // Completed mark bitmap
   G1CMBitMap*             _nextMarkBitMap; // Under-construction mark bitmap
 
   // Heap bounds
@@ -626,8 +535,8 @@ public:
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
 
-  G1CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
-  G1CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
+  const G1CMBitMap* const prevMarkBitMap() const { return _prevMarkBitMap; }
+  G1CMBitMap* nextMarkBitMap() const { return _nextMarkBitMap; }
 
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW
@@ -636,16 +545,6 @@ public:
 
   // Calculates the number of GC threads to be used in a concurrent phase.
   uint calc_parallel_marking_threads();
-
-  // The following three are interaction between CM and
-  // G1CollectedHeap
-
-  // This notifies CM that a root during initial-mark needs to be
-  // grayed. It is MT-safe. hr is the region that
-  // contains the object and it's passed optionally from callers who
-  // might already have it (no point in recalculating it).
-  inline void grayRoot(oop obj,
-                       HeapRegion* hr = NULL);
 
   // Prepare internal data structures for the next mark cycle. This includes clearing
   // the next mark bitmap and some internal data structures. This method is intended
@@ -713,8 +612,9 @@ public:
 
   void print_on_error(outputStream* st) const;
 
-  // Attempts to mark the given object on the next mark bitmap.
-  inline bool par_mark(oop obj);
+  // Mark the given object on the next bitmap if it is below nTAMS.
+  inline bool mark_in_next_bitmap(HeapRegion* const hr, oop const obj);
+  inline bool mark_in_next_bitmap(oop const obj);
 
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {

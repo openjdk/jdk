@@ -4945,7 +4945,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                                p2i(r->bottom()),
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
-                               next_bitmap->isMarked(r->bottom()),
+                               next_bitmap->is_marked(r->bottom()),
                                g1h->is_humongous_reclaim_candidate(region_idx),
                                obj->is_typeArray()
                               );
@@ -4962,13 +4962,13 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                              p2i(r->bottom()),
                              r->rem_set()->occupied(),
                              r->rem_set()->strong_code_roots_list_length(),
-                             next_bitmap->isMarked(r->bottom()),
+                             next_bitmap->is_marked(r->bottom()),
                              g1h->is_humongous_reclaim_candidate(region_idx),
                              obj->is_typeArray()
                             );
 
     // Need to clear mark bit of the humongous object if already set.
-    if (next_bitmap->isMarked(r->bottom())) {
+    if (next_bitmap->is_marked(r->bottom())) {
       next_bitmap->clear(r->bottom());
     }
     _humongous_objects_reclaimed++;

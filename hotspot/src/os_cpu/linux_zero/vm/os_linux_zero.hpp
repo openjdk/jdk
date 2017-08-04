@@ -38,10 +38,10 @@
   static void atomic_copy64(const volatile void *src, volatile void *dst) {
 #if defined(PPC32)
     double tmp;
-    asm volatile ("lfd  %0, 0(%1)\n"
-                  "stfd %0, 0(%2)\n"
-                  : "=f"(tmp)
-                  : "b"(src), "b"(dst));
+    asm volatile ("lfd  %0, %2\n"
+                  "stfd %0, %1\n"
+                  : "=&f"(tmp), "=Q"(*(volatile double*)dst)
+                  : "Q"(*(volatile double*)src));
 #elif defined(S390) && !defined(_LP64)
     double tmp;
     asm volatile ("ld  %0, 0(%1)\n"
