@@ -134,10 +134,6 @@ protected:
 
     return (int)words;
   }
-  static int size(int length, int elm_byte_size) {
-    return align_size_up(byte_sizeof(length, elm_byte_size), BytesPerWord) / BytesPerWord; // FIXME
-  }
-
   int size() {
     return size(_length);
   }
