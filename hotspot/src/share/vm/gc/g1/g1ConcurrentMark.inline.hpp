@@ -33,8 +33,30 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-inline bool G1ConcurrentMark::par_mark(oop obj) {
-  return _nextMarkBitMap->par_mark((HeapWord*)obj);
+inline bool G1ConcurrentMark::mark_in_next_bitmap(oop const obj) {
+  HeapRegion* const hr = _g1h->heap_region_containing(obj);
+  return mark_in_next_bitmap(hr, obj);
+}
+
+inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop const obj) {
+  assert(hr != NULL, "just checking");
+  assert(hr->is_in_reserved(obj), "Attempting to mark object at " PTR_FORMAT " that is not contained in the given region %u", p2i(obj), hr->hrm_index());
+
+  if (hr->obj_allocated_since_next_marking(obj)) {
+    return false;
+  }
+
+  // Some callers may have stale objects to mark above nTAMS after humongous reclaim.
+  assert(obj->is_oop(true /* ignore mark word */), "Address " PTR_FORMAT " to mark is not an oop", p2i(obj));
+  assert(!hr->is_continues_humongous(), "Should not try to mark object " PTR_FORMAT " in Humongous continues region %u above nTAMS " PTR_FORMAT, p2i(obj), hr->hrm_index(), p2i(hr->next_top_at_mark_start()));
+
+  HeapWord* const obj_addr = (HeapWord*)obj;
+  // Dirty read to avoid CAS.
+  if (_nextMarkBitMap->is_marked(obj_addr)) {
+    return false;
+  }
+
+  return _nextMarkBitMap->par_mark(obj_addr);
 }
 
 #ifndef PRODUCT
@@ -140,62 +162,53 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
 }
 
 inline void G1CMTask::make_reference_grey(oop obj) {
-  if (_cm->par_mark(obj)) {
-    // No OrderAccess:store_load() is needed. It is implicit in the
-    // CAS done in G1CMBitMap::parMark() call in the routine above.
-    HeapWord* global_finger = _cm->finger();
+  if (!_cm->mark_in_next_bitmap(obj)) {
+    return;
+  }
 
-    // We only need to push a newly grey object on the mark
-    // stack if it is in a section of memory the mark bitmap
-    // scan has already examined.  Mark bitmap scanning
-    // maintains progress "fingers" for determining that.
-    //
-    // Notice that the global finger might be moving forward
-    // concurrently. This is not a problem. In the worst case, we
-    // mark the object while it is above the global finger and, by
-    // the time we read the global finger, it has moved forward
-    // past this object. In this case, the object will probably
-    // be visited when a task is scanning the region and will also
-    // be pushed on the stack. So, some duplicate work, but no
-    // correctness problems.
-    if (is_below_finger(obj, global_finger)) {
-      G1TaskQueueEntry entry = G1TaskQueueEntry::from_oop(obj);
-      if (obj->is_typeArray()) {
-        // Immediately process arrays of primitive types, rather
-        // than pushing on the mark stack.  This keeps us from
-        // adding humongous objects to the mark stack that might
-        // be reclaimed before the entry is processed - see
-        // selection of candidates for eager reclaim of humongous
-        // objects.  The cost of the additional type test is
-        // mitigated by avoiding a trip through the mark stack,
-        // by only doing a bookkeeping update and avoiding the
-        // actual scan of the object - a typeArray contains no
-        // references, and the metadata is built-in.
-        process_grey_task_entry<false>(entry);
-      } else {
-        push(entry);
-      }
+  // No OrderAccess:store_load() is needed. It is implicit in the
+  // CAS done in G1CMBitMap::parMark() call in the routine above.
+  HeapWord* global_finger = _cm->finger();
+
+  // We only need to push a newly grey object on the mark
+  // stack if it is in a section of memory the mark bitmap
+  // scan has already examined.  Mark bitmap scanning
+  // maintains progress "fingers" for determining that.
+  //
+  // Notice that the global finger might be moving forward
+  // concurrently. This is not a problem. In the worst case, we
+  // mark the object while it is above the global finger and, by
+  // the time we read the global finger, it has moved forward
+  // past this object. In this case, the object will probably
+  // be visited when a task is scanning the region and will also
+  // be pushed on the stack. So, some duplicate work, but no
+  // correctness problems.
+  if (is_below_finger(obj, global_finger)) {
+    G1TaskQueueEntry entry = G1TaskQueueEntry::from_oop(obj);
+    if (obj->is_typeArray()) {
+      // Immediately process arrays of primitive types, rather
+      // than pushing on the mark stack.  This keeps us from
+      // adding humongous objects to the mark stack that might
+      // be reclaimed before the entry is processed - see
+      // selection of candidates for eager reclaim of humongous
+      // objects.  The cost of the additional type test is
+      // mitigated by avoiding a trip through the mark stack,
+      // by only doing a bookkeeping update and avoiding the
+      // actual scan of the object - a typeArray contains no
+      // references, and the metadata is built-in.
+      process_grey_task_entry<false>(entry);
+    } else {
+      push(entry);
     }
   }
 }
 
 inline void G1CMTask::deal_with_reference(oop obj) {
   increment_refs_reached();
-
-  HeapWord* objAddr = (HeapWord*) obj;
-  assert(obj->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
-  if (_g1h->is_in_g1_reserved(objAddr)) {
-    assert(obj != NULL, "null check is implicit");
-    if (!_nextMarkBitMap->is_marked(objAddr)) {
-      // Only get the containing region if the object is not marked on the
-      // bitmap (otherwise, it's a waste of time since we won't do
-      // anything with it).
-      HeapRegion* hr = _g1h->heap_region_containing(obj);
-      if (!hr->obj_allocated_since_next_marking(obj)) {
-        make_reference_grey(obj);
-      }
-    }
+  if (obj == NULL) {
+    return;
   }
+  make_reference_grey(obj);
 }
 
 inline void G1ConcurrentMark::markPrev(oop p) {
@@ -206,26 +219,6 @@ inline void G1ConcurrentMark::markPrev(oop p) {
 bool G1ConcurrentMark::isPrevMarked(oop p) const {
   assert(p != NULL && p->is_oop(), "expected an oop");
   return _prevMarkBitMap->is_marked((HeapWord*)p);
-}
-
-inline void G1ConcurrentMark::grayRoot(oop obj, HeapRegion* hr) {
-  assert(obj != NULL, "pre-condition");
-  HeapWord* addr = (HeapWord*) obj;
-  if (hr == NULL) {
-    hr = _g1h->heap_region_containing(addr);
-  } else {
-    assert(hr->is_in(addr), "pre-condition");
-  }
-  assert(hr != NULL, "sanity");
-  // Given that we're looking for a region that contains an object
-  // header it's impossible to get back a HC region.
-  assert(!hr->is_continues_humongous(), "sanity");
-
-  if (addr < hr->next_top_at_mark_start()) {
-    if (!_nextMarkBitMap->is_marked(addr)) {
-      par_mark(obj);
-    }
-  }
 }
 
 inline bool G1ConcurrentMark::do_yield_check() {

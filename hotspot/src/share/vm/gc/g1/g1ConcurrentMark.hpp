@@ -546,16 +546,6 @@ public:
   // Calculates the number of GC threads to be used in a concurrent phase.
   uint calc_parallel_marking_threads();
 
-  // The following three are interaction between CM and
-  // G1CollectedHeap
-
-  // This notifies CM that a root during initial-mark needs to be
-  // grayed. It is MT-safe. hr is the region that
-  // contains the object and it's passed optionally from callers who
-  // might already have it (no point in recalculating it).
-  inline void grayRoot(oop obj,
-                       HeapRegion* hr = NULL);
-
   // Prepare internal data structures for the next mark cycle. This includes clearing
   // the next mark bitmap and some internal data structures. This method is intended
   // to be called concurrently to the mutator. It will yield to safepoint requests.
@@ -622,8 +612,9 @@ public:
 
   void print_on_error(outputStream* st) const;
 
-  // Attempts to mark the given object on the next mark bitmap.
-  inline bool par_mark(oop obj);
+  // Mark the given object on the next bitmap if it is below nTAMS.
+  inline bool mark_in_next_bitmap(HeapRegion* const hr, oop const obj);
+  inline bool mark_in_next_bitmap(oop const obj);
 
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {
