@@ -1345,7 +1345,7 @@ public class BytecodeParser implements GraphBuilderContext {
             /*
              * Special handling for runtimes that rewrite an invocation of MethodHandle.invoke(...)
              * or MethodHandle.invokeExact(...) to a static adapter. HotSpot does this - see
-             * https://wikis.oracle.com/display/HotSpotInternals/Method+handles +and+invokedynamic
+             * https://wiki.openjdk.java.net/display/HotSpot/Method+handles+and+invokedynamic
              */
             boolean hasReceiver = !((ResolvedJavaMethod) target).isStatic();
             JavaConstant appendix = constantPool.lookupAppendix(stream.readCPI(), Bytecodes.INVOKEVIRTUAL);
