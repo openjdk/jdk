@@ -101,15 +101,12 @@ public class ExpandLogicPhase extends Phase {
     private static void processIf(LogicNode x, boolean xNegated, LogicNode y, boolean yNegated, IfNode ifNode, double shortCircuitProbability) {
         AbstractBeginNode trueTarget = ifNode.trueSuccessor();
         AbstractBeginNode falseTarget = ifNode.falseSuccessor();
-        double firstIfProbability = shortCircuitProbability;
-        /*
-         * P(Y | not(X)) = P(Y inter not(X)) / P(not(X)) = (P(X union Y) - P(X)) / (1 - P(X))
-         *
-         * P(X) = shortCircuitProbability
-         *
-         * P(X union Y) = ifNode.probability(trueTarget)
-         */
-        double secondIfProbability = (ifNode.probability(trueTarget) - shortCircuitProbability) / (1 - shortCircuitProbability);
+        // while the first if node is reached by all cases, the true values are split between the
+        // first and the second if
+        double firstIfProbability = ifNode.probability(trueTarget) * shortCircuitProbability;
+        // the second if node is reached by a reduced number of true cases but the same number of
+        // false cases
+        double secondIfProbability = 1 - ifNode.probability(falseTarget) / (1 - firstIfProbability);
         secondIfProbability = Math.min(1.0, Math.max(0.0, secondIfProbability));
         if (Double.isNaN(secondIfProbability)) {
             secondIfProbability = 0.5;

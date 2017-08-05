@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpHandler;
 import org.graalvm.compiler.debug.DebugHandler;
@@ -203,7 +204,7 @@ public class GraalDebugHandlersFactory implements DebugHandlersFactory {
         }
         String ext = PathUtilities.formatExtension(extension);
         Path result = createUnique(DebugOptions.getDumpDirectory(options), id, label, ext, createDirectory);
-        if (ShowDumpFiles.getValue(options)) {
+        if (ShowDumpFiles.getValue(options) || Assertions.assertionsEnabled()) {
             TTY.println("Dumping debug output to %s", result.toAbsolutePath().toString());
         }
         return result;

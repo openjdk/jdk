@@ -22,11 +22,7 @@
  */
 package org.graalvm.compiler.loop;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Iterator;
-
+import jdk.vm.ci.meta.TriState;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -57,7 +53,10 @@ import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.util.EconomicMap;
 
-import jdk.vm.ci.meta.TriState;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
 
 public abstract class LoopFragment {
 
@@ -78,7 +77,10 @@ public abstract class LoopFragment {
         this.nodesReady = false;
     }
 
-    public LoopEx loop() {
+    /**
+     * Return the original LoopEx for this fragment. For duplicated fragments this returns null.
+     */
+    protected LoopEx loop() {
         return loop;
     }
 
@@ -172,6 +174,8 @@ public abstract class LoopFragment {
             NodeIterable<Node> nodesIterable = original().nodes();
             duplicationMap = graph().addDuplicates(nodesIterable, graph(), nodesIterable.count(), dr);
             finishDuplication();
+            nodes = new NodeBitMap(graph());
+            nodes.markAll(duplicationMap.getValues());
             nodesReady = true;
         } else {
             // TODO (gd) apply fix ?

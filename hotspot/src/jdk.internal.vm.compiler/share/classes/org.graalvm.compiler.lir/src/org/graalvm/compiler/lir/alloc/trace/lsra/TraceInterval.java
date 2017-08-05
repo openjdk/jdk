@@ -26,7 +26,6 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
@@ -39,6 +38,7 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.util.Util;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
@@ -722,7 +722,7 @@ final class TraceInterval extends IntervalHint {
 
         // do not add use positions for precolored intervals because they are never used
         if (registerPriority != RegisterPriority.None) {
-            if (DetailedAsserts.getValue(options)) {
+            if (Assertions.detailedAssertionsEnabled(options)) {
                 for (int i = 0; i < numUsePos(); i++) {
                     assert pos <= getUsePos(i) : "already added a use-position with lower position";
                     if (i > 0) {
@@ -802,7 +802,7 @@ final class TraceInterval extends IntervalHint {
         // split list of use positions
         splitUsePosAt(result, splitPos);
 
-        if (DetailedAsserts.getValue(allocator.getOptions())) {
+        if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
             for (int i = 0; i < numUsePos(); i++) {
                 assert getUsePos(i) < splitPos;
             }

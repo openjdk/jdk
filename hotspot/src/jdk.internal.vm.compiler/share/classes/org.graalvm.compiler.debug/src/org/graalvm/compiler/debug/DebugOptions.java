@@ -75,7 +75,7 @@ public class DebugOptions {
     public static final OptionKey<String> Time = new OptionKey<>(null);
 
     @Option(help = "Pattern for scope(s) in which verification is enabled (see DebugFilter and Debug.verify).", type = OptionType.Debug)
-    public static final OptionKey<String> Verify = new OptionKey<>(Assertions.ENABLED ? "" : null);
+    public static final OptionKey<String> Verify = new OptionKey<>(null);
     @Option(help = "Pattern for scope(s) in which dumping is enabled (see DebugFilter and Debug.dump)", type = OptionType.Debug)
     public static final OptionKey<String> Dump = new OptionKey<>(null);
     @Option(help = "Pattern for scope(s) in which logging is enabled (see DebugFilter and Debug.log)", type = OptionType.Debug)
@@ -115,7 +115,7 @@ public class DebugOptions {
     @Option(help = "The directory where various Graal dump files are written.")
     public static final OptionKey<String> DumpPath = new OptionKey<>("dumps");
     @Option(help = "Print the name of each dump file path as it's created.")
-    public static final OptionKey<Boolean> ShowDumpFiles = new OptionKey<>(Assertions.ENABLED);
+    public static final OptionKey<Boolean> ShowDumpFiles = new OptionKey<>(false);
 
     @Option(help = "Enable dumping to the C1Visualizer. Enabling this option implies PrintBackendCFG.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintCFG = new OptionKey<>(false);

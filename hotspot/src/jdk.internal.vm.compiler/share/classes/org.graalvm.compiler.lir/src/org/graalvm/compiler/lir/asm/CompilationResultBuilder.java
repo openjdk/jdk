@@ -171,7 +171,7 @@ public class CompilationResultBuilder {
         assert frameContext != null;
         this.dataCache = dataCache;
 
-        if (dataBuilder.needDetailedPatchingInformation() || Assertions.ENABLED) {
+        if (dataBuilder.needDetailedPatchingInformation() || Assertions.assertionsEnabled()) {
             /*
              * Always enabled in debug mode, even when the VM does not request detailed information,
              * to increase test coverage.

@@ -179,6 +179,14 @@ suite = {
       "workingSets" : "Graal",
     },
 
+    "org.graalvm.graphio" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "checkstyle" : "org.graalvm.compiler.graph",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,Graal",
+    },
+
     "org.graalvm.util" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
@@ -1011,6 +1019,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.graphio",
         "org.graalvm.compiler.core",
         "org.graalvm.compiler.java",
       ],
@@ -1138,6 +1147,13 @@ suite = {
       ],
     },
 
+    "GRAAL_GRAPHIO" : {
+      "subDir" : "share/classes",
+      "dependencies" : ["org.graalvm.graphio"],
+      "distDependencies" : [
+      ],
+    },
+
     "GRAAL_OPTIONS_PROCESSOR" : {
       "subDir" : "share/classes",
       "dependencies" : ["org.graalvm.compiler.options.processor"],
@@ -1203,6 +1219,7 @@ suite = {
       "distDependencies" : [
         "GRAAL_API",
         "GRAAL_COMPILER",
+        "GRAAL_GRAPHIO",
       ],
     },
 
@@ -1297,6 +1314,7 @@ suite = {
     "GRAAL" : {
       "subDir" : "share/classes",
       "overlaps" : [
+        "GRAAL_GRAPHIO",
         "GRAAL_OPTIONS",
         "GRAAL_NODEINFO",
         "GRAAL_API",

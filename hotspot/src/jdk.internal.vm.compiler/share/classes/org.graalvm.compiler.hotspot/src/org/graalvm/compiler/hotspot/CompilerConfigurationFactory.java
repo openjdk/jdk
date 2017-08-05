@@ -130,7 +130,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
      * List used to assert uniqueness of {@link #name} and {@link #autoSelectionPriority} across all
      * {@link CompilerConfigurationFactory} instances.
      */
-    private static final List<CompilerConfigurationFactory> factories = Assertions.ENABLED ? new ArrayList<>() : null;
+    private static final List<CompilerConfigurationFactory> factories = Assertions.assertionsEnabled() ? new ArrayList<>() : null;
 
     private static boolean checkAndAddNewFactory(CompilerConfigurationFactory factory) {
         for (CompilerConfigurationFactory other : factories) {

@@ -31,7 +31,7 @@ public final class ReplacementsUtil {
         // empty
     }
 
-    public static final boolean REPLACEMENTS_ASSERTIONS_ENABLED = Assertions.ENABLED;
+    public static final boolean REPLACEMENTS_ASSERTIONS_ENABLED = Assertions.assertionsEnabled();
 
     /**
      * Asserts that condition evaluates to true by the time compilation is finished. This is

@@ -162,9 +162,20 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
      * This method is static so it can be exercised during initialization.
      */
     private static CompilationLevel adjustCompilationLevelInternal(Class<?> declaringClass, String name, String signature, CompilationLevel level) {
+        if (compileGraalWithC1Only) {
+            if (level.ordinal() > CompilationLevel.Simple.ordinal()) {
+                String declaringClassName = declaringClass.getName();
+                if (declaringClassName.startsWith("jdk.vm.ci") || declaringClassName.startsWith("org.graalvm") || declaringClassName.startsWith("com.oracle.graal")) {
+                    return CompilationLevel.Simple;
+                }
+            }
+        }
+        return checkGraalCompileOnlyFilter(declaringClass.getName(), name, signature, level);
+    }
+
+    public static CompilationLevel checkGraalCompileOnlyFilter(String declaringClassName, String name, String signature, CompilationLevel level) {
         if (graalCompileOnlyFilter != null) {
             if (level == CompilationLevel.FullOptimization) {
-                String declaringClassName = declaringClass.getName();
                 HotSpotSignature sig = null;
                 for (MethodFilter filter : graalCompileOnlyFilter) {
                     if (filter.hasSignature() && sig == null) {
@@ -175,14 +186,6 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
                     }
                 }
                 return CompilationLevel.Simple;
-            }
-        }
-        if (compileGraalWithC1Only) {
-            if (level.ordinal() > CompilationLevel.Simple.ordinal()) {
-                String declaringClassName = declaringClass.getName();
-                if (declaringClassName.startsWith("jdk.vm.ci") || declaringClassName.startsWith("org.graalvm") || declaringClassName.startsWith("com.oracle.graal")) {
-                    return CompilationLevel.Simple;
-                }
             }
         }
         return level;

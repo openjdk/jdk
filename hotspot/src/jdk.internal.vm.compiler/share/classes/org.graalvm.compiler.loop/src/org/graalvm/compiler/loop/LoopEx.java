@@ -22,15 +22,13 @@
  */
 package org.graalvm.compiler.loop;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
-
+import jdk.vm.ci.code.BytecodeFrame;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.graph.iterators.NodePredicate;
@@ -72,7 +70,9 @@ import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
 
-import jdk.vm.ci.code.BytecodeFrame;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class LoopEx {
     private final Loop<Block> loop;
@@ -164,33 +164,46 @@ public class LoopEx {
 
     private class InvariantPredicate implements NodePredicate {
 
+        private final Graph.Mark mark;
+
+        InvariantPredicate() {
+            this.mark = loopBegin().graph().getMark();
+        }
+
         @Override
         public boolean apply(Node n) {
+            if (loopBegin().graph().isNew(mark, n)) {
+                // Newly created nodes are unknown.
+                return false;
+            }
             return isOutsideLoop(n);
         }
     }
 
-    public void reassociateInvariants() {
-        InvariantPredicate invariant = new InvariantPredicate();
+    public boolean reassociateInvariants() {
+        int count = 0;
         StructuredGraph graph = loopBegin().graph();
+        InvariantPredicate invariant = new InvariantPredicate();
         for (BinaryArithmeticNode<?> binary : whole().nodes().filter(BinaryArithmeticNode.class)) {
             if (!binary.isAssociative()) {
                 continue;
             }
             ValueNode result = BinaryArithmeticNode.reassociate(binary, invariant, binary.getX(), binary.getY());
             if (result != binary) {
-                DebugContext debug = graph.getDebug();
-                if (debug.isLogEnabled()) {
-                    debug.log("%s : Reassociated %s into %s", graph.method().format("%H::%n"), binary, result);
-                }
                 if (!result.isAlive()) {
                     assert !result.isDeleted();
                     result = graph.addOrUniqueWithInputs(result);
                 }
+                DebugContext debug = graph.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log("%s : Reassociated %s into %s", graph.method().format("%H::%n"), binary, result);
+                }
                 binary.replaceAtUsages(result);
                 GraphUtil.killWithUnusedFloatingInputs(binary);
+                count++;
             }
         }
+        return count != 0;
     }
 
     public boolean detectCounted() {

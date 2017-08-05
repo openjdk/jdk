@@ -23,7 +23,6 @@
 package org.graalvm.compiler.lir.alloc.trace.lsra;
 
 import static jdk.vm.ci.code.ValueUtil.isRegister;
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
@@ -34,6 +33,7 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
@@ -84,7 +84,7 @@ final class TraceLinearScanEliminateSpillMovePhase extends TraceLinearScanAlloca
              * by Interval.spillDefinitionPos.
              */
             TraceInterval interval = allocator.createUnhandledListBySpillPos(spilledIntervals);
-            if (DetailedAsserts.getValue(allocator.getOptions())) {
+            if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                 checkIntervals(debug, interval);
             }
             if (debug.isLogEnabled()) {
