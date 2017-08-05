@@ -320,6 +320,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                 ResolvedJavaType argumentType = StampTool.typeOrNull(argument.stamp());
                 if (argumentType == null || (argumentType.isAssignableFrom(targetType.getType()) && !argumentType.equals(targetType.getType()))) {
                     LogicNode inst = InstanceOfNode.createAllowNull(targetType, argument, null, null);
+                    assert !inst.isAlive();
                     if (!inst.isTautology()) {
                         inst = adder.add(inst);
                         AnchoringNode guardAnchor = adder.getGuardAnchor();
@@ -337,8 +338,6 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                         }
                         ValueNode valueNode = adder.add(PiNode.create(argument, StampFactory.object(targetType), guard.asNode()));
                         arguments[index] = valueNode;
-                    } else {
-                        inst.safeDelete();
                     }
                 }
             }

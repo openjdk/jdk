@@ -138,8 +138,6 @@ class JVMCIVersionCheck {
                 if (build >= JVMCI9_MIN_EA_BUILD) {
                     return;
                 }
-                // Using Object.equals suppresses Eclipse's "Dead code" warning.
-                // Unfortunately @SuppressWarnings("unused") can only be applied at method level.
                 if (Objects.equals(JVMCI9_MIN_EA_BUILD, Integer.MAX_VALUE)) {
                     failVersionCheck(exitOnFailure, "This version of Graal is not compatible with any JDK 9 Early Access build.%n");
                 } else {

@@ -65,7 +65,7 @@ final class DebugConfigImpl implements DebugConfig {
                         DebugOptions.TrackMemUse.getValue(options),
                         DebugOptions.Time.getValue(options),
                         DebugOptions.Dump.getValue(options),
-                        DebugOptions.Verify.getValue(options),
+                        getVerifyOptionValue(options),
                         DebugOptions.MethodFilter.getValue(options),
                         output, dumpHandlers, verifyHandlers);
     }
@@ -97,6 +97,10 @@ final class DebugConfigImpl implements DebugConfig {
         this.dumpHandlers = Collections.unmodifiableList(dumpHandlers);
         this.verifyHandlers = Collections.unmodifiableList(verifyHandlers);
         this.output = output;
+    }
+
+    private static String getVerifyOptionValue(OptionValues values) {
+        return !DebugOptions.Verify.hasBeenSet(values) && Assertions.assertionsEnabled() ? "" : DebugOptions.Verify.getValue(values);
     }
 
     @Override

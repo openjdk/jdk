@@ -31,9 +31,11 @@ import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.AddressLoweringByUsePhase;
 import org.graalvm.compiler.phases.common.ExpandLogicPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
+import org.graalvm.compiler.phases.common.PropagateDeoptimizeProbabilityPhase;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.SuitesCreator;
+import org.graalvm.compiler.replacements.aarch64.AArch64ReadReplacementPhase;
 
 import java.util.ListIterator;
 
@@ -59,6 +61,9 @@ public class AArch64HotSpotSuitesProvider extends HotSpotSuitesProvider {
             findPhase = suites.getLowTier().findPhase(ExpandLogicPhase.class);
         }
         findPhase.add(new AddressLoweringByUsePhase(addressLoweringByUse));
+
+        findPhase = suites.getLowTier().findPhase(PropagateDeoptimizeProbabilityPhase.class);
+        findPhase.add(new AArch64ReadReplacementPhase());
 
         return suites;
     }

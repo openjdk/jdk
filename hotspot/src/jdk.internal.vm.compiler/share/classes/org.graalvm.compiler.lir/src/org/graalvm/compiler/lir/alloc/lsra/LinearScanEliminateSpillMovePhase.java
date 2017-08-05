@@ -23,7 +23,6 @@
 package org.graalvm.compiler.lir.alloc.lsra;
 
 import static jdk.vm.ci.code.ValueUtil.isRegister;
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.phases.LIRPhase.Options.LIROptimization;
@@ -31,6 +30,7 @@ import static org.graalvm.compiler.lir.phases.LIRPhase.Options.LIROptimization;
 import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInsertionBuffer;
@@ -99,7 +99,7 @@ public class LinearScanEliminateSpillMovePhase extends LinearScanAllocationPhase
              */
             Interval interval;
             interval = allocator.createUnhandledLists(mustStoreAtDefinition, null).getLeft();
-            if (DetailedAsserts.getValue(allocator.getOptions())) {
+            if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                 checkIntervals(debug, interval);
             }
 

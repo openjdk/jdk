@@ -1092,7 +1092,7 @@ public class InvocationPlugins {
         static final Class<?>[][] SIGS;
 
         static {
-            if (!Assertions.ENABLED) {
+            if (!Assertions.assertionsEnabled()) {
                 throw new GraalError("%s must only be used in assertions", Checks.class.getName());
             }
             ArrayList<Class<?>[]> sigs = new ArrayList<>(MAX_ARITY);

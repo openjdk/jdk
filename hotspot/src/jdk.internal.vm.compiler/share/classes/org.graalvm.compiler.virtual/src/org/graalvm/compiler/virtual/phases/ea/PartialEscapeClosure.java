@@ -1009,18 +1009,25 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                     for (int i = 0; i < states.length; i++) {
                         VirtualObjectNode virtual = virtualObjs[i];
 
-                        boolean identitySurvives = virtual.hasIdentity() &&
-                                        // check whether we trivially see that this is the only
-                                        // reference to this allocation
-                                        !isSingleUsageAllocation(getPhiValueAt(phi, i));
-
-                        if (identitySurvives || !firstVirtual.type().equals(virtual.type()) || firstVirtual.entryCount() != virtual.entryCount()) {
+                        if (!firstVirtual.type().equals(virtual.type()) || firstVirtual.entryCount() != virtual.entryCount()) {
                             compatible = false;
                             break;
                         }
                         if (!states[0].getObjectState(firstVirtual).locksEqual(states[i].getObjectState(virtual))) {
                             compatible = false;
                             break;
+                        }
+                    }
+                    if (compatible) {
+                        for (int i = 0; i < states.length; i++) {
+                            VirtualObjectNode virtual = virtualObjs[i];
+                            /*
+                             * check whether we trivially see that this is the only reference to
+                             * this allocation
+                             */
+                            if (virtual.hasIdentity() && !isSingleUsageAllocation(getPhiValueAt(phi, i), virtualObjs, states[i])) {
+                                compatible = false;
+                            }
                         }
                     }
                     if (compatible) {
@@ -1069,14 +1076,34 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
             return materialized;
         }
 
-        private boolean isSingleUsageAllocation(ValueNode value) {
+        private boolean isSingleUsageAllocation(ValueNode value, VirtualObjectNode[] virtualObjs, PartialEscapeBlockState<?> state) {
             /*
              * If the phi input is an allocation, we know that it is a "fresh" value, i.e., that
              * this is a value that will only appear through this source, and cannot appear anywhere
              * else. If the phi is also the only usage of this input, we know that no other place
              * can check object identity against it, so it is safe to lose the object identity here.
              */
-            return value instanceof AllocatedObjectNode && value.hasExactlyOneUsage();
+            if (!(value instanceof AllocatedObjectNode && value.hasExactlyOneUsage())) {
+                return false;
+            }
+
+            /*
+             * Check that the state only references the one virtual object from the Phi.
+             */
+            VirtualObjectNode singleVirtual = null;
+            for (int v = 0; v < virtualObjs.length; v++) {
+                if (state.contains(virtualObjs[v])) {
+                    if (singleVirtual == null) {
+                        singleVirtual = virtualObjs[v];
+                    } else if (singleVirtual != virtualObjs[v]) {
+                        /*
+                         * More than one virtual object is visible in the object state.
+                         */
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
     }
 

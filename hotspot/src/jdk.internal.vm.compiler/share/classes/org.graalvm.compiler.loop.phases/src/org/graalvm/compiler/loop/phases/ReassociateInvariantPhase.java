@@ -26,24 +26,34 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.loop.LoopEx;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.calc.BinaryArithmeticNode;
 import org.graalvm.compiler.phases.Phase;
 
+/**
+ * Rearrange {@link BinaryArithmeticNode#isAssociative() associative binary operations} so that
+ * invariant parts of the expression can move outside of the loop.
+ */
 public class ReassociateInvariantPhase extends Phase {
 
     @SuppressWarnings("try")
     @Override
     protected void run(StructuredGraph graph) {
-        if (graph.hasLoops()) {
-            final LoopsData dataReassociate = new LoopsData(graph);
-            DebugContext debug = graph.getDebug();
-            try (DebugContext.Scope s = debug.scope("ReassociateInvariants")) {
+        int iterations = 0;
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("ReassociateInvariants")) {
+            boolean changed = true;
+            while (changed) {
+                changed = false;
+                final LoopsData dataReassociate = new LoopsData(graph);
                 for (LoopEx loop : dataReassociate.loops()) {
-                    loop.reassociateInvariants();
+                    changed |= loop.reassociateInvariants();
                 }
-            } catch (Throwable e) {
-                throw debug.handle(e);
+                dataReassociate.deleteUnusedNodes();
+                iterations++;
+                debug.dump(DebugContext.VERBOSE_LEVEL, graph, "after iteration %d", iterations);
             }
-            dataReassociate.deleteUnusedNodes();
+        } catch (Throwable e) {
+            throw debug.handle(e);
         }
     }
 }

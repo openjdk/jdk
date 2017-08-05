@@ -119,7 +119,7 @@ public class NodeMapTest extends GraphTest {
         TestNode newNode = graph.add(new TestNode());
         try {
             map.get(newNode);
-            fail("expected " + (Assertions.ENABLED ? AssertionError.class.getSimpleName() : ArrayIndexOutOfBoundsException.class.getSimpleName()));
+            fail("expected " + (Assertions.assertionsEnabled() ? AssertionError.class.getSimpleName() : ArrayIndexOutOfBoundsException.class.getSimpleName()));
         } catch (AssertionError ae) {
             // thrown when assertions are enabled
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -136,7 +136,7 @@ public class NodeMapTest extends GraphTest {
         TestNode newNode = graph.add(new TestNode());
         try {
             map.set(newNode, 1);
-            fail("expected " + (Assertions.ENABLED ? AssertionError.class.getSimpleName() : ArrayIndexOutOfBoundsException.class.getSimpleName()));
+            fail("expected " + (Assertions.assertionsEnabled() ? AssertionError.class.getSimpleName() : ArrayIndexOutOfBoundsException.class.getSimpleName()));
         } catch (AssertionError ae) {
             // thrown when assertions are enabled
         } catch (ArrayIndexOutOfBoundsException e) {

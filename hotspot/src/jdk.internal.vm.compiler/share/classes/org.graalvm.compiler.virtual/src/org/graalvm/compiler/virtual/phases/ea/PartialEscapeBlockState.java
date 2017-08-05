@@ -24,9 +24,7 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
@@ -53,6 +51,19 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
      * corresponding virtual object is not alive or reachable currently.
      */
     private ObjectState[] objectStates;
+
+    public boolean contains(VirtualObjectNode value) {
+        for (ObjectState state : objectStates) {
+            if (state != null && state.isVirtual() && state.getEntries() != null) {
+                for (ValueNode entry : state.getEntries()) {
+                    if (entry == value) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     private static class RefCount {
         private int refCount = 1;
@@ -308,41 +319,6 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
             }
         }
         return true;
-    }
-
-    protected static <K, V> boolean compareMaps(Map<K, V> left, Map<K, V> right) {
-        if (left.size() != right.size()) {
-            return false;
-        }
-        return compareMapsNoSize(left, right);
-    }
-
-    protected static <K, V> boolean compareMapsNoSize(Map<K, V> left, Map<K, V> right) {
-        if (left == right) {
-            return true;
-        }
-        for (Map.Entry<K, V> entry : right.entrySet()) {
-            K key = entry.getKey();
-            V value = entry.getValue();
-            assert value != null;
-            V otherValue = left.get(key);
-            if (otherValue != value && !value.equals(otherValue)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected static <U, V> void meetMaps(Map<U, V> target, Map<U, V> source) {
-        Iterator<Map.Entry<U, V>> iter = target.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<U, V> entry = iter.next();
-            if (source.containsKey(entry.getKey())) {
-                assert source.get(entry.getKey()) == entry.getValue();
-            } else {
-                iter.remove();
-            }
-        }
     }
 
     public void resetObjectStates(int size) {

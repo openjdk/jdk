@@ -94,7 +94,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         }
     }
 
-    protected Value emitExtendMemory(boolean isSigned, AArch64Kind memoryKind, int resultBits, AArch64AddressValue address, LIRFrameState state) {
+    public Value emitExtendMemory(boolean isSigned, AArch64Kind memoryKind, int resultBits, AArch64AddressValue address, LIRFrameState state) {
         // Issue a zero extending load of the proper bit size and set the result to
         // the proper kind.
         Variable result = getLIRGen().newVariable(LIRKind.value(resultBits == 32 ? AArch64Kind.DWORD : AArch64Kind.QWORD));

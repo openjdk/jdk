@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
@@ -39,6 +38,7 @@ import java.util.List;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.util.IntList;
 import org.graalvm.compiler.core.common.util.Util;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.Variable;
@@ -1140,7 +1140,7 @@ public final class Interval {
         // split list of use positions
         result.usePosList = usePosList.splitAt(splitPos);
 
-        if (DetailedAsserts.getValue(allocator.getOptions())) {
+        if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
             for (int i = 0; i < usePosList.size(); i++) {
                 assert usePosList.usePos(i) < splitPos;
             }

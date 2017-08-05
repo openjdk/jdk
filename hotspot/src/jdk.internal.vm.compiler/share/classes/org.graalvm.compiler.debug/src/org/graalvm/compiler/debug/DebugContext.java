@@ -32,11 +32,9 @@ import static org.graalvm.compiler.debug.DebugOptions.DumpOnPhaseChange;
 import static org.graalvm.compiler.debug.DebugOptions.ListMetrics;
 import static org.graalvm.compiler.debug.DebugOptions.Log;
 import static org.graalvm.compiler.debug.DebugOptions.MemUseTrackers;
-import static org.graalvm.compiler.debug.DebugOptions.MethodFilter;
 import static org.graalvm.compiler.debug.DebugOptions.Time;
 import static org.graalvm.compiler.debug.DebugOptions.Timers;
 import static org.graalvm.compiler.debug.DebugOptions.TrackMemUse;
-import static org.graalvm.compiler.debug.DebugOptions.Verify;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -374,16 +372,7 @@ public final class DebugContext implements AutoCloseable {
                     }
                 }
             }
-            currentConfig = new DebugConfigImpl(
-                            options,
-                            Log.getValue(options),
-                            Count.getValue(options),
-                            TrackMemUse.getValue(options),
-                            Time.getValue(options),
-                            Dump.getValue(options),
-                            Verify.getValue(options),
-                            MethodFilter.getValue(options),
-                            logStream, dumpHandlers, verifyHandlers);
+            currentConfig = new DebugConfigImpl(options, logStream, dumpHandlers, verifyHandlers);
             currentScope = new ScopeImpl(this, Thread.currentThread());
             currentScope.updateFlags(currentConfig);
             metricsEnabled = true;
@@ -575,7 +564,7 @@ public final class DebugContext implements AutoCloseable {
         }
     }
 
-    private final Invariants invariants = Assertions.ENABLED ? new Invariants() : null;
+    private final Invariants invariants = Assertions.assertionsEnabled() ? new Invariants() : null;
 
     static StackTraceElement[] getStackTrace(Thread thread) {
         return thread.getStackTrace();

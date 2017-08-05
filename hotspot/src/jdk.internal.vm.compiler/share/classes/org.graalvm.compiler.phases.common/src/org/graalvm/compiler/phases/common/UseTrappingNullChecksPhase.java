@@ -35,6 +35,7 @@ import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
+import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.DynamicDeoptimizeNode;
@@ -197,6 +198,14 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
                     AddressNode address = fixedAccessNode.getAddress();
                     ValueNode base = address.getBase();
                     ValueNode index = address.getIndex();
+                    // allow for architectures which cannot fold an
+                    // intervening uncompress out of the address chain
+                    if (base != null && base instanceof CompressionNode) {
+                        base = ((CompressionNode) base).getValue();
+                    }
+                    if (index != null && index instanceof CompressionNode) {
+                        index = ((CompressionNode) index).getValue();
+                    }
                     if (((base == value && index == null) || (base == null && index == value)) && address.getMaxConstantDisplacement() < implicitNullCheckLimit) {
                         // Opportunity for implicit null check as part of an existing read found!
                         fixedAccessNode.setStateBefore(deopt.stateBefore());

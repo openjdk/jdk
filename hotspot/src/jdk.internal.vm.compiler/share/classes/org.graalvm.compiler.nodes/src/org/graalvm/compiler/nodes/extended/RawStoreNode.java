@@ -39,6 +39,7 @@ import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.spi.Virtualizable;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
+import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.word.LocationIdentity;
 
@@ -124,7 +125,7 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
                 int entryIndex = virtual.entryIndexForOffset(off, accessKind());
                 if (entryIndex != -1) {
                     JavaKind entryKind = virtual.entryKind(entryIndex);
-                    boolean canVirtualize = entryKind == accessKind() || entryKind == accessKind().getStackKind();
+                    boolean canVirtualize = entryKind == accessKind() || (entryKind == accessKind().getStackKind() && !StampTool.typeOrNull(object()).isArray());
                     if (!canVirtualize) {
                         /*
                          * Special case: If the entryKind is long, allow arbitrary kinds as long as

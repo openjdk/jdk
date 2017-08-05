@@ -26,13 +26,12 @@ import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class LoopPartialUnrollTest extends GraalCompilerTest {
 
     @Override
-    protected boolean checkLowTierGraph(StructuredGraph graph) {
+    protected boolean checkMidTierGraph(StructuredGraph graph) {
         NodeIterable<LoopBeginNode> loops = graph.getNodes().filter(LoopBeginNode.class);
         for (LoopBeginNode loop : loops) {
             if (loop.isMainLoop()) {
@@ -45,7 +44,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
     public static long testMultiplySnippet(int arg) {
         long r = 1;
         for (int i = 0; branchProbability(0.99, i < arg); i++) {
-            r *= i;
+            r += r * i;
         }
         return r;
     }
@@ -59,7 +58,24 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
         int c = 0;
         for (int i = 0; i < d; i++) {
             for (int j = 0; branchProbability(0.99, j < i); j++) {
-                c += j & 0x3;
+                c += c + j & 0x3;
+            }
+        }
+        return c;
+    }
+
+    @Test
+    public void testNestedSumBy2() {
+        for (int i = 0; i < 1000; i++) {
+            test("testNestedSumBy2Snippet", i);
+        }
+    }
+
+    public static int testNestedSumBy2Snippet(int d) {
+        int c = 0;
+        for (int i = 0; i < d; i++) {
+            for (int j = 0; branchProbability(0.99, j < i); j += 2) {
+                c += c + j & 0x3;
             }
         }
         return c;
@@ -75,7 +91,7 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
     public static int testSumDownSnippet(int d) {
         int c = 0;
         for (int j = d; branchProbability(0.99, j > -4); j--) {
-            c += j & 0x3;
+            c += c + j & 0x3;
         }
         return c;
     }
@@ -83,21 +99,38 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
     @Test
     public void testSumDown() {
         test("testSumDownSnippet", 1);
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 160; i++) {
             test("testSumDownSnippet", i);
         }
     }
 
-    @Ignore("Phis which reference the backedge value of other Phis aren't handled properly")
+    public static int testSumDownBy2Snippet(int d) {
+        int c = 0;
+        for (int j = d; branchProbability(0.99, j > -4); j -= 2) {
+            c += c + j & 0x3;
+        }
+        return c;
+    }
+
+    @Test
+    public void testSumDownBy2() {
+        test("testSumDownBy2Snippet", 1);
+        for (int i = 0; i < 160; i++) {
+            test("testSumDownBy2Snippet", i);
+        }
+    }
+
     @Test
     public void testLoopCarried() {
         test("testLoopCarriedSnippet", 1, 2);
+        test("testLoopCarriedSnippet", 0, 4);
+        test("testLoopCarriedSnippet", 4, 0);
     }
 
     public static int testLoopCarriedSnippet(int a, int b) {
         int c = a;
         int d = b;
-        for (int j = 0; j < a; j++) {
+        for (int j = 0; branchProbability(0.99, j < a); j++) {
             d = c;
             c += 1;
         }
@@ -136,4 +169,16 @@ public class LoopPartialUnrollTest extends GraalCompilerTest {
         test("testComplexSnippet", 1000);
     }
 
+    public static long testSignExtensionSnippet(long arg) {
+        long r = 1;
+        for (int i = 0; branchProbability(0.99, i < arg); i++) {
+            r *= i;
+        }
+        return r;
+    }
+
+    @Test
+    public void testSignExtension() {
+        test("testSignExtensionSnippet", 9L);
+    }
 }

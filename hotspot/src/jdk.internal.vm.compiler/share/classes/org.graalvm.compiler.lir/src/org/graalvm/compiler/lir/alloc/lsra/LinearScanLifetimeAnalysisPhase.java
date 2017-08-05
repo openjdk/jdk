@@ -26,7 +26,6 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.asVariable;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.debug.LIRGenerationDebugContext.getSourceForOperandFromDebugContext;
@@ -41,6 +40,7 @@ import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.util.BitMap2D;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
@@ -88,7 +88,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
         debug.dump(DebugContext.VERBOSE_LEVEL, lirGenRes.getLIR(), "Before register allocation");
         computeLocalLiveSets();
         computeGlobalLiveSets();
-        buildIntervals(DetailedAsserts.getValue(allocator.getOptions()));
+        buildIntervals(Assertions.detailedAssertionsEnabled(allocator.getOptions()));
     }
 
     /**
@@ -364,14 +364,14 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                 }
             } while (changeOccurred);
 
-            if (DetailedAsserts.getValue(allocator.getOptions())) {
+            if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                 verifyLiveness();
             }
 
             // check that the liveIn set of the first block is empty
             AbstractBlockBase<?> startBlock = allocator.getLIR().getControlFlowGraph().getStartBlock();
             if (allocator.getBlockData(startBlock).liveIn.cardinality() != 0) {
-                if (DetailedAsserts.getValue(allocator.getOptions())) {
+                if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                     reportFailure(numBlocks);
                 }
                 // bailout if this occurs in product mode.
@@ -570,7 +570,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
             ValueMoveOp move = ValueMoveOp.asValueMoveOp(op);
             if (optimizeMethodArgument(move.getInput())) {
                 StackSlot slot = asStackSlot(move.getInput());
-                if (DetailedAsserts.getValue(allocator.getOptions())) {
+                if (Assertions.detailedAssertionsEnabled(allocator.getOptions())) {
                     assert op.id() > 0 : "invalid id";
                     assert allocator.blockForId(op.id()).getPredecessorCount() == 0 : "move from stack must be in first block";
                     assert isVariable(move.getResult()) : "result of move must be a variable";

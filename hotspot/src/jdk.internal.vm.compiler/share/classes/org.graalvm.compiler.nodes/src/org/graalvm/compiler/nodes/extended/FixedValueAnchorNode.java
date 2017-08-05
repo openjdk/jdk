@@ -35,7 +35,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 
 @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
-public final class FixedValueAnchorNode extends FixedWithNextNode implements LIRLowerable, ValueProxy, GuardingNode {
+public class FixedValueAnchorNode extends FixedWithNextNode implements LIRLowerable, ValueProxy, GuardingNode {
     public static final NodeClass<FixedValueAnchorNode> TYPE = NodeClass.create(FixedValueAnchorNode.class);
 
     @Input ValueNode object;
@@ -45,9 +45,13 @@ public final class FixedValueAnchorNode extends FixedWithNextNode implements LIR
         return object;
     }
 
-    public FixedValueAnchorNode(ValueNode object) {
-        super(TYPE, object.stamp());
+    protected FixedValueAnchorNode(NodeClass<? extends FixedValueAnchorNode> c, ValueNode object) {
+        super(c, object.stamp());
         this.object = object;
+    }
+
+    public FixedValueAnchorNode(ValueNode object) {
+        this(TYPE, object);
     }
 
     public FixedValueAnchorNode(ValueNode object, Stamp predefinedStamp) {

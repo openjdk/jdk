@@ -28,10 +28,12 @@
 
 package org.graalvm.compiler.options.test;
 
+import static org.graalvm.compiler.options.OptionValues.asMap;
 import static org.graalvm.compiler.options.test.TestOptionKey.Options.MyOption;
 import static org.graalvm.compiler.options.test.TestOptionKey.Options.MyOtherOption;
 import static org.junit.Assert.assertEquals;
 
+import org.graalvm.compiler.options.ModifiableOptionValues;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
@@ -65,4 +67,20 @@ public class TestOptionKey {
         }
         Assert.assertTrue(sawAssertionError);
     }
+
+    /**
+     * Tests that initial values are properly copied.
+     */
+    @Test
+    public void testDerived() {
+        OptionValues initialOptions = new ModifiableOptionValues(asMap(MyOption, "new value 1"));
+        OptionValues derivedOptions = new OptionValues(initialOptions, MyOtherOption, "ignore");
+        Assert.assertEquals("new value 1", MyOption.getValue(derivedOptions));
+
+        initialOptions = new OptionValues(asMap(MyOption, "new value 1"));
+        derivedOptions = new OptionValues(initialOptions, MyOtherOption, "ignore");
+        Assert.assertEquals("new value 1", MyOption.getValue(derivedOptions));
+
+    }
+
 }

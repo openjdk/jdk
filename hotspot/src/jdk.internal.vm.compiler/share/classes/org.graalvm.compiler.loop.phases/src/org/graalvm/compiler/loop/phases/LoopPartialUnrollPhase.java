@@ -45,12 +45,12 @@ public class LoopPartialUnrollPhase extends LoopPhase<LoopPolicies> {
     protected void run(StructuredGraph graph, PhaseContext context) {
         if (graph.hasLoops()) {
             HashSetNodeEventListener listener = new HashSetNodeEventListener();
-            try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
-                boolean changed = true;
-                while (changed) {
+            boolean changed = true;
+            while (changed) {
+                changed = false;
+                try (Graph.NodeEventScope nes = graph.trackNodeEvents(listener)) {
                     LoopsData dataCounted = new LoopsData(graph);
                     dataCounted.detectedCountedLoops();
-                    changed = false;
                     for (LoopEx loop : dataCounted.countedLoops()) {
                         if (!LoopTransformations.isUnrollableLoop(loop)) {
                             continue;
@@ -60,18 +60,19 @@ public class LoopPartialUnrollPhase extends LoopPhase<LoopPolicies> {
                                 // First perform the pre/post transformation and do the partial
                                 // unroll when we come around again.
                                 LoopTransformations.insertPrePostLoops(loop, graph);
-                                changed = true;
                             } else {
-                                changed |= LoopTransformations.partialUnroll(loop, graph);
+                                LoopTransformations.partialUnroll(loop, graph);
                             }
+                            changed = true;
                         }
                     }
                     dataCounted.deleteUnusedNodes();
+
+                    if (!listener.getNodes().isEmpty()) {
+                        canonicalizer.applyIncremental(graph, context, listener.getNodes());
+                        listener.getNodes().clear();
+                    }
                 }
-            }
-            if (!listener.getNodes().isEmpty()) {
-                canonicalizer.applyIncremental(graph, context, listener.getNodes());
-                listener.getNodes().clear();
             }
         }
     }

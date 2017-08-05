@@ -153,7 +153,7 @@ public class ExceptionHandlerStub extends SnippetStub {
     @Fold
     @SuppressWarnings("all")
     static boolean assertionsEnabled(@InjectedParameter GraalHotSpotVMConfig config) {
-        return Assertions.ENABLED || cAssertionsEnabled(config);
+        return Assertions.assertionsEnabled() || cAssertionsEnabled(config);
     }
 
     public static final ForeignCallDescriptor EXCEPTION_HANDLER_FOR_PC = newDescriptor(ExceptionHandlerStub.class, "exceptionHandlerForPc", Word.class, Word.class);

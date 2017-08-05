@@ -227,7 +227,7 @@ public class DebugContextTest {
      */
     @Test
     public void testInvariantChecking() throws InterruptedException {
-        Assume.assumeTrue(Assertions.ENABLED);
+        Assume.assumeTrue(Assertions.assertionsEnabled());
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables counters
         map.put(DebugOptions.Counters, "");

@@ -151,15 +151,17 @@ public final class OptionDescriptor {
     public static <T> Builder newBuilder(OptionKey<T> key, String name) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(name);
-        return new Builder(key, name);
+        return EMPTY.new Builder(key, name);
     }
+
+    private static final OptionDescriptor EMPTY = new OptionDescriptor(null, null, null, null, false);
 
     /**
      * Represents an option descriptor builder.
      *
      * @since 1.0
      */
-    public static final class Builder {
+    public final class Builder {
 
         private final OptionKey<?> key;
         private final String name;

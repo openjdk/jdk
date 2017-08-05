@@ -53,6 +53,7 @@ import jdk.vm.ci.hotspot.EventProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequestResult;
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
+import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotNmethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -145,7 +146,7 @@ public class CompilationTask {
              * respect CompilationFailureAction if it has been explicitly set.
              */
             if (actionKey == CompilationFailureAction && !actionKey.hasBeenSet(values)) {
-                if (Assertions.ENABLED || compiler.getGraalRuntime().isBootstrapping()) {
+                if (Assertions.assertionsEnabled() || compiler.getGraalRuntime().isBootstrapping()) {
                     return ExitVM;
                 }
             }
@@ -304,6 +305,10 @@ public class CompilationTask {
             // only need to check for that value.
             if (method.hasCodeAtLevel(entryBCI, config.compilationLevelFullOptimization)) {
                 return HotSpotCompilationRequestResult.failure("Already compiled", false);
+            }
+            if (HotSpotGraalCompilerFactory.checkGraalCompileOnlyFilter(method.getDeclaringClass().toJavaName(), method.getName(), method.getSignature().toString(),
+                            HotSpotJVMCICompilerFactory.CompilationLevel.FullOptimization) != HotSpotJVMCICompilerFactory.CompilationLevel.FullOptimization) {
+                return HotSpotCompilationRequestResult.failure("GraalCompileOnly excluded", false);
             }
         }
 

@@ -27,7 +27,6 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 import static jdk.vm.ci.code.ValueUtil.isLegal;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
 import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
 import static org.graalvm.compiler.lir.phases.LIRPhase.Options.LIROptimization;
 
@@ -40,6 +39,7 @@ import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
+import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.Indent;
@@ -206,7 +206,7 @@ public class LinearScan {
         this.rangeEndMarker = new Range(Integer.MAX_VALUE, Integer.MAX_VALUE, null);
         this.intervalEndMarker = new Interval(Value.ILLEGAL, Interval.END_MARKER_OPERAND_NUMBER, null, rangeEndMarker);
         this.intervalEndMarker.next = intervalEndMarker;
-        this.detailedAsserts = DetailedAsserts.getValue(ir.getOptions());
+        this.detailedAsserts = Assertions.detailedAssertionsEnabled(ir.getOptions());
     }
 
     public LIRGenerationResult getLIRGenerationResult() {

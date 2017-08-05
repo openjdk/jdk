@@ -300,6 +300,16 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
         return begin instanceof LoopExitNode && ((LoopExitNode) begin).loopBegin() == this;
     }
 
+    public LoopExitNode getSingleLoopExit() {
+        assert loopExits().count() == 1;
+        return loopExits().first();
+    }
+
+    public LoopEndNode getSingleLoopEnd() {
+        assert loopEnds().count() == 1;
+        return loopEnds().first();
+    }
+
     public void removeExits() {
         for (LoopExitNode loopexit : loopExits().snapshot()) {
             loopexit.removeProxies();

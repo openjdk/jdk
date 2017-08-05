@@ -111,6 +111,7 @@ import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
@@ -595,6 +596,10 @@ public abstract class GraalCompilerTest extends GraalTest {
         return new HighTierContext(getProviders(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL);
     }
 
+    protected MidTierContext getDefaultMidTierContext() {
+        return new MidTierContext(getProviders(), getTargetProvider(), OptimisticOptimizations.ALL, null);
+    }
+
     protected SnippetReflectionProvider getSnippetReflection() {
         return Graal.getRequiredCapability(SnippetReflectionProvider.class);
     }
@@ -926,7 +931,7 @@ public abstract class GraalCompilerTest extends GraalTest {
      */
     @SuppressWarnings("try")
     protected InstalledCode getCode(final ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, boolean forceCompile, boolean installAsDefault, OptionValues options) {
-        if (!forceCompile) {
+        if (!forceCompile && graph == null) {
             InstalledCode cached = cache.get(installedCodeOwner);
             if (cached != null) {
                 if (cached.isValid()) {
