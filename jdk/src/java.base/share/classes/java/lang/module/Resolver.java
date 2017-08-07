@@ -353,25 +353,13 @@ final class Resolver {
 
     /**
      * Execute post-resolution checks and returns the module graph of resolved
-     * modules as {@code Map}. The resolved modules will be in the given
-     * configuration.
-     *
-     * @param check {@true} to execute the post resolution checks
+     * modules as a map.
      */
-    Map<ResolvedModule, Set<ResolvedModule>> finish(Configuration cf,
-                                                    boolean check)
-    {
-        if (check) {
-            detectCycles();
-            checkHashes();
-        }
-
+    Map<ResolvedModule, Set<ResolvedModule>> finish(Configuration cf) {
+        detectCycles();
+        checkHashes();
         Map<ResolvedModule, Set<ResolvedModule>> graph = makeGraph(cf);
-
-        if (check) {
-            checkExportSuppliers(graph);
-        }
-
+        checkExportSuppliers(graph);
         return graph;
     }
 
