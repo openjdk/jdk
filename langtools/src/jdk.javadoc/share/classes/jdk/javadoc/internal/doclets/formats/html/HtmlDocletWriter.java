@@ -446,9 +446,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
         head.addContent(getTitle());
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
-                (configuration.charset.length() > 0) ?
-                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
         head.addContent(meta);
         if (!configuration.notimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");

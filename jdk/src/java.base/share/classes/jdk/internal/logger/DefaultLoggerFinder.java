@@ -25,6 +25,8 @@
 
 package jdk.internal.logger;
 
+import jdk.internal.misc.VM;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
@@ -140,15 +142,9 @@ public class DefaultLoggerFinder extends LoggerFinder {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Boolean run() {
-                final ClassLoader moduleCL = m.getClassLoader();
-                if (moduleCL == null) return true;
-                ClassLoader cl = ClassLoader.getPlatformClassLoader();
-                while (cl != null && moduleCL != cl) {
-                    cl = cl.getParent();
-                }
                 // returns true if moduleCL is the platform class loader
                 // or one of its ancestors.
-                return moduleCL == cl;
+                return VM.isSystemDomainLoader(m.getClassLoader());
             }
         });
     }

@@ -161,7 +161,9 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<!-- ========= START OF TOP NAVBAR ======= -->",
                 "<main role=\"main\">\n"
                 + "<div class=\"header\">",
-                "<section role=\"region\">\n"
+                "<section role=\"region\"><a id=\"package.description\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<div class=\"block\">Test package.</div>",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -1107,7 +1109,9 @@ public class TestHtmlVersion extends JavadocTester {
                 "<a name=\"navbar.top.firstrow\">\n"
                 + "<!--   -->\n"
                 + "</a>",
-                "<div class=\"contentContainer\">\n"
+                "<div class=\"contentContainer\"><a name=\"package.description\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
                 + "<div class=\"block\">Test package.</div>",
                 "<table class=\"typeSummary\" summary=\"Interface Summary table, listing interfaces, and an explanation\">",
                 "<table class=\"typeSummary\" summary=\"Class Summary table, listing classes, and an explanation\">",
