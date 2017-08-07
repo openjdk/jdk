@@ -1007,8 +1007,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ? getHyperLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);
         addNavGap(liNav);
-        liNav.addContent((display(uses) || (moduleMode == ModuleMode.API && display(usesTrees))
-                || display(provides) || (moduleMode == ModuleMode.API && display(providesTrees)))
+        liNav.addContent((displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
                 ? getHyperLink(SectionName.SERVICES, contents.navServices)
                 : contents.navServices);
         ulNav.addContent(liNav);

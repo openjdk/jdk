@@ -275,6 +275,12 @@ public class SocketTransportService extends TransportService {
             sa = new InetSocketAddress(localaddress, port);
         }
         ServerSocket ss = new ServerSocket();
+        if (port == 0) {
+            // Only need SO_REUSEADDR if we're using a fixed port. If we
+            // start seeing EADDRINUSE due to collisions in free ports
+            // then we should retry the bind() a few times.
+            ss.setReuseAddress(false);
+        }
         ss.bind(sa);
         return new SocketListenKey(ss);
     }

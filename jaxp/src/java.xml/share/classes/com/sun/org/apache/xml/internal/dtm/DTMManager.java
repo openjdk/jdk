@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,12 +20,8 @@
 
 package com.sun.org.apache.xml.internal.dtm;
 
-import com.sun.org.apache.xml.internal.res.XMLErrorResources;
-import com.sun.org.apache.xml.internal.res.XMLMessages;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 /**
  * A DTMManager instance can be used to create DTM and
@@ -99,11 +94,11 @@ public abstract class DTMManager
    *
    * @return new DTMManager instance, never null.
    *
-   * @throws DTMConfigurationException
+   * @throws DTMException
    * if the implementation is not available or cannot be instantiated.
    */
   public static DTMManager newInstance(XMLStringFactory xsf)
-           throws DTMConfigurationException
+           throws DTMException
   {
       final DTMManager factoryImpl = new com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault();
       factoryImpl.setXMLStringFactory(xsf);
@@ -315,20 +310,6 @@ public abstract class DTMManager
 
   // -------------------- private methods --------------------
 
-   /**
-   * Temp debug code - this will be removed after we test everything
-   */
-  private static boolean debug;
-
-  static
-  {
-    try
-    {
-      debug = SecuritySupport.getSystemProperty("dtm.debug") != null;
-    }
-    catch (SecurityException ex){}
-  }
-
   /** This value, set at compile time, controls how many bits of the
    * DTM node identifier numbers are used to identify a node within a
    * document, and thus sets the maximum number of nodes per
@@ -394,47 +375,4 @@ public abstract class DTMManager
   {
     return IDENT_NODE_DEFAULT;
   }
-
-    //
-    // Classes
-    //
-
-    /**
-     * A configuration error.
-     * Originally in ObjectFactory. This is the only portion used in this package
-     */
-    static class ConfigurationError
-        extends Error {
-                static final long serialVersionUID = 5122054096615067992L;
-        //
-        // Data
-        //
-
-        /** Exception. */
-        private Exception exception;
-
-        //
-        // Constructors
-        //
-
-        /**
-         * Construct a new instance with the specified detail string and
-         * exception.
-         */
-        ConfigurationError(String msg, Exception x) {
-            super(msg);
-            this.exception = x;
-        } // <init>(String,Exception)
-
-        //
-        // Public methods
-        //
-
-        /** Returns the exception associated to this error. */
-        Exception getException() {
-            return exception;
-        } // getException():Exception
-
-    } // class ConfigurationError
-
 }

@@ -34,7 +34,7 @@ import jdk.xml.internal.SecuritySupport;
  * The CatalogFeatures holds a collection of features and properties.
  *
  *
- * <table class="plain">
+ * <table class="plain" id="CatalogFeatures">
  * <caption>Catalog Features</caption>
  * <thead>
  * <tr>
@@ -55,7 +55,7 @@ import jdk.xml.internal.SecuritySupport;
  * <tbody>
  *
  * <tr>
- * <th scope="row" style="font-weight:normal">FILES</th>
+ * <th scope="row" style="font-weight:normal" id="FILES">FILES</th>
  * <td>A semicolon-delimited list of URIs to locate the catalog files.
  * The URIs must be absolute and have a URL protocol handler for the URI scheme.
  * </td>
@@ -71,7 +71,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <th rowspan="2" scope="row" style="font-weight:normal">PREFER</th>
+ * <th rowspan="2" scope="row" style="font-weight:normal" id="PREFER">PREFER</th>
  * <td rowspan="2">Indicates the preference between the public and system
  * identifiers. The default value is public [3].</td>
  * <td rowspan="2">javax.xml.catalog.prefer</td>
@@ -91,7 +91,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <th rowspan="2" scope="row" style="font-weight:normal">DEFER</th>
+ * <th rowspan="2" scope="row" style="font-weight:normal" id="DEFER">DEFER</th>
  * <td rowspan="2">Indicates that the alternative catalogs including those
  * specified in delegate entries or nextCatalog are not read until they are
  * needed. The default value is true.</td>
@@ -111,7 +111,7 @@ import jdk.xml.internal.SecuritySupport;
  * </tr>
  *
  * <tr>
- * <th rowspan="3" scope="row" style="font-weight:normal">RESOLVE</th>
+ * <th rowspan="3" scope="row" style="font-weight:normal" id="RESOLVE">RESOLVE</th>
  * <td rowspan="3">Determines the action if there is no matching entry found after
  * all of the specified catalogs are exhausted. The default is strict.</td>
  * <td rowspan="3">javax.xml.catalog.resolve [4]</td>

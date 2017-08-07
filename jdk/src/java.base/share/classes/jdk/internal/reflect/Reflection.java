@@ -316,8 +316,7 @@ public class Reflection {
      */
     public static boolean isCallerSensitive(Method m) {
         final ClassLoader loader = m.getDeclaringClass().getClassLoader();
-        if (VM.isSystemDomainLoader(loader) ||
-                loader == ClassLoaders.platformClassLoader()) {
+        if (VM.isSystemDomainLoader(loader)) {
             return m.isAnnotationPresent(CallerSensitive.class);
         }
         return false;
