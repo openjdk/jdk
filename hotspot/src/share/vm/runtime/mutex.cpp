@@ -1159,9 +1159,12 @@ Monitor::~Monitor() {
   uintptr_t entrylist = UNS(_EntryList);
   uintptr_t waitset = UNS(_WaitSet);
   uintptr_t ondeck = UNS(_OnDeck);
+  // Print _name with precision limit, in case failure is due to memory
+  // corruption that also trashed _name.
   assert((owner|lockword|entrylist|waitset|ondeck) == 0,
-         "_owner(" INTPTR_FORMAT ")|_LockWord(" INTPTR_FORMAT ")|_EntryList(" INTPTR_FORMAT ")|_WaitSet("
-         INTPTR_FORMAT ")|_OnDeck(" INTPTR_FORMAT ") != 0", owner, lockword, entrylist, waitset, ondeck);
+         "%.*s: _owner(" INTPTR_FORMAT ")|_LockWord(" INTPTR_FORMAT ")|_EntryList(" INTPTR_FORMAT ")|_WaitSet("
+         INTPTR_FORMAT ")|_OnDeck(" INTPTR_FORMAT ") != 0",
+         MONITOR_NAME_LEN, _name, owner, lockword, entrylist, waitset, ondeck);
 #endif
 }
 
@@ -1191,10 +1194,6 @@ Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
   _rank            = Rank;
   NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
 #endif
-}
-
-Mutex::~Mutex() {
-  assert((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "");
 }
 
 Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
