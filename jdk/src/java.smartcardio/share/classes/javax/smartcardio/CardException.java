@@ -48,7 +48,7 @@ public class CardException extends Exception {
 
     /**
      * Constructs a new CardException with the specified cause and a detail message
-     * of <code>(cause==null ? null : cause.toString())</code>.
+     * of {@code (cause==null ? null : cause.toString())}.
      *
      * @param cause the cause of this exception or null
      */

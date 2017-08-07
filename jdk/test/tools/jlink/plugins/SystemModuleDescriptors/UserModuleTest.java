@@ -284,7 +284,6 @@ public class UserModuleTest {
         Set<String> modules = Set.of("m1", "m4");
         assertTrue(JLINK_TOOL.run(System.out, System.out,
             "--output", dir.toString(),
-            "--system-modules", "retainModuleTarget",
             "--exclude-resources", "m4/p4/dummy/*",
             "--add-modules", modules.stream().collect(Collectors.joining(",")),
             "--module-path", mp) == 0);

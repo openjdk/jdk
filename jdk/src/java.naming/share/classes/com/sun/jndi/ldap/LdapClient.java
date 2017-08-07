@@ -1234,6 +1234,7 @@ public final class LdapClient implements PooledConnection {
     static final int LDAP_REF_FOLLOW = 0x01;            // follow referrals
     static final int LDAP_REF_THROW = 0x02;             // throw referral ex.
     static final int LDAP_REF_IGNORE = 0x03;            // ignore referrals
+    static final int LDAP_REF_FOLLOW_SCHEME = 0x04;     // follow referrals of the same scheme
 
     static final String LDAP_URL = "ldap://";           // LDAPv3
     static final String LDAPS_URL = "ldaps://";         // LDAPv3

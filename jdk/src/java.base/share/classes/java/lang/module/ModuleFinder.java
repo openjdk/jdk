@@ -25,9 +25,7 @@
 
 package java.lang.module;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -40,10 +38,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import jdk.internal.module.ModuleBootstrap;
-import jdk.internal.module.ModulePatcher;
 import jdk.internal.module.ModulePath;
-import jdk.internal.module.SystemModuleFinder;
+import jdk.internal.module.SystemModuleFinders;
 
 /**
  * A finder of modules. A {@code ModuleFinder} is used to find modules during
@@ -157,50 +153,11 @@ public interface ModuleFinder {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("accessSystemModules"));
-            PrivilegedAction<ModuleFinder> pa = ModuleFinder::privilegedOfSystem;
+            PrivilegedAction<ModuleFinder> pa = SystemModuleFinders::ofSystem;
             return AccessController.doPrivileged(pa);
         } else {
-            return privilegedOfSystem();
+            return SystemModuleFinders.ofSystem();
         }
-    }
-
-    /**
-     * Returns a module finder that locates the system modules. This method
-     * assumes it has permissions to access the runtime image.
-     */
-    private static ModuleFinder privilegedOfSystem() {
-        String home = System.getProperty("java.home");
-        Path modules = Paths.get(home, "lib", "modules");
-        if (Files.isRegularFile(modules)) {
-            return SystemModuleFinder.getInstance();
-        } else {
-            Path dir = Paths.get(home, "modules");
-            if (Files.isDirectory(dir)) {
-                return privilegedOf(ModuleBootstrap.patcher(), dir);
-            } else {
-                throw new InternalError("Unable to detect the run-time image");
-            }
-        }
-    }
-
-    /**
-     * Returns a module finder that locates the system modules in an exploded
-     * image. The image may be patched.
-     */
-    private static ModuleFinder privilegedOf(ModulePatcher patcher, Path dir) {
-        ModuleFinder finder = ModulePath.of(patcher, dir);
-        return new ModuleFinder() {
-            @Override
-            public Optional<ModuleReference> find(String name) {
-                PrivilegedAction<Optional<ModuleReference>> pa = () -> finder.find(name);
-                return AccessController.doPrivileged(pa);
-            }
-            @Override
-            public Set<ModuleReference> findAll() {
-                PrivilegedAction<Set<ModuleReference>> pa = finder::findAll;
-                return AccessController.doPrivileged(pa);
-            }
-        };
     }
 
     /**

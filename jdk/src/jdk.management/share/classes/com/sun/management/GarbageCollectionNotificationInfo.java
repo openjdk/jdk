@@ -182,26 +182,30 @@ public class GarbageCollectionNotificationInfo implements  CompositeDataView {
      * the following attributes:
      * <blockquote>
      * <table class="striped"><caption style="display:none">description</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col" style="text-align:left">Attribute Name</th>
+     *   <th scope="col" style="text-align:left">Type</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td>gcName</td>
+     *   <th scope="row">gcName</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>gcAction</td>
+     *   <th scope="row">gcAction</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>gcCause</td>
+     *   <th scope="row">gcCause</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>gcInfo</td>
+     *   <th scope="row">gcInfo</th>
      *   <td>{@code javax.management.openmbean.CompositeData}</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

@@ -79,6 +79,9 @@ public abstract class HandshakeMessage {
     public static final Debug debug = Debug.getInstance("ssl");
 
     // enum HandshakeType:
+    //
+    // Please update the isUnsupported() method accordingly if the handshake
+    // types get updated in the future.
     static final byte   ht_hello_request          = 0;      // RFC 5246
     static final byte   ht_client_hello           = 1;      // RFC 5246
     static final byte   ht_server_hello           = 2;      // RFC 5246
@@ -128,6 +131,24 @@ public abstract class HandshakeMessage {
             b = newarray;
         }
         return b;
+    }
+
+    static boolean isUnsupported(byte handshakeType) {
+        return (handshakeType != ht_hello_request) &&
+               (handshakeType != ht_client_hello) &&
+               (handshakeType != ht_server_hello) &&
+               (handshakeType != ht_hello_verify_request) &&
+               (handshakeType != ht_new_session_ticket) &&
+               (handshakeType != ht_certificate) &&
+               (handshakeType != ht_server_key_exchange) &&
+               (handshakeType != ht_certificate_request) &&
+               (handshakeType != ht_server_hello_done) &&
+               (handshakeType != ht_certificate_verify) &&
+               (handshakeType != ht_client_key_exchange) &&
+               (handshakeType != ht_finished) &&
+               (handshakeType != ht_certificate_url) &&
+               (handshakeType != ht_certificate_status) &&
+               (handshakeType != ht_supplemental_data);
     }
 
     private static byte[] genPad(int b, int count) {

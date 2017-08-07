@@ -184,30 +184,34 @@ public class GcInfo implements CompositeData, CompositeDataView {
      *
      * <blockquote>
      * <table class="striped"><caption style="display:none">description</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col" style="text-align:left">Attribute Name</th>
+     *   <th scope="col" style="text-align:left">Type</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td>index</td>
+     *   <th scope="row">index</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>startTime</td>
+     *   <th scope="row">startTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>endTime</td>
+     *   <th scope="row">endTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>memoryUsageBeforeGc</td>
+     *   <th scope="row">memoryUsageBeforeGc</th>
      *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
      * <tr>
-     *   <td>memoryUsageAfterGc</td>
+     *   <th scope="row">memoryUsageAfterGc</th>
      *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

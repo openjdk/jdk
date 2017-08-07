@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@ import javax.security.auth.Subject;
  * must not be null; the behavior is unspecified if it is.</p>
  *
  * <p>Class loading aspects are detailed in the
- * <a href="{@docRoot}/../technotes/guides/jmx/JMX_1_4_specification.pdf">
- * JMX Specification, version 1.4</a> PDF document.</p>
+ * <a href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
+ * JMX Specification, version 1.4</a></p>
  *
  * <p>Most methods in this interface parallel methods in the {@link
  * MBeanServerConnection} interface.  Where an aspect of the behavior

@@ -170,6 +170,36 @@ public class Extern {
     }
 
     /**
+     * Build the extern package list from given URL or the directory path,
+     * as specified with the "-link" flag.
+     * Flag error if the "-link" or "-linkoffline" option is already used.
+     *
+     * @param url        URL or Directory path.
+     * @param reporter   The <code>DocErrorReporter</code> used to report errors.
+     * @return true if successful, false otherwise
+     * @throws DocFileIOException if there is a problem reading a package list file
+     */
+    public boolean link(String url, Reporter reporter) throws DocFileIOException {
+        return link(url, url, reporter, false);
+    }
+
+    /**
+     * Build the extern package list from given URL or the directory path,
+     * as specified with the "-linkoffline" flag.
+     * Flag error if the "-link" or "-linkoffline" option is already used.
+     *
+     * @param url        URL or Directory path.
+     * @param pkglisturl This can be another URL for "package-list" or ordinary
+     *                   file.
+     * @param reporter   The <code>DocErrorReporter</code> used to report errors.
+     * @return true if successful, false otherwise
+     * @throws DocFileIOException if there is a problem reading a package list file
+     */
+    public boolean link(String url, String pkglisturl, Reporter reporter) throws DocFileIOException {
+        return link(url, pkglisturl, reporter, true);
+    }
+
+    /*
      * Build the extern package list from given URL or the directory path.
      * Flag error if the "-link" or "-linkoffline" option is already used.
      *
@@ -181,7 +211,7 @@ public class Extern {
      * @return true if successful, false otherwise
      * @throws DocFileIOException if there is a problem reading a package list file
      */
-    public boolean link(String url, String pkglisturl, Reporter reporter, boolean linkoffline)
+    private boolean link(String url, String pkglisturl, Reporter reporter, boolean linkoffline)
                 throws DocFileIOException {
         this.linkoffline = linkoffline;
         try {
@@ -245,8 +275,7 @@ public class Extern {
             readPackageList(link.openStream(), urlpath, false);
         } catch (URISyntaxException | MalformedURLException exc) {
             throw new Fault(configuration.getText("doclet.MalformedURL", pkglisturlpath.toString()), exc);
-        }
-        catch (IOException exc) {
+        } catch (IOException exc) {
             throw new Fault(configuration.getText("doclet.URL_error", pkglisturlpath.toString()), exc);
         }
     }

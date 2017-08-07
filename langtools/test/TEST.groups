@@ -27,11 +27,13 @@ tier1 = \
     jdk \
     lib \
     tools \
+    -jdk/jshell/ExternalEditorTest.java \
     -jdk/jshell/ToolReloadTest.java \
     -jdk/jshell/ToolLocaleMessageTest.java
 
 # (Almost) no langtools tests are tier 2.
 tier2 = \
+    jdk/jshell/ExternalEditorTest.java \
     jdk/jshell/ToolReloadTest.java \
     jdk/jshell/ToolLocaleMessageTest.java
 
