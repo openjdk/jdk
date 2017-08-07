@@ -55,13 +55,13 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
-import jdk.internal.module.SystemModules;
 import jdk.internal.module.Resources;
 
 
@@ -139,7 +139,7 @@ public class BuiltinClassLoader
 
     // maps package name to loaded module for modules in the boot layer
     private static final Map<String, LoadedModule> packageToModule
-        = new ConcurrentHashMap<>(SystemModules.PACKAGES_IN_BOOT_LAYER);
+        = new ConcurrentHashMap<>(1024);
 
     // maps a module name to a module reference
     private final Map<String, ModuleReference> nameToModule;
@@ -946,9 +946,16 @@ public class BuiltinClassLoader
         URL url = cs.getLocation();
         if (url == null)
             return perms;
-        Permission p = null;
+
+        // avoid opening connection when URL is to resource in run-time image
+        if (url.getProtocol().equals("jrt")) {
+            perms.add(new RuntimePermission("accessSystemModules"));
+            return perms;
+        }
+
+        // open connection to determine the permission needed
         try {
-            p = url.openConnection().getPermission();
+            Permission p = url.openConnection().getPermission();
             if (p != null) {
                 // for directories then need recursive access
                 if (p instanceof FilePermission) {
@@ -969,23 +976,26 @@ public class BuiltinClassLoader
     // -- miscellaneous supporting methods
 
     /**
-     * Returns the ModuleReader for the given module.
+     * Returns the ModuleReader for the given module, creating it if needed
      */
     private ModuleReader moduleReaderFor(ModuleReference mref) {
-        return moduleToReader.computeIfAbsent(mref, BuiltinClassLoader::createModuleReader);
-    }
-
-    /**
-     * Creates a ModuleReader for the given module.
-     */
-    private static ModuleReader createModuleReader(ModuleReference mref) {
-        try {
-            return mref.open();
-        } catch (IOException e) {
-            // Return a null module reader to avoid a future class load
-            // attempting to open the module again.
-            return new NullModuleReader();
+        ModuleReader reader = moduleToReader.get(mref);
+        if (reader == null) {
+            // avoid method reference during startup
+            Function<ModuleReference, ModuleReader> create = new Function<>() {
+                public ModuleReader apply(ModuleReference moduleReference) {
+                    try {
+                        return mref.open();
+                    } catch (IOException e) {
+                        // Return a null module reader to avoid a future class
+                        // load attempting to open the module again.
+                        return new NullModuleReader();
+                    }
+                }
+            };
+            reader = moduleToReader.computeIfAbsent(mref, create);
         }
+        return reader;
     }
 
     /**
