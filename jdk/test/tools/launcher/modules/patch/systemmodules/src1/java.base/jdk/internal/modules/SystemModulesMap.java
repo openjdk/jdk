@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,17 @@ import java.util.Set;
  * Test --patch-module java.base=jdk/modules/java.base to override
  * java.base with an exploded image
  */
-public final class SystemModules {
-    public static final String[] MODULE_NAMES = new String[0];
-
-    public static int PACKAGES_IN_BOOT_LAYER = 1024;
-
-    public static boolean hasSplitPackages() {
-        return true;
+class SystemModulesMap {
+    static SystemModules allSystemModules() {
+        return null;
     }
-
-    public static Map<String, Set<String>> concealedPackagesToOpen() {
-        return Collections.emptyMap();
+    static SystemModules defaultSystemModules() {
+        return null;
     }
-
-    public static Map<String, Set<String>> exportedPackagesToOpen() {
-        return Collections.emptyMap();
+    static String[] moduleNames() {
+        return new String[0];
+    }
+    static String[] classNames() {
+        return new String[0];
     }
 }

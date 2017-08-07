@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4720957 5020118 8026567 8038976
+ * @bug 4720957 5020118 8026567 8038976 8184969
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
@@ -135,6 +135,46 @@ public class TestLinkOption extends JavadocTester {
         // this is the text that is given when there is a problem with a URL
         checkOutput(Output.OUT, false,
                 "warning - Error fetching URL");
+
+        // check multiple link options
+        javadoc("-d", "out5",
+                "-sourcepath", testSrc,
+                "-link", "../" + "out1",
+                "-link", "../" + "out2",
+                "pkg3");
+        checkExit(Exit.OK);
+        checkOutput("pkg3/A.html", true,
+                "<pre>public class <span class=\"typeNameLabel\">A</span>\n"
+                + "extends java.lang.Object</pre>\n"
+                + "<div class=\"block\">Test links.\n"
+                + " <br>\n"
+                + " <a href=\"../../out2/pkg2/C2.html?is-external=true\" "
+                + "title=\"class or interface in pkg2\"><code>link to pkg2.C2</code></a>\n"
+                + " <br>\n"
+                + " <a href=\"../../out1/mylib/lang/StringBuilderChild.html?is-external=true\" "
+                + "title=\"class or interface in mylib.lang\">"
+                + "<code>link to mylib.lang.StringBuilderChild</code></a>.</div>\n"
+        );
+
+        // check multiple linkoffline options
+        javadoc("-d", "out6",
+                "-sourcepath", testSrc,
+                "-linkoffline", "../copy/out1", "out1",
+                "-linkoffline", "../copy/out2", "out2",
+                "pkg3");
+        checkExit(Exit.OK);
+        checkOutput("pkg3/A.html", true,
+                "<pre>public class <span class=\"typeNameLabel\">A</span>\n"
+                        + "extends java.lang.Object</pre>\n"
+                        + "<div class=\"block\">Test links.\n"
+                        + " <br>\n"
+                        + " <a href=\"../../copy/out2/pkg2/C2.html?is-external=true\" "
+                        + "title=\"class or interface in pkg2\"><code>link to pkg2.C2</code></a>\n"
+                        + " <br>\n"
+                        + " <a href=\"../../copy/out1/mylib/lang/StringBuilderChild.html?is-external=true\" "
+                        + "title=\"class or interface in mylib.lang\">"
+                        + "<code>link to mylib.lang.StringBuilderChild</code></a>.</div>\n"
+        );
     }
 
     /*

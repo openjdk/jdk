@@ -409,7 +409,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = protocol.toLowerCase(Locale.ROOT);
+        protocol = toLowerCase(protocol);
         this.protocol = protocol;
         if (host != null) {
 
@@ -585,7 +585,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-                    String s = spec.substring(start, i).toLowerCase(Locale.ROOT);
+                    String s = toLowerCase(spec.substring(start, i));
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -1318,6 +1318,17 @@ public final class URL implements java.io.Serializable {
         }
     }
 
+    /**
+     * Returns the protocol in lower case. Special cases known protocols
+     * to avoid loading locale classes during startup.
+     */
+    static String toLowerCase(String protocol) {
+        if (protocol.equals("jrt") || protocol.equals("file") || protocol.equals("jar")) {
+            return protocol;
+        } else {
+            return protocol.toLowerCase(Locale.ROOT);
+        }
+    }
 
     /**
      * Non-overrideable protocols: "jrt" and "file"

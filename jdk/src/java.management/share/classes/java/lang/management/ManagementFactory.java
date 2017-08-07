@@ -588,8 +588,8 @@ public class ManagementFactory {
                                Class<T> mxbeanInterface)
             throws java.io.IOException {
 
-        // Only allow MXBean interfaces from rt.jar loaded by the
-        // bootstrap class loader
+        // Only allow MXBean interfaces from the platform modules loaded by the
+        // bootstrap or platform class loader
         final Class<?> cls = mxbeanInterface;
         ClassLoader loader =
             AccessController.doPrivileged(
