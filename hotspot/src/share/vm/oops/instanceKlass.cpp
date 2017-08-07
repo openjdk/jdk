@@ -101,7 +101,7 @@
       len = clss_name->utf8_length();                            \
     }                                                            \
     HOTSPOT_CLASS_INITIALIZATION_##type(                         \
-      data, len, class_loader(), thread_type);                   \
+      data, len, (void*)class_loader(), thread_type);            \
   }
 
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, thread_type, wait)     \
@@ -114,7 +114,7 @@
       len = clss_name->utf8_length();                            \
     }                                                            \
     HOTSPOT_CLASS_INITIALIZATION_##type(                         \
-      data, len, class_loader(), thread_type, wait);             \
+      data, len, (void*)class_loader(), thread_type, wait);      \
   }
 
 #else //  ndef DTRACE_ENABLED
