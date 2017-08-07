@@ -303,7 +303,7 @@ class Mutex : public Monitor {      // degenerate Monitor
  public:
    Mutex(int rank, const char *name, bool allow_vm_block = false,
          SafepointCheckRequired safepoint_check_required = _safepoint_check_always);
-   ~Mutex () ;
+  // default destructor
  private:
    bool notify ()    { ShouldNotReachHere(); return false; }
    bool notify_all() { ShouldNotReachHere(); return false; }
