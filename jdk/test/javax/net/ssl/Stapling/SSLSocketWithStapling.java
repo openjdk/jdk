@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,8 +367,14 @@ public class SSLSocketWithStapling {
             throw tr.serverExc;
         }
 
+        // make sure getSoftFailExceptions is not empty
+        if (cliParams.revChecker.getSoftFailExceptions().isEmpty()) {
+            throw new Exception("No soft fail exceptions");
+        }
+
         System.out.println("                 PASS");
         System.out.println("=======================================\n");
+
 
         // Make OCSP responders accept connections
         intOcsp.acceptConnections();

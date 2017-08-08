@@ -26,10 +26,8 @@
  * @bug     5086470 6358247 7193302
  * @summary Test type conversion when invoking ThreadMXBean.dumpAllThreads
  *          through proxy.
- *
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @run main ThreadMXBeanProxy
  */
 

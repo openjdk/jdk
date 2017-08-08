@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import javax.xml.ws.Provider;
 import javax.xml.ws.Service;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -234,17 +235,15 @@ public class HandlerAnnotationProcessor {
     }
 
     private static InputStream moduleResource(Class resolvingClass, String name) {
-        java.lang.reflect.Module module = resolvingClass.getModule();
-        if (module != null) {
-            try {
-                InputStream stream = module.getResourceAsStream(name);
-                if (stream != null) {
-                    return stream;
-                }
-            } catch(IOException e) {
-                throw new UtilException("util.failed.to.find.handlerchain.file",
-                        resolvingClass.getName(), name);
+        Module module = resolvingClass.getModule();
+        try {
+            InputStream stream = module.getResourceAsStream(name);
+            if (stream != null) {
+                return stream;
             }
+        } catch(IOException e) {
+            throw new UtilException("util.failed.to.find.handlerchain.file",
+                    resolvingClass.getName(), name);
         }
         return null;
     }

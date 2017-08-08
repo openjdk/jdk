@@ -27,8 +27,12 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.ref
  *          java.base/jdk.internal.misc
- * @build jdk.test.lib.*
- * @build jdk.test.lib.process.*
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main ExitOnThrow
  * @summary Ensure that if a cleaner throws an exception then the VM exits
  */

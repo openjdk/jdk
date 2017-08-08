@@ -23,11 +23,10 @@
 
 /**
  *  @test
- *  @bug 4238644 4238643 4238641 4944198
+ *  @bug 4238644 4238643 4238641 4944198 8181500
  *  @summary Test javac regressions in the generation of line number info
  *  @author Gordon Hirsch
  *
- *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -XDstringConcat=inline -g LineNumberInfo.java ControlFlow.java
  *
@@ -73,6 +72,7 @@ public class LineNumberInfo extends TestScaffold {
         36,
         37,
         36,
+        37,
         40,
         41,
         42,
@@ -111,6 +111,7 @@ public class LineNumberInfo extends TestScaffold {
         85 ,
         93 ,
         96 ,
+        105,
         107,
         111,
         119,

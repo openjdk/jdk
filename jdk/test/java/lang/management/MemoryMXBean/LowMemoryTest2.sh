@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 # @test
 # @bug     4982128
 # @summary Test low memory detection of non-heap memory pool
+#
 # @requires vm.gc=="null"
-# @modules java.management
+#
 # @run build LowMemoryTest2 MemoryUtil
 # @run shell/timeout=600 LowMemoryTest2.sh
 #
@@ -51,14 +52,14 @@ go() {
 }
 
 # Run test with each GC configuration
-# 
+#
 # Notes: To ensure that metaspace fills up we disable class unloading.
-# Also we set the max metaspace to 8MB - otherwise the test takes too
-# long to run. 
+# Also we set the max metaspace to 16MB - otherwise the test takes too
+# long to run.
 
 go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseSerialGC LowMemoryTest2
 go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParallelGC LowMemoryTest2
-go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseConcMarkSweepGC LowMemoryTest2
 
 # Test class metaspace - might hit MaxMetaspaceSize instead if
 # UseCompressedClassPointers is off or if 32 bit.

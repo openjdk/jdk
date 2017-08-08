@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,30 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
-
 import java.util.List;
+
+import com.sun.jdi.Field;
+import com.sun.jdi.Location;
+import com.sun.jdi.Mirror;
+import com.sun.jdi.NativeMethodException;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.Event;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ExceptionEvent;
+import com.sun.jdi.event.VMDeathEvent;
 
 /**
  * Manages the creation and deletion of {@link EventRequest}s. A single
- * implementor of this interface exists in a particuar VM and
+ * implementor of this interface exists in a particular VM and
  * is accessed through {@link VirtualMachine#eventRequestManager()}
  *
  * @see EventRequest
- * @see com.sun.jdi.event.Event
+ * @see Event
  * @see BreakpointRequest
- * @see com.sun.jdi.event.BreakpointEvent
+ * @see BreakpointEvent
  * @see VirtualMachine
  *
  * @author Robert Field
@@ -97,7 +108,7 @@ public interface EventRequestManager extends Mirror {
      * or both can be selected. Note, however, that
      * at the time an exception is thrown, it is not always
      * possible to determine whether it is truly caught. See
-     * {@link com.sun.jdi.event.ExceptionEvent#catchLocation} for
+     * {@link ExceptionEvent#catchLocation} for
      * details.
      * @param refType If non-null, specifies that exceptions which are
      *                instances of refType will be reported. Note: this
@@ -217,19 +228,19 @@ public interface EventRequestManager extends Mirror {
      * <p>
      * The returned request will control stepping only in the specified
      * {@code thread}; all other threads will be unaffected.
-     * A {@code size} value of {@link com.sun.jdi.request.StepRequest#STEP_MIN} will generate a
+     * A {@code size} value of {@link StepRequest#STEP_MIN} will generate a
      * step event each time the code index changes. It represents the
      * smallest step size available and often maps to the instruction
      * level.
-     * A {@code size} value of {@link com.sun.jdi.request.StepRequest#STEP_LINE} will generate a
+     * A {@code size} value of {@link StepRequest#STEP_LINE} will generate a
      * step event each time the source line changes unless line number information is not available,
      * in which case a STEP_MIN will be done instead.  For example, no line number information is
      * available during the execution of a method that has been rendered obsolete by
-     * by a {@link com.sun.jdi.VirtualMachine#redefineClasses} operation.
-     * A {@code depth} value of {@link com.sun.jdi.request.StepRequest#STEP_INTO} will generate
+     * by a {@link VirtualMachine#redefineClasses} operation.
+     * A {@code depth} value of {@link StepRequest#STEP_INTO} will generate
      * step events in any called methods.  A {@code depth} value
-     * of {@link com.sun.jdi.request.StepRequest#STEP_OVER} restricts step events to the current frame
-     * or caller frames. A {@code depth} value of {@link com.sun.jdi.request.StepRequest#STEP_OUT}
+     * of {@link StepRequest#STEP_OVER} restricts step events to the current frame
+     * or caller frames. A {@code depth} value of {@link StepRequest#STEP_OUT}
      * restricts step events to caller frames only. All depth
      * restrictions are relative to the call stack immediately before the
      * step takes place.
@@ -327,7 +338,7 @@ public interface EventRequestManager extends Mirror {
      * activate this event request.
      * <P>
      * This request (if enabled) will cause a
-     * {@link com.sun.jdi.event.VMDeathEvent}
+     * {@link VMDeathEvent}
      * to be sent on termination of the target VM.
      * <P>
      * A VMDeathRequest with a suspend policy of
@@ -338,8 +349,8 @@ public interface EventRequestManager extends Mirror {
      * events before VM death.  If all event processing is being
      * done in the same thread as event sets are being read,
      * enabling the request is all that is needed since the VM
-     * will be suspended until the {@link com.sun.jdi.event.EventSet}
-     * containing the {@link com.sun.jdi.event.VMDeathEvent}
+     * will be suspended until the {@link EventSet}
+     * containing the {@link VMDeathEvent}
      * is resumed.
      * <P>
      * Not all target virtual machines support this operation.

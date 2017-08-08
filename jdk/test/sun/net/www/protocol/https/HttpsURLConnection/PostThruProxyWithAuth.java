@@ -39,6 +39,12 @@ import jdk.test.lib.process.ProcessTools;
  *          http POST method requests in secure channel, and a client that
  *          makes https POST request through a proxy.
  * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @compile OriginServer.java ProxyTunnelServer.java
  * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes= PostThruProxyWithAuth
  */

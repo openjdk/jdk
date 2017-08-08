@@ -135,44 +135,44 @@ public abstract class Validator {
      * <caption>{@code Source} / {@code Result} Accepted</caption>
      * <thead>
      *  <tr>
-     *   <th></th>
-     *   <th>{@link javax.xml.transform.stream.StreamSource}</th>
-     *   <th>{@link javax.xml.transform.sax.SAXSource}</th>
-     *   <th>{@link javax.xml.transform.dom.DOMSource}</th>
-     *   <th>{@link javax.xml.transform.stax.StAXSource}</th>
+     *   <td></td>
+     *   <th scope="col">{@link javax.xml.transform.stream.StreamSource}</th>
+     *   <th scope="col">{@link javax.xml.transform.sax.SAXSource}</th>
+     *   <th scope="col">{@link javax.xml.transform.dom.DOMSource}</th>
+     *   <th scope="col">{@link javax.xml.transform.stax.StAXSource}</th>
      *  </tr>
      * </thead>
      * <tbody style="text-align:center">
      *  <tr>
-     *   <td>{@code null}</td>
+     *   <th scope="row">{@code null}</th>
      *   <td>OK</td>
      *   <td>OK</td>
      *   <td>OK</td>
      *   <td>OK</td>
      *  </tr>
      *  <tr>
-     *   <th>{@link javax.xml.transform.stream.StreamResult}</th>
+     *   <th scope="row">{@link javax.xml.transform.stream.StreamResult}</th>
      *   <td>OK</td>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
-     *   <th>{@link javax.xml.transform.sax.SAXResult}</th>
+     *   <th scope="row">{@link javax.xml.transform.sax.SAXResult}</th>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>OK</td>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
-     *   <th>{@link javax.xml.transform.dom.DOMResult}</th>
+     *   <th scope="row">{@link javax.xml.transform.dom.DOMResult}</th>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>OK</td>
      *   <td>{@code IllegalArgumentException}</td>
      *  </tr>
      *  <tr>
-     *   <th>{@link javax.xml.transform.stax.StAXResult}</th>
+     *   <th scope="row">{@link javax.xml.transform.stax.StAXResult}</th>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>
      *   <td>{@code IllegalArgumentException}</td>

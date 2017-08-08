@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.FieldWriter;
@@ -90,11 +90,8 @@ public class FieldBuilder extends AbstractMemberBuilder {
         super(context);
         this.typeElement = typeElement;
         this.writer = writer;
-        visibleMemberMap =
-                new VisibleMemberMap(
-                typeElement,
-                VisibleMemberMap.Kind.FIELDS,
-                configuration);
+        visibleMemberMap = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.FIELDS);
         fields = visibleMemberMap.getLeafMembers();
     }
 
@@ -113,14 +110,6 @@ public class FieldBuilder extends AbstractMemberBuilder {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return "FieldDetails";
-    }
-
-    /**
      * Returns whether or not there are members to document.
      *
      * @return whether or not there are members to document
@@ -131,13 +120,20 @@ public class FieldBuilder extends AbstractMemberBuilder {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void build(Content contentTree) throws DocletException {
+        buildFieldDoc(contentTree);
+    }
+
+    /**
      * Build the field documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildFieldDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
+    protected void buildFieldDoc(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
@@ -148,7 +144,12 @@ public class FieldBuilder extends AbstractMemberBuilder {
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
                 Content fieldDocTree = writer.getFieldDocTreeHeader(currentElement, fieldDetailsTree);
-                buildChildren(node, fieldDocTree);
+
+                buildSignature(fieldDocTree);
+                buildDeprecationInfo(fieldDocTree);
+                buildFieldComments(fieldDocTree);
+                buildTagInfo(fieldDocTree);
+
                 fieldDetailsTree.addContent(writer.getFieldDoc(
                         fieldDocTree, currentElement == lastElement));
             }
@@ -160,31 +161,28 @@ public class FieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content fieldDocTree) {
+    protected void buildSignature(Content fieldDocTree) {
         fieldDocTree.addContent(writer.getSignature(currentElement));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content fieldDocTree) {
+    protected void buildDeprecationInfo(Content fieldDocTree) {
         writer.addDeprecated(currentElement, fieldDocTree);
     }
 
     /**
      * Build the comments for the field.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldDocTree the content tree to which the documentation will be added
      */
-    public void buildFieldComments(XMLNode node, Content fieldDocTree) {
+    protected void buildFieldComments(Content fieldDocTree) {
         if (!configuration.nocomment) {
             writer.addComments(currentElement, fieldDocTree);
         }
@@ -193,10 +191,9 @@ public class FieldBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param fieldDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content fieldDocTree) {
+    protected void buildTagInfo(Content fieldDocTree) {
         writer.addTags(currentElement, fieldDocTree);
     }
 

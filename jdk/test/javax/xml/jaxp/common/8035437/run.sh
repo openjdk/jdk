@@ -28,13 +28,43 @@
 # @summary Tests that java.lang.AbstractMethodError is not thrown when
 #    serializing improper version of DocumentImpl class.
 
+OS=`uname -s`
+case "$OS" in
+  SunOS )
+    PS=":"
+    ;;
+  Linux )
+    PS=":"
+    ;;
+  Darwin )
+    PS=":"
+    ;;
+  AIX )
+    PS=":"
+    ;;
+  Windows*)
+    PS=";"
+    ;;
+  CYGWIN*)
+    PS=";"
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
+
 mkdir -p exec/java.xml compile/java.xml
 
 $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-   -d compile/java.xml -Xmodule:java.xml $TESTSRC/Document.java $TESTSRC/Node.java || exit 1
+   -d compile/java.xml --patch-module java.xml=$TESTSRC/patch-src1 \
+   $TESTSRC/patch-src1/org/w3c/dom/Document.java \
+   $TESTSRC/patch-src1/org/w3c/dom/Node.java || exit 1
 
 $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-   -d exec/java.xml --patch-module java.xml=compile/java.xml -Xmodule:java.xml $TESTSRC/DocumentImpl.java || exit 2
+   -d exec/java.xml --patch-module java.xml=compile/java.xml${PS}$TESTSRC/patch-src2 \
+   $TESTSRC/patch-src2/com/sun/org/apache/xerces/internal/dom/DocumentImpl.java \
+   || exit 2
 
 $COMPILEJAVA/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
    $TESTSRC/AbstractMethodErrorTest.java -d exec || exit 3

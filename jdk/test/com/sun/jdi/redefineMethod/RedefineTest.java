@@ -22,19 +22,18 @@
  */
 
 /**
- *  @test
- *  @bug 4628726
- *  @summary Test class redefinition - method data line numbers and local vars,
+ * @test
+ * @bug 4628726
+ * @summary Test class redefinition - method data line numbers and local vars,
+ * @author Robert Field
  *
- *  @author Robert Field
+ * @library ..
  *
- *  @library ..
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g RedefineTest.java
- *  @run shell RedefineSetUp.sh
- *  @run driver RedefineTest -repeat 3
- *  @run driver RedefineTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g RedefineTest.java
+ * @run shell RedefineSetUp.sh
+ * @run driver RedefineTest -repeat 3
+ * @run driver RedefineTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

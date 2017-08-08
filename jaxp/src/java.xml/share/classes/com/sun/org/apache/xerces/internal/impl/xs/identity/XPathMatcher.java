@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -157,7 +156,8 @@ public class XPathMatcher {
 
     // a place-holder method; to be overridden by subclasses
     // that care about matching element content.
-    protected void handleContent(XSTypeDefinition type, boolean nillable, Object value, short valueType, ShortList itemValueType) {
+    protected void handleContent(XSTypeDefinition type, boolean nillable,
+            Object value, short valueType, ShortList itemValueType) {
     }
 
     /**
@@ -165,7 +165,8 @@ public class XPathMatcher {
      * XPath expression. Subclasses can override this method to
      * provide default handling upon a match.
      */
-    protected void matched(Object actualValue, short valueType, ShortList itemValueType, boolean isNil) {
+    protected void matched(Object actualValue, short valueType,
+            ShortList itemValueType, boolean isNil) {
         if (DEBUG_METHODS3) {
             System.out.println(toString()+"#matched(\""+actualValue+"\")");
         }
@@ -255,7 +256,8 @@ public class XPathMatcher {
             // to look at this step for next time we're called.
             // so first consume all descendants:
             int descendantStep = fCurrentStep[i];
-            while(fCurrentStep[i] < steps.length && steps[fCurrentStep[i]].axis.type == XPath.Axis.DESCENDANT) {
+            while(fCurrentStep[i] < steps.length &&
+                    steps[fCurrentStep[i]].axis.type == XPath.Axis.DESCENDANT) {
                 if (DEBUG_MATCH) {
                     XPath.Step step = steps[fCurrentStep[i]];
                     System.out.println(toString()+" [DESCENDANT] MATCHED!");
@@ -330,9 +332,11 @@ public class XPathMatcher {
                                 int j=0;
                                 for(; j<i && ((fMatched[j] & MATCHED) != MATCHED); j++);
                                 if(j==i) {
-                                    AttributePSVI attrPSVI = (AttributePSVI)attributes.getAugmentations(aIndex).getItem(Constants.ATTRIBUTE_PSVI);
-                                    fMatchedString = attrPSVI.getActualNormalizedValue();
-                                    matched(fMatchedString, attrPSVI.getActualNormalizedValueType(), attrPSVI.getItemValueTypes(), false);
+                                    AttributePSVI attrPSVI = (AttributePSVI)attributes.
+                                            getAugmentations(aIndex).getItem(Constants.ATTRIBUTE_PSVI);
+                                    fMatchedString = attrPSVI.getSchemaValue().getActualValue();
+                                    matched(fMatchedString, attrPSVI.getSchemaValue().getActualValueType(),
+                                            attrPSVI.getSchemaValue().getListValueTypes(), false);
                                 }
                             }
                             break;
@@ -373,7 +377,8 @@ public class XPathMatcher {
        * @param value - actual value
        *        the typed value of the content of this element.
        */
-    public void endElement(QName element, XSTypeDefinition type, boolean nillable, Object value, short valueType, ShortList itemValueType) {
+    public void endElement(QName element, XSTypeDefinition type, boolean nillable,
+            Object value, short valueType, ShortList itemValueType) {
         if (DEBUG_METHODS2) {
             System.out.println(toString()+"#endElement("+
                                "element={"+element+"},"+

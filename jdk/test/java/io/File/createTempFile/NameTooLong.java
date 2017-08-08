@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ public class NameTooLong {
         for (String[] ps : prefixSuffix) {
             File f;
             try {
-                f = File.createTempFile(ps[0], ps[1]);
+                f = File.createTempFile(ps[0], ps[1],
+                        new File(System.getProperty("test.dir", ".")));
                 String s = f.toPath().getFileName().toString();
                 if (!s.startsWith(ps[0].substring(0, 3))) {
                     System.err.printf("%s did not start with %s%n", s,

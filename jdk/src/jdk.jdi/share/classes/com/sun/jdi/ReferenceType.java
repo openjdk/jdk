@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package com.sun.jdi;
 import java.util.List;
 import java.util.Map;
 
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.VMDisconnectEvent;
+
 /**
  * The type of an object in a target VM. ReferenceType encompasses
  * classes, interfaces, and array types as defined in
@@ -55,17 +58,17 @@ import java.util.Map;
  * <p>
  * Any method on <code>ReferenceType</code> which directly or
  * indirectly takes <code>ReferenceType</code> as an parameter may throw
- * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
- * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
- * available to be read from the {@link com.sun.jdi.event.EventQueue}.
+ * {@link VMDisconnectedException} if the target VM is
+ * disconnected and the {@link VMDisconnectEvent} has been or is
+ * available to be read from the {@link EventQueue}.
  * <p>
  * Any method on <code>ReferenceType</code> which directly or
  * indirectly takes <code>ReferenceType</code> as an parameter may throw
- * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
+ * {@link VMOutOfMemoryException} if the target VM has run out of memory.
  * <p>
  * Any method on <code>ReferenceType</code> or which directly or indirectly takes
  * <code>ReferenceType</code> as parameter may throw
- * {@link com.sun.jdi.ObjectCollectedException} if the mirrored type has been unloaded.
+ * {@link ObjectCollectedException} if the mirrored type has been unloaded.
  *
  * @see ObjectReference
  * @see ObjectReference#referenceType
@@ -80,7 +83,6 @@ import java.util.Map;
 public interface ReferenceType
     extends Type, Comparable<ReferenceType>, Accessible
 {
-
     /**
      * Gets the fully qualified name of this type. The returned name
      * is formatted as it might appear in a Java programming langauge
@@ -615,7 +617,7 @@ public interface ReferenceType
      * @since 1.4
      */
     List<Location> allLineLocations(String stratum, String sourceName)
-                             throws AbsentInformationException;
+        throws AbsentInformationException;
 
     /**
      * Returns a List containing all {@link Location} objects
@@ -685,7 +687,7 @@ public interface ReferenceType
     List<Location> locationsOfLine(String stratum,
                                    String sourceName,
                                    int lineNumber)
-                     throws AbsentInformationException;
+        throws AbsentInformationException;
 
     /**
      * Return the available strata for this reference type.
@@ -777,7 +779,6 @@ public interface ReferenceType
      */
     int majorVersion();
 
-
     /**
      * Returns the class minor version number, as defined in the class file format
      * of the Java Virtual Machine Specification.
@@ -850,5 +851,4 @@ public interface ReferenceType
      * @since 1.6
      */
      byte[] constantPool();
-
 }

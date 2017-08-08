@@ -45,7 +45,7 @@ import jdk.internal.misc.Unsafe;
  * this program or another.  Whether or not such changes occur, and when they
  * occur, is operating-system dependent and therefore unspecified.
  *
- * <a name="inaccess"></a><p> All or part of a mapped byte buffer may become
+ * <a id="inaccess"></a><p> All or part of a mapped byte buffer may become
  * inaccessible at any time, for example if the mapped file is truncated.  An
  * attempt to access an inaccessible region of a mapped byte buffer will not
  * change the buffer's content and will cause an unspecified exception to be
@@ -213,7 +213,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer position(int newPosition) {
@@ -223,7 +222,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer limit(int newLimit) {
@@ -233,7 +231,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer mark() {
@@ -243,7 +240,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer reset() {
@@ -253,7 +249,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer clear() {
@@ -263,7 +258,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer flip() {
@@ -273,7 +267,6 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 9
      */
     @Override
     public final MappedByteBuffer rewind() {

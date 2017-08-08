@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,25 @@
 
 package javax.accessibility;
 
-
-import java.util.*;
-import java.awt.*;
-import javax.swing.text.*;
-
+import java.awt.Rectangle;
 
 /**
- * <P>The AccessibleExtendedText interface contains additional methods
- * not provided by the AccessibleText interface
+ * The {@code AccessibleExtendedText} interface contains additional methods not
+ * provided by the {@code AccessibleText} interface.
+ * <p>
+ * Applications can determine if an object supports the
+ * {@code AccessibleExtendedText} interface by first obtaining its
+ * {@code AccessibleContext} (see {@link Accessible}) and then calling the
+ * {@link AccessibleContext#getAccessibleText} method of
+ * {@code AccessibleContext}. If the return value is an instance of
+ * {@code AccessibleExtendedText}, the object supports this interface.
  *
- * Applications can determine if an object supports the AccessibleExtendedText
- * interface by first obtaining its AccessibleContext (see {@link Accessible})
- * and then calling the {@link AccessibleContext#getAccessibleText} method of
- * AccessibleContext.  If the return value is an instance of
- * AccessibleExtendedText, the object supports this interface.
- *
+ * @author Peter Korn
+ * @author Lynn Monsanto
  * @see Accessible
  * @see Accessible#getAccessibleContext
  * @see AccessibleContext
  * @see AccessibleContext#getAccessibleText
- *
- * @author       Peter Korn
- * @author       Lynn Monsanto
  * @since 1.5
  */
 public interface AccessibleExtendedText {
@@ -73,25 +69,24 @@ public interface AccessibleExtendedText {
     public static final int ATTRIBUTE_RUN = 5; // BugID: 4849720
 
     /**
-     * Returns the text between two indices
+     * Returns the text between two indices.
      *
-     * @param startIndex the start index in the text
-     * @param endIndex the end index in the text
-     * @return the text string if the indices are valid.
-     * Otherwise, null is returned.
+     * @param  startIndex the start index in the text
+     * @param  endIndex the end index in the text
+     * @return the text string if the indices are valid. Otherwise, {@code null}
+     *         is returned.
      */
     public String getTextRange(int startIndex, int endIndex);
 
     /**
      * Returns the {@code AccessibleTextSequence} at a given index.
      *
-     * @param part the {@code CHARACTER}, {@code WORD},
-     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
-     * to retrieve
-     * @param index an index within the text
-     * @return an {@code AccessibleTextSequence} specifying the text
-     * if part and index are valid.  Otherwise, null is returned.
-     *
+     * @param  part the {@code CHARACTER}, {@code WORD}, {@code SENTENCE},
+     *         {@code LINE} or {@code ATTRIBUTE_RUN} to retrieve
+     * @param  index an index within the text
+     * @return an {@code AccessibleTextSequence} specifying the text if
+     *         {@code part} and {@code index} are valid. Otherwise, {@code null}
+     *         is returned.
      * @see AccessibleText#CHARACTER
      * @see AccessibleText#WORD
      * @see AccessibleText#SENTENCE
@@ -101,13 +96,12 @@ public interface AccessibleExtendedText {
     /**
      * Returns the {@code AccessibleTextSequence} after a given index.
      *
-     * @param part the {@code CHARACTER}, {@code WORD},
-     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
-     * to retrieve
-     * @param index an index within the text
-     * @return an {@code AccessibleTextSequence} specifying the text
-     * if part and index are valid.  Otherwise, null is returned.
-     *
+     * @param  part the {@code CHARACTER}, {@code WORD}, {@code SENTENCE},
+     *         {@code LINE} or {@code ATTRIBUTE_RUN} to retrieve
+     * @param  index an index within the text
+     * @return an {@code AccessibleTextSequence} specifying the text if
+     *         {@code part} and {@code index} are valid. Otherwise, {@code null}
+     *         is returned.
      * @see AccessibleText#CHARACTER
      * @see AccessibleText#WORD
      * @see AccessibleText#SENTENCE
@@ -117,13 +111,12 @@ public interface AccessibleExtendedText {
     /**
      * Returns the {@code AccessibleTextSequence} before a given index.
      *
-     * @param part the {@code CHARACTER}, {@code WORD},
-     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
-     * to retrieve
-     * @param index an index within the text
-     * @return an {@code AccessibleTextSequence} specifying the text
-     * if part and index are valid.  Otherwise, null is returned.
-     *
+     * @param  part the {@code CHARACTER}, {@code WORD}, {@code SENTENCE},
+     *         {@code LINE} or {@code ATTRIBUTE_RUN} to retrieve
+     * @param  index an index within the text
+     * @return an {@code AccessibleTextSequence} specifying the text if
+     *         {@code part} and {@code index} are valid. Otherwise, {@code null}
+     *         is returned.
      * @see AccessibleText#CHARACTER
      * @see AccessibleText#WORD
      * @see AccessibleText#SENTENCE
@@ -133,10 +126,10 @@ public interface AccessibleExtendedText {
     /**
      * Returns the bounding rectangle of the text between two indices.
      *
-     * @param startIndex the start index in the text
-     * @param endIndex the end index in the text
+     * @param  startIndex the start index in the text
+     * @param  endIndex the end index in the text
      * @return the bounding rectangle of the text if the indices are valid.
-     * Otherwise, null is returned.
+     *         Otherwise, {@code null} is returned.
      */
     public Rectangle getTextBounds(int startIndex, int endIndex);
 }

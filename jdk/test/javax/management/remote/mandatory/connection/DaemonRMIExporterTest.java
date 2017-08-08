@@ -28,7 +28,7 @@
  * @summary test the connector server option that causes it not to prevent the
  * VM from exiting
  * @author Shanliang JIANG, Eamonn McManus
- * @modules java.management.rmi
+ *
  * @run main/othervm DaemonRMIExporterTest
  */
 import java.util.Arrays;
