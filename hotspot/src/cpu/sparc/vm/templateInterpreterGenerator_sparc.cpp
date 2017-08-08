@@ -44,26 +44,18 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-
-#ifndef FAST_DISPATCH
-#define FAST_DISPATCH 1
-#endif
-#undef FAST_DISPATCH
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-#ifdef _LP64
-  // The sethi() instruction generates lots more instructions when shell
-  // stack limit is unlimited, so that's why this is much bigger.
+// The sethi() instruction generates lots more instructions when shell
+// stack limit is unlimited, so that's why this is much bigger.
 int TemplateInterpreter::InterpreterCodeSize = 260 * K;
-#else
-int TemplateInterpreter::InterpreterCodeSize = 230 * K;
-#endif
 
 // Generation of Interpreter
 //
@@ -75,41 +67,6 @@ int TemplateInterpreter::InterpreterCodeSize = 230 * K;
 
 //----------------------------------------------------------------------------------------------------
 
-#ifndef _LP64
-address TemplateInterpreterGenerator::generate_slow_signature_handler() {
-  address entry = __ pc();
-  Argument argv(0, true);
-
-  // We are in the jni transition frame. Save the last_java_frame corresponding to the
-  // outer interpreter frame
-  //
-  __ set_last_Java_frame(FP, noreg);
-  // make sure the interpreter frame we've pushed has a valid return pc
-  __ mov(O7, I7);
-  __ mov(Lmethod, G3_scratch);
-  __ mov(Llocals, G4_scratch);
-  __ save_frame(0);
-  __ mov(G2_thread, L7_thread_cache);
-  __ add(argv.address_in_frame(), O3);
-  __ mov(G2_thread, O0);
-  __ mov(G3_scratch, O1);
-  __ call(CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), relocInfo::runtime_call_type);
-  __ delayed()->mov(G4_scratch, O2);
-  __ mov(L7_thread_cache, G2_thread);
-  __ reset_last_Java_frame();
-
-  // load the register arguments (the C code packed them as varargs)
-  for (Argument ldarg = argv.successor(); ldarg.is_register(); ldarg = ldarg.successor()) {
-      __ ld_ptr(ldarg.address_in_frame(), ldarg.as_register());
-  }
-  __ ret();
-  __ delayed()->
-     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
-  return entry;
-}
-
-
-#else
 // LP64 passes floating point arguments in F1, F3, F5, etc. instead of
 // O0, O1, O2 etc..
 // Doubles are passed in D0, D2, D4
@@ -197,16 +154,14 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     __ delayed()->srl( G4_scratch, 2, G4_scratch );
 
     __ bind(NextArg);
-
   }
 
   __ bind(done);
   __ ret();
-  __ delayed()->
-     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+  __ delayed()->restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+
   return entry;
 }
-#endif
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 
@@ -222,7 +177,6 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
   // returns verified_entry_point or NULL
   // we ignore it in any case
   __ ba_short(Lcontinue);
-
 }
 
 
@@ -241,7 +195,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return entry;
-
 }
 
 void TemplateInterpreterGenerator::save_native_result(void) {
@@ -253,11 +206,7 @@ void TemplateInterpreterGenerator::save_native_result(void) {
 
   // save and restore any potential method result value around the unlocking operation
   __ stf(FloatRegisterImpl::D, F0, d_tmp);
-#ifdef _LP64
   __ stx(O0, l_tmp);
-#else
-  __ std(O0, l_tmp);
-#endif
 }
 
 void TemplateInterpreterGenerator::restore_native_result(void) {
@@ -266,11 +215,7 @@ void TemplateInterpreterGenerator::restore_native_result(void) {
 
   // Restore any method result value
   __ ldf(FloatRegisterImpl::D, d_tmp, F0);
-#ifdef _LP64
   __ ldx(l_tmp, O0);
-#else
-  __ ldd(l_tmp, O0);
-#endif
 }
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
@@ -340,22 +285,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ profile_return_type(O0, G3_scratch, G1_scratch);
   }
 
-#if !defined(_LP64) && defined(COMPILER2)
-  // All return values are where we want them, except for Longs.  C2 returns
-  // longs in G1 in the 32-bit build whereas the interpreter wants them in O0/O1.
-  // Since the interpreter will return longs in G1 and O0/O1 in the 32bit
-  // build even if we are returning from interpreted we just do a little
-  // stupid shuffing.
-  // Note: I tried to make c2 return longs in O0/O1 and G1 so we wouldn't have to
-  // do this here. Unfortunately if we did a rethrow we'd see an machepilog node
-  // first which would move g1 -> O0/O1 and destroy the exception we were throwing.
-
-  if (state == ltos) {
-    __ srl (G1,  0, O1);
-    __ srlx(G1, 32, O0);
-  }
-#endif // !_LP64 && COMPILER2
-
   // The callee returns with the stack possibly adjusted by adapter transition
   // We remove that possible adjustment here.
   // All interpreter local registers are untouched. Any result is passed back
@@ -374,6 +303,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ and3(flags, ConstantPoolCacheEntry::parameter_size_mask, parameter_size);  // argument size in words
   __ sll(parameter_size, Interpreter::logStackElementSize, parameter_size);     // each argument size in bytes
   __ add(Lesp, parameter_size, Lesp);                                           // pop arguments
+
+  __ check_and_handle_popframe(Gtemp);
+  __ check_and_handle_earlyret(Gtemp);
+
   __ dispatch_next(state, step);
 
   return entry;
@@ -438,9 +371,6 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
     case T_BYTE   : __ sll(O0, 24, O0); __ sra(O0, 24, Itos_i);   break;
     case T_SHORT  : __ sll(O0, 16, O0); __ sra(O0, 16, Itos_i);   break;
     case T_LONG   :
-#ifndef _LP64
-                    __ mov(O1, Itos_l2);  // move other half of long
-#endif              // ifdef or no ifdef, fall through to the T_INT case
     case T_INT    : __ mov(O0, Itos_i);                         break;
     case T_VOID   : /* nothing to do */                         break;
     case T_FLOAT  : assert(F0 == Ftos_f, "fix this code" );     break;
@@ -465,12 +395,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
-
-address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
-  address entry = __ pc();
-  __ dispatch_next(state);
-  return entry;
-}
 
 //
 // Helpers for commoning out cases in the various type of method entries.
@@ -548,7 +472,6 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     __ delayed()->nop();
     __ bind(done);
   }
-
 }
 
 // Allocate monitor and lock method (asm interpreter)
@@ -664,7 +587,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 //   pop parameters from the callers stack by adjusting Lesp
 //   set O0 to Lesp
 //   compute X = (max_locals - num_parameters)
-//   bump SP up by X to accomadate the extra locals
+//   bump SP up by X to accommodate the extra locals
 //   compute X = max_expression_stack
 //               + vm_local_words
 //               + 16 words of register save area
@@ -762,7 +685,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // 1) Increase caller's SP by for the extra local space needed:
   //    (check for overflow)
   //    Efficient implementation of xload/xstore bytecodes requires
-  //    that arguments and non-argument locals are in a contigously
+  //    that arguments and non-argument locals are in a contiguously
   //    addressable memory block => non-argument locals must be
   //    allocated in the caller's frame.
   //
@@ -789,7 +712,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // (gri - 2/25/2000)
 
 
-  int rounded_vm_local_words = round_to( frame::interpreter_frame_vm_local_words, WordsPerLong );
+  int rounded_vm_local_words = align_up((int)frame::interpreter_frame_vm_local_words, WordsPerLong );
 
   const int extra_space =
     rounded_vm_local_words +                   // frame local scratch space
@@ -856,7 +779,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ sub(Gframe_size, Glocals_size, Gframe_size);
 
     //
-    // bump SP to accomodate the extra locals
+    // bump SP to accommodate the extra locals
     //
     __ sub(SP, Glocals_size, SP);
   }
@@ -884,22 +807,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   Register mirror = LcpoolCache;
   __ load_mirror(mirror, Lmethod);
   __ st_ptr(mirror, FP, (frame::interpreter_frame_mirror_offset * wordSize) + STACK_BIAS);
-  __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
+  __ get_constant_pool_cache(LcpoolCache);     // set LcpoolCache
   __ sub(FP, rounded_vm_local_words * BytesPerWord, Lmonitors ); // set Lmonitors
-#ifdef _LP64
-  __ add( Lmonitors, STACK_BIAS, Lmonitors );   // Account for 64 bit stack bias
-#endif
+  __ add(Lmonitors, STACK_BIAS, Lmonitors);    // Account for 64 bit stack bias
   __ sub(Lmonitors, BytesPerWord, Lesp);       // set Lesp
 
   // setup interpreter activation registers
   __ sub(Gargs, BytesPerWord, Llocals);        // set Llocals
 
   if (ProfileInterpreter) {
-#ifdef FAST_DISPATCH
-    // FAST_DISPATCH and ProfileInterpreter are mutually exclusive since
-    // they both use I2.
-    assert(0, "FAST_DISPATCH and +ProfileInterpreter are mutually exclusive");
-#endif // FAST_DISPATCH
     __ set_method_data_pointer();
   }
 
@@ -1065,7 +981,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
       __ ldx( Gargs, 16, buf);
       __ lduw(Gargs, 24, crc);
       __ add(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE), buf); // account for the header size
-      __ add(buf ,offset, buf);
+      __ add(buf, offset, buf);
     }
 
     // Call the crc32 kernel
@@ -1138,8 +1054,58 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return NULL;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+/* Math routines only partially supported.
+ *
+ *   Providing support for fma (float/double) only.
+ */
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind)
+{
+  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
+
+  address entry = __ pc();
+
+  switch (kind) {
+    case Interpreter::java_lang_math_fmaF:
+      if (UseFMA) {
+        // float .fma(float a, float b, float c)
+        const FloatRegister ra = F1;
+        const FloatRegister rb = F2;
+        const FloatRegister rc = F3;
+        const FloatRegister rd = F0; // Result.
+
+        __ ldf(FloatRegisterImpl::S, Gargs,  0, rc);
+        __ ldf(FloatRegisterImpl::S, Gargs,  8, rb);
+        __ ldf(FloatRegisterImpl::S, Gargs, 16, ra);
+
+        __ fmadd(FloatRegisterImpl::S, ra, rb, rc, rd);
+        __ retl();  // Result in F0 (rd).
+        __ delayed()->mov(O5_savedSP, SP);
+
+        return entry;
+      }
+      break;
+    case Interpreter::java_lang_math_fmaD:
+      if (UseFMA) {
+        // double .fma(double a, double b, double c)
+        const FloatRegister ra = F2; // D1
+        const FloatRegister rb = F4; // D2
+        const FloatRegister rc = F6; // D3
+        const FloatRegister rd = F0; // D0 Result.
+
+        __ ldf(FloatRegisterImpl::D, Gargs,  0, rc);
+        __ ldf(FloatRegisterImpl::D, Gargs, 16, rb);
+        __ ldf(FloatRegisterImpl::D, Gargs, 32, ra);
+
+        __ fmadd(FloatRegisterImpl::D, ra, rb, rc, rd);
+        __ retl();  // Result in D0 (rd).
+        __ delayed()->mov(O5_savedSP, SP);
+
+        return entry;
+      }
+      break;
+    default:
+      break;
+  }
   return NULL;
 }
 
@@ -1152,7 +1118,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Doing the banging earlier fails if the caller frame is not an interpreter
   // frame.
   // (Also, the exception throwing code expects to unlock any synchronized
-  // method receiever, so do the banging after locking the receiver.)
+  // method receiver, so do the banging after locking the receiver.)
 
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
@@ -1193,8 +1159,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
   __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
-  {
-    Label L;
+  { Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
     __ br(Assembler::notZero, false, Assembler::pt, L);
     __ delayed()->nop();
@@ -1443,7 +1408,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     //     didn't see any synchronization is progress, and escapes.
     __ set(_thread_in_native_trans, G3_scratch);
     __ st(G3_scratch, thread_state);
-    if(os::is_MP()) {
+    if (os::is_MP()) {
       if (UseMembar) {
         // Force this write out before the read below
         __ membar(Assembler::StoreLoad);
@@ -1483,12 +1448,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Move the result handler address
   __ mov(Lscratch, G3_scratch);
   // return possible result to the outer frame
-#ifndef __LP64
-  __ mov(O0, I0);
-  __ restore(O1, G0, O1);
-#else
   __ restore(O0, G0, O0);
-#endif /* __LP64 */
 
   // Move result handler to expected register
   __ mov(G3_scratch, Lscratch);
@@ -1511,8 +1471,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // If we have an oop result store it where it will be safe for any further gc
   // until we return now that we've released the handle it might be protected by
 
-  {
-    Label no_oop, store_result;
+  { Label no_oop, store_result;
 
     __ set((intptr_t)AbstractInterpreter::result_handler(T_OBJECT), G3_scratch);
     __ cmp_and_brx_short(G3_scratch, Lscratch, Assembler::notEqual, Assembler::pt, no_oop);
@@ -1568,21 +1527,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     restore_native_result();
   }
 
-#if defined(COMPILER2) && !defined(_LP64)
-
-  // C2 expects long results in G1 we can't tell if we're returning to interpreted
-  // or compiled so just be safe.
-
-  __ sllx(O0, 32, G1);          // Shift bits into high G1
-  __ srl (O1, 0, O1);           // Zero extend O1
-  __ or3 (O1, G1, G1);          // OR 64 bits into G1
-
-#endif /* COMPILER2 && !_LP64 */
-
   // dispose of return address and remove activation
 #ifdef ASSERT
-  {
-    Label ok;
+  { Label ok;
     __ cmp_and_brx_short(I5_savedSP, FP, Assembler::greaterEqualUnsigned, Assembler::pt, ok);
     __ stop("bad I5_savedSP value");
     __ should_not_reach_here();
@@ -1592,14 +1539,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ jmp(Lscratch, 0);
   __ delayed()->nop();
 
-
   if (inc_counter) {
     // handle invocation counter overflow
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(Lcontinue);
   }
-
-
 
   return entry;
 }
@@ -1630,8 +1574,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
   __ ld(G5_method, Method::access_flags_offset(), Gtmp1);
-  {
-    Label L;
+  { Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
     __ br(Assembler::zero, false, Assembler::pt, L);
     __ delayed()->nop();
@@ -1650,11 +1593,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // generate the code to allocate the interpreter stack frame
 
   generate_fixed_frame(false);
-
-#ifdef FAST_DISPATCH
-  __ set((intptr_t)Interpreter::dispatch_table(), IdispatchTables);
-                                          // set bytecode dispatch table base
-#endif
 
   //
   // Code to initialize the extra (i.e. non-parm) locals
@@ -1767,7 +1705,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(Lcontinue);
   }
-
 
   return entry;
 }
@@ -1888,8 +1825,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
 #if INCLUDE_JVMTI
-  {
-    Label L_done;
+  { Label L_done;
 
     __ ldub(Address(Lbcp, 0), G1_scratch);  // Load current bytecode
     __ cmp_and_br_short(G1_scratch, Bytecodes::_invokestatic, Assembler::notEqual, Assembler::pn, L_done);
@@ -1929,7 +1865,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ get_vm_result(Oexception);
   __ verify_oop(Oexception);
 
-    const int return_reg_adjustment = frame::pc_return_offset;
+  const int return_reg_adjustment = frame::pc_return_offset;
   Address issuing_pc_addr(I7, return_reg_adjustment);
 
   // We are done with this activation frame; find out where to go next.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,39 @@ inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
   } else {
     return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
   }
+}
+
+// Create the _archive_region_map which is used to identify archive objects.
+inline void G1ArchiveAllocator::enable_archive_object_check() {
+  assert(!_archive_check_enabled, "archive range check already enabled");
+  _archive_check_enabled = true;
+  size_t length = Universe::heap()->max_capacity();
+  _archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
+                                 (HeapWord*)Universe::heap()->base() + length,
+                                 HeapRegion::GrainBytes);
+}
+
+// Set the regions containing the specified address range as archive/non-archive.
+inline void G1ArchiveAllocator::set_range_archive(MemRegion range, bool is_archive) {
+  assert(_archive_check_enabled, "archive range check not enabled");
+  _archive_region_map.set_by_address(range, is_archive);
+}
+
+// Check if an object is in an archive region using the _archive_region_map.
+inline bool G1ArchiveAllocator::in_archive_range(oop object) {
+  // This is the out-of-line part of is_archive_object test, done separately
+  // to avoid additional performance impact when the check is not enabled.
+  return _archive_region_map.get_by_address((HeapWord*)object);
+}
+
+// Check if archive object checking is enabled, to avoid calling in_archive_range
+// unnecessarily.
+inline bool G1ArchiveAllocator::archive_check_enabled() {
+  return _archive_check_enabled;
+}
+
+inline bool G1ArchiveAllocator::is_archive_object(oop object) {
+  return (archive_check_enabled() && in_archive_range(object));
 }
 
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

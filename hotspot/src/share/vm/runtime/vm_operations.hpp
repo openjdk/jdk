@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,11 @@
   template(MarkActiveNMethods)                    \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
+  template(ThreadSuspend)                         \
+  template(CTWThreshold)                          \
+  template(ThreadsSuspendJVMTI)                   \
+  template(ICBufferFull)                          \
+  template(ScavengeMonitors)                      \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:
@@ -238,20 +243,41 @@ class VM_ClearICs: public VM_Operation {
   VMOp_Type type() const { return VMOp_ClearICs; }
 };
 
-// dummy vm op, evaluated just to force a safepoint
+// empty vm op, evaluated just to force a safepoint
 class VM_ForceSafepoint: public VM_Operation {
  public:
-  VM_ForceSafepoint() {}
   void doit()         {}
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
 };
 
-// dummy vm op, evaluated just to force a safepoint
-class VM_ForceAsyncSafepoint: public VM_Operation {
+// empty vm op, when forcing a safepoint to suspend a thread
+class VM_ThreadSuspend: public VM_ForceSafepoint {
  public:
-  VM_ForceAsyncSafepoint() {}
-  void doit()              {}
-  VMOp_Type type() const                         { return VMOp_ForceAsyncSafepoint; }
+  VMOp_Type type() const { return VMOp_ThreadSuspend; }
+};
+
+// empty vm op, when forcing a safepoint due to ctw threshold is reached for the sweeper
+class VM_CTWThreshold: public VM_ForceSafepoint {
+ public:
+  VMOp_Type type() const { return VMOp_CTWThreshold; }
+};
+
+// empty vm op, when forcing a safepoint to suspend threads from jvmti
+class VM_ThreadsSuspendJVMTI: public VM_ForceSafepoint {
+ public:
+  VMOp_Type type() const { return VMOp_ThreadsSuspendJVMTI; }
+};
+
+// empty vm op, when forcing a safepoint due to inline cache buffers being full
+class VM_ICBufferFull: public VM_ForceSafepoint {
+ public:
+  VMOp_Type type() const { return VMOp_ICBufferFull; }
+};
+
+// empty asynchronous vm op, when forcing a safepoint to scavenge monitors
+class VM_ScavengeMonitors: public VM_ForceSafepoint {
+ public:
+  VMOp_Type type() const                         { return VMOp_ScavengeMonitors; }
   Mode evaluation_mode() const                   { return _async_safepoint; }
   bool is_cheap_allocated() const                { return true; }
 };
@@ -292,7 +318,7 @@ class VM_DeoptimizeFrame: public VM_Operation {
 #ifndef PRODUCT
 class VM_DeoptimizeAll: public VM_Operation {
  private:
-  KlassHandle _dependee;
+  Klass* _dependee;
  public:
   VM_DeoptimizeAll() {}
   VMOp_Type type() const                         { return VMOp_DeoptimizeAll; }

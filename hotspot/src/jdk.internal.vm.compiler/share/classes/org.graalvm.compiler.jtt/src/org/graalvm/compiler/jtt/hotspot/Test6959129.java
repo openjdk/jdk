@@ -22,11 +22,16 @@
  */
 package org.graalvm.compiler.jtt.hotspot;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 public class Test6959129 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     public static long test() {
         int min = Integer.MAX_VALUE - 30000;
@@ -74,8 +79,9 @@ public class Test6959129 extends JTTTest {
         return maxmoves;
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
+        initializeForTimeout();
         runTest("test");
     }
 

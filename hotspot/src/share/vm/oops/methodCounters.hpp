@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,14 @@
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/arguments.hpp"
+#include "utilities/align.hpp"
 
 class MethodCounters : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to MethodCounters::metaspace_pointers_do().
 #if INCLUDE_AOT
   Method*           _method;                     // Back link to Method
 #endif
@@ -67,7 +70,7 @@ class MethodCounters : public Metadata {
   u1                _highest_osr_comp_level;      // Same for OSR level
 #endif
 
-  MethodCounters(methodHandle mh) :
+  MethodCounters(const methodHandle& mh) :
 #if INCLUDE_AOT
                                     _method(mh()),
 #endif
@@ -111,16 +114,20 @@ class MethodCounters : public Metadata {
  public:
   virtual bool is_methodCounters() const volatile { return true; }
 
-  static MethodCounters* allocate(methodHandle mh, TRAPS);
+  static MethodCounters* allocate(const methodHandle& mh, TRAPS);
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
 
   AOT_ONLY(Method* method() const { return _method; })
 
-  static int size() {
-    return align_size_up(sizeof(MethodCounters), wordSize) / wordSize;
+  static int method_counters_size() {
+    return align_up((int)sizeof(MethodCounters), wordSize) / wordSize;
   }
-
+  virtual int size() const {
+    return method_counters_size();
+  }
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return MethodCountersType; }
   void clear_counters();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI

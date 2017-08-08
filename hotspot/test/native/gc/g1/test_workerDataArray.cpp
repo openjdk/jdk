@@ -34,7 +34,11 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(3, title) {
+    array(3, title),
+    sub_item_title("Sub item array"),
+    sub_item(3, sub_item_title) {
+
+    array.link_thread_work_items(&sub_item);
   }
 
   const char* print_summary() {
@@ -64,6 +68,9 @@ class WorkerDataArrayTest : public ::testing::Test {
 
   const char* title;
   WorkerDataArray<T> array;
+
+  const char* sub_item_title;
+  WorkerDataArray<size_t> sub_item;
 
  private:
   virtual const char* expected_summary() = 0;
@@ -111,6 +118,10 @@ class BasicWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
     array.set(0, 5);
     array.set(1, 3);
     array.set(2, 7);
+
+    array.set_thread_work_item(0, 1);
+    array.set_thread_work_item(1, 2);
+    array.set_thread_work_item(2, 3);
   }
 
  private:
@@ -125,10 +136,12 @@ class BasicWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
 
 TEST_VM_F(BasicWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(15u, array.sum());
+  ASSERT_EQ(6u, array.thread_work_items(0)->sum());
 }
 
 TEST_VM_F(BasicWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(5.0, array.average(), epsilon);
+  ASSERT_NEAR(2.0, array.thread_work_items(0)->average(), epsilon);
 }
 
 TEST_VM_F(BasicWorkerDataArrayTest, print_summary_on_test) {
@@ -149,6 +162,16 @@ class AddWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
     for (uint i = 0; i < 3; i++) {
       array.add(i, 1);
     }
+
+    WorkerDataArray<size_t>* sub_items = array.thread_work_items(0);
+
+    sub_items->set(0, 1);
+    sub_items->set(1, 2);
+    sub_items->set(2, 3);
+
+    for (uint i = 0; i < 3; i++) {
+      array.add_thread_work_item(i, 1);
+    }
   }
 
  private:
@@ -163,10 +186,12 @@ class AddWorkerDataArrayTest : public WorkerDataArrayTest<size_t> {
 
 TEST_VM_F(AddWorkerDataArrayTest, sum_test) {
   ASSERT_EQ(18u, array.sum());
+  ASSERT_EQ(9u, array.thread_work_items(0)->sum());
 }
 
 TEST_VM_F(AddWorkerDataArrayTest, average_test) {
   ASSERT_NEAR(6.0, array.average(), epsilon);
+  ASSERT_NEAR(3.0, array.thread_work_items(0)->average(), epsilon);
 }
 
 TEST_VM_F(AddWorkerDataArrayTest, print_summary_on_test) {

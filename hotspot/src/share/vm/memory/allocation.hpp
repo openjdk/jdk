@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,11 @@
 #endif
 
 #include <new>
+
+// The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
+// Note: this value must be a power of 2
+
+#define ARENA_AMALLOC_ALIGNMENT (2*BytesPerWord)
 
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
@@ -234,6 +239,7 @@ class _ValueObj {
 //
 
 class ClassLoaderData;
+class MetaspaceClosure;
 
 class MetaspaceObj {
  public:
@@ -255,9 +261,8 @@ class MetaspaceObj {
   f(MethodData) \
   f(ConstantPool) \
   f(ConstantPoolCache) \
-  f(Annotation) \
-  f(MethodCounters) \
-  f(Deallocated)
+  f(Annotations) \
+  f(MethodCounters)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
 #define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
@@ -289,10 +294,15 @@ class MetaspaceObj {
   }
 
   void* operator new(size_t size, ClassLoaderData* loader_data,
-                     size_t word_size, bool read_only,
+                     size_t word_size,
                      Type type, Thread* thread) throw();
                      // can't use TRAPS from this header file.
   void operator delete(void* p) { ShouldNotCallThis(); }
+
+  // Declare a *static* method with the same signature in any subclass of MetaspaceObj
+  // that should be read-only by default. See symbol.hpp for an example. This function
+  // is used by the templates in metaspaceClosure.hpp
+  static bool is_read_only_by_default() { return false; }
 };
 
 // Base class for classes that constitute name spaces.
@@ -713,43 +723,43 @@ public:
 // to mapped memory for large allocations. By default ArrayAllocatorMallocLimit
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
-template <class E, MEMFLAGS F>
+template <class E>
 class ArrayAllocator : public AllStatic {
  private:
   static bool should_use_malloc(size_t length);
 
-  static E* allocate_malloc(size_t length);
-  static E* allocate_mmap(size_t length);
+  static E* allocate_malloc(size_t length, MEMFLAGS flags);
+  static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
  public:
-  static E* allocate(size_t length);
-  static E* reallocate(E* old_addr, size_t old_length, size_t new_length);
+  static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 
 // Uses mmaped memory for all allocations. All allocations are initially
 // zero-filled. No pre-touching.
-template <class E, MEMFLAGS F>
+template <class E>
 class MmapArrayAllocator : public AllStatic {
  private:
   static size_t size_for(size_t length);
 
  public:
-  static E* allocate_or_null(size_t length);
-  static E* allocate(size_t length);
+  static E* allocate_or_null(size_t length, MEMFLAGS flags);
+  static E* allocate(size_t length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 
 // Uses malloc:ed memory for all allocations.
-template <class E, MEMFLAGS F>
+template <class E>
 class MallocArrayAllocator : public AllStatic {
  public:
   static size_t size_for(size_t length);
 
-  static E* allocate(size_t length);
+  static E* allocate(size_t length, MEMFLAGS flags);
   static void free(E* addr, size_t length);
 };
 

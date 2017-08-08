@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3466,7 +3466,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ z_sllg(index, index, exact_log2(vtableEntry::size_in_bytes()));
   __ mem2reg_opt(method,
                  Address(Z_tmp_2, index,
-                         InstanceKlass::vtable_start_offset() + in_ByteSize(vtableEntry::method_offset_in_bytes())));
+                         Klass::vtable_start_offset() + in_ByteSize(vtableEntry::method_offset_in_bytes())));
   __ profile_arguments_type(Z_ARG4, method, Z_ARG5, true);
   __ jump_from_interpreted(method, Z_ARG4);
   BLOCK_COMMENT("} invokevirtual_helper");
@@ -3708,7 +3708,7 @@ void TemplateTable::_new() {
   __ z_sllg(offset, offset, LogBytesPerWord); // Convert to to offset.
   // Get InstanceKlass.
   Register iklass = cpool;
-  __ z_lg(iklass, Address(cpool, offset, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(cpool, offset, iklass);
 
   // Make sure klass is initialized & doesn't have finalizer.
   // Make sure klass is fully initialized.
@@ -3895,7 +3895,7 @@ void TemplateTable::checkcast() {
 
   __ z_lgr(Z_ARG4, Z_tos);  // Save receiver.
   __ z_sllg(index, index, LogBytesPerWord);  // index2bytes for addressing
-  __ mem2reg_opt(klass, Address(cpool, index, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(cpool, index, klass);
 
   __ bind(resolved);
 
@@ -3969,8 +3969,7 @@ void TemplateTable::instanceof() {
 
   __ load_klass(subklass, Z_tos);
   __ z_sllg(index, index, LogBytesPerWord);  // index2bytes for addressing
-  __ mem2reg_opt(klass,
-                 Address(cpool, index, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_offset(cpool, index, klass);
 
   __ bind(resolved);
 

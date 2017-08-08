@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ class BoolObjectClosure;
 class ThreadClosure;
 class outputStream;
 class G1StringDedupTable;
+class G1StringDedupUnlinkOrOopsDoClosure;
 class G1GCPhaseTimes;
 
 //
@@ -129,7 +130,7 @@ public:
                                       unsigned int queue, oop java_string);
 
   static void oops_do(OopClosure* keep_alive);
-  static void unlink(BoolObjectClosure* is_alive);
+  static void parallel_unlink(G1StringDedupUnlinkOrOopsDoClosure* unlink, uint worker_id);
   static void unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive,
                                 bool allow_resize_and_rehash, G1GCPhaseTimes* phase_times = NULL);
 

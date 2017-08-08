@@ -45,8 +45,7 @@ public class ClassesListInFile extends PathHandler {
             return;
         }
         try {
-            try (BufferedReader reader = Files.newBufferedReader(root,
-                    StandardCharsets.UTF_8)) {
+            try (BufferedReader reader = Files.newBufferedReader(root)) {
                 String line;
                 while (!isFinished() && ((line = reader.readLine()) != null)) {
                     processClass(line);
@@ -54,6 +53,18 @@ public class ClassesListInFile extends PathHandler {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public long classCount() {
+        try {
+            try (BufferedReader reader = Files.newBufferedReader(root)) {
+                return reader.lines().count();
+            }
+        } catch (IOException e) {
+            throw new Error("can not read list " + root + " : "
+                    + e.getMessage(), e);
         }
     }
 }

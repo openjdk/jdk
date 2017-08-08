@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/compiledIC.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/codeCache.hpp"
 #include "prims/methodHandles.hpp"
@@ -57,15 +58,6 @@ bool CompiledMethod::is_method_handle_return(address return_pc) {
   if (pd == NULL)
     return false;
   return pd->is_method_handle_invoke();
-}
-
-// When using JVMCI the address might be off by the size of a call instruction.
-bool CompiledMethod::is_deopt_entry(address pc) {
-  return pc == deopt_handler_begin()
-#if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
-#endif
-    ;
 }
 
 // Returns a string version of the method state.
@@ -263,6 +255,8 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all/*=false*/) {
           }
         break;
       }
+      default:
+        break;
     }
   }
 }
@@ -315,22 +309,6 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
 #endif // !SHARK
 }
 
-// -----------------------------------------------------------------------------
-// CompiledMethod::get_deopt_original_pc
-//
-// Return the original PC for the given PC if:
-// (a) the given PC belongs to a nmethod and
-// (b) it is a deopt PC
-address CompiledMethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == NULL)  return NULL;
-
-  CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-  if (cm != NULL && cm->is_deopt_pc(fr->pc()))
-    return cm->get_original_pc(fr);
-
-  return NULL;
-}
-
 Method* CompiledMethod::attached_method(address call_instr) {
   assert(code_contains(call_instr), "not part of the nmethod");
   RelocIterator iter(this, call_instr, call_instr + 1);
@@ -340,6 +318,7 @@ Method* CompiledMethod::attached_method(address call_instr) {
         case relocInfo::static_call_type:      return iter.static_call_reloc()->method_value();
         case relocInfo::opt_virtual_call_type: return iter.opt_virtual_call_reloc()->method_value();
         case relocInfo::virtual_call_type:     return iter.virtual_call_reloc()->method_value();
+        default:                               break;
       }
     }
   }
@@ -650,6 +629,9 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
 
     case relocInfo::metadata_type:
       break; // nothing to do.
+
+    default:
+      break;
     }
   }
 
@@ -702,6 +684,9 @@ void CompiledMethod::do_unloading_parallel_postponed(BoolObjectClosure* is_alive
 
     case relocInfo::static_call_type:
       clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      break;
+
+    default:
       break;
     }
   }

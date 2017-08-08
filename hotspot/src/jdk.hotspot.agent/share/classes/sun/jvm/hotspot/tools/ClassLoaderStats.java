@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
@@ -106,8 +107,8 @@ public class ClassLoaderStats extends Tool {
          err.print("computing per loader stat ..");
       }
 
-      SystemDictionary dict = VM.getVM().getSystemDictionary();
-      dict.classesDo(new SystemDictionary.ClassVisitor() {
+      ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+      cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                         public void visit(Klass k) {
                            if (! (k instanceof InstanceKlass)) {
                               return;

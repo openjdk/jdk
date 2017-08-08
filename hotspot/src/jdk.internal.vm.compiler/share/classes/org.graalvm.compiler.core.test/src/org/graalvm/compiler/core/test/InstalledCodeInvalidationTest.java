@@ -22,12 +22,11 @@
  */
 package org.graalvm.compiler.core.test;
 
-import jdk.vm.ci.code.InstalledCode;
-import jdk.vm.ci.code.InvalidInstalledCodeException;
-
+import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.junit.Test;
 
-import org.graalvm.compiler.api.directives.GraalDirectives;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
 
 public class InstalledCodeInvalidationTest extends GraalCompilerTest {
 

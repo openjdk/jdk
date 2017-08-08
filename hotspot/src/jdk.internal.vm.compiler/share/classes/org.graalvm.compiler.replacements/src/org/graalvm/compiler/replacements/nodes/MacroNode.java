@@ -22,15 +22,14 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
+import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
-import static jdk.vm.ci.code.BytecodeFrame.isPlaceholderBci;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -97,6 +96,18 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
         assert !isPlaceholderBci(bci);
     }
 
+    public ValueNode getArgument(int i) {
+        return arguments.get(i);
+    }
+
+    public int getArgumentCount() {
+        return arguments.size();
+    }
+
+    public ValueNode[] toArgumentArray() {
+        return arguments.toArray(new ValueNode[0]);
+    }
+
     public int getBci() {
         return bci;
     }
@@ -126,7 +137,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
     @SuppressWarnings("try")
     protected StructuredGraph lowerReplacement(final StructuredGraph replacementGraph, LoweringTool tool) {
         final PhaseContext c = new PhaseContext(tool.getMetaAccess(), tool.getConstantReflection(), tool.getConstantFieldProvider(), tool.getLowerer(), tool.getReplacements(),
-                        tool.getStampProvider(), tool.getNodeCostProvider());
+                        tool.getStampProvider());
         if (!graph().hasValueProxies()) {
             new RemoveValueProxyPhase().apply(replacementGraph);
         }
@@ -137,10 +148,11 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
                 new FrameStateAssignmentPhase().apply(replacementGraph);
             }
         }
-        try (Scope s = Debug.scope("LoweringSnippetTemplate", replacementGraph)) {
+        DebugContext debug = replacementGraph.getDebug();
+        try (DebugContext.Scope s = debug.scope("LoweringSnippetTemplate", replacementGraph)) {
             new LoweringPhase(new CanonicalizerPhase(), tool.getLoweringStage()).apply(replacementGraph, c);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
         return replacementGraph;
     }
@@ -161,8 +173,8 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
                     ((Lowerable) nonNullReceiver).lower(tool);
                 }
             }
-            InliningUtil.inline(invoke, replacementGraph, false, null, targetMethod);
-            Debug.dump(Debug.INFO_LOG_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
+            InliningUtil.inline(invoke, replacementGraph, false, targetMethod);
+            replacementGraph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph(), "After inlining replacement %s", replacementGraph);
         } else {
             if (isPlaceholderBci(invoke.bci())) {
                 throw new GraalError("%s: cannot lower to invoke with placeholder BCI: %s", graph(), this);
@@ -184,7 +196,7 @@ public abstract class MacroNode extends FixedWithNextNode implements Lowerable {
         }
     }
 
-    protected InvokeNode replaceWithInvoke() {
+    public InvokeNode replaceWithInvoke() {
         InvokeNode invoke = createInvoke();
         graph().replaceFixedWithFixed(this, invoke);
         return invoke;

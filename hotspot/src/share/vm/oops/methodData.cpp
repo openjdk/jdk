@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -37,6 +38,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
 // ==================================================================
@@ -205,13 +207,15 @@ int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_rec
 int TypeEntriesAtCall::compute_cell_count(BytecodeStream* stream) {
   assert(Bytecodes::is_invoke(stream->code()), "should be invoke");
   assert(TypeStackSlotEntries::per_arg_count() > ReturnTypeEntry::static_cell_count(), "code to test for arguments/results broken");
-  Bytecode_invoke inv(stream->method(), stream->bci());
+  const methodHandle m = stream->method();
+  int bci = stream->bci();
+  Bytecode_invoke inv(m, bci);
   int args_cell = 0;
-  if (arguments_profiling_enabled()) {
+  if (MethodData::profile_arguments_for_invoke(m, bci)) {
     args_cell = TypeStackSlotEntries::compute_cell_count(inv.signature(), false, TypeProfileArgsLimit);
   }
   int ret_cell = 0;
-  if (return_profiling_enabled() && (inv.result_type() == T_OBJECT || inv.result_type() == T_ARRAY)) {
+  if (MethodData::profile_return_for_invoke(m, bci) && (inv.result_type() == T_OBJECT || inv.result_type() == T_ARRAY)) {
     ret_cell = ReturnTypeEntry::static_cell_count();
   }
   int header_cell = 0;
@@ -712,7 +716,7 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
 MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS) {
   int size = MethodData::compute_allocation_size_in_words(method);
 
-  return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
+  return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
     MethodData(method(), size, THREAD);
 }
 
@@ -776,8 +780,9 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
   case Bytecodes::_lookupswitch:
   case Bytecodes::_tableswitch:
     return variable_cell_count;
+  default:
+    return no_profile_data;
   }
-  return no_profile_data;
 }
 
 // Compute the size of the profiling information corresponding to
@@ -935,7 +940,7 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
 // profiling information about a given method.  Size is in words
 int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
   int byte_size = compute_allocation_size_in_bytes(method);
-  int word_size = align_size_up(byte_size, BytesPerWord) / BytesPerWord;
+  int word_size = align_up(byte_size, BytesPerWord) / BytesPerWord;
   return align_metadata_size(word_size);
 }
 
@@ -1044,6 +1049,8 @@ int MethodData::initialize_data(BytecodeStream* stream,
   case Bytecodes::_tableswitch:
     cell_count = MultiBranchData::compute_cell_count(stream);
     tag = DataLayout::multi_branch_data_tag;
+    break;
+  default:
     break;
   }
   assert(tag == DataLayout::multi_branch_data_tag ||
@@ -1525,6 +1532,18 @@ bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
   return inv.is_invokedynamic() || inv.is_invokehandle();
 }
 
+bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
+  Bytecode_invoke inv(m , bci);
+  if (inv.is_invokevirtual() && inv.klass() == vmSymbols::jdk_internal_misc_Unsafe()) {
+    ResourceMark rm;
+    char* name = inv.name()->as_C_string();
+    if (!strncmp(name, "get", 3) || !strncmp(name, "put", 3)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int MethodData::profile_arguments_flag() {
   return TypeProfileLevel % 10;
 }
@@ -1547,6 +1566,10 @@ bool MethodData::profile_arguments_for_invoke(const methodHandle& m, int bci) {
   }
 
   if (profile_all_arguments()) {
+    return true;
+  }
+
+  if (profile_unsafe(m, bci)) {
     return true;
   }
 
@@ -1610,6 +1633,11 @@ bool MethodData::profile_parameters_for_method(const methodHandle& m) {
 
   assert(profile_parameters_jsr292_only(), "inconsistent");
   return m->is_compiled_lambda_form();
+}
+
+void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(MethodData): %p", this);
+  it->push(&_method);
 }
 
 void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) {

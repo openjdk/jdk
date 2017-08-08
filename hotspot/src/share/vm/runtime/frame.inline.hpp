@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_FRAME_INLINE_HPP
 #define SHARE_VM_RUNTIME_FRAME_INLINE_HPP
 
+#include "code/compiledMethod.inline.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -51,6 +52,16 @@ inline bool frame::is_stub_frame() const {
 
 inline bool frame::is_first_frame() const {
   return is_entry_frame() && entry_frame_is_first();
+}
+
+inline oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
+  if(reg->is_reg()) {
+    // If it is passed in a register, it got spilled in the stub frame.
+    return (oop *)reg_map->location(reg);
+  } else {
+    int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
+    return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
+  }
 }
 
 #endif // SHARE_VM_RUNTIME_FRAME_INLINE_HPP

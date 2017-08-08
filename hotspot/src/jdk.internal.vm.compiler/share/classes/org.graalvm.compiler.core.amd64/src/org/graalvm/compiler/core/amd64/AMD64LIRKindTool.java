@@ -66,4 +66,13 @@ public class AMD64LIRKindTool implements LIRKindTool {
         return LIRKind.value(AMD64Kind.QWORD);
     }
 
+    @Override
+    public LIRKind getNarrowOopKind() {
+        return LIRKind.reference(AMD64Kind.DWORD);
+    }
+
+    @Override
+    public LIRKind getNarrowPointerKind() {
+        return LIRKind.value(AMD64Kind.DWORD);
+    }
 }

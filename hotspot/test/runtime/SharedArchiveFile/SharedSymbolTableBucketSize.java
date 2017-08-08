@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,41 @@
  * @test
  * @bug 8059510
  * @summary Test SharedSymbolTableBucketSize option
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedSymbolTableBucketSize {
     public static void main(String[] args) throws Exception {
         int bucket_size = 8;
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xshare:dump", "-XX:+PrintSharedSpaces",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./SharedSymbolTableBucketSize.jsa",
-            "-XX:SharedSymbolTableBucketSize=" + Integer.valueOf(bucket_size));
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
 
-        String s = output.firstMatch("Average bucket size     : .*");
-        Float f = Float.parseFloat(s.substring(25));
-        int size = Math.round(f);
-        if (size != bucket_size) {
-          throw new Exception("FAILED: incorrect bucket size " + size +
-                              ", expect " + bucket_size);
+        OutputAnalyzer output =
+            CDSTestUtils.createArchive("-XX:SharedSymbolTableBucketSize="
+                                       + Integer.valueOf(bucket_size));
+        CDSTestUtils.checkDump(output);
+
+        if (!CDSTestUtils.isUnableToMap(output)) {
+            String s = output.firstMatch("Average bucket size     : .*");
+            Float f = Float.parseFloat(s.substring(25));
+            int size = Math.round(f);
+            if (size != bucket_size) {
+                throw new Exception("FAILED: incorrect bucket size " + size +
+                                    ", expect " + bucket_size);
+            }
         }
-
 
         // Invalid SharedSymbolTableBucketSize input
         String input[] = {"-XX:SharedSymbolTableBucketSize=-1",
                           "-XX:SharedSymbolTableBucketSize=2.5"};
         for (int i = 0; i < input.length; i++) {
-          pb = ProcessTools.createJavaProcessBuilder(
-               "-Xshare:dump", "-XX:+PrintSharedSpaces",
-               "-XX:+UnlockDiagnosticVMOptions",
-               "-XX:SharedArchiveFile=./SharedSymbolTableBucketSize.jsa",
-               input[i]);
-          output = new OutputAnalyzer(pb.start());
-          output.shouldContain("Improperly specified VM option");
-      }
-  }
+            CDSTestUtils.createArchive(input[i])
+                .shouldContain("Improperly specified VM option")
+                .shouldHaveExitValue(1);
+        }
+    }
 }

@@ -57,9 +57,8 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
         ConstantNode tryConstantFold = tryConstantFold(op, x, y, stamp);
         if (tryConstantFold != null) {
             return tryConstantFold;
-        } else {
-            return new AndNode(x, y).maybeCommuteInputs();
         }
+        return canonical(null, op, stamp, x, y);
     }
 
     @Override
@@ -69,6 +68,10 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
             return ret;
         }
 
+        return canonical(this, getOp(forX, forY), stamp(), forX, forY);
+    }
+
+    private static ValueNode canonical(AndNode self, BinaryOp<And> op, Stamp stamp, ValueNode forX, ValueNode forY) {
         if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
             return forX;
         }
@@ -77,15 +80,15 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
         }
         if (forY.isConstant()) {
             Constant c = forY.asConstant();
-            if (getOp(forX, forY).isNeutral(c)) {
+            if (op.isNeutral(c)) {
                 return forX;
             }
 
             if (c instanceof PrimitiveConstant && ((PrimitiveConstant) c).getJavaKind().isNumericInteger()) {
                 long rawY = ((PrimitiveConstant) c).asLong();
-                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp()));
+                long mask = CodeUtil.mask(PrimitiveStamp.getBits(stamp));
                 if ((rawY & mask) == 0) {
-                    return ConstantNode.forIntegerStamp(stamp(), 0);
+                    return ConstantNode.forIntegerStamp(stamp, 0);
                 }
                 if (forX instanceof SignExtendNode) {
                     SignExtendNode ext = (SignExtendNode) forX;
@@ -100,9 +103,12 @@ public final class AndNode extends BinaryArithmeticNode<And> implements Narrowab
                 }
             }
 
-            return reassociate(this, ValueNode.isConstantPredicate(), forX, forY);
+            return reassociate(self != null ? self : (AndNode) new AndNode(forX, forY).maybeCommuteInputs(), ValueNode.isConstantPredicate(), forX, forY);
         }
-        return this;
+        if (forX instanceof NotNode && forY instanceof NotNode) {
+            return new NotNode(OrNode.create(((NotNode) forX).getValue(), ((NotNode) forY).getValue()));
+        }
+        return self != null ? self : new AndNode(forX, forY).maybeCommuteInputs();
     }
 
     @Override

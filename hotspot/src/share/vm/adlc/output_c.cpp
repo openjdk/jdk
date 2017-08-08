@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3146,8 +3146,8 @@ void ArchDesc::defineClasses(FILE *fp) {
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
-        instr->_matrule != NULL &&
-        instr->num_opnds() != instr->num_unique_opnds() )
+        (instr->_matrule != NULL &&
+         instr->num_opnds() != instr->num_unique_opnds()) )
       defineExpand(_CPP_EXPAND_file._fp, instr);
     // If there is an explicit peephole rule, build it
     if ( instr->peepholes() )
@@ -3878,7 +3878,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Insert operands that are not in match-rule.
     // Only insert a DEF if the do_care flag is set
     comp_list.reset();
-    while ( comp = comp_list.post_match_iter() ) {
+    while ( (comp = comp_list.post_match_iter()) ) {
       // Check if we don't care about DEFs or KILLs that are not USEs
       if ( dont_care && (! comp->isa(Component::USE)) ) {
         continue;
@@ -4172,11 +4172,11 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"%s\n", _frame->_c_calling_convention);
   fprintf(fp_cpp,"}\n\n");
   // Java Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(int ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::return_value(uint ideal_reg, bool is_outgoing) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_return_value);
   fprintf(fp_cpp,"}\n\n");
   // Native Return Value Location
-  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(int ideal_reg, bool is_outgoing) {\n");
+  fprintf(fp_cpp,"OptoRegPair Matcher::c_return_value(uint ideal_reg, bool is_outgoing) {\n");
   fprintf(fp_cpp,"%s\n", _frame->_c_return_value);
   fprintf(fp_cpp,"}\n\n");
 

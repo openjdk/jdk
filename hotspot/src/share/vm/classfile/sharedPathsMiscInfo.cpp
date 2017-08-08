@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
@@ -73,18 +74,13 @@ bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
   return false;
 }
 
-void SharedPathsMiscInfo::print_path(int type, const char* path) {
-  ResourceMark rm;
-  outputStream* out = Log(class, path)::info_stream();
+void SharedPathsMiscInfo::print_path(outputStream* out, int type, const char* path) {
   switch (type) {
   case BOOT:
     out->print("Expecting BOOT path=%s", path);
     break;
   case NON_EXIST:
     out->print("Expecting that %s does not exist", path);
-    break;
-  case REQUIRED:
-    out->print("Expecting that file %s must exist and is not altered", path);
     break;
   default:
     ShouldNotReachHere();
@@ -109,8 +105,13 @@ bool SharedPathsMiscInfo::check() {
     if (!read_jint(&type)) {
       return fail("Corrupted archive file header");
     }
-    log_info(class, path)("type=%s ", type_name(type));
-    print_path(type, path);
+    LogTarget(Info, class, path) lt;
+    if (lt.is_enabled()) {
+      lt.print("type=%s ", type_name(type));
+      LogStream ls(lt);
+      print_path(&ls, type, path);
+      ls.cr();
+    }
     if (!check(type, path)) {
       if (!PrintSharedArchiveAndExit) {
         return false;
@@ -130,37 +131,13 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
       return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
     }
     break;
-  case NON_EXIST: // fall-through
-  case REQUIRED:
+  case NON_EXIST:
     {
       struct stat st;
-      if (os::stat(path, &st) != 0) {
-        // The file does not actually exist
-        if (type == REQUIRED) {
-          // but we require it to exist -> fail
-          return fail("Required file doesn't exist");
-        }
-      } else {
+      if (os::stat(path, &st) == 0) {
         // The file actually exists
-        if (type == NON_EXIST) {
-          // But we want it to not exist -> fail
-          return fail("File must not exist");
-        }
-        if ((st.st_mode & S_IFMT) != S_IFREG) {
-          return fail("Did not get a regular file as expected.");
-        }
-        time_t    timestamp;
-        long      filesize;
-
-        if (!read_time(&timestamp) || !read_long(&filesize)) {
-          return fail("Corrupted archive file header");
-        }
-        if (timestamp != st.st_mtime) {
-          return fail("Timestamp mismatch");
-        }
-        if (filesize != st.st_size) {
-          return fail("File size mismatch");
-        }
+        // But we want it to not exist -> fail
+        return fail("File must not exist");
       }
     }
     break;

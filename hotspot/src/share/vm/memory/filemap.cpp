@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,30 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayOop.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 
 # include <sys/stat.h>
@@ -98,9 +106,11 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
     if (RequireSharedSpaces) {
       fail(msg, ap);
     } else {
-      if (PrintSharedSpaces) {
-        tty->print("UseSharedSpaces: ");
-        tty->vprint_cr(msg, ap);
+      if (log_is_enabled(Info, cds)) {
+        ResourceMark rm;
+        LogStream ls(Log(cds)::info());
+        ls.print("UseSharedSpaces: ");
+        ls.vprint_cr(msg, ap);
       }
     }
     UseSharedSpaces = false;
@@ -145,7 +155,7 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 FileMapInfo::FileMapInfo() {
   assert(_current_info == NULL, "must be singleton"); // not thread safe
   _current_info = this;
-  memset(this, 0, sizeof(FileMapInfo));
+  memset((void*)this, 0, sizeof(FileMapInfo));
   _file_offset = 0;
   _file_open = false;
   _header = SharedClassUtil::allocate_file_map_header();
@@ -188,114 +198,97 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   get_header_version(_jvm_ident);
 }
 
-void FileMapInfo::allocate_classpath_entry_table() {
-  int bytes = 0;
-  int count = 0;
-  char* strptr = NULL;
-  char* strptr_max = NULL;
-  Thread* THREAD = Thread::current();
+void SharedClassPathEntry::init(const char* name, TRAPS) {
+  _timestamp = 0;
+  _filesize  = 0;
 
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  size_t entry_size = SharedClassUtil::shared_class_path_entry_size();
-
-  for (int pass=0; pass<2; pass++) {
-
-    // Process the modular java runtime image first
-    ClassPathEntry* jrt_entry = ClassLoader::get_jrt_entry();
-    assert(jrt_entry != NULL,
-           "No modular java runtime image present when allocating the CDS classpath entry table");
-    const char *name = jrt_entry->name();
-    int name_bytes = (int)(strlen(name) + 1);
-    if (pass == 0) {
-      count++;
-      bytes += (int)entry_size;
-      bytes += name_bytes;
-      log_info(class, path)("add main shared path for modular java runtime image %s", name);
-    } else {
-      // The java runtime image is always in slot 0 on the shared class path.
-      SharedClassPathEntry* ent = shared_classpath(0);
-      struct stat st;
-      if (os::stat(name, &st) == 0) {
-        ent->_timestamp = st.st_mtime;
-        ent->_filesize = st.st_size;
-      }
-      if (ent->_filesize == 0) {
-        // unknown
-        ent->_filesize = -2;
-      }
-      ent->_name = strptr;
-      assert(strptr + name_bytes <= strptr_max, "miscalculated buffer size");
-      strncpy(strptr, name, (size_t)name_bytes); // name_bytes includes trailing 0.
-      strptr += name_bytes;
-    }
-
-    // Walk the appended entries, which includes the entries added for the classpath.
-    ClassPathEntry *cpe = ClassLoader::classpath_entry(1);
-
-    // Since the java runtime image is always in slot 0 on the shared class path, the
-    // appended entries are started at slot 1 immediately after.
-    for (int cur_entry = 1 ; cpe != NULL; cpe = cpe->next(), cur_entry++) {
-      const char *name = cpe->name();
-      int name_bytes = (int)(strlen(name) + 1);
-      assert(!cpe->is_jrt(), "A modular java runtime image is present on the list of appended entries");
-
-      if (pass == 0) {
-        count ++;
-        bytes += (int)entry_size;
-        bytes += name_bytes;
-        log_info(class, path)("add main shared path (%s) %s", (cpe->is_jar_file() ? "jar" : "dir"), name);
-      } else {
-        SharedClassPathEntry* ent = shared_classpath(cur_entry);
-        if (cpe->is_jar_file()) {
-          struct stat st;
-          if (os::stat(name, &st) != 0) {
-            // The file/dir must exist, or it would not have been added
-            // into ClassLoader::classpath_entry().
-            //
-            // If we can't access a jar file in the boot path, then we can't
-            // make assumptions about where classes get loaded from.
-            FileMapInfo::fail_stop("Unable to open jar file %s.", name);
-          }
-
-          EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
-          SharedClassUtil::update_shared_classpath(cpe, ent, st.st_mtime, st.st_size, THREAD);
-        } else {
-          struct stat st;
-          if (os::stat(name, &st) == 0) {
-            if ((st.st_mode & S_IFMT) == S_IFDIR) {
-              if (!os::dir_is_empty(name)) {
-                ClassLoader::exit_with_path_failure(
+  struct stat st;
+  if (os::stat(name, &st) == 0) {
+    if ((st.st_mode & S_IFMT) == S_IFDIR) {
+      if (!os::dir_is_empty(name)) {
+        ClassLoader::exit_with_path_failure(
                   "Cannot have non-empty directory in archived classpaths", name);
-              }
-              ent->_filesize = -1;
-            }
-          }
-          if (ent->_filesize == 0) {
-            // unknown
-            ent->_filesize = -2;
-          }
-        }
-        ent->_name = strptr;
-        if (strptr + name_bytes <= strptr_max) {
-          strncpy(strptr, name, (size_t)name_bytes); // name_bytes includes trailing 0.
-          strptr += name_bytes;
-        } else {
-          assert(0, "miscalculated buffer size");
-        }
+      }
+      _is_dir = true;
+    } else {
+      _is_dir = false;
+      _timestamp = st.st_mtime;
+      _filesize = st.st_size;
+    }
+  } else {
+    // The file/dir must exist, or it would not have been added
+    // into ClassLoader::classpath_entry().
+    //
+    // If we can't access a jar file in the boot path, then we can't
+    // make assumptions about where classes get loaded from.
+    FileMapInfo::fail_stop("Unable to open file %s.", name);
+  }
+
+  size_t len = strlen(name) + 1;
+  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, THREAD);
+  strcpy(_name->data(), name);
+}
+
+bool SharedClassPathEntry::validate() {
+  struct stat st;
+  const char* name = this->name();
+  bool ok = true;
+  log_info(class, path)("checking shared classpath entry: %s", name);
+  if (os::stat(name, &st) != 0) {
+    FileMapInfo::fail_continue("Required classpath entry does not exist: %s", name);
+    ok = false;
+  } else if (is_dir()) {
+    if (!os::dir_is_empty(name)) {
+      FileMapInfo::fail_continue("directory is not empty: %s", name);
+      ok = false;
+    }
+  } else if (is_jar_or_bootimage()) {
+    if (_timestamp != st.st_mtime ||
+        _filesize != st.st_size) {
+      ok = false;
+      if (PrintSharedArchiveAndExit) {
+        FileMapInfo::fail_continue(_timestamp != st.st_mtime ?
+                                   "Timestamp mismatch" :
+                                   "File size mismatch");
+      } else {
+        FileMapInfo::fail_continue("A jar/jimage file is not the one used while building"
+                                   " the shared archive file: %s", name);
       }
     }
+  }
+  return ok;
+}
 
-    if (pass == 0) {
+void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+  it->push(&_manifest);
+}
+
+void FileMapInfo::allocate_classpath_entry_table() {
+  Thread* THREAD = Thread::current();
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  size_t entry_size = SharedClassUtil::shared_class_path_entry_size(); // assert ( should be 8 byte aligned??)
+  int num_entries = ClassLoader::number_of_classpath_entries();
+  size_t bytes = entry_size * num_entries;
+
+  _classpath_entry_table = MetadataFactory::new_array<u8>(loader_data, (int)(bytes + 7 / 8), THREAD);
+  _classpath_entry_table_size = num_entries;
+  _classpath_entry_size = entry_size;
+
+  assert(ClassLoader::get_jrt_entry() != NULL,
+         "No modular java runtime image present when allocating the CDS classpath entry table");
+
+  for (int i=0; i<num_entries; i++) {
+    ClassPathEntry *cpe = ClassLoader::classpath_entry(i);
+    const char* type = ((i == 0) ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
+
+    log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
+    SharedClassPathEntry* ent = shared_classpath(i);
+    ent->init(cpe->name(), THREAD);
+
+    if (i > 0) { // No need to do jimage.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
-      Array<u8>* arr = MetadataFactory::new_array<u8>(loader_data, (bytes + 7)/8, THREAD);
-      strptr = (char*)(arr->data());
-      strptr_max = strptr + bytes;
-      SharedClassPathEntry* table = (SharedClassPathEntry*)strptr;
-      strptr += entry_size * count;
-
-      _classpath_entry_table_size = count;
-      _classpath_entry_table = table;
-      _classpath_entry_size = entry_size;
+      SharedClassUtil::update_shared_classpath(cpe, ent, THREAD);
     }
   }
 }
@@ -307,44 +300,19 @@ bool FileMapInfo::validate_classpath_entry_table() {
 
   _classpath_entry_table = _header->_classpath_entry_table;
   _classpath_entry_size = _header->_classpath_entry_size;
+  _classpath_entry_table_size = _header->_classpath_entry_table_size;
 
   for (int i=0; i<count; i++) {
-    SharedClassPathEntry* ent = shared_classpath(i);
-    struct stat st;
-    const char* name = ent->_name;
-    bool ok = true;
-    log_info(class, path)("checking shared classpath entry: %s", name);
-    if (os::stat(name, &st) != 0) {
-      fail_continue("Required classpath entry does not exist: %s", name);
-      ok = false;
-    } else if (ent->is_dir()) {
-      if (!os::dir_is_empty(name)) {
-        fail_continue("directory is not empty: %s", name);
-        ok = false;
-      }
-    } else if (ent->is_jar_or_bootimage()) {
-      if (ent->_timestamp != st.st_mtime ||
-          ent->_filesize != st.st_size) {
-        ok = false;
-        if (PrintSharedArchiveAndExit) {
-          fail_continue(ent->_timestamp != st.st_mtime ?
-                        "Timestamp mismatch" :
-                        "File size mismatch");
-        } else {
-          fail_continue("A jar/jimage file is not the one used while building"
-                        " the shared archive file: %s", name);
-        }
-      }
-    }
-    if (ok) {
+    if (shared_classpath(i)->validate()) {
       log_info(class, path)("ok");
     } else if (!PrintSharedArchiveAndExit) {
       _validating_classpath_entry_table = false;
+      _classpath_entry_table = NULL;
+      _classpath_entry_table_size = 0;
       return false;
     }
   }
 
-  _classpath_entry_table_size = _header->_classpath_entry_table_size;
   _validating_classpath_entry_table = false;
   return true;
 }
@@ -382,7 +350,7 @@ bool FileMapInfo::init_from_file(int fd) {
 
   size_t len = lseek(fd, 0, SEEK_END);
   struct FileMapInfo::FileMapHeader::space_info* si =
-    &_header->_space[MetaspaceShared::mc];
+    &_header->_space[MetaspaceShared::last_valid_region];
   if (si->_file_offset >= len || len - si->_file_offset < si->_used) {
     fail_continue("The shared archive file has been truncated.");
     return false;
@@ -418,9 +386,13 @@ bool FileMapInfo::open_for_read() {
 
 void FileMapInfo::open_for_write() {
  _full_path = Arguments::GetSharedArchivePath();
-  if (PrintSharedSpaces) {
-    tty->print_cr("Dumping shared data to file: ");
-    tty->print_cr("   %s", _full_path);
+  if (log_is_enabled(Info, cds)) {
+    ResourceMark rm;
+    LogMessage(cds) msg;
+    stringStream info_stream;
+    info_stream.print_cr("Dumping shared data to file: ");
+    info_stream.print_cr("   %s", _full_path);
+    msg.info("%s", info_stream.as_string());
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
@@ -457,30 +429,17 @@ void FileMapInfo::write_header() {
 }
 
 
-// Dump shared spaces to file.
-
-void FileMapInfo::write_space(int i, Metaspace* space, bool read_only) {
-  align_file_position();
-  size_t used = space->used_bytes_slow(Metaspace::NonClassType);
-  size_t capacity = space->capacity_bytes_slow(Metaspace::NonClassType);
-  struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
-  write_region(i, (char*)space->bottom(), used, capacity, read_only, false);
-}
-
-
 // Dump region to file.
 
 void FileMapInfo::write_region(int region, char* base, size_t size,
-                               size_t capacity, bool read_only,
-                               bool allow_exec) {
+                               bool read_only, bool allow_exec) {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[region];
 
   if (_file_open) {
     guarantee(si->_file_offset == _file_offset, "file offset mismatch.");
-    if (PrintSharedSpaces) {
-      tty->print_cr("Shared file region %d: " SIZE_FORMAT_HEX_W(6) " bytes, addr " INTPTR_FORMAT
-                    " file offset " SIZE_FORMAT_HEX_W(6), region, size, p2i(base), _file_offset);
-    }
+    log_info(cds)("Shared file region %d: " SIZE_FORMAT_HEX_W(08)
+                  " bytes, addr " INTPTR_FORMAT " file offset " SIZE_FORMAT_HEX_W(08),
+                  region, size, p2i(base), _file_offset);
   } else {
     si->_file_offset = _file_offset;
   }
@@ -495,7 +454,6 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     si->_addr._base = base;
   }
   si->_used = size;
-  si->_capacity = capacity;
   si->_read_only = read_only;
   si->_allow_exec = allow_exec;
   si->_crc = ClassLoader::crc32(0, base, (jint)size);
@@ -512,25 +470,62 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
 // The non-empty portion of the first region is written into the archive as one string
 // region. The rest are consecutive full GC regions if they exist, which can be written
 // out in one chunk as another string region.
-void FileMapInfo::write_string_regions(GrowableArray<MemRegion> *regions) {
+//
+// Here's the mapping from (GrowableArray<MemRegion> *regions) -> (metaspace string regions).
+//   + We have 1 or more heap regions: r0, r1, r2 ..... rn
+//   + We have 2 metaspace string regions: s0 and s1
+//
+// If there's a single heap region (r0), then s0 == r0, and s1 is empty.
+// Otherwise:
+//
+// "X" represented space that's occupied by heap objects.
+// "_" represented unused spaced in the heap region.
+//
+//
+//    |r0        | r1  | r2 | ...... | rn |
+//    |XXXXXX|__ |XXXXX|XXXX|XXXXXXXX|XXXX|
+//    |<-s0->|   |<- s1 ----------------->|
+//            ^^^
+//             |
+//             +-- unmapped space
+void FileMapInfo::write_string_regions(GrowableArray<MemRegion> *regions,
+                                       char** st0_start, char** st0_top, char** st0_end,
+                                       char** st1_start, char** st1_top, char** st1_end) {
+  *st0_start = *st0_top = *st0_end = NULL;
+  *st1_start = *st1_top = *st1_end = NULL;
+
+  assert(MetaspaceShared::max_strings == 2, "this loop doesn't work for any other value");
   for (int i = MetaspaceShared::first_string;
            i < MetaspaceShared::first_string + MetaspaceShared::max_strings; i++) {
     char* start = NULL;
     size_t size = 0;
-    if (regions->is_nonempty()) {
+    int len = regions->length();
+    if (len > 0) {
       if (i == MetaspaceShared::first_string) {
         MemRegion first = regions->first();
         start = (char*)first.start();
         size = first.byte_size();
+        *st0_start = start;
+        *st0_top = start + size;
+        if (len > 1) {
+          *st0_end = (char*)regions->at(1).start();
+        } else {
+          *st0_end = start + size;
+        }
       } else {
-        int len = regions->length();
+        assert(i == MetaspaceShared::first_string + 1, "must be");
         if (len > 1) {
           start = (char*)regions->at(1).start();
           size = (char*)regions->at(len - 1).end() - start;
+          *st1_start = start;
+          *st1_top = start + size;
+          *st1_end = start + size;
         }
       }
     }
-    write_region(i, start, size, size, false, false);
+    log_info(cds)("String region %d " INTPTR_FORMAT " - " INTPTR_FORMAT " = " SIZE_FORMAT_W(8) " bytes",
+                  i, p2i(start), p2i(start + size), size);
+    write_region(i, start, size, false, false);
   }
 }
 
@@ -555,7 +550,7 @@ void FileMapInfo::write_bytes(const void* buffer, int nbytes) {
 // Align file position to an allocation unit boundary.
 
 void FileMapInfo::align_file_position() {
-  size_t new_file_offset = align_size_up(_file_offset,
+  size_t new_file_offset = align_up(_file_offset,
                                          os::vm_allocation_granularity());
   if (new_file_offset != _file_offset) {
     _file_offset = new_file_offset;
@@ -598,14 +593,14 @@ void FileMapInfo::close() {
 // JVM/TI RedefineClasses() support:
 // Remap the shared readonly space to shared readwrite, private.
 bool FileMapInfo::remap_shared_readonly_as_readwrite() {
-  int idx = 0;
+  int idx = MetaspaceShared::ro;
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[idx];
   if (!si->_read_only) {
     // the space is already readwrite so we are done
     return true;
   }
   size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
+  size_t size = align_up(used, os::vm_allocation_granularity());
   if (!open_for_read()) {
     return false;
   }
@@ -628,10 +623,8 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 
 // Map the whole region at once, assumed to be allocated contiguously.
 ReservedSpace FileMapInfo::reserve_shared_memory() {
-  struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[0];
   char* requested_addr = _header->region_addr(0);
-
-  size_t size = FileMapInfo::shared_spaces_size();
+  size_t size = FileMapInfo::core_spaces_size();
 
   // Reserve the space first, then map otherwise map will go right over some
   // other reserved memory (like the code cache).
@@ -656,7 +649,7 @@ char* FileMapInfo::map_region(int i) {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
   size_t alignment = os::vm_allocation_granularity();
-  size_t size = align_size_up(used, alignment);
+  size_t size = align_up(used, alignment);
   char *requested_addr = _header->region_addr(i);
 
   // If a tool agent is in use (debugging enabled), we must map the address space RW
@@ -691,11 +684,11 @@ bool FileMapInfo::map_string_regions() {
         narrow_oop_shift() != Universe::narrow_oop_shift() ||
         narrow_klass_base() != Universe::narrow_klass_base() ||
         narrow_klass_shift() != Universe::narrow_klass_shift()) {
-      if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
-        tty->print_cr("Shared string data from the CDS archive is being ignored. "
-                     "The current CompressedOops/CompressedClassPointers encoding differs from "
-                     "that archived due to heap size change. The archive was dumped using max heap "
-                     "size " UINTX_FORMAT "M.", max_heap_size()/M);
+      if (log_is_enabled(Info, cds) && _header->_space[MetaspaceShared::first_string]._used > 0) {
+        log_info(cds)("Shared string data from the CDS archive is being ignored. "
+                      "The current CompressedOops/CompressedClassPointers encoding differs from "
+                      "that archived due to heap size change. The archive was dumped using max heap "
+                      "size " UINTX_FORMAT "M.", max_heap_size()/M);
       }
     } else {
       string_ranges = new MemRegion[MetaspaceShared::max_strings];
@@ -761,8 +754,8 @@ bool FileMapInfo::map_string_regions() {
       return true;
     }
   } else {
-    if (PrintSharedSpaces && _header->_space[MetaspaceShared::first_string]._used > 0) {
-      tty->print_cr("Shared string data from the CDS archive is being ignored. UseG1GC, "
+    if (log_is_enabled(Info, cds) && _header->_space[MetaspaceShared::first_string]._used > 0) {
+      log_info(cds)("Shared string data from the CDS archive is being ignored. UseG1GC, "
                     "UseCompressedOops and UseCompressedClassPointers are required.");
     }
   }
@@ -823,7 +816,7 @@ void FileMapInfo::unmap_region(int i) {
   assert(!MetaspaceShared::is_string_region(i), "sanity");
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
-  size_t size = align_size_up(used, os::vm_allocation_granularity());
+  size_t size = align_up(used, os::vm_allocation_granularity());
 
   if (used == 0) {
     return;
@@ -851,9 +844,16 @@ void FileMapInfo::assert_mark(bool check) {
   }
 }
 
+void FileMapInfo::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_classpath_entry_table);
+  for (int i=0; i<_classpath_entry_table_size; i++) {
+    shared_classpath(i)->metaspace_pointers_do(it);
+  }
+}
+
 
 FileMapInfo* FileMapInfo::_current_info = NULL;
-SharedClassPathEntry* FileMapInfo::_classpath_entry_table = NULL;
+Array<u8>* FileMapInfo::_classpath_entry_table = NULL;
 int FileMapInfo::_classpath_entry_table_size = 0;
 size_t FileMapInfo::_classpath_entry_size = 0x1234baad;
 bool FileMapInfo::_validating_classpath_entry_table = false;
@@ -879,11 +879,6 @@ bool FileMapInfo::initialize() {
   if (!validate_header()) {
     return false;
   }
-
-  SharedReadOnlySize =  _header->_space[0]._capacity;
-  SharedReadWriteSize = _header->_space[1]._capacity;
-  SharedMiscDataSize =  _header->_space[2]._capacity;
-  SharedMiscCodeSize =  _header->_space[3]._capacity;
   return true;
 }
 
@@ -990,9 +985,12 @@ bool FileMapInfo::is_in_shared_space(const void* p) {
   return false;
 }
 
-// Check if a given address is within one of the shared regions (ro, rw, md, mc)
+// Check if a given address is within one of the shared regions ( ro, rw, mc or md)
 bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
-  assert((idx >= MetaspaceShared::ro) && (idx <= MetaspaceShared::mc), "invalid region index");
+  assert(idx == MetaspaceShared::ro ||
+         idx == MetaspaceShared::rw ||
+         idx == MetaspaceShared::mc ||
+         idx == MetaspaceShared::md, "invalid region index");
   char* base = _header->region_addr(idx);
   if (p >= base && p < base + _header->_space[idx]._used) {
     return true;

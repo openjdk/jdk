@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2498,14 +2498,20 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   //   All transactions = total_count *  RTMTotalCountIncrRate
   //   Set no_rtm bit if (Aborted transactions >= All transactions * RTMAbortRatio)
   ld(R0, RTMLockingCounters::abort_count_offset(), rtm_counters_Reg);
-  cmpdi(CCR0, R0, RTMAbortThreshold);
-  blt(CCR0, L_check_always_rtm2);
+  if (is_simm(RTMAbortThreshold, 16)) {   // cmpdi can handle 16bit immediate only.
+    cmpdi(CCR0, R0, RTMAbortThreshold);
+    blt(CCR0, L_check_always_rtm2);  // reload of rtm_counters_Reg not necessary
+  } else {
+    load_const_optimized(rtm_counters_Reg, RTMAbortThreshold);
+    cmpd(CCR0, R0, rtm_counters_Reg);
+    blt(CCR0, L_check_always_rtm1);  // reload of rtm_counters_Reg required
+  }
   mulli(R0, R0, 100);
 
   const Register tmpReg = rtm_counters_Reg;
   ld(tmpReg, RTMLockingCounters::total_count_offset(), rtm_counters_Reg);
-  mulli(tmpReg, tmpReg, RTMTotalCountIncrRate);
-  mulli(tmpReg, tmpReg, RTMAbortRatio);
+  mulli(tmpReg, tmpReg, RTMTotalCountIncrRate); // allowable range: int16
+  mulli(tmpReg, tmpReg, RTMAbortRatio);         // allowable range: int16
   cmpd(CCR0, R0, tmpReg);
   blt(CCR0, L_check_always_rtm1); // jump to reload
   if (method_data != NULL) {
@@ -2521,7 +2527,13 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   load_const_optimized(rtm_counters_Reg, (address)rtm_counters, R0); // reload
   bind(L_check_always_rtm2);
   ld(tmpReg, RTMLockingCounters::total_count_offset(), rtm_counters_Reg);
-  cmpdi(CCR0, tmpReg, RTMLockingThreshold / RTMTotalCountIncrRate);
+  int64_t thresholdValue = RTMLockingThreshold / RTMTotalCountIncrRate;
+  if (is_simm(thresholdValue, 16)) {   // cmpdi can handle 16bit immediate only.
+    cmpdi(CCR0, tmpReg, thresholdValue);
+  } else {
+    load_const_optimized(R0, thresholdValue);
+    cmpd(CCR0, tmpReg, R0);
+  }
   blt(CCR0, L_done);
   if (method_data != NULL) {
     // Set rtm_state to "always rtm" in MDO.
@@ -2620,7 +2632,7 @@ void MacroAssembler::rtm_stack_locking(ConditionRegister flag,
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
-      branch_on_random_using_tb(tmp, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_tb(tmp, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(stack_rtm_counters != NULL, "should not be NULL when profiling RTM");
     load_const_optimized(tmp, (address)stack_rtm_counters->total_count_addr(), R0);
@@ -2687,7 +2699,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
     Label L_noincrement;
     if (RTMTotalCountIncrRate > 1) {
-      branch_on_random_using_tb(R0, (int)RTMTotalCountIncrRate, L_noincrement);
+      branch_on_random_using_tb(R0, RTMTotalCountIncrRate, L_noincrement);
     }
     assert(rtm_counters != NULL, "should not be NULL when profiling RTM");
     load_const(R0, (address)rtm_counters->total_count_addr(), tmpReg);
@@ -4120,7 +4132,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  * @param table register pointing to CRC table
  */
 void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
-                                           Register data, bool loopAlignment, bool invertCRC) {
+                                           Register data, bool loopAlignment) {
   assert_different_registers(crc, buf, len, table, data);
 
   Label L_mainLoop, L_done;
@@ -4131,10 +4143,6 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
   clrldi_(len, len, 32);                         // Enforce 32 bit. Anything to do?
   beq(CCR0, L_done);
 
-  if (invertCRC) {
-    nand(crc, crc, crc);                         // ~c
-  }
-
   mtctr(len);
   align(mainLoop_alignment);
   BIND(L_mainLoop);
@@ -4142,10 +4150,6 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
     addi(buf, buf, mainLoop_stepping);           // Advance buffer position.
     update_byte_crc32(crc, data, table);
     bdnz(L_mainLoop);                            // Iterate.
-
-  if (invertCRC) {
-    nand(crc, crc, crc);                         // ~c
-  }
 
   bind(L_done);
 }
@@ -4203,7 +4207,8 @@ void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register tab
  */
 void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
                                         Register t0,  Register t1,  Register t2,  Register t3,
-                                        Register tc0, Register tc1, Register tc2, Register tc3) {
+                                        Register tc0, Register tc1, Register tc2, Register tc3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_mainLoop, L_tail;
@@ -4217,14 +4222,16 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
   const int complexThreshold   = 2*mainLoop_stepping;
 
   // Don't test for len <= 0 here. This pathological case should not occur anyway.
-  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles.
-  // The situation itself is detected and handled correctly by the conditional branches
-  // following  aghi(len, -stepping) and aghi(len, +stepping).
+  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles
+  // for all well-behaved cases. The situation itself is detected and handled correctly
+  // within update_byteLoop_crc32.
   assert(tailLoop_stepping == 1, "check tailLoop_stepping!");
 
   BLOCK_COMMENT("kernel_crc32_2word {");
 
-  nand(crc, crc, crc);                           // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
 
   // Check for short (<mainLoop_stepping) buffer.
   cmpdi(CCR0, len, complexThreshold);
@@ -4245,7 +4252,7 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
       blt(CCR0, L_tail);                         // For less than one mainloop_stepping left, do only tail processing
       mr(len, tmp);                              // remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
     }
-    update_byteLoop_crc32(crc, buf, tmp2, table, data, false, false);
+    update_byteLoop_crc32(crc, buf, tmp2, table, data, false);
   }
 
   srdi(tmp2, len, log_stepping);                 // #iterations for mainLoop
@@ -4281,9 +4288,11 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
 
   // Process last few (<complexThreshold) bytes of buffer.
   BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, data, false, false);
+  update_byteLoop_crc32(crc, buf, len, table, data, false);
 
-  nand(crc, crc, crc);                           // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
   BLOCK_COMMENT("} kernel_crc32_2word");
 }
 
@@ -4297,7 +4306,8 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
  */
 void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
                                         Register t0,  Register t1,  Register t2,  Register t3,
-                                        Register tc0, Register tc1, Register tc2, Register tc3) {
+                                        Register tc0, Register tc1, Register tc2, Register tc3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_mainLoop, L_tail;
@@ -4311,14 +4321,16 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
   const int complexThreshold   = 2*mainLoop_stepping;
 
   // Don't test for len <= 0 here. This pathological case should not occur anyway.
-  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles.
-  // The situation itself is detected and handled correctly by the conditional branches
-  // following  aghi(len, -stepping) and aghi(len, +stepping).
+  // Optimizing for it by adding a test and a branch seems to be a waste of CPU cycles
+  // for all well-behaved cases. The situation itself is detected and handled correctly
+  // within update_byteLoop_crc32.
   assert(tailLoop_stepping == 1, "check tailLoop_stepping!");
 
   BLOCK_COMMENT("kernel_crc32_1word {");
 
-  nand(crc, crc, crc);                           // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
 
   // Check for short (<mainLoop_stepping) buffer.
   cmpdi(CCR0, len, complexThreshold);
@@ -4339,7 +4351,7 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
       blt(CCR0, L_tail);                         // For less than one mainloop_stepping left, do only tail processing
       mr(len, tmp);                              // remaining bytes for main loop (>=mainLoop_stepping is guaranteed).
     }
-    update_byteLoop_crc32(crc, buf, tmp2, table, data, false, false);
+    update_byteLoop_crc32(crc, buf, tmp2, table, data, false);
   }
 
   srdi(tmp2, len, log_stepping);                 // #iterations for mainLoop
@@ -4374,9 +4386,11 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
 
   // Process last few (<complexThreshold) bytes of buffer.
   BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, data, false, false);
+  update_byteLoop_crc32(crc, buf, len, table, data, false);
 
-  nand(crc, crc, crc);                           // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
   BLOCK_COMMENT("} kernel_crc32_1word");
 }
 
@@ -4389,16 +4403,24 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
  * Uses R7_ARG5, R8_ARG6 as work registers.
  */
 void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3) {
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Register  data = t0;                   // Holds the current byte to be folded into crc.
 
   BLOCK_COMMENT("kernel_crc32_1byte {");
 
-  // Process all bytes in a single-byte loop.
-  update_byteLoop_crc32(crc, buf, len, table, data, true, true);
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
 
+  // Process all bytes in a single-byte loop.
+  update_byteLoop_crc32(crc, buf, len, table, data, true);
+
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
   BLOCK_COMMENT("} kernel_crc32_1byte");
 }
 
@@ -4416,7 +4438,8 @@ void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len
  */
 void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
                                                 Register constants,  Register barretConstants,
-                                                Register t0,  Register t1, Register t2, Register t3, Register t4) {
+                                                Register t0,  Register t1, Register t2, Register t3, Register t4,
+                                                bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_alignedHead, L_tail, L_alignTail, L_start, L_end;
@@ -4434,13 +4457,15 @@ void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Regi
     Register tc0 = t4;
     Register tc1 = constants;
     Register tc2 = barretConstants;
-    kernel_crc32_1word(crc, buf, len, table,t0, t1, t2, t3, tc0, tc1, tc2, table);
+    kernel_crc32_1word(crc, buf, len, table,t0, t1, t2, t3, tc0, tc1, tc2, table, invertCRC);
     b(L_end);
 
   BIND(L_start);
 
     // 2. ~c
-    nand(crc, crc, crc);
+    if (invertCRC) {
+      nand(crc, crc, crc);                      // 1s complement of crc
+    }
 
     // 3. calculate from 0 to first 128bit-aligned address
     clrldi_(prealign, buf, 57);
@@ -4449,7 +4474,7 @@ void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Regi
     subfic(prealign, prealign, 128);
 
     subf(len, prealign, len);
-    update_byteLoop_crc32(crc, buf, prealign, table, t2, false, false);
+    update_byteLoop_crc32(crc, buf, prealign, table, t2, false);
 
     // 4. calculate from first 128bit-aligned address to last 128bit-aligned address
     BIND(L_alignedHead);
@@ -4464,12 +4489,14 @@ void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Regi
     cmpdi(CCR0, postalign, 0);
     beq(CCR0, L_tail);
 
-    update_byteLoop_crc32(crc, buf, postalign, table, t2, false, false);
+    update_byteLoop_crc32(crc, buf, postalign, table, t2, false);
 
     BIND(L_tail);
 
     // 6. ~c
-    nand(crc, crc, crc);
+    if (invertCRC) {
+      nand(crc, crc, crc);                      // 1s complement of crc
+    }
 
   BIND(L_end);
 
@@ -4961,16 +4988,35 @@ void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Regi
   offsetInt -= 8;  ld(R31, offsetInt, R1_SP);
 }
 
-void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp) {
+void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp, bool invertCRC) {
   assert_different_registers(crc, buf, /* len,  not used!! */ table, tmp);
 
   BLOCK_COMMENT("kernel_crc32_singleByte:");
-  nand(crc, crc, crc);       // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                // 1s complement of crc
+  }
 
-  lbz(tmp, 0, buf);          // Byte from buffer, zero-extended.
+  lbz(tmp, 0, buf);                     // Byte from buffer, zero-extended.
   update_byte_crc32(crc, tmp, table);
 
-  nand(crc, crc, crc);       // ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                // 1s complement of crc
+  }
+}
+
+void MacroAssembler::kernel_crc32_singleByteReg(Register crc, Register val, Register table, bool invertCRC) {
+  assert_different_registers(crc, val, table);
+
+  BLOCK_COMMENT("kernel_crc32_singleByteReg:");
+  if (invertCRC) {
+    nand(crc, crc, crc);                // 1s complement of crc
+  }
+
+  update_byte_crc32(crc, val, table);
+
+  if (invertCRC) {
+    nand(crc, crc, crc);                // 1s complement of crc
+  }
 }
 
 // dest_lo += src1 + src2

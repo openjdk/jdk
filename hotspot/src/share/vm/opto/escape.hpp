@@ -528,7 +528,7 @@ private:
  }
   // Helper functions
   bool   is_oop_field(Node* n, int offset, bool* unsafe);
-  static Node* get_addp_base(Node *addp);
+  Node* get_addp_base(Node *addp);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseTransform *phase);

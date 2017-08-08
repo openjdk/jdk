@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,11 @@ void Canonicalizer::do_Op2(Op2* x) {
     case Bytecodes::_lsub: set_constant(jlong_cast(0)); return;
     case Bytecodes::_iand: // fall through
     case Bytecodes::_land: // fall through
-    case Bytecodes::_ior:  // fall through
+    case Bytecodes::_ior : // fall through
     case Bytecodes::_lor : set_canonical(x->x()); return;
     case Bytecodes::_ixor: set_constant(0); return;
     case Bytecodes::_lxor: set_constant(jlong_cast(0)); return;
+    default              : break;
     }
   }
 
@@ -114,6 +115,7 @@ void Canonicalizer::do_Op2(Op2* x) {
             case Bytecodes::_iand: set_constant(a & b); return;
             case Bytecodes::_ior : set_constant(a | b); return;
             case Bytecodes::_ixor: set_constant(a ^ b); return;
+            default              : break;
           }
         }
         break;
@@ -139,10 +141,13 @@ void Canonicalizer::do_Op2(Op2* x) {
             case Bytecodes::_land: set_constant(a & b); return;
             case Bytecodes::_lor : set_constant(a | b); return;
             case Bytecodes::_lxor: set_constant(a ^ b); return;
+            default              : break;
           }
         }
         break;
-      // other cases not implemented (must be extremely careful with floats & doubles!)
+      default:
+        // other cases not implemented (must be extremely careful with floats & doubles!)
+        break;
     }
   }
   // make sure constant is on the right side, if any
@@ -161,6 +166,7 @@ void Canonicalizer::do_Op2(Op2* x) {
               //       corresponds to Java semantics!
             case Bytecodes::_iand: set_constant(0); return;
             case Bytecodes::_ior : set_canonical(x->x()); return;
+            default              : break;
           }
         }
         break;
@@ -174,8 +180,11 @@ void Canonicalizer::do_Op2(Op2* x) {
               //       corresponds to Java semantics!
             case Bytecodes::_land: set_constant((jlong)0); return;
             case Bytecodes::_lor : set_canonical(x->x()); return;
+            default              : break;
           }
         }
+        break;
+      default:
         break;
     }
   }
@@ -210,6 +219,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
     case Bytecodes::_i2b: if (type == T_BYTE)  value = conv->value(); break;
     case Bytecodes::_i2s: if (type == T_SHORT || type == T_BYTE) value = conv->value(); break;
     case Bytecodes::_i2c: if (type == T_CHAR  || type == T_BYTE)  value = conv->value(); break;
+    default             : break;
     }
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
@@ -303,6 +313,7 @@ void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
     case Bytecodes::_i2b: if (type == T_BYTE)  value = conv->value(); break;
     case Bytecodes::_i2s: if (type == T_SHORT || type == T_BYTE) value = conv->value(); break;
     case Bytecodes::_i2c: if (type == T_CHAR  || type == T_BYTE) value = conv->value(); break;
+    default             : break;
     }
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
@@ -351,6 +362,7 @@ void Canonicalizer::do_ShiftOp        (ShiftOp*         x) {
           case Bytecodes::_ishl:  set_constant(value << shift); return;
           case Bytecodes::_ishr:  set_constant(value >> shift); return;
           case Bytecodes::_iushr: set_constant((value >> shift) & mask); return;
+          default:                break;
         }
       } else if (t->tag() == longTag) {
         jlong value = t->as_LongConstant()->value();
@@ -361,6 +373,7 @@ void Canonicalizer::do_ShiftOp        (ShiftOp*         x) {
           case Bytecodes::_lshl:  set_constant(value << shift); return;
           case Bytecodes::_lshr:  set_constant(value >> shift); return;
           case Bytecodes::_lushr: set_constant((value >> shift) & mask); return;
+          default:                break;
         }
       }
     }
@@ -369,7 +382,7 @@ void Canonicalizer::do_ShiftOp        (ShiftOp*         x) {
     switch (t2->tag()) {
       case intTag   : if (t2->as_IntConstant()->value() == 0)  set_canonical(x->x()); return;
       case longTag  : if (t2->as_LongConstant()->value() == (jlong)0)  set_canonical(x->x()); return;
-      default       : ShouldNotReachHere();
+      default       : ShouldNotReachHere(); return;
     }
   }
 }
@@ -402,6 +415,8 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
         }
         break;
       }
+      default:
+        break;
     }
   } else if (x->x()->type()->is_constant() && x->y()->type()->is_constant()) {
     switch (x->x()->type()->tag()) {
@@ -444,8 +459,10 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
           set_constant(1);
         break;
       }
-    }
 
+      default:
+        break;
+    }
   }
 }
 
@@ -530,6 +547,8 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
+  default:
+    break;
   }
 }
 
@@ -572,6 +591,7 @@ void Canonicalizer::do_Convert        (Convert*         x) {
           case Bytecodes::_i2b: type = T_BYTE;  break;
           case Bytecodes::_i2s: type = T_SHORT; break;
           case Bytecodes::_i2c: type = T_CHAR;  break;
+          default             :                 break;
         }
       }
     }
@@ -581,6 +601,7 @@ void Canonicalizer::do_Convert        (Convert*         x) {
       case Bytecodes::_i2b: if (type == T_BYTE)                    set_canonical(x->value()); break;
       case Bytecodes::_i2s: if (type == T_SHORT || type == T_BYTE) set_canonical(x->value()); break;
       case Bytecodes::_i2c: if (type == T_CHAR)                    set_canonical(x->value()); break;
+      default             :                                                                   break;
     }
   } else {
     Op2* op2 = x->value()->as_Op2();
@@ -591,6 +612,7 @@ void Canonicalizer::do_Convert        (Convert*         x) {
         case Bytecodes::_i2b: safebits = 0x7f;   break;
         case Bytecodes::_i2s: safebits = 0x7fff; break;
         case Bytecodes::_i2c: safebits = 0xffff; break;
+        default             :                    break;
       }
       // When casting a masked integer to a smaller signed type, if
       // the mask doesn't include the sign bit the cast isn't needed.
@@ -669,9 +691,10 @@ static bool is_true(jlong x, If::Condition cond, jlong y) {
     case If::leq: return x <= y;
     case If::gtr: return x >  y;
     case If::geq: return x >= y;
+    default:
+      ShouldNotReachHere();
+      return false;
   }
-  ShouldNotReachHere();
-  return false;
 }
 
 static bool is_safepoint(BlockEnd* x, BlockBegin* sux) {
@@ -756,6 +779,8 @@ void Canonicalizer::do_If(If* x) {
               case Bytecodes::_dcmpl: case Bytecodes::_dcmpg:
                 set_canonical(x);
                 return;
+              default:
+                break;
             }
           }
           set_bci(cmp->state_before()->bci());

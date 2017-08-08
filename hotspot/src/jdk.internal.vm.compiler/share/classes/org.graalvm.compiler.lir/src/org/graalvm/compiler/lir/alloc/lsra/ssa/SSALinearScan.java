@@ -24,8 +24,7 @@ package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScanEliminateSpillMovePhase;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScanLifetimeAnalysisPhase;
@@ -73,7 +72,7 @@ public final class SSALinearScan extends LinearScan {
          * PHI Ins are needed for the RegisterVerifier, otherwise PHIs where the Out and In value
          * matches (ie. there is no resolution move) are falsely detected as errors.
          */
-        try (Scope s1 = Debug.scope("Remove Phi In")) {
+        try (DebugContext.Scope s1 = debug.scope("Remove Phi In")) {
             for (AbstractBlockBase<?> toBlock : sortedBlocks()) {
                 if (toBlock.getPredecessorCount() > 1) {
                     SSAUtil.removePhiIn(getLIR(), toBlock);

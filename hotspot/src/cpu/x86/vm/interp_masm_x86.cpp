@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,7 +509,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  movptr(result, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  movptr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
+  movptr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
   // JNIHandles::resolve(obj);
   movptr(result, Address(result, 0));
   // Add in the index
@@ -517,6 +518,14 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 }
 
+// load cpool->resolved_klass_at(index)
+void InterpreterMacroAssembler::load_resolved_klass_at_index(Register cpool,
+                                           Register index, Register klass) {
+  movw(index, Address(cpool, index, Address::times_ptr, sizeof(ConstantPool)));
+  Register resolved_klasses = cpool;
+  movptr(resolved_klasses, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes()));
+  movptr(klass, Address(resolved_klasses, index, Address::times_ptr, Array<Klass*>::base_offset_in_bytes()));
+}
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
 // subtype of super_klass.
@@ -1148,7 +1157,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     movl(swap_reg, (int32_t)1);
 
     // Load (object->mark() | 1) into swap_reg %rax
-    orptr(swap_reg, Address(obj_reg, 0));
+    orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // Save (object->mark() | 1) into BasicLock's displaced header
     movptr(Address(lock_reg, mark_offset), swap_reg);
@@ -1157,7 +1166,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
            "displaced header must be first word in BasicObjectLock");
 
     if (os::is_MP()) lock();
-    cmpxchgptr(lock_reg, Address(obj_reg, 0));
+    cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     if (PrintBiasedLockingStatistics) {
       cond_inc32(Assembler::zero,
                  ExternalAddress((address) BiasedLocking::fast_path_entry_count_addr()));
@@ -1254,7 +1263,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     // Atomic swap back the old header
     if (os::is_MP()) lock();
-    cmpxchgptr(header_reg, Address(obj_reg, 0));
+    cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // zero for simple unlock of a stack-lock case
     jcc(Assembler::zero, done);

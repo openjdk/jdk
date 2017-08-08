@@ -42,13 +42,14 @@ public class NullBytecodeExceptionTest extends BytecodeExceptionTest {
     }
 
     @Override
-    protected void registerPlugin(InvocationPlugins plugins) {
-        plugins.register(new InvocationPlugin() {
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        invocationPlugins.register(new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 return throwBytecodeException(b, NullPointerException.class);
             }
         }, Exceptions.class, "throwNull");
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static void nullSnippet() {

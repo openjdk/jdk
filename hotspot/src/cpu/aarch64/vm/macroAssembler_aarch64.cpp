@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,7 @@
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
+#include "prims/jvm.h"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -515,7 +516,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     mov(rscratch1, markOopDesc::biased_lock_mask_in_place | markOopDesc::age_mask_in_place | markOopDesc::epoch_mask_in_place);
     andr(swap_reg, swap_reg, rscratch1);
     orr(tmp_reg, swap_reg, rthread);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
     // If the biasing toward our thread failed, this means that
     // another thread succeeded in biasing it toward itself and we
     // need to revoke that bias. The revocation will occur in the
@@ -542,7 +543,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     Label here;
     load_prototype_header(tmp_reg, obj_reg);
     orr(tmp_reg, rthread, tmp_reg);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, slow_case);
     // If the biasing toward our thread failed, then another thread
     // succeeded in biasing it toward itself and we need to revoke that
     // bias. The revocation will occur in the runtime in the slow case.
@@ -569,7 +570,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   {
     Label here, nope;
     load_prototype_header(tmp_reg, obj_reg);
-    cmpxchgptr(swap_reg, tmp_reg, obj_reg, rscratch1, here, &nope);
+    cmpxchg_obj_header(swap_reg, tmp_reg, obj_reg, rscratch1, here, &nope);
     bind(here);
 
     // Fall through to the normal CAS-based lock, because no matter what
@@ -2011,6 +2012,12 @@ void MacroAssembler::stop(const char* msg) {
   hlt(0);
 }
 
+void MacroAssembler::unimplemented(const char* what) {
+  char* b = new char[1024];
+  jio_snprintf(b, 1024, "unimplemented: %s", what);
+  stop(b);
+}
+
 // If a constant does not fit in an immediate field, generate some
 // number of MOV instructions and then perform the operation.
 void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
@@ -2139,6 +2146,12 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   }
   if (fail)
     b(*fail);
+}
+
+void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
+                                        Label &succeed, Label *fail) {
+  assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
+  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
 }
 
 void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,

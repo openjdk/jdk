@@ -83,6 +83,10 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
         if (synonym != null) {
             return synonym;
         }
+        ValueNode result = canonicalizeConditional(condition, trueValue, falseValue, trueValue.stamp().meet(falseValue.stamp()));
+        if (result != null) {
+            return result;
+        }
         return new ConditionalNode(condition, trueValue, falseValue);
     }
 

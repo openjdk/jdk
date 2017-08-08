@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,6 +307,8 @@ void ObjectMonitor::enter(TRAPS) {
   { // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(jt, this);
 
+    Self->set_current_pending_monitor(this);
+
     DTRACE_MONITOR_PROBE(contended__enter, this, object(), jt);
     if (JvmtiExport::should_post_monitor_contended_enter()) {
       JvmtiExport::post_monitor_contended_enter(jt, this);
@@ -320,8 +322,6 @@ void ObjectMonitor::enter(TRAPS) {
 
     OSThreadContendState osts(Self->osthread());
     ThreadBlockInVM tbivm(jt);
-
-    Self->set_current_pending_monitor(this);
 
     // TODO-FIXME: change the following for(;;) loop to straight-line code.
     for (;;) {
@@ -1673,7 +1673,7 @@ void ObjectMonitor::INotify(Thread * Self) {
         // the EntryList.  We can make tail access constant-time by converting to
         // a CDLL instead of using our current DLL.
         ObjectWaiter * tail;
-        for (tail = list; tail->_next != NULL; tail = tail->_next) /* empty */;
+        for (tail = list; tail->_next != NULL; tail = tail->_next) {}
         assert(tail != NULL && tail->_next == NULL, "invariant");
         tail->_next = iterator;
         iterator->_prev = tail;
@@ -2445,12 +2445,6 @@ void ObjectMonitor::sanity_checks() {
 }
 
 #ifndef PRODUCT
-void ObjectMonitor::verify() {
-}
-
-void ObjectMonitor::print() {
-}
-
 void ObjectMonitor_test() {
   ObjectMonitor::sanity_checks();
 }

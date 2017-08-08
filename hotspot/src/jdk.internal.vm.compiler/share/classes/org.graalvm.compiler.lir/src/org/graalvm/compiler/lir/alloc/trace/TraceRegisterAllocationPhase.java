@@ -26,21 +26,18 @@ import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.alloc.Trace;
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIR;
-import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
 import org.graalvm.compiler.lir.phases.AllocationPhase;
-import org.graalvm.compiler.lir.ssi.SSIUtil;
-import org.graalvm.compiler.lir.ssi.SSIVerifier;
+import org.graalvm.compiler.lir.ssa.SSAUtil;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.StableOptionValue;
 
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -55,22 +52,20 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
     public static class Options {
         // @formatter:off
         @Option(help = "Use inter-trace register hints.", type = OptionType.Debug)
-        public static final StableOptionValue<Boolean> TraceRAuseInterTraceHints = new StableOptionValue<>(true);
+        public static final OptionKey<Boolean> TraceRAuseInterTraceHints = new OptionKey<>(true);
         @Option(help = "Share information about spilled values to other traces.", type = OptionType.Debug)
-        public static final StableOptionValue<Boolean> TraceRAshareSpillInformation = new StableOptionValue<>(true);
+        public static final OptionKey<Boolean> TraceRAshareSpillInformation = new OptionKey<>(true);
         @Option(help = "Reuse spill slots for global move resolution cycle breaking.", type = OptionType.Debug)
-        public static final StableOptionValue<Boolean> TraceRAreuseStackSlotsForMoveResolutionCycleBreaking = new StableOptionValue<>(true);
+        public static final OptionKey<Boolean> TraceRAreuseStackSlotsForMoveResolutionCycleBreaking = new OptionKey<>(true);
         @Option(help = "Cache stack slots globally (i.e. a variable always gets the same slot in every trace).", type = OptionType.Debug)
-        public static final StableOptionValue<Boolean> TraceRACacheStackSlots = new StableOptionValue<>(true);
+        public static final OptionKey<Boolean> TraceRACacheStackSlots = new OptionKey<>(true);
         // @formatter:on
     }
 
-    private static final TraceGlobalMoveResolutionPhase TRACE_GLOBAL_MOVE_RESOLUTION_PHASE = new TraceGlobalMoveResolutionPhase();
+    private static final CounterKey tracesCounter = DebugContext.counter("TraceRA[traces]");
 
-    private static final DebugCounter tracesCounter = Debug.counter("TraceRA[traces]");
-
-    public static final DebugCounter globalStackSlots = Debug.counter("TraceRA[GlobalStackSlots]");
-    public static final DebugCounter allocatedStackSlots = Debug.counter("TraceRA[AllocatedStackSlots]");
+    public static final CounterKey globalStackSlots = DebugContext.counter("TraceRA[GlobalStackSlots]");
+    public static final CounterKey allocatedStackSlots = DebugContext.counter("TraceRA[AllocatedStackSlots]");
 
     @Override
     @SuppressWarnings("try")
@@ -78,64 +73,47 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         RegisterAllocationConfig registerAllocationConfig = context.registerAllocationConfig;
         LIR lir = lirGenRes.getLIR();
-        assert SSIVerifier.verify(lir) : "LIR not in SSI form.";
+        DebugContext debug = lir.getDebug();
         TraceBuilderResult resultTraces = context.contextLookup(TraceBuilderResult.class);
-
-        TraceAllocationContext traceContext = new TraceAllocationContext(spillMoveFactory, registerAllocationConfig, resultTraces);
-        AllocatableValue[] cachedStackSlots = Options.TraceRACacheStackSlots.getValue() ? new AllocatableValue[lir.numVariables()] : null;
+        GlobalLivenessInfo livenessInfo = context.contextLookup(GlobalLivenessInfo.class);
+        assert livenessInfo != null;
+        TraceAllocationContext traceContext = new TraceAllocationContext(spillMoveFactory, registerAllocationConfig, resultTraces, livenessInfo);
+        AllocatableValue[] cachedStackSlots = Options.TraceRACacheStackSlots.getValue(lir.getOptions()) ? new AllocatableValue[lir.numVariables()] : null;
 
         // currently this is not supported
         boolean neverSpillConstant = false;
 
-        final TraceRegisterAllocationPolicy plan = DefaultTraceRegisterAllocationPolicy.allocationPolicy(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots,
-                        resultTraces, neverSpillConstant);
+        final TraceRegisterAllocationPolicy plan = DefaultTraceRegisterAllocationPolicy.allocationPolicy(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces,
+                        neverSpillConstant, livenessInfo, lir.getOptions());
 
-        Debug.dump(Debug.INFO_LOG_LEVEL, lir, "Before TraceRegisterAllocation");
-        try (Scope s0 = Debug.scope("AllocateTraces", resultTraces)) {
+        try (DebugContext.Scope s0 = debug.scope("AllocateTraces", resultTraces, livenessInfo)) {
             for (Trace trace : resultTraces.getTraces()) {
-                tracesCounter.increment();
+                tracesCounter.increment(debug);
                 TraceAllocationPhase<TraceAllocationContext> allocator = plan.selectStrategy(trace);
-                try (Indent i = Debug.logAndIndent("Allocating Trace%d: %s (%s)", trace.getId(), trace, allocator); Scope s = Debug.scope("AllocateTrace", trace)) {
+                try (Indent i = debug.logAndIndent("Allocating Trace%d: %s (%s)", trace.getId(), trace, allocator); DebugContext.Scope s = debug.scope("AllocateTrace", trace)) {
                     allocator.apply(target, lirGenRes, trace, traceContext);
                 }
             }
         } catch (Throwable e) {
-            throw Debug.handle(e);
-        }
-        if (Debug.isDumpEnabled(Debug.INFO_LOG_LEVEL)) {
-            unnumberInstructions(lir);
-            Debug.dump(Debug.INFO_LOG_LEVEL, lir, "After trace allocation");
+            throw debug.handle(e);
         }
 
-        TRACE_GLOBAL_MOVE_RESOLUTION_PHASE.apply(target, lirGenRes, traceContext);
-        deconstructSSIForm(lir);
+        TraceGlobalMoveResolutionPhase.resolve(target, lirGenRes, traceContext);
+        deconstructSSAForm(lir);
     }
 
     /**
-     * Remove Phi/Sigma In/Out.
-     *
-     * Note: Incoming Values are needed for the RegisterVerifier, otherwise SIGMAs/PHIs where the
-     * Out and In value matches (ie. there is no resolution move) are falsely detected as errors.
+     * Remove Phi In/Out.
      */
-    @SuppressWarnings("try")
-    private static void deconstructSSIForm(LIR lir) {
+    private static void deconstructSSAForm(LIR lir) {
         for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
-            try (Indent i = Debug.logAndIndent("Fixup Block %s", block)) {
-                if (block.getPredecessorCount() != 0) {
-                    SSIUtil.removeIncoming(lir, block);
-                } else {
-                    assert lir.getControlFlowGraph().getStartBlock().equals(block);
+            if (SSAUtil.isMerge(block)) {
+                SSAUtil.phiIn(lir, block).clearIncomingValues();
+                for (AbstractBlockBase<?> pred : block.getPredecessors()) {
+                    SSAUtil.phiOut(lir, pred).clearOutgoingValues();
                 }
-                SSIUtil.removeOutgoing(lir, block);
             }
         }
     }
 
-    private static void unnumberInstructions(LIR lir) {
-        for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
-            for (LIRInstruction op : lir.getLIRforBlock(block)) {
-                op.setId(-1);
-            }
-        }
-    }
 }

@@ -28,6 +28,7 @@
  *          java.management
  *
  * @build sun.hotspot.WhiteBox
+ * @requires !(vm.cpu.features ~= ".*aes.*")
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -40,6 +41,7 @@ package compiler.cpuflags;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cli.predicate.NotPredicate;
+import static jdk.test.lib.cli.CommandLineOptionTest.*;
 
 public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
 
@@ -48,15 +50,6 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
     private static final String AES_NOT_AVAILABLE_MSG = "warning: AES "
             + "instructions are not available on this CPU";
 
-    /**
-     * Constructs new TestAESIntrinsicsOnUnsupportedConfig that will be
-     * executed only if AESSupportPredicate returns false
-     */
-    private TestAESIntrinsicsOnUnsupportedConfig() {
-        super(new NotPredicate(AESIntrinsicsBase.AES_SUPPORTED_PREDICATE));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         testUseAES();
         testUseAESIntrinsics();
@@ -110,6 +103,6 @@ public class TestAESIntrinsicsOnUnsupportedConfig extends AESIntrinsicsBase {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestAESIntrinsicsOnUnsupportedConfig().test();
+        new TestAESIntrinsicsOnUnsupportedConfig().runTestCases();
     }
 }

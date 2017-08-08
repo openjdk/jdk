@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8069469
- * @summary Make sure -Xlog:classload=info works properly with "modules" jimage,
+ * @summary Make sure -Xlog:class+load=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -46,7 +46,7 @@ public class PatchModuleTraceCL {
                         "    } "                                    +
                         "}";
 
-        // Test -Xlog:classload=info output for --patch-module
+        // Test -Xlog:class+load=info output for --patch-module
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
              InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
              "mods/java.naming");
@@ -62,7 +62,7 @@ public class PatchModuleTraceCL {
         // -cp case.
         output.shouldContain("[class,load] PatchModuleMain source: file");
 
-        // Test -Xlog:classload=info output for -Xbootclasspath/a
+        // Test -Xlog:class+load=info output for -Xbootclasspath/a
         source = "package PatchModuleTraceCL_pkg; "                 +
                  "public class ItIsI { "                          +
                  "    static { "                                  +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,12 +224,12 @@ void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
   mark_and_push_closure.set_ref_processor(_ref_processor);
 }
 
-MarkSweep::AdjustPointerClosure MarkSweep::adjust_pointer_closure;
+AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 
 template <typename T>
-void MarkSweep::AdjustPointerClosure::do_oop_nv(T* p)      { adjust_pointer(p); }
-void MarkSweep::AdjustPointerClosure::do_oop(oop* p)       { do_oop_nv(p); }
-void MarkSweep::AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+void AdjustPointerClosure::do_oop_nv(T* p)      { MarkSweep::adjust_pointer(p); }
+void AdjustPointerClosure::do_oop(oop* p)       { do_oop_nv(p); }
+void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
 
 void MarkSweep::adjust_marks() {
   assert( _preserved_oop_stack.size() == _preserved_mark_stack.size(),
@@ -278,80 +278,6 @@ void MarkSweep::KeepAliveClosure::do_oop(narrowOop* p) { MarkSweep::KeepAliveClo
 void marksweep_init() {
   MarkSweep::_gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
   MarkSweep::_gc_tracer = new (ResourceObj::C_HEAP, mtGC) SerialOldTracer();
-}
-
-int InstanceKlass::oop_ms_adjust_pointers(oop obj) {
-  int size = size_helper();
-  oop_oop_iterate_oop_maps<true>(obj, &MarkSweep::adjust_pointer_closure);
-  return size;
-}
-
-int InstanceMirrorKlass::oop_ms_adjust_pointers(oop obj) {
-  int size = oop_size(obj);
-  InstanceKlass::oop_ms_adjust_pointers(obj);
-
-  oop_oop_iterate_statics<true>(obj, &MarkSweep::adjust_pointer_closure);
-  return size;
-}
-
-int InstanceClassLoaderKlass::oop_ms_adjust_pointers(oop obj) {
-  return InstanceKlass::oop_ms_adjust_pointers(obj);
-}
-
-#ifdef ASSERT
-template <class T> static void trace_reference_gc(const char *s, oop obj,
-                                                  T* referent_addr,
-                                                  T* next_addr,
-                                                  T* discovered_addr) {
-  log_develop_trace(gc, ref)("%s obj " PTR_FORMAT, s, p2i(obj));
-  log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                             p2i(referent_addr), p2i(referent_addr ? (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
-  log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                             p2i(next_addr), p2i(next_addr ? (address)oopDesc::load_decode_heap_oop(next_addr) : NULL));
-  log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                             p2i(discovered_addr), p2i(discovered_addr ? (address)oopDesc::load_decode_heap_oop(discovered_addr) : NULL));
-}
-#endif
-
-template <class T> void static adjust_object_specialized(oop obj) {
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  MarkSweep::adjust_pointer(referent_addr);
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
-  MarkSweep::adjust_pointer(next_addr);
-  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
-  MarkSweep::adjust_pointer(discovered_addr);
-  debug_only(trace_reference_gc("InstanceRefKlass::oop_ms_adjust_pointers", obj,
-                                referent_addr, next_addr, discovered_addr);)
-}
-
-int InstanceRefKlass::oop_ms_adjust_pointers(oop obj) {
-  int size = size_helper();
-  InstanceKlass::oop_ms_adjust_pointers(obj);
-
-  if (UseCompressedOops) {
-    adjust_object_specialized<narrowOop>(obj);
-  } else {
-    adjust_object_specialized<oop>(obj);
-  }
-  return size;
-}
-
-int ObjArrayKlass::oop_ms_adjust_pointers(oop obj) {
-  assert(obj->is_objArray(), "obj must be obj array");
-  objArrayOop a = objArrayOop(obj);
-  // Get size before changing pointers.
-  // Don't call size() or oop_size() since that is a virtual call.
-  int size = a->object_size();
-  oop_oop_iterate_elements<true>(a, &MarkSweep::adjust_pointer_closure);
-  return size;
-}
-
-int TypeArrayKlass::oop_ms_adjust_pointers(oop obj) {
-  assert(obj->is_typeArray(), "must be a type array");
-  typeArrayOop t = typeArrayOop(obj);
-  // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::TypeArrayKlass never moves.
-  return t->object_size();
 }
 
 // Generate MS specialized oop_oop_iterate functions.
