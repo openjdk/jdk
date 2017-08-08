@@ -25,6 +25,8 @@
  * @test
  * @bug 8067437
  * @summary Verify Multiple JRE version support has been removed.
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @build TestHelper
  * @run main MultipleJRERemoved
  */

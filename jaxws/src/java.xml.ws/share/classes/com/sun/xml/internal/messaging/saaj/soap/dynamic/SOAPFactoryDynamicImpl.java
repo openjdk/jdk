@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,12 @@ import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPFactoryImpl;
 
 public class SOAPFactoryDynamicImpl extends SOAPFactoryImpl {
+    @Override
     protected SOAPDocumentImpl createDocument() {
         return null;
     }
 
+    @Override
     public Detail createDetail() throws SOAPException {
         throw new UnsupportedOperationException(
                 "createDetail() not supported for Dynamic Protocol");

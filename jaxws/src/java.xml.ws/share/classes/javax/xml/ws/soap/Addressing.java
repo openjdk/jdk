@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceRef;
-import javax.xml.ws.WebServiceRefs;
 import javax.xml.ws.WebServiceProvider;
 import javax.xml.ws.soap.AddressingFeature.Responses;
 import javax.xml.ws.spi.WebServiceFeatureAnnotation;
@@ -44,7 +42,7 @@ import javax.xml.ws.spi.WebServiceFeatureAnnotation;
  * with any other binding is undefined.
  * <p>
  * This annotation MUST only be used in conjunction with the
- * {@link javax.jws.WebService}, {@link WebServiceProvider},
+ * {@code javax.jws.WebService}, {@link WebServiceProvider},
  *  and {@link WebServiceRef} annotations.
  * When used with a {@code javax.jws.WebService} annotation, this
  * annotation MUST only be used on the service endpoint implementation
@@ -70,6 +68,8 @@ public @interface Addressing {
      * Corresponding
      * <a href="http://www.w3.org/TR/ws-addr-metadata/#wspolicyaddressing">
      * 3.1.1 Addressing Assertion</a> must be generated in the generated WSDL.
+     *
+     * @return {@code true} if endpoint supports WS-Addressing, {@code false} otherwise
      */
     boolean enabled() default true;
 
@@ -80,6 +80,8 @@ public @interface Addressing {
      * be present on incoming messages. A corresponding
      * <a href="http://www.w3.org/TR/ws-addr-metadata/#wspolicyaddressing">
      * 3.1.1 Addressing Assertion</a> must be generated in the WSDL.
+     *
+     * @return {@code true} if endpoint requires WS-Addressing, {@code false} otherwise
      */
     boolean required() default false;
 
@@ -106,6 +108,7 @@ public @interface Addressing {
      * <a href="http://www.w3.org/TR/ws-addr-metadata/#wspolicynonanonresponses">
      * 3.1.3 NonAnonymousResponses Assertion</a> in the generated WSDL.
      *
+     * @return supported response types
      * @since 1.7, JAX-WS 2.2
      */
     Responses responses() default Responses.ALL;

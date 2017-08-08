@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,16 +135,6 @@
     "sr_SP", "sr_YU",
     "tchinese", "zh_TW",
 #endif
-#ifdef MACOSX
-    "sr-Latn", "sr_CS",   // Mappings as done by old Apple JRS code
-    "tk", "tk-Cyrl",
-    "tt-Latn", "tt-Cyrl",
-    "uz", "uz_UZ",
-    "uz-Arab", "uz_UZ",
-    "uz-Latn", "uz_UZ",
-    "zh-Hans", "zh_CN",
-    "zh-Hant", "zh_TW",
-#endif
     "", "",
  };
 
@@ -211,6 +201,16 @@ static char *script_names[] = {
     "iqtelif", "Latn",
     "latin", "Latn",
 #endif
+    "Arab", "Arab",
+    "Cyrl", "Cyrl",
+    "Deva", "Deva",
+    "Ethi", "Ethi",
+    "Hans", "Hans",
+    "Hant", "Hant",
+    "Latn", "Latn",
+    "Sund", "Sund",
+    "Syrc", "Syrc",
+    "Tfng", "Tfng",
     "", "",
 };
 

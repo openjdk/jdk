@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1161,7 +1161,7 @@ public class XSAttributeChecker {
             }
         }
 
-        attrValues[ATTIDX_FROMDEFAULT] = new Long(fromDefault);
+        attrValues[ATTIDX_FROMDEFAULT] = fromDefault;
         //attrValues[ATTIDX_OTHERVALUES] = otherValues;
 
         // Check that minOccurs isn't greater than maxOccurs.
@@ -1193,7 +1193,7 @@ public class XSAttributeChecker {
                     // maxOccurNodeLimit.
                     int maxOccurNodeLimit = fSchemaHandler.fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT);
                     if (max > maxOccurNodeLimit && !fSchemaHandler.fSecurityManager.isNoLimit(maxOccurNodeLimit)) {
-                        reportSchemaFatalError("MaxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
+                        reportSchemaFatalError("MaxOccurLimit", new Object[] {maxOccurNodeLimit}, element);
 
                         // reset max values in case processing continues on error
                         attrValues[ATTIDX_MAXOCCURS] = fXIntPool.getXInt(maxOccurNodeLimit);

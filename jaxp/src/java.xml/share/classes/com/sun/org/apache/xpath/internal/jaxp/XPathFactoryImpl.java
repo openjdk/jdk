@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// $Id: XPathFactoryImpl.java,v 1.2 2005/08/16 22:41:13 jeffsuttor Exp $
 
 package com.sun.org.apache.xpath.internal.jaxp;
 
@@ -170,7 +169,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             if (name == null) {
                 String fmsg = XSLMessages.createXPATHMessage(
                         XPATHErrorResources.ER_FEATURE_NAME_NULL,
-                        new Object[] { CLASS_NAME, new Boolean( value) } );
+                        new Object[] { CLASS_NAME,  value } );
                 throw new NullPointerException( fmsg );
              }
 
@@ -179,7 +178,7 @@ public  class XPathFactoryImpl extends XPathFactory {
                 if ((_isSecureMode) && (!value)) {
                     String fmsg = XSLMessages.createXPATHMessage(
                             XPATHErrorResources.ER_SECUREPROCESSING_FEATURE,
-                            new Object[] { name, CLASS_NAME, new Boolean(value) } );
+                            new Object[] { name, CLASS_NAME, value } );
                     throw new XPathFactoryConfigurationException( fmsg );
                 }
 
@@ -207,7 +206,7 @@ public  class XPathFactoryImpl extends XPathFactory {
             // unknown feature
             String fmsg = XSLMessages.createXPATHMessage(
                     XPATHErrorResources.ER_FEATURE_UNKNOWN,
-                    new Object[] { name, CLASS_NAME, new Boolean(value) } );
+                    new Object[] { name, CLASS_NAME, value } );
             throw new XPathFactoryConfigurationException( fmsg );
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * Constructor to construct HelpWriter object.
      * @param filename File to be generated.
      */
-    public HelpWriter(ConfigurationImpl configuration,
+    public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
     }
@@ -68,7 +68,7 @@ public class HelpWriter extends HtmlDocletWriter {
      *
      * @throws DocFileIOException if there is a problem while generating the documentation
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.HELP_DOC;
         HelpWriter helpgen = new HelpWriter(configuration, filename);
         helpgen.generateHelpFile();

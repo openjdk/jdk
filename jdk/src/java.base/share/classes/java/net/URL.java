@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import jdk.internal.misc.JavaNetURLAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -407,7 +409,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = protocol.toLowerCase(Locale.ROOT);
+        protocol = toLowerCase(protocol);
         this.protocol = protocol;
         if (host != null) {
 
@@ -583,7 +585,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-                    String s = spec.substring(start, i).toLowerCase(Locale.ROOT);
+                    String s = toLowerCase(spec.substring(start, i));
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -1316,6 +1318,17 @@ public final class URL implements java.io.Serializable {
         }
     }
 
+    /**
+     * Returns the protocol in lower case. Special cases known protocols
+     * to avoid loading locale classes during startup.
+     */
+    static String toLowerCase(String protocol) {
+        if (protocol.equals("jrt") || protocol.equals("file") || protocol.equals("jar")) {
+            return protocol;
+        } else {
+            return protocol.toLowerCase(Locale.ROOT);
+        }
+    }
 
     /**
      * Non-overrideable protocols: "jrt" and "file"
@@ -1613,6 +1626,17 @@ public final class URL implements java.io.Serializable {
 
     private void setSerializedHashCode(int hc) {
         this.hashCode = hc;
+    }
+
+    static {
+        SharedSecrets.setJavaNetURLAccess(
+                new JavaNetURLAccess() {
+                    @Override
+                    public URLStreamHandler getHandler(URL u) {
+                        return u.handler;
+                    }
+                }
+        );
     }
 }
 

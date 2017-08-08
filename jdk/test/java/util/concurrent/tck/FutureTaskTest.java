@@ -35,7 +35,6 @@
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,9 +134,7 @@ public class FutureTaskTest extends JSR166TestCase {
 
         try {
             assertSame(expected, f.get());
-        } catch (Throwable fail) { threadUnexpectedException(fail); }
-        try {
-            assertSame(expected, f.get(5L, SECONDS));
+            assertSame(expected, f.get(randomTimeout(), randomTimeUnit()));
         } catch (Throwable fail) { threadUnexpectedException(fail); }
     }
 
@@ -152,7 +149,7 @@ public class FutureTaskTest extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         try {
-            f.get(5L, SECONDS);
+            f.get(randomTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (CancellationException success) {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
@@ -178,7 +175,7 @@ public class FutureTaskTest extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         try {
-            f.get(5L, SECONDS);
+            f.get(randomTimeout(), randomTimeUnit());
             shouldThrow();
         } catch (ExecutionException success) {
             assertSame(t, success.getCause());
@@ -444,6 +441,7 @@ public class FutureTaskTest extends JSR166TestCase {
                         delay(LONG_DELAY_MS);
                         shouldThrow();
                     } catch (InterruptedException success) {}
+                    assertFalse(Thread.interrupted());
                 }});
 
         Thread t = newStartedThread(task);

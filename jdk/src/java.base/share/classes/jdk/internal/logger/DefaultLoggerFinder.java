@@ -25,15 +25,17 @@
 
 package jdk.internal.logger;
 
+import jdk.internal.misc.VM;
+
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Objects;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.ReferenceQueue;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
@@ -140,21 +142,17 @@ public class DefaultLoggerFinder extends LoggerFinder {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Boolean run() {
-                final ClassLoader moduleCL = m.getClassLoader();
-                if (moduleCL == null) return true;
-                ClassLoader cl = ClassLoader.getPlatformClassLoader();
-                while (cl != null && moduleCL != cl) {
-                    cl = cl.getParent();
-                }
                 // returns true if moduleCL is the platform class loader
                 // or one of its ancestors.
-                return moduleCL == cl;
+                return VM.isSystemDomainLoader(m.getClassLoader());
             }
         });
     }
 
     @Override
     public final Logger getLogger(String name,  Module module) {
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(module, "module");
         checkPermission();
         return demandLoggerFor(name, module);
     }

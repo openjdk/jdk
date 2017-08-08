@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,31 +36,27 @@ import javax.xml.transform.Source;
  * Each property varies in the level of support required by each implementation.
  * The level of support required is described in the 'Required' column.
  *
- *   <table border="2" rules="all" cellpadding="4">
+ *   <table class="striped">
+ *    <caption>Configuration Parameters</caption>
  *    <thead>
  *      <tr>
- *        <th align="center" colspan="5">
- *          Configuration parameters
- *        </th>
+ *        <th scope="col">Property Name</th>
+ *        <th scope="col">Behavior</th>
+ *        <th scope="col">Return type</th>
+ *        <th scope="col">Default Value</th>
+ *        <th scope="col">Required</th>
  *      </tr>
  *    </thead>
  *    <tbody>
- *      <tr>
- *        <th>Property Name</th>
- *        <th>Behavior</th>
- *        <th>Return type</th>
- *        <th>Default Value</th>
- *        <th>Required</th>
- *      </tr>
- * <tr><td>javax.xml.stream.isValidating</td><td>Turns on/off implementation specific DTD validation</td><td>Boolean</td><td>False</td><td>No</td></tr>
- * <tr><td>javax.xml.stream.isNamespaceAware</td><td>Turns on/off namespace processing for XML 1.0 support</td><td>Boolean</td><td>True</td><td>True (required) / False (optional)</td></tr>
- * <tr><td>javax.xml.stream.isCoalescing</td><td>Requires the processor to coalesce adjacent character data</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
- * <tr><td>javax.xml.stream.isReplacingEntityReferences</td><td>replace internal entity references with their replacement text and report them as characters</td><td>Boolean</td><td>True</td><td>Yes</td></tr>
- *<tr><td>javax.xml.stream.isSupportingExternalEntities</td><td>Resolve external parsed entities</td><td>Boolean</td><td>Unspecified</td><td>Yes</td></tr>
- *<tr><td>javax.xml.stream.supportDTD</td><td>Use this property to request processors that do not support DTDs</td><td>Boolean</td><td>True</td><td>Yes</td></tr>
- *<tr><td>javax.xml.stream.reporter</td><td>sets/gets the impl of the XMLReporter </td><td>javax.xml.stream.XMLReporter</td><td>Null</td><td>Yes</td></tr>
- *<tr><td>javax.xml.stream.resolver</td><td>sets/gets the impl of the XMLResolver interface</td><td>javax.xml.stream.XMLResolver</td><td>Null</td><td>Yes</td></tr>
- *<tr><td>javax.xml.stream.allocator</td><td>sets/gets the impl of the XMLEventAllocator interface</td><td>javax.xml.stream.util.XMLEventAllocator</td><td>Null</td><td>Yes</td></tr>
+ * <tr><th scope="row">javax.xml.stream.isValidating</th><td>Turns on/off implementation specific DTD validation</td><td>Boolean</td><td>False</td><td>No</td></tr>
+ * <tr><th scope="row">javax.xml.stream.isNamespaceAware</th><td>Turns on/off namespace processing for XML 1.0 support</td><td>Boolean</td><td>True</td><td>True (required) / False (optional)</td></tr>
+ * <tr><th scope="row">javax.xml.stream.isCoalescing</th><td>Requires the processor to coalesce adjacent character data</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
+ * <tr><th scope="row">javax.xml.stream.isReplacingEntityReferences</th><td>replace internal entity references with their replacement text and report them as characters</td><td>Boolean</td><td>True</td><td>Yes</td></tr>
+ *<tr><th scope="row">javax.xml.stream.isSupportingExternalEntities</th><td>Resolve external parsed entities</td><td>Boolean</td><td>Unspecified</td><td>Yes</td></tr>
+ *<tr><th scope="row">javax.xml.stream.supportDTD</th><td>Use this property to request processors that do not support DTDs</td><td>Boolean</td><td>True</td><td>Yes</td></tr>
+ *<tr><th scope="row">javax.xml.stream.reporter</th><td>sets/gets the impl of the XMLReporter </td><td>javax.xml.stream.XMLReporter</td><td>Null</td><td>Yes</td></tr>
+ *<tr><th scope="row">javax.xml.stream.resolver</th><td>sets/gets the impl of the XMLResolver interface</td><td>javax.xml.stream.XMLResolver</td><td>Null</td><td>Yes</td></tr>
+ *<tr><th scope="row">javax.xml.stream.allocator</th><td>sets/gets the impl of the XMLEventAllocator interface</td><td>javax.xml.stream.util.XMLEventAllocator</td><td>Null</td><td>Yes</td></tr>
  *    </tbody>
  *  </table>
  *
@@ -213,16 +209,11 @@ public abstract class XMLInputFactory {
    * <p>
    *   Once an application has obtained a reference to a XMLInputFactory it
    *   can use the factory to configure and obtain stream instances.
-   * <p>
-   *   Note that this is a new method that replaces the deprecated newInstance() method.
-   *     No changes in behavior are defined by this replacement method relative to
-   *     the deprecated method.
    *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
    *   the implementation is not available or cannot be instantiated.
    */
-  @Deprecated(since="7")
   public static XMLInputFactory newFactory()
     throws FactoryConfigurationError
   {
@@ -244,7 +235,7 @@ public abstract class XMLInputFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)} method
    *              defines no changes in behavior.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLInputFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {

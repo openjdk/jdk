@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,20 @@ import org.xml.sax.InputSource;
 
 /**
  * {@code XPathExpression} provides access to compiled XPath expressions.
+ * The XPath evaluation is affected by the factors described in the following table.
  *
- * <a name="XPathExpression-evaluation"></a>
- * <table border="1" cellpadding="2">
+ * <a id="XPathExpression-evaluation"></a>
+ * <table class="striped">
+ *    <caption>Evaluation of XPath Expressions</caption>
  *    <thead>
  *      <tr>
- *        <th colspan="2">Evaluation of XPath Expressions.</th>
+ *        <th scope="col">Factor</th>
+ *        <th scope="col">Behavior</th>
  *      </tr>
  *    </thead>
+ *    <tbody>
  *    <tr>
- *      <td>context</td>
+ *      <th scope="row">context</th>
  *      <td>
  *        The type of the context is implementation-dependent. If the value is
  *        null, the operation must have no dependency on the context, otherwise
@@ -50,7 +54,7 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>variables</td>
+ *      <th scope="row">variables</th>
  *      <td>
  *        If the expression contains a variable reference, its value will be found through the {@link XPathVariableResolver}.
  *        An {@link XPathExpressionException} is raised if the variable resolver is undefined or
@@ -59,7 +63,7 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>functions</td>
+ *      <th scope="row">functions</th>
  *      <td>
  *        If the expression contains a function reference, the function will be found through the {@link XPathFunctionResolver}.
  *        An {@link XPathExpressionException} is raised if the function resolver is undefined or
@@ -67,13 +71,13 @@ import org.xml.sax.InputSource;
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>QNames</td>
+ *      <th scope="row">QNames</th>
  *      <td>
  *        QNames in the expression are resolved against the XPath namespace context.
  *      </td>
  *    </tr>
  *    <tr>
- *      <td>result</td>
+ *      <th scope="row">result</th>
  *      <td>
  *        This result of evaluating an expression is converted to an instance of the desired return type.
  *        Valid return types are defined in {@link XPathConstants}.

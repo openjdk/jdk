@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedSet;
@@ -87,7 +86,7 @@ import java.util.Spliterator;
  * distinguished from the absence of elements.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author Doug Lea
@@ -492,9 +491,9 @@ public class ConcurrentSkipListSet<E>
      * encounter order that is ascending order.  Overriding implementations
      * should document the reporting of additional characteristic values.
      *
-     * <p>The spliterator's comparator (see
-     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
-     * the set's comparator (see {@link #comparator()}) is {@code null}.
+     * <p>The {@linkplain Spliterator#getComparator() spliterator's comparator}
+     * is {@code null} if the {@linkplain #comparator() set's comparator}
+     * is {@code null}.
      * Otherwise, the spliterator's comparator is the same as or imposes the
      * same total ordering as the set's comparator.
      *

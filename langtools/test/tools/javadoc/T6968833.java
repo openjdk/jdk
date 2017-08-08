@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6968833
  * @summary javadoc reports error but still returns 0
  * @modules jdk.javadoc
+ * @library lib
+ * @build ToyDoclet
+ * @run main T6968833
  */
 
 import java.io.*;
@@ -36,10 +39,14 @@ public class T6968833 {
     }
 
     void run() throws IOException {
+        String testClasses = System.getProperty("test.classes");
+
         File srcDir = new File("src");
-        // following file causes error: No public or protected classes found to document.
+        // following file cause a doclet error, as there is nothing to document
         File f = writeFile(srcDir, "Foo.java", "class Foo { }");
-        String[] args = { f.getPath() };
+        String[] args = { "-docletpath", testClasses,
+                "-doclet", "ToyDoclet",
+                f.getPath() };
         int rc = com.sun.tools.javadoc.Main.execute(args);
         if (rc == 0)
             throw new Error("Unexpected exit from javadoc: " + rc);

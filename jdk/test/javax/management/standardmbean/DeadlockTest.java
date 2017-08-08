@@ -26,7 +26,7 @@
  * @bug 6331746
  * @summary Test a deadlock and will be blocked forever if the deadlock is present.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run main DeadlockTest
  */
 

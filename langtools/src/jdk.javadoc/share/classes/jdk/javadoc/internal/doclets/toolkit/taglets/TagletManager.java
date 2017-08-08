@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -39,7 +40,9 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.doclet.Doclet;
+import jdk.javadoc.doclet.DocletEnvironment;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 
@@ -125,6 +128,9 @@ public class TagletManager {
      */
     private List<Taglet> serializedFormTags;
 
+    private final DocletEnvironment docEnv;
+    private final Doclet doclet;
+
     private final Messages messages;
     private final Resources resources;
 
@@ -184,11 +190,11 @@ public class TagletManager {
      * @param showversion true if we want to use @version tags.
      * @param showauthor true if we want to use @author tags.
      * @param javafx indicates whether javafx is active.
-     * @param message the message retriever to print warnings.
+     * @param configuration the configuration for this taglet manager
      */
     public TagletManager(boolean nosince, boolean showversion,
                          boolean showauthor, boolean javafx,
-                         Configuration configuration) {
+                         BaseConfiguration configuration) {
         overridenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
@@ -199,6 +205,8 @@ public class TagletManager {
         this.showversion = showversion;
         this.showauthor = showauthor;
         this.javafx = javafx;
+        this.docEnv = configuration.docEnv;
+        this.doclet = configuration.doclet;
         this.messages = configuration.getMessages();
         this.resources = configuration.getResources();
         initStandardTaglets();
@@ -236,7 +244,7 @@ public class TagletManager {
      */
     public void addCustomTag(String classname, JavaFileManager fileManager, String tagletPath) {
         try {
-            ClassLoader tagClassLoader = null;
+            ClassLoader tagClassLoader;
             if (!fileManager.hasLocation(TAGLET_PATH)) {
                 List<File> paths = new ArrayList<>();
                 if (tagletPath != null) {
@@ -249,9 +257,11 @@ public class TagletManager {
                 }
             }
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
-            Class<?> customTagClass = tagClassLoader.loadClass(classname);
-            Object instance = customTagClass.getConstructor().newInstance();
-            Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.taglet.Taglet)instance);
+            Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
+                    tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
+            jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
+            instance.init(docEnv, doclet);
+            Taglet newLegacy = new UserTaglet(instance);
             String tname = newLegacy.getName();
             Taglet t = customTags.get(tname);
             if (t != null) {
@@ -315,8 +325,8 @@ public class TagletManager {
     private void checkTaglet(Object taglet) {
         if (taglet instanceof Taglet) {
             checkTagName(((Taglet) taglet).getName());
-        } else if (taglet instanceof jdk.javadoc.doclet.taglet.Taglet) {
-            jdk.javadoc.doclet.taglet.Taglet legacyTaglet = (jdk.javadoc.doclet.taglet.Taglet) taglet;
+        } else if (taglet instanceof jdk.javadoc.doclet.Taglet) {
+            jdk.javadoc.doclet.Taglet legacyTaglet = (jdk.javadoc.doclet.Taglet) taglet;
             customTags.remove(legacyTaglet.getName());
             customTags.put(legacyTaglet.getName(), new UserTaglet(legacyTaglet));
             checkTagName(legacyTaglet.getName());

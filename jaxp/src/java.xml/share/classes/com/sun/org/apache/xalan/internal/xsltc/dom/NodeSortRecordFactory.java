@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: NodeSortRecordFactory.java,v 1.2.4.1 2005/09/06 09:53:40 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
@@ -29,6 +26,7 @@ import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.LocaleUtility;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.text.Collator;
 
@@ -57,6 +55,7 @@ public class NodeSortRecordFactory {
      * @deprecated This constructor is no longer used in generated code.  It
      *             exists only for backwards compatibility.
      */
+     @Deprecated
      public NodeSortRecordFactory(DOM dom, String className, Translet translet,
                  String order[], String type[])
          throws TransletException
@@ -150,10 +149,17 @@ public class NodeSortRecordFactory {
                SecurityException,
                TransletException {
 
-        final NodeSortRecord sortRecord =
-            (NodeSortRecord)_class.newInstance();
-        sortRecord.initialize(node, last, _dom, _sortSettings);
-        return sortRecord;
+        try {
+            final NodeSortRecord sortRecord;
+            //NodeSortRecord subclasses are generated with a public empty constructor
+            // refer to com.sun.org.apache.xalan.internal.xsltc.compiler.Sort::compileInit
+            sortRecord = (NodeSortRecord)_class.getConstructor().newInstance();
+            sortRecord.initialize(node, last, _dom, _sortSettings);
+            return sortRecord;
+        } catch (NoSuchMethodException | IllegalArgumentException |
+                InvocationTargetException ex) {
+            throw new InstantiationException(ex.getMessage());
+        }
     }
 
     public String getClassName() {

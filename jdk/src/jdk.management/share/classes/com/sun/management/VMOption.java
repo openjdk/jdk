@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ import javax.management.openmbean.CompositeData;
  * object was constructed.  The value of the VM option
  * may be changed after the {@code VMOption} object was constructed,
  *
- * @see <a href="{@docRoot}/../../../../technotes/guides/vm/index.html">
- *         Java Virtual Machine</a>
  * @author Mandy Chung
  * @since 1.6
  */
@@ -192,27 +190,31 @@ public class VMOption {
      * must contain the following attributes:
      *
      * <blockquote>
-     * <table border>
+     * <table class="striped"><caption style="display:none">description</caption>
+     * <thead>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th scope="col" style="text-align:left">Attribute Name</th>
+     *   <th scope="col" style="text-align:left">Type</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td>name</td>
+     *   <th scope="row">name</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>value</td>
+     *   <th scope="row">value</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>origin</td>
+     *   <th scope="row">origin</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>writeable</td>
+     *   <th scope="row">writeable</th>
      *   <td>{@code java.lang.Boolean}</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *
