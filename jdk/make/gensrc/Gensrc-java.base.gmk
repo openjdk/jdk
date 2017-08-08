@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,16 @@ $(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
         sun/security/util/Resources_zh_TW.java)))
 
 GENSRC_JAVA_BASE += $(COPY_ZH_HK)
+
+################################################################################
+
+GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
+
+$(GENSRC_LSREQUIVMAPS): $(JDK_TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
+	$(call MakeDir, $(@D))
+	$(TOOL_GENERATELSREQUIVMAPS) $< $@
+
+GENSRC_JAVA_BASE += $(GENSRC_LSREQUIVMAPS)
 
 ################################################################################
 

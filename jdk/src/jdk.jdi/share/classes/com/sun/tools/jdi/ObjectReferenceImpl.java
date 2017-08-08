@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,31 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassType;
+import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.InvocationException;
+import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Type;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class ObjectReferenceImpl extends ValueImpl
-             implements ObjectReference, VMListener {
-
+             implements ObjectReference, VMListener
+{
     protected long ref;
     private ReferenceType type = null;
     private int gcDisableCount = 0;
@@ -161,7 +178,7 @@ public class ObjectReferenceImpl extends ValueImpl
     }
 
     public Value getValue(Field sig) {
-        List<Field> list = new ArrayList<Field>(1);
+        List<Field> list = new ArrayList<>(1);
         list.add(sig);
         Map<Field, Value> map = getValues(list);
         return map.get(sig);
@@ -170,12 +187,12 @@ public class ObjectReferenceImpl extends ValueImpl
     public Map<Field,Value> getValues(List<? extends Field> theFields) {
         validateMirrors(theFields);
 
-        List<Field> staticFields = new ArrayList<Field>(0);
+        List<Field> staticFields = new ArrayList<>(0);
         int size = theFields.size();
-        List<Field> instanceFields = new ArrayList<Field>(size);
+        List<Field> instanceFields = new ArrayList<>(size);
 
-        for (int i=0; i<size; i++) {
-            Field field = (Field)theFields.get(i);
+        for (int i = 0; i < size; i++) {
+            Field field = theFields.get(i);
 
             // Make sure the field is valid
             ((ReferenceTypeImpl)referenceType()).validateFieldAccess(field);
@@ -299,9 +316,6 @@ public class ObjectReferenceImpl extends ValueImpl
     void validateClassMethodInvocation(Method method, int options)
                                          throws InvalidTypeException,
                                          InvocationException {
-
-        ClassTypeImpl clazz = invokableReferenceType(method);
-
         /*
          * Method must be a non-constructor
          */
@@ -317,30 +331,6 @@ public class ObjectReferenceImpl extends ValueImpl
                 throw new IllegalArgumentException("Abstract method");
             }
         }
-
-        /*
-         * Get the class containing the method that will be invoked.
-         * This class is needed only for proper validation of the
-         * method argument types.
-         */
-        ClassTypeImpl invokedClass;
-        if (isNonVirtual(options)) {
-            // No overrides in non-virtual invokes
-            invokedClass = clazz;
-        } else {
-            /*
-             * For virtual invokes, find any override of the method.
-             * Since we are looking for a method with a real body, we
-             * don't need to bother with interfaces/abstract methods.
-             */
-            Method invoker = clazz.concreteMethodByName(method.name(),
-                                                        method.signature());
-            //  invoker is supposed to be non-null under normal circumstances
-            invokedClass = (ClassTypeImpl)invoker.declaringType();
-        }
-        /* The above code is left over from previous versions.
-         * We haven't had time to divine the intent.  jjh, 7/31/2003
-         */
     }
 
     void validateIfaceMethodInvocation(Method method, int options)
@@ -619,7 +609,6 @@ public class ObjectReferenceImpl extends ValueImpl
                                            " to " + destTypeName);
         }
     }
-
 
     public String toString() {
         return "instance of " + referenceType().name() + "(id=" + uniqueID() + ")";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * {@link java.util.concurrent.Executor} object. If none is provided a default
  * implementation is used.
  * <p>
- * <a name="mapping_description"></a>
+ * <a id="mapping_description"></a>
  * <b>Mapping request URIs to HttpContext paths</b><p>
  * When a HTTP request is received,
  * the appropriate HttpContext (and handler) is located by finding the context
@@ -59,21 +59,29 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * Paths are matched literally, which means that the strings are compared
  * case sensitively, and with no conversion to or from any encoded forms.
  * For example. Given a HttpServer with the following HttpContexts configured.
- * <table>
- * <tr><td><i>Context</i></td><td><i>Context path</i></td></tr>
- * <tr><td>ctx1</td><td>"/"</td></tr>
- * <tr><td>ctx2</td><td>"/apps/"</td></tr>
- * <tr><td>ctx3</td><td>"/apps/foo/"</td></tr>
+ * <table class="striped"><caption style="display:none">description</caption>
+ * <thead>
+ * <tr><th scope="col"><i>Context</i></th><th scope="col"><i>Context path</i></th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">ctx1</th><td>"/"</td></tr>
+ * <tr><th scope="row">ctx2</th><td>"/apps/"</td></tr>
+ * <tr><th scope="row">ctx3</th><td>"/apps/foo/"</td></tr>
+ * </tbody>
  * </table>
  * <p>
  * the following table shows some request URIs and which, if any context they would
  * match with.
- * <table>
- * <tr><td><i>Request URI</i></td><td><i>Matches context</i></td></tr>
- * <tr><td>"http://foo.com/apps/foo/bar"</td><td>ctx3</td></tr>
- * <tr><td>"http://foo.com/apps/Foo/bar"</td><td>no match, wrong case</td></tr>
- * <tr><td>"http://foo.com/apps/app1"</td><td>ctx2</td></tr>
- * <tr><td>"http://foo.com/foo"</td><td>ctx1</td></tr>
+ * <table class="striped"><caption style="display:none">description</caption>
+ * <thead>
+ * <tr><th scope="col"><i>Request URI</i></th><th scope="col"><i>Matches context</i></th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">"http://foo.com/apps/foo/bar"</th><td>ctx3</td></tr>
+ * <tr><th scope="row">"http://foo.com/apps/Foo/bar"</th><td>no match, wrong case</td></tr>
+ * <tr><th scope="row">"http://foo.com/apps/app1"</th><td>ctx2</td></tr>
+ * <tr><th scope="row">"http://foo.com/foo"</th><td>ctx1</td></tr>
+ * </tbody>
  * </table>
  * <p>
  * <b>Note about socket backlogs</b><p>

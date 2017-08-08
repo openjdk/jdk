@@ -80,7 +80,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -1066,7 +1066,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Returns an empty spliterator in which calls to
-     * {@link java.util.Spliterator#trySplit()} always return {@code null}.
+     * {@link Spliterator#trySplit() trySplit} always return {@code null}.
      *
      * @return an empty spliterator
      * @since 1.8

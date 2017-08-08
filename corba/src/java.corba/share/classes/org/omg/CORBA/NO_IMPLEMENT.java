@@ -36,8 +36,8 @@ package org.omg.CORBA;
  * what caused the exception, and a completion status. It may also contain
  * a string describing the exception.
  * <P>
- * See the section <A href="../../../../technotes/guides/idl/jidlExceptions.html#minorcodemeanings">Minor
- * Code Meanings</A> to see the minor codes for this exception.
+ * See the section {extLink jidlexception_minorcodes Minor Code Meanings}
+ * to see the minor codes for this exception.
  *
  * @since       JDK1.2
  */

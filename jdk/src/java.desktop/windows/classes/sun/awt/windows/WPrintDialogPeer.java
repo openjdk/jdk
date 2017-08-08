@@ -135,6 +135,7 @@ class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
     void disable() {}
     @Override
     public void reshape(int x, int y, int width, int height) {}
+    @SuppressWarnings("deprecation")
     public boolean handleEvent(Event e) { return false; }
     @Override
     public void setForeground(Color c) {}

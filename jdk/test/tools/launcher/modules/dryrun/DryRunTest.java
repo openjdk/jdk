@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 /**
  * @test
  * @bug 8159596
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
- * @build DryRunTest CompilerUtils jdk.testlibrary.ProcessTools
+ * @build DryRunTest jdk.testlibrary.ProcessTools
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng DryRunTest
  * @summary Test java --dry-run
  */
@@ -39,12 +40,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.spi.ToolProvider;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.ProcessTools;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class DryRunTest {
@@ -167,22 +168,6 @@ public class DryRunTest {
         // test main method with and without --add-modules mm
         int exitValue = exec("--module-path", LIBS_DIR.toString(),
                              "-m", mid);
-        assertTrue(exitValue != 0);
-
-        exitValue = exec("--module-path", LIBS_DIR.toString(),
-                         "--add-modules", M_MODULE,
-                         "-m", mid);
-        assertTrue(exitValue == 0);
-
-        // test dry run with and without --add-modules m
-        // no resolution failure
-        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
-                         "-m", mid);
-        assertTrue(exitValue == 0);
-
-        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
-                         "--add-modules", M_MODULE,
-                         "-m", mid);
         assertTrue(exitValue == 0);
     }
 

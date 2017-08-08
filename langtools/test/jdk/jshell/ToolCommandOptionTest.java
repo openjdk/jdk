@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637 8170368 8172102 8172179
+ * @bug 8157395 8157393 8157517 8158738 8167128 8163840 8167637 8170368 8172102 8172179 8177847
  * @summary Tests of jshell comand options, and undoing operations
  * @modules jdk.jshell/jdk.internal.jshell.tool
  *          jdk.compiler/com.sun.tools.javac.api
@@ -35,6 +35,7 @@
 import java.nio.file.Path;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 @Test
 public class ToolCommandOptionTest extends ReplToolTesting {
@@ -527,6 +528,20 @@ public class ToolCommandOptionTest extends ReplToolTesting {
                         (s) -> assertFalse(s.contains("kmode"), "Didn't delete kmode: " + s)),
                 (a) -> assertCommandCheckOutput(a, "/set feedback",
                         (s) -> assertFalse(s.contains("tmode"), "Didn't delete tmode: " + s))
+        );
+    }
+
+    public void retainModeDeleteLocalTest() {
+        test(
+                (a) -> assertCommand(a, "/set mode rmdlt normal -command",
+                        "|  Created new feedback mode: rmdlt"),
+                (a) -> assertCommand(a, "/set mode rmdlt -delete -retain ",
+                        ""),
+                (a) -> assertCommandCheckOutput(a, "/set feedback",
+                        (s) -> {
+                            assertTrue(s.contains("normal"), "Expected normal mode: " + s);
+                            assertFalse(s.contains("rmdlt"), "Didn't delete rmdlt: " + s);
+                        })
         );
     }
 

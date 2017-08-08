@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@
  * @modules java.base/jdk.internal.misc
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm compiler.jvmci.compilerToVM.DebugOutputTest
+ * @run driver compiler.jvmci.compilerToVM.DebugOutputTest
  */
-
- // as soon as CODETOOLS-7901589 fixed, '@run main/othervm' should be replaced w/ '@run driver'
 
 package compiler.jvmci.compilerToVM;
 
@@ -42,8 +40,11 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 
 import java.util.Arrays;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class DebugOutputTest {
+    private static final String VM_CI_MODULE = "jdk.internal.vm.ci";
     public static void main(String[] args) {
         new DebugOutputTest().test();
     }
@@ -53,10 +54,18 @@ public class DebugOutputTest {
             System.out.println(testCase);
             OutputAnalyzer oa;
             try {
-                oa = ProcessTools.executeTestJvmAllArgs(
+                Path patch = Paths.get(System.getProperty("test.patch.path"));
+                Path jvmciPath = patch.resolve(VM_CI_MODULE).toAbsolutePath();
+                if (!jvmciPath.toFile().exists()) {
+                    throw new Error("TESTBUG: patch for " + VM_CI_MODULE + " : "
+                            + jvmciPath.toString() + " does not exist");
+                }
+                oa = ProcessTools.executeTestJvm(
                         "-XX:+UnlockExperimentalVMOptions",
                         "-XX:+EnableJVMCI",
-                        "-Xbootclasspath/a:.",
+                        "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                        "--add-exports", "jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED",
+                        "--patch-module", VM_CI_MODULE + "=" + jvmciPath.toString(),
                         DebugOutputTest.Worker.class.getName(),
                         testCase.name());
                } catch (Throwable e) {

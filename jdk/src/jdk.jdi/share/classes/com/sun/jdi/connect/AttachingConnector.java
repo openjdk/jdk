@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.jdi.connect;
 
-import com.sun.jdi.VirtualMachine;
-import java.util.Map;
 import java.io.IOException;
+import java.util.Map;
+
+import com.sun.jdi.VirtualMachine;
 
 /**
  * A connector which attaches to a previously running target VM.
@@ -36,6 +37,7 @@ import java.io.IOException;
  * @since  1.3
  */
 public interface AttachingConnector extends Connector {
+
     /**
      * Attaches to a running application and returns a
      * mirror of its VM.

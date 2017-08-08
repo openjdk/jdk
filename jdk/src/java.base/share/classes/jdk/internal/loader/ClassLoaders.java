@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package jdk.internal.loader;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Module;
 import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
@@ -38,7 +36,6 @@ import java.util.jar.Manifest;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
-
 
 /**
  * Creates and provides access to the built-in platform and application class
@@ -62,23 +59,30 @@ public class ClassLoaders {
      */
     static {
 
-        // -Xbootclasspth/a or -javaagent Boot-Class-Path
+        // -Xbootclasspath/a or -javaagent with Boot-Class-Path attribute
         URLClassPath bcp = null;
         String s = VM.getSavedProperty("jdk.boot.class.path.append");
         if (s != null && s.length() > 0)
-            bcp = toURLClassPath(s);
+            bcp = new URLClassPath(s, true);
 
         // we have a class path if -cp is specified or -m is not specified.
         // If neither is specified then default to -cp <working directory>
         // If -cp is not specified and -m is specified, the value of
         // java.class.path is an empty string, then no class path.
-        URLClassPath ucp = new URLClassPath(new URL[0]);
         String mainMid = System.getProperty("jdk.module.main");
         String cp = System.getProperty("java.class.path");
-        if (cp == null)
-            cp = "";
-        if (mainMid == null || cp.length() > 0)
-            addClassPathToUCP(cp, ucp);
+        if (mainMid == null) {
+            // no main module specified so class path required
+            if (cp == null) {
+                cp = "";
+            }
+        } else {
+            // main module specified, ignore empty class path
+            if (cp != null && cp.length() == 0) {
+                cp = null;
+            }
+        }
+        URLClassPath ucp = new URLClassPath(cp, false);
 
         // create the class loaders
         BOOT_LOADER = new BootClassLoader(bcp);
@@ -199,7 +203,7 @@ public class ClassLoaders {
          * @see java.lang.instrument.Instrumentation#appendToSystemClassLoaderSearch
          */
         void appendToClassPathForInstrumentation(String path) {
-            addClassPathToUCP(path, ucp);
+            ucp.addFile(path);
         }
 
         /**
@@ -221,47 +225,20 @@ public class ClassLoaders {
     }
 
     /**
-     * Returns a {@code URLClassPath} of file URLs to each of the elements in
-     * the given class path.
-     */
-    private static URLClassPath toURLClassPath(String cp) {
-        URLClassPath ucp = new URLClassPath(new URL[0]);
-        addClassPathToUCP(cp, ucp);
-        return ucp;
-    }
-
-    /**
-     * Converts the elements in the given class path to file URLs and adds
-     * them to the given URLClassPath.
-     */
-    private static void addClassPathToUCP(String cp, URLClassPath ucp) {
-        int off = 0;
-        int next;
-        while ((next = cp.indexOf(File.pathSeparator, off)) != -1) {
-            URL url = toFileURL(cp.substring(off, next));
-            if (url != null)
-                ucp.addURL(url);
-            off = next + 1;
-        }
-
-        // remaining
-        URL url = toFileURL(cp.substring(off));
-        if (url != null)
-            ucp.addURL(url);
-    }
-
-    /**
      * Attempts to convert the given string to a file URL.
      *
      * @apiNote This is called by the VM
      */
+    @Deprecated
     private static URL toFileURL(String s) {
         try {
-            return Paths.get(s).toRealPath().toUri().toURL();
+            // Use an intermediate File object to construct a URI/URL without
+            // authority component as URLClassPath can't handle URLs with a UNC
+            // server name in the authority component.
+            return Paths.get(s).toRealPath().toFile().toURI().toURL();
         } catch (InvalidPathException | IOException ignore) {
             // malformed path string or class path element does not exist
             return null;
         }
     }
-
 }

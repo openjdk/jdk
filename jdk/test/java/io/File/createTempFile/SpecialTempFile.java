@@ -30,6 +30,9 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class SpecialTempFile {
 
@@ -45,21 +48,21 @@ public class SpecialTempFile {
         final String exceptionMsg = "Unable to create temporary file";
         String[] dirs = { null, "." };
 
+        Path testPath = Paths.get(System.getProperty("test.dir", "."));
         for (int i = 0; i < prefix.length; i++) {
             boolean exceptionThrown = false;
             File f = null;
 
             for (String dir: dirs) {
+                Path tempDir = Files.createTempDirectory(testPath, dir);
                 System.out.println("In test " + name +
                                    ", creating temp file with prefix, " +
                                    prefix[i] + ", suffix, " + suffix[i] +
-                                   ", in dir, " + dir);
+                                   ", in dir, " + tempDir);
 
                 try {
-                    if (dir == null || dir.isEmpty())
-                        f = File.createTempFile(prefix[i], suffix[i]);
-                    else
-                        f = File.createTempFile(prefix[i], suffix[i], new File(dir));
+                    f = File.createTempFile(prefix[i], suffix[i],
+                        tempDir.toFile());
                 } catch (IOException e) {
                     if (exceptionExpected) {
                         if (e.getMessage().startsWith(exceptionMsg))
@@ -81,10 +84,6 @@ public class SpecialTempFile {
     public static void main(String[] args) throws Exception {
         // Common test
         final String name = "SpecialTempFile";
-        File f = new File(System.getProperty("java.io.tmpdir"), name);
-        if (!f.exists()) {
-            f.createNewFile();
-        }
         String[] nulPre = { name + "\u0000" };
         String[] nulSuf = { ".test" };
         test("NulName", nulPre, nulSuf, true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,8 @@ public class ManifestEntryVerifier {
         /* get the headers from the manifest for this entry */
         /* if there aren't any, we can't verify any digests for this entry */
 
+        skip = false;
+
         Attributes attr = man.getAttributes(name);
         if (attr == null) {
             // ugh. we should be able to remove this at some point.
@@ -141,7 +143,6 @@ public class ManifestEntryVerifier {
                 }
 
                 if (digest != null) {
-                    skip = false;
                     digest.reset();
                     digests.add(digest);
                     manifestHashes.add(
@@ -195,6 +196,10 @@ public class ManifestEntryVerifier {
     {
         if (skip) {
             return null;
+        }
+
+        if (digests.isEmpty()) {
+            throw new SecurityException("digest missing for " + name);
         }
 
         if (signers != null)

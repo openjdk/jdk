@@ -43,7 +43,6 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ConcurrentLinkedDequeTest extends JSR166TestCase {
 
@@ -67,7 +66,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
      * Returns a new deque of given size containing consecutive
      * Integers 0 ... n - 1.
      */
-    private ConcurrentLinkedDeque<Integer> populatedDeque(int n) {
+    private static ConcurrentLinkedDeque<Integer> populatedDeque(int n) {
         ConcurrentLinkedDeque<Integer> q = new ConcurrentLinkedDeque<>();
         assertTrue(q.isEmpty());
         for (int i = 0; i < n; ++i)
@@ -340,7 +339,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     }
 
     /**
-     * addAll(this) throws IAE
+     * addAll(this) throws IllegalArgumentException
      */
     public void testAddAllSelf() {
         ConcurrentLinkedDeque q = populatedDeque(SIZE);

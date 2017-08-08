@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,24 +72,6 @@ strictfp class ConstFold {
     private static long longValue(Object x) { return ((Number)x).longValue(); }
     private static float floatValue(Object x) { return ((Number)x).floatValue(); }
     private static double doubleValue(Object x) { return ((Number)x).doubleValue(); }
-
-    /** Fold binary or unary operation, returning constant type reflecting the
-     *  operations result. Return null if fold failed due to an
-     *  arithmetic exception.
-     *  @param opcode    The operation's opcode instruction (usually a byte code),
-     *                   as entered by class Symtab.
-     *  @param argtypes  The operation's argument types (a list of length 1 or 2).
-     *                   Argument types are assumed to have non-null constValue's.
-     */
-    Type fold(int opcode, List<Type> argtypes) {
-        int argCount = argtypes.length();
-        if (argCount == 1)
-            return fold1(opcode, argtypes.head);
-        else if (argCount == 2)
-            return fold2(opcode, argtypes.head, argtypes.tail.head);
-        else
-            throw new AssertionError();
-    }
 
     /** Fold unary operation.
      *  @param opcode    The operation's opcode instruction (usually a byte code),
