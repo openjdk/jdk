@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,36 +106,39 @@ import javax.management.DynamicMBean;
  * The additional meta-data provided for an operation associated with a
  * diagnostic command are described in the table below:
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped"><caption style="display:none">description</caption>
+ *   <thead>
  *   <tr>
- *     <th>Name</th><th>Type</th><th>Description</th>
+ *     <th scope="col">Name</th><th scope="col">Type</th><th scope="col">Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
- *     <td>dcmd.name</td><td>String</td>
+ *     <th scope="row">dcmd.name</th><td>String</td>
  *     <td>The original diagnostic command name (not the operation name)</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.description</td><td>String</td>
+ *     <th scope="row">dcmd.description</th><td>String</td>
  *     <td>The diagnostic command description</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.help</td><td>String</td>
+ *     <th scope="row">dcmd.help</th><td>String</td>
  *     <td>The full help message for this diagnostic command (same output as
  *          the one produced by the 'help' command)</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.vmImpact</td><td>String</td>
+ *     <th scope="row">dcmd.vmImpact</th><td>String</td>
  *     <td>The impact of the diagnostic command,
  *      this value is the same as the one printed in the 'impact'
  *      section of the help message of the diagnostic command, and it
  *      is different from the getImpact() of the MBeanOperationInfo</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.enabled</td><td>boolean</td>
+ *     <th scope="row">dcmd.enabled</th><td>boolean</td>
  *     <td>True if the diagnostic command is enabled, false otherwise</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.permissionClass</td><td>String</td>
+ *     <th scope="row">dcmd.permissionClass</th><td>String</td>
  *     <td>Some diagnostic command might require a specific permission to be
  *          executed, in addition to the MBeanPermission to invoke their
  *          associated MBean operation. This field returns the fully qualified
@@ -143,22 +146,23 @@ import javax.management.DynamicMBean;
  *   </td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.permissionName</td><td>String</td>
+ *     <th scope="row">dcmd.permissionName</th><td>String</td>
  *     <td>The fist argument of the permission required to execute this
  *          diagnostic command or null if no permission is required</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.permissionAction</td><td>String</td>
+ *     <th scope="row">dcmd.permissionAction</th><td>String</td>
  *     <td>The second argument of the permission required to execute this
  *          diagnostic command or null if the permission constructor has only
  *          one argument (like the ManagementPermission) or if no permission
  *          is required</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arguments</td><td>Descriptor</td>
+ *     <th scope="row">dcmd.arguments</th><td>Descriptor</td>
  *     <td>A Descriptor instance containing the descriptions of options and
  *          arguments supported by the diagnostic command (see below)</td>
  *   </tr>
+ *   </tbody>
  * </table>
  *
  * <p>The description of parameters (options or arguments) of a diagnostic
@@ -167,45 +171,49 @@ import javax.management.DynamicMBean;
  * a Descriptor instance. The fields provided in this second Descriptor
  * instance are described in the table below:
  *
- * <table border="1" cellpadding="5">
+ * <table class="striped"><caption style="display:none">description</caption>
+ *   <thead>
  *   <tr>
- *     <th>Name</th><th>Type</th><th>Description</th>
+ *     <th scope="col">Name</th><th scope="col">Type</th><th scope="col">Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
- *     <td>dcmd.arg.name</td><td>String</td>
+ *     <th scope="row">dcmd.arg.name</th><td>String</td>
  *     <td>The name of the parameter</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arg.type</td><td>String</td>
+ *     <th scope="row">dcmd.arg.type</th><td>String</td>
  *     <td>The type of the parameter. The returned String is the name of a type
  *          recognized by the diagnostic command parser. These types are not
  *          Java types and are implementation dependent.
  *          </td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arg.description</td><td>String</td>
+ *     <th scope="row">dcmd.arg.description</th><td>String</td>
  *     <td>The parameter description</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arg.isMandatory</td><td>boolean</td>
+ *     <th scope="row">dcmd.arg.isMandatory</th><td>boolean</td>
  *     <td>True if the parameter is mandatory, false otherwise</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arg.isOption</td><td>boolean</td>
+ *     <th scope="row">dcmd.arg.isOption</th><td>boolean</td>
  *     <td>True if the parameter is an option, false if it is an argument</td>
  *   </tr>
  *   <tr>
- *     <td>dcmd.arg.isMultiple</td><td>boolean</td>
+ *     <th scope="row">dcmd.arg.isMultiple</th><td>boolean</td>
  *     <td>True if the parameter can be specified several times, false
  *          otherwise</td>
  *   </tr>
+ *   </tbody>
  * </table>
  *
  * <p>When the set of diagnostic commands currently supported by the Java
  * Virtual Machine is modified, the {@code DiagnosticCommandMBean} emits
  * a {@link javax.management.Notification} with a
  * {@linkplain javax.management.Notification#getType() type} of
- * <a href="{@docRoot}/../../../../api/javax/management/MBeanInfo.html#info-changed">
+ * <a href="{@docRoot}/javax/management/MBeanInfo.html#info-changed">
  * {@code "jmx.mbean.info.changed"}</a> and a
  * {@linkplain javax.management.Notification#getUserData() userData} that
  * is the new {@code MBeanInfo}.

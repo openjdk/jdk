@@ -23,8 +23,9 @@
 
 
 /* @test
-   @bug 6803681
-   @summary Test IBM1364
+ * @bug 6803681
+ * @summary Test IBM1364
+ * @modules jdk.charsets
  */
 
 import java.util.Arrays;

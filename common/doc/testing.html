@@ -34,13 +34,16 @@
 </nav>
 <h2 id="using-the-run-test-framework">Using the run-test framework</h2>
 <p>This new way of running tests is developer-centric. It assumes that you have built a jdk locally and want to test it. Running common test targets is simple, and more complex ad-hoc combination of tests is possible. The user interface is forgiving, and clearly report errors it cannot resolve.</p>
+<p>The main target &quot;run-test&quot; uses the jdk-image as the tested product. There is also an alternate target &quot;exploded-run-test&quot; that uses the exploded image instead. Not all tests will run successfully on the exploded image, but using this target can greatly improve rebuild times for certain workflows.</p>
 <p>Some example command-lines:</p>
 <pre><code>$ make run-test-tier1
 $ make run-test-jdk_lang JTREG=&quot;JOBS=8&quot;
 $ make run-test TEST=jdk_lang
 $ make run-test-only TEST=&quot;gtest:LogTagSet gtest:LogTagSetDescriptions&quot; GTEST=&quot;REPEAT=-1&quot;
 $ make run-test TEST=&quot;hotspot/test:hotspot_gc&quot; JTREG=&quot;JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug&quot;
-$ make run-test TEST=&quot;jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java&quot;</code></pre>
+$ make run-test TEST=&quot;jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java&quot;
+$ make exploded-run-test TEST=hotspot_tier1</code></pre>
+
 <h3 id="configuration">Configuration</h3>
 <p>To be able to run JTReg tests, <code>configure</code> needs to know where to find the JTReg test framework. If it is not picked up automatically by configure, use the <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to the JTReg framework. Note that this option should point to the JTReg home, i.e. the top directory, containing <code>lib/jtreg.jar</code> etc. (An alternative is to set the <code>JT_HOME</code> environment variable to point to the JTReg home before running <code>configure</code>.)</p>
 <h2 id="test-selection">Test selection</h2>

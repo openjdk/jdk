@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public interface CommandObject {
      *
      * @param verb The Command Verb this object refers to.
      * @param dh The DataHandler.
+     * @exception       IOException     for failures accessing data
      */
     public void setCommandContext(String verb, DataHandler dh)
                                                 throws IOException;

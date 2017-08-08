@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind.*;
-
 /**
  * The factory that returns HTML writers.
  *
@@ -59,8 +57,8 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind.*;
  */
 public class WriterFactoryImpl implements WriterFactory {
 
-    private final ConfigurationImpl configuration;
-    public WriterFactoryImpl(ConfigurationImpl configuration) {
+    private final HtmlConfiguration configuration;
+    public WriterFactoryImpl(HtmlConfiguration configuration) {
         this.configuration = configuration;
     }
 

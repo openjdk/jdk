@@ -29,15 +29,15 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2014-10-31):
+# From Paul Eggert (2017-02-20):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
 # Unfortunately this book contains many errors and cites no sources.
 #
-# Gwillim Law writes that a good source
-# for recent time zone data is the International Air Transport
+# Many years ago Gwillim Law wrote that a good source
+# for time zone data was the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
 # of the IATA's data after 1990.  Except where otherwise noted,
@@ -54,39 +54,33 @@
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).
 #
+# European-style abbreviations are commonly used along the Mediterranean.
+# For sub-Saharan Africa abbreviations were less standardized.
 # Previous editions of this database used WAT, CAT, SAT, and EAT
-# for +0:00 through +3:00, respectively,
-# but Mark R V Murray reports that
-# 'SAST' is the official abbreviation for +2:00 in the country of South Africa,
-# 'CAT' is commonly used for +2:00 in countries north of South Africa, and
-# 'WAT' is probably the best name for +1:00, as the common phrase for
+# for UT +00 through +03, respectively,
+# but in 1997 Mark R V Murray reported that
+# 'SAST' is the official abbreviation for +02 in the country of South Africa,
+# 'CAT' is commonly used for +02 in countries north of South Africa, and
+# 'WAT' is probably the best name for +01, as the common phrase for
 # the area that includes Nigeria is "West Africa".
-# He has heard of "Western Sahara Time" for +0:00 but can find no reference.
 #
-# To make things confusing, 'WAT' seems to have been used for -1:00 long ago;
-# I'd guess that this was because people needed _some_ name for -1:00,
-# and at the time, far west Africa was the only major land area in -1:00.
-# This usage is now obsolete, as the last use of -1:00 on the African
-# mainland seems to have been 1976 in Western Sahara.
-#
-# To summarize, the following abbreviations seem to have some currency:
-#	-1:00	WAT	West Africa Time (no longer used)
-#	 0:00	GMT	Greenwich Mean Time
-#	 2:00	CAT	Central Africa Time
-#	 2:00	SAST	South Africa Standard Time
-# and Murray suggests the following abbreviation:
-#	 1:00	WAT	West Africa Time
-# I realize that this leads to 'WAT' being used for both -1:00 and 1:00
-# for times before 1976, but this is the best I can think of
-# until we get more information.
+# To summarize, the following abbreviations seemed to have some currency:
+#	 +00	GMT	Greenwich Mean Time
+#	 +02	CAT	Central Africa Time
+#	 +02	SAST	South Africa Standard Time
+# and Murray suggested the following abbreviation:
+#	 +01	WAT	West Africa Time
+# Murray's suggestion seems to have caught on in news reports and the like.
+# I vaguely recall 'WAT' also being used for -01 in the past but
+# cannot now come up with solid citations.
 #
 # I invented the following abbreviations; corrections are welcome!
-#	 2:00	WAST	West Africa Summer Time
-#	 2:30	BEAT	British East Africa Time (no longer used)
-#	 2:45	BEAUT	British East Africa Unified Time (no longer used)
-#	 3:00	CAST	Central Africa Summer Time (no longer used)
-#	 3:00	SAST	South Africa Summer Time (no longer used)
-#	 3:00	EAT	East Africa Time
+#	 +02	WAST	West Africa Summer Time
+#	 +03	CAST	Central Africa Summer Time (no longer used)
+#	 +03	SAST	South Africa Summer Time (no longer used)
+#	 +03	EAT	East Africa Time
+# 'EAT' also seems to have caught on; the others are rare but are paired
+# with better-attested non-DST abbreviations.
 
 # Algeria
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -144,17 +138,17 @@ Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 15  0:01
 
 # Cape Verde / Cabo Verde
 #
-# Shanks gives 1907 for the transition to CVT.
+# Shanks gives 1907 for the transition to +02.
 # Perhaps the 1911-05-26 Portuguese decree
-# http://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
+# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
 # merely made it official?
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1907        # Praia
-			-2:00	-	CVT	1942 Sep
-			-2:00	1:00	CVST	1945 Oct 15
-			-2:00	-	CVT	1975 Nov 25  2:00
-			-1:00	-	CVT
+			-2:00	-	-02	1942 Sep
+			-2:00	1:00	-01	1945 Oct 15
+			-2:00	-	-02	1975 Nov 25  2:00
+			-1:00	-	-01
 
 # Central African Republic
 # See Africa/Lagos.
@@ -411,7 +405,7 @@ Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	GHST
 Rule	Ghana	1920	1942	-	Dec	31	0:00	0	GMT
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Accra	-0:00:52 -	LMT	1918
-			 0:00	Ghana	%s
+			 0:00	Ghana	GMT/+0020
 
 # Guinea
 # See Africa/Abidjan.
@@ -420,20 +414,20 @@ Zone	Africa/Accra	-0:00:52 -	LMT	1918
 #
 # Shanks gives 1911-05-26 for the transition to WAT,
 # evidently confusing the date of the Portuguese decree
-# http://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
+# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
 # with the date that it took effect, namely 1912-01-01.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1
-			-1:00	-	WAT	1975
+			-1:00	-	-01	1975
 			 0:00	-	GMT
 
 # Kenya
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Nairobi	2:27:16	-	LMT	1928 Jul
 			3:00	-	EAT	1930
-			2:30	-	BEAT	1940
-			2:45	-	BEAUT	1960
+			2:30	-	+0230	1940
+			2:45	-	+0245	1960
 			3:00	-	EAT
 Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
 Link Africa/Nairobi Africa/Asmara	 # Eritrea
@@ -449,18 +443,25 @@ Link Africa/Nairobi Indian/Mayotte
 # See Africa/Johannesburg.
 
 # Liberia
-# From Paul Eggert (2006-03-22):
-# In 1972 Liberia was the last country to switch
-# from a UTC offset that was not a multiple of 15 or 20 minutes.
-# Howse reports that it was in honor of their president's birthday.
-# Shank & Pottenger report the date as May 1, whereas Howse reports Jan;
-# go with Shanks & Pottenger.
-# For Liberia before 1972, Shanks & Pottenger report -0:44, whereas Howse and
-# Whitman each report -0:44:30; go with the more precise figure.
+#
+# From Paul Eggert (2017-03-02):
+#
+# The Nautical Almanac for the Year 1970, p 264, is the source for -0:44:30.
+#
+# In 1972 Liberia was the last country to switch from a UTC offset
+# that was not a multiple of 15 or 20 minutes.  The 1972 change was on
+# 1972-01-07, according to an entry dated 1972-01-04 on p 330 of:
+# Presidential Papers: First year of the administration of
+# President William R. Tolbert, Jr., July 23, 1971-July 31, 1972.
+# Monrovia: Executive Mansion.
+#
+# Use the abbreviation "MMT" before 1972, as the more-accurate numeric
+# abbreviation "-004430" would be one byte over the POSIX limit.
+#
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 			-0:43:08 -	MMT	1919 Mar # Monrovia Mean Time
-			-0:44:30 -	LRT	1972 May # Liberia Time
+			-0:44:30 -	MMT	1972 Jan 7 # approximately MMT
 			 0:00	-	GMT
 
 ###############################################################################
@@ -619,7 +620,7 @@ Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	S
 Rule Mauritius	2009	only	-	Mar	lastSun	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
-			4:00 Mauritius	MU%sT	# Mauritius Time
+			4:00 Mauritius	+04/+05
 # Agalega Is, Rodriguez
 # no information; probably like Indian/Mauritius
 
@@ -938,14 +939,14 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 # since most of it was then controlled by Morocco.
 
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
-			-1:00	-	WAT	1976 Apr 14
+			-1:00	-	-01	1976 Apr 14
 			 0:00	Morocco	WE%sT
 
 # Mozambique
 #
 # Shanks gives 1903-03-01 for the transition to CAT.
 # Perhaps the 1911-05-26 Portuguese decree
-# http://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
+# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
 # merely made it official?
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -972,16 +973,19 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 # the country are close to 40 minutes earlier in sunrise than the rest
 # of the country.
 #
-# From Paul Eggert (2007-03-31):
-# Apparently the Caprivi Strip informally observes Botswana time, but
-# we have no details.  In the meantime people there can use Africa/Gaborone.
+# From Paul Eggert (2017-02-22):
+# Although the Zambezi Region (formerly known as Caprivi) informally
+# observes Botswana time, we have no details about historical practice.
+# In the meantime people there can use Africa/Gaborone.
+# See: Immanuel S. The Namibian. 2017-02-23.
+# http://www.namibian.com.na/51480/read/Time-change-divides-lawmakers
 
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Namibia	1994	max	-	Sep	Sun>=1	2:00	1:00	S
 Rule	Namibia	1995	max	-	Apr	Sun>=1	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
-			1:30	-	SWAT	1903 Mar    # SW Africa Time
+			1:30	-	+0130	1903 Mar
 			2:00	-	SAST	1942 Sep 20  2:00
 			2:00	1:00	SAST	1943 Mar 21  2:00
 			2:00	-	SAST	1990 Mar 21 # independence
@@ -1008,7 +1012,7 @@ Link Africa/Lagos Africa/Porto-Novo  # Benin
 # Réunion
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
-			4:00	-	RET	# Réunion Time
+			4:00	-	+04
 #
 # Crozet Islands also observes Réunion time; see the 'antarctica' file.
 #
@@ -1043,7 +1047,7 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 # Seychelles
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Mahe	3:41:48 -	LMT	1906 Jun # Victoria
-			4:00	-	SCT	# Seychelles Time
+			4:00	-	+04
 # From Paul Eggert (2001-05-30):
 # Aldabra, Farquhar, and Desroches, originally dependencies of the
 # Seychelles, were transferred to the British Indian Ocean Territory

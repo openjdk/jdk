@@ -382,7 +382,8 @@ enum {
     NO_FAST_ENCODING,           /* Platform encoding is not fast */
     FAST_8859_1,                /* ISO-8859-1 */
     FAST_CP1252,                /* MS-DOS Cp1252 */
-    FAST_646_US                 /* US-ASCII : ISO646-US */
+    FAST_646_US,                /* US-ASCII : ISO646-US */
+    FAST_UTF_8
 };
 
 int getFastEncoding();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.util.Debug;
  *
  * <p>A cryptographically strong random number minimally complies with the
  * statistical random number generator tests specified in
- * <a href="http://csrc.nist.gov/publications/fips/fips140-2/fips1402.pdf">
+ * <a href="http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf">
  * <i>FIPS 140-2, Security Requirements for Cryptographic Modules</i></a>,
  * section 4.9.1.
  * Additionally, {@code SecureRandom} must produce non-deterministic output.
@@ -64,8 +64,8 @@ import sun.security.util.Debug;
  * <blockquote><pre>
  * SecureRandom r1 = new SecureRandom();
  * SecureRandom r2 = SecureRandom.getInstance("NativePRNG");
- * SecureRandom r3 = SecureRandom("DRBG",
- *         DrbgParameters.Instantiation(128, RESEED_ONLY, null));</pre>
+ * SecureRandom r3 = SecureRandom.getInstance("DRBG",
+ *         DrbgParameters.instantiation(128, RESEED_ONLY, null));</pre>
  * </blockquote>
  *
  * <p> The third statement above returns a {@code SecureRandom} object of the
@@ -126,7 +126,7 @@ import sun.security.util.Debug;
  * @implSpec
  * A {@code SecureRandom} service provider can advertise that it is thread-safe
  * by setting the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#Service">service
+ * "{@docRoot}/../specs/security/standard-names.html#service-attributes">service
  * provider attribute</a> "ThreadSafe" to "true" when registering the provider.
  * Otherwise, this class will instead synchronize access to the following
  * methods of the {@code SecureRandomSpi} implementation:
@@ -143,6 +143,7 @@ import sun.security.util.Debug;
  *
  * @author Benjamin Renaud
  * @author Josh Bloch
+ * @since 1.1
  */
 
 public class SecureRandom extends java.util.Random {
@@ -203,8 +204,8 @@ public class SecureRandom extends java.util.Random {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p> See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      */
     public SecureRandom() {
@@ -244,8 +245,8 @@ public class SecureRandom extends java.util.Random {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p> See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param seed the seed.
@@ -341,8 +342,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @return the new {@code SecureRandom} object
@@ -380,8 +381,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param provider the name of the provider.
@@ -424,8 +425,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param provider the provider.
@@ -478,8 +479,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param params the {@code SecureRandomParameters}
@@ -528,8 +529,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param params the {@code SecureRandomParameters}
@@ -581,8 +582,8 @@ public class SecureRandom extends java.util.Random {
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#SecureRandom">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#securerandom-number-generation-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard RNG algorithm names.
      *
      * @param params the {@code SecureRandomParameters}
@@ -651,8 +652,6 @@ public class SecureRandom extends java.util.Random {
      * {@code SecureRandom}.
      *
      * @return the string representation
-     *
-     * @since 9
      */
     @Override
     public String toString() {

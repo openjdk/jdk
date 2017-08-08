@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ import static javax.lang.model.element.Modifier.*;
  */
 public abstract class AbstractMemberWriter {
 
-    protected final ConfigurationImpl configuration;
+    protected final HtmlConfiguration configuration;
     protected final Utils utils;
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
@@ -532,7 +532,7 @@ public abstract class AbstractMemberWriter {
         tdDesc.addStyle(HtmlStyle.colLast);
         writer.addSummaryLinkComment(this, member, firstSentenceTags, tdDesc);
         tr.addContent(tdDesc);
-        if (utils.isMethod(member) && !utils.isAnnotationType(member)) {
+        if (utils.isMethod(member) && !utils.isAnnotationType(member) && !utils.isProperty(name(member))) {
             int methodType = utils.isStatic(member) ? MethodTypes.STATIC.tableTabs().value() :
                     MethodTypes.INSTANCE.tableTabs().value();
             if (utils.isInterface(member.getEnclosingElement())) {

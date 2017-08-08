@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @modules jdk.compiler/com.sun.tools.javac.main
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @library /tools/lib
- * @build toolbox.JavacTask toolbox.JavadocTask toolbox.TestRunner toolbox.ToolBox
+ * @library /tools/lib /tools/javadoc/lib
+ * @build toolbox.JavacTask toolbox.JavadocTask toolbox.TestRunner toolbox.ToolBox ToyDoclet
  * @run main BadOptionsTest
  */
 
@@ -73,9 +73,11 @@ public class BadOptionsTest extends TestRunner {
 
     private final ToolBox tb = new ToolBox();
     private final Path src = Paths.get("src");
+    private final Class<?> docletClass;
 
-    BadOptionsTest() throws IOException {
+    BadOptionsTest() throws Exception {
         super(System.err);
+        docletClass = getClass().getClassLoader().loadClass("ToyDoclet");
         init();
     }
 
@@ -87,9 +89,9 @@ public class BadOptionsTest extends TestRunner {
 
     @Test
     public void testAddModulesEmptyArg() {
-        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
-                .options("-Xold",
-                        "--add-modules", "")
+        Task.Result result = new JavadocTask(tb, Task.Mode.API)
+                .docletClass(docletClass)
+                .options("--add-modules", "")
                 .files(src.resolve("C.java"))
                 .run(Task.Expect.FAIL)
                 .writeAll();
@@ -100,9 +102,9 @@ public class BadOptionsTest extends TestRunner {
 
     @Test
     public void testAddModulesBadName() {
-        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
-                .options("-Xold", "-quiet",
-                        "--add-modules", "123")
+        Task.Result result = new JavadocTask(tb, Task.Mode.API)
+                .docletClass(docletClass)
+                .options("--add-modules", "123")
                 .files(src.resolve("C.java"))
                 .run(Task.Expect.FAIL)
                 .writeAll();
@@ -113,9 +115,9 @@ public class BadOptionsTest extends TestRunner {
 
     @Test
     public void testAddExportsEmptyArg() {
-        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
-                .options("-Xold",
-                        "--add-exports", "")
+        Task.Result result = new JavadocTask(tb, Task.Mode.API)
+                .docletClass(docletClass)
+                .options("--add-exports", "")
                 .files(src.resolve("C.java"))
                 .run(Task.Expect.FAIL)
                 .writeAll();
@@ -126,9 +128,9 @@ public class BadOptionsTest extends TestRunner {
 
     @Test
     public void testAddExportsBadArg() {
-        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
-                .options("-Xold",
-                        "--add-exports", "m/p")
+        Task.Result result = new JavadocTask(tb, Task.Mode.API)
+                .docletClass(docletClass)
+                .options("--add-exports", "m/p")
                 .files(src.resolve("C.java"))
                 .run(Task.Expect.FAIL)
                 .writeAll();
@@ -139,9 +141,9 @@ public class BadOptionsTest extends TestRunner {
 
     @Test
     public void testAddExportsBadName() {
-        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
-                .options("-Xold",
-                        "--add-exports", "m!/p1=m2")
+        Task.Result result = new JavadocTask(tb, Task.Mode.API)
+                .docletClass(docletClass)
+                .options("--add-exports", "m!/p1=m2")
                 .files(src.resolve("C.java"))
                 .run()
                 .writeAll();

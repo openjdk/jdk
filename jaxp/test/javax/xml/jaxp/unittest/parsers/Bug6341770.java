@@ -23,6 +23,7 @@
 
 package parsers;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 
 import java.io.File;
@@ -61,7 +62,7 @@ public class Bug6341770 {
             return;
         }
         try {
-            File dir = new File(ALPHA);
+            File dir = new File(USER_DIR + ALPHA);
             dir.delete();
             dir.mkdir();
             File main = new File(dir, "main.xml");

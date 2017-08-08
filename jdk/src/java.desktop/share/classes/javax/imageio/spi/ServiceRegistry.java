@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package javax.imageio.spi;
 
 import java.io.File;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,9 +107,8 @@ import java.util.ServiceLoader;
  * sees fit, so long as it has the appropriate runtime permission.
  *
  * <p> For more details on declaring service providers, and the JAR
- * format in general, see the <a
- * href="../../../../technotes/guides/jar/jar.html">
- * JAR File Specification</a>.
+ * format in general, see the
+ * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>.
  *
  * @see RegisterableService
  * @see java.util.ServiceLoader
@@ -706,7 +708,17 @@ public class ServiceRegistry {
      *
      * @exception Throwable if an error occurs during superclass
      * finalization.
+     *
+     * @deprecated The {@code finalize} method has been deprecated.
+     *     Subclasses that override {@code finalize} in order to perform cleanup
+     *     should be modified to use alternative cleanup mechanisms and
+     *     to remove the overriding {@code finalize} method.
+     *     When overriding the {@code finalize} method, its implementation must explicitly
+     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
+     *     See the specification for {@link Object#finalize()} for further
+     *     information about migration options.
      */
+    @Deprecated(since="9")
     public void finalize() throws Throwable {
         deregisterAll();
         super.finalize();
@@ -746,13 +758,14 @@ class SubRegistry {
 
     Class<?> category;
 
-    // Provider Objects organized by partial oridering
-    PartiallyOrderedSet<Object> poset = new PartiallyOrderedSet<>();
+    // Provider Objects organized by partial ordering
+    final PartiallyOrderedSet<Object> poset = new PartiallyOrderedSet<>();
 
     // Class -> Provider Object of that class
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
-    Map<Class<?>, Object> map = new HashMap<>();
+    final Map<Class<?>, Object> map = new HashMap<>();
+    final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
         this.registry = registry;
@@ -767,6 +780,7 @@ class SubRegistry {
             deregisterServiceProvider(oprovider);
         }
         map.put(provider.getClass(), provider);
+        accMap.put(provider.getClass(), AccessController.getContext());
         poset.add(provider);
         if (provider instanceof RegisterableService) {
             RegisterableService rs = (RegisterableService)provider;
@@ -791,6 +805,7 @@ class SubRegistry {
 
         if (provider == oprovider) {
             map.remove(provider.getClass());
+            accMap.remove(provider.getClass());
             poset.remove(provider);
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
@@ -840,12 +855,20 @@ class SubRegistry {
 
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
-                rs.onDeregistration(registry, category);
+                AccessControlContext acc = accMap.get(provider.getClass());
+                if (acc != null || System.getSecurityManager() == null) {
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    rs.onDeregistration(registry, category);
+                        return null;
+                    }, acc);
+                }
             }
         }
         poset.clear();
+        accMap.clear();
     }
 
+    @SuppressWarnings("deprecation")
     public synchronized void finalize() {
         clear();
     }

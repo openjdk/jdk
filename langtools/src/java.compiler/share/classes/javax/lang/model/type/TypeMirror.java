@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import javax.lang.model.util.Types;
  * Represents a type in the Java programming language.
  * Types include primitive types, declared types (class and interface types),
  * array types, type variables, and the null type.
- * Also represented are wildcard type arguments,
- * the signature and return types of executables,
- * and pseudo-types corresponding to packages and to the keyword {@code void}.
+ * Also represented are wildcard type arguments, the signature and
+ * return types of executables, and pseudo-types corresponding to
+ * packages, modules, and the keyword {@code void}.
  *
  * <p> Types should be compared using the utility methods in {@link
  * Types}.  There is no guarantee that any particular type will always
