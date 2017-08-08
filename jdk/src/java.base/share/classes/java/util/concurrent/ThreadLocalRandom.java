@@ -1050,30 +1050,18 @@ public class ThreadLocalRandom extends Random {
 
     // Unsafe mechanics
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long SEED;
-    private static final long PROBE;
-    private static final long SECONDARY;
-    private static final long THREADLOCALS;
-    private static final long INHERITABLETHREADLOCALS;
-    private static final long INHERITEDACCESSCONTROLCONTEXT;
-    static {
-        try {
-            SEED = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSeed"));
-            PROBE = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomProbe"));
-            SECONDARY = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
-            THREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocals"));
-            INHERITABLETHREADLOCALS = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritableThreadLocals"));
-            INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
-                (Thread.class.getDeclaredField("inheritedAccessControlContext"));
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final long SEED = U.objectFieldOffset
+            (Thread.class, "threadLocalRandomSeed");
+    private static final long PROBE = U.objectFieldOffset
+            (Thread.class, "threadLocalRandomProbe");
+    private static final long SECONDARY = U.objectFieldOffset
+            (Thread.class, "threadLocalRandomSecondarySeed");
+    private static final long THREADLOCALS = U.objectFieldOffset
+            (Thread.class, "threadLocals");
+    private static final long INHERITABLETHREADLOCALS = U.objectFieldOffset
+            (Thread.class, "inheritableThreadLocals");
+    private static final long INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset
+            (Thread.class, "inheritedAccessControlContext");
 
     /** Rarely-used holder for the second of a pair of Gaussians */
     private static final ThreadLocal<Double> nextLocalGaussian =
