@@ -25,6 +25,10 @@ groups=TEST.groups
 # Minimum jtreg version
 requiredVersion=4.2 b07
 
+# Path to libraries in the topmost test directory. This is needed so @library
+# does not need ../../ notation to reach them
+external.lib.roots = ../../
+
 # Use new module options
 useNewOptions=true
 

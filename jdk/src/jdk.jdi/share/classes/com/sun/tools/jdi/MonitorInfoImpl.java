@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,12 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.InternalException;
+import com.sun.jdi.InvalidStackFrameException;
+import com.sun.jdi.MonitorInfo;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
 
 public class MonitorInfoImpl extends MirrorImpl
     implements MonitorInfo, ThreadListener {
@@ -37,7 +42,7 @@ public class MonitorInfoImpl extends MirrorImpl
 
     ObjectReference monitor;
     ThreadReference thread;
-    int  stack_depth;
+    int stack_depth;
 
     MonitorInfoImpl(VirtualMachine vm, ObjectReference mon,
                     ThreadReferenceImpl thread, int dpth) {
@@ -47,7 +52,6 @@ public class MonitorInfoImpl extends MirrorImpl
         this.stack_depth = dpth;
         thread.addListener(this);
     }
-
 
     /*
      * ThreadListener implementation

@@ -27,7 +27,7 @@
  * @summary Test that a method inherited from two different interfaces
  *          appears only once in MBeanInfo.
  * @author dfuchs
- * @modules java.management
+ *
  * @run clean TooManyFooTest
  * @run build TooManyFooTest
  * @run main TooManyFooTest
@@ -54,12 +54,6 @@ import javax.management.openmbean.OpenMBeanOperationInfo;
  * @author Sun Microsystems, 2005 - All rights reserved.
  */
 public class TooManyFooTest {
-
-    /**
-     * A logger for this class.
-     **/
-    private static final Logger LOG =
-            Logger.getLogger(TooManyFooTest.class.getName());
 
     public static class NumberHolder {
         public Integer getNumber() { return 0;}

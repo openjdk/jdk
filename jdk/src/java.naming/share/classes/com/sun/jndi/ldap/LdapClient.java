@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,6 +474,7 @@ public final class LdapClient implements PooledConnection {
         }
     }
 
+    @SuppressWarnings("deprecation")
     protected void finalize() {
         if (debug > 0) System.err.println("LdapClient: finalize " + this);
         forceClose(pooled);
@@ -1233,6 +1234,7 @@ public final class LdapClient implements PooledConnection {
     static final int LDAP_REF_FOLLOW = 0x01;            // follow referrals
     static final int LDAP_REF_THROW = 0x02;             // throw referral ex.
     static final int LDAP_REF_IGNORE = 0x03;            // ignore referrals
+    static final int LDAP_REF_FOLLOW_SCHEME = 0x04;     // follow referrals of the same scheme
 
     static final String LDAP_URL = "ldap://";           // LDAPv3
     static final String LDAPS_URL = "ldaps://";         // LDAPv3

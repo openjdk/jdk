@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,8 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * the array are copied to protect against subsequent modification.
      * @param algorithm the name of the secret-key algorithm to be associated
      * with the given key material.
-     * See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
@@ -126,9 +125,8 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @param len the length of the key material.
      * @param algorithm the name of the secret-key algorithm to be associated
      * with the given key material.
-     * See Appendix A in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null, empty, or too short,

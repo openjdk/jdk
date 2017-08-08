@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +26,7 @@ import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.utils.LocaleUtility;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.text.Collator;
 
@@ -55,6 +55,7 @@ public class NodeSortRecordFactory {
      * @deprecated This constructor is no longer used in generated code.  It
      *             exists only for backwards compatibility.
      */
+     @Deprecated
      public NodeSortRecordFactory(DOM dom, String className, Translet translet,
                  String order[], String type[])
          throws TransletException
@@ -148,10 +149,17 @@ public class NodeSortRecordFactory {
                SecurityException,
                TransletException {
 
-        final NodeSortRecord sortRecord =
-            (NodeSortRecord)_class.newInstance();
-        sortRecord.initialize(node, last, _dom, _sortSettings);
-        return sortRecord;
+        try {
+            final NodeSortRecord sortRecord;
+            //NodeSortRecord subclasses are generated with a public empty constructor
+            // refer to com.sun.org.apache.xalan.internal.xsltc.compiler.Sort::compileInit
+            sortRecord = (NodeSortRecord)_class.getConstructor().newInstance();
+            sortRecord.initialize(node, last, _dom, _sortSettings);
+            return sortRecord;
+        } catch (NoSuchMethodException | IllegalArgumentException |
+                InvocationTargetException ex) {
+            throw new InstantiationException(ex.getMessage());
+        }
     }
 
     public String getClassName() {

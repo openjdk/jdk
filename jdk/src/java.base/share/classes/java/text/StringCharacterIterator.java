@@ -47,6 +47,7 @@ package java.text;
  * entire <code>String</code>.
  *
  * @see CharacterIterator
+ * @since 1.1
  */
 
 public final class StringCharacterIterator implements CharacterIterator

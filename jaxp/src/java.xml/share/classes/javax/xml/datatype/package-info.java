@@ -52,46 +52,46 @@
  *     <caption> W3C XML Schema/Java Type Mappings</caption>
  *     <thead>
  *         <tr>
- *             <th>W3C XML Schema Data Type</th>
- *             <th>Java Data Type</th>
+ *             <th scope="col">W3C XML Schema Data Type</th>
+ *             <th scope="col">Java Data Type</th>
  *         </tr>
  *     </thead>
  *
  *     <tbody>
  *         <tr>
- *             <td>xs:date</td>
+ *             <th scope="row">xs:date</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:dateTime</td>
+ *             <th scope="row">xs:dateTime</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:duration</td>
+ *             <th scope="row">xs:duration</th>
  *             <td>{@link javax.xml.datatype.Duration}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:gDay</td>
+ *             <th scope="row">xs:gDay</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:gMonth </td>
+ *             <th scope="row">xs:gMonth </th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:gMonthDay</td>
+ *             <th scope="row">xs:gMonthDay</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:gYear</td>
+ *             <th scope="row">xs:gYear</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:gYearMonth</td>
+ *             <th scope="row">xs:gYearMonth</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *         <tr>
- *             <td>xs:time</td>
+ *             <th scope="row">xs:time</th>
  *             <td>{@link javax.xml.datatype.XMLGregorianCalendar}</td>
  *         </tr>
  *
@@ -105,18 +105,18 @@
  *     <caption>XQuery and XPath/Java Type Mappings</caption>
  *     <thead>
  *         <tr>
- *             <th>XQuery 1.0 and XPath 2.0 Data Model</th>
- *             <th>Java Data Type</th>
+ *             <th scope="col">XQuery 1.0 and XPath 2.0 Data Model</th>
+ *             <th scope="col">Java Data Type</th>
  *         </tr>
  *     </thead>
  *
  *     <tbody>
  *         <tr>
- *             <td>xdt:dayTimeDuration</td>
+ *             <th scope="row">xdt:dayTimeDuration</th>
  *             <td>{@link javax.xml.datatype.Duration}</td>
  *         </tr>
  *         <tr>
- *             <td>xdt:yearMonthDuration</td>
+ *             <th scope="row">xdt:yearMonthDuration</th>
  *             <td>{@link javax.xml.datatype.Duration}</td>
  *         </tr>
  *     </tbody>
@@ -149,23 +149,13 @@
  *     <li>xs:unsignedShort</li>
  * </ul>
  *
- * <hr>
- *
- * <ul>
- *     <li>Author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a></li>
- *     <li>See <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
+ * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @see <a href="http://www.w3.org/TR/xmlschema-2/#dateTime">
  *             W3C XML Schema 1.0 Part 2, Section 3.2.7-14</a>
- *     </li>
- *     <li>See <a href="http://www.w3.org/TR/xpath-datamodel#dt-dayTimeDuration">
+ * @see <a href="http://www.w3.org/TR/xpath-datamodel#dt-dayTimeDuration">
  *             XQuery 1.0 and XPath 2.0 Data Model, xdt:dayTimeDuration</a>
- *     </li>
- *     <li>See <a href="http://www.w3.org/TR/xpath-datamodel#dt-yearMonthDuration">
+ * @see <a href="http://www.w3.org/TR/xpath-datamodel#dt-yearMonthDuration">
  *             XQuery 1.0 and XPath 2.0 Data Model, xdt:yearMonthDuration</a>
- *     </li>
- *     <li>Since 1.5</li>
- * </ul>
- *
- * <hr>
  * @since 1.5
  */
 

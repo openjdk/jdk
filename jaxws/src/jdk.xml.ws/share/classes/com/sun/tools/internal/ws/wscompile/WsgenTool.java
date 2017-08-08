@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,11 +144,8 @@ public class WsgenTool {
     public boolean buildModel(String endpoint, Listener listener) throws BadCommandLineException {
         final ErrorReceiverFilter errReceiver = new ErrorReceiverFilter(listener);
 
-        List<String> args = new ArrayList<String>(6 + (options.nocompile ? 1 : 0)
+        List<String> args = new ArrayList<>(6 + (options.nocompile ? 1 : 0)
                 + (options.encoding != null ? 2 : 0));
-
-        args.add("--add-modules");
-        args.add("java.xml.ws");
 
         args.add("-d");
         args.add(options.destDir.getAbsolutePath());
@@ -163,8 +160,27 @@ public class WsgenTool {
             args.add("-encoding");
             args.add(options.encoding);
         }
+
+        boolean addModules = true;
         if (options.javacOptions != null) {
-            args.addAll(options.getJavacOptions(args, listener));
+            List<String> javacOptions = options.getJavacOptions(args, listener);
+            for (int i = 0; i < javacOptions.size(); i++) {
+                String opt = javacOptions.get(i);
+                if ("-source".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                    addModules = false;
+                }
+                if ("-target".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                    addModules = false;
+                }
+                if ("--release".equals(opt) && 9 >= getVersion(javacOptions.get(i + 1))) {
+                    addModules = false;
+                }
+                args.add(opt);
+            }
+        }
+        if (addModules) {
+            args.add("--add-modules");
+            args.add("java.xml.ws");
         }
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -227,7 +243,7 @@ public class WsgenTool {
             com.sun.xml.internal.ws.db.DatabindingImpl rt = (com.sun.xml.internal.ws.db.DatabindingImpl) fac.createRuntime(config);
 
             final File[] wsdlFileName = new File[1]; // used to capture the generated WSDL file.
-            final Map<String, File> schemaFiles = new HashMap<String, File>();
+            final Map<String, File> schemaFiles = new HashMap<>();
 
             WSDLGenInfo wsdlGenInfo = new WSDLGenInfo();
             wsdlGenInfo.setSecureXmlProcessingDisabled(disableXmlSecurity);
@@ -299,7 +315,7 @@ public class WsgenTool {
     }
 
     private List<File> getExternalFiles(List<String> exts) {
-        List<File> files = new ArrayList<File>();
+        List<File> files = new ArrayList<>();
         for (String ext : exts) {
             // first try absolute path ...
             File file = new File(ext);
@@ -339,6 +355,10 @@ public class WsgenTool {
             // this is code for the test, so we can be lousy in the error handling
             throw new Error(e);
         }
+    }
+
+    private float getVersion(String s) {
+        return Float.parseFloat(s);
     }
 
     /**

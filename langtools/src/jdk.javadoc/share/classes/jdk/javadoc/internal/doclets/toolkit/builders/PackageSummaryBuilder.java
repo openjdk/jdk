@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
  * @author Bhavesh Patel (Modified)
  */
 public class PackageSummaryBuilder extends AbstractBuilder {
-    /**
-     * The root element of the package summary XML is {@value}.
-     */
-    public static final String ROOT = "PackageDoc";
 
     /**
      * The package being documented.
@@ -112,27 +108,20 @@ public class PackageSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(layoutParser.parseXML(ROOT), contentTree);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return ROOT;
+        buildPackageDoc(contentTree);
     }
 
     /**
      * Build the package documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildPackageDoc(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildPackageDoc(Content contentTree) throws DocletException {
         contentTree = packageWriter.getPackageHeader(utils.getPackageName(packageElement));
-        buildChildren(node, contentTree);
+
+        buildContent(contentTree);
+
         packageWriter.addPackageFooter(contentTree);
         packageWriter.printDocument(contentTree);
         utils.copyDocFiles(packageElement);
@@ -141,39 +130,47 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the content for the package.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the package contents
      *                    will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildContent(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildContent(Content contentTree) throws DocletException {
         Content packageContentTree = packageWriter.getContentHeader();
-        buildChildren(node, packageContentTree);
+
+        buildPackageDescription(packageContentTree);
+        buildPackageTags(packageContentTree);
+        buildSummary(packageContentTree);
+
         packageWriter.addPackageContent(contentTree, packageContentTree);
     }
 
     /**
      * Build the package summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param packageContentTree the package content tree to which the summaries will
      *                           be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSummary(XMLNode node, Content packageContentTree) throws DocletException {
+    protected void buildSummary(Content packageContentTree) throws DocletException {
         Content summaryContentTree = packageWriter.getSummaryHeader();
-        buildChildren(node, summaryContentTree);
+
+        buildInterfaceSummary(summaryContentTree);
+        buildClassSummary(summaryContentTree);
+        buildEnumSummary(summaryContentTree);
+        buildExceptionSummary(summaryContentTree);
+        buildErrorSummary(summaryContentTree);
+        buildAnnotationTypeSummary(summaryContentTree);
+
         packageContentTree.addContent(summaryContentTree);
     }
 
     /**
      * Build the summary for the interfaces in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the interface summary
      *                           will be added
      */
-    public void buildInterfaceSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildInterfaceSummary(Content summaryContentTree) {
         String interfaceTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Interface_Summary"),
@@ -195,11 +192,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the classes in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the class summary will
      *                           be added
      */
-    public void buildClassSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildClassSummary(Content summaryContentTree) {
         String classTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Class_Summary"),
@@ -220,11 +216,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the enums in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the enum summary will
      *                           be added
      */
-    public void buildEnumSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildEnumSummary(Content summaryContentTree) {
         String enumTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Enum_Summary"),
@@ -245,11 +240,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the exceptions in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the exception summary will
      *                           be added
      */
-    public void buildExceptionSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildExceptionSummary(Content summaryContentTree) {
         String exceptionTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Exception_Summary"),
@@ -272,11 +266,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the errors in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the error summary will
      *                           be added
      */
-    public void buildErrorSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildErrorSummary(Content summaryContentTree) {
         String errorTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Error_Summary"),
@@ -298,11 +291,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the annotation type in this package.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the summary tree to which the annotation type
      *                           summary will be added
      */
-    public void buildAnnotationTypeSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildAnnotationTypeSummary(Content summaryContentTree) {
         String annotationtypeTableSummary =
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Annotation_Types_Summary"),
@@ -327,11 +319,10 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the description of the summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param packageContentTree the tree to which the package description will
      *                           be added
      */
-    public void buildPackageDescription(XMLNode node, Content packageContentTree) {
+    protected void buildPackageDescription(Content packageContentTree) {
         if (configuration.nocomment) {
             return;
         }
@@ -341,10 +332,9 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the tags of the summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param packageContentTree the tree to which the package tags will be added
      */
-    public void buildPackageTags(XMLNode node, Content packageContentTree) {
+    protected void buildPackageTags(Content packageContentTree) {
         if (configuration.nocomment) {
             return;
         }

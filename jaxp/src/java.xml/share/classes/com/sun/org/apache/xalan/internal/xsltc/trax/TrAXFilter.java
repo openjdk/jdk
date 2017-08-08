@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +48,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @author Santiago Pericas-Geertsen
  * @author G. Todd Miller
  */
+@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;

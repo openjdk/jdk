@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,8 +125,8 @@ public class ExemptionMechanism {
      * mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#exemption-mechanisms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard exemption mechanism names.
      *
      * @return the new {@code ExemptionMechanism} object
@@ -164,8 +164,8 @@ public class ExemptionMechanism {
      * @param algorithm the standard name of the requested exemption mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#exemption-mechanisms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard exemption mechanism names.
      *
      * @param provider the name of the provider.
@@ -208,8 +208,8 @@ public class ExemptionMechanism {
      * @param algorithm the standard name of the requested exemption mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#exemption-mechanisms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard exemption mechanism names.
      *
      * @param provider the provider.

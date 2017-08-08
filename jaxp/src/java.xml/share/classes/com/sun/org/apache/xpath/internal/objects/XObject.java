@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -499,13 +498,13 @@ public class XObject extends Expression implements Serializable, Cloneable
       result = str();
       break;
     case CLASS_NUMBER :
-      result = new Double(num());
+      result = num();
       break;
     case CLASS_NODESET :
       result = iter();
       break;
     case CLASS_BOOLEAN :
-      result = new Boolean(bool());
+      result = bool();
       break;
     case CLASS_UNKNOWN :
       result = m_obj;

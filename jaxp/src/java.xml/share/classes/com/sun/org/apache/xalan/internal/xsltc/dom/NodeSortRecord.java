@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -49,6 +48,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     private static final Collator DEFAULT_COLLATOR = Collator.getInstance();
 
     /**
@@ -56,6 +56,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     protected Collator _collator = DEFAULT_COLLATOR;
     protected Collator[] _collators;
 
@@ -64,6 +65,7 @@ public abstract class NodeSortRecord {
      * @deprecated This field continues to exist for binary compatibility.
      *             New code should not refer to it.
      */
+    @Deprecated
     protected Locale _locale;
 
     protected CollatorFactory _collatorFactory;
@@ -185,11 +187,11 @@ public abstract class NodeSortRecord {
                                                    translet, _last);
             Double num;
             try {
-                num = new Double(str);
+                num = Double.parseDouble(str);
             }
             // Treat number as NaN if it cannot be parsed as a double
             catch (NumberFormatException e) {
-                num = new Double(Double.NEGATIVE_INFINITY);
+                num = Double.NEGATIVE_INFINITY;
             }
             _values[_scanned++] = num;
             return(num);

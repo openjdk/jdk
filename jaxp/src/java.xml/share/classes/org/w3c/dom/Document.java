@@ -357,34 +357,34 @@ public interface Document extends Node {
      * <caption>Attributes of the {@code Element} object</caption>
      * <thead>
      * <tr>
-     * <th>Attribute</th>
-     * <th>Value</th>
+     * <th scope="col">Attribute</th>
+     * <th scope="col">Value</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td><code>Node.nodeName</code></td>
+     * <th scope="row"><code>Node.nodeName</code></th>
      * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td><code>Node.namespaceURI</code></td>
+     * <th scope="row"><code>Node.namespaceURI</code></th>
      * <td>
      *   <code>namespaceURI</code></td>
      * </tr>
      * <tr>
-     * <td><code>Node.prefix</code></td>
+     * <th scope="row"><code>Node.prefix</code></th>
      * <td>prefix, extracted
      *   from <code>qualifiedName</code>, or <code>null</code> if there is
      *   no prefix</td>
      * </tr>
      * <tr>
-     * <td><code>Node.localName</code></td>
+     * <th scope="row"><code>Node.localName</code></th>
      * <td>local name, extracted from
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td><code>Element.tagName</code></td>
+     * <th scope="row"><code>Element.tagName</code></th>
      * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
@@ -426,40 +426,40 @@ public interface Document extends Node {
      * <caption>Attributes of the {@code Attr} object </caption>
      * <thead>
      * <tr>
-     * <th>
+     * <th scope="col">
      *   Attribute</th>
-     * <th>Value</th>
+     * <th scope="col">Value</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td><code>Node.nodeName</code></td>
+     * <th scope="row"><code>Node.nodeName</code></th>
      * <td>qualifiedName</td>
      * </tr>
      * <tr>
-     * <td>
-     *   <code>Node.namespaceURI</code></td>
+     * <th scope="row">
+     *   <code>Node.namespaceURI</code></th>
      * <td><code>namespaceURI</code></td>
      * </tr>
      * <tr>
-     * <td>
-     *   <code>Node.prefix</code></td>
+     * <th scope="row">
+     *   <code>Node.prefix</code></th>
      * <td>prefix, extracted from
      *   <code>qualifiedName</code>, or <code>null</code> if there is no
      *   prefix</td>
      * </tr>
      * <tr>
-     * <td><code>Node.localName</code></td>
+     * <th scope="row"><code>Node.localName</code></th>
      * <td>local name, extracted from
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td><code>Attr.name</code></td>
+     * <th scope="row"><code>Attr.name</code></th>
      * <td>
      *   <code>qualifiedName</code></td>
      * </tr>
      * <tr>
-     * <td><code>Node.nodeValue</code></td>
+     * <th scope="row"><code>Node.nodeValue</code></th>
      * <td>the empty
      *   string</td>
      * </tr>

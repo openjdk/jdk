@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ import java.util.Hashtable;
  * known to protect it.
  *
  *<p>
- *<a name=RESOURCEFILES></a>
+ *<a id=RESOURCEFILES></a>
  *<h1>Resource Files</h1>
  *<p>
  * To simplify the task of setting up the environment
@@ -184,7 +184,7 @@ import java.util.Hashtable;
  * {@code jndiprovider.properties}.
  *
  * <p>
- * <a name=LISTPROPS></a>
+ * <a id=LISTPROPS></a>
  * Certain methods in the JNDI class library make use of the standard
  * JNDI properties that specify lists of JNDI factories:
  * <ul>
