@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import static sun.java2d.StateTrackable.State.*;
 /**
  * This class extends {@code DataBuffer} and stores data internally as shorts.
  * <p>
- * <a name="optimizations">
+ * <a id="optimizations">
  * Note that some implementations may function more efficiently
  * if they can maintain control over how the data for an image is
  * stored.

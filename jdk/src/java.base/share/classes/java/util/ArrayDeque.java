@@ -79,7 +79,7 @@ import java.util.function.UnaryOperator;
  * Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author  Josh Bloch and Doug Lea
@@ -243,7 +243,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * Index i must be logically ahead of index j.
      * Precondition: 0 <= i < modulus, 0 <= j < modulus.
      * @return the "circular distance" from j to i; corner case i == j
-     * is diambiguated to "empty", returning 0.
+     * is disambiguated to "empty", returning 0.
      */
     static final int sub(int i, int j, int modulus) {
         if ((i -= j) < 0) i += modulus;
@@ -310,8 +310,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * Adds all of the elements in the specified collection at the end
      * of this deque, as if by calling {@link #addLast} on each one,
-     * in the order that they are returned by the collection's
-     * iterator.
+     * in the order that they are returned by the collection's iterator.
      *
      * @param c the elements to be inserted into this deque
      * @return {@code true} if this deque changed as a result of the call
@@ -508,8 +507,8 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * Retrieves and removes the head of the queue represented by this deque.
      *
-     * This method differs from {@link #poll poll} only in that it throws an
-     * exception if this deque is empty.
+     * This method differs from {@link #poll() poll()} only in that it
+     * throws an exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #removeFirst}.
      *

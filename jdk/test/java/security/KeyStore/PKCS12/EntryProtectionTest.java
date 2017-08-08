@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.crypto.spec.PBEParameterSpec;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 import static java.lang.System.out;
 import java.util.Arrays;
 
@@ -40,8 +40,10 @@ import java.util.Arrays;
  * @summary Test for feature 'support stronger entry protection'. An entry is
  * stored to keystore with different PasswordProtection objects which are
  * specified by different PBE algorithms (use -Dseed=X to set PRNG seed)
- * @library /lib/testlibrary ../
+ * @library /test/lib /lib/testlibrary ../
  * @key randomness
+ * @build jdk.test.lib.RandomFactory
+ * @run main EntryProtectionTest
  */
 public class EntryProtectionTest {
     private static final char[] PASSWORD = "passwd".toCharArray();

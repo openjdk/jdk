@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /**
  * @test
  * @modules jdk.compiler
- * @build NestedTypeVars
+ * @library /tools/javac/lib
+ * @build NestedTypeVars JavacTestingAbstractProcessor
  * @compile/process/ref=NestedTypeVars.out -processor NestedTypeVars Test$1L1$L2$1L3$L4$L5 Test$1L1$CCheck Test$1L1 Test$1CCheck Test$CCheck Test
  */
 
@@ -44,8 +45,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.ElementFilter;
 
-@SupportedAnnotationTypes("*")
-public class NestedTypeVars extends AbstractProcessor{
+public class NestedTypeVars extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -102,12 +102,6 @@ public class NestedTypeVars extends AbstractProcessor{
                 throw new IllegalStateException("Unexpected element: " + el + "(" + el.getKind() + ")");
         }
     }
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
-    }
-
-
 }
 
 class Test<T1, C> {

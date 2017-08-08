@@ -27,16 +27,15 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static jdk.testlibrary.ProcessTools.executeTestJava;
-import jdk.testlibrary.CompilerUtils;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run testng BasicModularXMLParserTest
  * @bug 8078820 8156119
  * @summary Tests JAXP lib can instantiate the following interfaces

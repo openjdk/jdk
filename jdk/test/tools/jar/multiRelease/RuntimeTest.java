@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
  * @test
  * @summary Test Multi-Release jar usage in runtime
  * @library /test/lib
- * @library /lib/testlibrary
  * @modules jdk.compiler
- * @build jdk.test.lib.JDKToolFinder jdk.test.lib.JDKToolLauncher
- *        jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.process.ProcessTools
- *        CompilerUtils RuntimeTest
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run testng RuntimeTest
  */
 
@@ -41,6 +43,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -51,7 +54,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.testng.annotations.BeforeClass;
@@ -60,37 +66,53 @@ import org.testng.annotations.Test;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class RuntimeTest {
     public static final int SUCCESS = 0;
-    private final String src = System.getProperty("test.src", ".");
-    private final String usr = System.getProperty("user.dir", ".");
+    private static final String src = System.getProperty("test.src", ".");
+    private static final String usr = System.getProperty("user.dir", ".");
+
+    private static final Path srcFileRoot = Paths.get(src, "data", "runtimetest");
+    private static final Path genFileRoot = Paths.get(usr, "data", "runtimetest");
+
+    private static final int OLD_RELEASE = 8;
+    private static final int CURRENT_RELEASE = Runtime.version().major();
+    private static final int FUTURE_RELEASE = CURRENT_RELEASE + 1;
+    private static final String MRJAR_BOTH_RELEASES = "MV_BOTH.jar";
+    private static final String MRJAR_CURRENT_RELEASE = "MV_ONLY_" + CURRENT_RELEASE + ".jar";
+    private static final String NON_MRJAR_OLD_RELEASE = "NON_MV.jar";
+
+    private static final int[] versions = { OLD_RELEASE, CURRENT_RELEASE, FUTURE_RELEASE };
 
     @DataProvider(name = "jarFiles")
     Object[][] jarFiles() {
-        return new Object[][] { { "MV_BOTH.jar", 9, 9, 9 },
-                { "MV_ONLY_9.jar", 9, 9, 9 },
-                { "NON_MV.jar", 8, 8, 8 } };
+        return new Object[][]{
+            { MRJAR_BOTH_RELEASES, CURRENT_RELEASE, CURRENT_RELEASE, CURRENT_RELEASE },
+            { MRJAR_CURRENT_RELEASE, CURRENT_RELEASE, CURRENT_RELEASE, CURRENT_RELEASE },
+            { NON_MRJAR_OLD_RELEASE, OLD_RELEASE, OLD_RELEASE, OLD_RELEASE }
+        };
     }
 
     @BeforeClass
     protected void setUpTest() throws Throwable {
+        createJarSourceFiles();
         compile();
         Path classes = Paths.get("classes");
-        jar("cfm", "MV_BOTH.jar", "manifest.txt",
-                "-C", classes.resolve("base").toString(), ".",
-                "--release", "9", "-C", classes.resolve("v9").toString(), ".",
-                "--release", "10", "-C", classes.resolve("v10").toString(), ".")
+        jar("cfm", MRJAR_BOTH_RELEASES, "manifest.txt",
+                "-C", classes.resolve("v" + OLD_RELEASE).toString(), ".",
+                "--release", "" + CURRENT_RELEASE, "-C", classes.resolve("v" + CURRENT_RELEASE).toString(), ".",
+                "--release", "" + FUTURE_RELEASE, "-C", classes.resolve("v" + FUTURE_RELEASE).toString(), ".")
                 .shouldHaveExitValue(0);
 
-        jar("cfm", "MV_ONLY_9.jar", "manifest.txt",
-                "-C", classes.resolve("base").toString(), ".",
-                "--release", "9", "-C", classes.resolve("v9").toString(), ".")
+        jar("cfm", MRJAR_CURRENT_RELEASE, "manifest.txt",
+                "-C", classes.resolve("v" + OLD_RELEASE).toString(), ".",
+                "--release", "" + CURRENT_RELEASE, "-C", classes.resolve("v" + CURRENT_RELEASE).toString(), ".")
                 .shouldHaveExitValue(0);
-        jar("cfm", "NON_MV.jar", "manifest.txt",
-                "-C", classes.resolve("base").toString(), ".")
+        jar("cfm", NON_MRJAR_OLD_RELEASE, "manifest.txt",
+                "-C", classes.resolve("v" + OLD_RELEASE).toString(), ".")
                 .shouldHaveExitValue(0);
     }
 
@@ -203,12 +225,37 @@ public class RuntimeTest {
         return ProcessTools.executeCommand(launcher.getCommand());
     }
 
+    private static String platformPath(String p) {
+        return p.replace("/", File.separator);
+    }
+
+    private static void createJarSourceFiles() throws IOException {
+        for (int ver : versions) {
+            Files.find(srcFileRoot, 3, (file, attrs) -> (file.toString().endsWith(".template")))
+                 .map(srcFileRoot::relativize)
+                 .map(Path::toString)
+                 .map(p -> p.replace(".template", ""))
+                 .forEach(f -> {
+                     try {
+                         Path template = srcFileRoot.resolve(f + ".template");
+                         Path out = genFileRoot.resolve(platformPath("v" + ver + "/" + f));
+                         Files.createDirectories(out.getParent());
+                         List<String> lines = Files.lines(template)
+                                 .map(s -> s.replaceAll("\\$version", String.valueOf(ver)))
+                                 .collect(Collectors.toList());
+                         Files.write(out, lines);
+                     } catch (IOException x) {
+                         throw new UncheckedIOException(x);
+                     }
+                 });
+        }
+    }
+
     private void compile() throws Throwable {
-        String[] vers = { "base", "v9", "v10" };
-        for (String ver : vers) {
-            Path classes = Paths.get(usr, "classes", ver);
+        for (int ver : versions) {
+            Path classes = Paths.get(usr, "classes", "v" + ver);
             Files.createDirectories(classes);
-            Path source = Paths.get(src, "data", "runtimetest", ver);
+            Path source = genFileRoot.resolve("v" + ver);
             assertTrue(CompilerUtils.compile(source, classes));
             Files.copy(source.resolve("versionResource"),
                     classes.resolve("versionResource"),
@@ -217,10 +264,10 @@ public class RuntimeTest {
 
         Path classes = Paths.get(usr, "classes", "test");
         Files.createDirectory(classes);
-        Path source = Paths.get(src, "data", "runtimetest", "test");
+        Path source = srcFileRoot.resolve("test");
         assertTrue(
-                CompilerUtils.compile(source, classes, "-cp", "classes/base/"));
-        Files.copy(Paths.get(src, "data", "runtimetest", "manifest.txt"),
+                CompilerUtils.compile(source, classes, "-cp", "classes/v" + OLD_RELEASE));
+        Files.copy(srcFileRoot.resolve("manifest.txt"),
                 Paths.get(usr, "manifest.txt"),
                 StandardCopyOption.REPLACE_EXISTING);
     }

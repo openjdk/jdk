@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,12 @@
  * to inspect the source-level structures of programs and
  * libraries, including API comments embedded in the source.
  *
+ * <p>
+ * The {@link StandardDoclet standard doclet} can be used to
+ * generate HTML-formatted documentation. It supports user-defined
+ * {@link Taglet taglets}, which can be used to generate customized
+ * output for user-defined tags in documentation comments.
+ *
  * <p style="font-style: italic">
  * <b>Note:</b> The declarations in this package supersede those
  * in the older package {@code com.sun.javadoc}. For details on the
@@ -55,24 +61,24 @@
  * described by {@link javax.lang.model Language Model API} to query Elements and Types.
  * <p>
  *
- * <a name="terminology"></a>
+ * <a id="terminology"></a>
  * <h3>Terminology</h3>
  *
  * <dl>
- *   <dt><a name="selected"></a>Selected</dt>
+ *   <dt><a id="selected"></a>Selected</dt>
  *     <dd>An element is considered to be <em>selected</em>, if the
  *         <em>selection controls</em> <a href="#options">allow</a> it
  *         to be documented. (Note that synthetic elements are never
  *         selected.)
  *    </dd>
  *
- *   <dt><a name="specified"></a>Specified</dt>
+ *   <dt><a id="specified"></a>Specified</dt>
  *   <dd>The set of elements specified by the user are considered to be <em>specified
  *       elements</em>. Specified elements provide the starting points
  *       for determining the <em>included elements</em> to be documented.
  *   </dd>
  *
- *   <dt><a name="included"></a>Included</dt>
+ *   <dt><a id="included"></a>Included</dt>
  *   <dd>An element is considered to be <em>included</em>, if it is
  *       <em>specified</em> if it contains a <em>specified</em> element,
  *       or it is enclosed in a <em>specified</em> element, and is <em>selected</em>.
@@ -81,7 +87,7 @@
  *
  * </dl>
  * <p>
- * <a name="options"></a>
+ * <a id="options"></a>
  * <h3>Options</h3>
  * Javadoc <em>selection control</em> can be specified with these options
  * as follows:
@@ -125,30 +131,56 @@
  *   <li>{@code sourcefilenames} can be used to specify source file names.
  * </ul>
  * <p>
- * <a name="legacy-interactions"></a>
+ * <a id="legacy-interactions"></a>
  * <h4>Interactions with older options.</h4>
  *
  * The new {@code --show-*} options provide a more detailed replacement
- * for the older options -public, -protected, -package, -private.
+ * for the older options {@code -public}, {@code -protected}, {@code -package}, {@code -private}.
  * Alternatively, the older options can continue to be used as shorter
  * forms for combinations of the new options, as described below:
- <table style="font-family: monospace" border=1>
-    <caption>Short form options mapping</caption>
-    <tr><th>Older option<th colspan="5">Equivalent to these values with the new option
-    <tr><th><th>{@code --show-members}<th>{@code --show-types}<th>{@code --show-packages}<th>{@code --show-module-contents}
-    <tr><td>{@code -public}<td>public<td>public<td>exported<td>api
-    <tr><td>{@code -protected}<td>protected<td>protected<td>exported<td>api
-    <tr><td>{@code -package}<td>package<td>package<td>all<td>all
-    <tr><td>{@code -private}<td>private<td>private<td>all<td>all
-  </table>
+ * <table class="striped">
+ *   <caption>Short form options mapping</caption>
+ *   <thead>
+ *       <tr>   <th rowspan="2" scope="col" style="vertical-align:top">
+ *                      Older option
+ *              <th colspan="5" scope="col" style="border-bottom: 1px solid black">
+ *                      Equivalent to these values with the new option
+ *       <tr>   <th scope="col">{@code --show-members}
+ *              <th scope="col">{@code --show-types}
+ *              <th scope="col">{@code --show-packages}
+ *              <th scope="col">{@code --show-module-contents}
+ *   </thead>
+ *   <tbody>
+ *       <tr>   <th scope="row">{@code -public}
+ *              <td>public
+ *              <td>public
+ *              <td>exported
+ *              <td>api
+ *       <tr>   <th scope="row">{@code -protected}
+ *              <td>protected
+ *              <td>protected
+ *              <td>exported
+ *              <td>api
+ *       <tr>   <th scope="row">{@code -package}
+ *              <td>package
+ *              <td>package
+ *              <td>all
+ *              <td>all
+ *       <tr>   <th scope="row">{@code -private}
+ *              <td>private
+ *              <td>private
+ *              <td>all
+ *              <td>all
+ *   </tbody>
+ * </table>
  * <p>
- * <a name="qualified"></a>
+ * <a id="qualified"></a>
  * A <em>qualified</em> element name is one that has its package
  * name prepended to it, such as {@code java.lang.String}.  A non-qualified
  * name has no package name, such as {@code String}.
  * <p>
  *
- * <a name="example"></a>
+ * <a id="example"></a>
  * <h3>Example</h3>
  *
  * The following is an example doclet that displays information of a class
@@ -268,7 +300,7 @@
  *       source-location/Example.java
  * </pre>
  *
- * <h3><a name="migration">Migration Guide</a></h3>
+ * <h3><a id="migration">Migration Guide</a></h3>
  *
  * <p>Many of the types in the old {@code com.sun.javadoc} API do not have equivalents in this
  * package. Instead, types in the {@code javax.lang.model} and {@code com.sun.source} APIs
@@ -277,39 +309,44 @@
  * <p>The following table gives a guide to the mapping from old types to their replacements.
  * In some cases, there is no direct equivalent.
  *
- * <table style="font-family: monospace" border=1>
-    <caption>Guide for mapping old types to new types</caption>
-    <tr><th>Old Type<th>New Type
-    <tr><td>AnnotatedType<td>javax.lang.model.type.Type
-    <tr><td>AnnotationDesc<td>javax.lang.model.element.AnnotationMirror
-    <tr><td>AnnotationDesc.ElementValuePair<td>javax.lang.model.element.AnnotationValue
-    <tr><td>AnnotationTypeDoc<td>javax.lang.model.element.TypeElement
-    <tr><td>AnnotationTypeElementDoc<td>javax.lang.model.element.ExecutableElement
-    <tr><td>AnnotationValue<td>javax.lang.model.element.AnnotationValue
-    <tr><td>ClassDoc<td>javax.lang.model.element.TypeElement
-    <tr><td>ConstructorDoc<td>javax.lang.model.element.ExecutableElement
-    <tr><td>Doc<td>javax.lang.model.element.Element
-    <tr><td>DocErrorReporter<td>jdk.javadoc.doclet.Reporter
-    <tr><td>Doclet<td>jdk.javadoc.doclet.Doclet
-    <tr><td>ExecutableMemberDoc<td>javax.lang.model.element.ExecutableElement
-    <tr><td>FieldDoc<td>javax.lang.model.element.VariableElement
-    <tr><td>LanguageVersion<td>javax.lang.model.SourceVersion
-    <tr><td>MemberDoc<td>javax.lang.model.element.Element
-    <tr><td>MethodDoc<td>javax.lang.model.element.ExecutableElement
-    <tr><td>PackageDoc<td>javax.lang.model.element.PackageElement
-    <tr><td>Parameter<td>javax.lang.model.element.VariableElement
-    <tr><td>ParameterizedType<td>javax.lang.model.type.DeclaredType
-    <tr><td>ParamTag<td>com.sun.source.doctree.ParamTree
-    <tr><td>ProgramElementDoc<td>javax.lang.model.element.Element
-    <tr><td>RootDoc<td>jdk.javadoc.doclet.DocletEnvironment
-    <tr><td>SeeTag<td>com.sun.source.doctree.LinkTree<br>com.sun.source.doctree.SeeTree
-    <tr><td>SerialFieldTag<td>com.sun.source.doctree.SerialFieldTree
-    <tr><td>SourcePosition<td>com.sun.source.util.SourcePositions
-    <tr><td>Tag<td>com.sun.source.doctree.DocTree
-    <tr><td>ThrowsTag<td>com.sun.source.doctree.ThrowsTree
-    <tr><td>Type<td>javax.lang.model.type.Type
-    <tr><td>TypeVariable<td>javax.lang.model.type.TypeVariable
-    <tr><td>WildcardType<td>javax.lang.model.type.WildcardType
+ * <table class="striped">
+ *   <caption>Guide for mapping old types to new types</caption>
+ *   <thead>
+ *     <tr><th scope="col">Old Type<th scope="col">New Type
+ *   </thead>
+ *   <tbody style="text-align:left">
+ *     <tr><th scope="row">{@code AnnotatedType}            <td>{@link javax.lang.model.type.TypeMirror javax.lang.model.type.TypeMirror}
+ *     <tr><th scope="row">{@code AnnotationDesc}           <td>{@link javax.lang.model.element.AnnotationMirror javax.lang.model.element.AnnotationMirror}
+ *     <tr><th scope="row">{@code AnnotationDesc.ElementValuePair}<td>{@link javax.lang.model.element.AnnotationValue javax.lang.model.element.AnnotationValue}
+ *     <tr><th scope="row">{@code AnnotationTypeDoc}        <td>{@link javax.lang.model.element.TypeElement javax.lang.model.element.TypeElement}
+ *     <tr><th scope="row">{@code AnnotationTypeElementDoc} <td>{@link javax.lang.model.element.ExecutableElement javax.lang.model.element.ExecutableElement}
+ *     <tr><th scope="row">{@code AnnotationValue}          <td>{@link javax.lang.model.element.AnnotationValue javax.lang.model.element.AnnotationValue}
+ *     <tr><th scope="row">{@code ClassDoc}                 <td>{@link javax.lang.model.element.TypeElement javax.lang.model.element.TypeElement}
+ *     <tr><th scope="row">{@code ConstructorDoc}           <td>{@link javax.lang.model.element.ExecutableElement javax.lang.model.element.ExecutableElement}
+ *     <tr><th scope="row">{@code Doc}                      <td>{@link javax.lang.model.element.Element javax.lang.model.element.Element}
+ *     <tr><th scope="row">{@code DocErrorReporter}         <td>{@link jdk.javadoc.doclet.Reporter jdk.javadoc.doclet.Reporter}
+ *     <tr><th scope="row">{@code Doclet}                   <td>{@link jdk.javadoc.doclet.Doclet jdk.javadoc.doclet.Doclet}
+ *     <tr><th scope="row">{@code ExecutableMemberDoc}      <td>{@link javax.lang.model.element.ExecutableElement javax.lang.model.element.ExecutableElement}
+ *     <tr><th scope="row">{@code FieldDoc}                 <td>{@link javax.lang.model.element.VariableElement javax.lang.model.element.VariableElement}
+ *     <tr><th scope="row">{@code LanguageVersion}          <td>{@link javax.lang.model.SourceVersion javax.lang.model.SourceVersion}
+ *     <tr><th scope="row">{@code MemberDoc}                <td>{@link javax.lang.model.element.Element javax.lang.model.element.Element}
+ *     <tr><th scope="row">{@code MethodDoc}                <td>{@link javax.lang.model.element.ExecutableElement javax.lang.model.element.ExecutableElement}
+ *     <tr><th scope="row">{@code PackageDoc}               <td>{@link javax.lang.model.element.PackageElement javax.lang.model.element.PackageElement}
+ *     <tr><th scope="row">{@code Parameter}                <td>{@link javax.lang.model.element.VariableElement javax.lang.model.element.VariableElement}
+ *     <tr><th scope="row">{@code ParameterizedType}        <td>{@link javax.lang.model.type.DeclaredType javax.lang.model.type.DeclaredType}
+ *     <tr><th scope="row">{@code ParamTag}                 <td>{@link com.sun.source.doctree.ParamTree com.sun.source.doctree.ParamTree}
+ *     <tr><th scope="row">{@code ProgramElementDoc}        <td>{@link javax.lang.model.element.Element javax.lang.model.element.Element}
+ *     <tr><th scope="row">{@code RootDoc}                  <td>{@link jdk.javadoc.doclet.DocletEnvironment jdk.javadoc.doclet.DocletEnvironment}
+ *     <tr><th scope="row">{@code SeeTag}                   <td>{@link com.sun.source.doctree.LinkTree com.sun.source.doctree.LinkTree}<br>
+ *                                                              {@link com.sun.source.doctree.SeeTree com.sun.source.doctree.SeeTree}
+ *     <tr><th scope="row">{@code SerialFieldTag}           <td>{@link com.sun.source.doctree.SerialFieldTree com.sun.source.doctree.SerialFieldTree}
+ *     <tr><th scope="row">{@code SourcePosition}           <td>{@link com.sun.source.util.SourcePositions com.sun.source.util.SourcePositions}
+ *     <tr><th scope="row">{@code Tag}                      <td>{@link com.sun.source.doctree.DocTree com.sun.source.doctree.DocTree}
+ *     <tr><th scope="row">{@code ThrowsTag}                <td>{@link com.sun.source.doctree.ThrowsTree com.sun.source.doctree.ThrowsTree}
+ *     <tr><th scope="row">{@code Type}                     <td>{@link javax.lang.model.type.TypeMirror javax.lang.model.type.TypeMirror}
+ *     <tr><th scope="row">{@code TypeVariable}             <td>{@link javax.lang.model.type.TypeVariable javax.lang.model.type.TypeVariable}
+ *     <tr><th scope="row">{@code WildcardType}             <td>{@link javax.lang.model.type.WildcardType javax.lang.model.type.WildcardType}
+ *   </tbody>
  * </table>
  *
  * @see jdk.javadoc.doclet.Doclet

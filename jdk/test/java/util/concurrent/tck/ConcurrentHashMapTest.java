@@ -43,8 +43,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -148,7 +146,7 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
         ConcurrentHashMap<BI, Boolean> m =
             new ConcurrentHashMap<BI, Boolean>();
         for (int i = 0; i < size; i++) {
-            assertTrue(m.put(new CI(i), true) == null);
+            assertNull(m.put(new CI(i), true));
         }
         for (int i = 0; i < size; i++) {
             assertTrue(m.containsKey(new CI(i)));
@@ -169,7 +167,7 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
             BS bs = new BS(String.valueOf(i));
             LexicographicList<BI> bis = new LexicographicList<BI>(bi);
             LexicographicList<BS> bss = new LexicographicList<BS>(bs);
-            assertTrue(m.putIfAbsent(bis, true) == null);
+            assertNull(m.putIfAbsent(bis, true));
             assertTrue(m.containsKey(bis));
             if (m.putIfAbsent(bss, true) == null)
                 assertTrue(m.containsKey(bss));

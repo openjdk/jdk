@@ -25,6 +25,8 @@
  * @test
  * @bug 7194005
  * @summary launcher handling of zip64 archives (Scenario A and B)
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile  -XDignore.symbol.file BigJar.java
  * @run main/timeout=600 BigJar
  */

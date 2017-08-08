@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public class MessageLine {
 
     static final Pattern emptyOrCommentPattern = Pattern.compile("( *#.*)?");
-    static final Pattern typePattern = Pattern.compile("[-\\\\'A-Z\\.a-z ]+( \\([A-Za-z 0-9]+\\))?");
+    static final Pattern typePattern = Pattern.compile("[-\\\\'A-Z\\.a-z ]+( \\([-A-Za-z 0-9]+\\))?");
     static final Pattern infoPattern = Pattern.compile(String.format("# ([0-9]+: %s, )*[0-9]+: %s",
             typePattern.pattern(), typePattern.pattern()));
 

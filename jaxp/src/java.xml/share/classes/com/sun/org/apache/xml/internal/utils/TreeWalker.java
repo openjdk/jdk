@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,11 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xml.internal.utils;
 
-import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
-import java.io.File;
-
+import com.sun.org.apache.xml.internal.dtm.ref.dom2dtm.DOM2DTM.CharacterNodeHandler;
+import javax.xml.transform.Result;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Element;
 import org.w3c.dom.EntityReference;
@@ -47,14 +47,8 @@ public class TreeWalker
   /** Local reference to a ContentHandler          */
   private ContentHandler m_contentHandler = null;
 
-  // ARGHH!!  JAXP Uses Xerces without setting the namespace processing to ON!
-  // DOM2Helper m_dh = new DOM2Helper();
-
-  /** DomHelper for this TreeWalker          */
-  protected DOMHelper m_dh;
-
-        /** Locator object for this TreeWalker          */
-        private LocatorImpl m_locator = new LocatorImpl();
+   /** Locator object for this TreeWalker          */
+   private LocatorImpl m_locator = new LocatorImpl();
 
   /**
    * Get the ContentHandler used for the tree walk.
@@ -76,32 +70,21 @@ public class TreeWalker
     m_contentHandler = ch;
   }
 
-        /**
+   /**
    * Constructor.
    * @param   contentHandler The implementation of the
    * @param   systemId System identifier for the document.
    * contentHandler operation (toXMLString, digest, ...)
    */
-  public TreeWalker(ContentHandler contentHandler, DOMHelper dh, String systemId)
+  public TreeWalker(ContentHandler contentHandler, String systemId)
   {
     this.m_contentHandler = contentHandler;
-    m_contentHandler.setDocumentLocator(m_locator);
+    if (m_contentHandler != null) {
+        m_contentHandler.setDocumentLocator(m_locator);
+    }
     if (systemId != null) {
         m_locator.setSystemId(systemId);
     }
-    m_dh = dh;
-  }
-
-  /**
-   * Constructor.
-   * @param   contentHandler The implementation of the
-   * contentHandler operation (toXMLString, digest, ...)
-   */
-  public TreeWalker(ContentHandler contentHandler, DOMHelper dh)
-  {
-    this.m_contentHandler = contentHandler;
-    m_contentHandler.setDocumentLocator(m_locator);
-    m_dh = dh;
   }
 
   /**
@@ -111,11 +94,7 @@ public class TreeWalker
    */
   public TreeWalker(ContentHandler contentHandler)
   {
-    this.m_contentHandler = contentHandler;
-    if (m_contentHandler != null) {
-        m_contentHandler.setDocumentLocator(m_locator);
-    }
-    m_dh = new DOM2Helper();
+      this(contentHandler, null);
   }
 
   /**
@@ -239,7 +218,7 @@ public class TreeWalker
     this.m_contentHandler.endDocument();
   }
 
-  /** Flag indicating whether following text to be processed is raw text          */
+  // Flag indicating whether following text to be processed is raw text
   boolean nextIsRaw = false;
 
   /**
@@ -248,9 +227,9 @@ public class TreeWalker
   private final void dispatachChars(Node node)
      throws org.xml.sax.SAXException
   {
-    if(m_contentHandler instanceof com.sun.org.apache.xml.internal.dtm.ref.dom2dtm.DOM2DTM.CharacterNodeHandler)
+    if(m_contentHandler instanceof CharacterNodeHandler)
     {
-      ((com.sun.org.apache.xml.internal.dtm.ref.dom2dtm.DOM2DTM.CharacterNodeHandler)m_contentHandler).characters(node);
+      ((CharacterNodeHandler)m_contentHandler).characters(node);
     }
     else
     {
@@ -313,17 +292,14 @@ public class TreeWalker
     case Node.ELEMENT_NODE :
       NamedNodeMap atts = ((Element) node).getAttributes();
       int nAttrs = atts.getLength();
-      // System.out.println("TreeWalker#startNode: "+node.getNodeName());
 
       for (int i = 0; i < nAttrs; i++)
       {
         Node attr = atts.item(i);
         String attrName = attr.getNodeName();
 
-        // System.out.println("TreeWalker#startNode: attr["+i+"] = "+attrName+", "+attr.getNodeValue());
         if (attrName.equals("xmlns") || attrName.startsWith("xmlns:"))
         {
-          // System.out.println("TreeWalker#startNode: attr["+i+"] = "+attrName+", "+attr.getNodeValue());
           int index;
           // Use "" instead of null, as Xerces likes "" for the
           // name of the default namespace.  Fix attributed
@@ -337,15 +313,13 @@ public class TreeWalker
 
       }
 
-      // System.out.println("m_dh.getNamespaceOfNode(node): "+m_dh.getNamespaceOfNode(node));
-      // System.out.println("m_dh.getLocalNameOfNode(node): "+m_dh.getLocalNameOfNode(node));
-      String ns = m_dh.getNamespaceOfNode(node);
+      String ns = DOM2Helper.getNamespaceOfNode(node);
       if(null == ns)
         ns = "";
       this.m_contentHandler.startElement(ns,
-                                         m_dh.getLocalNameOfNode(node),
+                                         DOM2Helper.getLocalNameOfNode(node),
                                          node.getNodeName(),
-                                         new AttList(atts, m_dh));
+                                         new AttList(atts));
       break;
     case Node.PROCESSING_INSTRUCTION_NODE :
     {
@@ -393,9 +367,9 @@ public class TreeWalker
       {
         nextIsRaw = false;
 
-        m_contentHandler.processingInstruction(javax.xml.transform.Result.PI_DISABLE_OUTPUT_ESCAPING, "");
+        m_contentHandler.processingInstruction(Result.PI_DISABLE_OUTPUT_ESCAPING, "");
         dispatachChars(node);
-        m_contentHandler.processingInstruction(javax.xml.transform.Result.PI_ENABLE_OUTPUT_ESCAPING, "");
+        m_contentHandler.processingInstruction(Result.PI_ENABLE_OUTPUT_ESCAPING, "");
       }
       else
       {
@@ -440,12 +414,12 @@ public class TreeWalker
       break;
 
     case Node.ELEMENT_NODE :
-      String ns = m_dh.getNamespaceOfNode(node);
+      String ns = DOM2Helper.getNamespaceOfNode(node);
       if(null == ns)
         ns = "";
       this.m_contentHandler.endElement(ns,
-                                         m_dh.getLocalNameOfNode(node),
-                                         node.getNodeName());
+              DOM2Helper.getLocalNameOfNode(node),
+              node.getNodeName());
 
       NamedNodeMap atts = ((Element) node).getAttributes();
       int nAttrs = atts.getLength();

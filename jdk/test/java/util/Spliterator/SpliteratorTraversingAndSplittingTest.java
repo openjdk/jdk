@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 /**
  * @test
  * @summary Spliterator traversing and splitting tests
+ * @library /lib/testlibrary/bootlib
+ * @build java.base/java.util.SpliteratorOfIntDataBuilder
+ *        java.base/java.util.SpliteratorTestHelper
  * @run testng SpliteratorTraversingAndSplittingTest
  * @bug 8020016 8071477 8072784 8169838
  */
@@ -38,11 +41,9 @@ import java.util.AbstractSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -58,6 +59,8 @@ import java.util.RandomAccess;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.Spliterator;
+import java.util.SpliteratorOfIntDataBuilder;
+import java.util.SpliteratorTestHelper;
 import java.util.Spliterators;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -82,14 +85,8 @@ import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
-
-@Test
-public class SpliteratorTraversingAndSplittingTest {
+public class SpliteratorTraversingAndSplittingTest extends SpliteratorTestHelper {
 
     private static final List<Integer> SIZES = Arrays.asList(0, 1, 10, 42);
 
@@ -668,83 +665,52 @@ public class SpliteratorTraversingAndSplittingTest {
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testNullPointerException(String description, Collection exp, Supplier<Spliterator> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining(null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance(null));
+    public void testNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        assertThrowsNPE(() -> s.get().forEachRemaining(null));
+        assertThrowsNPE(() -> s.get().tryAdvance(null));
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testForEach(String description, Collection exp, Supplier<Spliterator> s) {
-        testForEach(exp, s, (Consumer<Object> b) -> b);
+    public void testForEach(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testForEach(exp, s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testTryAdvance(String description, Collection exp, Supplier<Spliterator> s) {
-        testTryAdvance(exp, s, (Consumer<Object> b) -> b);
+    public void testTryAdvance(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testTryAdvance(exp, s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testMixedTryAdvanceForEach(String description, Collection exp, Supplier<Spliterator> s) {
-        testMixedTryAdvanceForEach(exp, s, (Consumer<Object> b) -> b);
+    public void testMixedTryAdvanceForEach(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testMixedTryAdvanceForEach(exp, s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testSplitAfterFullTraversal(String description, Collection exp, Supplier<Spliterator> s) {
-        testSplitAfterFullTraversal(s, (Consumer<Object> b) -> b);
+    public void testMixedTraverseAndSplit(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testMixedTraverseAndSplit(exp, s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testSplitOnce(String description, Collection exp, Supplier<Spliterator> s) {
-        testSplitOnce(exp, s, (Consumer<Object> b) -> b);
+    public void testSplitAfterFullTraversal(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testSplitAfterFullTraversal(s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testSplitSixDeep(String description, Collection exp, Supplier<Spliterator> s) {
-        testSplitSixDeep(exp, s, (Consumer<Object> b) -> b);
+    public void testSplitOnce(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testSplitOnce(exp, s, UnaryOperator.identity());
     }
 
     @Test(dataProvider = "Spliterator<Integer>")
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public void testSplitUntilNull(String description, Collection exp, Supplier<Spliterator> s) {
-        testSplitUntilNull(exp, s, (Consumer<Object> b) -> b);
+    public void testSplitSixDeep(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testSplitSixDeep(exp, s, UnaryOperator.identity());
+    }
+
+    @Test(dataProvider = "Spliterator<Integer>")
+    public void testSplitUntilNull(String description, Collection<Integer> exp, Supplier<Spliterator<Integer>> s) {
+        testSplitUntilNull(exp, s, UnaryOperator.identity());
     }
 
     //
-
-    private static class SpliteratorOfIntDataBuilder {
-        List<Object[]> data;
-
-        List<Integer> exp;
-
-        SpliteratorOfIntDataBuilder(List<Object[]> data, List<Integer> exp) {
-            this.data = data;
-            this.exp = exp;
-        }
-
-        void add(String description, List<Integer> expected, Supplier<Spliterator.OfInt> s) {
-            description = joiner(description).toString();
-            data.add(new Object[]{description, expected, s});
-        }
-
-        void add(String description, Supplier<Spliterator.OfInt> s) {
-            add(description, exp, s);
-        }
-
-        StringBuilder joiner(String description) {
-            return new StringBuilder(description).
-                    append(" {").
-                    append("size=").append(exp.size()).
-                    append("}");
-        }
-    }
-
     private static class SpliteratorOfIntCharDataBuilder {
         List<Object[]> data;
 
@@ -888,30 +854,6 @@ public class SpliteratorTraversingAndSplittingTest {
             cdb.add("CharBuffer.wrap(\"%s\".toCharArray())", s -> CharBuffer.wrap(s.toCharArray()));
         }
 
-
-        Object[][] bitStreamTestcases = new Object[][] {
-                { "none", IntStream.empty().toArray() },
-                { "index 0", IntStream.of(0).toArray() },
-                { "index 255", IntStream.of(255).toArray() },
-                { "index 0 and 255", IntStream.of(0, 255).toArray() },
-                { "every bit", IntStream.range(0, 255).toArray() },
-                { "step 2", IntStream.range(0, 255).map(f -> f * 2).toArray() },
-                { "step 3", IntStream.range(0, 255).map(f -> f * 3).toArray() },
-                { "step 5", IntStream.range(0, 255).map(f -> f * 5).toArray() },
-                { "step 7", IntStream.range(0, 255).map(f -> f * 7).toArray() },
-                { "1, 10, 100, 1000", IntStream.of(1, 10, 100, 1000).toArray() },
-        };
-        for (Object[] tc : bitStreamTestcases) {
-            String description = (String)tc[0];
-            int[] exp = (int[])tc[1];
-            SpliteratorOfIntDataBuilder db = new SpliteratorOfIntDataBuilder(
-                    data, IntStream.of(exp).boxed().collect(toList()));
-
-            db.add("BitSet.stream.spliterator() {" + description + "}", () ->
-                IntStream.of(exp).collect(BitSet::new, BitSet::set, BitSet::or).
-                        stream().spliterator()
-            );
-        }
         return spliteratorOfIntDataProvider = data.toArray(new Object[0][]);
     }
 
@@ -922,32 +864,10 @@ public class SpliteratorTraversingAndSplittingTest {
         return exp;
     }
 
-    private static UnaryOperator<Consumer<Integer>> intBoxingConsumer() {
-        class BoxingAdapter implements Consumer<Integer>, IntConsumer {
-            private final Consumer<Integer> b;
-
-            BoxingAdapter(Consumer<Integer> b) {
-                this.b = b;
-            }
-
-            @Override
-            public void accept(Integer value) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public void accept(int value) {
-                b.accept(value);
-            }
-        }
-
-        return b -> new BoxingAdapter(b);
-    }
-
     @Test(dataProvider = "Spliterator.OfInt")
     public void testIntNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((IntConsumer) null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((IntConsumer) null));
+        assertThrowsNPE(() -> s.get().forEachRemaining((IntConsumer) null));
+        assertThrowsNPE(() -> s.get().tryAdvance((IntConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfInt")
@@ -963,6 +883,11 @@ public class SpliteratorTraversingAndSplittingTest {
     @Test(dataProvider = "Spliterator.OfInt")
     public void testIntMixedTryAdvanceForEach(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
         testMixedTryAdvanceForEach(exp, s, intBoxingConsumer());
+    }
+
+    @Test(dataProvider = "Spliterator.OfInt")
+    public void testIntMixedTraverseAndSplit(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
+        testMixedTraverseAndSplit(exp, s, intBoxingConsumer());
     }
 
     @Test(dataProvider = "Spliterator.OfInt")
@@ -1082,32 +1007,10 @@ public class SpliteratorTraversingAndSplittingTest {
         return exp;
     }
 
-    private static UnaryOperator<Consumer<Long>> longBoxingConsumer() {
-        class BoxingAdapter implements Consumer<Long>, LongConsumer {
-            private final Consumer<Long> b;
-
-            BoxingAdapter(Consumer<Long> b) {
-                this.b = b;
-            }
-
-            @Override
-            public void accept(Long value) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public void accept(long value) {
-                b.accept(value);
-            }
-        }
-
-        return b -> new BoxingAdapter(b);
-    }
-
     @Test(dataProvider = "Spliterator.OfLong")
     public void testLongNullPointerException(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((LongConsumer) null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((LongConsumer) null));
+        assertThrowsNPE(() -> s.get().forEachRemaining((LongConsumer) null));
+        assertThrowsNPE(() -> s.get().tryAdvance((LongConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfLong")
@@ -1123,6 +1026,11 @@ public class SpliteratorTraversingAndSplittingTest {
     @Test(dataProvider = "Spliterator.OfLong")
     public void testLongMixedTryAdvanceForEach(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
         testMixedTryAdvanceForEach(exp, s, longBoxingConsumer());
+    }
+
+    @Test(dataProvider = "Spliterator.OfLong")
+    public void testLongMixedTraverseAndSplit(String description, Collection<Long> exp, Supplier<Spliterator.OfLong> s) {
+        testMixedTraverseAndSplit(exp, s, longBoxingConsumer());
     }
 
     @Test(dataProvider = "Spliterator.OfLong")
@@ -1242,32 +1150,10 @@ public class SpliteratorTraversingAndSplittingTest {
         return exp;
     }
 
-    private static UnaryOperator<Consumer<Double>> doubleBoxingConsumer() {
-        class BoxingAdapter implements Consumer<Double>, DoubleConsumer {
-            private final Consumer<Double> b;
-
-            BoxingAdapter(Consumer<Double> b) {
-                this.b = b;
-            }
-
-            @Override
-            public void accept(Double value) {
-                throw new IllegalStateException();
-            }
-
-            @Override
-            public void accept(double value) {
-                b.accept(value);
-            }
-        }
-
-        return b -> new BoxingAdapter(b);
-    }
-
     @Test(dataProvider = "Spliterator.OfDouble")
     public void testDoubleNullPointerException(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((DoubleConsumer) null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((DoubleConsumer) null));
+        assertThrowsNPE(() -> s.get().forEachRemaining((DoubleConsumer) null));
+        assertThrowsNPE(() -> s.get().tryAdvance((DoubleConsumer) null));
     }
 
     @Test(dataProvider = "Spliterator.OfDouble")
@@ -1283,6 +1169,11 @@ public class SpliteratorTraversingAndSplittingTest {
     @Test(dataProvider = "Spliterator.OfDouble")
     public void testDoubleMixedTryAdvanceForEach(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testMixedTryAdvanceForEach(exp, s, doubleBoxingConsumer());
+    }
+
+    @Test(dataProvider = "Spliterator.OfDouble")
+    public void testDoubleMixedTraverseAndSplit(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
+        testMixedTraverseAndSplit(exp, s, doubleBoxingConsumer());
     }
 
     @Test(dataProvider = "Spliterator.OfDouble")
@@ -1303,394 +1194,6 @@ public class SpliteratorTraversingAndSplittingTest {
     @Test(dataProvider = "Spliterator.OfDouble")
     public void testDoubleSplitUntilNull(String description, Collection<Double> exp, Supplier<Spliterator.OfDouble> s) {
         testSplitUntilNull(exp, s, doubleBoxingConsumer());
-    }
-
-    //
-
-    private static <T, S extends Spliterator<T>> void testForEach(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        S spliterator = supplier.get();
-        long sizeIfKnown = spliterator.getExactSizeIfKnown();
-        boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
-
-        ArrayList<T> fromForEach = new ArrayList<>();
-        spliterator = supplier.get();
-        Consumer<T> addToFromForEach = boxingAdapter.apply(fromForEach::add);
-        spliterator.forEachRemaining(addToFromForEach);
-
-        // Assert that forEach now produces no elements
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> fail("Spliterator.forEach produced an element after spliterator exhausted: " + e)));
-        // Assert that tryAdvance now produce no elements
-        spliterator.tryAdvance(boxingAdapter.apply(e -> fail("Spliterator.tryAdvance produced an element after spliterator exhausted: " + e)));
-
-        // assert that size, tryAdvance, and forEach are consistent
-        if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, exp.size());
-        }
-        assertEquals(fromForEach.size(), exp.size());
-
-        assertContents(fromForEach, exp, isOrdered);
-    }
-
-    private static <T, S extends Spliterator<T>> void testTryAdvance(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        S spliterator = supplier.get();
-        long sizeIfKnown = spliterator.getExactSizeIfKnown();
-        boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
-
-        spliterator = supplier.get();
-        ArrayList<T> fromTryAdvance = new ArrayList<>();
-        Consumer<T> addToFromTryAdvance = boxingAdapter.apply(fromTryAdvance::add);
-        while (spliterator.tryAdvance(addToFromTryAdvance)) { }
-
-        // Assert that forEach now produces no elements
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> fail("Spliterator.forEach produced an element after spliterator exhausted: " + e)));
-        // Assert that tryAdvance now produce no elements
-        spliterator.tryAdvance(boxingAdapter.apply(e -> fail("Spliterator.tryAdvance produced an element after spliterator exhausted: " + e)));
-
-        // assert that size, tryAdvance, and forEach are consistent
-        if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, exp.size());
-        }
-        assertEquals(fromTryAdvance.size(), exp.size());
-
-        assertContents(fromTryAdvance, exp, isOrdered);
-    }
-
-    private static <T, S extends Spliterator<T>> void testMixedTryAdvanceForEach(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        S spliterator = supplier.get();
-        long sizeIfKnown = spliterator.getExactSizeIfKnown();
-        boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
-
-        // tryAdvance first few elements, then forEach rest
-        ArrayList<T> dest = new ArrayList<>();
-        spliterator = supplier.get();
-        Consumer<T> addToDest = boxingAdapter.apply(dest::add);
-        for (int i = 0; i < 10 && spliterator.tryAdvance(addToDest); i++) { }
-        spliterator.forEachRemaining(addToDest);
-
-        // Assert that forEach now produces no elements
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> fail("Spliterator.forEach produced an element after spliterator exhausted: " + e)));
-        // Assert that tryAdvance now produce no elements
-        spliterator.tryAdvance(boxingAdapter.apply(e -> fail("Spliterator.tryAdvance produced an element after spliterator exhausted: " + e)));
-
-        if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, dest.size());
-        }
-        assertEquals(dest.size(), exp.size());
-
-        if (isOrdered) {
-            assertEquals(dest, exp);
-        }
-        else {
-            assertContentsUnordered(dest, exp);
-        }
-    }
-
-    private static <T, S extends Spliterator<T>> void testSplitAfterFullTraversal(
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        // Full traversal using tryAdvance
-        Spliterator<T> spliterator = supplier.get();
-        while (spliterator.tryAdvance(boxingAdapter.apply(e -> { }))) { }
-        Spliterator<T> split = spliterator.trySplit();
-        assertNull(split);
-
-        // Full traversal using forEach
-        spliterator = supplier.get();
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> {
-        }));
-        split = spliterator.trySplit();
-        assertNull(split);
-
-        // Full traversal using tryAdvance then forEach
-        spliterator = supplier.get();
-        spliterator.tryAdvance(boxingAdapter.apply(e -> { }));
-        spliterator.forEachRemaining(boxingAdapter.apply(e -> {
-        }));
-        split = spliterator.trySplit();
-        assertNull(split);
-    }
-
-    private static <T, S extends Spliterator<T>> void testSplitOnce(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        S spliterator = supplier.get();
-        long sizeIfKnown = spliterator.getExactSizeIfKnown();
-        boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
-
-        ArrayList<T> fromSplit = new ArrayList<>();
-        Spliterator<T> s1 = supplier.get();
-        Spliterator<T> s2 = s1.trySplit();
-        long s1Size = s1.getExactSizeIfKnown();
-        long s2Size = (s2 != null) ? s2.getExactSizeIfKnown() : 0;
-        Consumer<T> addToFromSplit = boxingAdapter.apply(fromSplit::add);
-        if (s2 != null)
-            s2.forEachRemaining(addToFromSplit);
-        s1.forEachRemaining(addToFromSplit);
-
-        if (sizeIfKnown >= 0) {
-            assertEquals(sizeIfKnown, fromSplit.size());
-            if (s1Size >= 0 && s2Size >= 0)
-                assertEquals(sizeIfKnown, s1Size + s2Size);
-        }
-        assertContents(fromSplit, exp, isOrdered);
-    }
-
-    private static <T, S extends Spliterator<T>> void testSplitSixDeep(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        S spliterator = supplier.get();
-        boolean isOrdered = spliterator.hasCharacteristics(Spliterator.ORDERED);
-
-        for (int depth=0; depth < 6; depth++) {
-            List<T> dest = new ArrayList<>();
-            spliterator = supplier.get();
-
-            assertRootSpliterator(spliterator);
-
-            // verify splitting with forEach
-            visit(depth, 0, dest, spliterator, boxingAdapter, spliterator.characteristics(), false);
-            assertContents(dest, exp, isOrdered);
-
-            // verify splitting with tryAdvance
-            dest.clear();
-            spliterator = supplier.get();
-            visit(depth, 0, dest, spliterator, boxingAdapter, spliterator.characteristics(), true);
-            assertContents(dest, exp, isOrdered);
-        }
-    }
-
-    private static <T, S extends Spliterator<T>> void visit(int depth, int curLevel,
-                                                            List<T> dest, S spliterator, UnaryOperator<Consumer<T>> boxingAdapter,
-                                                            int rootCharacteristics, boolean useTryAdvance) {
-        if (curLevel < depth) {
-            long beforeSize = spliterator.getExactSizeIfKnown();
-            Spliterator<T> split = spliterator.trySplit();
-            if (split != null) {
-                assertSpliterator(split, rootCharacteristics);
-                assertSpliterator(spliterator, rootCharacteristics);
-
-                if ((rootCharacteristics & Spliterator.SUBSIZED) != 0 &&
-                    (rootCharacteristics & Spliterator.SIZED) != 0) {
-                    assertEquals(beforeSize, split.estimateSize() + spliterator.estimateSize());
-                }
-                visit(depth, curLevel + 1, dest, split, boxingAdapter, rootCharacteristics, useTryAdvance);
-            }
-            visit(depth, curLevel + 1, dest, spliterator, boxingAdapter, rootCharacteristics, useTryAdvance);
-        }
-        else {
-            long sizeIfKnown = spliterator.getExactSizeIfKnown();
-            if (useTryAdvance) {
-                Consumer<T> addToDest = boxingAdapter.apply(dest::add);
-                int count = 0;
-                while (spliterator.tryAdvance(addToDest)) {
-                    ++count;
-                }
-
-                if (sizeIfKnown >= 0)
-                    assertEquals(sizeIfKnown, count);
-
-                // Assert that forEach now produces no elements
-                spliterator.forEachRemaining(boxingAdapter.apply(e -> fail("Spliterator.forEach produced an element after spliterator exhausted: " + e)));
-
-                Spliterator<T> split = spliterator.trySplit();
-                assertNull(split);
-            }
-            else {
-                List<T> leafDest = new ArrayList<>();
-                Consumer<T> addToLeafDest = boxingAdapter.apply(leafDest::add);
-                spliterator.forEachRemaining(addToLeafDest);
-
-                if (sizeIfKnown >= 0)
-                    assertEquals(sizeIfKnown, leafDest.size());
-
-                // Assert that forEach now produces no elements
-                spliterator.tryAdvance(boxingAdapter.apply(e -> fail("Spliterator.tryAdvance produced an element after spliterator exhausted: " + e)));
-
-                Spliterator<T> split = spliterator.trySplit();
-                assertNull(split);
-
-                dest.addAll(leafDest);
-            }
-        }
-    }
-
-    private static <T, S extends Spliterator<T>> void testSplitUntilNull(
-            Collection<T> exp,
-            Supplier<S> supplier,
-            UnaryOperator<Consumer<T>> boxingAdapter) {
-        Spliterator<T> s = supplier.get();
-        boolean isOrdered = s.hasCharacteristics(Spliterator.ORDERED);
-        assertRootSpliterator(s);
-
-        List<T> splits = new ArrayList<>();
-        Consumer<T> c = boxingAdapter.apply(splits::add);
-
-        testSplitUntilNull(new SplitNode<T>(c, s));
-        assertContents(splits, exp, isOrdered);
-    }
-
-    private static class SplitNode<T> {
-        // Constant for every node
-        final Consumer<T> c;
-        final int rootCharacteristics;
-
-        final Spliterator<T> s;
-
-        SplitNode(Consumer<T> c, Spliterator<T> s) {
-            this(c, s.characteristics(), s);
-        }
-
-        private SplitNode(Consumer<T> c, int rootCharacteristics, Spliterator<T> s) {
-            this.c = c;
-            this.rootCharacteristics = rootCharacteristics;
-            this.s = s;
-        }
-
-        SplitNode<T> fromSplit(Spliterator<T> split) {
-            return new SplitNode<>(c, rootCharacteristics, split);
-        }
-    }
-
-    /**
-     * Set the maximum stack capacity to 0.25MB. This should be more than enough to detect a bad spliterator
-     * while not unduly disrupting test infrastructure given the test data sizes that are used are small.
-     * Note that j.u.c.ForkJoinPool sets the max queue size to 64M (1 << 26).
-     */
-    private static final int MAXIMUM_STACK_CAPACITY = 1 << 18; // 0.25MB
-
-    private static <T> void testSplitUntilNull(SplitNode<T> e) {
-        // Use an explicit stack to avoid a StackOverflowException when testing a Spliterator
-        // that when repeatedly split produces a right-balanced (and maybe degenerate) tree, or
-        // for a spliterator that is badly behaved.
-        Deque<SplitNode<T>> stack = new ArrayDeque<>();
-        stack.push(e);
-
-        int iteration = 0;
-        while (!stack.isEmpty()) {
-            assertTrue(iteration++ < MAXIMUM_STACK_CAPACITY, "Exceeded maximum stack modification count of 1 << 18");
-
-            e = stack.pop();
-            Spliterator<T> parentAndRightSplit = e.s;
-
-            long parentEstimateSize = parentAndRightSplit.estimateSize();
-            assertTrue(parentEstimateSize >= 0,
-                       String.format("Split size estimate %d < 0", parentEstimateSize));
-
-            long parentSize = parentAndRightSplit.getExactSizeIfKnown();
-            Spliterator<T> leftSplit = parentAndRightSplit.trySplit();
-            if (leftSplit == null) {
-                parentAndRightSplit.forEachRemaining(e.c);
-                continue;
-            }
-
-            assertSpliterator(leftSplit, e.rootCharacteristics);
-            assertSpliterator(parentAndRightSplit, e.rootCharacteristics);
-
-            if (parentEstimateSize != Long.MAX_VALUE && leftSplit.estimateSize() > 0 && parentAndRightSplit.estimateSize() > 0) {
-                assertTrue(leftSplit.estimateSize() < parentEstimateSize,
-                           String.format("Left split size estimate %d >= parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
-                assertTrue(parentAndRightSplit.estimateSize() < parentEstimateSize,
-                           String.format("Right split size estimate %d >= parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
-            }
-            else {
-                assertTrue(leftSplit.estimateSize() <= parentEstimateSize,
-                           String.format("Left split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
-                assertTrue(parentAndRightSplit.estimateSize() <= parentEstimateSize,
-                           String.format("Right split size estimate %d > parent split size estimate %d", leftSplit.estimateSize(), parentEstimateSize));
-            }
-
-            long leftSize = leftSplit.getExactSizeIfKnown();
-            long rightSize = parentAndRightSplit.getExactSizeIfKnown();
-            if (parentSize >= 0 && leftSize >= 0 && rightSize >= 0)
-                assertEquals(parentSize, leftSize + rightSize,
-                             String.format("exact left split size %d + exact right split size %d != parent exact split size %d",
-                                           leftSize, rightSize, parentSize));
-
-            // Add right side to stack first so left side is popped off first
-            stack.push(e.fromSplit(parentAndRightSplit));
-            stack.push(e.fromSplit(leftSplit));
-        }
-    }
-
-    private static void assertRootSpliterator(Spliterator<?> s) {
-        assertFalse(s.hasCharacteristics(Spliterator.SIZED | Spliterator.CONCURRENT),
-                    "Root spliterator should not be SIZED and CONCURRENT");
-
-        assertSpliterator(s);
-    }
-
-    private static void assertSpliterator(Spliterator<?> s, int rootCharacteristics) {
-        if ((rootCharacteristics & Spliterator.SUBSIZED) != 0) {
-            assertTrue(s.hasCharacteristics(Spliterator.SUBSIZED),
-                       "Child split is not SUBSIZED when root split is SUBSIZED");
-        }
-        assertSpliterator(s);
-    }
-
-    private static void assertSpliterator(Spliterator<?> s) {
-        if (s.hasCharacteristics(Spliterator.SUBSIZED)) {
-            assertTrue(s.hasCharacteristics(Spliterator.SIZED));
-        }
-        if (s.hasCharacteristics(Spliterator.SIZED)) {
-            assertTrue(s.estimateSize() != Long.MAX_VALUE);
-            assertTrue(s.getExactSizeIfKnown() >= 0);
-        }
-        try {
-            s.getComparator();
-            assertTrue(s.hasCharacteristics(Spliterator.SORTED));
-        } catch (IllegalStateException e) {
-            assertFalse(s.hasCharacteristics(Spliterator.SORTED));
-        }
-    }
-
-    private static<T> void assertContents(Collection<T> actual, Collection<T> expected, boolean isOrdered) {
-        if (isOrdered) {
-            assertEquals(actual, expected);
-        }
-        else {
-            assertContentsUnordered(actual, expected);
-        }
-    }
-
-    private static<T> void assertContentsUnordered(Iterable<T> actual, Iterable<T> expected) {
-        assertEquals(toBoxedMultiset(actual), toBoxedMultiset(expected));
-    }
-
-    private static <T> Map<T, Integer> toBoxedMultiset(Iterable<T> c) {
-        Map<T, Integer> result = new HashMap<>();
-        c.forEach(e -> {
-            if (result.containsKey(e)) result.put(e, result.get(e) + 1);
-            else result.put(e, 1);
-        });
-        return result;
-    }
-
-    private void executeAndCatch(Class<? extends Exception> expected, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        }
-        catch (Exception e) {
-            caught = e;
-        }
-
-        assertNotNull(caught,
-                      String.format("No Exception was thrown, expected an Exception of %s to be thrown",
-                                    expected.getName()));
-        assertTrue(expected.isInstance(caught),
-                   String.format("Exception thrown %s not an instance of %s",
-                                 caught.getClass().getName(), expected.getName()));
     }
 
 }

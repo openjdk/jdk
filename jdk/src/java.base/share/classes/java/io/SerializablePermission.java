@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,19 @@ import java.util.StringTokenizer;
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
- * <table border=1 cellpadding=5 summary="Permission target name, what the permission allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">Permission target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
+ * <tbody>
  *
  * <tr>
- *   <td>enableSubclassImplementation</td>
+ *   <th scope="row">enableSubclassImplementation</th>
  *   <td>Subclass implementation of ObjectOutputStream or ObjectInputStream
  * to override the default serialization or deserialization, respectively,
  * of objects</td>
@@ -65,7 +69,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>enableSubstitution</td>
+ *   <th scope="row">enableSubstitution</th>
  *   <td>Substitution of one object for another during
  * serialization or deserialization</td>
  *   <td>This is dangerous because malicious code
@@ -74,12 +78,12 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>serialFilter</td>
+ *   <th scope="row">serialFilter</th>
  *   <td>Setting a filter for ObjectInputStreams.</td>
  *   <td>Code could remove a configured filter and remove protections
  *       already established.</td>
  * </tr>
- *
+ * </tbody>
  * </table>
  *
  * @see java.security.BasicPermission

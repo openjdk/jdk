@@ -42,9 +42,8 @@ import java.util.concurrent.locks.LockSupport;
 
 /**
  * A reusable synchronization barrier, similar in functionality to
- * {@link java.util.concurrent.CyclicBarrier CyclicBarrier} and
- * {@link java.util.concurrent.CountDownLatch CountDownLatch}
- * but supporting more flexible usage.
+ * {@link CyclicBarrier} and {@link CountDownLatch} but supporting
+ * more flexible usage.
  *
  * <p><b>Registration.</b> Unlike the case for other barriers, the
  * number of parties <em>registered</em> to synchronize on a phaser

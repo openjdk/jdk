@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,39 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
-import java.util.Iterator;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.List;
+
+import com.sun.jdi.AbsentInformationException;
+import com.sun.jdi.ArrayReference;
+import com.sun.jdi.ArrayType;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.Location;
+import com.sun.jdi.Method;
+import com.sun.jdi.Type;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public abstract class MethodImpl extends TypeComponentImpl
-    implements Method {
+                                 implements Method
+{
     private JNITypeParser signatureParser;
+
     abstract int argSlotCount() throws AbsentInformationException;
 
     abstract List<Location> allLineLocations(SDE.Stratum stratum,
-                                   String sourceName)
-                           throws AbsentInformationException;
+                                             String sourceName)
+                            throws AbsentInformationException;
 
     abstract List<Location> locationsOfLine(SDE.Stratum stratum,
-                                  String sourceName,
-                                  int lineNumber)
-                           throws AbsentInformationException;
+                                            String sourceName,
+                                            int lineNumber)
+                            throws AbsentInformationException;
 
     MethodImpl(VirtualMachine vm, ReferenceTypeImpl declaringType,
-               long ref,
-               String name, String signature,
+               long ref, String name, String signature,
                String genericSignature, int modifiers) {
         super(vm, declaringType, ref, name, signature,
               genericSignature, modifiers);
@@ -62,8 +71,7 @@ public abstract class MethodImpl extends TypeComponentImpl
                                        String signature,
                                        String genericSignature,
                                        int modifiers) {
-        if ((modifiers &
-             (VMModifiers.NATIVE | VMModifiers.ABSTRACT)) != 0) {
+        if ((modifiers & (VMModifiers.NATIVE | VMModifiers.ABSTRACT)) != 0) {
             return new NonConcreteMethodImpl(vm, declaringType, ref,
                                              name, signature,
                                              genericSignature,
@@ -92,27 +100,26 @@ public abstract class MethodImpl extends TypeComponentImpl
     }
 
     public final List<Location> allLineLocations()
-                           throws AbsentInformationException {
+                                throws AbsentInformationException {
         return allLineLocations(vm.getDefaultStratum(), null);
     }
 
     public List<Location> allLineLocations(String stratumID,
-                                 String sourceName)
-                           throws AbsentInformationException {
-        return allLineLocations(declaringType.stratum(stratumID),
-                                sourceName);
+                                           String sourceName)
+                          throws AbsentInformationException {
+        return allLineLocations(declaringType.stratum(stratumID), sourceName);
     }
 
     public final List<Location> locationsOfLine(int lineNumber)
-                           throws AbsentInformationException {
+                                throws AbsentInformationException {
         return locationsOfLine(vm.getDefaultStratum(),
                                null, lineNumber);
     }
 
     public List<Location> locationsOfLine(String stratumID,
-                                String sourceName,
-                                int lineNumber)
-                           throws AbsentInformationException {
+                                          String sourceName,
+                                          int lineNumber)
+                          throws AbsentInformationException {
         return locationsOfLine(declaringType.stratum(stratumID),
                                sourceName, lineNumber);
     }
@@ -122,8 +129,7 @@ public abstract class MethodImpl extends TypeComponentImpl
         if (stratum.isJava()) {
             return new BaseLineInfo(-1, declaringType);
         } else {
-            return new StratumLineInfo(stratum.id(), -1,
-                                       null, null);
+            return new StratumLineInfo(stratum.id(), -1, null, null);
         }
     }
 
@@ -164,7 +170,7 @@ public abstract class MethodImpl extends TypeComponentImpl
 
     public List<Type> argumentTypes() throws ClassNotLoadedException {
         int size = argumentSignatures().size();
-        ArrayList<Type> types = new ArrayList<Type>(size);
+        List<Type> types = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Type type = argumentType(i);
             types.add(type);
@@ -177,8 +183,7 @@ public abstract class MethodImpl extends TypeComponentImpl
         ReferenceTypeImpl declaringType = (ReferenceTypeImpl)declaringType();
         int rc = declaringType.compareTo(method.declaringType());
         if (rc == 0) {
-            rc = declaringType.indexOf(this) -
-                    declaringType.indexOf(method);
+            rc = declaringType.indexOf(this) - declaringType.indexOf(method);
         }
         return rc;
     }
@@ -226,7 +231,6 @@ public abstract class MethodImpl extends TypeComponentImpl
             throw exc.toJDIException();
         }
     }
-
 
     /*
      * A container class for the return value to allow
@@ -300,7 +304,6 @@ public abstract class MethodImpl extends TypeComponentImpl
         throws ClassNotLoadedException, InvalidTypeException {
         List<Type> paramTypes = this.argumentTypes();
         ArrayType lastParamType = (ArrayType)paramTypes.get(paramTypes.size() - 1);
-        Type componentType = lastParamType.componentType();
         int argCount = arguments.size();
         int paramCount = paramTypes.size();
         if (argCount < paramCount - 1) {
@@ -365,7 +368,7 @@ public abstract class MethodImpl extends TypeComponentImpl
     List<Value> validateAndPrepareArgumentsForInvoke(List<? extends Value> origArguments)
                          throws ClassNotLoadedException, InvalidTypeException {
 
-        List<Value> arguments = new ArrayList<Value>(origArguments);
+        List<Value> arguments = new ArrayList<>(origArguments);
         if (isVarArgs()) {
             handleVarArgs(arguments);
         }

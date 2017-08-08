@@ -24,16 +24,20 @@
 /**
  * @test
  * @bug 8167063
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library /test/lib
+ * @modules jdk.compiler
+ *          jdk.zipfs
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run main LauncherMessageTest
  * @summary LauncherHelper should not throw JNI error for LinkageError
  */
+
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 public class LauncherMessageTest {
 

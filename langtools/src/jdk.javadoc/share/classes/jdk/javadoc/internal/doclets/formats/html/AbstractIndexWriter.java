@@ -79,7 +79,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param path       Path to the file which is getting generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
-    protected AbstractIndexWriter(ConfigurationImpl configuration,
+    protected AbstractIndexWriter(HtmlConfiguration configuration,
                                   DocPath path,
                                   IndexBuilder indexbuilder) {
         super(configuration, path);
@@ -140,7 +140,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         int j = 0;
         Content dl = new HtmlTree(HtmlTag.DL);
         while (i < memberListSize && j < searchListSize) {
-            String name = utils.getSimpleName(memberlist.get(i));
+            Element elem = memberlist.get(i);
+            String name = (utils.isModule(elem))
+                    ? utils.getFullyQualifiedName(elem) : utils.getSimpleName(elem);
             if (name.compareTo(searchList.get(j).getLabel()) < 0) {
                 addDescription(dl, memberlist.get(i));
                 i++;
@@ -222,7 +224,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param dlTree the content tree to which the description will be added
      */
     protected void addDescription(ModuleElement mdle, Content dlTree, SearchIndexItem si) {
-        String moduleName = utils.getSimpleName(mdle);
+        String moduleName = utils.getFullyQualifiedName(mdle);
         Content link = getModuleLink(mdle, new StringContent(moduleName));
         si.setLabel(moduleName);
         si.setCategory(resources.getText("doclet.Modules"));
@@ -246,7 +248,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
     protected void addDescription(PackageElement pkg, Content dlTree, SearchIndexItem si) {
         Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
         if (configuration.showModules) {
-            si.setContainingModule(utils.getSimpleName(utils.containingModule(pkg)));
+            si.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(pkg)));
         }
         si.setLabel(utils.getPackageName(pkg));
         si.setCategory(resources.getText("doclet.Packages"));
@@ -453,7 +455,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem creating the search index file
      */
     protected void createSearchIndexFile(DocPath searchIndexFile, DocPath searchIndexZip,
-            DocPath searchIndexJS, List<SearchIndexItem> searchIndex, String varName) throws DocFileIOException {
+            DocPath searchIndexJS, Collection<SearchIndexItem> searchIndex, String varName) throws DocFileIOException {
         if (!searchIndex.isEmpty()) {
             StringBuilder searchVar = new StringBuilder("[");
             boolean first = true;

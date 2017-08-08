@@ -1,2 +1,2 @@
-- compiler.err.cant.access: mod.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.info.invalid.super.class))
+- compiler.err.cant.access: <error>.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.module.name.mismatch: mod/module-info, <error>))
 1 error

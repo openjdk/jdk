@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,6 @@
  * @bug 8058290
  * @summary JAAS Krb5LoginModule has suspect ticket-renewal logic,
  *          relies on clockskew grace
- * @modules java.base/sun.security.util
- *          java.security.jgss/sun.security.krb5:+open
- *          java.security.jgss/sun.security.krb5.internal:+open
- *          java.security.jgss/sun.security.krb5.internal.ccache
- *          java.security.jgss/sun.security.krb5.internal.crypto
- *          java.security.jgss/sun.security.krb5.internal.ktab
  * @compile -XDignore.symbol.file Renew.java
  * @run main/othervm Renew 1
  * @run main/othervm Renew 2
