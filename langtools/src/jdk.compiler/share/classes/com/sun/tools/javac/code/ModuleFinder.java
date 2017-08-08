@@ -225,7 +225,7 @@ public class ModuleFinder {
                 name = moduleNameFromSourceReader.readModuleName(fo);
                 if (name == null) {
                     JCDiagnostic diag =
-                        diags.fragment("file.does.not.contain.module");
+                        diags.fragment(Fragments.FileDoesNotContainModule);
                     ClassSymbol errModuleInfo = syms.defineClass(names.module_info, syms.errModule);
                     throw new ClassFinder.BadClassFile(errModuleInfo, fo, diag, diags);
                 }

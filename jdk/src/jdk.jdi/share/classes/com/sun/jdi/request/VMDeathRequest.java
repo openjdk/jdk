@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.VMDeathEvent;
 
 /**
  * Request for notification when the target VM terminates.
  * When an enabled VMDeathRequest is satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing a
- * {@link com.sun.jdi.event.VMDeathEvent VMDeathEvent}
- * will be placed on the
- * {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * {@link EventSet event set} containing a
+ * {@link VMDeathEvent VMDeathEvent}
+ * will be placed on the {@link EventQueue EventQueue}.
  * The collection of existing VMDeathRequests is
  * managed by the {@link EventRequestManager}
  * <P>
@@ -49,13 +50,12 @@ import com.sun.jdi.*;
  * to be alive (e.g. event processing).  Note: the
  * unsolicited VMDeathEvent will still be sent.
  *
- * @see com.sun.jdi.event.VMDeathEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see VMDeathEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Robert Field
  * @since  1.4
  */
 public interface VMDeathRequest extends EventRequest {
-
 }

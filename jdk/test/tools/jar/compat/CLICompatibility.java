@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 import jdk.testlibrary.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -49,8 +49,10 @@ import static org.testng.Assert.assertTrue;
 /*
  * @test
  * @bug 8170952
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder
+ * @library /lib/testlibrary /test/lib
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.testlibrary.JDKToolFinder
  * @run testng CLICompatibility
  * @summary Basic test for compatibility of CLI options
  */

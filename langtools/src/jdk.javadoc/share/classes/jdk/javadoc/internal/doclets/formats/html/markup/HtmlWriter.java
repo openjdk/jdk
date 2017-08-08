@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -62,7 +62,7 @@ public class HtmlWriter {
     /**
      * The configuration
      */
-    protected Configuration configuration;
+    protected BaseConfiguration configuration;
 
     /**
      * Header for table displaying modules and description.
@@ -120,7 +120,7 @@ public class HtmlWriter {
      * @param path The directory path to be created for this file
      *             or null if none to be created.
      */
-    public HtmlWriter(Configuration configuration, DocPath path) {
+    public HtmlWriter(BaseConfiguration configuration, DocPath path) {
         docFile = DocFile.createFileForOutput(configuration, path);
         this.configuration = configuration;
 

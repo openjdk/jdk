@@ -27,9 +27,9 @@
  * @summary Verify that the RSA KeyPairGenerator works (use -Dseed=X to set PRNG seed)
  * @author Andreas Sterbenz
  * @library ..
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @modules jdk.crypto.cryptoki
+ * @build jdk.test.lib.RandomFactory
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  * @run main/othervm -Djava.security.debug=sunpkcs11 TestKeyPairGenerator
  *                                                   sm TestKeyPairGenerator.policy
@@ -46,7 +46,7 @@ import java.security.Signature;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAKeyGenParameterSpec;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class TestKeyPairGenerator extends PKCS11Test {
 

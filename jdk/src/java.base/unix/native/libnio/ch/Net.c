@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,23 +101,21 @@
  * Copy IPv6 group, interface index, and IPv6 source address
  * into group_source_req structure.
  */
-#ifdef AF_INET6
 static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
-                               jbyteArray source, struct group_source_req* req)
+                               jbyteArray source, struct group_source_req *req)
 {
     struct sockaddr_in6* sin6;
 
     req->gsr_interface = (uint32_t)index;
 
-    sin6 = (struct sockaddr_in6*)&(req->gsr_group);
+    sin6 = (struct sockaddr_in6 *)&(req->gsr_group);
     sin6->sin6_family = AF_INET6;
-    COPY_INET6_ADDRESS(env, group, (jbyte*)&(sin6->sin6_addr));
+    COPY_INET6_ADDRESS(env, group, (jbyte *)&(sin6->sin6_addr));
 
-    sin6 = (struct sockaddr_in6*)&(req->gsr_source);
+    sin6 = (struct sockaddr_in6 *)&(req->gsr_source);
     sin6->sin6_family = AF_INET6;
-    COPY_INET6_ADDRESS(env, source, (jbyte*)&(sin6->sin6_addr));
+    COPY_INET6_ADDRESS(env, source, (jbyte *)&(sin6->sin6_addr));
 }
-#endif
 
 #ifdef _AIX
 
@@ -199,18 +197,13 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 {
     int fd;
     int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
-#ifdef AF_INET6
     int domain = (ipv6_available() && preferIPv6) ? AF_INET6 : AF_INET;
-#else
-    int domain = AF_INET;
-#endif
 
     fd = socket(domain, type, 0);
     if (fd < 0) {
         return handleSocketError(env, errno);
     }
 
-#ifdef AF_INET6
     /* Disable IPV6_V6ONLY to ensure dual-socket support */
     if (domain == AF_INET6) {
         int arg = 0;
@@ -223,7 +216,6 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
             return -1;
         }
     }
-#endif
 
     if (reuse) {
         int arg = 1;
@@ -250,9 +242,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
             return -1;
         }
     }
-#endif
 
-#if defined(__linux__) && defined(AF_INET6)
     /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
         int arg = 1;
@@ -569,7 +559,6 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobject fdo,
                                 jbyteArray group, jint index, jbyteArray source)
 {
-#ifdef AF_INET6
     struct ipv6_mreq mreq6;
     struct group_source_req req;
     int opt, n, optlen;
@@ -600,21 +589,16 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
         handleSocketError(env, errno);
     }
     return 0;
-#else
-    JNU_ThrowInternalError(env, "Should not get here");
-    return IOS_THROWN;
-#endif  /* AF_INET6 */
 }
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jbyteArray group, jint index, jbyteArray source)
 {
-#ifdef AF_INET6
-  #ifdef __APPLE__
+#ifdef __APPLE__
     /* no IPv6 exclude-mode filtering for now */
     return IOS_UNAVAILABLE;
-  #else
+#else
     struct group_source_req req;
     int n;
     int opt = (block) ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE;
@@ -629,10 +613,6 @@ Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, j
         handleSocketError(env, errno);
     }
     return 0;
-  #endif
-#else
-    JNU_ThrowInternalError(env, "Should not get here");
-    return IOS_THROWN;
 #endif
 }
 

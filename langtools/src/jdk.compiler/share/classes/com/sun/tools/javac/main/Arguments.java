@@ -578,7 +578,7 @@ public class Arguments {
         if (lintOptions && source.compareTo(Source.DEFAULT) < 0 && !options.isSet(Option.RELEASE)) {
             if (fm instanceof BaseFileManager) {
                 if (((BaseFileManager) fm).isDefaultBootClassPath())
-                    log.warning(LintCategory.OPTIONS, "source.no.bootclasspath", source.name);
+                    log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name));
             }
         }
 
@@ -628,7 +628,7 @@ public class Arguments {
         }
 
         if (obsoleteOptionFound && lintOptions) {
-            log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
+            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteSuppression);
         }
 
         SourceVersion sv = Source.toSourceVersion(source);

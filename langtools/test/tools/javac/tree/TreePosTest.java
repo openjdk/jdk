@@ -108,7 +108,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @run main/othervm TreePosTest -q -r .
+ * @run main TreePosTest -q -r .
  */
 public class TreePosTest {
     /**

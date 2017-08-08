@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package com.sun.tools.jdi;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class JNITypeParser {
 
@@ -112,7 +112,7 @@ public class JNITypeParser {
 
     private synchronized List<String> signatureList() {
         if (signatureList == null) {
-            signatureList = new ArrayList<String>(10);
+            signatureList = new ArrayList<>(10);
             String elem;
 
             currentIndex = 0;
@@ -131,7 +131,7 @@ public class JNITypeParser {
 
     private synchronized List<String> typeNameList() {
         if (typeNameList == null) {
-            typeNameList = new ArrayList<String>(10);
+            typeNameList = new ArrayList<>(10);
             String elem;
 
             currentIndex = 0;
@@ -235,7 +235,6 @@ public class JNITypeParser {
             default:
                 throw new IllegalArgumentException(
                     "Invalid JNI signature character '" + key + "'");
-
         }
     }
 }

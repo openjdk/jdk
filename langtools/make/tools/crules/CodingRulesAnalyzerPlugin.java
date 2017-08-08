@@ -67,7 +67,8 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
         task.addTaskListener(new PostAnalyzeTaskListener(
                 new MutableFieldsAnalyzer(task),
                 new AssertCheckAnalyzer(task),
-                new DefinedByAnalyzer(task)
+                new DefinedByAnalyzer(task),
+                new LegacyLogMethodAnalyzer(task)
         ));
     }
 

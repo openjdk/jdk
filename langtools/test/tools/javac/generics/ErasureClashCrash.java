@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 4951670
+ * @bug 4951670 7170058
  * @summary javac crash with improper overrider
  * @author gafter
  *

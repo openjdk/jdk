@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.*;
 
 import javax.net.ssl.SSLException;
+import static sun.security.ssl.NamedGroupType.*;
 
 /**
  * A list of CipherSuites. Also maintains the lists of supported and
@@ -42,15 +43,16 @@ final class CipherSuiteList {
 
     private final Collection<CipherSuite> cipherSuites;
     private String[] suiteNames;
-
-    // flag indicating whether this list contains any ECC ciphersuites.
-    // null if not yet checked.
-    private volatile Boolean containsEC;
+    private final EnumSet<NamedGroupType> groupsTypes =
+            EnumSet.noneOf(NamedGroupType.class);
 
     // for use by buildAvailableCache() and
     // Handshaker.getKickstartMessage() only
     CipherSuiteList(Collection<CipherSuite> cipherSuites) {
         this.cipherSuites = cipherSuites;
+        for (CipherSuite suite : cipherSuites) {
+            updateGroupTypes(suite);
+        }
     }
 
     /**
@@ -59,6 +61,7 @@ final class CipherSuiteList {
     CipherSuiteList(CipherSuite suite) {
         cipherSuites = new ArrayList<CipherSuite>(1);
         cipherSuites.add(suite);
+        updateGroupTypes(suite);
     }
 
     /**
@@ -82,6 +85,7 @@ final class CipherSuiteList {
                     + suiteName + " with currently installed providers");
             }
             cipherSuites.add(suite);
+            updateGroupTypes(suite);
         }
     }
 
@@ -97,7 +101,20 @@ final class CipherSuiteList {
         }
         cipherSuites = new ArrayList<CipherSuite>(bytes.length >> 1);
         for (int i = 0; i < bytes.length; i += 2) {
-            cipherSuites.add(CipherSuite.valueOf(bytes[i], bytes[i+1]));
+            CipherSuite suite = CipherSuite.valueOf(bytes[i], bytes[i+1]);
+            cipherSuites.add(suite);
+            updateGroupTypes(suite);
+        }
+    }
+
+    // Please don't use this method except constructors.
+    private void updateGroupTypes(CipherSuite cipherSuite) {
+        if (cipherSuite.keyExchange != null && (!cipherSuite.exportable)) {
+            NamedGroupType groupType = cipherSuite.keyExchange.groupType;
+            if ((groupType != NAMED_GROUP_NONE) &&
+                    (!groupsTypes.contains(groupType))) {
+                groupsTypes.add(groupType);
+            }
         }
     }
 
@@ -108,20 +125,9 @@ final class CipherSuiteList {
         return cipherSuites.contains(suite);
     }
 
-    // Return whether this list contains any ECC ciphersuites
-    boolean containsEC() {
-        if (containsEC == null) {
-            for (CipherSuite c : cipherSuites) {
-                if (c.keyExchange.isEC) {
-                    containsEC = true;
-                    return true;
-                }
-            }
-
-            containsEC = false;
-        }
-
-        return containsEC;
+    // Return whether this list contains cipher suites of a named group type.
+    boolean contains(NamedGroupType groupType) {
+        return groupsTypes.contains(groupType);
     }
 
     /**

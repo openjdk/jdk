@@ -31,7 +31,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
@@ -61,7 +60,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 public class HtmlDoclet extends AbstractDoclet {
 
     public HtmlDoclet() {
-        configuration = new ConfigurationImpl(this);
+        configuration = new HtmlConfiguration(this);
     }
 
     @Override // defined by Doclet
@@ -72,7 +71,7 @@ public class HtmlDoclet extends AbstractDoclet {
     /**
      * The global configuration information for this run.
      */
-    private final ConfigurationImpl configuration;
+    private final HtmlConfiguration configuration;
 
     private Messages messages;
 
@@ -95,7 +94,7 @@ public class HtmlDoclet extends AbstractDoclet {
      * @return the configuration
      */
     @Override // defined by AbstractDoclet
-    public ConfigurationImpl getConfiguration() {
+    public HtmlConfiguration getConfiguration() {
         return configuration;
     }
 

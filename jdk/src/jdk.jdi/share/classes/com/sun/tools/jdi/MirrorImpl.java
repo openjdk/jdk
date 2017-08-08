@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
 import java.util.Collection;
 import java.util.Iterator;
+
+import com.sun.jdi.Mirror;
+import com.sun.jdi.VMMismatchException;
+import com.sun.jdi.VirtualMachine;
 
 abstract class MirrorImpl extends Object implements Mirror {
 
@@ -92,6 +95,7 @@ abstract class MirrorImpl extends Object implements Mirror {
             }
         }
     }
+
     /**
      * Allow null mirrors.
      * Throw VMMismatchException on wrong VM.

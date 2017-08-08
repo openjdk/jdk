@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -369,6 +369,7 @@ public class DeferredDocumentImpl
      * Creates an element node with a URI in the table and type information.
      * @deprecated
      */
+    @Deprecated
     public int createDeferredElement(String elementURI, String elementName,
                                       Object type) {
 
@@ -389,6 +390,7 @@ public class DeferredDocumentImpl
      * Creates an element node in the table.
      * @deprecated
      */
+    @Deprecated
     public int createDeferredElement(String elementName) {
         return createDeferredElement(null, elementName);
     }
@@ -469,41 +471,6 @@ public class DeferredDocumentImpl
                 // return node index
                 return attrNodeIndex;
         }
-
-    /**
-     * Sets an attribute on an element node.
-     * @deprecated
-     */
-    public int setDeferredAttribute(int elementNodeIndex,
-                                    String attrName, String attrURI,
-                                    String attrValue, boolean specified) {
-        // create attribute
-        int attrNodeIndex = createDeferredAttribute(attrName, attrURI,
-                                                    attrValue, specified);
-        int attrChunk = attrNodeIndex >> CHUNK_SHIFT;
-        int attrIndex  = attrNodeIndex & CHUNK_MASK;
-        // set attribute's parent to element
-        setChunkIndex(fNodeParent, elementNodeIndex, attrChunk, attrIndex);
-
-        int elementChunk     = elementNodeIndex >> CHUNK_SHIFT;
-        int elementIndex     = elementNodeIndex & CHUNK_MASK;
-
-        // get element's last attribute
-        int lastAttrNodeIndex = getChunkIndex(fNodeExtra,
-                                              elementChunk, elementIndex);
-        if (lastAttrNodeIndex != 0) {
-            // add link from new attribute to last attribute
-            setChunkIndex(fNodePrevSib, lastAttrNodeIndex,
-                          attrChunk, attrIndex);
-        }
-        // add link from element to new last attribute
-        setChunkIndex(fNodeExtra, attrNodeIndex,
-                      elementChunk, elementIndex);
-
-        // return node index
-        return attrNodeIndex;
-
-    } // setDeferredAttribute(int,String,String,String,boolean):int
 
     /** Creates an attribute in the table. */
     public int createDeferredAttribute(String attrName, String attrValue,

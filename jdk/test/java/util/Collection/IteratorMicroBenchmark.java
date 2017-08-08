@@ -56,6 +56,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Pattern;
 
 /**
@@ -391,16 +392,53 @@ public class IteratorMicroBenchmark {
                         for (Integer o : x.toArray(empty))
                             sum[0] += o;
                         check.sum(sum[0]);}}},
+            new Job(klazz + " stream().forEach") {
+                public void work() throws Throwable {
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        x.stream().forEach(n -> sum[0] += n);
+                        check.sum(sum[0]);}}},
+            new Job(klazz + " stream().mapToInt") {
+                public void work() throws Throwable {
+                    for (int i = 0; i < iterations; i++) {
+                        check.sum(x.stream().mapToInt(e -> e).sum());}}},
             new Job(klazz + " stream().collect") {
                 public void work() throws Throwable {
                     for (int i = 0; i < iterations; i++) {
                         check.sum(x.stream()
                                   .collect(summingInt(e -> e)));}}},
+            new Job(klazz + " stream()::iterator") {
+                public void work() throws Throwable {
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        for (Integer o : (Iterable<Integer>) x.stream()::iterator)
+                            sum[0] += o;
+                        check.sum(sum[0]);}}},
+            new Job(klazz + " parallelStream().forEach") {
+                public void work() throws Throwable {
+                    for (int i = 0; i < iterations; i++) {
+                        LongAdder sum = new LongAdder();
+                        x.parallelStream().forEach(n -> sum.add(n));
+                        check.sum((int) sum.sum());}}},
+            new Job(klazz + " parallelStream().mapToInt") {
+                public void work() throws Throwable {
+                    for (int i = 0; i < iterations; i++) {
+                        check.sum(x.parallelStream().mapToInt(e -> e).sum());}}},
             new Job(klazz + " parallelStream().collect") {
                 public void work() throws Throwable {
                     for (int i = 0; i < iterations; i++) {
                         check.sum(x.parallelStream()
-                                  .collect(summingInt(e -> e)));}}});
+                                  .collect(summingInt(e -> e)));}}},
+            new Job(klazz + " parallelStream()::iterator") {
+                public void work() throws Throwable {
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        for (Integer o : (Iterable<Integer>) x.parallelStream()::iterator)
+                            sum[0] += o;
+                        check.sum(sum[0]);}}});
     }
 
     List<Job> dequeJobs(Deque<Integer> x) {

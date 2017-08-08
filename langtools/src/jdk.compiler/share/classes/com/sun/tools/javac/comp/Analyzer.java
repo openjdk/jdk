@@ -25,11 +25,14 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.ArrayList;
+
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -68,13 +71,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import com.sun.source.tree.NewClassTree;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.tree.JCTree.JCTry;
+import com.sun.tools.javac.tree.JCTree.JCUnary;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.DiagnosticSource;
+
 import static com.sun.tools.javac.code.Flags.GENERATEDCONSTR;
-import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.APPLY;
+import static com.sun.tools.javac.tree.JCTree.Tag.LABELLED;
 import static com.sun.tools.javac.tree.JCTree.Tag.METHODDEF;
 import static com.sun.tools.javac.tree.JCTree.Tag.NEWCLASS;
+import static com.sun.tools.javac.tree.JCTree.Tag.NULLCHK;
 import static com.sun.tools.javac.tree.JCTree.Tag.TYPEAPPLY;
+import static com.sun.tools.javac.tree.JCTree.Tag.VARDEF;
 
 /**
  * Helper class for defining custom code analysis, such as finding instance creation expression
@@ -246,7 +260,7 @@ public class Analyzer {
                     explicitArgs = explicitArgs.tail;
                 }
                 //exact match
-                log.warning(oldTree.clazz, "diamond.redundant.args");
+                log.warning(oldTree.clazz, Warnings.DiamondRedundantArgs);
             }
         }
     }
@@ -294,7 +308,7 @@ public class Analyzer {
         @Override
         void process (JCNewClass oldTree, JCLambda newTree, boolean hasErrors){
             if (!hasErrors) {
-                log.warning(oldTree.def, "potential.lambda.found");
+                log.warning(oldTree.def, Warnings.PotentialLambdaFound);
             }
         }
     }
@@ -322,7 +336,7 @@ public class Analyzer {
         void process (JCMethodInvocation oldTree, JCMethodInvocation newTree, boolean hasErrors){
             if (!hasErrors) {
                 //exact match
-                log.warning(oldTree, "method.redundant.typeargs");
+                log.warning(oldTree, Warnings.MethodRedundantTypeargs);
             }
         }
     }
@@ -335,12 +349,29 @@ public class Analyzer {
     };
 
     /**
+     * Create a copy of Env if needed.
+     */
+    Env<AttrContext> copyEnvIfNeeded(JCTree tree, Env<AttrContext> env) {
+        if (!analyzerModes.isEmpty() &&
+                !env.info.isSpeculative &&
+                TreeInfo.isStatement(tree) &&
+                !tree.hasTag(LABELLED)) {
+            Env<AttrContext> analyzeEnv =
+                    env.dup(env.tree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
+            analyzeEnv.info.returnResult = analyzeEnv.info.returnResult != null ?
+                    attr.new ResultInfo(analyzeEnv.info.returnResult.pkind,
+                                        analyzeEnv.info.returnResult.pt) : null;
+            return analyzeEnv;
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Analyze an AST node if needed.
      */
     void analyzeIfNeeded(JCTree tree, Env<AttrContext> env) {
-        if (!analyzerModes.isEmpty() &&
-                !env.info.isSpeculative &&
-                TreeInfo.isStatement(tree)) {
+        if (env != null) {
             JCStatement stmt = (JCStatement)tree;
             analyze(stmt, env);
         }
@@ -351,25 +382,107 @@ public class Analyzer {
      * and speculatively type-check the rewritten code to compare results against previously attributed code.
      */
     void analyze(JCStatement statement, Env<AttrContext> env) {
-        AnalysisContext context = new AnalysisContext();
+        AnalysisContext context = new AnalysisContext(statement, env);
         StatementScanner statementScanner = new StatementScanner(context);
         statementScanner.scan(statement);
 
         if (!context.treesToAnalyzer.isEmpty()) {
+            deferredAnalysisHelper.queue(context);
+        }
+    }
 
-            //add a block to hoist potential dangling variable declarations
-            JCBlock fakeBlock = make.Block(SYNTHETIC, List.of(statement));
+    /**
+     * Helper interface to handle deferral of analysis tasks.
+     */
+    interface DeferredAnalysisHelper {
+        /**
+         * Add a new analysis task to the queue.
+         */
+        void queue(AnalysisContext context);
+        /**
+         * Flush queue with given attribution env.
+         */
+        void flush(Env<AttrContext> flushEnv);
+    }
+
+    /**
+     * Dummy deferral handler.
+     */
+    DeferredAnalysisHelper flushDeferredHelper = new DeferredAnalysisHelper() {
+        @Override
+        public void queue(AnalysisContext context) {
+            //do nothing
+        }
+
+        @Override
+        public void flush(Env<AttrContext> flushEnv) {
+            //do nothing
+        }
+    };
+
+    /**
+     * Simple deferral handler. All tasks belonging to the same outermost class are added to
+     * the same queue. The queue is flushed after flow analysis (only if no error occurred).
+     */
+    DeferredAnalysisHelper queueDeferredHelper = new DeferredAnalysisHelper() {
+
+        Map<ClassSymbol, ArrayList<AnalysisContext>> Q = new HashMap<>();
+
+        @Override
+        public void queue(AnalysisContext context) {
+            ArrayList<AnalysisContext> s = Q.computeIfAbsent(context.env.enclClass.sym.outermostClass(), k -> new ArrayList<>());
+            s.add(context);
+        }
+
+        @Override
+        public void flush(Env<AttrContext> flushEnv) {
+            if (!Q.isEmpty()) {
+                DeferredAnalysisHelper prevHelper = deferredAnalysisHelper;
+                try {
+                    deferredAnalysisHelper = flushDeferredHelper;
+                    ArrayList<AnalysisContext> s = Q.get(flushEnv.enclClass.sym.outermostClass());
+                    while (s != null && !s.isEmpty()) {
+                        doAnalysis(s.remove(0));
+                    }
+                } finally {
+                    deferredAnalysisHelper = prevHelper;
+                }
+            }
+        }
+    };
+
+    DeferredAnalysisHelper deferredAnalysisHelper = queueDeferredHelper;
+
+    void doAnalysis(AnalysisContext context) {
+        DiagnosticSource prevSource = log.currentSource();
+        LocalCacheContext localCacheContext = argumentAttr.withLocalCacheContext();
+        try {
+            log.useSource(context.env.toplevel.getSourceFile());
+
+            JCStatement treeToAnalyze = (JCStatement)context.tree;
+            if (context.env.info.scope.owner.kind == Kind.TYP) {
+                //add a block to hoist potential dangling variable declarations
+                treeToAnalyze = make.Block(Flags.SYNTHETIC, List.of((JCStatement)context.tree));
+            }
 
             TreeMapper treeMapper = new TreeMapper(context);
             //TODO: to further refine the analysis, try all rewriting combinations
-            deferredAttr.attribSpeculative(fakeBlock, env, attr.statInfo, treeMapper,
-                    t -> new AnalyzeDeferredDiagHandler(context),
-                    argumentAttr.withLocalCacheContext());
+            deferredAttr.attribSpeculative(treeToAnalyze, context.env, attr.statInfo, treeMapper,
+                    t -> new AnalyzeDeferredDiagHandler(context), argumentAttr.withLocalCacheContext());
             context.treeMap.entrySet().forEach(e -> {
                 context.treesToAnalyzer.get(e.getKey())
                         .process(e.getKey(), e.getValue(), context.errors.nonEmpty());
             });
+        } catch (Throwable ex) {
+            Assert.error("Analyzer error when processing: " + context.tree);
+        } finally {
+            log.useSource(prevSource.getFile());
+            localCacheContext.leave();
         }
+    }
+
+    public void flush(Env<AttrContext> flushEnv) {
+        deferredAnalysisHelper.flush(flushEnv);
     }
 
     /**
@@ -394,6 +507,23 @@ public class Analyzer {
      * trees to be rewritten, errors occurred during the speculative attribution step, etc.
      */
     class AnalysisContext {
+
+        JCTree tree;
+
+        Env<AttrContext> env;
+
+        AnalysisContext(JCTree tree, Env<AttrContext> env) {
+            this.tree = tree;
+            this.env = attr.copyEnv(env);
+            /*  this is a temporary workaround that should be removed once we have a truly independent
+             *  clone operation
+             */
+            if (tree.hasTag(VARDEF)) {
+                // avoid redefinition clashes
+                this.env.info.scope.remove(((JCVariableDecl)tree).sym);
+            }
+        }
+
         /** Map from trees to analyzers. */
         Map<JCTree, StatementAnalyzer<JCTree, JCTree>> treesToAnalyzer = new HashMap<>();
 
@@ -435,17 +565,17 @@ public class Analyzer {
 
         @Override
         public void visitClassDef(JCClassDecl tree) {
-            //do nothing (prevents seeing same stuff twice
+            //do nothing (prevents seeing same stuff twice)
         }
 
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
-            //do nothing (prevents seeing same stuff twice
+            //do nothing (prevents seeing same stuff twice)
         }
 
         @Override
         public void visitBlock(JCBlock tree) {
-            //do nothing (prevents seeing same stuff twice
+            //do nothing (prevents seeing same stuff twice)
         }
 
         @Override
@@ -455,28 +585,40 @@ public class Analyzer {
 
         @Override
         public void visitForLoop(JCForLoop tree) {
-            scan(tree.getInitializer());
+            //skip body and var decl (to prevents same statements to be analyzed twice)
             scan(tree.getCondition());
             scan(tree.getUpdate());
         }
 
         @Override
+        public void visitTry(JCTry tree) {
+            //skip resources (to prevents same statements to be analyzed twice)
+            scan(tree.getBlock());
+            scan(tree.getCatches());
+            scan(tree.getFinallyBlock());
+        }
+
+        @Override
         public void visitForeachLoop(JCEnhancedForLoop tree) {
+            //skip body (to prevents same statements to be analyzed twice)
             scan(tree.getExpression());
         }
 
         @Override
         public void visitWhileLoop(JCWhileLoop tree) {
+            //skip body (to prevents same statements to be analyzed twice)
             scan(tree.getCondition());
         }
 
         @Override
         public void visitDoLoop(JCDoWhileLoop tree) {
+            //skip body (to prevents same statements to be analyzed twice)
             scan(tree.getCondition());
         }
 
         @Override
         public void visitIf(JCIf tree) {
+            //skip body (to prevents same statements to be analyzed twice)
             scan(tree.getCondition());
         }
     }
@@ -515,6 +657,18 @@ public class Analyzer {
                 newLambda.params.forEach(p -> p.vartype = null);
             }
             return newLambda;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public JCTree visitNewClass(NewClassTree node, Void aVoid) {
+            JCNewClass oldNewClazz = (JCNewClass)node;
+            JCNewClass newNewClazz = (JCNewClass)super.visitNewClass(node, aVoid);
+            if (!oldNewClazz.args.isEmpty() && oldNewClazz.args.head.hasTag(NULLCHK)) {
+                //workaround to Attr generating trees
+                newNewClazz.encl = ((JCUnary)newNewClazz.args.head).arg;
+                newNewClazz.args = newNewClazz.args.tail;
+            }
+            return newNewClazz;
         }
     }
 }

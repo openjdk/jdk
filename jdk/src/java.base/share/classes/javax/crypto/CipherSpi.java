@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.nio.ByteBuffer;
  * <p>A <i>transformation</i> is a string that describes the operation (or
  * set of operations) to be performed on the given input, to produce some
  * output. A transformation always includes the name of a cryptographic
- * algorithm (e.g., <i>DES</i>), and may be followed by a feedback mode and
+ * algorithm (e.g., <i>AES</i>), and may be followed by a feedback mode and
  * padding scheme.
  *
  * <p> A transformation is of the form:
@@ -75,7 +75,7 @@ import java.nio.ByteBuffer;
  * For example, the following is a valid transformation:
  *
  * <pre>
- *     Cipher c = Cipher.getInstance("<i>DES/CBC/PKCS5Padding</i>");
+ *     Cipher c = Cipher.getInstance("<i>AES/CBC/PKCS5Padding</i>");
  * </pre>
  *
  * <p>A provider may supply a separate class for each combination
@@ -125,32 +125,32 @@ import java.nio.ByteBuffer;
  * </ul>
  *
  * <p>For example, a provider may supply a subclass of <code>CipherSpi</code>
- * that implements <i>DES/ECB/PKCS5Padding</i>, one that implements
- * <i>DES/CBC/PKCS5Padding</i>, one that implements
- * <i>DES/CFB/PKCS5Padding</i>, and yet another one that implements
- * <i>DES/OFB/PKCS5Padding</i>. That provider would have the following
+ * that implements <i>AES/ECB/PKCS5Padding</i>, one that implements
+ * <i>AES/CBC/PKCS5Padding</i>, one that implements
+ * <i>AES/CFB/PKCS5Padding</i>, and yet another one that implements
+ * <i>AES/OFB/PKCS5Padding</i>. That provider would have the following
  * <code>Cipher</code> properties in its master class:
  *
  * <ul>
  *
  * <li>
  * <pre>
- *     <code>Cipher.</code><i>DES/ECB/PKCS5Padding</i>
+ *     <code>Cipher.</code><i>AES/ECB/PKCS5Padding</i>
  * </pre>
  *
  * <li>
  * <pre>
- *     <code>Cipher.</code><i>DES/CBC/PKCS5Padding</i>
+ *     <code>Cipher.</code><i>AES/CBC/PKCS5Padding</i>
  * </pre>
  *
  * <li>
  * <pre>
- *     <code>Cipher.</code><i>DES/CFB/PKCS5Padding</i>
+ *     <code>Cipher.</code><i>AES/CFB/PKCS5Padding</i>
  * </pre>
  *
  * <li>
  * <pre>
- *     <code>Cipher.</code><i>DES/OFB/PKCS5Padding</i>
+ *     <code>Cipher.</code><i>AES/OFB/PKCS5Padding</i>
  * </pre>
  *
  * </ul>
@@ -158,7 +158,7 @@ import java.nio.ByteBuffer;
  * <p>Another provider may implement a class for each of the above modes
  * (i.e., one class for <i>ECB</i>, one for <i>CBC</i>, one for <i>CFB</i>,
  * and one for <i>OFB</i>), one class for <i>PKCS5Padding</i>,
- * and a generic <i>DES</i> class that subclasses from <code>CipherSpi</code>.
+ * and a generic <i>AES</i> class that subclasses from <code>CipherSpi</code>.
  * That provider would have the following
  * <code>Cipher</code> properties in its master class:
  *
@@ -166,7 +166,7 @@ import java.nio.ByteBuffer;
  *
  * <li>
  * <pre>
- *     <code>Cipher.</code><i>DES</i>
+ *     <code>Cipher.</code><i>AES</i>
  * </pre>
  *
  * </ul>

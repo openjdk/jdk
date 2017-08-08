@@ -37,8 +37,9 @@ import jdk.testlibrary.ProcessTools;
  * @summary Performs a sanity test for the ManagementAgent.status diagnostic command.
  *          Management agent may be disabled, started (only local connections) and started.
  *          The test asserts that the expected text is being printed.
+ *
  * @library /lib/testlibrary
- * @modules jdk.management.agent/jdk.internal.agent
+ *
  * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
  *        JMXStatusTest JMXStatus1Test JMXStatus2Test
  * @run testng/othervm -XX:+UsePerfData JMXStatus1Test

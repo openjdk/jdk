@@ -70,7 +70,7 @@ public abstract class AbstractSelector
     extends Selector
 {
 
-    private AtomicBoolean selectorOpen = new AtomicBoolean(true);
+    private final AtomicBoolean selectorOpen = new AtomicBoolean(true);
 
     // The provider that created this selector
     private final SelectorProvider provider;

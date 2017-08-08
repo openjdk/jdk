@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,12 @@
 
 package com.sun.tools.jdi;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.ClassType;
 import com.sun.jdi.IncompatibleThreadStateException;
@@ -34,18 +40,15 @@ import com.sun.jdi.InvocationException;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VMCannotBeModifiedException;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A supertype for ReferenceTypes allowing method invocations
  */
 abstract class InvokableTypeImpl extends ReferenceTypeImpl {
+
     /**
      * The invocation result wrapper
      * It is necessary because both ClassType and InterfaceType
@@ -74,7 +77,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
      * a member of this type, if the size of the argument list
      * does not match the number of declared arguments for the method, or
      * if the method is not static or is a static initializer.
-     * @throws {@link InvalidTypeException} if any argument in the
+     * @throws InvalidTypeException if any argument in the
      * argument list is not assignable to the corresponding method argument
      * type.
      * @throws ClassNotLoadedException if any argument type has not yet been loaded
@@ -240,7 +243,7 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
          * Cache the values of args when TRACE_SENDS is enabled, for later printing.
          * If not cached, printing causes a remote call while synchronized, and deadlock.
          */
-        if ((vm.traceFlags & VirtualMachineImpl.TRACE_SENDS) != 0) {
+        if ((vm.traceFlags & VirtualMachine.TRACE_SENDS) != 0) {
            for (ValueImpl arg: args) {
               arg.toString();
            }

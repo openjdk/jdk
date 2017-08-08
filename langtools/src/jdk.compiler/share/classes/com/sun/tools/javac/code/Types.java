@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ClassFile.externalize;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 /**
  * Utility class containing various operations on types.
@@ -310,6 +311,15 @@ public class Types {
         if (tPrimitive == sPrimitive) {
             return isSubtypeUnchecked(t, s, warn);
         }
+        boolean tUndet = t.hasTag(UNDETVAR);
+        boolean sUndet = s.hasTag(UNDETVAR);
+
+        if (tUndet || sUndet) {
+            return tUndet ?
+                    isSubtype(t, boxedTypeOrType(s)) :
+                    isSubtype(boxedTypeOrType(t), s);
+        }
+
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
@@ -374,7 +384,7 @@ public class Types {
                 if (!chk.checkValidGenericType(site)) {
                     //if the inferred functional interface type is not well-formed,
                     //or if it's not a subtype of the original target, issue an error
-                    throw failure(diags.fragment("no.suitable.functional.intf.inst", site));
+                    throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
                 }
                 return memberType(site, descSym);
             }
@@ -434,13 +444,13 @@ public class Types {
                 } else {
                     //the target method(s) should be the only abstract members of t
                     throw failure("not.a.functional.intf.1",  origin,
-                            diags.fragment("incompatible.abstracts", Kinds.kindName(origin), origin));
+                            diags.fragment(Fragments.IncompatibleAbstracts(Kinds.kindName(origin), origin)));
                 }
             }
             if (abstracts.isEmpty()) {
                 //t must define a suitable non-generic method
                 throw failure("not.a.functional.intf.1", origin,
-                            diags.fragment("no.abstracts", Kinds.kindName(origin), origin));
+                            diags.fragment(Fragments.NoAbstracts(Kinds.kindName(origin), origin)));
             } else if (abstracts.size() == 1) {
                 return new FunctionDescriptor(abstracts.first());
             } else { // size > 1
@@ -456,9 +466,11 @@ public class Types {
                                 desc.type.getReturnType(),
                                 desc.type.getThrownTypes()));
                     }
+                    JCDiagnostic msg =
+                            diags.fragment(Fragments.IncompatibleDescsInFunctionalIntf(Kinds.kindName(origin),
+                                                                                       origin));
                     JCDiagnostic.MultilineDiagnostic incompatibleDescriptors =
-                            new JCDiagnostic.MultilineDiagnostic(diags.fragment("incompatible.descs.in.functional.intf",
-                            Kinds.kindName(origin), origin), descriptors.toList());
+                            new JCDiagnostic.MultilineDiagnostic(msg, descriptors.toList());
                     throw failure(incompatibleDescriptors);
                 }
                 return descRes;
@@ -2094,7 +2106,7 @@ public class Types {
             Type out = erasure.visit(t, recurse);
             return out;
         }
-        }
+    }
     // where
         private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
             private Type combineMetadata(final Type s,

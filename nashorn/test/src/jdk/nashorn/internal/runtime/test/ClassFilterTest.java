@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.test;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 import java.io.File;
 import javax.script.ScriptEngine;
@@ -76,6 +77,65 @@ public class ClassFilterTest {
             fail("TypeError should have been thrown");
         } catch (final ScriptException e) {
             //emtpy
+        }
+        try {
+            engine.eval("Java");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("JavaImporter");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("Packages");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("com");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("edu");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("java");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("javafx");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("javax");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            engine.eval("org");
+            fail("TypeError should have been thrown");
+        } catch (final ScriptException e) {
+            //emtpy
+        }
+        try {
+            assertEquals(engine.eval("Java = this[\"__LINE__\"]; Java === this[\"__LINE__\"]"), Boolean.TRUE);
+        } catch (final ScriptException e) {
+            fail("Unexpected exception", e);
         }
     }
 

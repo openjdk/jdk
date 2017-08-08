@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -94,9 +94,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.AttributeTree.ValueKind.*;
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocWriter.CONTENT_TYPE;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
 
 
@@ -141,7 +139,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     /**
      * The global configuration information for this run.
      */
-    public final ConfigurationImpl configuration;
+    public final HtmlConfiguration configuration;
 
     protected final Utils utils;
 
@@ -180,7 +178,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      *
      * @param path File to be generated.
      */
-    public HtmlDocletWriter(ConfigurationImpl configuration, DocPath path) {
+    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
         super(configuration, path);
         this.configuration = configuration;
         this.contents = configuration.contents;
@@ -448,9 +446,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
         head.addContent(getTitle());
-        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
-                (configuration.charset.length() > 0) ?
-                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE, configuration.charset);
         head.addContent(meta);
         if (!configuration.notimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -1759,6 +1755,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return true;
     }
 
+    // Notify the next DocTree handler to take necessary action
+    private boolean commentRemoved = false;
+
     /**
      * Converts inline tags and text to text strings, expanding the
      * inline tags along the way.  Called wherever text can contain
@@ -1784,27 +1783,32 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         // Array of all possible inline tags for this javadoc run
         configuration.tagletManager.checkTags(utils, element, tags, true);
-        for (ListIterator<? extends DocTree> iterator = tags.listIterator(); iterator.hasNext();) {
-            DocTree tag = iterator.next();
-             // zap block tags
-            if (isFirstSentence && ignoreNonInlineTag(tag))
-                continue;
+        commentRemoved = false;
 
-            if (isFirstSentence && iterator.nextIndex() == tags.size() &&
-                    (tag.getKind() == TEXT && isAllWhiteSpace(ch.getText(tag))))
-                continue;
+        for (ListIterator<? extends DocTree> iterator = tags.listIterator(); iterator.hasNext();) {
+            boolean isFirstNode = !iterator.hasPrevious();
+            DocTree tag = iterator.next();
+            boolean isLastNode  = !iterator.hasNext();
+
+            if (isFirstSentence) {
+                // Ignore block tags
+                if (ignoreNonInlineTag(tag))
+                    continue;
+
+                // Ignore any trailing whitespace OR whitespace after removed html comment
+                if ((isLastNode || commentRemoved)
+                        && tag.getKind() == TEXT
+                        && isAllWhiteSpace(ch.getText(tag)))
+                    continue;
+
+                // Ignore any leading html comments
+                if ((isFirstNode || commentRemoved) && tag.getKind() == COMMENT) {
+                    commentRemoved = true;
+                    continue;
+                }
+            }
 
             boolean allDone = new SimpleDocTreeVisitor<Boolean, Content>() {
-                // notify the next DocTree handler to take necessary action
-                boolean commentRemoved = false;
-
-                private boolean isLast(DocTree node) {
-                    return node.equals(tags.get(tags.size() - 1));
-                }
-
-                private boolean isFirst(DocTree node) {
-                    return node.equals(tags.get(0));
-                }
 
                 private boolean inAnAtag() {
                     if (utils.isStartElement(tag)) {
@@ -1849,14 +1853,14 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                             if (text.startsWith("/..") && !configuration.docrootparent.isEmpty()) {
                                 result.addContent(configuration.docrootparent);
                                 docRootContent = new ContentBuilder();
-                                result.addContent(textCleanup(text.substring(3), isLast(node)));
+                                result.addContent(textCleanup(text.substring(3), isLastNode));
                             } else {
                                 if (!docRootContent.isEmpty()) {
                                     docRootContent = copyDocRootContent(docRootContent);
                                 } else {
                                     text = redirectRelativeLinks(element, (TextTree) dt);
                                 }
-                                result.addContent(textCleanup(text, isLast(node)));
+                                result.addContent(textCleanup(text, isLastNode));
                             }
                         } else {
                             docRootContent = copyDocRootContent(docRootContent);
@@ -1870,10 +1874,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
 
                 @Override
                 public Boolean visitComment(CommentTree node, Content c) {
-                    if (isFirstSentence && isFirst(node)) {
-                        commentRemoved = true;
-                        return this.visit(iterator.next(), c);
-                    }
                     result.addContent(new RawHtml(node.getBody()));
                     return false;
                 }
@@ -1998,8 +1998,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 @Override
                 public Boolean visitText(TextTree node, Content c) {
                     String text = node.getBody();
-                    result.addContent(new RawHtml(textCleanup(text, isLast(node), commentRemoved)));
-                    commentRemoved = false;
+                    result.addContent(new RawHtml(textCleanup(text, isLastNode, commentRemoved)));
                     return false;
                 }
 
@@ -2015,6 +2014,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 }
 
             }.visit(tag, null);
+            commentRemoved = false;
             if (allDone)
                 break;
         }
@@ -2601,7 +2601,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      * @return the configuration for this doclet.
      */
     @Override
-    public Configuration configuration() {
+    public BaseConfiguration configuration() {
         return configuration;
     }
 }

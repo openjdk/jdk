@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,28 +38,26 @@ import javax.xml.namespace.NamespaceContext;
  * Each NAMESPACE
  * and ATTRIBUTE must be individually written.
  *
- * <table border="1" cellpadding="2" cellspacing="0">
+ * <table class="striped">
+ *     <caption>XML Namespaces, {@code javax.xml.stream.isRepairingNamespaces} and write method behaviour</caption>
  *     <thead>
- *         <tr>
- *             <th colspan="5">XML Namespaces, {@code javax.xml.stream.isRepairingNamespaces} and write method behaviour</th>
+ *         <tr style="border-bottom: 1px solid black">
+ *             <th scope="col" rowspan="2">Method</th> <!-- method -->
+ *             <th scope="col" colspan="2">{@code isRepairingNamespaces} == true</th>
+ *             <th scope="col" colspan="2">{@code isRepairingNamespaces} == false</th>
  *         </tr>
  *         <tr>
- *             <th>Method</th> <!-- method -->
- *             <th colspan="2">{@code isRepairingNamespaces} == true</th>
- *             <th colspan="2">{@code isRepairingNamespaces} == false</th>
- *         </tr>
- *         <tr>
- *             <th></th> <!-- method -->
- *             <th>namespaceURI bound</th>
- *             <th>namespaceURI unbound</th>
- *             <th>namespaceURI bound</th>
- *             <th>namespaceURI unbound</th>
+ *             <!-- method -->
+ *             <th scope="col">namespaceURI bound</th>
+ *             <th scope="col">namespaceURI unbound</th>
+ *             <th scope="col">namespaceURI bound</th>
+ *             <th scope="col">namespaceURI unbound</th>
  *         </tr>
  *     </thead>
  *
  *     <tbody>
  *         <tr>
- *             <th>{@code writeAttribute(namespaceURI, localName, value)}</th>
+ *             <th scope="row">{@code writeAttribute(namespaceURI, localName, value)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td>
  *                 <!-- namespaceURI bound -->
@@ -81,7 +79,7 @@ import javax.xml.namespace.NamespaceContext;
  *         </tr>
  *
  *         <tr>
- *             <th>{@code writeAttribute(prefix, namespaceURI, localName, value)}</th>
+ *             <th scope="row">{@code writeAttribute(prefix, namespaceURI, localName, value)}</th>
  *             <!-- isRepairingNamespaces == true -->
  *             <td>
  *                 <!-- namespaceURI bound -->
@@ -111,11 +109,11 @@ import javax.xml.namespace.NamespaceContext;
  *         </tr>
  *
  *         <tr>
- *             <th>{@code writeStartElement(namespaceURI, localName)}<br>
+ *             <th scope="row">{@code writeStartElement(namespaceURI, localName)}<br>
  *                 <br>
  *                 {@code writeEmptyElement(namespaceURI, localName)}</th>
  *             <!-- isRepairingNamespaces == true -->
- *             <td >
+ *             <td>
  *                 <!-- namespaceURI bound -->
  *                 {@code <prefix:localName>}&nbsp;<sup>[1]</sup>
  *             </td>
@@ -135,7 +133,7 @@ import javax.xml.namespace.NamespaceContext;
  *         </tr>
  *
  *         <tr>
- *             <th>{@code writeStartElement(prefix, localName, namespaceURI)}<br>
+ *             <th scope="row">{@code writeStartElement(prefix, localName, namespaceURI)}<br>
  *                 <br>
  *                 {@code writeEmptyElement(prefix, localName, namespaceURI)}</th>
  *             <!-- isRepairingNamespaces == true -->
@@ -166,25 +164,20 @@ import javax.xml.namespace.NamespaceContext;
  *             </td>
  *         </tr>
  *     </tbody>
- *     <tfoot>
- *         <tr>
- *             <td colspan="5">
- *                 Notes:
- *                 <ul>
- *                     <li>[1] if namespaceURI == default Namespace URI, then no prefix is written</li>
- *                     <li>[2] if prefix == "" || null {@literal &&} namespaceURI == "", then
- *                        no prefix or Namespace declaration is generated or written</li>
- *                     <li>[3] if prefix == "" || null, then a prefix is randomly generated</li>
- *                     <li>[4] if prefix == "" || null, then it is treated as the default Namespace and
- *                        no prefix is generated or written, an xmlns declaration is generated
- *                        and written if the namespaceURI is unbound</li>
- *                     <li>[5] if prefix == "" || null, then it is treated as an invalid attempt to
- *                        define the default Namespace and an XMLStreamException is thrown</li>
- *                 </ul>
- *             </td>
- *         </tr>
- *     </tfoot>
  * </table>
+
+ * Notes:
+ * <ul>
+ *    <li>[1] if namespaceURI == default Namespace URI, then no prefix is written</li>
+ *    <li>[2] if prefix == "" || null {@literal &&} namespaceURI == "", then
+ *            no prefix or Namespace declaration is generated or written</li>
+ *    <li>[3] if prefix == "" || null, then a prefix is randomly generated</li>
+ *    <li>[4] if prefix == "" || null, then it is treated as the default Namespace and
+ *            no prefix is generated or written, an xmlns declaration is generated
+ *            and written if the namespaceURI is unbound</li>
+ *    <li>[5] if prefix == "" || null, then it is treated as an invalid attempt to
+ *            define the default Namespace and an XMLStreamException is thrown</li>
+ * </ul>
  *
  * @version 1.0
  * @author Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.

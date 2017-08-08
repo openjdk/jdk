@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
- * {@link jdk.jshell.JShell#eval}.  It is associated only with the
+ * {@link jdk.jshell.JShell#eval(java.lang.String)}.  It is associated only with the
  * {@link jdk.jshell.JShell JShell} instance that created it.
  * An instance of Snippet (including its subclasses) is immutable: an access to
  * any of its methods will always return the same result.
@@ -52,7 +52,7 @@ public abstract class Snippet {
      * It is accessed with {@link jdk.jshell.Snippet#kind()}.
      * The {@code Kind} can be used to determine which
      * subclass of Snippet it is. For example,
-     * {@link jdk.jshell.JShell#eval eval("int three() { return 3; }")} will
+     * {@link jdk.jshell.JShell#eval(java.lang.String) eval("int three() { return 3; }")} will
      * return a snippet creation event.  The {@code Kind} of that Snippet
      * will be {@code METHOD}, from which you know that the subclass
      * of {@code Snippet} is {@code MethodSnippet} and it can be
@@ -72,7 +72,7 @@ public abstract class Snippet {
          * or a static on-demand type import
          * ({@link jdk.jshell.Snippet.SubKind#SINGLE_STATIC_IMPORT_SUBKIND}) --
          * use {@link jdk.jshell.Snippet#subKind()} to distinguish.
-         * <P>
+         *
          * @jls 8.3: importDeclaration.
          * <P>
          * An import declaration is {@linkplain Kind#isPersistent() persistent}.
@@ -90,7 +90,7 @@ public abstract class Snippet {
          * classes {@link jdk.jshell.Snippet.SubKind#CLASS_SUBKIND}, enums, and
          * annotation interfaces -- see {@link jdk.jshell.Snippet.SubKind} to
          * differentiate.
-         * <P>
+         *
          * @jls 7.6: TypeDeclaration.
          * <P>
          * A type declaration is {@linkplain Kind#isPersistent() persistent}.
@@ -100,7 +100,7 @@ public abstract class Snippet {
         /**
          * A method declaration.
          * The snippet is an instance of {@link jdk.jshell.MethodSnippet}.
-         * <P>
+         *
          * @jls 8.4: MethodDeclaration.
          * <P>
          * A method declaration is {@linkplain Kind#isPersistent() persistent}.
@@ -115,7 +115,7 @@ public abstract class Snippet {
          * The variable may be with or without initializer, or be a temporary
          * variable representing an expression -- see
          * {@link jdk.jshell.Snippet.SubKind}to differentiate.
-         * <P>
+         *
          * @jls 8.3: FieldDeclaration.
          * <P>
          * A variable declaration is {@linkplain Kind#isPersistent() persistent}.
@@ -132,7 +132,7 @@ public abstract class Snippet {
          * names) -- see {@link jdk.jshell.Snippet.SubKind} to differentiate.
          * All other expression forms (operators, method calls, ...) generate a
          * scratch variable and so are instead of the VAR Kind.
-         * <P>
+         *
          * @jls 15: Expression.
          */
         EXPRESSION(false),
@@ -140,7 +140,7 @@ public abstract class Snippet {
         /**
          * A statement.
          * The snippet is an instance of {@link jdk.jshell.StatementSnippet}.
-         * <P>
+         *
          * @jls 14.5: Statement.
          */
         STATEMENT(false),
@@ -178,7 +178,7 @@ public abstract class Snippet {
     /**
      * The detailed variety of a snippet.  This is a sub-classification of the
      * Kind.  The Kind of a SubKind is accessible with
-     * {@link jdk.jshell.Snippet.SubKind#kind}.
+     * {@link jdk.jshell.Snippet.SubKind#kind()}.
      */
     public enum SubKind {
 
@@ -460,7 +460,7 @@ public abstract class Snippet {
         /**
          * The snippet is inactive because it has been replaced by a new
          * snippet.  This occurs when the new snippet added with
-         * {@link jdk.jshell.JShell#eval} matches a previous snippet.
+         * {@link jdk.jshell.JShell#eval(java.lang.String) eval} matches a previous snippet.
          * A {@code TypeDeclSnippet} will match another
          * {@code TypeDeclSnippet} if the names match.
          * For example {@code class X { }} will overwrite

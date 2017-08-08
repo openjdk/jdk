@@ -33,7 +33,7 @@
  * @run driver compiler.profiling.spectrapredefineclass.Launcher
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation
  *                   -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222
- *                   -XX:ReservedCodeCacheSize=3M
+ *                   -XX:ReservedCodeCacheSize=3M -Djdk.attach.allowAttachSelf
  *                   compiler.profiling.spectrapredefineclass.Agent
  */
 

@@ -32,7 +32,6 @@ import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
-import java.lang.reflect.Module;
 import java.util.Objects;
 import java.util.logging.LogManager;
 import jdk.internal.logger.DefaultLoggerFinder;

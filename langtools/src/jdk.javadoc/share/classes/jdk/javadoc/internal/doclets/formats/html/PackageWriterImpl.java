@@ -99,7 +99,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param prev          Previous package in the sorted array.
      * @param next            Next package in the sorted array.
      */
-    public PackageWriterImpl(ConfigurationImpl configuration,
+    public PackageWriterImpl(HtmlConfiguration configuration,
             PackageElement packageElement, PackageElement prev, PackageElement next) {
         super(configuration, DocPath
                 .forPackage(packageElement)
@@ -247,6 +247,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageDescription(Content packageContentTree) {
         if (!utils.getBody(packageElement).isEmpty()) {
             Content tree = configuration.allowTag(HtmlTag.SECTION) ? sectionTree : packageContentTree;
+            tree.addContent(getMarkerAnchor(SectionName.PACKAGE_DESCRIPTION));
             addDeprecationInfo(tree);
             addInlineComment(packageElement, tree);
         }
