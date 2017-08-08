@@ -559,7 +559,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
       module_entry = ModuleEntryTable::javabase_moduleEntry();
     }
     // Obtain java.lang.Module, if available
-    Handle module_handle(THREAD, ((module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL));
+    Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, CHECK);
   }
 }
