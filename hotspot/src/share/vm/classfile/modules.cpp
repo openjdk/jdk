@@ -663,7 +663,7 @@ jobject Modules::get_named_module(Handle h_loader, const char* package_name, TRA
   const ModuleEntry* const module_entry = (pkg_entry != NULL ? pkg_entry->module() : NULL);
 
   if (module_entry != NULL && module_entry->module() != NULL && module_entry->is_named()) {
-    return JNIHandles::make_local(THREAD, JNIHandles::resolve(module_entry->module()));
+    return JNIHandles::make_local(THREAD, module_entry->module());
   }
   return NULL;
 }
@@ -677,7 +677,7 @@ jobject Modules::get_module(Symbol* package_name, Handle h_loader, TRAPS) {
 
   if (module_entry != NULL &&
       module_entry->module() != NULL) {
-    return JNIHandles::make_local(THREAD, JNIHandles::resolve(module_entry->module()));
+    return JNIHandles::make_local(THREAD, module_entry->module());
   }
 
   return NULL;

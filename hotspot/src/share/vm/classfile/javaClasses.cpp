@@ -799,15 +799,15 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
     // If java.base was already defined then patch this particular class with java.base.
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
-      assert(javabase_entry != NULL && javabase_entry->module() != NULL,
+      assert(javabase_entry != NULL && javabase_entry->module_handle() != NULL,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
-      Handle javabase_handle(THREAD, JNIHandles::resolve(javabase_entry->module()));
+      Handle javabase_handle(THREAD, javabase_entry->module());
       set_module(mirror(), javabase_handle());
     }
   } else {
     assert(Universe::is_module_initialized() ||
            (ModuleEntryTable::javabase_defined() &&
-            (module() == JNIHandles::resolve(ModuleEntryTable::javabase_moduleEntry()->module()))),
+            (module() == ModuleEntryTable::javabase_moduleEntry()->module())),
            "Incorrect java.lang.Module specification while creating mirror");
     set_module(mirror(), module());
   }

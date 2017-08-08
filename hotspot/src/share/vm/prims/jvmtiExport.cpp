@@ -764,12 +764,12 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         ModuleEntry* module_entry = InstanceKlass::cast(klass)->module();
         assert(module_entry != NULL, "module_entry should always be set");
         if (module_entry->is_named() &&
-            module_entry->module() != NULL &&
+            module_entry->module_handle() != NULL &&
             !module_entry->has_default_read_edges()) {
           if (!module_entry->set_has_default_read_edges()) {
             // We won a potential race.
             // Add read edges to the unnamed modules of the bootstrap and app class loaders
-            Handle class_module(_thread, JNIHandles::resolve(module_entry->module())); // Obtain j.l.r.Module
+            Handle class_module(_thread, module_entry->module()); // Obtain j.l.r.Module
             JvmtiExport::add_default_read_edges(class_module, _thread);
           }
         }
