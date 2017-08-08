@@ -112,8 +112,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       -relativeSrcInclude src \
       -hidePath .hg \
       -hidePath .jcheck \
+      -hidePath jdk.aot \
       -hidePath jdk.hotspot.agent \
-      -hidePath jdk.vm.ci \
+      -hidePath jdk.internal.vm.ci \
+      -hidePath jdk.internal.vm.compiler \
       -hidePath jdk.jfr \
       -compiler VC10 \
       -jdkTargetRoot $(call FixPath, $(JDK_OUTPUTDIR)) \

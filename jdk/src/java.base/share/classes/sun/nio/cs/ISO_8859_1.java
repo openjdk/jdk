@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class ISO_8859_1
 {
 
     public ISO_8859_1() {
-        super("ISO-8859-1", StandardCharsets.aliases_ISO_8859_1);
+        super(StandardCharsets.ISO_8859_1, StandardCharsets.aliases_ISO_8859_1);
     }
 
     public String historicalName() {

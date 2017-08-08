@@ -453,7 +453,6 @@ public class WhiteBox {
                                   Object[] packages);
   public native void AddModuleExports(Object from_module, String pkg, Object to_module);
   public native void AddReadsModule(Object from_module, Object source_module);
-  public native void AddModulePackage(Object module, String pkg);
   public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
   public native void AddModuleExportsToAll(Object module, String pkg);
   public native Object GetModuleByPackageName(Object ldr, String pkg);

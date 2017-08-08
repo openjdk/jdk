@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -82,7 +83,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param filename the path of the page to be generated
      * @see Group
      */
-    public PackageIndexWriter(ConfigurationImpl configuration, DocPath filename) {
+    public PackageIndexWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
         groupPackageMap = configuration.group.groupPackages(packages);
         groupList = configuration.group.getGroupList();
@@ -94,7 +95,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * @param configuration the current configuration of the doclet.
      * @throws DocFileIOException if there is a problem generating the package index page
      */
-    public static void generate(ConfigurationImpl configuration) throws DocFileIOException {
+    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
         DocPath filename = DocPaths.overviewSummary(configuration.frames);
         PackageIndexWriter packgen = new PackageIndexWriter(configuration, filename);
         packgen.buildPackageIndexFile("doclet.Window_Overview_Summary", true);
@@ -112,8 +113,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             SortedSet<PackageElement> list = groupPackageMap.get(groupname);
             if (list != null && !list.isEmpty()) {
                 addIndexContents(list,
-                                 groupname, configuration.getText("doclet.Member_Table_Summary",
-                                                                  groupname, configuration.getText("doclet.packages")), body);
+                        groupname, configuration.getText("doclet.Member_Table_Summary",
+                                groupname, configuration.getText("doclet.packages")), body);
             }
         }
     }
@@ -131,7 +132,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         addPackagesList(packages, tbody);
         table.addContent(tbody);
-        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
+        Content anchor = getMarkerAnchor(text);
+        Content div = HtmlTree.DIV(HtmlStyle.contentContainer, anchor);
+        div.addContent(table);
         if (configuration.allowTag(HtmlTag.MAIN)) {
             htmlTree.addContent(div);
         } else {
@@ -176,19 +179,9 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
-            subTitleDiv.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(configuration.overviewElement, subTitleDiv);
-            Content div = HtmlTree.DIV(HtmlStyle.header, subTitleDiv);
-            Content descBody = new ContentBuilder();
-            descBody.addContent(contents.seeLabel);
-            descBody.addContent(" ");
-            Content descPara = HtmlTree.P(descBody);
-            Content descLink = getHyperLink(getDocLink(
-                    SectionName.OVERVIEW_DESCRIPTION),
-                    contents.descriptionLabel, "", "");
-            descPara.addContent(descLink);
-            div.addContent(descPara);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.contentContainer);
+            addOverviewComment(div);
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
             } else {
@@ -206,27 +199,19 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      */
     protected void addOverviewComment(Content htmltree) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            htmltree.addContent(getMarkerAnchor(SectionName.OVERVIEW_DESCRIPTION));
             addInlineComment(configuration.overviewElement, htmltree);
         }
     }
 
     /**
-     * Adds the tag information as provided in the file specified by the
-     * "-overview" option on the command line.
+     * For HTML 5, add the htmlTree to the body. For HTML 4, do nothing.
      *
      * @param body the documentation tree to which the overview will be added
      */
     @Override
     protected void addOverview(Content body) {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
-        addOverviewComment(div);
         if (configuration.allowTag(HtmlTag.MAIN)) {
-            htmlTree.addContent(div);
             body.addContent(htmlTree);
-        } else {
-            body.addContent(div);
         }
     }
 

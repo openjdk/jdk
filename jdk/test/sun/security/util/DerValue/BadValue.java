@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,30 +48,37 @@ public class BadValue {
         if (bs.length != 6 || in.available() != 0) {
             throw new Exception("Second read error");
         }
-        // MAX read as much as it can
+        // MAX length results in exception
         in = new ByteArrayInputStream(new byte[10]);
-        bs = IOUtils.readFully(in, Integer.MAX_VALUE, true);
-        if (bs.length != 10 || in.available() != 0) {
-            throw new Exception("Second read error");
+        try {
+            bs = IOUtils.readFully(in, Integer.MAX_VALUE, true);
+            throw new Exception("No exception on MAX_VALUE length");
+        } catch (EOFException ex) {
+            // this is expected
+        } catch (IOException ex) {
+            throw ex;
         }
-        // MAX ignore readAll
+        // -1 length results in exception
         in = new ByteArrayInputStream(new byte[10]);
-        bs = IOUtils.readFully(in, Integer.MAX_VALUE, false);
-        if (bs.length != 10 || in.available() != 0) {
-            throw new Exception("Second read error");
+        try {
+            bs = IOUtils.readFully(in, -1, true);
+            throw new Exception("No exception on -1 length");
+        } catch (IOException ex) {
+            // this is expected
         }
+
         // 20>10, readAll means failure
         in = new ByteArrayInputStream(new byte[10]);
         try {
             bs = IOUtils.readFully(in, 20, true);
-            throw new Exception("Third read error");
+            throw new Exception("No exception on EOF");
         } catch (EOFException e) {
             // OK
         }
         int bignum = 10 * 1024 * 1024;
-        bs = IOUtils.readFully(new SuperSlowStream(bignum), -1, true);
+        bs = IOUtils.readFully(new SuperSlowStream(bignum), bignum, true);
         if (bs.length != bignum) {
-            throw new Exception("Fourth read error");
+            throw new Exception("Read returned small array");
         }
 
         // Test DerValue

@@ -48,6 +48,7 @@ import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+@SuppressWarnings("WaitNotInLoop") // we implement spurious-wakeup freedom
 public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public static void main(String[] args) {
         main(suite(), args);
@@ -1036,42 +1037,41 @@ public class ReentrantReadWriteLockTest extends JSR166TestCase {
     public void testAwaitUninterruptibly()      { testAwaitUninterruptibly(false); }
     public void testAwaitUninterruptibly_fair() { testAwaitUninterruptibly(true); }
     public void testAwaitUninterruptibly(boolean fair) {
-        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(fair);
-        final Condition c = lock.writeLock().newCondition();
+        final Lock lock = new ReentrantReadWriteLock(fair).writeLock();
+        final Condition condition = lock.newCondition();
         final CountDownLatch pleaseInterrupt = new CountDownLatch(2);
 
         Thread t1 = newStartedThread(new CheckedRunnable() {
             public void realRun() {
                 // Interrupt before awaitUninterruptibly
-                lock.writeLock().lock();
+                lock.lock();
                 pleaseInterrupt.countDown();
                 Thread.currentThread().interrupt();
-                c.awaitUninterruptibly();
+                condition.awaitUninterruptibly();
                 assertTrue(Thread.interrupted());
-                lock.writeLock().unlock();
+                lock.unlock();
             }});
 
         Thread t2 = newStartedThread(new CheckedRunnable() {
             public void realRun() {
                 // Interrupt during awaitUninterruptibly
-                lock.writeLock().lock();
+                lock.lock();
                 pleaseInterrupt.countDown();
-                c.awaitUninterruptibly();
+                condition.awaitUninterruptibly();
                 assertTrue(Thread.interrupted());
-                lock.writeLock().unlock();
+                lock.unlock();
             }});
 
         await(pleaseInterrupt);
-        lock.writeLock().lock();
-        lock.writeLock().unlock();
         t2.interrupt();
+        lock.lock();
+        lock.unlock();
+        assertThreadBlocks(t1, Thread.State.WAITING);
+        assertThreadBlocks(t2, Thread.State.WAITING);
 
-        assertThreadStaysAlive(t1);
-        assertTrue(t2.isAlive());
-
-        lock.writeLock().lock();
-        c.signalAll();
-        lock.writeLock().unlock();
+        lock.lock();
+        condition.signalAll();
+        lock.unlock();
 
         awaitTermination(t1);
         awaitTermination(t2);

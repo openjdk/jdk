@@ -36,6 +36,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -52,12 +54,14 @@ import java.util.concurrent.RunnableScheduledFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -303,110 +307,67 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * execute(null) throws NPE
+     * Submitting null tasks throws NullPointerException
      */
-    public void testExecuteNull() throws InterruptedException {
+    public void testNullTaskSubmission() {
         final CustomExecutor p = new CustomExecutor(1);
         try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.execute(null);
-                shouldThrow();
-            } catch (NullPointerException success) {}
+            assertNullTaskSubmissionThrowsNullPointerException(p);
         }
     }
 
     /**
-     * schedule(null) throws NPE
+     * Submitted tasks are rejected when shutdown
      */
-    public void testScheduleNull() throws InterruptedException {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                TrackedCallable callable = null;
-                Future f = p.schedule(callable, SHORT_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (NullPointerException success) {}
-        }
-    }
+    public void testSubmittedTasksRejectedWhenShutdown() throws InterruptedException {
+        final CustomExecutor p = new CustomExecutor(2);
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final CountDownLatch threadsStarted = new CountDownLatch(p.getCorePoolSize());
+        final CountDownLatch done = new CountDownLatch(1);
+        final Runnable r = () -> {
+            threadsStarted.countDown();
+            for (;;) {
+                try {
+                    done.await();
+                    return;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
+        final Callable<Boolean> c = () -> {
+            threadsStarted.countDown();
+            for (;;) {
+                try {
+                    done.await();
+                    return Boolean.TRUE;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
 
-    /**
-     * execute throws RejectedExecutionException if shutdown
-     */
-    public void testSchedule1_RejectedExecutionException() {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
+        try (PoolCleaner cleaner = cleaner(p, done)) {
+            for (int i = p.getCorePoolSize(); i--> 0; ) {
+                switch (rnd.nextInt(4)) {
+                case 0: p.execute(r); break;
+                case 1: assertFalse(p.submit(r).isDone()); break;
+                case 2: assertFalse(p.submit(r, Boolean.TRUE).isDone()); break;
+                case 3: assertFalse(p.submit(c).isDone()); break;
+                }
+            }
+
+            // ScheduledThreadPoolExecutor has an unbounded queue, so never saturated.
+            await(threadsStarted);
+
+            if (rnd.nextBoolean())
+                p.shutdownNow();
+            else
                 p.shutdown();
-                p.schedule(new NoOpRunnable(),
-                           MEDIUM_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (RejectedExecutionException success) {
-            } catch (SecurityException ok) {}
-        }
-    }
+            // Pool is shutdown, but not yet terminated
+            assertTaskSubmissionsAreRejected(p);
+            assertFalse(p.isTerminated());
 
-    /**
-     * schedule throws RejectedExecutionException if shutdown
-     */
-    public void testSchedule2_RejectedExecutionException() {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.shutdown();
-                p.schedule(new NoOpCallable(),
-                           MEDIUM_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (RejectedExecutionException success) {
-            } catch (SecurityException ok) {}
-        }
-    }
+            done.countDown();   // release blocking tasks
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
 
-    /**
-     * schedule callable throws RejectedExecutionException if shutdown
-     */
-    public void testSchedule3_RejectedExecutionException() {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.shutdown();
-                p.schedule(new NoOpCallable(),
-                           MEDIUM_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (RejectedExecutionException success) {
-            } catch (SecurityException ok) {}
+            assertTaskSubmissionsAreRejected(p);
         }
-    }
-
-    /**
-     * scheduleAtFixedRate throws RejectedExecutionException if shutdown
-     */
-    public void testScheduleAtFixedRate1_RejectedExecutionException() {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.shutdown();
-                p.scheduleAtFixedRate(new NoOpRunnable(),
-                                      MEDIUM_DELAY_MS, MEDIUM_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (RejectedExecutionException success) {
-            } catch (SecurityException ok) {}
-        }
-    }
-
-    /**
-     * scheduleWithFixedDelay throws RejectedExecutionException if shutdown
-     */
-    public void testScheduleWithFixedDelay1_RejectedExecutionException() {
-        final CustomExecutor p = new CustomExecutor(1);
-        try (PoolCleaner cleaner = cleaner(p)) {
-            try {
-                p.shutdown();
-                p.scheduleWithFixedDelay(new NoOpRunnable(),
-                                         MEDIUM_DELAY_MS, MEDIUM_DELAY_MS, MILLISECONDS);
-                shouldThrow();
-            } catch (RejectedExecutionException success) {
-            } catch (SecurityException ok) {}
-        }
+        assertEquals(p.getCorePoolSize(), p.getCompletedTaskCount());
     }
 
     /**
@@ -445,13 +406,13 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
                 public void realRun() throws InterruptedException {
                     threadStarted.countDown();
                     assertEquals(0, p.getCompletedTaskCount());
-                    threadProceed.await();
+                    await(threadProceed);
                     threadDone.countDown();
                 }});
             await(threadStarted);
             assertEquals(0, p.getCompletedTaskCount());
             threadProceed.countDown();
-            threadDone.await();
+            await(threadDone);
             long startTime = System.nanoTime();
             while (p.getCompletedTaskCount() != 1) {
                 if (millisElapsedSince(startTime) > LONG_DELAY_MS)
@@ -812,91 +773,187 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
      * - setExecuteExistingDelayedTasksAfterShutdownPolicy
      * - setContinueExistingPeriodicTasksAfterShutdownPolicy
      */
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void testShutdown_cancellation() throws Exception {
-        Boolean[] allBooleans = { null, Boolean.FALSE, Boolean.TRUE };
-        for (Boolean policy : allBooleans)
-    {
-        final int poolSize = 2;
+        final int poolSize = 4;
         final CustomExecutor p = new CustomExecutor(poolSize);
-        final boolean effectiveDelayedPolicy = (policy != Boolean.FALSE);
-        final boolean effectivePeriodicPolicy = (policy == Boolean.TRUE);
-        final boolean effectiveRemovePolicy = (policy == Boolean.TRUE);
-        if (policy != null) {
-            p.setExecuteExistingDelayedTasksAfterShutdownPolicy(policy);
-            p.setContinueExistingPeriodicTasksAfterShutdownPolicy(policy);
-            p.setRemoveOnCancelPolicy(policy);
-        }
+        final BlockingQueue<Runnable> q = p.getQueue();
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final long delay = rnd.nextInt(2);
+        final int rounds = rnd.nextInt(1, 3);
+        final boolean effectiveDelayedPolicy;
+        final boolean effectivePeriodicPolicy;
+        final boolean effectiveRemovePolicy;
+
+        if (rnd.nextBoolean())
+            p.setExecuteExistingDelayedTasksAfterShutdownPolicy(
+                effectiveDelayedPolicy = rnd.nextBoolean());
+        else
+            effectiveDelayedPolicy = true;
         assertEquals(effectiveDelayedPolicy,
                      p.getExecuteExistingDelayedTasksAfterShutdownPolicy());
+
+        if (rnd.nextBoolean())
+            p.setContinueExistingPeriodicTasksAfterShutdownPolicy(
+                effectivePeriodicPolicy = rnd.nextBoolean());
+        else
+            effectivePeriodicPolicy = false;
         assertEquals(effectivePeriodicPolicy,
                      p.getContinueExistingPeriodicTasksAfterShutdownPolicy());
+
+        if (rnd.nextBoolean())
+            p.setRemoveOnCancelPolicy(
+                effectiveRemovePolicy = rnd.nextBoolean());
+        else
+            effectiveRemovePolicy = false;
         assertEquals(effectiveRemovePolicy,
                      p.getRemoveOnCancelPolicy());
-        // Strategy: Wedge the pool with poolSize "blocker" threads
+
+        final boolean periodicTasksContinue = effectivePeriodicPolicy && rnd.nextBoolean();
+
+        // Strategy: Wedge the pool with one wave of "blocker" tasks,
+        // then add a second wave that waits in the queue until unblocked.
         final AtomicInteger ran = new AtomicInteger(0);
         final CountDownLatch poolBlocked = new CountDownLatch(poolSize);
         final CountDownLatch unblock = new CountDownLatch(1);
-        final CountDownLatch periodicLatch1 = new CountDownLatch(2);
-        final CountDownLatch periodicLatch2 = new CountDownLatch(2);
-        Runnable task = new CheckedRunnable() { public void realRun()
-                                                    throws InterruptedException {
-            poolBlocked.countDown();
-            assertTrue(unblock.await(LONG_DELAY_MS, MILLISECONDS));
-            ran.getAndIncrement();
-        }};
-        List<Future<?>> blockers = new ArrayList<>();
-        List<Future<?>> periodics = new ArrayList<>();
-        List<Future<?>> delayeds = new ArrayList<>();
-        for (int i = 0; i < poolSize; i++)
-            blockers.add(p.submit(task));
-        assertTrue(poolBlocked.await(LONG_DELAY_MS, MILLISECONDS));
+        final RuntimeException exception = new RuntimeException();
 
-        periodics.add(p.scheduleAtFixedRate(countDowner(periodicLatch1),
-                                            1, 1, MILLISECONDS));
-        periodics.add(p.scheduleWithFixedDelay(countDowner(periodicLatch2),
-                                               1, 1, MILLISECONDS));
-        delayeds.add(p.schedule(task, 1, MILLISECONDS));
+        class Task implements Runnable {
+            public void run() {
+                try {
+                    ran.getAndIncrement();
+                    poolBlocked.countDown();
+                    await(unblock);
+                } catch (Throwable fail) { threadUnexpectedException(fail); }
+            }
+        }
 
-        assertTrue(p.getQueue().containsAll(periodics));
-        assertTrue(p.getQueue().containsAll(delayeds));
+        class PeriodicTask extends Task {
+            PeriodicTask(int rounds) { this.rounds = rounds; }
+            int rounds;
+            public void run() {
+                if (--rounds == 0) super.run();
+                // throw exception to surely terminate this periodic task,
+                // but in a separate execution and in a detectable way.
+                if (rounds == -1) throw exception;
+            }
+        }
+
+        Runnable task = new Task();
+
+        List<Future<?>> immediates = new ArrayList<>();
+        List<Future<?>> delayeds   = new ArrayList<>();
+        List<Future<?>> periodics  = new ArrayList<>();
+
+        immediates.add(p.submit(task));
+        delayeds.add(p.schedule(task, delay, MILLISECONDS));
+        periodics.add(p.scheduleAtFixedRate(
+                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+        periodics.add(p.scheduleWithFixedDelay(
+                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+
+        await(poolBlocked);
+
+        assertEquals(poolSize, ran.get());
+        assertEquals(poolSize, p.getActiveCount());
+        assertTrue(q.isEmpty());
+
+        // Add second wave of tasks.
+        immediates.add(p.submit(task));
+        delayeds.add(p.schedule(task, effectiveDelayedPolicy ? delay : LONG_DELAY_MS, MILLISECONDS));
+        periodics.add(p.scheduleAtFixedRate(
+                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+        periodics.add(p.scheduleWithFixedDelay(
+                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+
+        assertEquals(poolSize, q.size());
+        assertEquals(poolSize, ran.get());
+
+        immediates.forEach(
+            f -> assertTrue(((ScheduledFuture)f).getDelay(NANOSECONDS) <= 0L));
+
+        Stream.of(immediates, delayeds, periodics).flatMap(c -> c.stream())
+            .forEach(f -> assertFalse(f.isDone()));
+
         try { p.shutdown(); } catch (SecurityException ok) { return; }
         assertTrue(p.isShutdown());
+        assertTrue(p.isTerminating());
         assertFalse(p.isTerminated());
-        for (Future<?> periodic : periodics) {
-            assertTrue(effectivePeriodicPolicy ^ periodic.isCancelled());
-            assertTrue(effectivePeriodicPolicy ^ periodic.isDone());
-        }
-        for (Future<?> delayed : delayeds) {
-            assertTrue(effectiveDelayedPolicy ^ delayed.isCancelled());
-            assertTrue(effectiveDelayedPolicy ^ delayed.isDone());
-        }
-        if (testImplementationDetails) {
-            assertEquals(effectivePeriodicPolicy,
-                         p.getQueue().containsAll(periodics));
-            assertEquals(effectiveDelayedPolicy,
-                         p.getQueue().containsAll(delayeds));
-        }
-        // Release all pool threads
-        unblock.countDown();
 
-        for (Future<?> delayed : delayeds) {
-            if (effectiveDelayedPolicy) {
-                assertNull(delayed.get());
-            }
+        if (rnd.nextBoolean())
+            assertThrows(
+                RejectedExecutionException.class,
+                () -> p.submit(task),
+                () -> p.schedule(task, 1, SECONDS),
+                () -> p.scheduleAtFixedRate(
+                    new PeriodicTask(1), 1, 1, SECONDS),
+                () -> p.scheduleWithFixedDelay(
+                    new PeriodicTask(2), 1, 1, SECONDS));
+
+        assertTrue(q.contains(immediates.get(1)));
+        assertTrue(!effectiveDelayedPolicy
+                   ^ q.contains(delayeds.get(1)));
+        assertTrue(!effectivePeriodicPolicy
+                   ^ q.containsAll(periodics.subList(2, 4)));
+
+        immediates.forEach(f -> assertFalse(f.isDone()));
+
+        assertFalse(delayeds.get(0).isDone());
+        if (effectiveDelayedPolicy)
+            assertFalse(delayeds.get(1).isDone());
+        else
+            assertTrue(delayeds.get(1).isCancelled());
+
+        if (effectivePeriodicPolicy)
+            periodics.forEach(
+                f -> {
+                    assertFalse(f.isDone());
+                    if (!periodicTasksContinue) {
+                        assertTrue(f.cancel(false));
+                        assertTrue(f.isCancelled());
+                    }
+                });
+        else {
+            periodics.subList(0, 2).forEach(f -> assertFalse(f.isDone()));
+            periodics.subList(2, 4).forEach(f -> assertTrue(f.isCancelled()));
         }
-        if (effectivePeriodicPolicy) {
-            assertTrue(periodicLatch1.await(LONG_DELAY_MS, MILLISECONDS));
-            assertTrue(periodicLatch2.await(LONG_DELAY_MS, MILLISECONDS));
-            for (Future<?> periodic : periodics) {
-                assertTrue(periodic.cancel(false));
-                assertTrue(periodic.isCancelled());
-                assertTrue(periodic.isDone());
-            }
-        }
+
+        unblock.countDown();    // Release all pool threads
+
         assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+        assertFalse(p.isTerminating());
         assertTrue(p.isTerminated());
-        assertEquals(2 + (effectiveDelayedPolicy ? 1 : 0), ran.get());
-    }}
+
+        assertTrue(q.isEmpty());
+
+        Stream.of(immediates, delayeds, periodics).flatMap(c -> c.stream())
+            .forEach(f -> assertTrue(f.isDone()));
+
+        for (Future<?> f : immediates) assertNull(f.get());
+
+        assertNull(delayeds.get(0).get());
+        if (effectiveDelayedPolicy)
+            assertNull(delayeds.get(1).get());
+        else
+            assertTrue(delayeds.get(1).isCancelled());
+
+        if (periodicTasksContinue)
+            periodics.forEach(
+                f -> {
+                    try { f.get(); }
+                    catch (ExecutionException success) {
+                        assertSame(exception, success.getCause());
+                    }
+                    catch (Throwable fail) { threadUnexpectedException(fail); }
+                });
+        else
+            periodics.forEach(f -> assertTrue(f.isCancelled()));
+
+        assertEquals(poolSize + 1
+                     + (effectiveDelayedPolicy ? 1 : 0)
+                     + (periodicTasksContinue ? 2 : 0),
+                     ran.get());
+    }
 
     /**
      * completed submit of callable returns result
@@ -948,7 +1005,7 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * invokeAny(empty collection) throws IAE
+     * invokeAny(empty collection) throws IllegalArgumentException
      */
     public void testInvokeAny2() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
@@ -1023,12 +1080,14 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * invokeAll(empty collection) returns empty collection
+     * invokeAll(empty collection) returns empty list
      */
     public void testInvokeAll2() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Future<String>> r = e.invokeAll(new ArrayList<Callable<String>>());
+            List<Future<String>> r = e.invokeAll(emptyCollection);
             assertTrue(r.isEmpty());
         }
     }
@@ -1091,7 +1150,7 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
         final ExecutorService e = new CustomExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAny(null, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
@@ -1106,20 +1165,22 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
             List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
-                e.invokeAny(l, MEDIUM_DELAY_MS, null);
+                e.invokeAny(l, randomTimeout(), null);
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
     }
 
     /**
-     * timed invokeAny(empty collection) throws IAE
+     * timed invokeAny(empty collection) throws IllegalArgumentException
      */
     public void testTimedInvokeAny2() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAny(new ArrayList<Callable<String>>(), MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(emptyCollection, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (IllegalArgumentException success) {}
         }
@@ -1136,7 +1197,7 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
             l.add(latchAwaitingStringTask(latch));
             l.add(null);
             try {
-                e.invokeAny(l, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAny(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
             latch.countDown();
@@ -1179,20 +1240,20 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * timed invokeAll(null) throws NPE
+     * timed invokeAll(null) throws NullPointerException
      */
     public void testTimedInvokeAll1() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
         try (PoolCleaner cleaner = cleaner(e)) {
             try {
-                e.invokeAll(null, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAll(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
     }
 
     /**
-     * timed invokeAll(,,null) throws NPE
+     * timed invokeAll(,,null) throws NullPointerException
      */
     public void testTimedInvokeAllNullTimeUnit() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
@@ -1200,19 +1261,22 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
             List<Callable<String>> l = new ArrayList<>();
             l.add(new StringTask());
             try {
-                e.invokeAll(l, MEDIUM_DELAY_MS, null);
+                e.invokeAll(l, randomTimeout(), null);
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
     }
 
     /**
-     * timed invokeAll(empty collection) returns empty collection
+     * timed invokeAll(empty collection) returns empty list
      */
     public void testTimedInvokeAll2() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
+        final Collection<Callable<String>> emptyCollection
+            = Collections.emptyList();
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Future<String>> r = e.invokeAll(new ArrayList<Callable<String>>(), MEDIUM_DELAY_MS, MILLISECONDS);
+            List<Future<String>> r =
+                e.invokeAll(emptyCollection, randomTimeout(), randomTimeUnit());
             assertTrue(r.isEmpty());
         }
     }
@@ -1227,7 +1291,7 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
             l.add(new StringTask());
             l.add(null);
             try {
-                e.invokeAll(l, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAll(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
             } catch (NullPointerException success) {}
         }
@@ -1238,11 +1302,11 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
      */
     public void testTimedInvokeAll4() throws Exception {
         final ExecutorService e = new CustomExecutor(2);
+        final Collection<Callable<String>> c = new ArrayList<>();
+        c.add(new NPETask());
         try (PoolCleaner cleaner = cleaner(e)) {
-            List<Callable<String>> l = new ArrayList<>();
-            l.add(new NPETask());
             List<Future<String>> futures =
-                e.invokeAll(l, MEDIUM_DELAY_MS, MILLISECONDS);
+                e.invokeAll(c, LONG_DELAY_MS, MILLISECONDS);
             assertEquals(1, futures.size());
             try {
                 futures.get(0).get();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 
-import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -75,7 +74,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param moduleElement moduleElement under consideration.
      */
-    public ModuleFrameWriter(ConfigurationImpl configuration, ModuleElement moduleElement) {
+    public ModuleFrameWriter(HtmlConfiguration configuration, ModuleElement moduleElement) {
         super(configuration, DocPaths.moduleTypeFrame(moduleElement));
         this.mdle = moduleElement;
         if (configuration.getSpecifiedPackageElements().isEmpty()) {
@@ -91,7 +90,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
      * @param moduleElement The package for which "module_name-type-frame.html" is to be generated.
      * @throws DocFileIOException if there is a problem generating the module summary file
      */
-    public static void generate(ConfigurationImpl configuration, ModuleElement moduleElement)
+    public static void generate(HtmlConfiguration configuration, ModuleElement moduleElement)
             throws DocFileIOException {
         ModuleFrameWriter mdlgen = new ModuleFrameWriter(configuration, moduleElement);
         String mdlName = moduleElement.getQualifiedName().toString();

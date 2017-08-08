@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,17 @@ import org.testng.annotations.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.compiler.CompilerUtils;
 import static org.testng.Assert.*;
 
 /**
  * @test
  * @bug 8129126 8136802 8137316 8137317 8136804 8139350
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          java.logging
- * @build GetResourceBundleTest CompilerUtils jdk.testlibrary.ProcessTools
+ * @build GetResourceBundleTest jdk.testlibrary.ProcessTools
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng GetResourceBundleTest
  * @summary Tests Logger.getLogger + logger.getResourceBundle in an named/unnamed module,
  *          resources are in named and unnamed modules respectively.

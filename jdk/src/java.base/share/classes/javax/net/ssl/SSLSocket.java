@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * This class extends <code>Socket</code>s and provides secure
- * socket using protocols such as the "Secure
+ * This class extends <code>Socket</code> and provides secure
+ * sockets using protocols such as the "Secure
  * Sockets Layer" (SSL) or IETF "Transport Layer Security" (TLS) protocols.
  * <P>
  * Such sockets are normal stream sockets, but they
@@ -105,7 +105,7 @@ import java.util.function.BiFunction;
  * non-private (unencrypted) communications will such a ciphersuite be
  * selected.
  *
- * <P>When <code>SSLSocket</code>s are first created, no handshaking
+ * <P>When an <code>SSLSocket</code> is first created, no handshaking
  * is done so that applications may first set their communication
  * preferences:  what cipher suites to use, whether the socket should be
  * in client or server mode, etc.
@@ -118,7 +118,7 @@ import java.util.function.BiFunction;
  * objects are passed to <em>HandshakeCompletedListener</em> instances,
  * which are registered by users of this API.
  *
- * <code>SSLSocket</code>s are created by <code>SSLSocketFactory</code>s,
+ * An <code>SSLSocket</code> is created by <code>SSLSocketFactory</code>,
  * or by <code>accept</code>ing a connection from a
  * <code>SSLServerSocket</code>.
  *

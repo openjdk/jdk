@@ -117,7 +117,6 @@ public class ToolLocaleMessageTest extends ReplToolTesting {
                     (a) -> assertCommandFail(a, "/drop rats"),
                     (a) -> assertCommandOK(a, "void dup() {}"),
                     (a) -> assertCommandOK(a, "int dup"),
-                    (a) -> assertCommandFail(a, "/drop dup"),
                     (a) -> assertCommandFail(a, "/edit zebra", "zebra"),
                     (a) -> assertCommandFail(a, "/list zebra", "zebra", "No such snippet: zebra"),
                     (a) -> assertCommandFail(a, "/open", "/open"),

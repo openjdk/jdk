@@ -23,8 +23,8 @@
 
 /* @test
  * @summary Test socketchannel vector IO (use -Dseed=X to set PRNG seed)
- * @library .. /lib/testlibrary/
- * @build jdk.testlibrary.RandomFactory
+ * @library .. /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main VectorIO
  * @key randomness
  */
@@ -34,7 +34,7 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class VectorIO {
 

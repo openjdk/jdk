@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,19 +43,17 @@ define_pd_global(bool, UseOnStackReplacement,        true);
 define_pd_global(bool, ProfileInterpreter,           true);
 define_pd_global(bool, TieredCompilation,            trueInTiered);
 define_pd_global(intx, CompileThreshold,             10000);
-define_pd_global(intx, BackEdgeThreshold,            100000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FLOATPRESSURE,                64);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, INTPRESSURE,                  25);
+define_pd_global(intx, INTPRESSURE,                  24);
 define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
-define_pd_global(intx, PostLoopMultiversioning,      false);
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(intx, InitialCodeCacheSize,         2496*K); // Integral multiple of CodeCacheExpansionSize
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);

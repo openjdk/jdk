@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,13 +81,12 @@ import java.io.*;
  * verification in an attempt to bypass a security check.
  *
  * <p> The signature algorithm can be, among others, the NIST standard
- * DSA, using DSA and SHA-1.  The algorithm is specified using the
+ * DSA, using DSA and SHA-256.  The algorithm is specified using the
  * same convention as that for signatures. The DSA algorithm using the
- * SHA-1 message digest algorithm can be specified, for example, as
- * "SHA/DSA" or "SHA-1/DSA" (they are equivalent).  In the case of
- * RSA, there are multiple choices for the message digest algorithm,
- * so the signing algorithm could be specified as, for example,
- * "MD2/RSA", "MD5/RSA" or "SHA-1/RSA".  The algorithm name must be
+ * SHA-256 message digest algorithm can be specified, for example, as
+ * "SHA256withDSA".  In the case of
+ * RSA the signing algorithm could be specified as, for example,
+ * "SHA256withRSA".  The algorithm name must be
  * specified, as there is no default.
  *
  * <p> The name of the Cryptography Package Provider is designated

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -679,6 +679,27 @@ public final class Utils {
         Objects.requireNonNull(prop,
                 String.format("A mandatory property '%s' isn't set", propName));
         return prop;
+    }
+
+    /*
+     * Run uname with specified arguments.
+     */
+    public static OutputAnalyzer uname(String... args) throws Throwable {
+        String[] cmds = new String[args.length + 1];
+        cmds[0] = "uname";
+        System.arraycopy(args, 0, cmds, 1, args.length);
+        return ProcessTools.executeCommand(cmds);
+    }
+
+    /*
+     * Returns the system distro.
+     */
+    public static String distro() {
+        try {
+            return uname("-v").asLines().get(0);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to determine distro.", t);
+        }
     }
 }
 

@@ -36,25 +36,30 @@ import java.security.BasicPermission;
  *
  * <table class="striped"><caption style="display:none">permission target name,
  *  what the target allows,and associated risks</caption>
+ * <thead>
  * <tr>
- *   <th>Permission Target Name</th>
- *   <th>What the Permission Allows</th>
- *   <th>Risks of Allowing this Permission</th>
+ *   <th scope="col">Permission Target Name</th>
+ *   <th scope="col">What the Permission Allows</th>
+ *   <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
- *   <td>setOption.SO_FLOW_SLA</td>
+ *   <th scope="row">setOption.SO_FLOW_SLA</th>
  *   <td>set the {@link ExtendedSocketOptions#SO_FLOW_SLA SO_FLOW_SLA} option
  *       on any socket that supports it</td>
  *   <td>allows caller to set a higher priority or bandwidth allocation
  *       to sockets it creates, than they might otherwise be allowed.</td>
  * </tr>
  * <tr>
- *   <td>getOption.SO_FLOW_SLA</td>
+ *   <th scope="row">getOption.SO_FLOW_SLA</th>
  *   <td>retrieve the {@link ExtendedSocketOptions#SO_FLOW_SLA SO_FLOW_SLA}
  *       setting from any socket that supports the option</td>
  *   <td>allows caller access to SLA information that it might not
  *       otherwise have</td>
- * </tr></table>
+ * </tr>
+ * </tbody>
+ * </table>
  *
  * @see jdk.net.ExtendedSocketOptions
  *

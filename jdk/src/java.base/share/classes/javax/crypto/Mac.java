@@ -50,7 +50,7 @@ import sun.security.jca.GetInstance.Instance;
  *
  * <p> A MAC mechanism that is based on cryptographic hash functions is
  * referred to as HMAC. HMAC can be used with any cryptographic hash function,
- * e.g., MD5 or SHA-1, in combination with a secret shared key. HMAC is
+ * e.g., SHA256 or SHA384, in combination with a secret shared key. HMAC is
  * specified in RFC 2104.
  *
  * <p> Every implementation of the Java platform is required to support

@@ -57,7 +57,6 @@ import java.util.stream.Stream;
  * <p>
  * In addition to the above entry types, a catalog may define nextCatalog
  * entries to add additional catalog entry files.
- * <p>
  *
  * @since 9
  */

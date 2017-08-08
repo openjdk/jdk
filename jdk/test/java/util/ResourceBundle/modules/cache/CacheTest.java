@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /**
  * @test
  * @bug 8170772
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build CacheTest CompilerUtils jdk.testlibrary.*
+ * @build CacheTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng CacheTest
  */
 
@@ -37,11 +37,11 @@ import java.nio.file.Paths;
 
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
-
 
 @Test
 public class CacheTest {

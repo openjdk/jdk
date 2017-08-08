@@ -191,26 +191,30 @@ public class VMOption {
      *
      * <blockquote>
      * <table class="striped"><caption style="display:none">description</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col" style="text-align:left">Attribute Name</th>
+     *   <th scope="col" style="text-align:left">Type</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td>name</td>
+     *   <th scope="row">name</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>value</td>
+     *   <th scope="row">value</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>origin</td>
+     *   <th scope="row">origin</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>writeable</td>
+     *   <th scope="row">writeable</th>
      *   <td>{@code java.lang.Boolean}</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

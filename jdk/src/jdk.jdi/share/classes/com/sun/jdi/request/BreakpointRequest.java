@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,29 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Locatable;
+import com.sun.jdi.Location;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
 
 /**
  * Identifies a {@link Location} in the target VM at which
  * execution should be stopped. When an enabled BreakpointRequest is
  * satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing an
- * {@link com.sun.jdi.event.BreakpointEvent BreakpointEvent}
+ * {@link EventSet event set} containing an
+ * {@link BreakpointEvent BreakpointEvent}
  * will be placed on the
- * {@link com.sun.jdi.event.EventQueue EventQueue} and
+ * {@link EventQueue EventQueue} and
  * the application is interrupted. The collection of existing breakpoints is
  * managed by the {@link EventRequestManager}
  *
  * @see Location
- * @see com.sun.jdi.event.BreakpointEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see BreakpointEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Robert Field

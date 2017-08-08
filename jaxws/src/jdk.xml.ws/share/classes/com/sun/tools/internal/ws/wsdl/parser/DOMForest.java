@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,15 +112,13 @@ public class DOMForest {
         this.entityResolver = entityResolver;
         this.errorReceiver = errReceiver;
         this.logic = logic;
-        try {
-            // secure xml processing can be switched off if input requires it
-            boolean secureProcessingEnabled = options == null || !options.disableXmlSecurity;
-            DocumentBuilderFactory dbf = XmlUtil.newDocumentBuilderFactory(secureProcessingEnabled);
-            dbf.setNamespaceAware(true);
-            this.documentBuilder = dbf.newDocumentBuilder();
+        // secure xml processing can be switched off if input requires it
+        boolean disableXmlSecurity = options == null ? false : options.disableXmlSecurity;
 
-            this.parserFactory = XmlUtil.newSAXParserFactory(secureProcessingEnabled);
-            this.parserFactory.setNamespaceAware(true);
+        DocumentBuilderFactory dbf = XmlUtil.newDocumentBuilderFactory(disableXmlSecurity);
+        this.parserFactory = XmlUtil.newSAXParserFactory(disableXmlSecurity);
+        try {
+            this.documentBuilder = dbf.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new AssertionError(e);
         }
