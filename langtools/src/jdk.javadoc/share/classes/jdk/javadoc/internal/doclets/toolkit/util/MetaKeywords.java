@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * Provides methods for creating an array of class, method and
@@ -52,12 +52,12 @@ public class MetaKeywords {
     /**
      * The global configuration information for this run.
      */
-    private final Configuration config;
+    private final BaseConfiguration config;
 
     /**
      * Constructor
      */
-    public MetaKeywords(Configuration configuration) {
+    public MetaKeywords(BaseConfiguration configuration) {
         config = configuration;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.xml.validation;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlContext;
@@ -286,41 +287,31 @@ class SchemaFactoryFinder  {
         // get Class from className
         Class<?> clazz = createClass(className);
         if (clazz == null) {
-                debugPrintln(()->"failed to getClass(" + className + ")");
-                return null;
+            debugPrintln(()->"failed to getClass(" + className + ")");
+            return null;
         }
         debugPrintln(()->"loaded " + className + " from " + which(clazz));
 
         // instantiate Class as a SchemaFactory
         try {
-                if (!SchemaFactory.class.isAssignableFrom(clazz)) {
-                    throw new ClassCastException(clazz.getName()
-                                + " cannot be cast to " + SchemaFactory.class);
-                }
-                if (!useServicesMechanism) {
-                    schemaFactory = newInstanceNoServiceLoader(clazz);
-                }
-                if (schemaFactory == null) {
-                    schemaFactory = (SchemaFactory) clazz.newInstance();
-                }
-        } catch (ClassCastException classCastException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        classCastException.printStackTrace();
-                }
-                return null;
-        } catch (IllegalAccessException illegalAccessException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        illegalAccessException.printStackTrace();
-                }
-                return null;
-        } catch (InstantiationException instantiationException) {
-                debugPrintln(()->"could not instantiate " + clazz.getName());
-                if (debug) {
-                        instantiationException.printStackTrace();
-                }
-                return null;
+            if (!SchemaFactory.class.isAssignableFrom(clazz)) {
+                throw new ClassCastException(clazz.getName()
+                            + " cannot be cast to " + SchemaFactory.class);
+            }
+            if (!useServicesMechanism) {
+                schemaFactory = newInstanceNoServiceLoader(clazz);
+            }
+            if (schemaFactory == null) {
+                schemaFactory = (SchemaFactory) clazz.getConstructor().newInstance();
+            }
+        } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
+            InstantiationException | InvocationTargetException | NoSuchMethodException |
+            SecurityException ex) {
+            debugPrintln(()->"could not instantiate " + clazz.getName());
+            if (debug) {
+                    ex.printStackTrace();
+            }
+            return null;
         }
 
         return schemaFactory;

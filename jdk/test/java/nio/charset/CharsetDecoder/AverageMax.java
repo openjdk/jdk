@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
 /* @test
  * @bug 4853350
  * @summary Ensure that averages do not exceed maxima
- *
- * @build AverageMax
- * @run main AverageMax
- * @run main/othervm -Dsun.nio.cs.bugLevel=1.4 AverageMax
  */
 
 import java.nio.*;
@@ -35,8 +31,6 @@ import java.nio.charset.*;
 
 
 public class AverageMax {
-
-    static boolean compat;
 
     static abstract class Test {
 
@@ -46,9 +40,6 @@ public class AverageMax {
             try {
                 go();
             } catch (Exception x) {
-                if (compat) {
-                    throw new Exception("Exception thrown", x);
-                }
                 if (x instanceof IllegalArgumentException) {
                     System.err.println("Thrown as expected: " + x);
                     return;
@@ -57,17 +48,13 @@ public class AverageMax {
                                     + x.getClass().getName(),
                                     x);
             }
-            if (!compat)
-                throw new Exception("No exception thrown");
+            throw new Exception("No exception thrown");
         }
 
     }
 
     public static void main(String[] args) throws Exception {
 
-        // If sun.nio.cs.bugLevel == 1.4 then we want the 1.4 behavior
-        String bl = System.getProperty("sun.nio.cs.bugLevel");
-        compat = (bl != null && bl.equals("1.4"));
         final Charset ascii = Charset.forName("US-ASCII");
 
         new Test() {

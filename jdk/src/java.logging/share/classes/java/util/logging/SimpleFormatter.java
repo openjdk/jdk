@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.internal.logger.SurrogateLogger;
  * format.  The summary will typically be 1 or 2 lines.
  *
  * <p>
- * <a name="formatting">
+ * <a id="formatting">
  * <b>Configuration:</b></a>
  * The {@code SimpleFormatter} is initialized with the
  * <a href="../Formatter.html#syntax">format string</a>

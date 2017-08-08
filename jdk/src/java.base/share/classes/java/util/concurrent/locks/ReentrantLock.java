@@ -330,7 +330,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * This &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to honor
      * the fairness setting for this lock, then use
-     * {@link #tryLock(long, TimeUnit) tryLock(0, TimeUnit.SECONDS) }
+     * {@link #tryLock(long, TimeUnit) tryLock(0, TimeUnit.SECONDS)}
      * which is almost equivalent (it also detects interruption).
      *
      * <p>If the current thread already holds this lock then the hold

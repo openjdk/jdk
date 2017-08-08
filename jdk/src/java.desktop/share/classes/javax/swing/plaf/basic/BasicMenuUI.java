@@ -123,6 +123,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                                            getPropertyPrefix() + ".actionMap");
     }
 
+    @SuppressWarnings("deprecation")
     void updateMnemonicBinding() {
         int mnemonic = menuItem.getModel().getMnemonic();
         int[] shortcutKeys = (int[])DefaultLookup.get(menuItem, this,

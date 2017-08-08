@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4757273
  * @summary Test deadlock in MBeanServerDelegate listeners
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NotifDeadlockTest
  * @run build NotifDeadlockTest
  * @run main NotifDeadlockTest
@@ -77,7 +77,6 @@ public class NotifDeadlockTest {
         }
     }
     static MBeanServer mbs;
-    static boolean timedOut;
 
     /* This listener registers or unregisters the MBean called on2
        when triggered.  */
@@ -110,83 +109,48 @@ public class NotifDeadlockTest {
                 };
                 t.start();
                 try {
-                    t.join(2000);
+                    t.join();
                 } catch (InterruptedException e) {
                     e.printStackTrace(); // should not happen
-                }
-                if (t.isAlive()) {
-                    System.out.println("FAILURE: Wait timed out: " +
-                                       "probable deadlock");
-                    timedOut = true;
                 }
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        boolean success = true;
 
         System.out.println("Test 1: in register notif, unregister an MBean");
-        timedOut = false;
         mbs = MBeanServerFactory.createMBeanServer();
         mbs.createMBean("javax.management.timer.Timer", on2);
         mbs.addNotificationListener(delName, new XListener(false), null, null);
         mbs.createMBean("javax.management.timer.Timer", on1);
         MBeanServerFactory.releaseMBeanServer(mbs);
-        if (timedOut) {
-            success = false;
-            Thread.sleep(500);
-            // wait for the spawned thread to complete its work, probably
-        }
         System.out.println("Test 1 completed");
 
         System.out.println("Test 2: in unregister notif, unregister an MBean");
-        timedOut = false;
         mbs = MBeanServerFactory.createMBeanServer();
         mbs.createMBean("javax.management.timer.Timer", on1);
         mbs.createMBean("javax.management.timer.Timer", on2);
         mbs.addNotificationListener(delName, new XListener(false), null, null);
         mbs.unregisterMBean(on1);
         MBeanServerFactory.releaseMBeanServer(mbs);
-        if (timedOut) {
-            success = false;
-            Thread.sleep(500);
-            // wait for the spawned thread to complete its work, probably
-        }
         System.out.println("Test 2 completed");
 
         System.out.println("Test 3: in register notif, register an MBean");
-        timedOut = false;
         mbs = MBeanServerFactory.createMBeanServer();
         mbs.addNotificationListener(delName, new XListener(true), null, null);
         mbs.createMBean("javax.management.timer.Timer", on1);
         MBeanServerFactory.releaseMBeanServer(mbs);
-        if (timedOut) {
-            success = false;
-            Thread.sleep(500);
-            // wait for the spawned thread to complete its work, probably
-        }
         System.out.println("Test 3 completed");
 
         System.out.println("Test 4: in unregister notif, register an MBean");
-        timedOut = false;
         mbs = MBeanServerFactory.createMBeanServer();
         mbs.createMBean("javax.management.timer.Timer", on1);
         mbs.addNotificationListener(delName, new XListener(true), null, null);
         mbs.unregisterMBean(on1);
         MBeanServerFactory.releaseMBeanServer(mbs);
-        if (timedOut) {
-            success = false;
-            Thread.sleep(500);
-            // wait for the spawned thread to complete its work, probably
-        }
         System.out.println("Test 4 completed");
 
-        if (success)
-            System.out.println("Test passed");
-        else {
-            System.out.println("TEST FAILED: at least one subcase failed");
-            System.exit(1);
-        }
+        System.out.println("Test passed");
     }
 }

@@ -1,3 +1,2 @@
 T8002286.java:8:22: compiler.err.cant.resolve.location.args: kindname.method, value, , , (compiler.misc.location: kindname.annotation, T8002286.Anno, null)
-T8002286.java:8:11: compiler.err.cant.resolve.location.args: kindname.method, nonExistent, , , (compiler.misc.location: kindname.class, T8002286, null)
-2 errors
+1 error

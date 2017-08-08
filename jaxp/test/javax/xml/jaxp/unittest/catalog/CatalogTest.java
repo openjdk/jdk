@@ -88,35 +88,6 @@ public class CatalogTest extends CatalogSupportBase {
     }
 
     /*
-     * @bug 8162431
-     * Verifies that circular references are caught and
-     * CatalogException is thrown.
-     */
-    @Test(dataProvider = "getFeatures", expectedExceptions = CatalogException.class)
-    public void testCircularRef(CatalogFeatures cf, String xml) throws Exception {
-        CatalogResolver catalogResolver = CatalogManager.catalogResolver(
-                cf,
-                getClass().getResource(xml).toURI());
-        catalogResolver.resolve("anyuri", "");
-    }
-
-    /*
-       DataProvider: used to verify circular reference
-        Data columns: CatalogFeatures, catalog
-     */
-    @DataProvider(name = "getFeatures")
-    public Object[][] getFeatures() {
-        String self = "catalogReferCircle-itself.xml";
-        String left = "catalogReferCircle-left.xml";
-        return new Object[][]{
-            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(), self},
-            {CatalogFeatures.defaults(), self},
-            {CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "false").build(), left},
-            {CatalogFeatures.defaults(), left}
-        };
-    }
-
-    /*
      * @bug 8163232
      * Verifies that the CatalogResolver supports the following XML Resolvers:
           javax.xml.stream.XMLResolver
@@ -437,7 +408,10 @@ public class CatalogTest extends CatalogSupportBase {
     public void resolveWithPrefer(String prefer, String cfile, String publicId,
             String systemId, String expected) throws Exception {
         URI catalogFile = getClass().getResource(cfile).toURI();
-        CatalogFeatures f = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).with(CatalogFeatures.Feature.RESOLVE, "ignore").build();
+        CatalogFeatures f = CatalogFeatures.builder()
+                .with(CatalogFeatures.Feature.PREFER, prefer)
+                .with(CatalogFeatures.Feature.RESOLVE, "ignore")
+                .build();
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(f, catalogFile);
         String result = catalogResolver.resolveEntity(publicId, systemId).getSystemId();
         Assert.assertEquals(expected, result);
@@ -452,7 +426,9 @@ public class CatalogTest extends CatalogSupportBase {
     @Test(dataProvider = "invalidAltCatalogs", expectedExceptions = CatalogException.class)
     public void testDeferAltCatalogs(String file) throws Exception {
         URI catalogFile = getClass().getResource(file).toURI();
-        CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.DEFER, "true").build();
+        CatalogFeatures features = CatalogFeatures.builder().
+                with(CatalogFeatures.Feature.DEFER, "true")
+                .build();
         /*
           Since the defer attribute is set to false in the specified catalog file,
           the parent catalog will try to load the alt catalog, which will fail
@@ -471,11 +447,17 @@ public class CatalogTest extends CatalogSupportBase {
         URI catalogFile = getClass().getResource("JDK8146237_catalog.xml").toURI();
 
         try {
-            CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, "system").build();
+            CatalogFeatures features = CatalogFeatures.builder()
+                    .with(CatalogFeatures.Feature.PREFER, "system")
+                    .build();
             Catalog catalog = CatalogManager.catalog(features, catalogFile);
             CatalogResolver catalogResolver = CatalogManager.catalogResolver(catalog);
-            String actualSystemId = catalogResolver.resolveEntity("-//FOO//DTD XML Dummy V0.0//EN", "http://www.oracle.com/alt1sys.dtd").getSystemId();
-            Assert.assertTrue(actualSystemId.contains("dummy.dtd"), "Resulting id should contain dummy.dtd, indicating a match by publicId");
+            String actualSystemId = catalogResolver.resolveEntity(
+                    "-//FOO//DTD XML Dummy V0.0//EN",
+                    "http://www.oracle.com/alt1sys.dtd")
+                    .getSystemId();
+            Assert.assertTrue(actualSystemId.contains("dummy.dtd"),
+                    "Resulting id should contain dummy.dtd, indicating a match by publicId");
 
         } catch (Exception e) {
             Assert.fail(e.getMessage());
@@ -572,20 +554,21 @@ public class CatalogTest extends CatalogSupportBase {
     */
     @Test
     public void testInvalidCatalog() throws Exception {
+        String expectedMsgId = "JAXP09040001";
         URI catalog = getClass().getResource("catalog_invalid.xml").toURI();
 
-        String test = "testInvalidCatalog";
         try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
-            String actualSystemId = resolver.resolveEntity(null, "http://remote/xml/dtd/sys/alice/docAlice.dtd").getSystemId();
+            CatalogResolver resolver = CatalogManager.catalogResolver(
+                    CatalogFeatures.defaults(), catalog);
+            String actualSystemId = resolver.resolveEntity(
+                    null,
+                    "http://remote/xml/dtd/sys/alice/docAlice.dtd")
+                    .getSystemId();
         } catch (Exception e) {
             String msg = e.getMessage();
             if (msg != null) {
-                if (msg.contains("No match found for publicId")) {
-                    Assert.assertEquals(msg, "No match found for publicId 'null' and systemId 'http://remote/xml/dtd/sys/alice/docAlice.dtd'.");
-                    System.out.println(test + ": expected [No match found for publicId 'null' and systemId 'http://remote/xml/dtd/sys/alice/docAlice.dtd'.]");
-                    System.out.println("actual [" + msg + "]");
-                }
+                Assert.assertTrue(msg.contains(expectedMsgId),
+                        "Message shall contain the corrent message ID " + expectedMsgId);
             }
         }
     }
@@ -607,7 +590,10 @@ public class CatalogTest extends CatalogSupportBase {
         String test = "testInvalidCatalog";
         try {
             CatalogResolver resolver = CatalogManager.catalogResolver(f);
-            String actualSystemId = resolver.resolveEntity(null, "http://remote/xml/dtd/sys/alice/docAlice.dtd").getSystemId();
+            String actualSystemId = resolver.resolveEntity(
+                    null,
+                    "http://remote/xml/dtd/sys/alice/docAlice.dtd")
+                    .getSystemId();
             System.out.println("testIgnoreInvalidCatalog: expected [null]");
             System.out.println("testIgnoreInvalidCatalog: expected [null]");
             System.out.println("actual [" + actualSystemId + "]");
@@ -628,7 +614,11 @@ public class CatalogTest extends CatalogSupportBase {
     @DataProvider(name = "resolveUri")
     public Object[][] getDataForUriResolver() {
         return new Object[][]{
-            {"uri.xml", "urn:publicid:-:Acme,+Inc.:DTD+Book+Version+1.0", null, "http://local/base/dtd/book.dtd", "Uri in publicId namespace is incorrectly unwrapped"},
+            {"uri.xml",
+                "urn:publicid:-:Acme,+Inc.:DTD+Book+Version+1.0",
+                null,
+                "http://local/base/dtd/book.dtd",
+                "Uri in publicId namespace is incorrectly unwrapped"},
         };
     }
 
@@ -654,7 +644,13 @@ public class CatalogTest extends CatalogSupportBase {
     public Object[][] getDataForMatchingBothIds() {
         String expected = "http://www.groupxmlbase.com/dtds/rewrite.dtd";
         return new Object[][]{
-            {"rewriteSystem_id.xml", "system", "http://www.sys00test.com/rewrite.dtd", "PUB-404", expected, expected, "Relative rewriteSystem with xml:base at group level failed"},
+            {"rewriteSystem_id.xml",
+                "system",
+                "http://www.sys00test.com/rewrite.dtd",
+                "PUB-404",
+                expected,
+                expected,
+                "Relative rewriteSystem with xml:base at group level failed"},
         };
     }
 

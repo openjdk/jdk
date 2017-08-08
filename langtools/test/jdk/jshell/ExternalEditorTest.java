@@ -28,6 +28,7 @@
  * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build ReplToolTesting CustomEditor EditorTestBase
  * @run testng ExternalEditorTest
+ * @key intermittent
  */
 
 import java.io.BufferedWriter;

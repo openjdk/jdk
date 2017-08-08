@@ -103,6 +103,7 @@ public class AuthResources extends java.util.ListResourceBundle {
         {"COLON", ": "},
         {".error.adding.Permission.", ": error adding Permission "},
         {"SPACE", " "},
+        {"NEWLINE", "\n"},
         {".error.adding.Entry.", ": error adding Entry "},
         {"LPARAM", "("},
         {"RPARAM", ")"},
