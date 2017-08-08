@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,12 +235,12 @@ JvmtiEnv::AddModuleReads(jobject module, jobject to_module) {
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(h_module())) {
+  if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   // check to_module
   Handle h_to_module(THREAD, JNIHandles::resolve(to_module));
-  if (!java_lang_reflect_Module::is_instance(h_to_module())) {
+  if (!java_lang_Module::is_instance(h_to_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   return JvmtiExport::add_module_reads(h_module, h_to_module, THREAD);
@@ -257,12 +257,12 @@ JvmtiEnv::AddModuleExports(jobject module, const char* pkg_name, jobject to_modu
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(h_module())) {
+  if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   // check to_module
   Handle h_to_module(THREAD, JNIHandles::resolve(to_module));
-  if (!java_lang_reflect_Module::is_instance(h_to_module())) {
+  if (!java_lang_Module::is_instance(h_to_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   return JvmtiExport::add_module_exports(h_module, h_pkg, h_to_module, THREAD);
@@ -279,12 +279,12 @@ JvmtiEnv::AddModuleOpens(jobject module, const char* pkg_name, jobject to_module
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(h_module())) {
+  if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   // check to_module
   Handle h_to_module(THREAD, JNIHandles::resolve(to_module));
-  if (!java_lang_reflect_Module::is_instance(h_to_module())) {
+  if (!java_lang_Module::is_instance(h_to_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   return JvmtiExport::add_module_opens(h_module, h_pkg, h_to_module, THREAD);
@@ -299,7 +299,7 @@ JvmtiEnv::AddModuleUses(jobject module, jclass service) {
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(h_module())) {
+  if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   // check service
@@ -321,7 +321,7 @@ JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
 
   // check module
   Handle h_module(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(h_module())) {
+  if (!java_lang_Module::is_instance(h_module())) {
     return JVMTI_ERROR_INVALID_MODULE;
   }
   // check service
@@ -338,6 +338,22 @@ JvmtiEnv::AddModuleProvides(jobject module, jclass service, jclass impl_class) {
   }
   return JvmtiExport::add_module_provides(h_module, h_service, h_impl_class, THREAD);
 } /* end AddModuleProvides */
+
+// module - pre-checked for NULL
+// is_modifiable_class_ptr - pre-checked for NULL
+jvmtiError
+JvmtiEnv::IsModifiableModule(jobject module, jboolean* is_modifiable_module_ptr) {
+  JavaThread* THREAD = JavaThread::current();
+
+  // check module
+  Handle h_module(THREAD, JNIHandles::resolve(module));
+  if (!java_lang_Module::is_instance(h_module())) {
+    return JVMTI_ERROR_INVALID_MODULE;
+  }
+
+  *is_modifiable_module_ptr = JNI_TRUE;
+  return JVMTI_ERROR_NONE;
+} /* end IsModifiableModule */
 
 
   //
@@ -1793,6 +1809,13 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
     k_oop = java_lang_Class::as_Klass(k_mirror);
     if (k_oop == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
+    }
+  }
+
+  if (initial_object != NULL) {
+    oop init_obj = JNIHandles::resolve_external_guard(initial_object);
+    if (init_obj == NULL) {
+      return JVMTI_ERROR_INVALID_OBJECT;
     }
   }
 

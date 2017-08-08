@@ -60,7 +60,7 @@ function readTextFromURL(url) {
 }
 
 // change URL for your city here!
-var url = "http://api.openweathermap.org/data/2.5/forecast?q=chennai,india&units=metric&mode=json";
+var url = "http://api.openweathermap.org/data/2.5/forecast?q=chennai,india&units=metric&mode=json&appid=9b2982987c080ae88d81f081dcb129e8";
 
 // download JSON document and parse
 var json = readTextFromURL(url);

@@ -38,6 +38,7 @@ import java.io.EOFException;
  *
  * @see         InflaterInputStream
  * @author      David Connelly
+ * @since 1.1
  *
  */
 public

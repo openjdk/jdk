@@ -1453,10 +1453,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       ciKlass* k = op->klass();
       assert_different_registers(res, k_RInfo, klass_RInfo, Rtemp);
 
+      if (stub->is_simple_exception_stub()) {
       // TODO: ARM - Late binding is used to prevent confusion of register allocator
       assert(stub->is_exception_throw_stub(), "must be");
       ((SimpleExceptionStub*)stub)->set_obj(op->result_opr());
-
+      }
       ciMethodData* md;
       ciProfileData* data;
       int mdo_offset_bias = 0;

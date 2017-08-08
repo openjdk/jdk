@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +26,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -1399,7 +1399,7 @@ class DurationImpl
             BigDecimal bd = getFieldAsBigDecimal(FIELDS[i]);
             bd = bd.multiply(factor).add(carry);
 
-            buf[i] = bd.setScale(0, BigDecimal.ROUND_DOWN);
+            buf[i] = bd.setScale(0, RoundingMode.DOWN);
 
             bd = bd.subtract(buf[i]);
             if (i == 1) {
@@ -1607,7 +1607,7 @@ class DurationImpl
                     BigDecimal borrow =
                         buf[i].abs().divide(
                             FACTORS[i - 1],
-                            BigDecimal.ROUND_UP);
+                            RoundingMode.UP);
                     if (buf[i].signum() > 0) {
                         borrow = borrow.negate();
                     }
@@ -1796,7 +1796,7 @@ class DurationImpl
 
         if (seconds != null) {
             BigDecimal fraction =
-                seconds.subtract(seconds.setScale(0, BigDecimal.ROUND_DOWN));
+                seconds.subtract(seconds.setScale(0, RoundingMode.DOWN));
             int millisec = fraction.movePointRight(3).intValue();
             calendar.add(Calendar.MILLISECOND, millisec * signum);
         }

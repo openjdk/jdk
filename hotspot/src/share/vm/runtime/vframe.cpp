@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,14 +463,15 @@ void interpretedVFrame::set_locals(StackValueCollection* values) const {
 entryVFrame::entryVFrame(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : externalVFrame(fr, reg_map, thread) {}
 
-
-void vframeStreamCommon::found_bad_method_frame() {
+#ifdef ASSERT
+void vframeStreamCommon::found_bad_method_frame() const {
   // 6379830 Cut point for an assertion that occasionally fires when
   // we are using the performance analyzer.
   // Disable this assert when testing the analyzer with fastdebug.
   // -XX:SuppressErrorAt=vframe.cpp:XXX (XXX=following line number)
-  assert(false, "invalid bci or invalid scope desc");
+  fatal("invalid bci or invalid scope desc");
 }
+#endif
 
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,

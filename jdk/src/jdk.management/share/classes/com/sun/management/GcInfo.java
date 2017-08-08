@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import com.sun.management.internal.GcInfoBuilder;
  * interface.  This is a historical relic, and other classes should
  * not copy this pattern.  Use {@link CompositeDataView} instead.
  *
- * <h4>MXBean Mapping</h4>
+ * <h3>MXBean Mapping</h3>
  * {@code GcInfo} is mapped to a {@link CompositeData CompositeData}
  * with attributes as specified in the {@link #from from} method.
  *
@@ -183,31 +183,35 @@ public class GcInfo implements CompositeData, CompositeDataView {
      * all the following attributes:
      *
      * <blockquote>
-     * <table border>
+     * <table class="striped"><caption style="display:none">description</caption>
+     * <thead>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th scope="col" style="text-align:left">Attribute Name</th>
+     *   <th scope="col" style="text-align:left">Type</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td>index</td>
+     *   <th scope="row">index</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>startTime</td>
+     *   <th scope="row">startTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>endTime</td>
+     *   <th scope="row">endTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>memoryUsageBeforeGc</td>
+     *   <th scope="row">memoryUsageBeforeGc</th>
      *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
      * <tr>
-     *   <td>memoryUsageAfterGc</td>
+     *   <th scope="row">memoryUsageAfterGc</th>
      *   <td>{@code javax.management.openmbean.TabularData}</td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

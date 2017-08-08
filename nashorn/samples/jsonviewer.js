@@ -103,7 +103,7 @@ function treeItemForObject(obj, name) {
     return item;
 }
 
-var DEFAULT_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?q=Chennai&amp;mode=json&amp;units=metric&amp;cnt=7`";
+var DEFAULT_URL = "http://api.openweathermap.org/data/2.5/forecast?q=chennai,india&units=metric&mode=json&appid=9b2982987c080ae88d81f081dcb129e8";
 
 var url = arguments.length == 0? DEFAULT_URL : arguments[0];
 var obj = JSON.parse(readTextFromURL(url));

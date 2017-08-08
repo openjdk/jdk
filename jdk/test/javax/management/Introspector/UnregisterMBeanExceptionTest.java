@@ -28,7 +28,7 @@
  *          the supplied MBean although DynamicMBean.getMBeanInfo() throws
  *          a runtime exception.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean UnregisterMBeanExceptionTest
  * @run build UnregisterMBeanExceptionTest
  * @run main UnregisterMBeanExceptionTest

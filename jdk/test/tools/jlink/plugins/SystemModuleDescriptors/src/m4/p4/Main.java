@@ -27,16 +27,53 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
+import jdk.internal.module.ClassFileAttributes;
+import jdk.internal.module.ClassFileAttributes.ModuleTargetAttribute;
+import jdk.internal.module.ClassFileConstants;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+
 public class Main {
+    private static boolean hasModuleTarget(InputStream in) throws IOException {
+        ModuleTargetAttribute[] modTargets = new ModuleTargetAttribute[1];
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+            @Override
+            public void visitAttribute(Attribute attr) {
+                if (attr instanceof ModuleTargetAttribute) {
+                    modTargets[0] = (ModuleTargetAttribute)attr;
+                }
+            }
+        };
+
+        // prototype of attributes that should be parsed
+        Attribute[] attrs = new Attribute[] {
+            new ModuleTargetAttribute()
+        };
+
+        // parse module-info.class
+        ClassReader cr = new ClassReader(in);
+        cr.accept(cv, attrs, 0);
+        return modTargets[0] != null && modTargets[0].targetPlatform() != null;
+    }
+
+    private static boolean hasModuleTarget(String modName) throws IOException {
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), Map.of());
+        Path path = fs.getPath("/", "modules", modName, "module-info.class");
+        try (InputStream in = Files.newInputStream(path)) {
+            return hasModuleTarget(in);
+        }
+    }
+
     // the system module plugin by default drops ModuleTarget attribute
     private static boolean expectModuleTarget = false;
     public static void main(String... args) throws IOException {
@@ -48,14 +85,9 @@ public class Main {
             expectModuleTarget = true;
         }
 
-        // java.base is packaged with osName/osArch/osVersion
-        ModuleDescriptor md = Layer.boot().findModule("java.base").get()
-                                   .getDescriptor();
-        if (!md.osName().isPresent() ||
-                !md.osArch().isPresent() ||
-                !md.osVersion().isPresent()) {
-            throw new RuntimeException("osName/osArch/osVersion is missing: " +
-                md.osName() + " " + md.osArch() + " " + md.osVersion());
+        // java.base is packaged with ModuleTarget
+        if (!hasModuleTarget("java.base")) {
+            throw new RuntimeException("ModuleTarget absent for java.base");
         }
 
         // verify module-info.class for m1 and m4
@@ -65,7 +97,7 @@ public class Main {
 
     private static void checkModule(String mn, String... packages) throws IOException {
         // verify ModuleDescriptor from the runtime module
-        ModuleDescriptor md = Layer.boot().findModule(mn).get()
+        ModuleDescriptor md = ModuleLayer.boot().findModule(mn).get()
                                    .getDescriptor();
         checkModuleDescriptor(md, packages);
 
@@ -76,34 +108,20 @@ public class Main {
         }
 
         // verify ModuleDescriptor from module-info.class read from jimage
-        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
-            Collections.emptyMap());
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), Map.of());
         Path path = fs.getPath("/", "modules", mn, "module-info.class");
         checkModuleDescriptor(ModuleDescriptor.read(Files.newInputStream(path)), packages);
     }
 
-    static void checkModuleDescriptor(ModuleDescriptor md, String... packages) {
+    static void checkModuleDescriptor(ModuleDescriptor md, String... packages) throws IOException {
         String mainClass = md.name().replace('m', 'p') + ".Main";
         if (!md.mainClass().get().equals(mainClass)) {
             throw new RuntimeException(md.mainClass().toString());
         }
 
-        if (expectModuleTarget) {
-            // ModuleTarget attribute is retained
-            if (!md.osName().isPresent() || !md.osArch().isPresent()) {
-                throw new RuntimeException("osName or osArch is missing: " +
-                    md.osName() + " " + md.osArch());
-            }
-        } else {
-            // by default ModuleTarget attribute is dropped
-            if (md.osName().isPresent() || md.osArch().isPresent()) {
-                throw new RuntimeException("osName and osArch should not be set: " +
-                    md.osName() + " " + md.osArch());
-            }
-        }
-
-        if (md.osVersion().isPresent()) {
-            throw new RuntimeException("Expected no osVersion set: " + md.osVersion());
+        // ModuleTarget attribute should be present
+        if (!hasModuleTarget(md.name())) {
+            throw new RuntimeException("ModuleTarget missing for " + md.name());
         }
 
         Set<String> pkgs = md.packages();

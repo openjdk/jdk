@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.util.Set;
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577
+ *    7044019 8008577 8176853
  * @summary test API changes to Locale
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -1032,6 +1032,7 @@ public class LocaleEnhanceTest extends IntlTest {
 
         // null attribute throws NPE
         new BuilderNPE("null attribute") { public void call() { b.addUnicodeLocaleAttribute(null); }};
+        new BuilderNPE("null attribute removal") { public void call() { b.removeUnicodeLocaleAttribute(null); }};
 
         // illformed attribute throws IllformedLocaleException
         new BuilderILE("invalid attribute") { public void call() { b.addUnicodeLocaleAttribute("ca"); }};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.ConfigurationImpl;
-import jdk.javadoc.internal.doclets.toolkit.Configuration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
@@ -94,10 +93,8 @@ public class MethodBuilder extends AbstractMemberBuilder {
         super(context);
         this.typeElement = typeElement;
         this.writer = writer;
-        visibleMemberMap = new VisibleMemberMap(
-                typeElement,
-                VisibleMemberMap.Kind.METHODS,
-                configuration);
+        visibleMemberMap = configuration.getVisibleMemberMap(typeElement,
+                VisibleMemberMap.Kind.METHODS);
         methods = visibleMemberMap.getLeafMembers();
     }
 
@@ -119,26 +116,25 @@ public class MethodBuilder extends AbstractMemberBuilder {
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return "MethodDetails";
+    public boolean hasMembersToDocument() {
+        return !methods.isEmpty();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean hasMembersToDocument() {
-        return !methods.isEmpty();
+    public void build(Content contentTree) throws DocletException {
+        buildMethodDoc(contentTree);
     }
 
     /**
      * Build the method documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param memberDetailsTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildMethodDoc(XMLNode node, Content memberDetailsTree) throws DocletException {
+    protected void buildMethodDoc(Content memberDetailsTree) throws DocletException {
         if (writer == null) {
             return;
         }
@@ -150,7 +146,12 @@ public class MethodBuilder extends AbstractMemberBuilder {
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
                 Content methodDocTree = writer.getMethodDocTreeHeader(currentMethod, methodDetailsTree);
-                buildChildren(node, methodDocTree);
+
+                buildSignature(methodDocTree);
+                buildDeprecationInfo(methodDocTree);
+                buildMethodComments(methodDocTree);
+                buildTagInfo(methodDocTree);
+
                 methodDetailsTree.addContent(writer.getMethodDoc(
                         methodDocTree, currentMethod == lastElement));
             }
@@ -161,31 +162,28 @@ public class MethodBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodDocTree the content tree to which the documentation will be added
      */
-    public void buildSignature(XMLNode node, Content methodDocTree) {
+    protected void buildSignature(Content methodDocTree) {
         methodDocTree.addContent(writer.getSignature(currentMethod));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodDocTree the content tree to which the documentation will be added
      */
-    public void buildDeprecationInfo(XMLNode node, Content methodDocTree) {
+    protected void buildDeprecationInfo(Content methodDocTree) {
         writer.addDeprecated(currentMethod, methodDocTree);
     }
 
     /**
      * Build the comments for the method.  Do nothing if
-     * {@link Configuration#nocomment} is set to true.
+     * {@link BaseConfiguration#nocomment} is set to true.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodDocTree the content tree to which the documentation will be added
      */
-    public void buildMethodComments(XMLNode node, Content methodDocTree) {
+    protected void buildMethodComments(Content methodDocTree) {
         if (!configuration.nocomment) {
             ExecutableElement method = currentMethod;
             if (utils.getFullBody(currentMethod).isEmpty()) {
@@ -202,10 +200,9 @@ public class MethodBuilder extends AbstractMemberBuilder {
     /**
      * Build the tag information.
      *
-     * @param node the XML element that specifies which components to document
      * @param methodDocTree the content tree to which the documentation will be added
      */
-    public void buildTagInfo(XMLNode node, Content methodDocTree) {
+    protected void buildTagInfo(Content methodDocTree) {
         writer.addTags(currentMethod, methodDocTree);
     }
 

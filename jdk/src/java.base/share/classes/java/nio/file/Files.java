@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,10 +233,14 @@ public final class Files {
      * <p> In the addition to {@code READ} and {@code WRITE}, the following
      * options may be present:
      *
-     * <table border=1 cellpadding=5 summary="Options">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
+     * <tr> <th scope="col">Option</th> <th scope="col">Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
+     *   <th scope="row"> {@link StandardOpenOption#APPEND APPEND} </th>
      *   <td> If this option is present then the file is opened for writing and
      *     each invocation of the channel's {@code write} method first advances
      *     the position to the end of the file and then writes the requested
@@ -246,13 +250,13 @@ public final class Files {
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </td>
+     *   <th scope="row"> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </th>
      *   <td> If this option is present then the existing file is truncated to
      *   a size of 0 bytes. This option is ignored when the file is opened only
      *   for reading. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </td>
+     *   <th scope="row"> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </th>
      *   <td> If this option is present then a new file is created, failing if
      *   the file already exists or is a symbolic link. When creating a file the
      *   check for the existence of the file and the creation of the file if it
@@ -260,14 +264,14 @@ public final class Files {
      *   This option is ignored when the file is opened only for reading. </td>
      * </tr>
      * <tr>
-     *   <td > {@link StandardOpenOption#CREATE CREATE} </td>
+     *   <th scope="row" > {@link StandardOpenOption#CREATE CREATE} </th>
      *   <td> If this option is present then an existing file is opened if it
      *   exists, otherwise a new file is created. This option is ignored if the
      *   {@code CREATE_NEW} option is also present or the file is opened only
      *   for reading. </td>
      * </tr>
      * <tr>
-     *   <td > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </td>
+     *   <th scope="row" > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </th>
      *   <td> When this option is present then the implementation makes a
      *   <em>best effort</em> attempt to delete the file when closed by the
      *   {@link SeekableByteChannel#close close} method. If the {@code close}
@@ -275,25 +279,26 @@ public final class Files {
      *   delete the file when the Java virtual machine terminates. </td>
      * </tr>
      * <tr>
-     *   <td>{@link StandardOpenOption#SPARSE SPARSE} </td>
+     *   <th scope="row">{@link StandardOpenOption#SPARSE SPARSE} </th>
      *   <td> When creating a new file this option is a <em>hint</em> that the
      *   new file will be sparse. This option is ignored when not creating
      *   a new file. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#SYNC SYNC} </td>
+     *   <th scope="row"> {@link StandardOpenOption#SYNC SYNC} </th>
      *   <td> Requires that every update to the file's content or metadata be
      *   written synchronously to the underlying storage device. (see <a
      *   href="package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
+     *   <th scope="row"> {@link StandardOpenOption#DSYNC DSYNC} </th>
      *   <td> Requires that every update to the file's content be written
      *   synchronously to the underlying storage device. (see <a
      *   href="package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> An implementation may also support additional implementation specific
@@ -1188,17 +1193,21 @@ public final class Files {
      *
      * <p> The {@code options} parameter may include any of the following:
      *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
+     * <tr> <th scope="col">Option</th> <th scope="col">Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
+     *   <th scope="row"> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </th>
      *   <td> If the target file exists, then the target file is replaced if it
      *     is not a non-empty directory. If the target file exists and is a
      *     symbolic link, then the symbolic link itself, not the target of
      *     the link, is replaced. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardCopyOption#COPY_ATTRIBUTES COPY_ATTRIBUTES} </td>
+     *   <th scope="row"> {@link StandardCopyOption#COPY_ATTRIBUTES COPY_ATTRIBUTES} </th>
      *   <td> Attempts to copy the file attributes associated with this file to
      *     the target file. The exact file attributes that are copied is platform
      *     and file system dependent and therefore unspecified. Minimally, the
@@ -1208,13 +1217,14 @@ public final class Files {
      *     loss. </td>
      * </tr>
      * <tr>
-     *   <td> {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} </td>
+     *   <th scope="row"> {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} </th>
      *   <td> Symbolic links are not followed. If the file is a symbolic link,
      *     then the symbolic link itself, not the target of the link, is copied.
      *     It is implementation specific if file attributes can be copied to the
      *     new link. In other words, the {@code COPY_ATTRIBUTES} option may be
      *     ignored when copying a symbolic link. </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> An implementation of this interface may support additional
@@ -1306,17 +1316,21 @@ public final class Files {
      *
      * <p> The {@code options} parameter may include any of the following:
      *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
+     * <tr> <th scope="col">Option</th> <th scope="col">Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
+     *   <th scope="row"> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </th>
      *   <td> If the target file exists, then the target file is replaced if it
      *     is not a non-empty directory. If the target file exists and is a
      *     symbolic link, then the symbolic link itself, not the target of
      *     the link, is replaced. </td>
      * </tr>
      * <tr>
-     *   <td> {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} </td>
+     *   <th scope="row"> {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} </th>
      *   <td> The move is performed as an atomic file system operation and all
      *     other options are ignored. If the target file exists then it is
      *     implementation specific if the existing file is replaced or this method
@@ -1326,6 +1340,7 @@ public final class Files {
      *     example, when the target location is on a different {@code FileStore}
      *     and would require that the file be copied, or target location is
      *     associated with a different provider to this object. </td>
+     * </tbody>
      * </table>
      *
      * <p> An implementation of this interface may support additional
@@ -1909,7 +1924,9 @@ public final class Files {
      * attributes} parameter:
      *
      * <blockquote>
-     * <table border="0" summary="Possible values">
+     * <table class="borderless">
+     * <caption style="display:none">Possible values</caption>
+     * <tbody>
      * <tr>
      *   <td> {@code "*"} </td>
      *   <td> Read all {@link BasicFileAttributes basic-file-attributes}. </td>
@@ -1927,6 +1944,7 @@ public final class Files {
      *   <td> {@code "posix:permissions,owner,size"} </td>
      *   <td> Reads the POSIX file permissions, owner, and file size. </td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

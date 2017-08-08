@@ -71,4 +71,9 @@ public class C {
      * caseA <ul type='"a">b'> <li> end of sentence. <li> more </ul>
      */
     public void caseA() {}
+
+    /**
+     * caseB <blockquote>A block quote example:</blockquote>
+     */
+    public void caseB() {}
 }

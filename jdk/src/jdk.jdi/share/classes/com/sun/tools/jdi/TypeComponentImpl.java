@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-
-import java.util.List;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.TypeComponent;
+import com.sun.jdi.VirtualMachine;
 
 abstract public class TypeComponentImpl extends MirrorImpl
     implements TypeComponent
@@ -40,8 +40,7 @@ abstract public class TypeComponentImpl extends MirrorImpl
     private final int modifiers;
 
     TypeComponentImpl(VirtualMachine vm, ReferenceTypeImpl declaringType,
-                      long ref,
-                      String name, String signature,
+                      long ref, String name, String signature,
                       String genericSignature, int modifiers) {
         // The generic signature is set when this is created.
         super(vm);
@@ -89,9 +88,9 @@ abstract public class TypeComponentImpl extends MirrorImpl
     }
 
     public boolean isPackagePrivate() {
-        return !isModifierSet(VMModifiers.PRIVATE
-                              | VMModifiers.PROTECTED
-                              | VMModifiers.PUBLIC);
+        return !isModifierSet(VMModifiers.PRIVATE |
+                              VMModifiers.PROTECTED |
+                              VMModifiers.PUBLIC);
     }
 
     public boolean isProtected() {

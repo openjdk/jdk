@@ -37,6 +37,8 @@ import jdk.jshell.spi.ExecutionEnv;
 
 /**
  * Tries other providers in sequence until one works.
+ *
+ * @since 9
  */
 public class FailOverExecutionControlProvider  implements ExecutionControlProvider{
 
@@ -131,7 +133,10 @@ public class FailOverExecutionControlProvider  implements ExecutionControlProvid
     private Logger logger() {
         if (logger == null) {
             logger = Logger.getLogger("jdk.jshell.execution");
-            logger.setLevel(Level.ALL);
+            if (logger.getLevel() == null) {
+                // Logging has not been specifically requested, turn it off
+                logger.setLevel(Level.OFF);
+            }
         }
         return logger;
     }

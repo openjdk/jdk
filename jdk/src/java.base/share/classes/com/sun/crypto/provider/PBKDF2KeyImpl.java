@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * This class represents a PBE key derived using PBKDF2 defined
  * in PKCS#5 v2.0. meaning that
@@ -76,7 +78,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     /**
      * Creates a PBE key from a given PBE key specification.
      *
-     * @param key the given PBE key specification
+     * @param keySpec the given PBE key specification
+     * @param prfAlgo the given PBE key algorithm
      */
     PBKDF2KeyImpl(PBEKeySpec keySpec, String prfAlgo)
         throws InvalidKeySpecException {
@@ -120,6 +123,15 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             throw ike;
         }
         this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
+
+        // Use the cleaner to zero the key when no longer referenced
+        final byte[] k = this.key;
+        final char[] p = this.passwd;
+        CleanerFactory.cleaner().register(this,
+                () -> {
+                    java.util.Arrays.fill(k, (byte)0x00);
+                    java.util.Arrays.fill(p, '0');
+                });
     }
 
     private static byte[] deriveKey(final Mac prf, final byte[] password,
@@ -261,24 +273,5 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private Object writeReplace() throws ObjectStreamException {
             return new KeyRep(KeyRep.Type.SECRET, getAlgorithm(),
                               getFormat(), getEncoded());
-    }
-
-    /**
-     * Ensures that the password bytes of this key are
-     * erased when there are no more references to it.
-     */
-    protected void finalize() throws Throwable {
-        try {
-            if (this.passwd != null) {
-                java.util.Arrays.fill(this.passwd, '0');
-                this.passwd = null;
-            }
-            if (this.key != null) {
-                java.util.Arrays.fill(this.key, (byte)0x00);
-                this.key = null;
-            }
-        } finally {
-            super.finalize();
-        }
     }
 }

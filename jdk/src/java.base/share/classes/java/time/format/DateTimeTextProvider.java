@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,9 @@ class DateTimeTextProvider {
         }
     };
 
+    // Singleton instance
+    private static final DateTimeTextProvider INSTANCE = new DateTimeTextProvider();
+
     DateTimeTextProvider() {}
 
     /**
@@ -120,7 +123,7 @@ class DateTimeTextProvider {
      * @return the provider, not null
      */
     static DateTimeTextProvider getInstance() {
-        return new DateTimeTextProvider();
+        return INSTANCE;
     }
 
     /**
