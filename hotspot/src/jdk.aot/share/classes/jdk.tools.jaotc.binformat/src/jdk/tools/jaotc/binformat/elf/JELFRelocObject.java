@@ -69,6 +69,7 @@ public class JELFRelocObject {
                                          String sectName,
                                          byte [] scnData,
                                          boolean hasRelocs,
+                                         int align,
                                          int scnFlags,
                                          int scnType) {
 
@@ -77,6 +78,7 @@ public class JELFRelocObject {
                                          scnFlags,
                                          scnType,
                                          hasRelocs,
+                                         align,
                                          sections.size());
         // Add this section to our list
         sections.add(sect);
@@ -91,7 +93,7 @@ public class JELFRelocObject {
         byte[] scnData = c.getByteArray();
 
         int scnType = Elf64_Shdr.SHT_PROGBITS;
-        boolean zeros = hasRelocs;
+        boolean zeros = !hasRelocs;
         if (zeros) {
             for (byte b : scnData) {
                 if (b != 0) {
@@ -105,7 +107,7 @@ public class JELFRelocObject {
         }
 
         sect = createByteSection(sections, c.getContainerName(),
-                                 scnData, hasRelocs,
+                                 scnData, hasRelocs, segmentSize,
                                  scnFlags, scnType);
         c.setSectionId(sect.getSectionId());
     }
@@ -136,7 +138,7 @@ public class JELFRelocObject {
         ArrayList<ElfSection> sections = new ArrayList<ElfSection>();
 
         // Create the null section
-        createByteSection(sections, null, null, false, 0, 0);
+        createByteSection(sections, null, null, false, 1, 0, 0);
 
         // Create text section
         createCodeSection(sections, binContainer.getCodeContainer());
@@ -170,6 +172,7 @@ public class JELFRelocObject {
                                                      ".strtab",
                                                      symtab.getStrtabArray(),
                                                      false,
+                                                     1,
                                                      0,
                                                      Elf64_Shdr.SHT_STRTAB);
 
@@ -181,6 +184,7 @@ public class JELFRelocObject {
                                                     ".symtab",
                                                     symtab.getSymtabArray(),
                                                     false,
+                                                    8,
                                                     0,
                                                     Elf64_Shdr.SHT_SYMTAB);
         symTabSection.setLink(strTabSection.getSectionId());
@@ -196,6 +200,7 @@ public class JELFRelocObject {
                                                     ".shstrtab",
                                                     null,
                                                     false,
+                                                    1,
                                                     0,
                                                     Elf64_Shdr.SHT_STRTAB);
         eh.setSectionStrNdx(shStrTabSection.getSectionId());
@@ -435,13 +440,14 @@ public class JELFRelocObject {
                 ElfSection sect = sections.get(i);
                 String relname = ".rela" + sect.getName();
                 ElfSection relocSection = createByteSection(sections,
-                                                            relname,
-                                                            elfRelocTable.getRelocData(i),
-                                                            false,
-                                                            0,
-                                                            Elf64_Shdr.SHT_RELA);
-                relocSection.setLink(symtabsectidx);
-                relocSection.setInfo(sect.getSectionId());
+                                                                    relname,
+                                                                    elfRelocTable.getRelocData(i),
+                                                                    false,
+                                                                    8,
+                                                                    0,
+                                                                    Elf64_Shdr.SHT_RELA);
+                        relocSection.setLink(symtabsectidx);
+                        relocSection.setInfo(sect.getSectionId());
             }
         }
     }

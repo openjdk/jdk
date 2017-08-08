@@ -111,6 +111,8 @@ public class PECoff {
         public static final int IMAGE_SCN_ALIGN_4BYTES           = 0x300000;
         public static final int IMAGE_SCN_ALIGN_8BYTES           = 0x400000;
         public static final int IMAGE_SCN_ALIGN_16BYTES          = 0x500000;
+        public static final int IMAGE_SCN_ALIGN_32BYTES          = 0x600000;
+        public static final int IMAGE_SCN_ALIGN_64BYTES          = 0x700000;
         public static final int IMAGE_SCN_ALIGN_MASK             = 0xf00000;
         public static final int IMAGE_SCN_ALIGN_SHIFT            = 20;
 
