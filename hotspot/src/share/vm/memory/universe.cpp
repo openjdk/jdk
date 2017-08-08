@@ -320,6 +320,8 @@ void Universe::genesis(TRAPS) {
 
     { MutexLocker mc(Compile_lock);
 
+      java_lang_Class::allocate_fixup_lists();
+
       // determine base vtable size; without that we cannot create the array klasses
       compute_base_vtable_size();
 

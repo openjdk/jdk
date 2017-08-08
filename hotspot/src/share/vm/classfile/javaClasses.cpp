@@ -787,12 +787,9 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
       MutexLocker m1(Module_lock, THREAD);
       // Keep list of classes needing java.base module fixup
       if (!ModuleEntryTable::javabase_defined()) {
-        if (fixup_module_field_list() == NULL) {
-          GrowableArray<Klass*>* list =
-            new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
-          set_fixup_module_field_list(list);
-        }
+        assert(k->java_mirror() != NULL, "Class's mirror is null");
         k->class_loader_data()->inc_keep_alive();
+        assert(fixup_module_field_list() != NULL, "fixup_module_field_list not initialized");
         fixup_module_field_list()->push(k);
       } else {
         javabase_was_defined = true;
@@ -816,10 +813,22 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
   }
 }
 
+// Statically allocate fixup lists because they always get created.
+void java_lang_Class::allocate_fixup_lists() {
+  GrowableArray<Klass*>* mirror_list =
+    new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, true);
+  set_fixup_mirror_list(mirror_list);
+
+  GrowableArray<Klass*>* module_list =
+    new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+  set_fixup_module_field_list(module_list);
+}
+
 void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
                                     Handle module, Handle protection_domain, TRAPS) {
   assert(k != NULL, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == NULL, "should only assign mirror once");
+
   // Use this moment of initialization to cache modifier_flags also,
   // to support Class.getModifiers().  Instance classes recalculate
   // the cached flags after the class file is parsed, but before the
@@ -878,23 +887,21 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
     assert(class_loader() == k->class_loader(), "should be same");
     set_class_loader(mirror(), class_loader());
 
-    // set the module field in the java_lang_Class instance
-    set_mirror_module_field(k, mirror, module, THREAD);
-
     // Setup indirection from klass->mirror
     // after any exceptions can happen during allocations.
     k->set_java_mirror(mirror());
+
+    // Set the module field in the java_lang_Class instance.  This must be done
+    // after the mirror is set.
+    set_mirror_module_field(k, mirror, module, THREAD);
+
     if (comp_mirror() != NULL) {
       // Set after k->java_mirror() is published, because compiled code running
       // concurrently doesn't expect a k to have a null java_mirror.
       release_set_array_klass(comp_mirror(), k);
     }
   } else {
-    if (fixup_mirror_list() == NULL) {
-      GrowableArray<Klass*>* list =
-       new (ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(40, true);
-      set_fixup_mirror_list(list);
-    }
+    assert(fixup_mirror_list() != NULL, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
   }
 }
