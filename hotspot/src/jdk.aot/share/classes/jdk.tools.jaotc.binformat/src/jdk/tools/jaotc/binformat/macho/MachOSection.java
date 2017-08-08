@@ -35,7 +35,7 @@ public class MachOSection {
     byte [] data;
     boolean hasrelocations;
 
-    public MachOSection(String sectName, String segName, byte [] sectData, int sectFlags, boolean hasRelocations) {
+    public MachOSection(String sectName, String segName, byte [] sectData, int sectFlags, boolean hasRelocations, int align) {
         section = MachOByteBuffer.allocate(section_64.totalsize);
 
         // TODO: Hotspot uses long section names.
@@ -57,8 +57,8 @@ public class MachOSection {
 
         section.putLong(section_64.size.off, sectData.length);
 
-        // For now use 8 byte alignment
-        section.putInt(section_64.align.off, 3);
+        section.putInt(section_64.align.off,
+                       31 - Integer.numberOfLeadingZeros(align));
 
         section.putInt(section_64.flags.off, sectFlags);
 

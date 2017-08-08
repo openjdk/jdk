@@ -62,6 +62,9 @@ public class JPECoffRelocObject {
         this.binContainer = binContainer;
         this.pecoffContainer = new PECoffContainer(outputFileName, aotVersion);
         this.segmentSize = binContainer.getCodeSegmentSize();
+        if (segmentSize != 64) {
+            System.out.println("binContainer alignment size not 64 bytes, update JPECoffRelocObject");
+        }
     }
 
     private PECoffSection createByteSection(ArrayList<PECoffSection>sections,
@@ -97,20 +100,20 @@ public class JPECoffRelocObject {
     private void createCodeSection(ArrayList<PECoffSection>sections, CodeContainer c) {
         createByteSection(sections, c, IMAGE_SECTION_HEADER.IMAGE_SCN_MEM_READ |
                                        IMAGE_SECTION_HEADER.IMAGE_SCN_MEM_EXECUTE |
-                                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_16BYTES |
+                                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_64BYTES |
                                        IMAGE_SECTION_HEADER.IMAGE_SCN_CNT_CODE);
     }
 
     private void createReadOnlySection(ArrayList<PECoffSection>sections, ReadOnlyDataContainer c) {
         createByteSection(sections, c, IMAGE_SECTION_HEADER.IMAGE_SCN_MEM_READ |
-                                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_16BYTES |
+                                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_64BYTES |
                                        IMAGE_SECTION_HEADER.IMAGE_SCN_CNT_INITIALIZED_DATA);
     }
 
     private void createReadWriteSection(ArrayList<PECoffSection>sections, ByteContainer c) {
         int scnFlags = IMAGE_SECTION_HEADER.IMAGE_SCN_MEM_READ |
                        IMAGE_SECTION_HEADER.IMAGE_SCN_MEM_WRITE |
-                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_8BYTES;
+                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_64BYTES;
 
         if (c.getByteArray().length > 0)
             scnFlags |= IMAGE_SECTION_HEADER.IMAGE_SCN_CNT_INITIALIZED_DATA;

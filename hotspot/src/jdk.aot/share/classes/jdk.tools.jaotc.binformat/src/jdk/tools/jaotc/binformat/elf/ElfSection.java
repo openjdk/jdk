@@ -53,9 +53,8 @@ public class ElfSection {
     private static int shStrTabNrOfBytes = 0;
 
     public ElfSection(String sectName, byte [] sectData, int sectFlags,
-                      int sectType, boolean hasRelocations, int sectIndex) {
-
-        long align;
+                      int sectType, boolean hasRelocations, int align,
+                      int sectIndex) {
 
         section = ElfByteBuffer.allocate(Elf64_Shdr.totalsize);
 
@@ -90,35 +89,19 @@ public class ElfSection {
 
         section.putLong(Elf64_Shdr.sh_entsize.off, 0);
 
-        // Determine the alignment and entrysize
+        // Determine the entrysize
         // based on type of section
         switch (sectType) {
-            case Elf64_Shdr.SHT_PROGBITS:
-                if ((sectFlags & Elf64_Shdr.SHF_EXECINSTR) != 0)
-                    align = 16;
-                else
-                    align = 4;
-                break;
             case Elf64_Shdr.SHT_SYMTAB:
-                align = 8;
                 section.putLong(Elf64_Shdr.sh_entsize.off, Elf64_Sym.totalsize);
                 break;
-            case Elf64_Shdr.SHT_STRTAB:
-                align = 1;
-                break;
             case Elf64_Shdr.SHT_RELA:
-                align = 8;
                 section.putLong(Elf64_Shdr.sh_entsize.off, Elf64_Rela.totalsize);
                 break;
             case Elf64_Shdr.SHT_REL:
-                align = 8;
                 section.putLong(Elf64_Shdr.sh_entsize.off, Elf64_Rel.totalsize);
                 break;
-            case Elf64_Shdr.SHT_NOBITS:
-                align = 4;
-                break;
             default:
-                align = 8;
                 break;
         }
         section.putLong(Elf64_Shdr.sh_addralign.off, align);

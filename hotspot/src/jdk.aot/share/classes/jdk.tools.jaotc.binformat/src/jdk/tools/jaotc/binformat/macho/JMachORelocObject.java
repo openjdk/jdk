@@ -96,7 +96,8 @@ public class JMachORelocObject {
                                              segName,
                                              c.getByteArray(),
                                              scnFlags,
-                                             c.hasRelocations());
+                                             c.hasRelocations(),
+                                             segmentSize);
         // Add this section to our list
         sections.add(sect);
 
