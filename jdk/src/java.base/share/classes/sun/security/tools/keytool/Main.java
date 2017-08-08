@@ -3071,8 +3071,14 @@ public final class Main {
 
     private String withWeak(PublicKey key) {
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
-            return String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), key.getAlgorithm());
+            int kLen = KeyUtil.getKeySize(key);
+            if (kLen >= 0) {
+                return String.format(rb.getString("key.bit"),
+                        kLen, key.getAlgorithm());
+            } else {
+                return String.format(
+                        rb.getString("unknown.size.1"), key.getAlgorithm());
+            }
         } else {
             return String.format(rb.getString("key.bit.weak"),
                     KeyUtil.getKeySize(key), key.getAlgorithm());
