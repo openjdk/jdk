@@ -217,4 +217,9 @@ public class Utils {
         return filename.substring(nameStart, filename.length() - CLASSFILE_EXT.length())
                        .replace(nameSeparator, '.');
     }
+
+    public static String classNameToFileName(String classname) {
+        return classname.replace('.', '/')
+                        .concat(CLASSFILE_EXT);
+    }
 }
