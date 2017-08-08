@@ -24,58 +24,69 @@
 package sun.hotspot.tools.ctw;
 
 import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.ImageLocation;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 /**
  * Handler for jimage-files containing classes to compile.
  */
-public class ClassPathJimageEntry extends PathHandler {
-    public ClassPathJimageEntry(Path root, Executor executor) {
-        super(root, executor);
+public class ClassPathJimageEntry extends PathHandler.PathEntry {
+
+    @Override
+    protected Stream<String> classes() {
+        return Arrays.stream(reader.getEntryNames())
+                     .filter(name -> name.endsWith(".class"))
+                     .filter(name -> !name.endsWith("module-info.class"))
+                     .map(Utils::fileNameToClassName);
+    }
+
+    @Override
+    protected String description() {
+        return "# jimage: " + root;
+    }
+
+    @Override
+    public void close() {
         try {
-            URL url = root.toUri().toURL();
-            setLoader(new URLClassLoader(new URL[]{url}));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void process() {
-        CompileTheWorld.OUT.println("# jimage: " + root);
-        if (!Files.exists(root)) {
-            return;
-        }
-        try (ImageReader reader = ImageReader.open(root)) {
-            Arrays.stream(reader.getEntryNames())
-                    .filter(name -> name.endsWith(".class"))
-                    .filter(name -> !name.endsWith("module-info.class"))
-                    .map(Utils::fileNameToClassName)
-                    .forEach(this::processClass);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-    }
-
-    @Override
-    public long classCount() {
-        try (ImageReader reader = ImageReader.open(root)) {
-            return Arrays.stream(reader.getEntryNames())
-                    .filter(name -> name.endsWith(".class"))
-                    .filter(name -> !name.endsWith("module-info.class"))
-                    .map(Utils::fileNameToClassName)
-                    .count();
+            reader.close();
         } catch (IOException e) {
-            throw new Error("can not open jimage file " + root + " : "
-                    + e.getMessage() , e);
+            throw new Error("error on closing reader for " + root + " : "
+                    + e.getMessage(), e);
+        } finally {
+            super.close();
         }
     }
+
+    private final ImageReader reader;
+
+    public ClassPathJimageEntry(Path root) {
+        super(root);
+        if (!Files.exists(root)) {
+            throw new Error(root + " image file not found");
+        }
+        try {
+            reader = ImageReader.open(root);
+        } catch (IOException e) {
+            throw new Error("can not open " + root + " : " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    protected byte[] findByteCode(String name) {
+        String resource = Utils.classNameToFileName(name);
+        for (String m : reader.getModuleNames()) {
+            ImageLocation location = reader.findLocation(m, resource);
+            if (location != null) {
+                return reader.getResource(location);
+            }
+        }
+        return null;
+    }
+
 }

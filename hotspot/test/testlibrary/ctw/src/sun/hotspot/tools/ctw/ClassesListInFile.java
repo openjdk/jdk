@@ -25,46 +25,52 @@ package sun.hotspot.tools.ctw;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 /**
  * Handler for files containing a list of classes to compile.
  */
-public class ClassesListInFile extends PathHandler {
-    public ClassesListInFile(Path root, Executor executor) {
-        super(root, executor);
-    }
+public class ClassesListInFile extends PathHandler.PathEntry {
+    private final BufferedReader reader;
 
-    @Override
-    public void process() {
-        CompileTheWorld.OUT.println("# list: " + root);
+    public ClassesListInFile(Path root) {
+        super(root);
         if (!Files.exists(root)) {
-            return;
+            throw new Error(root + " file does not exist");
         }
         try {
-            try (BufferedReader reader = Files.newBufferedReader(root)) {
-                String line;
-                while (!isFinished() && ((line = reader.readLine()) != null)) {
-                    processClass(line);
-                }
-            }
+           reader = Files.newBufferedReader(root);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new Error("can not open " + root + " : " + e.getMessage(), e);
         }
     }
 
     @Override
-    public long classCount() {
+    protected byte[] findByteCode(String name) {
+        return null;
+    }
+
+    @Override
+    protected Stream<String> classes() {
+        return reader.lines();
+    }
+
+    @Override
+    protected String description() {
+        return "# list: " + root;
+    }
+
+    @Override
+    public void close() {
         try {
-            try (BufferedReader reader = Files.newBufferedReader(root)) {
-                return reader.lines().count();
-            }
+            reader.close();
         } catch (IOException e) {
-            throw new Error("can not read list " + root + " : "
-                    + e.getMessage(), e);
+            throw new Error("error on closing reader for " + root
+                    + " : "  + e.getMessage(), e);
+        } finally {
+            super.close();
         }
     }
 }

@@ -162,8 +162,12 @@ public class CtwRunner {
     }
 
     private long classCount() {
-        return PathHandler.create(targetPath.toString(), Runnable::run)
-                .classCount();
+        List<PathHandler> phs = PathHandler.create(targetPath.toString());
+        long result = phs.stream()
+                         .mapToLong(PathHandler::classCount)
+                         .sum();
+        phs.forEach(PathHandler::close);
+        return result;
     }
 
     private Pair<String, Long> getLastClass(Path errFile) {
