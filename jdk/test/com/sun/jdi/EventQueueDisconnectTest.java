@@ -22,21 +22,20 @@
  */
 
 /**
- *  @test
- *  @bug 4425852
- *  @author Robert Field
+ * @test
+ * @bug 4425852
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build VMConnection
- *  @run compile -g EventQueueDisconnectTest.java
- *  @run driver EventQueueDisconnectTest
- *
- *  @summary EventQueueDisconnectTest checks to see that
- *  VMDisconnectedException is never thrown before VMDisconnectEvent.
+ * @summary EventQueueDisconnectTest checks to see that
+ * VMDisconnectedException is never thrown before VMDisconnectEvent.
  *
  * Failure mode for this test is throwing VMDisconnectedException
  * on vm.eventQueue().remove();
  * Does not use a scaffold since we don't want that hiding the exception.
+ *
+ * @run build VMConnection
+ * @run compile -g EventQueueDisconnectTest.java
+ * @run driver EventQueueDisconnectTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

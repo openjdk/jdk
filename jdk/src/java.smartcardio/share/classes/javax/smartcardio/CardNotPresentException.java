@@ -48,7 +48,7 @@ public class CardNotPresentException extends CardException {
 
     /**
      * Constructs a new CardNotPresentException with the specified cause and a detail message
-     * of <code>(cause==null ? null : cause.toString())</code>.
+     * of {@code (cause==null ? null : cause.toString())}.
      *
      * @param cause the cause of this exception or null
      */

@@ -95,21 +95,19 @@ public class I18NArgTest extends TestHelper {
             throw new RuntimeException("test fails");
         }
 
-        // Test via JAVA_OPTIONS
-/*
+        // Test via JDK_JAVA_OPTIONS
         Map<String, String> env = new HashMap<>();
         String cmd = "-Dtest.src=" + TEST_SOURCES_DIR.getAbsolutePath() +
                 " -Dtest.classes=" + TEST_CLASSES_DIR.getAbsolutePath() +
                 " -cp " + TEST_CLASSES_DIR.getAbsolutePath() +
                 " I18NArgTest " + unicodeStr + " " + hexValue;
-        env.put("JAVA_OPTIONS", cmd);
+        env.put("JDK_JAVA_OPTIONS", cmd);
         tr = doExec(env, javaCmd);
         System.out.println(tr.testOutput);
         if (!tr.isOK()) {
             System.err.println(tr);
             throw new RuntimeException("test fails");
         }
-*/
     }
 
     static void testCharacters(String... args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -575,7 +575,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * For example:
      *
      * <pre>
-     * class SwingWorkerCompletionWaiter extends PropertyChangeListener {
+     * class SwingWorkerCompletionWaiter implements PropertyChangeListener {
      *     private JDialog dialog;
      *
      *     public SwingWorkerCompletionWaiter(JDialog dialog) {

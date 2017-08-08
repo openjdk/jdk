@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@ package combo;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.List;
 import combo.ComboParameter.Resolver;
 
@@ -36,11 +36,18 @@ import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -184,6 +191,28 @@ public class ComboTask {
     }
 
     /**
+     * Parse, analyze, perform code generation for the sources associated with this task and finally
+     * executes them
+     */
+    public <Z> Optional<Z> execute(Function<ExecutionTask, Z> executionFunc) throws IOException {
+        Result<Iterable<? extends JavaFileObject>> generationResult = generate();
+        Iterable<? extends JavaFileObject> jfoIterable = generationResult.get();
+        if (generationResult.hasErrors()) {
+            // we have nothing else to do
+            return Optional.empty();
+        }
+        java.util.List<URL> urlList = new ArrayList<>();
+        for (JavaFileObject jfo : jfoIterable) {
+            String urlStr = jfo.toUri().toURL().toString();
+            urlStr = urlStr.substring(0, urlStr.length() - jfo.getName().length());
+            urlList.add(new URL(urlStr));
+        }
+        return Optional.of(
+                executionFunc.apply(
+                        new ExecutionTask(new URLClassLoader(urlList.toArray(new URL[urlList.size()])))));
+    }
+
+    /**
      * Fork a new compilation task; if possible the compilation context from previous executions is
      * retained (see comments in ReusableContext as to when it's safe to do so); otherwise a brand
      * new context is created.
@@ -212,6 +241,80 @@ public class ComboTask {
             task = javacTask;
         }
         return task;
+    }
+
+    /**
+     * This class represents an execution task. It allows the execution of one or more classes previously
+     * added to a given class loader. This class uses reflection to execute any given static public method
+     * in any given class. It's not restricted to the execution of the {@code main} method
+     */
+    public class ExecutionTask {
+        private ClassLoader classLoader;
+        private String methodName = "main";
+        private Class<?>[] parameterTypes = new Class<?>[]{String[].class};
+        private Object[] args = new String[0];
+        private Consumer<Throwable> handler;
+        private Class<?> c;
+
+        private ExecutionTask(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+        }
+
+        /**
+         * Set the name of the class to be loaded.
+         */
+        public ExecutionTask withClass(String className) {
+            Assert.check(className != null, "class name value is null, impossible to proceed");
+            try {
+                c = classLoader.loadClass(className);
+            } catch (Throwable t) {
+                throw new IllegalStateException(t);
+            }
+            return this;
+        }
+
+        /**
+         * Set the name of the method to be executed along with the parameter types to
+         * reflectively obtain the method.
+         */
+        public ExecutionTask withMethod(String methodName, Class<?>... parameterTypes) {
+            this.methodName = methodName;
+            this.parameterTypes = parameterTypes;
+            return this;
+        }
+
+        /**
+         * Set the arguments to be passed to the method.
+         */
+        public ExecutionTask withArguments(Object... args) {
+            this.args = args;
+            return this;
+        }
+
+        /**
+         * Set a handler to handle any exception thrown.
+         */
+        public ExecutionTask withHandler(Consumer<Throwable> handler) {
+            this.handler = handler;
+            return this;
+        }
+
+        /**
+         * Executes the given method in the given class. Returns true if the execution was
+         * successful, false otherwise.
+         */
+        public Object run() {
+            try {
+                java.lang.reflect.Method meth = c.getMethod(methodName, parameterTypes);
+                meth.invoke(null, (Object)args);
+                return true;
+            } catch (Throwable t) {
+                if (handler != null) {
+                    handler.accept(t);
+                }
+                return false;
+            }
+        }
     }
 
     /**

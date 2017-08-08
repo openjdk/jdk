@@ -22,6 +22,7 @@
  */
 package test.astro;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.filenameToURL;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -130,7 +131,7 @@ public class DocumentLSTest {
         impl = (DOMImplementationLS) db.getDOMImplementation();
         LSSerializer domSerializer = impl.createLSSerializer();
         MyDOMOutput mydomoutput = new MyDOMOutput();
-        try (OutputStream os = new FileOutputStream("test.out")) {
+        try (OutputStream os = new FileOutputStream(USER_DIR + "test.out")) {
             mydomoutput.setByteStream(os);
             mydomoutput.setEncoding("UTF-8");
             assertTrue(domSerializer.write(doc, mydomoutput));

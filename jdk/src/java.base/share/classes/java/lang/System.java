@@ -35,32 +35,33 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
+import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
-import java.net.URL;
+import java.net.URI;
 import java.security.AccessControlContext;
-import java.util.Properties;
-import java.util.PropertyPermission;
-import java.util.Map;
+import java.security.ProtectionDomain;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.PropertyPermission;
+import java.util.ResourceBundle;
+import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.function.Supplier;
-import sun.nio.ch.Interruptible;
+import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import sun.security.util.SecurityConstants;
-import sun.reflect.annotation.AnnotationType;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.JavaLangAccess;;
 import jdk.internal.misc.SharedSecrets;;
@@ -68,8 +69,9 @@ import jdk.internal.misc.VM;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
-
-import jdk.internal.module.ModuleBootstrap;
+import sun.reflect.annotation.AnnotationType;
+import sun.nio.ch.Interruptible;
+import sun.security.util.SecurityConstants;
 
 /**
  * The <code>System</code> class contains several useful class fields
@@ -311,6 +313,10 @@ public final class System {
      * @see java.lang.RuntimePermission
      */
     public static void setSecurityManager(final SecurityManager s) {
+        if (security == null) {
+            // ensure image reader is initialized
+            Object.class.getResource("java/lang/ANY");
+        }
         if (s != null) {
             try {
                 s.checkPackageAccess("java.lang");
@@ -534,6 +540,8 @@ public final class System {
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
+     * @see Object#hashCode
+     * @see java.util.Objects#hashCode(Object)
      */
     @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);
@@ -575,67 +583,72 @@ public final class System {
      * system properties, a set of system properties is first created and
      * initialized. This set of system properties always includes values
      * for the following keys:
-     * <table summary="Shows property keys and associated values">
-     * <tr><th>Key</th>
-     *     <th>Description of Associated Value</th></tr>
-     * <tr><td><code>java.version</code></td>
+     * <table class="striped">
+     * <caption style="display:none">Shows property keys and associated values</caption>
+     * <thead>
+     * <tr><th scope="col">Key</th>
+     *     <th scope="col">Description of Associated Value</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row"><code>java.version</code></th>
      *     <td>Java Runtime Environment version which may be interpreted
      *     as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vendor</code></td>
+     * <tr><th scope="row"><code>java.vendor</code></th>
      *     <td>Java Runtime Environment vendor</td></tr>
-     * <tr><td><code>java.vendor.url</code></td>
+     * <tr><th scope="row"><code>java.vendor.url</code></th>
      *     <td>Java vendor URL</td></tr>
-     * <tr><td><code>java.home</code></td>
+     * <tr><th scope="row"><code>java.home</code></th>
      *     <td>Java installation directory</td></tr>
-     * <tr><td><code>java.vm.specification.version</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.version</code></th>
      *     <td>Java Virtual Machine specification version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vm.specification.vendor</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.vendor</code></th>
      *     <td>Java Virtual Machine specification vendor</td></tr>
-     * <tr><td><code>java.vm.specification.name</code></td>
+     * <tr><th scope="row"><code>java.vm.specification.name</code></th>
      *     <td>Java Virtual Machine specification name</td></tr>
-     * <tr><td><code>java.vm.version</code></td>
+     * <tr><th scope="row"><code>java.vm.version</code></th>
      *     <td>Java Virtual Machine implementation version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.vm.vendor</code></td>
+     * <tr><th scope="row"><code>java.vm.vendor</code></th>
      *     <td>Java Virtual Machine implementation vendor</td></tr>
-     * <tr><td><code>java.vm.name</code></td>
+     * <tr><th scope="row"><code>java.vm.name</code></th>
      *     <td>Java Virtual Machine implementation name</td></tr>
-     * <tr><td><code>java.specification.version</code></td>
+     * <tr><th scope="row"><code>java.specification.version</code></th>
      *     <td>Java Runtime Environment specification version which may be
      *     interpreted as a {@link Runtime.Version}</td></tr>
-     * <tr><td><code>java.specification.vendor</code></td>
+     * <tr><th scope="row"><code>java.specification.vendor</code></th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
-     * <tr><td><code>java.specification.name</code></td>
+     * <tr><th scope="row"><code>java.specification.name</code></th>
      *     <td>Java Runtime Environment specification  name</td></tr>
-     * <tr><td><code>java.class.version</code></td>
+     * <tr><th scope="row"><code>java.class.version</code></th>
      *     <td>Java class format version number</td></tr>
-     * <tr><td><code>java.class.path</code></td>
+     * <tr><th scope="row"><code>java.class.path</code></th>
      *     <td>Java class path</td></tr>
-     * <tr><td><code>java.library.path</code></td>
+     * <tr><th scope="row"><code>java.library.path</code></th>
      *     <td>List of paths to search when loading libraries</td></tr>
-     * <tr><td><code>java.io.tmpdir</code></td>
+     * <tr><th scope="row"><code>java.io.tmpdir</code></th>
      *     <td>Default temp file path</td></tr>
-     * <tr><td><code>java.compiler</code></td>
+     * <tr><th scope="row"><code>java.compiler</code></th>
      *     <td>Name of JIT compiler to use</td></tr>
-     * <tr><td><code>os.name</code></td>
+     * <tr><th scope="row"><code>os.name</code></th>
      *     <td>Operating system name</td></tr>
-     * <tr><td><code>os.arch</code></td>
+     * <tr><th scope="row"><code>os.arch</code></th>
      *     <td>Operating system architecture</td></tr>
-     * <tr><td><code>os.version</code></td>
+     * <tr><th scope="row"><code>os.version</code></th>
      *     <td>Operating system version</td></tr>
-     * <tr><td><code>file.separator</code></td>
+     * <tr><th scope="row"><code>file.separator</code></th>
      *     <td>File separator ("/" on UNIX)</td></tr>
-     * <tr><td><code>path.separator</code></td>
+     * <tr><th scope="row"><code>path.separator</code></th>
      *     <td>Path separator (":" on UNIX)</td></tr>
-     * <tr><td><code>line.separator</code></td>
+     * <tr><th scope="row"><code>line.separator</code></th>
      *     <td>Line separator ("\n" on UNIX)</td></tr>
-     * <tr><td><code>user.name</code></td>
+     * <tr><th scope="row"><code>user.name</code></th>
      *     <td>User's account name</td></tr>
-     * <tr><td><code>user.home</code></td>
+     * <tr><th scope="row"><code>user.home</code></th>
      *     <td>User's home directory</td></tr>
-     * <tr><td><code>user.dir</code></td>
+     * <tr><th scope="row"><code>user.dir</code></th>
      *     <td>User's current working directory</td></tr>
+     * </tbody>
      * </table>
      * <p>
      * Multiple paths in a system property value are separated by the path
@@ -647,17 +660,22 @@ public final class System {
      *
      * @implNote In addition to the standard system properties, the system
      * properties may include the following keys:
-     * <table summary="Shows property keys and associated values">
-     * <tr><th>Key</th>
-     *     <th>Description of Associated Value</th></tr>
-     * <tr><td>{@code jdk.module.path}</td>
+     * <table class="striped">
+     * <caption style="display:none">Shows property keys and associated values</caption>
+     * <thead>
+     * <tr><th scope="col">Key</th>
+     *     <th scope="col">Description of Associated Value</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row">{@code jdk.module.path}</th>
      *     <td>The application module path</td></tr>
-     * <tr><td>{@code jdk.module.upgrade.path}</td>
+     * <tr><th scope="row">{@code jdk.module.upgrade.path}</th>
      *     <td>The upgrade module path</td></tr>
-     * <tr><td>{@code jdk.module.main}</td>
+     * <tr><th scope="row">{@code jdk.module.main}</th>
      *     <td>The module name of the initial/main module</td></tr>
-     * <tr><td>{@code jdk.module.main.class}</td>
+     * <tr><th scope="row">{@code jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
+     * </tbody>
      * </table>
      *
      * @return     the system properties
@@ -898,7 +916,7 @@ public final class System {
      * being thrown.  If no exception is thrown the value of the
      * variable <code>name</code> is returned.
      *
-     * <p><a name="EnvironmentVSSystemProperties"><i>System
+     * <p><a id="EnvironmentVSSystemProperties"><i>System
      * properties</i> and <i>environment variables</i></a> are both
      * conceptually mappings between names and values.  Both
      * mechanisms can be used to pass user-defined information to a
@@ -1159,7 +1177,7 @@ public final class System {
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          *
          * @throws NullPointerException if {@code level} is {@code null}.
@@ -1227,7 +1245,7 @@ public final class System {
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          * @param thrown a {@code Throwable} associated with the log message;
          *        can be {@code null}.
@@ -1276,7 +1294,7 @@ public final class System {
          * java.text.MessageFormat} format, (or a key in the message
          * catalog, if this logger is a {@link
          * LoggerFinder#getLocalizedLogger(java.lang.String,
-         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * java.util.ResourceBundle, java.lang.Module) localized logger});
          * can be {@code null}.
          * @param params an optional list of parameters to the message (may be
          * none).
@@ -1481,7 +1499,7 @@ public final class System {
          * message localization.
          *
          * @implSpec By default, this method calls {@link
-         * #getLogger(java.lang.String, java.lang.reflect.Module)
+         * #getLogger(java.lang.String, java.lang.Module)
          * this.getLogger(name, module)} to obtain a logger, then wraps that
          * logger in a {@link Logger} instance where all methods that do not
          * take a {@link ResourceBundle} as parameter are redirected to one
@@ -1565,12 +1583,20 @@ public final class System {
      * @implSpec
      * Instances returned by this method route messages to loggers
      * obtained by calling {@link LoggerFinder#getLogger(java.lang.String,
-     * java.lang.reflect.Module) LoggerFinder.getLogger(name, module)}, where
+     * java.lang.Module) LoggerFinder.getLogger(name, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method may defer calling the {@link
-     * LoggerFinder#getLogger(java.lang.String, java.lang.reflect.Module)
+     * LoggerFinder#getLogger(java.lang.String, java.lang.Module)
      * LoggerFinder.getLogger} method to create an actual logger supplied by
      * the logging backend, for instance, to allow loggers to be obtained during
      * the system initialization time.
@@ -1579,6 +1605,8 @@ public final class System {
      * @return an instance of {@link Logger} that can be used by the calling
      *         class.
      * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1586,6 +1614,9 @@ public final class System {
     public static Logger getLogger(String name) {
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         return LazyLoggers.getLogger(name, caller.getModule());
     }
 
@@ -1598,9 +1629,17 @@ public final class System {
      * @implSpec
      * The returned logger will perform message localization as specified
      * by {@link LoggerFinder#getLocalizedLogger(java.lang.String,
-     * java.util.ResourceBundle, java.lang.reflect.Module)
-     * LoggerFinder.getLocalizedLogger(name, bundle, module}, where
+     * java.util.ResourceBundle, java.lang.Module)
+     * LoggerFinder.getLocalizedLogger(name, bundle, module)}, where
      * {@code module} is the caller's module.
+     * In cases where {@code System.getLogger} is called from a context where
+     * there is no caller frame on the stack (e.g when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a logger in such a context, use an auxiliary class that
+     * will implicitly be identified as the caller, or use the system {@link
+     * LoggerFinder#getLoggerFinder() LoggerFinder} to obtain a logger instead.
+     * Note that doing the latter may eagerly initialize the underlying
+     * logging system.
      *
      * @apiNote
      * This method is intended to be used after the system is fully initialized.
@@ -1619,6 +1658,8 @@ public final class System {
      * resource bundle for message localization.
      * @throws NullPointerException if {@code name} is {@code null} or
      *         {@code bundle} is {@code null}.
+     * @throws IllegalCallerException if there is no Java caller frame on the
+     *         stack.
      *
      * @since 9
      */
@@ -1627,6 +1668,9 @@ public final class System {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
         final SecurityManager sm = System.getSecurityManager();
         // We don't use LazyLoggers if a resource bundle is specified.
         // Bootstrap sensitive classes in the JDK do not use resource bundles
@@ -1737,6 +1781,7 @@ public final class System {
      * @since   1.1
      */
     @Deprecated(since="1.2", forRemoval=true)
+    @SuppressWarnings("removal")
     public static void runFinalizersOnExit(boolean value) {
         Runtime.runFinalizersOnExit(value);
     }
@@ -1845,6 +1890,39 @@ public final class System {
     }
 
     /**
+     * Logs an exception/error at initialization time to stdout or stderr.
+     *
+     * @param printToStderr to print to stderr rather than stdout
+     * @param printStackTrace to print the stack trace
+     * @param msg the message to print before the exception, can be {@code null}
+     * @param e the exception or error
+     */
+    private static void logInitException(boolean printToStderr,
+                                         boolean printStackTrace,
+                                         String msg,
+                                         Throwable e) {
+        if (VM.initLevel() < 1) {
+            throw new InternalError("system classes not initialized");
+        }
+        PrintStream log = (printToStderr) ? err : out;
+        if (msg != null) {
+            log.println(msg);
+        }
+        if (printStackTrace) {
+            e.printStackTrace(log);
+        } else {
+            log.println(e);
+            for (Throwable suppressed : e.getSuppressed()) {
+                log.println("Suppressed: " + suppressed);
+            }
+            Throwable cause = e.getCause();
+            if (cause != null) {
+                log.println("Caused by: " + cause);
+            }
+        }
+    }
+
+    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initPhase1() {
@@ -1886,10 +1964,6 @@ public final class System {
         setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
         setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
 
-        // Load the zip library now in order to keep java.util.zip.ZipFile
-        // from trying to use itself to load this library later.
-        loadLibrary("zip");
-
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
 
@@ -1917,18 +1991,30 @@ public final class System {
     }
 
     // @see #initPhase2()
-    private static Layer bootLayer;
+    static ModuleLayer bootLayer;
 
     /*
      * Invoked by VM.  Phase 2 module system initialization.
      * Only classes in java.base can be loaded in this phase.
+     *
+     * @param printToStderr print exceptions to stderr rather than stdout
+     * @param printStackTrace print stack trace when exception occurs
+     *
+     * @return JNI_OK for success, JNI_ERR for failure
      */
-    private static void initPhase2() {
-        // initialize the module system
-        System.bootLayer = ModuleBootstrap.boot();
+    private static int initPhase2(boolean printToStderr, boolean printStackTrace) {
+        try {
+            bootLayer = ModuleBootstrap.boot();
+        } catch (Exception | Error e) {
+            logInitException(printToStderr, printStackTrace,
+                             "Error occurred during initialization of boot layer", e);
+            return -1; // JNI_ERR
+        }
 
         // module system initialized
         VM.initLevel(2);
+
+        return 0; // JNI_OK
     }
 
     /*
@@ -1942,10 +2028,6 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // Initialize publicLookup early, to avoid bootstrapping circularities
-        // with security manager using java.lang.invoke infrastructure.
-        java.lang.invoke.MethodHandles.publicLookup();
-
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
@@ -1989,8 +2071,8 @@ public final class System {
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         SharedSecrets.setJavaLangAccess(new JavaLangAccess() {
-            public Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes) {
-                return klass.getMethodOrNull(name, parameterTypes);
+            public List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes) {
+                return klass.getDeclaredPublicMethods(name, parameterTypes);
             }
             public jdk.internal.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
@@ -2014,7 +2096,7 @@ public final class System {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
             public <E extends Enum<E>>
-                    E[] getEnumConstantsShared(Class<E> klass) {
+            E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
             public void blockedOn(Thread t, Interruptible b) {
@@ -2029,29 +2111,77 @@ public final class System {
             public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
                 return new Thread(target, acc);
             }
+            @SuppressWarnings("deprecation")
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
-            }
-            public Layer getBootLayer() {
-                return bootLayer;
             }
             public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
                 return cl.createOrGetClassLoaderValueMap();
             }
+            public Class<?> defineClass(ClassLoader loader, String name, byte[] b, ProtectionDomain pd, String source) {
+                return ClassLoader.defineClass1(loader, name, b, 0, b.length, pd, source);
+            }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);
-            }
-            public URL findResource(ClassLoader cl, String mn, String name) throws IOException {
-                return cl.findResource(mn, name);
-            }
-            public Stream<Package> packages(ClassLoader cl) {
-                return cl.packages();
             }
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void addNonExportedPackages(ModuleLayer layer) {
+                SecurityManager.addNonExportedPackages(layer);
+            }
+            public void invalidatePackageAccessCache() {
+                SecurityManager.invalidatePackageAccessCache();
+            }
+            public Module defineModule(ClassLoader loader,
+                                       ModuleDescriptor descriptor,
+                                       URI uri) {
+                return new Module(null, loader, descriptor, uri);
+            }
+            public Module defineUnnamedModule(ClassLoader loader) {
+                return new Module(loader);
+            }
+            public void addReads(Module m1, Module m2) {
+                m1.implAddReads(m2);
+            }
+            public void addReadsAllUnnamed(Module m) {
+                m.implAddReadsAllUnnamed();
+            }
+            public void addExports(Module m, String pn, Module other) {
+                m.implAddExports(pn, other);
+            }
+            public void addExportsToAllUnnamed(Module m, String pn) {
+                m.implAddExportsToAllUnnamed(pn);
+            }
+            public void addOpens(Module m, String pn, Module other) {
+                m.implAddOpens(pn, other);
+            }
+            public void addOpensToAllUnnamed(Module m, String pn) {
+                m.implAddOpensToAllUnnamed(pn);
+            }
+            public void addOpensToAllUnnamed(Module m, Iterator<String> packages) {
+                m.implAddOpensToAllUnnamed(packages);
+            }
+            public void addUses(Module m, Class<?> service) {
+                m.implAddUses(service);
+            }
+            public boolean isReflectivelyExported(Module m, String pn, Module other) {
+                return m.isReflectivelyExported(pn, other);
+            }
+            public boolean isReflectivelyOpened(Module m, String pn, Module other) {
+                return m.isReflectivelyOpened(pn, other);
+            }
+            public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
+                return layer.getServicesCatalog();
+            }
+            public Stream<ModuleLayer> layers(ModuleLayer layer) {
+                return layer.layers();
+            }
+            public Stream<ModuleLayer> layers(ClassLoader loader) {
+                return ModuleLayer.layers(loader);
             }
         });
     }

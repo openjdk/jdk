@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,19 @@ import java.security.*;
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
- * <table border=1 cellpadding=5
- *  summary="permission name, what it allows, and associated risks">
+ * <table class="striped">
+ * <caption style="display:none">permission name, what it allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
  *
+ * <tbody>
  * <tr>
- *   <td>setHostnameVerifier</td>
+ *   <th scope="row">setHostnameVerifier</th>
  *   <td>The ability to set a callback which can decide whether to
  * allow a mismatch between the host being connected to by
  * an HttpsURLConnection and the common name field in
@@ -67,7 +70,7 @@ import java.security.*;
  * </tr>
  *
  * <tr>
- *   <td>getSSLSessionContext</td>
+ *   <th scope="row">getSSLSessionContext</th>
  *   <td>The ability to get the SSLSessionContext of an SSLSession.
  * </td>
  *   <td>Malicious code may monitor sessions which have been established
@@ -76,7 +79,7 @@ import java.security.*;
  * </tr>
  *
  * <tr>
- *   <td>setDefaultSSLContext</td>
+ *   <th scope="row">setDefaultSSLContext</th>
  *   <td>The ability to set the default SSL context
  * </td>
  *   <td>Malicious code can set a context that monitors the opening of
@@ -84,6 +87,7 @@ import java.security.*;
  * </td>
  * </tr>
  *
+ * </tbody>
  * </table>
  *
  * @see java.security.BasicPermission

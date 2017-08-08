@@ -49,7 +49,7 @@ public class AquaUtilControlSize {
         void applySizeFor(final JComponent c, final Size size);
     }
 
-    protected static final RecyclableSingleton<PropertySizeListener> sizeListener
+    private static final RecyclableSingleton<PropertySizeListener> sizeListener
             = new RecyclableSingletonFromDefaultConstructor<>(PropertySizeListener.class);
     protected static PropertySizeListener getSizeListener() {
         return sizeListener.get();

@@ -26,6 +26,9 @@
 package com.sun.tools.javac.processing;
 
 import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Notes;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
@@ -114,21 +117,21 @@ public class JavacMessager implements Messager {
             switch (kind) {
             case ERROR:
                 errorCount++;
-                log.error(DiagnosticFlag.MULTIPLE, pos, "proc.messager", msg.toString());
+                log.error(DiagnosticFlag.MULTIPLE, pos, Errors.ProcMessager(msg.toString()));
                 break;
 
             case WARNING:
                 warningCount++;
-                log.warning(pos, "proc.messager", msg.toString());
+                log.warning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             case MANDATORY_WARNING:
                 warningCount++;
-                log.mandatoryWarning(pos, "proc.messager", msg.toString());
+                log.mandatoryWarning(pos, Warnings.ProcMessager(msg.toString()));
                 break;
 
             default:
-                log.note(pos, "proc.messager", msg.toString());
+                log.note(pos, Notes.ProcMessager(msg.toString()));
                 break;
             }
         } finally {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public abstract class SOAPMessage {
      *
      * @return an iterator over all the attachments in this message
      */
-    public abstract Iterator getAttachments();
+    public abstract Iterator<AttachmentPart> getAttachments();
 
     /**
      * Retrieves all the {@code AttachmentPart} objects that have header
@@ -217,7 +217,7 @@ public abstract class SOAPMessage {
      * @return an iterator over all attachments that have a header that matches
      * one of the given headers
      */
-    public abstract Iterator getAttachments(MimeHeaders headers);
+    public abstract Iterator<AttachmentPart> getAttachments(MimeHeaders headers);
 
     /**
      * Removes all the {@code AttachmentPart} objects that have header
@@ -266,12 +266,14 @@ public abstract class SOAPMessage {
      * object. An {@code AttachmentPart} object must be created before
      * it can be added to a message.
      *
-     * @param AttachmentPart
-     *           an {@code AttachmentPart} object that is to become part
+     * @param attachmentPart
+     *           an {@code attachmentPart} object that is to become part
      *           of this {@code SOAPMessage} object
      * @exception IllegalArgumentException
+     *               if there was a problem with the specified {@code attachmentPart}
+     *               object
      */
-    public abstract void addAttachmentPart(AttachmentPart AttachmentPart);
+    public abstract void addAttachmentPart(AttachmentPart attachmentPart);
 
     /**
      * Creates a new empty {@code AttachmentPart} object. Note that the

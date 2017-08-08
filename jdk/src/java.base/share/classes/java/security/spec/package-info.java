@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,18 +54,10 @@
  * For documentation that includes information about algorithm parameter
  * and key specifications, please see:
  * <ul>
- *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html">
- *       <b>Java&trade;
- *       Cryptography Architecture API Specification and Reference
- *       </b></a></li>
- *   <li>
- *     <a href=
- *       "{@docRoot}/../technotes/guides/security/crypto/HowToImplAProvider.html">
- *       <b>How to Implement a Provider for the
- *       Java&trade; Cryptography Architecture
- *       </b></a></li>
+ *   <li> {@extLink security_guide_jca
+ *       Java Cryptography Architecture (JCA) Reference Guide}</li>
+ *   <li> {@extLink security_guide_impl_provider
+ *       How to Implement a Provider in the Java Cryptography Architecture}</li>
  * </ul>
  *
  * @since 1.2

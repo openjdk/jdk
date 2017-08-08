@@ -23,12 +23,9 @@
 
 package p2.test;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
-
 public class Main {
     public static void main(String... args) throws Exception {
-        Layer boot = Layer.boot();
+        ModuleLayer boot = ModuleLayer.boot();
         Module m1 = boot.findModule("m1").get();
         Module m2 = Main.class.getModule();
 

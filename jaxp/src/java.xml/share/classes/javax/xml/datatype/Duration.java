@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,27 +120,23 @@ public abstract class Duration {
      * maps to. Type is computed based on fields that are set,
      * i.e. {@link #isSet(DatatypeConstants.Field field)} == {@code true}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
+     *         <i>(timezone is optional for all date/time datatypes)</i></caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="7">
-     *         Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
-     *         <i>(timezone is optional for all date/time datatypes)</i>
-     *       </th>
+     *       <th scope="col">Datatype</th>
+     *       <th scope="col">year</th>
+     *       <th scope="col">month</th>
+     *       <th scope="col">day</th>
+     *       <th scope="col">hour</th>
+     *       <th scope="col">minute</th>
+     *       <th scope="col">second</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>Datatype</td>
-     *       <td>year</td>
-     *       <td>month</td>
-     *       <td>day</td>
-     *       <td>hour</td>
-     *       <td>minute</td>
-     *       <td>second</td>
-     *     </tr>
-     *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td>X</td>
@@ -149,7 +145,7 @@ public abstract class Duration {
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION_DAYTIME}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION_DAYTIME}</th>
      *       <td></td>
      *       <td></td>
      *       <td>X</td>
@@ -158,7 +154,7 @@ public abstract class Duration {
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DURATION_YEARMONTH}</td>
+     *       <th scope="row">{@link DatatypeConstants#DURATION_YEARMONTH}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td></td>

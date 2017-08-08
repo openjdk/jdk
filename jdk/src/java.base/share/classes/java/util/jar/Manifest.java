@@ -39,7 +39,7 @@ import java.util.Iterator;
  * associated Attributes. There are main Manifest Attributes as well as
  * per-entry Attributes. For information on the Manifest format, please
  * see the
- * <a href="../../../../technotes/guides/jar/jar.html">
+ * <a href="{@docRoot}/../specs/jar/jar.html">
  * Manifest format specification</a>.
  *
  * @author  David Connelly

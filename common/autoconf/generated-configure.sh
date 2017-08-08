@@ -749,6 +749,7 @@ CXXFLAGS_JDKEXE
 CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
+MACOSX_VERSION_MAX
 MACOSX_VERSION_MIN
 CXXSTD_CXXFLAG
 JDK_ARCH_ABI_PROP_NAME
@@ -934,6 +935,7 @@ DSYMUTIL
 IS_GNU_TIME
 PATCH
 DTRACE
+FLOCK
 TIME
 STAT
 HG
@@ -1181,6 +1183,7 @@ with_toolchain_version
 with_build_devkit
 with_jtreg
 with_abi_profile
+with_macosx_version_max
 enable_warnings_as_errors
 with_native_debug_symbols
 enable_debug_symbols
@@ -1299,6 +1302,7 @@ DOT
 HG
 STAT
 TIME
+FLOCK
 DTRACE
 PATCH
 DSYMUTIL
@@ -2130,6 +2134,8 @@ Optional Packages:
                           (arm-vfp-sflt,arm-vfp-hflt,arm-sflt,
                           armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64)
                           [toolchain dependent]
+  --with-macosx-version-max
+                          error on use of newer functionality. [macosx]
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
                           internal, external, zipped) [varying]
@@ -2267,6 +2273,7 @@ Some influential environment variables:
   HG          Override default value for HG
   STAT        Override default value for STAT
   TIME        Override default value for TIME
+  FLOCK       Override default value for FLOCK
   DTRACE      Override default value for DTRACE
   PATCH       Override default value for PATCH
   DSYMUTIL    Override default value for DSYMUTIL
@@ -5007,7 +5014,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
-TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.7"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
@@ -5186,7 +5193,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1496926402
+DATE_WHEN_GENERATED=1500423205
 
 ###############################################################################
 #
@@ -23274,6 +23281,203 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${FLOCK+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in flock
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FLOCK" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !FLOCK! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!FLOCK!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xFLOCK" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of FLOCK from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of FLOCK from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in flock
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$FLOCK" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$FLOCK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FLOCK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FLOCK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FLOCK" >&5
+$as_echo_n "checking for FLOCK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FLOCK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FLOCK=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool FLOCK=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_FLOCK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FLOCK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FLOCK="$FLOCK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_FLOCK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FLOCK=$ac_cv_path_FLOCK
+if test -n "$FLOCK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FLOCK" >&5
+$as_echo "$FLOCK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$FLOCK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FLOCK=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool FLOCK=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FLOCK" >&5
+$as_echo_n "checking for FLOCK... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool FLOCK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
   # Dtrace is usually found in /usr/sbin on Solaris, but that directory may not
   # be in the user path.
 
@@ -31219,7 +31423,7 @@ $as_echo "no" >&6; }
 
 
   # Check if the boot jdk is 32 or 64 bit
-  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+  if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
     BOOT_JDK_BITS="64"
   else
     BOOT_JDK_BITS="32"
@@ -51261,14 +51465,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     JVM_CFLAGS="$JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     JVM_CFLAGS="$JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
         -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
-        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     JVM_CFLAGS="$JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_CFLAGS="$JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -51435,18 +51643,54 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Additional macosx handling
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # Setting these parameters makes it an error to link to macosx APIs that are
-    # newer than the given OS version and makes the linked binaries compatible
-    # even if built on a newer version of the OS.
-    # The expected format is X.Y.Z
+    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
+    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
+    # JDK can be built and makes the linked binaries compatible even if built on
+    # a newer version of the OS.
     MACOSX_VERSION_MIN=10.7.0
 
 
-    # The macro takes the version with no dots, ex: 1070
+    # Setting --with-macosx-version-max=<version> makes it an error to build or
+    # link to macosx APIs that are newer than the given OS version. The expected
+    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+
+# Check whether --with-macosx-version-max was given.
+if test "${with_macosx_version_max+set}" = set; then :
+  withval=$with_macosx_version_max;
+          if echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9]\.[0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif test "x$with_macosx_version_max" = "xno"; then
+              # Use build system default
+              MACOSX_VERSION_MAX=
+          else
+              as_fn_error $? "osx version format must be nn.n.n or nn.nn.nn" "$LINENO" 5
+          fi
+
+else
+  MACOSX_VERSION_MAX=
+
+fi
+
+
+
     # Let the flags variables get resolved in make for easier override on make
-    # command line.
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    # command line. AvailabilityMacros.h versions have no dots, ex: 1070.
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    JVM_CFLAGS="$JVM_CFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+        JVM_CFLAGS="$JVM_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+    fi
   fi
 
   # Setup some hard coded includes
@@ -51572,6 +51816,12 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
     JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_LDFLAGS="$JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables
@@ -52079,14 +52329,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
         -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
-        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_BUILD_OS" = xaix; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_BUILD_OS" = xbsd; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
@@ -52253,18 +52507,54 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Additional macosx handling
   if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-    # Setting these parameters makes it an error to link to macosx APIs that are
-    # newer than the given OS version and makes the linked binaries compatible
-    # even if built on a newer version of the OS.
-    # The expected format is X.Y.Z
+    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
+    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
+    # JDK can be built and makes the linked binaries compatible even if built on
+    # a newer version of the OS.
     MACOSX_VERSION_MIN=10.7.0
 
 
-    # The macro takes the version with no dots, ex: 1070
+    # Setting --with-macosx-version-max=<version> makes it an error to build or
+    # link to macosx APIs that are newer than the given OS version. The expected
+    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+
+# Check whether --with-macosx-version-max was given.
+if test "${with_macosx_version_max+set}" = set; then :
+  withval=$with_macosx_version_max;
+          if echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9]\.[0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif test "x$with_macosx_version_max" = "xno"; then
+              # Use build system default
+              MACOSX_VERSION_MAX=
+          else
+              as_fn_error $? "osx version format must be nn.n.n or nn.nn.nn" "$LINENO" 5
+          fi
+
+else
+  MACOSX_VERSION_MAX=
+
+fi
+
+
+
     # Let the flags variables get resolved in make for easier override on make
-    # command line.
-    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    # command line. AvailabilityMacros.h versions have no dots, ex: 1070.
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+    fi
   fi
 
   # Setup some hard coded includes
@@ -52390,6 +52680,12 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_XLC"
     OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables
@@ -66218,24 +66514,8 @@ fi
 
 
   if test "$MEMORY_SIZE" -gt "3000"; then
-
-  $ECHO "Check if jvm arg is ok: -d64" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -d64 -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA_FLAGS="$SJAVAC_SERVER_JAVA_FLAGS -d64"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    if test "$JVM_ARG_OK" = true; then
+    if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
       JVM_64BIT=true
-      JVM_ARG_OK=false
     fi
   fi
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package compiler.compilercontrol.share.scenario;
 
 import compiler.compilercontrol.share.actions.BaseAction;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.management.InputArguments;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.dcmd.CommandExecutor;
@@ -38,6 +39,7 @@ import java.lang.reflect.Executable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -97,9 +99,13 @@ public class Executor {
                 // Start separate thread to connect with test VM
                 new Thread(() -> connectTestVM(serverSocket)).start();
             }
-            // Start test VM
-            output = ProcessTools.executeTestJvmAllArgs(
-                    vmOptions.toArray(new String[vmOptions.size()]));
+            // Start a test VM using vm flags from @run and from vm options
+            String[] vmInputArgs = InputArguments.getVmInputArgs();
+            String[] cmds = Arrays.copyOf(vmInputArgs,
+                    vmInputArgs.length + vmOptions.size());
+            System.arraycopy(vmOptions.toArray(), 0, cmds, vmInputArgs.length,
+                    vmOptions.size());
+            output = ProcessTools.executeTestJvm(cmds);
         } catch (Throwable thr) {
             throw new Error("Execution failed: " + thr.getMessage(), thr);
         }

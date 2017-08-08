@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package com.sun.jdi.event;
 
-import com.sun.jdi.*;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.request.EventRequest;
 
 /**
  * Notification of disconnection from target VM.
  * May be caused by normal termination of a VM,
  * VM termination by uncaught exception or other error,
- * debugger action (
- * {@link VirtualMachine#dispose} or
+ * debugger action ({@link VirtualMachine#dispose} or
  * {@link VirtualMachine#exit}) or by external events
  * (for example, target process termination by the
  * operating system, transport termination, etc).
@@ -41,9 +41,9 @@ import com.sun.jdi.*;
  * will be preceded by a {@link VMDeathEvent}.
  * <p>
  * This event is always sent.
- * There is no corresponding {@link com.sun.jdi.request.EventRequest}.
+ * There is no corresponding {@link EventRequest}.
  * The enclosing singleton {@link EventSet} always has a
- * suspend policy of {@link com.sun.jdi.request.EventRequest#SUSPEND_NONE}.
+ * suspend policy of {@link EventRequest#SUSPEND_NONE}.
  *
  * @see VMDeathEvent
  * @see EventQueue
