@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,7 +334,7 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
                                         FileEndOfFileInfo,
                                         &eofInfo,
                                         sizeof(eofInfo));
-    if (result == FALSE) {
+    if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
         return IOS_THROWN;
     }
@@ -411,7 +411,7 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
     long highPos = (long)(pos >> 32);
     DWORD lowNumBytes = (DWORD)size;
     DWORD highNumBytes = (DWORD)(size >> 32);
-    jint result = 0;
+    BOOL result = 0;
     OVERLAPPED o;
     o.hEvent = 0;
     o.Offset = lowPos;
@@ -422,7 +422,7 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
         if (error == ERROR_IO_PENDING) {
             DWORD dwBytes;
             result = GetOverlappedResult(h, &o, &dwBytes, TRUE);
-            if (result == 0) {
+            if (result != 0) {
                 return;
             }
             error = GetLastError();
@@ -437,7 +437,7 @@ static void closeFile(JNIEnv *env, jlong fd) {
     HANDLE h = (HANDLE)fd;
     if (h != INVALID_HANDLE_VALUE) {
         int result = CloseHandle(h);
-        if (result < 0)
+        if (result == 0)
             JNU_ThrowIOExceptionWithLastError(env, "Close failed");
     }
 }

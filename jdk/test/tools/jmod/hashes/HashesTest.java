@@ -25,13 +25,14 @@
  * @test
  * @bug 8160286
  * @summary Test the recording and checking of module hashes
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
  *          jdk.compiler
  *          jdk.jartool
  *          jdk.jlink
- * @build CompilerUtils ModuleInfoMaker
+ * @build jdk.test.lib.compiler.ModuleInfoMaker
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng HashesTest
  */
 
@@ -61,6 +62,8 @@ import java.util.stream.Stream;
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModulePath;
+
+import jdk.test.lib.compiler.ModuleInfoMaker;
 
 import org.testng.annotations.Test;
 
@@ -382,7 +385,7 @@ public class HashesTest {
         makeModule(mn, null, deps);
     }
 
-    private void makeModule(String mn, ModuleDescriptor.Requires.Modifier mod,  String... deps)
+    private void makeModule(String mn, ModuleDescriptor.Requires.Modifier mod, String... deps)
         throws IOException
     {
         if (mod != null && mod != TRANSITIVE && mod != STATIC) {
@@ -390,23 +393,23 @@ public class HashesTest {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("module " + mn + " {").append("\n");
-        Arrays.stream(deps).forEach(req -> {
-            sb.append("    requires ");
-            if (mod != null) {
-                sb.append(mod.toString().toLowerCase()).append(" ");
-            }
-            sb.append(req + ";\n");
-        });
+        sb.append("module ")
+          .append(mn)
+          .append(" {")
+          .append("\n");
+        Arrays.stream(deps)
+              .forEach(req -> {
+                  sb.append("    requires ");
+                  if (mod != null) {
+                      sb.append(mod.toString().toLowerCase())
+                        .append(" ");
+                  }
+                  sb.append(req)
+                    .append(";\n");
+              });
         sb.append("}\n");
         builder.writeJavaFiles(mn, sb.toString());
-
-        compileModule(mn, srcDir);
-    }
-
-    private void compileModule(String moduleName, Path src) throws IOException {
-        Path msrc = src.resolve(moduleName);
-        assertTrue(CompilerUtils.compile(msrc, mods, "--module-source-path", src.toString()));
+        builder.compile(mn, mods);
     }
 
     private void jmodHashModules(String moduleName, String hashModulesPattern) {

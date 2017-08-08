@@ -30,6 +30,13 @@
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.tools
  *          java.base/sun.security.util
+ * @build jdk.test.lib.SecurityTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/othervm/timeout=600 -Duser.language=en -Duser.country=US WeakAlg
  */
 
@@ -564,7 +571,7 @@ public class WeakAlg {
 
     static OutputAnalyzer genkeypair(String alias, String options) {
         return kt("-genkeypair -alias " + alias + " -dname CN=" + alias
-                + " -keyalg RSA -storetype JKS " + options);
+                + " -storetype JKS " + options);
     }
 
     static OutputAnalyzer certreq(String alias, String options) {

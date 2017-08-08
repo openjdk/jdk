@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.DynamicVMOption;
+import jdk.test.lib.management.DynamicVMOption;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

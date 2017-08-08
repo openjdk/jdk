@@ -181,7 +181,7 @@ public final class Main {
     enum Command {
         CERTREQ("Generates.a.certificate.request",
             ALIAS, SIGALG, FILEOUT, KEYPASS, KEYSTORE, DNAME,
-            STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
+            EXT, STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
         CHANGEALIAS("Changes.an.entry.s.alias",
             ALIAS, DESTALIAS, KEYPASS, KEYSTORE, CACERTS, STOREPASS,
@@ -250,12 +250,12 @@ public final class Main {
             KEYSTORE, STOREPASS, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V),
         SELFCERT("Generates.a.self.signed.certificate",
-            ALIAS, SIGALG, DNAME, STARTDATE, VALIDITY, KEYPASS,
+            ALIAS, SIGALG, DNAME, STARTDATE, EXT, VALIDITY, KEYPASS,
             STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
             ADDPROVIDER, PROVIDERCLASS, PROVIDERPATH, V),
         GENCRL("Generates.CRL",
             RFC, FILEOUT, ID,
-            ALIAS, SIGALG, EXT, KEYPASS, KEYSTORE,
+            ALIAS, SIGALG, KEYPASS, KEYSTORE,
             STOREPASS, STORETYPE, PROVIDERNAME, ADDPROVIDER,
             PROVIDERCLASS, PROVIDERPATH, V, PROTECTED),
         IDENTITYDB("Imports.entries.from.a.JDK.1.1.x.style.identity.database",
@@ -302,6 +302,8 @@ public final class Main {
         Command.IMPORTPASS.setAltName("-importpassword");
     }
 
+    // If an option is allowed multiple times, remember to record it
+    // in the optionsSet.contains() block in parseArgs().
     enum Option {
         ALIAS("alias", "<alias>", "alias.name.of.the.entry.to.process"),
         DESTALIAS("destalias", "<alias>", "destination.alias"),
@@ -423,9 +425,31 @@ public final class Main {
 
         String confFile = null;
 
+        // Records all commands and options set. Used to check dups.
+        Set<String> optionsSet = new HashSet<>();
+
         for (i=0; i < args.length; i++) {
             String flags = args[i];
             if (flags.startsWith("-")) {
+                String lowerFlags = flags.toLowerCase(Locale.ROOT);
+                if (optionsSet.contains(lowerFlags)) {
+                    switch (lowerFlags) {
+                        case "-ext":
+                        case "-id":
+                        case "-provider":
+                        case "-addprovider":
+                        case "-providerclass":
+                        case "-providerarg":
+                            // These options are allowed multiple times
+                            break;
+                        default:
+                            weakWarnings.add(String.format(
+                                    rb.getString("option.1.set.twice"),
+                                    lowerFlags));
+                    }
+                } else {
+                    optionsSet.add(lowerFlags);
+                }
                 if (collator.compare(flags, "-conf") == 0) {
                     if (i == args.length - 1) {
                         errorNeedArgument(flags);
@@ -433,7 +457,15 @@ public final class Main {
                     confFile = args[++i];
                 } else {
                     Command c = Command.getCommand(flags);
-                    if (c != null) command = c;
+                    if (c != null) {
+                        if (command == null) {
+                            command = c;
+                        } else {
+                            throw new Exception(String.format(
+                                    rb.getString("multiple.commands.1.2"),
+                                    command.name, c.name));
+                        }
+                    }
                 }
             }
         }
@@ -485,7 +517,9 @@ public final class Main {
 
             if (c != null) {
                 command = c;
-            } else if (collator.compare(flags, "-help") == 0) {
+            } else if (collator.compare(flags, "-help") == 0 ||
+                    collator.compare(flags, "-h") == 0 ||
+                    collator.compare(flags, "-?") == 0) {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;
@@ -3037,8 +3071,14 @@ public final class Main {
 
     private String withWeak(PublicKey key) {
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
-            return String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), key.getAlgorithm());
+            int kLen = KeyUtil.getKeySize(key);
+            if (kLen >= 0) {
+                return String.format(rb.getString("key.bit"),
+                        kLen, key.getAlgorithm());
+            } else {
+                return String.format(
+                        rb.getString("unknown.size.1"), key.getAlgorithm());
+            }
         } else {
             return String.format(rb.getString("key.bit.weak"),
                     KeyUtil.getKeySize(key), key.getAlgorithm());

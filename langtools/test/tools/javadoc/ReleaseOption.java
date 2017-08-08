@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class ReleaseOption {
         options.add(new File(System.getProperty("test.src", "."), "ReleaseOptionSource.java").getPath());
         StringWriter out = new StringWriter();
         PrintWriter pw = new PrintWriter(out);
-        int actualResult = Main.execute("javadoc", pw, pw, pw, "com.sun.tools.doclets.formats.html.HtmlDoclet", options.toArray(new String[0]));
+        int actualResult = Main.execute("javadoc", pw, pw, pw, "com.sun.tools.doclets.standard.Standard", options.toArray(new String[0]));
         System.err.println("actual result=" + actualResult);
         System.err.println("actual output=" + out.toString());
         if (actualResult != expectedResult)

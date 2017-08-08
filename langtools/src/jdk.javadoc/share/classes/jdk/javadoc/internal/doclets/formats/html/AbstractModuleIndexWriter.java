@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -66,7 +67,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param configuration  The current configuration
      * @param filename Name of the module index file to be generated.
      */
-    public AbstractModuleIndexWriter(ConfigurationImpl configuration,
+    public AbstractModuleIndexWriter(HtmlConfiguration configuration,
                                       DocPath filename) {
         super(configuration, filename);
         modules = configuration.modulePackages;
@@ -101,7 +102,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param tableSummary summary for the table
      * @param body the document tree to which the modules list will be added
      */
-    protected abstract void addModulesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
+    protected abstract void addModulesList(Collection<ModuleElement> modules, String text,
             String tableSummary, Content body);
 
     /**
@@ -173,7 +174,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param body the document tree to which the index will be added
      */
     protected void addIndex(Content body) {
-        addIndexContents(modules, "doclet.Module_Summary",
+        addIndexContents(configuration.modules, "doclet.Module_Summary",
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Module_Summary"),
                 configuration.getText("doclet.modules")), body);
@@ -201,7 +202,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param tableSummary summary for the table
      * @param body the document tree to which the index contents will be added
      */
-    protected void addIndexContents(Map<ModuleElement, Set<PackageElement>> modules, String text,
+    protected void addIndexContents(Collection<ModuleElement> modules, String text,
             String tableSummary, Content body) {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
                 ? HtmlTree.NAV()

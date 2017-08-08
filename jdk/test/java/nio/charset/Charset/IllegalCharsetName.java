@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  */
 
 /* @test
- * @bug 6330020
+ * @bug 6330020 8184665
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
  */
 
-import java.io.*;
-import java.nio.*;
 import java.nio.charset.*;
-import java.util.*;
 
 public class IllegalCharsetName {
     public static void main(String[] args) throws Exception {
@@ -58,6 +55,19 @@ public class IllegalCharsetName {
                 throw new Exception("Charset.isSupported(): No exception thrown");
             } catch (IllegalCharsetNameException x) { //expected
             }
+        }
+
+        // Standard charsets may bypass alias checking during startup, test that
+        // they're all well-behaved as a sanity test
+        checkAliases(StandardCharsets.ISO_8859_1);
+        checkAliases(StandardCharsets.US_ASCII);
+        checkAliases(StandardCharsets.UTF_8);
+    }
+
+    private static void checkAliases(Charset cs) {
+        for (String alias : cs.aliases()) {
+            Charset.forName(alias);
+            Charset.isSupported(alias);
         }
     }
 }

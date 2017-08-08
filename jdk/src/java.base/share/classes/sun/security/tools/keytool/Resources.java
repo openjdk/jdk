@@ -42,6 +42,8 @@ public class Resources extends java.util.ListResourceBundle {
         // keytool: Help part
         {".OPTION.", " [OPTION]..."},
         {"Options.", "Options:"},
+        {"option.1.set.twice", "The %s option is specified multiple times. All except the last one will be ignored."},
+        {"multiple.commands.1.2", "Only one command is allowed: both %1$s and %2$s were specified."},
         {"Use.keytool.help.for.all.available.commands",
                  "Use \"keytool -help\" for all available commands"},
         {"Key.and.Certificate.Management.Tool",
@@ -460,6 +462,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.weak", "%s (weak)"},
         {"key.bit", "%d-bit %s key"},
         {"key.bit.weak", "%d-bit %s key (weak)"},
+        {"unknown.size.1", "unknown size %s key"},
         {".PATTERN.printX509Cert.with.weak",
                 "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignature algorithm name: {7}\nSubject Public Key Algorithm: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",

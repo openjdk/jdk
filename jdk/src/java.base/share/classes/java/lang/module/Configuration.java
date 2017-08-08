@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.module.ModuleReferenceImpl;
+import jdk.internal.module.ModuleTarget;
 
 /**
  * A configuration that is the result of <a href="package-summary.html#resolution">
@@ -121,11 +125,8 @@ public final class Configuration {
         this.targetPlatform = null;
     }
 
-    private Configuration(List<Configuration> parents,
-                          Resolver resolver,
-                          boolean check)
-    {
-        Map<ResolvedModule, Set<ResolvedModule>> g = resolver.finish(this, check);
+    private Configuration(List<Configuration> parents, Resolver resolver) {
+        Map<ResolvedModule, Set<ResolvedModule>> g = resolver.finish(this);
 
         @SuppressWarnings(value = {"rawtypes", "unchecked"})
         Entry<String, ResolvedModule>[] nameEntries
@@ -144,6 +145,62 @@ public final class Configuration {
         this.nameToModule = Map.ofEntries(nameEntries);
 
         this.targetPlatform = resolver.targetPlatform();
+    }
+
+    /**
+     * Creates the Configuration for the boot layer from a pre-generated
+     * readability graph.
+     *
+     * @apiNote This method is coded for startup performance.
+     */
+    Configuration(ModuleFinder finder, Map<String, Set<String>> map) {
+        int moduleCount = map.size();
+
+        // create map of name -> ResolvedModule
+        @SuppressWarnings(value = {"rawtypes", "unchecked"})
+        Entry<String, ResolvedModule>[] nameEntries
+            = (Entry<String, ResolvedModule>[])new Entry[moduleCount];
+        ResolvedModule[] moduleArray = new ResolvedModule[moduleCount];
+        String targetPlatform = null;
+        int i = 0;
+        for (String name : map.keySet()) {
+            ModuleReference mref = finder.find(name).orElse(null);
+            assert mref != null;
+
+            if (targetPlatform == null && mref instanceof ModuleReferenceImpl) {
+                ModuleTarget target = ((ModuleReferenceImpl)mref).moduleTarget();
+                if (target != null) {
+                    targetPlatform = target.targetPlatform();
+                }
+            }
+
+            ResolvedModule resolvedModule = new ResolvedModule(this, mref);
+            moduleArray[i] = resolvedModule;
+            nameEntries[i] = Map.entry(name, resolvedModule);
+            i++;
+        }
+        Map<String, ResolvedModule> nameToModule = Map.ofEntries(nameEntries);
+
+        // create entries for readability graph
+        @SuppressWarnings(value = {"rawtypes", "unchecked"})
+        Entry<ResolvedModule, Set<ResolvedModule>>[] moduleEntries
+            = (Entry<ResolvedModule, Set<ResolvedModule>>[])new Entry[moduleCount];
+        i = 0;
+        for (ResolvedModule resolvedModule : moduleArray) {
+            Set<String> names = map.get(resolvedModule.name());
+            ResolvedModule[] readsArray = new ResolvedModule[names.size()];
+            int j = 0;
+            for (String name : names) {
+                readsArray[j++] = nameToModule.get(name);
+            }
+            moduleEntries[i++] = Map.entry(resolvedModule, Set.of(readsArray));
+        }
+
+        this.parents = List.of(empty());
+        this.graph = Map.ofEntries(moduleEntries);
+        this.modules = Set.of(moduleArray);
+        this.nameToModule = nameToModule;
+        this.targetPlatform = targetPlatform;
     }
 
     /**
@@ -233,23 +290,19 @@ public final class Configuration {
 
     /**
      * Resolves a collection of root modules, with service binding, and with
-     * the empty configuration as its parent. The consistency checks
-     * are optionally run.
+     * the empty configuration as its parent.
      *
      * This method is used to create the configuration for the boot layer.
      */
     static Configuration resolveAndBind(ModuleFinder finder,
                                         Collection<String> roots,
-                                        boolean check,
                                         PrintStream traceOutput)
     {
         List<Configuration> parents = List.of(empty());
         Resolver resolver = new Resolver(finder, parents, ModuleFinder.of(), traceOutput);
         resolver.resolve(roots).bind();
-
-        return new Configuration(parents, resolver, check);
+        return new Configuration(parents, resolver);
     }
-
 
     /**
      * Resolves a collection of root modules to create a configuration.
@@ -356,7 +409,7 @@ public final class Configuration {
         Resolver resolver = new Resolver(before, parentList, after, null);
         resolver.resolve(roots);
 
-        return new Configuration(parentList, resolver, true);
+        return new Configuration(parentList, resolver);
     }
 
     /**
@@ -427,7 +480,7 @@ public final class Configuration {
         Resolver resolver = new Resolver(before, parentList, after, null);
         resolver.resolve(roots).bind();
 
-        return new Configuration(parentList, resolver, true);
+        return new Configuration(parentList, resolver);
     }
 
 

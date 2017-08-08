@@ -153,7 +153,6 @@ class Stream<T> extends ExchangeImpl<T> {
     {
         Log.logTrace("Reading body on stream {0}", streamid);
         responseProcessor = handler.apply(responseCode, responseHeaders);
-        setClientForResponse(responseProcessor);
         publisher.subscribe(responseProcessor);
         CompletableFuture<T> cf = receiveData(executor);
 
@@ -573,10 +572,7 @@ class Stream<T> extends ExchangeImpl<T> {
         connection.putStream(this, streamid);
     }
 
-    class RequestSubscriber
-        extends RequestProcessors.ProcessorBase
-        implements Flow.Subscriber<ByteBuffer>
-    {
+    class RequestSubscriber implements Flow.Subscriber<ByteBuffer> {
         // can be < 0 if the actual length is not known.
         private volatile long remainingContentLength;
         private volatile Subscription subscription;
@@ -768,7 +764,6 @@ class Stream<T> extends ExchangeImpl<T> {
 
     CompletableFuture<Void> sendBodyImpl() {
         RequestSubscriber subscriber = new RequestSubscriber(requestContentLen);
-        subscriber.setClient(client);
         requestProcessor.subscribe(subscriber);
         requestBodyCF.whenComplete((v,t) -> requestSent());
         return requestBodyCF;

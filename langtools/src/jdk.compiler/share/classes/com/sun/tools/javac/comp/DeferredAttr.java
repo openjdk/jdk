@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Type.TypeMapping;
+import com.sun.tools.javac.code.Type.StructuralTypeMapping;
+import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
@@ -40,6 +41,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
@@ -54,6 +56,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Function;
+
+import com.sun.source.tree.MemberReferenceTree;
+import com.sun.tools.javac.tree.JCTree.JCMemberReference.OverloadKind;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -146,6 +151,27 @@ public class DeferredAttr extends JCTree.Visitor {
                     } else {
                         return super.visitNewClass(node, p);
                     }
+                }
+
+                @Override @DefinedBy(Api.COMPILER_TREE)
+                public JCTree visitMemberReference(MemberReferenceTree node, Void p) {
+                    JCMemberReference t = (JCMemberReference) node;
+                    JCExpression expr = copy(t.expr, p);
+                    List<JCExpression> typeargs = copy(t.typeargs, p);
+                    /** once the value for overloadKind is determined for a copy, it can be safely forwarded to
+                     *  the copied tree, we want to profit from that
+                     */
+                    JCMemberReference result = new JCMemberReference(t.mode, t.name, expr, typeargs) {
+                        @Override
+                        public void setOverloadKind(OverloadKind overloadKind) {
+                            super.setOverloadKind(overloadKind);
+                            if (t.getOverloadKind() == null) {
+                                t.setOverloadKind(overloadKind);
+                            }
+                        }
+                    };
+                    result.pos = t.pos;
+                    return result;
                 }
             };
         deferredCopier = new TypeMapping<Void> () {
@@ -445,11 +471,17 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                (newTree)->new DeferredAttrDiagHandler(log, newTree));
+                (newTree)->new DeferredAttrDiagHandler(log, newTree), null);
+    }
+
+    JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
+        return attribSpeculative(tree, env, resultInfo, treeCopier,
+                (newTree)->new DeferredAttrDiagHandler(log, newTree), localCache);
     }
 
     <Z> JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, TreeCopier<Z> deferredCopier,
-                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator) {
+                                 Function<JCTree, DeferredDiagnosticHandler> diagHandlerCreator,
+                                 LocalCacheContext localCache) {
         final JCTree newTree = deferredCopier.copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.isSpeculative = true;
@@ -460,6 +492,9 @@ public class DeferredAttr extends JCTree.Visitor {
         } finally {
             new UnenterScanner(env.toplevel.modle).scan(newTree);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
+            if (localCache != null) {
+                localCache.leave();
+            }
         }
     }
     //where
@@ -777,7 +812,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
                     if (descriptorType.getParameterTypes().length() != tree.params.length()) {
                         checkContext.report(tree,
-                                diags.fragment("incompatible.arg.types.in.lambda"));
+                                diags.fragment(Fragments.IncompatibleArgTypesInLambda));
                     }
 
                     Type currentReturnType = descriptorType.getReturnType();
@@ -787,8 +822,7 @@ public class DeferredAttr extends JCTree.Visitor {
                             TreeInfo.isExpressionStatement((JCExpression)tree.getBody());
                         if (!isExpressionCompatible) {
                             resultInfo.checkContext.report(tree.pos(),
-                                diags.fragment("incompatible.ret.type.in.lambda",
-                                    diags.fragment("missing.ret.val", currentReturnType)));
+                                diags.fragment(Fragments.IncompatibleRetTypeInLambda(Fragments.MissingRetVal(currentReturnType))));
                         }
                     } else {
                         LambdaBodyStructChecker lambdaBodyChecker =
@@ -800,20 +834,19 @@ public class DeferredAttr extends JCTree.Visitor {
                         if (returnTypeIsVoid) {
                             if (!isVoidCompatible) {
                                 resultInfo.checkContext.report(tree.pos(),
-                                    diags.fragment("unexpected.ret.val"));
+                                    diags.fragment(Fragments.UnexpectedRetVal));
                             }
                         } else {
                             boolean isValueCompatible = lambdaBodyChecker.isPotentiallyValueCompatible
                                 && !canLambdaBodyCompleteNormally(tree);
                             if (!isValueCompatible && !isVoidCompatible) {
                                 log.error(tree.body.pos(),
-                                    "lambda.body.neither.value.nor.void.compatible");
+                                          Errors.LambdaBodyNeitherValueNorVoidCompatible);
                             }
 
                             if (!isValueCompatible) {
                                 resultInfo.checkContext.report(tree.pos(),
-                                    diags.fragment("incompatible.ret.type.in.lambda",
-                                        diags.fragment("missing.ret.val", currentReturnType)));
+                                    diags.fragment(Fragments.IncompatibleRetTypeInLambda(Fragments.MissingRetVal(currentReturnType))));
                             }
                         }
                     }
@@ -846,6 +879,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
             @Override
             public void visitReference(JCMemberReference tree) {
+                Assert.checkNonNull(tree.getOverloadKind());
                 Check.CheckContext checkContext = resultInfo.checkContext;
                 Type pt = resultInfo.pt;
                 if (!inferenceContext.inferencevars.contains(pt)) {
@@ -855,8 +889,9 @@ public class DeferredAttr extends JCTree.Visitor {
                         checkContext.report(null, ex.getDiagnostic());
                     }
                     Env<AttrContext> localEnv = env.dup(tree);
-                    JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
-                            attr.memberReferenceQualifierResult(tree));
+                    JCExpression exprTree;
+                    exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
+                            attr.memberReferenceQualifierResult(tree), argumentAttr.withLocalCacheContext());
                     ListBuffer<Type> argtypes = new ListBuffer<>();
                     for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
                         argtypes.append(Type.noType);
@@ -929,7 +964,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * where T is computed by retrieving the type that has already been
      * computed for D during a previous deferred attribution round of the given kind.
      */
-    class DeferredTypeMap extends TypeMapping<Void> {
+    class DeferredTypeMap extends StructuralTypeMapping<Void> {
         DeferredAttrContext deferredAttrContext;
 
         protected DeferredTypeMap(AttrMode mode, Symbol msym, MethodResolutionPhase phase) {
@@ -1124,7 +1159,7 @@ public class DeferredAttr extends JCTree.Visitor {
             Type descType = types.findDescriptorType(pt);
             List<Type> freeArgVars = inferenceContext.freeVarsIn(descType.getParameterTypes());
             if (freeArgVars.nonEmpty() &&
-                    tree.overloadKind == JCMemberReference.OverloadKind.OVERLOADED) {
+                    tree.getOverloadKind() == JCMemberReference.OverloadKind.OVERLOADED) {
                 stuckVars.addAll(freeArgVars);
                 depVars.addAll(inferenceContext.freeVarsIn(descType.getReturnType()));
             }
@@ -1189,7 +1224,7 @@ public class DeferredAttr extends JCTree.Visitor {
         @Override
         public void visitReference(JCMemberReference tree) {
             super.visitReference(tree);
-            if (tree.overloadKind == JCMemberReference.OverloadKind.OVERLOADED) {
+            if (tree.getOverloadKind() == JCMemberReference.OverloadKind.OVERLOADED) {
                 stuck = true;
             }
         }

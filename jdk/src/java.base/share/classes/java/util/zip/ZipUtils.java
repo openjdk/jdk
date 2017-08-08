@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.util.zip;
 
 import java.nio.file.attribute.FileTime;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -245,4 +247,17 @@ class ZipUtils {
     // The END header is followed by a variable length comment of size < 64k.
     static final long END_MAXLEN = 0xFFFF + ENDHDR;
     static final int READBLOCKSZ = 128;
+
+    /**
+     * Loads zip native library, if not already laoded
+     */
+    static void loadLibrary() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            System.loadLibrary("zip");
+        } else {
+            PrivilegedAction<Void> pa = () -> { System.loadLibrary("zip"); return null; };
+            AccessController.doPrivileged(pa);
+        }
+    }
 }

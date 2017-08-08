@@ -26,8 +26,9 @@
  * However, the following notice accompanied the original version of this
  * file:
  *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
+ * Written by Doug Lea and Martin Buchholz with assistance from
+ * members of JCP JSR-166 Expert Group and released to the public
+ * domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  * Other contributors include Andrew Wright, Jeffrey Hayes,
  * Pat Fisher, Mike Judd.
@@ -35,32 +36,33 @@
 
 /*
  * @test
- * @summary JSR-166 tck tests (conformance testing mode)
+ * @summary JSR-166 tck tests, in a number of variations.
+ *          The first is the conformance testing variant,
+ *          while others also test implementation details.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
- */
-
-/*
- * @test
- * @summary JSR-166 tck tests (whitebox tests allowed)
- * @build *
- * @modules java.base/java.util.concurrent:open
- *          java.base/java.lang:open
- *          java.management
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=0
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
  *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  */
@@ -79,8 +81,6 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -103,22 +103,27 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.AssertionFailedError;
@@ -328,9 +333,11 @@ public class JSR166TestCase extends TestCase {
 
 //     public static String cpuModel() {
 //         try {
-//             Matcher matcher = Pattern.compile("model name\\s*: (.*)")
+//             java.util.regex.Matcher matcher
+//               = Pattern.compile("model name\\s*: (.*)")
 //                 .matcher(new String(
-//                      Files.readAllBytes(Paths.get("/proc/cpuinfo")), "UTF-8"));
+//                     java.nio.file.Files.readAllBytes(
+//                         java.nio.file.Paths.get("/proc/cpuinfo")), "UTF-8"));
 //             matcher.find();
 //             return matcher.group(1);
 //         } catch (Exception ex) { return null; }
@@ -664,6 +671,33 @@ public class JSR166TestCase extends TestCase {
     public static long MEDIUM_DELAY_MS;
     public static long LONG_DELAY_MS;
 
+    private static final long RANDOM_TIMEOUT;
+    private static final long RANDOM_EXPIRED_TIMEOUT;
+    private static final TimeUnit RANDOM_TIMEUNIT;
+    static {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        long[] timeouts = { Long.MIN_VALUE, -1, 0, 1, Long.MAX_VALUE };
+        RANDOM_TIMEOUT = timeouts[rnd.nextInt(timeouts.length)];
+        RANDOM_EXPIRED_TIMEOUT = timeouts[rnd.nextInt(3)];
+        TimeUnit[] timeUnits = TimeUnit.values();
+        RANDOM_TIMEUNIT = timeUnits[rnd.nextInt(timeUnits.length)];
+    }
+
+    /**
+     * Returns a timeout for use when any value at all will do.
+     */
+    static long randomTimeout() { return RANDOM_TIMEOUT; }
+
+    /**
+     * Returns a timeout that means "no waiting", i.e. not positive.
+     */
+    static long randomExpiredTimeout() { return RANDOM_EXPIRED_TIMEOUT; }
+
+    /**
+     * Returns a random non-null TimeUnit.
+     */
+    static TimeUnit randomTimeUnit() { return RANDOM_TIMEUNIT; }
+
     /**
      * Returns the shortest timed delay. This can be scaled up for
      * slow machines using the jsr166.delay.factor system property,
@@ -684,12 +718,17 @@ public class JSR166TestCase extends TestCase {
         LONG_DELAY_MS   = SHORT_DELAY_MS * 200;
     }
 
+    private static final long TIMEOUT_DELAY_MS
+        = (long) (12.0 * Math.cbrt(delayFactor));
+
     /**
-     * Returns a timeout in milliseconds to be used in tests that
-     * verify that operations block or time out.
+     * Returns a timeout in milliseconds to be used in tests that verify
+     * that operations block or time out.  We want this to be longer
+     * than the OS scheduling quantum, but not too long, so don't scale
+     * linearly with delayFactor; we use "crazy" cube root instead.
      */
-    long timeoutMillis() {
-        return SHORT_DELAY_MS / 4;
+    static long timeoutMillis() {
+        return TIMEOUT_DELAY_MS;
     }
 
     /**
@@ -1084,8 +1123,29 @@ public class JSR166TestCase extends TestCase {
     }
 
     /**
+     * Checks that thread eventually enters the expected blocked thread state.
+     */
+    void assertThreadBlocks(Thread thread, Thread.State expected) {
+        // always sleep at least 1 ms, with high probability avoiding
+        // transitory states
+        for (long retries = LONG_DELAY_MS * 3 / 4; retries-->0; ) {
+            try { delay(1); }
+            catch (InterruptedException fail) {
+                fail("Unexpected InterruptedException");
+            }
+            Thread.State s = thread.getState();
+            if (s == expected)
+                return;
+            else if (s == Thread.State.TERMINATED)
+                fail("Unexpected thread termination");
+        }
+        fail("timed out waiting for thread to enter thread state " + expected);
+    }
+
+    /**
      * Checks that thread does not terminate within the default
      * millisecond delay of {@code timeoutMillis()}.
+     * TODO: REMOVEME
      */
     void assertThreadStaysAlive(Thread thread) {
         assertThreadStaysAlive(thread, timeoutMillis());
@@ -1093,6 +1153,7 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Checks that thread does not terminate within the given millisecond delay.
+     * TODO: REMOVEME
      */
     void assertThreadStaysAlive(Thread thread, long millis) {
         try {
@@ -1107,6 +1168,7 @@ public class JSR166TestCase extends TestCase {
     /**
      * Checks that the threads do not terminate within the default
      * millisecond delay of {@code timeoutMillis()}.
+     * TODO: REMOVEME
      */
     void assertThreadsStayAlive(Thread... threads) {
         assertThreadsStayAlive(timeoutMillis(), threads);
@@ -1114,6 +1176,7 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Checks that the threads do not terminate within the given millisecond delay.
+     * TODO: REMOVEME
      */
     void assertThreadsStayAlive(long millis, Thread... threads) {
         try {
@@ -1162,6 +1225,12 @@ public class JSR166TestCase extends TestCase {
     public void shouldThrow(String exceptionName) {
         fail("Should throw " + exceptionName);
     }
+
+    /**
+     * The maximum number of consecutive spurious wakeups we should
+     * tolerate (from APIs like LockSupport.park) before failing a test.
+     */
+    static final int MAX_SPURIOUS_WAKEUPS = 10;
 
     /**
      * The number of elements to place in collections, arrays, etc.
@@ -1632,6 +1701,14 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
+    public void await(CyclicBarrier barrier) {
+        try {
+            barrier.await(LONG_DELAY_MS, MILLISECONDS);
+        } catch (Throwable fail) {
+            threadUnexpectedException(fail);
+        }
+    }
+
 //     /**
 //      * Spin-waits up to LONG_DELAY_MS until flag becomes true.
 //      */
@@ -1655,52 +1732,11 @@ public class JSR166TestCase extends TestCase {
         public String call() { throw new NullPointerException(); }
     }
 
-    public static class CallableOne implements Callable<Integer> {
-        public Integer call() { return one; }
-    }
-
-    public class ShortRunnable extends CheckedRunnable {
-        protected void realRun() throws Throwable {
-            delay(SHORT_DELAY_MS);
-        }
-    }
-
-    public class ShortInterruptedRunnable extends CheckedInterruptedRunnable {
-        protected void realRun() throws InterruptedException {
-            delay(SHORT_DELAY_MS);
-        }
-    }
-
-    public class SmallRunnable extends CheckedRunnable {
-        protected void realRun() throws Throwable {
-            delay(SMALL_DELAY_MS);
-        }
-    }
-
     public class SmallPossiblyInterruptedRunnable extends CheckedRunnable {
         protected void realRun() {
             try {
                 delay(SMALL_DELAY_MS);
             } catch (InterruptedException ok) {}
-        }
-    }
-
-    public class SmallCallable extends CheckedCallable {
-        protected Object realCall() throws InterruptedException {
-            delay(SMALL_DELAY_MS);
-            return Boolean.TRUE;
-        }
-    }
-
-    public class MediumRunnable extends CheckedRunnable {
-        protected void realRun() throws Throwable {
-            delay(MEDIUM_DELAY_MS);
-        }
-    }
-
-    public class MediumInterruptedRunnable extends CheckedInterruptedRunnable {
-        protected void realRun() throws InterruptedException {
-            delay(MEDIUM_DELAY_MS);
         }
     }
 
@@ -1711,22 +1747,6 @@ public class JSR166TestCase extends TestCase {
                     delay(timeoutMillis);
                 } catch (InterruptedException ok) {}
             }};
-    }
-
-    public class MediumPossiblyInterruptedRunnable extends CheckedRunnable {
-        protected void realRun() {
-            try {
-                delay(MEDIUM_DELAY_MS);
-            } catch (InterruptedException ok) {}
-        }
-    }
-
-    public class LongPossiblyInterruptedRunnable extends CheckedRunnable {
-        protected void realRun() {
-            try {
-                delay(LONG_DELAY_MS);
-            } catch (InterruptedException ok) {}
-        }
     }
 
     /**
@@ -1742,74 +1762,10 @@ public class JSR166TestCase extends TestCase {
         boolean isDone();
     }
 
-    public static TrackedRunnable trackedRunnable(final long timeoutMillis) {
-        return new TrackedRunnable() {
-                private volatile boolean done = false;
-                public boolean isDone() { return done; }
-                public void run() {
-                    try {
-                        delay(timeoutMillis);
-                        done = true;
-                    } catch (InterruptedException ok) {}
-                }
-            };
-    }
-
-    public static class TrackedShortRunnable implements Runnable {
-        public volatile boolean done = false;
-        public void run() {
-            try {
-                delay(SHORT_DELAY_MS);
-                done = true;
-            } catch (InterruptedException ok) {}
-        }
-    }
-
-    public static class TrackedSmallRunnable implements Runnable {
-        public volatile boolean done = false;
-        public void run() {
-            try {
-                delay(SMALL_DELAY_MS);
-                done = true;
-            } catch (InterruptedException ok) {}
-        }
-    }
-
-    public static class TrackedMediumRunnable implements Runnable {
-        public volatile boolean done = false;
-        public void run() {
-            try {
-                delay(MEDIUM_DELAY_MS);
-                done = true;
-            } catch (InterruptedException ok) {}
-        }
-    }
-
-    public static class TrackedLongRunnable implements Runnable {
-        public volatile boolean done = false;
-        public void run() {
-            try {
-                delay(LONG_DELAY_MS);
-                done = true;
-            } catch (InterruptedException ok) {}
-        }
-    }
-
     public static class TrackedNoOpRunnable implements Runnable {
         public volatile boolean done = false;
         public void run() {
             done = true;
-        }
-    }
-
-    public static class TrackedCallable implements Callable {
-        public volatile boolean done = false;
-        public Object call() {
-            try {
-                delay(SMALL_DELAY_MS);
-                done = true;
-            } catch (InterruptedException ok) {}
-            return Boolean.TRUE;
         }
     }
 
@@ -1879,7 +1835,7 @@ public class JSR166TestCase extends TestCase {
             assertEquals(0, q.size());
             assertNull(q.peek());
             assertNull(q.poll());
-            assertNull(q.poll(0, MILLISECONDS));
+            assertNull(q.poll(randomExpiredTimeout(), randomTimeUnit()));
             assertEquals(q.toString(), "[]");
             assertTrue(Arrays.equals(q.toArray(), new Object[0]));
             assertFalse(q.iterator().hasNext());
@@ -2029,5 +1985,177 @@ public class JSR166TestCase extends TestCase {
 
     static <T> void shuffle(T[] array) {
         Collections.shuffle(Arrays.asList(array), ThreadLocalRandom.current());
+    }
+
+    // --- Shared assertions for Executor tests ---
+
+    /**
+     * Returns maximum number of tasks that can be submitted to given
+     * pool (with bounded queue) before saturation (when submission
+     * throws RejectedExecutionException).
+     */
+    static final int saturatedSize(ThreadPoolExecutor pool) {
+        BlockingQueue<Runnable> q = pool.getQueue();
+        return pool.getMaximumPoolSize() + q.size() + q.remainingCapacity();
+    }
+
+    @SuppressWarnings("FutureReturnValueIgnored")
+    void assertNullTaskSubmissionThrowsNullPointerException(Executor e) {
+        try {
+            e.execute((Runnable) null);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+
+        if (! (e instanceof ExecutorService)) return;
+        ExecutorService es = (ExecutorService) e;
+        try {
+            es.submit((Runnable) null);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+        try {
+            es.submit((Runnable) null, Boolean.TRUE);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+        try {
+            es.submit((Callable) null);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+
+        if (! (e instanceof ScheduledExecutorService)) return;
+        ScheduledExecutorService ses = (ScheduledExecutorService) e;
+        try {
+            ses.schedule((Runnable) null,
+                         randomTimeout(), randomTimeUnit());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+        try {
+            ses.schedule((Callable) null,
+                         randomTimeout(), randomTimeUnit());
+            shouldThrow();
+        } catch (NullPointerException success) {}
+        try {
+            ses.scheduleAtFixedRate((Runnable) null,
+                                    randomTimeout(), LONG_DELAY_MS, MILLISECONDS);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+        try {
+            ses.scheduleWithFixedDelay((Runnable) null,
+                                       randomTimeout(), LONG_DELAY_MS, MILLISECONDS);
+            shouldThrow();
+        } catch (NullPointerException success) {}
+    }
+
+    void setRejectedExecutionHandler(
+        ThreadPoolExecutor p, RejectedExecutionHandler handler) {
+        p.setRejectedExecutionHandler(handler);
+        assertSame(handler, p.getRejectedExecutionHandler());
+    }
+
+    void assertTaskSubmissionsAreRejected(ThreadPoolExecutor p) {
+        final RejectedExecutionHandler savedHandler = p.getRejectedExecutionHandler();
+        final long savedTaskCount = p.getTaskCount();
+        final long savedCompletedTaskCount = p.getCompletedTaskCount();
+        final int savedQueueSize = p.getQueue().size();
+        final boolean stock = (p.getClass().getClassLoader() == null);
+
+        Runnable r = () -> {};
+        Callable<Boolean> c = () -> Boolean.TRUE;
+
+        class Recorder implements RejectedExecutionHandler {
+            public volatile Runnable r = null;
+            public volatile ThreadPoolExecutor p = null;
+            public void reset() { r = null; p = null; }
+            public void rejectedExecution(Runnable r, ThreadPoolExecutor p) {
+                assertNull(this.r);
+                assertNull(this.p);
+                this.r = r;
+                this.p = p;
+            }
+        }
+
+        // check custom handler is invoked exactly once per task
+        Recorder recorder = new Recorder();
+        setRejectedExecutionHandler(p, recorder);
+        for (int i = 2; i--> 0; ) {
+            recorder.reset();
+            p.execute(r);
+            if (stock && p.getClass() == ThreadPoolExecutor.class)
+                assertSame(r, recorder.r);
+            assertSame(p, recorder.p);
+
+            recorder.reset();
+            assertFalse(p.submit(r).isDone());
+            if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+            assertSame(p, recorder.p);
+
+            recorder.reset();
+            assertFalse(p.submit(r, Boolean.TRUE).isDone());
+            if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+            assertSame(p, recorder.p);
+
+            recorder.reset();
+            assertFalse(p.submit(c).isDone());
+            if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+            assertSame(p, recorder.p);
+
+            if (p instanceof ScheduledExecutorService) {
+                ScheduledExecutorService s = (ScheduledExecutorService) p;
+                ScheduledFuture<?> future;
+
+                recorder.reset();
+                future = s.schedule(r, randomTimeout(), randomTimeUnit());
+                assertFalse(future.isDone());
+                if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+                assertSame(p, recorder.p);
+
+                recorder.reset();
+                future = s.schedule(c, randomTimeout(), randomTimeUnit());
+                assertFalse(future.isDone());
+                if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+                assertSame(p, recorder.p);
+
+                recorder.reset();
+                future = s.scheduleAtFixedRate(r, randomTimeout(), LONG_DELAY_MS, MILLISECONDS);
+                assertFalse(future.isDone());
+                if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+                assertSame(p, recorder.p);
+
+                recorder.reset();
+                future = s.scheduleWithFixedDelay(r, randomTimeout(), LONG_DELAY_MS, MILLISECONDS);
+                assertFalse(future.isDone());
+                if (stock) assertTrue(!((FutureTask) recorder.r).isDone());
+                assertSame(p, recorder.p);
+            }
+        }
+
+        // Checking our custom handler above should be sufficient, but
+        // we add some integration tests of standard handlers.
+        final AtomicReference<Thread> thread = new AtomicReference<>();
+        final Runnable setThread = () -> thread.set(Thread.currentThread());
+
+        setRejectedExecutionHandler(p, new ThreadPoolExecutor.AbortPolicy());
+        try {
+            p.execute(setThread);
+            shouldThrow();
+        } catch (RejectedExecutionException success) {}
+        assertNull(thread.get());
+
+        setRejectedExecutionHandler(p, new ThreadPoolExecutor.DiscardPolicy());
+        p.execute(setThread);
+        assertNull(thread.get());
+
+        setRejectedExecutionHandler(p, new ThreadPoolExecutor.CallerRunsPolicy());
+        p.execute(setThread);
+        if (p.isShutdown())
+            assertNull(thread.get());
+        else
+            assertSame(Thread.currentThread(), thread.get());
+
+        setRejectedExecutionHandler(p, savedHandler);
+
+        // check that pool was not perturbed by handlers
+        assertEquals(savedTaskCount, p.getTaskCount());
+        assertEquals(savedCompletedTaskCount, p.getCompletedTaskCount());
+        assertEquals(savedQueueSize, p.getQueue().size());
     }
 }

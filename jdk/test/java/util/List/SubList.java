@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8079136
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run testng SubList
  * @summary Basic functionality of sublists
  * @key randomness
@@ -46,7 +46,7 @@ import java.util.Vector;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 
 public class SubList extends org.testng.Assert {

@@ -25,9 +25,10 @@
  * @test
  * @bug 6479237
  * @summary Basic test StackTraceElement with class loader names
- * @library lib /lib/testlibrary
+ * @library lib /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build m1/* WithClassLoaderName
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        m1/* WithClassLoaderName
  * @run main/othervm m1/com.app.Main
  * @run main/othervm WithClassLoaderName
  */
@@ -38,6 +39,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import com.app.Utils;
 

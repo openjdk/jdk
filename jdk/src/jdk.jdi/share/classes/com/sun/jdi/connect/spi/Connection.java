@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,13 @@ import java.io.IOException;
  *
  * <p> A Connection represents a bi-directional communication channel
  * between a debugger and a target VM. A Connection is created when
- * {@link com.sun.jdi.connect.spi.TransportService TransportService}
- * establishes a connection and successfully handshakes with a target
- * VM. A TransportService implementation provides a reliable
- * JDWP packet transportation service and consequently a Connection
- * provides a reliable flow of JDWP packets between the debugger
- * and the target VM. A Connection is stream oriented, that is, the
- * JDWP packets written to a connection are read by the target VM
- * in the order in which they were written. Similiarly packets written
+ * {@link TransportService TransportService} establishes a connection
+ * and successfully handshakes with a target VM. A TransportService
+ * implementation provides a reliable JDWP packet transportation service
+ * and consequently a Connection provides a reliable flow of JDWP packets
+ * between the debugger and the target VM. A Connection is stream oriented,
+ * that is, the JDWP packets written to a connection are read by the target VM
+ * in the order in which they were written. Similarly packets written
  * to a Connection by the target VM are read by the debugger in the
  * order in which they were written.
  *
@@ -55,7 +54,6 @@ import java.io.IOException;
  *
  * @since 1.5
  */
-
 public abstract class Connection {
 
     /**

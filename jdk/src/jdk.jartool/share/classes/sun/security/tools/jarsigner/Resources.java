@@ -164,6 +164,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.weak", "%s (weak)"},
         {"key.bit", "%d-bit key"},
         {"key.bit.weak", "%d-bit key (weak)"},
+        {"unknown.size", "unknown size"},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

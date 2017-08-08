@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1258,7 +1258,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     + ", listener=" + listener);
 
             final Integer[] ret =
-                    rmiNotifClient.removeNotificationListener(name, listener);
+                    rmiNotifClient.getListenerIds(name, listener);
 
             if (debug) logger.debug("removeNotificationListener",
                     "listenerIDs=" + objects(ret));
@@ -1278,7 +1278,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             } finally {
                 popDefaultClassLoader(old);
             }
-
+            rmiNotifClient.removeNotificationListener(name, listener);
         }
 
         public void removeNotificationListener(ObjectName name,
@@ -1300,7 +1300,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         + ", handback=" + handback);
 
             final Integer ret =
-                    rmiNotifClient.removeNotificationListener(name, listener,
+                    rmiNotifClient.getListenerId(name, listener,
                     filter, handback);
 
             if (debug) logger.debug("removeNotificationListener",
@@ -1320,7 +1320,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             } finally {
                 popDefaultClassLoader(old);
             }
-
+            rmiNotifClient.removeNotificationListener(name, listener,
+                    filter, handback);
         }
     }
 

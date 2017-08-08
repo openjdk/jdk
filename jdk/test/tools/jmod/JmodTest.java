@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
  * @test
  * @bug 8142968 8166568 8166286 8170618 8168149
  * @summary Basic test for jmod
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jlink
- * @build jdk.testlibrary.FileUtils CompilerUtils
+ * @build jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Platform
  * @run testng/othervm -Djava.io.tmpdir=. JmodTest
  */
 
@@ -40,9 +42,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.FileUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
