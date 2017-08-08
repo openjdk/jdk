@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
  * @bug 8056174
  * @summary Make sure the jarsigner tool still works after it's modified to
  *          be based on JarSigner API
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
  *          java.base/sun.security.pkcs
  *          java.base/sun.security.x509
+ * @build jdk.test.lib.util.JarUtils
+ * @run main Options
  */
 
 import com.sun.jarsigner.ContentSigner;
 import com.sun.jarsigner.ContentSignerParameters;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 import sun.security.pkcs.PKCS7;
 
 import java.io.ByteArrayInputStream;

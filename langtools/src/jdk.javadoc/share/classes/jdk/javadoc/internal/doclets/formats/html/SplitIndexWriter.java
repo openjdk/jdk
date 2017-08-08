@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param prev  the previous character that was indexed
      * @param next  the next character to be indexed
      */
-    public SplitIndexWriter(ConfigurationImpl configuration,
+    public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
                             IndexBuilder indexbuilder,
                             Collection<Character> elements,
@@ -101,18 +101,22 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param indexbuilder IndexBuilder built by {@link IndexBuilder}
      * @throws DocFileIOException if there is a problem generating the index files
      */
-    public static void generate(ConfigurationImpl configuration,
+    public static void generate(HtmlConfiguration configuration,
                                 IndexBuilder indexbuilder) throws DocFileIOException {
         DocPath path = DocPaths.INDEX_FILES;
         Set<Character> keys = new TreeSet<>(indexbuilder.getIndexMap().keySet());
         keys.addAll(configuration.tagSearchIndexKeys);
         ListIterator<Character> li = new ArrayList<>(keys).listIterator();
+        int prev;
+        int next;
         while (li.hasNext()) {
+            prev = (li.hasPrevious()) ? li.previousIndex() + 1 : -1;
             Object ch = li.next();
+            next = (li.hasNext()) ? li.nextIndex() + 1 : -1;
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                     path.resolve(filename),
-                    indexbuilder, keys, li.previousIndex(), li.nextIndex());
+                    indexbuilder, keys, prev, next);
             indexgen.generateIndexFile((Character) ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();

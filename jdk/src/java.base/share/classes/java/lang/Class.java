@@ -43,7 +43,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -51,6 +50,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,9 +64,9 @@ import java.util.StringJoiner;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
@@ -364,9 +364,9 @@ public final class Class<T> implements java.io.Serializable,
             // Reflective call to get caller class is only needed if a security manager
             // is present.  Avoid the overhead of making this call otherwise.
             caller = Reflection.getCallerClass();
-            if (VM.isSystemDomainLoader(loader)) {
+            if (loader == null) {
                 ClassLoader ccl = ClassLoader.getClassLoader(caller);
-                if (!VM.isSystemDomainLoader(ccl)) {
+                if (ccl != null) {
                     sm.checkPermission(
                         SecurityConstants.GET_CLASSLOADER_PERMISSION);
                 }
@@ -425,24 +425,28 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static Class<?> forName(Module module, String name) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
 
-        Class<?> caller = Reflection.getCallerClass();
-        if (caller != null && caller.getModule() != module) {
-            // if caller is null, Class.forName is the last java frame on the stack.
-            // java.base has all permissions
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
+        ClassLoader cl;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Class<?> caller = Reflection.getCallerClass();
+            if (caller != null && caller.getModule() != module) {
+                // if caller is null, Class.forName is the last java frame on the stack.
+                // java.base has all permissions
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
+            PrivilegedAction<ClassLoader> pa = module::getClassLoader;
+            cl = AccessController.doPrivileged(pa);
+        } else {
+            cl = module.getClassLoader();
         }
 
-        PrivilegedAction<ClassLoader> pa = module::getClassLoader;
-        ClassLoader cl = AccessController.doPrivileged(pa);
         if (cl != null) {
             return cl.loadClass(module, name);
         } else {
@@ -724,18 +728,23 @@ public final class Class<T> implements java.io.Serializable,
      * one or more '{@code [}' characters representing the depth of the array
      * nesting.  The encoding of element type names is as follows:
      *
-     * <blockquote><table summary="Element types and encodings">
-     * <tr><th> Element Type <th> &nbsp;&nbsp;&nbsp; <th> Encoding
-     * <tr><td> boolean      <td> &nbsp;&nbsp;&nbsp; <td align=center> Z
-     * <tr><td> byte         <td> &nbsp;&nbsp;&nbsp; <td align=center> B
-     * <tr><td> char         <td> &nbsp;&nbsp;&nbsp; <td align=center> C
+     * <blockquote><table class="borderless">
+     * <caption style="display:none">Element types and encodings</caption>
+     * <thead>
+     * <tr><th style="padding-right:3em;"> Element Type <th> Encoding
+     * </thead>
+     * <tbody>
+     * <tr><td> boolean      <td style="text-align:center"> Z
+     * <tr><td> byte         <td style="text-align:center"> B
+     * <tr><td> char         <td style="text-align:center"> C
      * <tr><td> class or interface
-     *                       <td> &nbsp;&nbsp;&nbsp; <td align=center> L<i>classname</i>;
-     * <tr><td> double       <td> &nbsp;&nbsp;&nbsp; <td align=center> D
-     * <tr><td> float        <td> &nbsp;&nbsp;&nbsp; <td align=center> F
-     * <tr><td> int          <td> &nbsp;&nbsp;&nbsp; <td align=center> I
-     * <tr><td> long         <td> &nbsp;&nbsp;&nbsp; <td align=center> J
-     * <tr><td> short        <td> &nbsp;&nbsp;&nbsp; <td align=center> S
+     *                       <td style="text-align:center"> L<i>classname</i>;
+     * <tr><td> double       <td style="text-align:center"> D
+     * <tr><td> float        <td style="text-align:center"> F
+     * <tr><td> int          <td style="text-align:center"> I
+     * <tr><td> long         <td style="text-align:center"> J
+     * <tr><td> short        <td style="text-align:center"> S
+     * </tbody>
      * </table></blockquote>
      *
      * <p> The class or interface name <i>classname</i> is the binary name of
@@ -819,6 +828,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the module that this class or interface is a member of
      *
      * @since 9
+     * @spec JPMS
      */
     public Module getModule() {
         return module;
@@ -924,6 +934,8 @@ public final class Class<T> implements java.io.Serializable,
      * this method returns {@code null}.
      *
      * @return the package of this class.
+     * @revised 9
+     * @spec JPMS
      */
     public Package getPackage() {
         if (isPrimitive() || isArray()) {
@@ -951,20 +963,30 @@ public final class Class<T> implements java.io.Serializable,
      * declaring class} of the {@link #getEnclosingMethod enclosing method} or
      * {@link #getEnclosingConstructor enclosing constructor}.
      *
-     * <p> This method returns {@code null} if this class represents an array type,
-     * a primitive type or void.
+     * <p> If this class represents an array type then this method returns the
+     * package name of the element type. If this class represents a primitive
+     * type or void then the package name "{@code java.lang}" is returned.
      *
      * @return the fully qualified package name
      *
      * @since 9
+     * @spec JPMS
      * @jls 6.7  Fully Qualified Names
      */
     public String getPackageName() {
         String pn = this.packageName;
-        if (pn == null && !isArray() && !isPrimitive()) {
-            String cn = getName();
-            int dot = cn.lastIndexOf('.');
-            pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+        if (pn == null) {
+            Class<?> c = this;
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            if (c.isPrimitive()) {
+                pn = "java.lang";
+            } else {
+                String cn = c.getName();
+                int dot = cn.lastIndexOf('.');
+                pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+            }
             this.packageName = pn;
         }
         return pn;
@@ -2049,25 +2071,6 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
-     * Returns a {@code Method} object that reflects the specified public
-     * member method of the class or interface represented by this
-     * {@code Class} object.
-     *
-     * @param name the name of the method
-     * @param parameterTypes the list of parameters
-     * @return the {@code Method} object that matches the specified
-     *         {@code name} and {@code parameterTypes}; {@code null}
-     *         if the method is not found or the name is
-     *         "&lt;init&gt;"or "&lt;clinit&gt;".
-     */
-    Method getMethodOrNull(String name, Class<?>... parameterTypes) {
-        Objects.requireNonNull(name);
-        Method method = getMethod0(name, parameterTypes);
-        return method == null ? null : getReflectionFactory().copyMethod(method);
-    }
-
-
-    /**
      * Returns a {@code Constructor} object that reflects the specified
      * public constructor of the class represented by this {@code Class}
      * object. The {@code parameterTypes} parameter is an array of
@@ -2207,7 +2210,6 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     *
      * Returns an array containing {@code Method} objects reflecting all the
      * declared methods of the class or interface represented by this {@code
      * Class} object, including public, protected, default (package)
@@ -2435,6 +2437,30 @@ public final class Class<T> implements java.io.Serializable,
         return getReflectionFactory().copyMethod(method);
     }
 
+    /**
+     * Returns the list of {@code Method} objects for the declared public
+     * methods of this class or interface that have the specified method name
+     * and parameter types.
+     *
+     * @param name the name of the method
+     * @param parameterTypes the parameter array
+     * @return the list of {@code Method} objects for the public methods of
+     *         this class matching the specified name and parameters
+     */
+    List<Method> getDeclaredPublicMethods(String name, Class<?>... parameterTypes) {
+        Method[] methods = privateGetDeclaredMethods(/* publicOnly */ true);
+        ReflectionFactory factory = getReflectionFactory();
+        List<Method> result = new ArrayList<>();
+        for (Method method : methods) {
+            if (method.getName().equals(name)
+                && Arrays.equals(
+                    factory.getExecutableSharedParameterTypes(method),
+                    parameterTypes)) {
+                result.add(factory.copyMethod(method));
+            }
+        }
+        return result;
+    }
 
     /**
      * Returns a {@code Constructor} object that reflects the specified
@@ -2491,10 +2517,16 @@ public final class Class<T> implements java.io.Serializable,
      * Finds a resource with a given name.
      *
      * <p> If this class is in a named {@link Module Module} then this method
-     * will attempt to find the resource in the module by means of the absolute
-     * resource name, subject to the rules for encapsulation specified in the
-     * {@code Module} {@link Module#getResourceAsStream getResourceAsStream}
-     * method.
+     * will attempt to find the resource in the module. This is done by
+     * delegating to the module's class loader {@link
+     * ClassLoader#findResource(String,String) findResource(String,String)}
+     * method, invoking it with the module name and the absolute name of the
+     * resource. Resources in named modules are subject to the rules for
+     * encapsulation specified in the {@code Module} {@link
+     * Module#getResourceAsStream getResourceAsStream} method and so this
+     * method returns {@code null} when the resource is a
+     * non-"{@code .class}" resource in a package that is not open to the
+     * caller's module.
      *
      * <p> Otherwise, if this class is not in a named module then the rules for
      * searching resources associated with a given class are implemented by the
@@ -2503,9 +2535,8 @@ public final class Class<T> implements java.io.Serializable,
      * the bootstrap class loader, the method delegates to {@link
      * ClassLoader#getSystemResourceAsStream}.
      *
-     * <p> Before finding a resource in the caller's module or delegation to a
-     * class loader, an absolute resource name is constructed from the given
-     * resource name using this algorithm:
+     * <p> Before delegation, an absolute resource name is constructed from the
+     * given resource name using this algorithm:
      *
      * <ul>
      *
@@ -2532,27 +2563,26 @@ public final class Class<T> implements java.io.Serializable,
      *          least the caller module, or access to the resource is denied
      *          by the security manager.
      * @throws  NullPointerException If {@code name} is {@code null}
+     *
+     * @see Module#getResourceAsStream(String)
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) {
         name = resolveName(name);
 
-        Module module = getModule();
-        if (module.isNamed()) {
-            if (!ResourceHelper.isSimpleResource(name)) {
-                Module caller = Reflection.getCallerClass().getModule();
-                if (caller != module) {
-                    Set<String> packages = module.getDescriptor().packages();
-                    String pn = ResourceHelper.getPackageName(name);
-                    if (packages.contains(pn) && !module.isOpen(pn, caller)) {
-                        // resource is in package not open to caller
-                        return null;
-                    }
-                }
+        Module thisModule = getModule();
+        if (thisModule.isNamed()) {
+            // check if resource can be located by caller
+            if (Resources.canEncapsulate(name)
+                && !isOpenToCaller(name, Reflection.getCallerClass())) {
+                return null;
             }
 
-            String mn = module.getName();
+            // resource not encapsulated or in package open to caller
+            String mn = thisModule.getName();
             ClassLoader cl = getClassLoader0();
             try {
 
@@ -2585,10 +2615,16 @@ public final class Class<T> implements java.io.Serializable,
      * Finds a resource with a given name.
      *
      * <p> If this class is in a named {@link Module Module} then this method
-     * will attempt to find the resource in the module by means of the absolute
-     * resource name, subject to the rules for encapsulation specified in the
-     * {@code Module} {@link Module#getResourceAsStream getResourceAsStream}
-     * method.
+     * will attempt to find the resource in the module. This is done by
+     * delegating to the module's class loader {@link
+     * ClassLoader#findResource(String,String) findResource(String,String)}
+     * method, invoking it with the module name and the absolute name of the
+     * resource. Resources in named modules are subject to the rules for
+     * encapsulation specified in the {@code Module} {@link
+     * Module#getResourceAsStream getResourceAsStream} method and so this
+     * method returns {@code null} when the resource is a
+     * non-"{@code .class}" resource in a package that is not open to the
+     * caller's module.
      *
      * <p> Otherwise, if this class is not in a named module then the rules for
      * searching resources associated with a given class are implemented by the
@@ -2627,25 +2663,23 @@ public final class Class<T> implements java.io.Serializable,
      *         manager.
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public URL getResource(String name) {
         name = resolveName(name);
 
-        Module module = getModule();
-        if (module.isNamed()) {
-            if (!ResourceHelper.isSimpleResource(name)) {
-                Module caller = Reflection.getCallerClass().getModule();
-                if (caller != module) {
-                    Set<String> packages = module.getDescriptor().packages();
-                    String pn = ResourceHelper.getPackageName(name);
-                    if (packages.contains(pn) && !module.isOpen(pn, caller)) {
-                        // resource is in package not open to caller
-                        return null;
-                    }
-                }
+        Module thisModule = getModule();
+        if (thisModule.isNamed()) {
+            // check if resource can be located by caller
+            if (Resources.canEncapsulate(name)
+                && !isOpenToCaller(name, Reflection.getCallerClass())) {
+                return null;
             }
-            String mn = getModule().getName();
+
+            // resource not encapsulated or in package open to caller
+            String mn = thisModule.getName();
             ClassLoader cl = getClassLoader0();
             try {
                 if (cl == null) {
@@ -2667,9 +2701,35 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
+    /**
+     * Returns true if a resource with the given name can be located by the
+     * given caller. All resources in a module can be located by code in
+     * the module. For other callers, then the package needs to be open to
+     * the caller.
+     */
+    private boolean isOpenToCaller(String name, Class<?> caller) {
+        // assert getModule().isNamed();
+        Module thisModule = getModule();
+        Module callerModule = (caller != null) ? caller.getModule() : null;
+        if (callerModule != thisModule) {
+            String pn = Resources.toPackageName(name);
+            if (thisModule.getDescriptor().packages().contains(pn)) {
+                if (callerModule == null && !thisModule.isOpen(pn)) {
+                    // no caller, package not open
+                    return false;
+                }
+                if (!thisModule.isOpen(pn, callerModule)) {
+                    // package not open to caller
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
     /** protection domain returned when the internal domain is null */
     private static java.security.ProtectionDomain allPermDomain;
-
 
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a
@@ -2740,7 +2800,7 @@ public final class Class<T> implements java.io.Serializable,
          * In all other cases, it requires RuntimePermission("accessDeclaredMembers")
          * permission.
          */
-        final ClassLoader ccl = caller.getClassLoader0();
+        final ClassLoader ccl = ClassLoader.getClassLoader(caller);
         if (which != Member.PUBLIC) {
             final ClassLoader cl = getClassLoader0();
             if (ccl != cl) {
@@ -2828,19 +2888,19 @@ public final class Class<T> implements java.io.Serializable,
         static <T> boolean casReflectionData(Class<?> clazz,
                                              SoftReference<ReflectionData<T>> oldData,
                                              SoftReference<ReflectionData<T>> newData) {
-            return unsafe.compareAndSwapObject(clazz, reflectionDataOffset, oldData, newData);
+            return unsafe.compareAndSetObject(clazz, reflectionDataOffset, oldData, newData);
         }
 
         static <T> boolean casAnnotationType(Class<?> clazz,
                                              AnnotationType oldType,
                                              AnnotationType newType) {
-            return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
+            return unsafe.compareAndSetObject(clazz, annotationTypeOffset, oldType, newType);
         }
 
         static <T> boolean casAnnotationData(Class<?> clazz,
                                              AnnotationData oldData,
                                              AnnotationData newData) {
-            return unsafe.compareAndSwapObject(clazz, annotationDataOffset, oldData, newData);
+            return unsafe.compareAndSetObject(clazz, annotationDataOffset, oldData, newData);
         }
     }
 

@@ -19,7 +19,6 @@ text: .text%Java_java_lang_System_initProperties;
 text: .text%GetJavaProperties;
 text: .text%uname: OUTPUTDIR/java_props_md.o;
 text: .text%mapLookup: OUTPUTDIR/java_props_md.o;
-text: .text%setPathEnvironment: OUTPUTDIR/java_props_md.o;
 text: .text%JNU_NewStringPlatform;
 text: .text%JNU_CallStaticMethodByName;
 text: .text%NewStringPlatform;

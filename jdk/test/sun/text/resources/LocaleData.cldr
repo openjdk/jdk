@@ -8274,3 +8274,29 @@ FormatData/fi/DatePatterns/3=d.M.y
 
 # bug #8075173
 FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r
+
+# bug #8178872
+FormatData/pt_PT/latn.NumberElements/0=,
+FormatData/pt_PT/latn.NumberElements/1=\u00a0
+FormatData/pt_AO/latn.NumberElements/0=,
+FormatData/pt_AO/latn.NumberElements/1=\u00a0
+FormatData/pt_CH/latn.NumberElements/0=,
+FormatData/pt_CH/latn.NumberElements/1=\u00a0
+FormatData/pt_CV/latn.NumberElements/0=,
+FormatData/pt_CV/latn.NumberElements/1=\u00a0
+FormatData/pt_GQ/latn.NumberElements/0=,
+FormatData/pt_GQ/latn.NumberElements/1=\u00a0
+FormatData/pt_MO/latn.NumberElements/0=,
+FormatData/pt_MO/latn.NumberElements/1=\u00a0
+FormatData/pt_LU/latn.NumberElements/0=,
+FormatData/pt_LU/latn.NumberElements/1=\u00a0
+FormatData/pt_MZ/latn.NumberElements/0=,
+FormatData/pt_MZ/latn.NumberElements/1=\u00a0
+FormatData/pt_ST/latn.NumberElements/0=,
+FormatData/pt_ST/latn.NumberElements/1=\u00a0
+FormatData/pt_TL/latn.NumberElements/0=,
+FormatData/pt_TL/latn.NumberElements/1=\u00a0
+FormatData/kea/latn.NumberElements/0=,
+FormatData/kea/latn.NumberElements/1=\u00a0
+FormatData/kea_CV/latn.NumberElements/0=,
+FormatData/kea_CV/latn.NumberElements/1=\u00a0

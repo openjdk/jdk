@@ -24,6 +24,7 @@
 package jdk.test.lib.process;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -415,6 +416,25 @@ public final class OutputAnalyzer {
       System.err.println(msg);
   }
 
+  /**
+   * Print the stdout buffer to the given {@code PrintStream}.
+   *
+   * @return this OutputAnalyzer
+   */
+  public OutputAnalyzer outputTo(PrintStream out) {
+      out.println(getStdout());
+      return this;
+  }
+
+  /**
+   * Print the stderr buffer to the given {@code PrintStream}.
+   *
+   * @return this OutputAnalyzer
+   */
+  public OutputAnalyzer errorTo(PrintStream out) {
+      out.println(getStderr());
+      return this;
+  }
 
   /**
    * Get the contents of the output buffer (stdout and stderr)

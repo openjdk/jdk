@@ -27,24 +27,23 @@ package jdk.tools.jlink.internal.plugins;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
-import jdk.tools.jlink.plugin.Plugin.Category;
-import jdk.tools.jlink.plugin.Plugin.State;
 import jdk.tools.jlink.plugin.Plugin;
 
 /**
@@ -101,9 +100,9 @@ public final class ReleaseInfoPlugin implements Plugin {
                 //     --release-info add:build_type=fastdebug,source=openjdk,java_version=9
                 // and put whatever value that was passed in command line.
 
-                config.keySet().stream().
-                    filter(s -> !NAME.equals(s)).
-                    forEach(s -> release.put(s, config.get(s)));
+                config.keySet().stream()
+                      .filter(s -> !NAME.equals(s))
+                      .forEach(s -> release.put(s, config.get(s)));
             }
             break;
 
@@ -133,40 +132,37 @@ public final class ReleaseInfoPlugin implements Plugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
 
-        Optional<ResourcePoolModule> javaBase = in.moduleView().findModule("java.base");
-        javaBase.ifPresent(mod -> {
-            // fill release information available from transformed "java.base" module!
-            ModuleDescriptor desc = mod.descriptor();
-            desc.osName().ifPresent(s -> {
-                release.put("OS_NAME", quote(s));
-            });
-            desc.osVersion().ifPresent(s -> release.put("OS_VERSION", quote(s)));
-            desc.osArch().ifPresent(s -> release.put("OS_ARCH", quote(s)));
-            desc.version().ifPresent(s -> release.put("JAVA_VERSION",
-                    quote(parseVersion(s.toString()))));
-            desc.version().ifPresent(s -> release.put("JAVA_FULL_VERSION",
-                    quote(s.toString())));
-        });
+        ResourcePoolModule javaBase = in.moduleView().findModule("java.base")
+                                                     .orElse(null);
+        if (javaBase == null || javaBase.targetPlatform() == null) {
+            throw new PluginException("ModuleTarget attribute is missing for java.base module");
+        }
+
+        // fill release information available from transformed "java.base" module!
+        ModuleDescriptor desc = javaBase.descriptor();
+        desc.version().ifPresent(v -> release.put("JAVA_VERSION",
+                                                  quote(parseVersion(v))));
 
         // put topological sorted module names separated by space
         release.put("MODULES",  new ModuleSorter(in.moduleView())
-                .sorted().map(ResourcePoolModule::name)
-                .collect(Collectors.joining(" ", "\"", "\"")));
+               .sorted().map(ResourcePoolModule::name)
+               .collect(Collectors.joining(" ", "\"", "\"")));
 
         // create a TOP level ResourcePoolEntry for "release" file.
         out.add(ResourcePoolEntry.create("/java.base/release",
-            ResourcePoolEntry.Type.TOP, releaseFileContent()));
+                                         ResourcePoolEntry.Type.TOP,
+                                         releaseFileContent()));
         return out.build();
     }
 
     // Parse version string and return a string that includes only version part
     // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
-    private static String parseVersion(String str) {
-        return Runtime.Version.parse(str).
-            version().
-            stream().
-            map(Object::toString).
-            collect(Collectors.joining("."));
+    private static String parseVersion(ModuleDescriptor.Version v) {
+        return Runtime.Version.parse(v.toString())
+                      .version()
+                      .stream()
+                      .map(Object::toString)
+                      .collect(Collectors.joining("."));
     }
 
     private static String quote(String str) {
@@ -174,14 +170,12 @@ public final class ReleaseInfoPlugin implements Plugin {
     }
 
     private byte[] releaseFileContent() {
-        Properties props = new Properties();
-        props.putAll(release);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            props.store(baos, "");
-            return baos.toByteArray();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+        try (PrintWriter pw = new PrintWriter(baos)) {
+            release.entrySet().stream()
+                   .sorted(Map.Entry.comparingByKey())
+                   .forEach(e -> pw.format("%s=%s%n", e.getKey(), e.getValue()));
         }
+        return baos.toByteArray();
     }
 }

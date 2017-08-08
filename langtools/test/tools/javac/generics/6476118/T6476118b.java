@@ -1,6 +1,6 @@
 /**
  * @test  /nodynamiccopyright/
- * @bug 6476118 6533652
+ * @bug 6476118 6533652 7170058
  * @summary compiler bug causes runtime ClassCastException for generics overloading
  * @compile/fail/ref=T6476118b.out -XDrawDiagnostics T6476118b.java
  */

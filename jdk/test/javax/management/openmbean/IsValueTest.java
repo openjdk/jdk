@@ -26,7 +26,6 @@
  * @bug 5072004
  * @summary Test new rules for isValue
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import javax.management.openmbean.*;

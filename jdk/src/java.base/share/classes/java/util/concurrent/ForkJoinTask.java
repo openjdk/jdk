@@ -134,11 +134,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link #isCompletedNormally} is true if a task completed without
  * cancellation or encountering an exception; {@link #isCancelled} is
  * true if the task was cancelled (in which case {@link #getException}
- * returns a {@link java.util.concurrent.CancellationException}); and
+ * returns a {@link CancellationException}); and
  * {@link #isCompletedAbnormally} is true if a task was either
  * cancelled or encountered an exception, in which case {@link
  * #getException} will return either the encountered exception or
- * {@link java.util.concurrent.CancellationException}.
+ * {@link CancellationException}.
  *
  * <p>The ForkJoinTask class is not usually directly subclassed.
  * Instead, you subclass one of the abstract classes that support a
@@ -695,13 +695,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Returns the result of the computation when it {@link #isDone is
-     * done}.  This method differs from {@link #get()} in that
-     * abnormal completion results in {@code RuntimeException} or
-     * {@code Error}, not {@code ExecutionException}, and that
-     * interrupts of the calling thread do <em>not</em> cause the
-     * method to abruptly return by throwing {@code
-     * InterruptedException}.
+     * Returns the result of the computation when it
+     * {@linkplain #isDone is done}.
+     * This method differs from {@link #get()} in that abnormal
+     * completion results in {@code RuntimeException} or {@code Error},
+     * not {@code ExecutionException}, and that interrupts of the
+     * calling thread do <em>not</em> cause the method to abruptly
+     * return by throwing {@code InterruptedException}.
      *
      * @return the computed result
      */

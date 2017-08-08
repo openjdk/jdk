@@ -26,6 +26,8 @@
  * @bug 7124089 7131021 8042469 8066185 8074373
  * @summary Checks for Launcher special flags, such as MacOSX specific flags,
  *          and JVM NativeMemoryTracking flags.
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file TestSpecialArgs.java EnvironmentVariables.java
  * @run main TestSpecialArgs
  */
