@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,25 +53,21 @@ import java.util.GregorianCalendar;
  * <a href="http://www.w3.org/TR/xmlschema-2/#isoformats">W3C XML Schema 1.0 Part 2, Appendix D,
  * <i>ISO 8601 Date and Time Formats</i></a>.
  *
- * <a name="datetimefieldmapping"></a>
- * <table border="2" rules="all" cellpadding="2">
+ * <a id="datetimefieldmapping"></a>
+ * <table class="striped">
+ *   <caption>Date/Time Datatype Field Mapping Between XML Schema 1.0 and Java Representation</caption>
  *   <thead>
  *     <tr>
- *       <th align="center" colspan="3">
- *         Date/Time Datatype Field Mapping Between XML Schema 1.0 and Java Representation
- *       </th>
+ *       <th scope="col">XML Schema 1.0<br>
+ *           datatype<br>
+ *            field</th>
+ *       <th scope="col">Related<br>XMLGregorianCalendar<br>Accessor(s)</th>
+ *       <th scope="col">Value Range</th>
  *     </tr>
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <th>XML Schema 1.0<br>
- *           datatype<br>
- *            field</th>
- *       <th>Related<br>XMLGregorianCalendar<br>Accessor(s)</th>
- *       <th>Value Range</th>
- *     </tr>
- *     <tr>
- *       <td><a name="datetimefield-year">year</a></td>
+ *       <th scope="row"><a id="datetimefield-year">year</a></th>
  *       <td> {@link #getYear()} + {@link #getEon()} or<br>
  *            {@link #getEonAndYear}
  *       </td>
@@ -89,12 +85,12 @@ import java.util.GregorianCalendar;
  *            </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-month">month</a></td>
+ *       <th scope="row"><a id="datetimefield-month">month</a></th>
  *       <td> {@link #getMonth()} </td>
  *       <td> 1 to 12 or {@link DatatypeConstants#FIELD_UNDEFINED} </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-day">day</a></td>
+ *       <th scope="row"><a id="datetimefield-day">day</a></th>
  *       <td> {@link #getDay()} </td>
  *       <td> Independent of month, max range is 1 to 31 or {@link DatatypeConstants#FIELD_UNDEFINED}.<br>
  *            The normative value constraint stated relative to month
@@ -102,7 +98,7 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-hour">hour</a></td>
+ *       <th scope="row"><a id="datetimefield-hour">hour</a></th>
  *       <td>{@link #getHour()}</td>
  *       <td>
  *         0 to 23 or {@link DatatypeConstants#FIELD_UNDEFINED}.
@@ -114,12 +110,12 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-minute">minute</a></td>
+ *       <th scope="row"><a id="datetimefield-minute">minute</a></th>
  *       <td> {@link #getMinute()} </td>
  *       <td> 0 to 59 or {@link DatatypeConstants#FIELD_UNDEFINED} </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-second">second</a></td>
+ *       <th scope="row"><a id="datetimefield-second">second</a></th>
  *       <td>
  *         {@link #getSecond()} + {@link #getMillisecond()}/1000 or<br>
  *         {@link #getSecond()} + {@link #getFractionalSecond()}
@@ -135,7 +131,7 @@ import java.util.GregorianCalendar;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td><a name="datetimefield-timezone">timezone</a></td>
+ *       <th scope="row"><a id="datetimefield-timezone">timezone</a></th>
  *       <td> {@link #getTimezone()} </td>
  *       <td> Number of minutes or {@link DatatypeConstants#FIELD_UNDEFINED}.
  *         Value range from -14 hours (-14 * 60 minutes) to 14 hours (14 * 60 minutes).
@@ -748,27 +744,23 @@ public abstract class XMLGregorianCalendar
      * Return the name of the XML Schema date/time type that this instance
      * maps to. Type is computed based on fields that are set.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
+     *         <i>(timezone is optional for all date/time datatypes)</i></caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="7">
-     *         Required fields for XML Schema 1.0 Date/Time Datatypes.<br>
-     *         <i>(timezone is optional for all date/time datatypes)</i>
-     *       </th>
+     *       <th scope="col">Datatype</th>
+     *       <th scope="col">year</th>
+     *       <th scope="col">month</th>
+     *       <th scope="col">day</th>
+     *       <th scope="col">hour</th>
+     *       <th scope="col">minute</th>
+     *       <th scope="col">second</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>Datatype</td>
-     *       <td>year</td>
-     *       <td>month</td>
-     *       <td>day</td>
-     *       <td>hour</td>
-     *       <td>minute</td>
-     *       <td>second</td>
-     *     </tr>
-     *     <tr>
-     *       <td>{@link DatatypeConstants#DATETIME}</td>
+     *       <th scope="row">{@link DatatypeConstants#DATETIME}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td>X</td>
@@ -777,7 +769,7 @@ public abstract class XMLGregorianCalendar
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#DATE}</td>
+     *       <th scope="row">{@link DatatypeConstants#DATE}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td>X</td>
@@ -786,7 +778,7 @@ public abstract class XMLGregorianCalendar
      *       <td></td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#TIME}</td>
+     *       <th scope="row">{@link DatatypeConstants#TIME}</th>
      *       <td></td>
      *       <td></td>
      *       <td></td>
@@ -795,7 +787,7 @@ public abstract class XMLGregorianCalendar
      *       <td>X</td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#GYEARMONTH}</td>
+     *       <th scope="row">{@link DatatypeConstants#GYEARMONTH}</th>
      *       <td>X</td>
      *       <td>X</td>
      *       <td></td>
@@ -804,7 +796,7 @@ public abstract class XMLGregorianCalendar
      *       <td></td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#GMONTHDAY}</td>
+     *       <th scope="row">{@link DatatypeConstants#GMONTHDAY}</th>
      *       <td></td>
      *       <td>X</td>
      *       <td>X</td>
@@ -813,7 +805,7 @@ public abstract class XMLGregorianCalendar
      *       <td></td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#GYEAR}</td>
+     *       <th scope="row">{@link DatatypeConstants#GYEAR}</th>
      *       <td>X</td>
      *       <td></td>
      *       <td></td>
@@ -822,7 +814,7 @@ public abstract class XMLGregorianCalendar
      *       <td></td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#GMONTH}</td>
+     *       <th scope="row">{@link DatatypeConstants#GMONTH}</th>
      *       <td></td>
      *       <td>X</td>
      *       <td></td>
@@ -831,7 +823,7 @@ public abstract class XMLGregorianCalendar
      *       <td></td>
      *     </tr>
      *     <tr>
-     *       <td>{@link DatatypeConstants#GDAY}</td>
+     *       <th scope="row">{@link DatatypeConstants#GDAY}</th>
      *       <td></td>
      *       <td></td>
      *       <td>X</td>
@@ -911,54 +903,50 @@ public abstract class XMLGregorianCalendar
      * instance, see
      * {@link #toGregorianCalendar(TimeZone, Locale, XMLGregorianCalendar)}.
      *
-     * <table border="2" rules="all" cellpadding="2">
+     * <table class="striped">
+     *   <caption>Field by Field Conversion from this class to
+     *          {@code java.util.GregorianCalendar}</caption>
      *   <thead>
      *     <tr>
-     *       <th align="center" colspan="2">
-     *          Field by Field Conversion from this class to
-     *          {@code java.util.GregorianCalendar}
-     *       </th>
+     *        <th scope="col">{@code java.util.GregorianCalendar} field</th>
+     *        <th scope="col">{@code javax.xml.datatype.XMLGregorianCalendar} field</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *        <td>{@code java.util.GregorianCalendar} field</td>
-     *        <td>{@code javax.xml.datatype.XMLGregorianCalendar} field</td>
-     *     </tr>
-     *     <tr>
-     *       <td>{@code ERA}</td>
+     *       <th scope="row">{@code ERA}</th>
      *       <td>{@link #getEonAndYear()}{@code .signum() < 0 ? GregorianCalendar.BC : GregorianCalendar.AD}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code YEAR}</td>
+     *       <th scope="row">{@code YEAR}</th>
      *       <td>{@link #getEonAndYear()}{@code .abs().intValue()}<i>*</i></td>
      *     </tr>
      *     <tr>
-     *       <td>{@code MONTH}</td>
+     *       <th scope="row">{@code MONTH}</th>
      *       <td>{@link #getMonth()} - {@link DatatypeConstants#JANUARY} + {@link GregorianCalendar#JANUARY}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code DAY_OF_MONTH}</td>
+     *       <th scope="row">{@code DAY_OF_MONTH}</th>
      *       <td>{@link #getDay()}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code HOUR_OF_DAY}</td>
+     *       <th scope="row">{@code HOUR_OF_DAY}</th>
      *       <td>{@link #getHour()}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code MINUTE}</td>
+     *       <th scope="row">{@code MINUTE}</th>
      *       <td>{@link #getMinute()}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code SECOND}</td>
+     *       <th scope="row">{@code SECOND}</th>
      *       <td>{@link #getSecond()}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code MILLISECOND}</td>
+     *       <th scope="row">{@code MILLISECOND}</th>
      *       <td>get millisecond order from {@link #getFractionalSecond()}<i>*</i> </td>
      *     </tr>
      *     <tr>
-     *       <td>{@code GregorianCalendar.setTimeZone(TimeZone)}</td>
+     *       <th scope="row">{@code GregorianCalendar.setTimeZone(TimeZone)}</th>
      *       <td>{@link #getTimezone()} formatted into Custom timezone id</td>
      *     </tr>
      *   </tbody>

@@ -79,7 +79,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param path       Path to the file which is getting generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      */
-    protected AbstractIndexWriter(ConfigurationImpl configuration,
+    protected AbstractIndexWriter(HtmlConfiguration configuration,
                                   DocPath path,
                                   IndexBuilder indexbuilder) {
         super(configuration, path);
@@ -455,7 +455,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @throws DocFileIOException if there is a problem creating the search index file
      */
     protected void createSearchIndexFile(DocPath searchIndexFile, DocPath searchIndexZip,
-            DocPath searchIndexJS, List<SearchIndexItem> searchIndex, String varName) throws DocFileIOException {
+            DocPath searchIndexJS, Collection<SearchIndexItem> searchIndex, String varName) throws DocFileIOException {
         if (!searchIndex.isEmpty()) {
             StringBuilder searchVar = new StringBuilder("[");
             boolean first = true;

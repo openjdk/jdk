@@ -181,7 +181,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param prevModule   Previous module in the sorted array.
      * @param nextModule   Next module in the sorted array.
      */
-    public ModuleWriterImpl(ConfigurationImpl configuration,
+    public ModuleWriterImpl(HtmlConfiguration configuration,
             ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule) {
         super(configuration, DocPaths.moduleSummary(mdle));
         this.prevModule = prevModule;
@@ -1007,8 +1007,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ? getHyperLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);
         addNavGap(liNav);
-        liNav.addContent((display(uses) || (moduleMode == ModuleMode.API && display(usesTrees))
-                || display(provides) || (moduleMode == ModuleMode.API && display(providesTrees)))
+        liNav.addContent((displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
                 ? getHyperLink(SectionName.SERVICES, contents.navServices)
                 : contents.navServices);
         ulNav.addContent(liNav);

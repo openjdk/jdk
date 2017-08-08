@@ -48,7 +48,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -106,7 +105,7 @@ import java.util.function.Predicate;
  * elements.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author Doug Lea
@@ -1822,9 +1821,11 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * The set's spliterator additionally reports {@link Spliterator#CONCURRENT},
      * {@link Spliterator#NONNULL}, {@link Spliterator#SORTED} and
      * {@link Spliterator#ORDERED}, with an encounter order that is ascending
-     * key order.  The spliterator's comparator (see
-     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
-     * the map's comparator (see {@link #comparator()}) is {@code null}.
+     * key order.
+     *
+     * <p>The {@linkplain Spliterator#getComparator() spliterator's comparator}
+     * is {@code null} if the {@linkplain #comparator() map's comparator}
+     * is {@code null}.
      * Otherwise, the spliterator's comparator is the same as or imposes the
      * same total ordering as the map's comparator.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -471,7 +471,7 @@ public final class SAXImpl extends SAX2DTM2
             return 0;
         }
         int eType = getIdForNamespace(s);
-        return _nsIndex.get(new Integer(eType));
+        return _nsIndex.get(eType);
     }
 
 
@@ -672,7 +672,7 @@ public final class SAXImpl extends SAX2DTM2
 
         for (i=0; i<nsLength; i++) {
             int eType = getIdForNamespace(namespaces[i]);
-            Integer type = _nsIndex.get(new Integer(eType));
+            Integer type = _nsIndex.get(eType);
             if (type != null) {
                 result[type] = (short)i;
             }
@@ -692,7 +692,7 @@ public final class SAXImpl extends SAX2DTM2
 
         for (i = 0; i < length; i++) {
             int eType = getIdForNamespace(namespaces[i]);
-            Integer type = _nsIndex.get(new Integer(eType));
+            Integer type = _nsIndex.get(eType);
             result[i] = (type == null) ? -1 : type.shortValue();
         }
 
@@ -900,7 +900,7 @@ public final class SAXImpl extends SAX2DTM2
         this.startElement(uri, localName, qname, attributes);
 
         if (m_buildIdIndex) {
-            _node2Ids.put(node, new Integer(m_parents.peek()));
+            _node2Ids.put(node, m_parents.peek());
         }
     }
 
@@ -979,7 +979,7 @@ public final class SAXImpl extends SAX2DTM2
         throws SAXException
     {
         // Check if the URI already exists before pushing on stack
-        Integer eType = new Integer(getIdForNamespace(uri));
+        Integer eType = getIdForNamespace(uri);
         if (_nsIndex.get(eType) == null) {
             _nsIndex.put(eType, _uriCount++);
         }

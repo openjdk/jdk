@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,27 @@
 
 package javax.accessibility;
 
+import java.awt.Point;
+import java.awt.Rectangle;
 
-import java.util.*;
-import java.awt.*;
-import javax.swing.text.*;
-
+import javax.swing.text.AttributeSet;
 
 /**
- * <P>The AccessibleText interface should be implemented by all
- * classes that present textual information on the display.  This interface
- * provides the standard mechanism for an assistive technology to access
- * that text via its content, attributes, and spatial location.
- * Applications can determine if an object supports the AccessibleText
- * interface by first obtaining its AccessibleContext (see {@link Accessible})
- * and then calling the {@link AccessibleContext#getAccessibleText} method of
- * AccessibleContext.  If the return value is not null, the object supports this
- * interface.
+ * The {@code AccessibleText} interface should be implemented by all classes
+ * that present textual information on the display. This interface provides the
+ * standard mechanism for an assistive technology to access that text via its
+ * content, attributes, and spatial location. Applications can determine if an
+ * object supports the {@code AccessibleText} interface by first obtaining its
+ * {@code AccessibleContext} (see {@link Accessible}) and then calling the
+ * {@link AccessibleContext#getAccessibleText} method of
+ * {@code AccessibleContext}. If the return value is not {@code null}, the
+ * object supports this interface.
  *
+ * @author Peter Korn
  * @see Accessible
  * @see Accessible#getAccessibleContext
  * @see AccessibleContext
  * @see AccessibleContext#getAccessibleText
- *
- * @author      Peter Korn
  */
 public interface AccessibleText {
 
@@ -74,13 +72,13 @@ public interface AccessibleText {
     /**
      * Constant used to indicate that the part of the text that should be
      * retrieved is a sentence.
-     *
-     * A sentence is a string of words which expresses an assertion,
-     * a question, a command, a wish, an exclamation, or the performance
-     * of an action. In English locales, the string usually begins with
-     * a capital letter and concludes with appropriate end punctuation;
-     * such as a period, question or exclamation mark. Other locales may
-     * use different capitalization and/or punctuation.
+     * <p>
+     * A sentence is a string of words which expresses an assertion, a question,
+     * a command, a wish, an exclamation, or the performance of an action. In
+     * English locales, the string usually begins with a capital letter and
+     * concludes with appropriate end punctuation; such as a period, question or
+     * exclamation mark. Other locales may use different capitalization and/or
+     * punctuation.
      *
      * @see #getAtIndex
      * @see #getAfterIndex
@@ -89,29 +87,29 @@ public interface AccessibleText {
     public static final int SENTENCE = 3;
 
     /**
-     * Given a point in local coordinates, return the zero-based index
-     * of the character under that Point.  If the point is invalid,
-     * this method returns -1.
+     * Given a point in local coordinates, return the zero-based index of the
+     * character under that point. If the point is invalid, this method returns
+     * -1.
      *
-     * @param p the Point in local coordinates
-     * @return the zero-based index of the character under Point p; if
-     * Point is invalid return -1.
+     * @param  p the point in local coordinates
+     * @return the zero-based index of the character under {@code Point p}; if
+     *         point is invalid return -1.
      */
     public int getIndexAtPoint(Point p);
 
     /**
-     * Determines the bounding box of the character at the given
-     * index into the string.  The bounds are returned in local
-     * coordinates.  If the index is invalid an empty rectangle is returned.
+     * Determines the bounding box of the character at the given index into the
+     * string. The bounds are returned in local coordinates. If the index is
+     * invalid an empty rectangle is returned.
      *
-     * @param i the index into the String
-     * @return the screen coordinates of the character's bounding box,
-     * if index is invalid return an empty rectangle.
+     * @param  i the index into the string
+     * @return the screen coordinates of the character's bounding box, if index
+     *         is invalid return an empty rectangle.
      */
     public Rectangle getCharacterBounds(int i);
 
     /**
-     * Returns the number of characters (valid indicies)
+     * Returns the number of characters (valid indicies).
      *
      * @return the number of characters
      */
@@ -119,61 +117,62 @@ public interface AccessibleText {
 
     /**
      * Returns the zero-based offset of the caret.
+     * <p>
+     * Note: That to the right of the caret will have the same index value as
+     * the offset (the caret is between two characters).
      *
-     * Note: That to the right of the caret will have the same index
-     * value as the offset (the caret is between two characters).
-     * @return the zero-based offset of the caret.
+     * @return the zero-based offset of the caret
      */
     public int getCaretPosition();
 
     /**
-     * Returns the String at a given index.
+     * Returns the {@code String} at a given index.
      *
-     * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-     * @param index an index within the text
+     * @param  part the CHARACTER, WORD, or SENTENCE to retrieve
+     * @param  index an index within the text
      * @return the letter, word, or sentence
      */
     public String getAtIndex(int part, int index);
 
     /**
-     * Returns the String after a given index.
+     * Returns the {@code String} after a given index.
      *
-     * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-     * @param index an index within the text
+     * @param  part the CHARACTER, WORD, or SENTENCE to retrieve
+     * @param  index an index within the text
      * @return the letter, word, or sentence
      */
     public String getAfterIndex(int part, int index);
 
     /**
-     * Returns the String before a given index.
+     * Returns the {@code String} before a given index.
      *
-     * @param part the CHARACTER, WORD, or SENTENCE to retrieve
-     * @param index an index within the text
+     * @param  part the CHARACTER, WORD, or SENTENCE to retrieve
+     * @param  index an index within the text
      * @return the letter, word, or sentence
      */
     public String getBeforeIndex(int part, int index);
 
     /**
-     * Returns the AttributeSet for a given character at a given index
+     * Returns the {@code AttributeSet} for a given character at a given index.
      *
-     * @param i the zero-based index into the text
-     * @return the AttributeSet of the character
+     * @param  i the zero-based index into the text
+     * @return the {@code AttributeSet} of the character
      */
     public AttributeSet getCharacterAttribute(int i);
 
     /**
-     * Returns the start offset within the selected text.
-     * If there is no selection, but there is
-     * a caret, the start and end offsets will be the same.
+     * Returns the start offset within the selected text. If there is no
+     * selection, but there is a caret, the start and end offsets will be the
+     * same.
      *
      * @return the index into the text of the start of the selection
      */
     public int getSelectionStart();
 
     /**
-     * Returns the end offset within the selected text.
-     * If there is no selection, but there is
-     * a caret, the start and end offsets will be the same.
+     * Returns the end offset within the selected text. If there is no
+     * selection, but there is a caret, the start and end offsets will be the
+     * same.
      *
      * @return the index into the text of the end of the selection
      */
@@ -182,7 +181,7 @@ public interface AccessibleText {
     /**
      * Returns the portion of the text that is selected.
      *
-     * @return the String portion of the text that is selected
+     * @return the {@code String} portion of the text that is selected
      */
     public String getSelectedText();
 }

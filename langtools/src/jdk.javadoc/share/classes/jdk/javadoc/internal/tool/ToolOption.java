@@ -361,12 +361,17 @@ public enum ToolOption {
         }
     },
 
-    // This option exists only for the purpose of documenting itself.
-    // It's actually implemented ahead of the normal option decoding loop.
-    Xold("-Xold", EXTENDED) {
+    VERSION("--version", STANDARD) {
         @Override
-        public void process(Helper helper) {
-            throw new AssertionError("the -Xold flag should be handled earlier.");
+        public void process(Helper helper) throws OptionException {
+            throw new OptionException(OK, helper::version);
+        }
+    },
+
+    FULLVERSION("--full-version", HIDDEN) {
+        @Override
+        public void process(Helper helper) throws OptionException {
+            throw new OptionException(OK, helper::fullVersion);
         }
     };
 
@@ -464,6 +469,9 @@ public enum ToolOption {
 
         abstract void usage();
         abstract void Xusage();
+
+        abstract void version();
+        abstract void fullVersion();
 
         abstract String getLocalizedMessage(String msg, Object... args);
 

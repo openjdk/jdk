@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,26 @@
 
 package com.sun.tools.doclets.standard;
 
-import com.sun.javadoc.*;
-import com.sun.tools.doclets.formats.html.*;
+import com.sun.javadoc.ClassDoc;
+import com.sun.javadoc.DocErrorReporter;
+import com.sun.javadoc.PackageDoc;
+import com.sun.javadoc.RootDoc;
 
 /**
- * This doclet generates HTML-formatted documentation for the specified packages and types.
+ * This is not the doclet you are looking for.
  * @deprecated The doclet has been superseded by its replacement,
  * {@link jdk.javadoc.doclet.StandardDoclet}.
  */
 @Deprecated(forRemoval=true, since="9")
+@SuppressWarnings("deprecation")
 public class Standard {
 
-    public static int optionLength(String option) {
-        return HtmlDoclet.optionLength(option);
-    }
-
     public static boolean start(RootDoc root) {
-        return HtmlDoclet.start(root);
+        root.printNotice("Notice: " + "This is not the Standard Doclet");
+        return true;
     }
 
-    public static boolean validOptions(String[][] options,
-                                   DocErrorReporter reporter) {
-        return HtmlDoclet.validOptions(options, reporter);
+    public static int optionLength(String option) {
+        return 0;  // all options are unsupported
     }
-
-    public static LanguageVersion languageVersion() {
-        return HtmlDoclet.languageVersion();
-    }
-
 }

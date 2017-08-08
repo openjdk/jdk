@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,16 @@
  * questions.
  */
 
-import java.net.*;
+/**
+ * @test
+ * @bug 4401485
+ * @requires (os.family == "windows")
+ * @summary  Check that URL.openConnection() doesn't open connection to UNC
+ * @run main UNCTest file://jdk/LOCAL-JAVA/jdk1.4/win/README.txt
+ */
+
+import java.net.URL;
+import java.net.URLConnection;
 
 public class UNCTest {
     public static void main(String args[]) throws Exception {

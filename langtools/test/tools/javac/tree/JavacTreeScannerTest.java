@@ -41,7 +41,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build AbstractTreeScannerTest JavacTreeScannerTest
- * @run main/othervm JavacTreeScannerTest -q -r .
+ * @run main JavacTreeScannerTest -q -r .
  */
 
 import java.io.*;

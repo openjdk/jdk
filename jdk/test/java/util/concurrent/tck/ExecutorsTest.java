@@ -167,7 +167,8 @@ public class ExecutorsTest extends JSR166TestCase {
     }
 
     /**
-     * A new newFixedThreadPool with null ThreadFactory throws NPE
+     * A new newFixedThreadPool with null ThreadFactory throws
+     * NullPointerException
      */
     public void testNewFixedThreadPool3() {
         try {
@@ -177,7 +178,7 @@ public class ExecutorsTest extends JSR166TestCase {
     }
 
     /**
-     * A new newFixedThreadPool with 0 threads throws IAE
+     * A new newFixedThreadPool with 0 threads throws IllegalArgumentException
      */
     public void testNewFixedThreadPool4() {
         try {
@@ -333,16 +334,12 @@ public class ExecutorsTest extends JSR166TestCase {
             public void realRun() {
                 try {
                     Thread current = Thread.currentThread();
-                    assertTrue(!current.isDaemon());
+                    assertFalse(current.isDaemon());
                     assertTrue(current.getPriority() <= Thread.NORM_PRIORITY);
-                    ThreadGroup g = current.getThreadGroup();
                     SecurityManager s = System.getSecurityManager();
-                    if (s != null)
-                        assertTrue(g == s.getThreadGroup());
-                    else
-                        assertTrue(g == egroup);
-                    String name = current.getName();
-                    assertTrue(name.endsWith("thread-1"));
+                    assertSame(current.getThreadGroup(),
+                               (s == null) ? egroup : s.getThreadGroup());
+                    assertTrue(current.getName().endsWith("thread-1"));
                 } catch (SecurityException ok) {
                     // Also pass if not allowed to change setting
                 }
@@ -370,16 +367,12 @@ public class ExecutorsTest extends JSR166TestCase {
                 Runnable r = new CheckedRunnable() {
                     public void realRun() {
                         Thread current = Thread.currentThread();
-                        assertTrue(!current.isDaemon());
+                        assertFalse(current.isDaemon());
                         assertTrue(current.getPriority() <= Thread.NORM_PRIORITY);
-                        ThreadGroup g = current.getThreadGroup();
                         SecurityManager s = System.getSecurityManager();
-                        if (s != null)
-                            assertTrue(g == s.getThreadGroup());
-                        else
-                            assertTrue(g == egroup);
-                        String name = current.getName();
-                        assertTrue(name.endsWith("thread-1"));
+                        assertSame(current.getThreadGroup(),
+                                   (s == null) ? egroup : s.getThreadGroup());
+                        assertTrue(current.getName().endsWith("thread-1"));
                         assertSame(thisccl, current.getContextClassLoader());
                         assertEquals(thisacc, AccessController.getContext());
                         done.countDown();
