@@ -53,7 +53,7 @@
       len = name->utf8_length();                    \
     }                                               \
     HOTSPOT_CLASS_##type( /* type = unloaded, loaded */ \
-      data, len, (clss)->class_loader(), (shared)); \
+      data, len, (void*)(clss)->class_loader(), (shared)); \
   }
 
 #else //  ndef DTRACE_ENABLED
