@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1472,13 +1472,13 @@ void TemplateTable::convert() {
     case Bytecodes::_i2d:
       __ extsw(R17_tos, R17_tos);
     case Bytecodes::_l2d:
-      __ push_l_pop_d();
+      __ move_l_to_d();
       __ fcfid(F15_ftos, F15_ftos);
       break;
 
     case Bytecodes::_i2f:
       __ extsw(R17_tos, R17_tos);
-      __ push_l_pop_d();
+      __ move_l_to_d();
       if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
         // Comment: alternatively, load with sign extend could be done by lfiwax.
         __ fcfids(F15_ftos, F15_ftos);
@@ -1490,7 +1490,7 @@ void TemplateTable::convert() {
 
     case Bytecodes::_l2f:
       if (VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        __ push_l_pop_d();
+        __ move_l_to_d();
         __ fcfids(F15_ftos, F15_ftos);
       } else {
         // Avoid rounding problem when result should be 0x3f800001: need fixup code before fcfid+frsp.
@@ -1514,7 +1514,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CCR0, done);
       __ fctiwz(F15_ftos, F15_ftos);
-      __ push_d_pop_l();
+      __ move_d_to_l();
       break;
 
     case Bytecodes::_d2l:
@@ -1523,7 +1523,7 @@ void TemplateTable::convert() {
       __ li(R17_tos, 0); // 0 in case of NAN
       __ bso(CCR0, done);
       __ fctidz(F15_ftos, F15_ftos);
-      __ push_d_pop_l();
+      __ move_d_to_l();
       break;
 
     default: ShouldNotReachHere();
@@ -3660,11 +3660,9 @@ void TemplateTable::_new() {
     __ cmpdi(CCR0, Rtags, JVM_CONSTANT_Class);
     __ bne(CCR0, Lslow_case);
 
-    // Get instanceKlass (load from Rcpool + sizeof(ConstantPool) + Rindex*BytesPerWord).
+    // Get instanceKlass
     __ sldi(Roffset, Rindex, LogBytesPerWord);
-    __ addi(Rscratch, Rcpool, sizeof(ConstantPool));
-    __ isync(); // Order load of instance Klass wrt. tags.
-    __ ldx(RinstanceKlass, Roffset, Rscratch);
+    __ load_resolved_klass_at_offset(Rcpool, Roffset, RinstanceKlass);
 
     // Make sure klass is fully initialized and get instance_size.
     __ lbz(Rscratch, in_bytes(InstanceKlass::init_state_offset()), RinstanceKlass);
@@ -3722,7 +3720,7 @@ void TemplateTable::_new() {
       __ bge(CCR0, Lslow_case);
 
       // Increment waste limit to prevent getting stuck on this slow path.
-      __ addi(RtlabWasteLimitValue, RtlabWasteLimitValue, (int)ThreadLocalAllocBuffer::refill_waste_limit_increment());
+      __ add_const_optimized(RtlabWasteLimitValue, RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment());
       __ std(RtlabWasteLimitValue, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), R16_thread);
     }
     // else: No allocation in the shared eden. // fallthru: __ b(Lslow_case);
@@ -3875,9 +3873,7 @@ void TemplateTable::checkcast() {
   // Extract target class from constant pool.
   __ bind(Lquicked);
   __ sldi(Roffset, Roffset, LogBytesPerWord);
-  __ addi(Rcpool, Rcpool, sizeof(ConstantPool));
-  __ isync(); // Order load of specified Klass wrt. tags.
-  __ ldx(RspecifiedKlass, Rcpool, Roffset);
+  __ load_resolved_klass_at_offset(Rcpool, Roffset, RspecifiedKlass);
 
   // Do the checkcast.
   __ bind(Lresolved);
@@ -3939,9 +3935,7 @@ void TemplateTable::instanceof() {
   // Extract target class from constant pool.
   __ bind(Lquicked);
   __ sldi(Roffset, Roffset, LogBytesPerWord);
-  __ addi(Rcpool, Rcpool, sizeof(ConstantPool));
-  __ isync(); // Order load of specified Klass wrt. tags.
-  __ ldx(RspecifiedKlass, Rcpool, Roffset);
+  __ load_resolved_klass_at_offset(Rcpool, Roffset, RspecifiedKlass);
 
   // Do the checkcast.
   __ bind(Lresolved);

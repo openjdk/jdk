@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,6 @@ void LIRItem::load_nonconstant() {
     _result = r;
   } else {
     load_item();
-  }
-}
-
-
-inline void load_int_as_long(LIR_List *ll, LIRItem &li, LIR_Opr dst) {
-  LIR_Opr r = li.value()->operand();
-  if (r->is_register()) {
-    LIR_Opr dst_l = FrameMap::as_long_opr(dst->as_register());
-    ll->convert(Bytecodes::_i2l, li.result(), dst_l); // Convert.
-  } else {
-    // Constants or memory get loaded with sign extend on this platform.
-    ll->move(li.result(), dst);
   }
 }
 
@@ -883,81 +871,91 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s
 void LIRGenerator::do_Convert(Convert* x) {
-  switch (x->op()) {
+  if (!VM_Version::has_mtfprd()) {
+    switch (x->op()) {
 
-    // int -> float: force spill
-    case Bytecodes::_l2f: {
-      if (!VM_Version::has_fcfids()) { // fcfids is >= Power7 only
-        // fcfid+frsp needs fixup code to avoid rounding incompatibility.
-        address entry = CAST_FROM_FN_PTR(address, SharedRuntime::l2f);
-        LIR_Opr result = call_runtime(x->value(), entry, x->type(), NULL);
-        set_result(x, result);
+      // int -> float: force spill
+      case Bytecodes::_l2f: {
+        if (!VM_Version::has_fcfids()) { // fcfids is >= Power7 only
+          // fcfid+frsp needs fixup code to avoid rounding incompatibility.
+          address entry = CAST_FROM_FN_PTR(address, SharedRuntime::l2f);
+          LIR_Opr result = call_runtime(x->value(), entry, x->type(), NULL);
+          set_result(x, result);
+          return;
+        } // else fallthru
+      }
+      case Bytecodes::_l2d: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.load_item();
+        LIR_Opr tmp = force_to_spill(value.result(), T_DOUBLE);
+        __ convert(x->op(), tmp, reg);
+        return;
+      }
+      case Bytecodes::_i2f:
+      case Bytecodes::_i2d: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.load_item();
+        // Convert i2l first.
+        LIR_Opr tmp1 = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, value.result(), tmp1);
+        LIR_Opr tmp2 = force_to_spill(tmp1, T_DOUBLE);
+        __ convert(x->op(), tmp2, reg);
+        return;
+      }
+
+      // float -> int: result will be stored
+      case Bytecodes::_f2l:
+      case Bytecodes::_d2l: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.set_destroys_register(); // USE_KILL
+        value.load_item();
+        set_vreg_flag(reg, must_start_in_memory);
+        __ convert(x->op(), value.result(), reg);
+        return;
+      }
+      case Bytecodes::_f2i:
+      case Bytecodes::_d2i: {
+        LIRItem value(x->value(), this);
+        LIR_Opr reg = rlock_result(x);
+        value.set_destroys_register(); // USE_KILL
+        value.load_item();
+        // Convert l2i afterwards.
+        LIR_Opr tmp1 = new_register(T_LONG);
+        set_vreg_flag(tmp1, must_start_in_memory);
+        __ convert(x->op(), value.result(), tmp1);
+        __ convert(Bytecodes::_l2i, tmp1, reg);
+        return;
+      }
+
+      // Within same category: just register conversions.
+      case Bytecodes::_i2b:
+      case Bytecodes::_i2c:
+      case Bytecodes::_i2s:
+      case Bytecodes::_i2l:
+      case Bytecodes::_l2i:
+      case Bytecodes::_f2d:
+      case Bytecodes::_d2f:
         break;
-      } // else fallthru
-    }
-    case Bytecodes::_l2d: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      LIR_Opr tmp = force_to_spill(value.result(), T_DOUBLE);
-      __ convert(x->op(), tmp, reg);
-      break;
-    }
-    case Bytecodes::_i2f:
-    case Bytecodes::_i2d: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      // Convert i2l first.
-      LIR_Opr tmp1 = new_register(T_LONG);
-      __ convert(Bytecodes::_i2l, value.result(), tmp1);
-      LIR_Opr tmp2 = force_to_spill(tmp1, T_DOUBLE);
-      __ convert(x->op(), tmp2, reg);
-      break;
-    }
 
-    // float -> int: result will be stored
-    case Bytecodes::_f2l:
-    case Bytecodes::_d2l: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.set_destroys_register(); // USE_KILL
-      value.load_item();
-      set_vreg_flag(reg, must_start_in_memory);
-      __ convert(x->op(), value.result(), reg);
-      break;
+      default: ShouldNotReachHere();
     }
-    case Bytecodes::_f2i:
-    case Bytecodes::_d2i: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.set_destroys_register(); // USE_KILL
-      value.load_item();
-      // Convert l2i afterwards.
-      LIR_Opr tmp1 = new_register(T_LONG);
-      set_vreg_flag(tmp1, must_start_in_memory);
-      __ convert(x->op(), value.result(), tmp1);
-      __ convert(Bytecodes::_l2i, tmp1, reg);
-      break;
-    }
-
-    // Within same category: just register conversions.
-    case Bytecodes::_i2b:
-    case Bytecodes::_i2c:
-    case Bytecodes::_i2s:
-    case Bytecodes::_i2l:
-    case Bytecodes::_l2i:
-    case Bytecodes::_f2d:
-    case Bytecodes::_d2f: {
-      LIRItem value(x->value(), this);
-      LIR_Opr reg = rlock_result(x);
-      value.load_item();
-      __ convert(x->op(), value.result(), reg);
-      break;
-    }
-
-    default: ShouldNotReachHere();
   }
+
+  // Register conversion.
+  LIRItem value(x->value(), this);
+  LIR_Opr reg = rlock_result(x);
+  value.load_item();
+  switch (x->op()) {
+    case Bytecodes::_f2l:
+    case Bytecodes::_d2l:
+    case Bytecodes::_f2i:
+    case Bytecodes::_d2i: value.set_destroys_register(); break; // USE_KILL
+    default: break;
+  }
+  __ convert(x->op(), value.result(), reg);
 }
 
 
@@ -1426,12 +1424,81 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
               arg2 = cc->at(1),
               arg3 = cc->at(2);
 
-      // CCallingConventionRequiresIntsAsLongs
       crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32 stub doesn't care about high bits.
       __ leal(LIR_OprFact::address(a), arg2);
-      load_int_as_long(gen()->lir(), len, arg3);
+      len.load_item_force(arg3); // We skip int->long conversion here, , because CRC32 stub expects int.
 
       __ call_runtime_leaf(StubRoutines::updateBytesCRC32(), LIR_OprFact::illegalOpr, result_reg, cc->args());
+      __ move(result_reg, result);
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
+}
+
+void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
+  assert(UseCRC32CIntrinsics, "or should not be here");
+  LIR_Opr result = rlock_result(x);
+
+  switch (x->id()) {
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32C);
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem end(x->argument_at(3), this);
+      buf.load_item();
+      off.load_nonconstant();
+      end.load_nonconstant();
+
+      // len = end - off
+      LIR_Opr len  = end.result();
+      LIR_Opr tmpA = new_register(T_INT);
+      LIR_Opr tmpB = new_register(T_INT);
+      __ move(end.result(), tmpA);
+      __ move(off.result(), tmpB);
+      __ sub(tmpA, tmpB, tmpA);
+      len = tmpA;
+
+      LIR_Opr index = off.result();
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+      LIR_Address* a = NULL;
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+        __ add(index, LIR_OprFact::intptrConst(offset), index);
+        a = new LIR_Address(base_op, index, T_BYTE);
+      } else {
+        a = new LIR_Address(base_op, offset, T_BYTE);
+      }
+
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr arg1 = cc->at(0),
+              arg2 = cc->at(1),
+              arg3 = cc->at(2);
+
+      crc.load_item_force(arg1); // We skip int->long conversion here, because CRC32C stub doesn't care about high bits.
+      __ leal(LIR_OprFact::address(a), arg2);
+      __ move(len, cc->at(2));   // We skip int->long conversion here, because CRC32C stub expects int.
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), LIR_OprFact::illegalOpr, result_reg, cc->args());
       __ move(result_reg, result);
       break;
     }
@@ -1466,8 +1533,4 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
-}
-
-void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  Unimplemented();
 }

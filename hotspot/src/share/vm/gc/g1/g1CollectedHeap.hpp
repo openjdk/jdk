@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@
 class HeapRegion;
 class HRRSCleanupTask;
 class GenerationSpec;
-class OopsInHeapRegionClosure;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1KlassScanClosure;
@@ -89,6 +88,8 @@ class G1Allocator;
 class G1ArchiveAllocator;
 class G1HeapVerifier;
 class G1HeapSizingPolicy;
+class G1HeapSummary;
+class G1EvacSummary;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -107,8 +108,6 @@ public:
   G1STWIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
   bool do_object_b(oop p);
 };
-
-class RefineCardTableEntryClosure;
 
 class G1RegionMappingChangedListener : public G1MappingChangedListener {
  private:
@@ -159,6 +158,8 @@ private:
   HeapRegionSet _humongous_set;
 
   void eagerly_reclaim_humongous_regions();
+  // Start a new incremental collection set for the next pause.
+  void start_new_collection_set();
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
@@ -778,9 +779,6 @@ protected:
   // concurrently after the collection.
   DirtyCardQueueSet _dirty_card_queue_set;
 
-  // The closure used to refine a single card.
-  RefineCardTableEntryClosure* _refine_cte_cl;
-
   // After a collection pause, convert the regions in the collection set into free
   // regions.
   void free_collection_set(G1CollectionSet* collection_set, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
@@ -937,8 +935,6 @@ protected:
 
 public:
 
-  void set_refine_cte_cl_concurrency(bool concurrent);
-
   RefToScanQueue *task_queue(uint i) const;
 
   uint num_task_queues() const;
@@ -951,6 +947,9 @@ public:
   // May not return if something goes wrong.
   G1CollectedHeap(G1CollectorPolicy* policy);
 
+private:
+  jint initialize_concurrent_refinement();
+public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
@@ -1129,11 +1128,10 @@ public:
 #endif
 
   // Return "TRUE" iff the given object address is within the collection
-  // set. Slow implementation.
-  bool obj_in_cs(oop obj);
-
+  // set. Assumes that the reference points into the heap.
   inline bool is_in_cset(const HeapRegion *hr);
   inline bool is_in_cset(oop obj);
+  inline bool is_in_cset(HeapWord* addr);
 
   inline bool is_in_cset_or_humongous(const oop obj);
 
@@ -1192,17 +1190,14 @@ public:
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
   // Iterate over the heap regions in parallel. Assumes that this will be called
-  // in parallel by ParallelGCThreads worker threads with distinct worker ids
-  // in the range [0..max(ParallelGCThreads-1, 1)]. Applies "blk->doHeapRegion"
+  // in parallel by a number of worker threads with distinct worker ids
+  // in the range passed to the HeapRegionClaimer. Applies "blk->doHeapRegion"
   // to each of the regions, by attempting to claim the region using the
   // HeapRegionClaimer and, if successful, applying the closure to the claimed
-  // region. The concurrent argument should be set to true if iteration is
-  // performed concurrently, during which no assumptions are made for consistent
-  // attributes of the heap regions (as they might be modified while iterating).
+  // region.
   void heap_region_par_iterate(HeapRegionClosure* cl,
                                uint worker_id,
-                               HeapRegionClaimer* hrclaimer,
-                               bool concurrent = false) const;
+                               HeapRegionClaimer* hrclaimer) const;
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
@@ -1348,7 +1343,6 @@ public:
   // bitmap off to the side.
   void doConcurrentMark();
 
-  bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
   // Determine if an object is dead, given the object and also
@@ -1357,8 +1351,7 @@ public:
   // is not marked, and c) it is not in an archive region.
   bool is_obj_dead(const oop obj, const HeapRegion* hr) const {
     return
-      !hr->obj_allocated_since_prev_marking(obj) &&
-      !isMarkedPrev(obj) &&
+      hr->is_obj_dead(obj, _cm->prevMarkBitMap()) &&
       !hr->is_archive();
   }
 
@@ -1403,12 +1396,16 @@ public:
   // after a full GC.
   void rebuild_strong_code_roots();
 
-  // Delete entries for dead interned string and clean up unreferenced symbols
-  // in symbol table, possibly in parallel.
-  void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
+  // Partial cleaning used when class unloading is disabled.
+  // Let the caller choose what structures to clean out:
+  // - StringTable
+  // - SymbolTable
+  // - StringDeduplication structures
+  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_symbols, bool unlink_string_dedup);
 
-  // Parallel phase of unloading/cleaning after G1 concurrent mark.
-  void parallel_cleaning(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool class_unloading_occurred);
+  // Complete cleaning used when class unloading is enabled.
+  // Cleans out all structures handled by partial_cleaning and also the CodeCache.
+  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
   void redirty_logged_cards();
@@ -1433,6 +1430,11 @@ public:
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo);
+
+  // WhiteBox testing support.
+  virtual bool supports_concurrent_phase_control() const;
+  virtual const char* const* concurrent_phases() const;
+  virtual bool request_concurrent_phase(const char* phase);
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

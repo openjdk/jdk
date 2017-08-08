@@ -22,9 +22,11 @@
  */
 package org.graalvm.compiler.core;
 
+import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
+import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
 
 /**
  * Options related to {@link GraalCompiler}.
@@ -32,22 +34,16 @@ import org.graalvm.compiler.options.OptionValue;
 public class GraalCompilerOptions {
 
     // @formatter:off
-    @Option(help = "Repeatedly run the LIR code generation pass to improve statistical profiling results.", type = OptionType.Debug)
-    public static final OptionValue<Integer> EmitLIRRepeatCount = new OptionValue<>(0);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<String> PrintFilter = new OptionValue<>(null);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> PrintCompilation = new OptionValue<>(false);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> PrintAfterCompilation = new OptionValue<>(false);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> PrintBailout = new OptionValue<>(false);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> ExitVMOnBailout = new OptionValue<>(false);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> ExitVMOnException = new OptionValue<>(false);
-    @Option(help = "", type = OptionType.Debug)
-    public static final OptionValue<Boolean> PrintStackTraceOnException = new OptionValue<>(false);
+    @Option(help = "Print an informational line to the console for each completed compilation.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> PrintCompilation = new OptionKey<>(false);
+    @Option(help = "Pattern (see MethodFilter for format) for method that will trigger an exception when compiled. " +
+                   "This option exists to test handling compilation crashes gracefully.", type = OptionType.Debug)
+    public static final OptionKey<String> CrashAt = new OptionKey<>(null);
+    @Option(help = "Specifies the action to take when compilation fails with a non-bailout exception.", type = OptionType.User)
+    public static final EnumOptionKey<ExceptionAction> CompilationFailureAction = new EnumOptionKey<>(ExceptionAction.Diagnose, ExceptionAction.HELP);
+    @Option(help = "Specifies the action to take when compilation fails with a bailout exception.", type = OptionType.User)
+    public static final EnumOptionKey<ExceptionAction> CompilationBailoutAction = new EnumOptionKey<>(ExceptionAction.Silent, ExceptionAction.HELP);
+    @Option(help = "Alias for CompilationFailureAction=ExitVM.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> ExitVMOnException = new OptionKey<>(false);
     // @formatter:on
-
 }

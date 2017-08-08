@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "gc/cms/allocationStats.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/binaryTreeDictionary.hpp"
-#include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/resourceArea.hpp"
@@ -43,9 +43,6 @@
 // A binary tree based search structure for free blocks.
 // This is currently used in the Concurrent Mark&Sweep implementation.
 ////////////////////////////////////////////////////////////////////////////////
-
-template <class Chunk_t, class FreeList_t>
-size_t TreeChunk<Chunk_t, FreeList_t>::_min_tree_chunk_size = sizeof(TreeChunk<Chunk_t,  FreeList_t>)/HeapWordSize;
 
 template <class Chunk_t, class FreeList_t>
 TreeChunk<Chunk_t, FreeList_t>* TreeChunk<Chunk_t, FreeList_t>::as_TreeChunk(Chunk_t* fc) {
@@ -426,9 +423,7 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::reset() {
 // Get a free block of size at least size from tree, or NULL.
 template <class Chunk_t, class FreeList_t>
 TreeChunk<Chunk_t, FreeList_t>*
-BinaryTreeDictionary<Chunk_t, FreeList_t>::get_chunk_from_tree(
-                              size_t size,
-                              enum FreeBlockDictionary<Chunk_t>::Dither dither)
+BinaryTreeDictionary<Chunk_t, FreeList_t>::get_chunk_from_tree(size_t size)
 {
   TreeList<Chunk_t, FreeList_t> *curTL, *prevTL;
   TreeChunk<Chunk_t, FreeList_t>* retTC = NULL;
@@ -452,8 +447,6 @@ BinaryTreeDictionary<Chunk_t, FreeList_t>::get_chunk_from_tree(
     }
   }
   if (curTL == NULL) { // couldn't find exact match
-
-    if (dither == FreeBlockDictionary<Chunk_t>::exactly) return NULL;
 
     // try and find the next larger size by walking back up the search path
     for (curTL = prevTL; curTL != NULL;) {
@@ -772,7 +765,7 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::insert_chunk_in_tree(Chunk_t* fc
 
 template <class Chunk_t, class FreeList_t>
 size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::max_chunk_size() const {
-  FreeBlockDictionary<Chunk_t>::verify_par_locked();
+  verify_par_locked();
   TreeList<Chunk_t, FreeList_t>* tc = root();
   if (tc == NULL) return 0;
   for (; tc->right() != NULL; tc = tc->right());
@@ -1112,6 +1105,27 @@ size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_count() {
   ctc.do_tree(root());
   return ctc.count;
 }
+
+template <class Chunk_t, class FreeList_t>
+Mutex* BinaryTreeDictionary<Chunk_t, FreeList_t>::par_lock() const {
+  return _lock;
+}
+
+template <class Chunk_t, class FreeList_t>
+void BinaryTreeDictionary<Chunk_t, FreeList_t>::set_par_lock(Mutex* lock) {
+  _lock = lock;
+}
+
+template <class Chunk_t, class FreeList_t>
+void BinaryTreeDictionary<Chunk_t, FreeList_t>::verify_par_locked() const {
+#ifdef ASSERT
+  Thread* my_thread = Thread::current();
+  if (my_thread->is_GC_task_thread()) {
+    assert(par_lock() != NULL, "Should be using locking?");
+    assert_lock_strong(par_lock());
+  }
+#endif // ASSERT
+}
 #endif // PRODUCT
 
 // Calculate surpluses for the lists in the tree.
@@ -1202,7 +1216,7 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::end_sweep_dict_census(double spl
 // Print summary statistics
 template <class Chunk_t, class FreeList_t>
 void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics(outputStream* st) const {
-  FreeBlockDictionary<Chunk_t>::verify_par_locked();
+  verify_par_locked();
   st->print_cr("Statistics for BinaryTreeDictionary:");
   st->print_cr("------------------------------------");
   size_t total_size = total_chunk_size(debug_only(NULL));

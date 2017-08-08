@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
  * @test CdsDifferentCompactStrings
  * @summary CDS (class data sharing) requires the same -XX:[+-]CompactStrings
  *          setting between archive creation time and load time.
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class CdsDifferentCompactStrings {
@@ -45,32 +46,14 @@ public class CdsDifferentCompactStrings {
         String createCompactStringsArgument = "-XX:" + create + "CompactStrings";
         String loadCompactStringsArgument   = "-XX:" + load   + "CompactStrings";
 
-        String filename = "./CdsDifferentCompactStrings" + create + ".jsa";
+        OutputAnalyzer out = CDSTestUtils.createArchive(createCompactStringsArgument);
+        CDSTestUtils.checkDump(out);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:dump",
-            createCompactStringsArgument);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Loading classes to share");
-        output.shouldHaveExitValue(0);
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:on",
-            loadCompactStringsArgument,
-            "-version");
-
-        output = new OutputAnalyzer(pb.start());
-        try {
-            output.shouldContain("The shared archive file's CompactStrings " +
-                "setting .* does not equal the current CompactStrings setting");
-        } catch (RuntimeException e) {
-            output.shouldContain("Unable to use shared archive");
+        out = CDSTestUtils.runWithArchive(loadCompactStringsArgument);
+        if (!CDSTestUtils.isUnableToMap(out)) {
+            out.shouldMatch("The shared archive file's CompactStrings " +
+                "setting .* does not equal the current CompactStrings setting")
+                .shouldHaveExitValue(1);
         }
-        output.shouldHaveExitValue(1);
     }
 }

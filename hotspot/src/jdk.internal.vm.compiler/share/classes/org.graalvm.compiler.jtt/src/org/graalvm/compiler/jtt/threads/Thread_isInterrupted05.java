@@ -22,15 +22,20 @@
  */
 package org.graalvm.compiler.jtt.threads;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.DisableOnDebug;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
 
 /*
  */
 
 // Interrupted during wait, with interrupter joining
 public class Thread_isInterrupted05 extends JTTTest {
+
+    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
 
     public static boolean test() throws InterruptedException {
         final WaitInterruptee waitInterruptee = new WaitInterruptee();
@@ -67,8 +72,9 @@ public class Thread_isInterrupted05 extends JTTTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run0() throws Throwable {
+        initializeForTimeout();
         runTest("test");
     }
 

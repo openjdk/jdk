@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvm.h"
 #include "prims/methodHandles.hpp"
 
 #ifdef PRODUCT
@@ -73,7 +74,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  const char* error_message) {
 
   InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
-  KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
+  Klass* klass = SystemDictionary::well_known_klass(klass_id);
 
   assert(temp_reg != Z_R0 && // Is used as base register!
          temp_reg != noreg && temp2_reg != noreg, "need valid registers!");
@@ -200,10 +201,13 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                      Address(method_temp,
                              NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())));
   __ verify_oop(method_temp);
-  // The following assumes that a method is normally compressed in the vmtarget field.
+  __ load_heap_oop(method_temp,
+          Address(method_temp,
+                  NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())));
+  __ verify_oop(method_temp);
   __ z_lg(method_temp,
           Address(method_temp,
-                  NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes())));
+                  NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())));
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // Make sure recv is already on stack.
@@ -371,7 +375,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
   Address  member_clazz(   member_reg, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()));
   Address  member_vmindex( member_reg, NONZERO(java_lang_invoke_MemberName::vmindex_offset_in_bytes()));
-  Address  member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()));
+  Address  member_vmtarget(member_reg, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()));
+  Address  vmtarget_method(Z_method, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes()));
   Register temp1_recv_klass = temp1;
 
   if (iid != vmIntrinsics::_linkToStatic) {
@@ -424,7 +429,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
-      __ z_lg(Z_method, member_vmtarget);
+      __ load_heap_oop(Z_method, member_vmtarget);
+      __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
 
@@ -432,7 +438,8 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
-      __ z_lg(Z_method, member_vmtarget);
+      __ load_heap_oop(Z_method, member_vmtarget);
+      __ z_lg(Z_method, vmtarget_method);
       method_is_live = true;
       break;
 
@@ -602,14 +609,14 @@ void trace_method_handle_stub(const char* adaptername,
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles) { return; }
 
+  // If arg registers are contiguous, we can use STMG/LMG.
+  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == RegisterImpl::number_of_arg_registers, "Oops");
+
   BLOCK_COMMENT("trace_method_handle {");
 
   // Save argument registers (they are used in raise exception stub).
-  __ z_stg(Z_ARG1, Address(Z_SP, 16));
-  __ z_stg(Z_ARG2, Address(Z_SP, 24));
-  __ z_stg(Z_ARG3, Address(Z_SP, 32));
-  __ z_stg(Z_ARG4, Address(Z_SP, 40));
-  __ z_stg(Z_ARG5, Address(Z_SP, 48));
+  // Argument registers have contiguous register numbers -> we can use stmg/lmg.
+  __ z_stmg(Z_ARG1, Z_ARG5, 16, Z_SP);
 
   // Setup arguments.
   __ z_lgr(Z_ARG2, Z_ARG4); // mh, see generate_method_handle_interpreter_entry()
@@ -622,11 +629,9 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
   __ pop_frame();
   __ restore_return_pc();   // restores to Z_R14
-  __ z_lg(Z_ARG1, Address(Z_SP, 16));
-  __ z_lg(Z_ARG2, Address(Z_SP, 24));
-  __ z_lg(Z_ARG3, Address(Z_SP, 32));
-  __ z_lg(Z_ARG4, Address(Z_SP, 40));
-  __ z_lg(Z_ARG5, Address(Z_SP, 45));
+
+  // Restore argument registers
+  __ z_lmg(Z_ARG1, Z_ARG5, 16, Z_SP);
   __ zap_from_to(Z_SP, Z_SP, Z_R0, Z_R1, 50, -1);
   __ zap_from_to(Z_SP, Z_SP, Z_R0, Z_R1, -1, 5);
 

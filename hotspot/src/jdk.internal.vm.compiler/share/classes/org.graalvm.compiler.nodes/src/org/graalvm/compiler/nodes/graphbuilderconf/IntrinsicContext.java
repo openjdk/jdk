@@ -22,18 +22,21 @@
  */
 package org.graalvm.compiler.nodes.graphbuilderconf;
 
-import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
-import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 import static jdk.vm.ci.code.BytecodeFrame.AFTER_BCI;
+import static jdk.vm.ci.code.BytecodeFrame.AFTER_EXCEPTION_BCI;
 import static jdk.vm.ci.code.BytecodeFrame.BEFORE_BCI;
 import static jdk.vm.ci.code.BytecodeFrame.INVALID_FRAMESTATE_BCI;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
+import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.ROOT_COMPILATION;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.java.ExceptionObjectNode;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -155,28 +158,40 @@ public class IntrinsicContext {
         void addSideEffect(StateSplit sideEffect);
     }
 
-    public FrameState createFrameState(StructuredGraph graph, SideEffectsState sideEffects, StateSplit forStateSplit) {
+    public FrameState createFrameState(StructuredGraph graph, SideEffectsState sideEffects, StateSplit forStateSplit, NodeSourcePosition sourcePosition) {
         assert forStateSplit != graph.start();
         if (forStateSplit.hasSideEffect()) {
             if (sideEffects.isAfterSideEffect()) {
                 // Only the last side effect on any execution path in a replacement
                 // can inherit the stateAfter of the replaced node
                 FrameState invalid = graph.add(new FrameState(INVALID_FRAMESTATE_BCI));
+                invalid.setNodeSourcePosition(sourcePosition);
                 for (StateSplit lastSideEffect : sideEffects.sideEffects()) {
                     lastSideEffect.setStateAfter(invalid);
                 }
             }
             sideEffects.addSideEffect(forStateSplit);
-            return graph.add(new FrameState(AFTER_BCI));
+            FrameState frameState;
+            if (forStateSplit instanceof ExceptionObjectNode) {
+                frameState = graph.add(new FrameState(AFTER_EXCEPTION_BCI, (ExceptionObjectNode) forStateSplit));
+            } else {
+                frameState = graph.add(new FrameState(AFTER_BCI));
+            }
+            frameState.setNodeSourcePosition(sourcePosition);
+            return frameState;
         } else {
             if (forStateSplit instanceof AbstractMergeNode) {
                 // Merge nodes always need a frame state
                 if (sideEffects.isAfterSideEffect()) {
                     // A merge after one or more side effects
-                    return graph.add(new FrameState(AFTER_BCI));
+                    FrameState frameState = graph.add(new FrameState(AFTER_BCI));
+                    frameState.setNodeSourcePosition(sourcePosition);
+                    return frameState;
                 } else {
                     // A merge before any side effects
-                    return graph.add(new FrameState(BEFORE_BCI));
+                    FrameState frameState = graph.add(new FrameState(BEFORE_BCI));
+                    frameState.setNodeSourcePosition(sourcePosition);
+                    return frameState;
                 }
             } else {
                 // Other non-side-effects do not need a state

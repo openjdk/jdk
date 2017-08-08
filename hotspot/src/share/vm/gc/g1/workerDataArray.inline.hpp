@@ -32,11 +32,13 @@
 template <typename T>
 WorkerDataArray<T>::WorkerDataArray(uint length, const char* title) :
  _title(title),
- _length(0),
- _thread_work_items(NULL) {
+ _length(0) {
   assert(length > 0, "Must have some workers to store data for");
   _length = length;
   _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
+  for (uint i = 0; i < MaxThreadWorkItems; i++) {
+    _thread_work_items[i] = NULL;
+  }
   reset();
 }
 
@@ -59,14 +61,23 @@ WorkerDataArray<T>::~WorkerDataArray() {
 }
 
 template <typename T>
-void WorkerDataArray<T>::link_thread_work_items(WorkerDataArray<size_t>* thread_work_items) {
-  _thread_work_items = thread_work_items;
+void WorkerDataArray<T>::link_thread_work_items(WorkerDataArray<size_t>* thread_work_items, uint index) {
+  assert(index < MaxThreadWorkItems, "Tried to access thread work item %u (max %u)", index, MaxThreadWorkItems);
+  _thread_work_items[index] = thread_work_items;
 }
 
 template <typename T>
-void WorkerDataArray<T>::set_thread_work_item(uint worker_i, size_t value) {
-  assert(_thread_work_items != NULL, "No sub count");
-  _thread_work_items->set(worker_i, value);
+void WorkerDataArray<T>::set_thread_work_item(uint worker_i, size_t value, uint index) {
+  assert(index < MaxThreadWorkItems, "Tried to access thread work item %u (max %u)", index, MaxThreadWorkItems);
+  assert(_thread_work_items[index] != NULL, "No sub count");
+  _thread_work_items[index]->set(worker_i, value);
+}
+
+template <typename T>
+void WorkerDataArray<T>::add_thread_work_item(uint worker_i, size_t value, uint index) {
+  assert(index < MaxThreadWorkItems, "Tried to access thread work item %u (max %u)", index, MaxThreadWorkItems);
+  assert(_thread_work_items[index] != NULL, "No sub count");
+  _thread_work_items[index]->add(worker_i, value);
 }
 
 template <typename T>
@@ -148,8 +159,10 @@ void WorkerDataArray<T>::print_details_on(outputStream* out) const {
 template <typename T>
 void WorkerDataArray<T>::reset() {
   set_all(uninitialized());
-  if (_thread_work_items != NULL) {
-    _thread_work_items->reset();
+  for (uint i = 0; i < MaxThreadWorkItems; i++) {
+    if (_thread_work_items[i] != NULL) {
+      _thread_work_items[i]->reset();
+    }
   }
 }
 

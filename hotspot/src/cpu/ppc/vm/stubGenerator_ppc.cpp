@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 
 #define __ _masm->
 
@@ -626,7 +627,7 @@ class StubGenerator: public StubCodeGenerator {
           int spill_slots = 3;
           if (preserve1 != noreg) { spill_slots++; }
           if (preserve2 != noreg) { spill_slots++; }
-          const int frame_size = align_size_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
           Label filtered;
 
           // Is marking active?
@@ -687,7 +688,7 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           int spill_slots = (preserve != noreg) ? 1 : 0;
-          const int frame_size = align_size_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
           __ save_LR_CR(R0);
           __ push_frame(frame_size, R0);
@@ -3276,6 +3277,36 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+  // Compute CRC32/CRC32C function.
+  void generate_CRC_updateBytes(const char* name, Register table, bool invertCRC) {
+
+      // arguments to kernel_crc32:
+      const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
+      const Register data    = R4_ARG2;  // source byte array
+      const Register dataLen = R5_ARG3;  // #bytes to process
+
+      const Register t0      = R2;
+      const Register t1      = R7;
+      const Register t2      = R8;
+      const Register t3      = R9;
+      const Register tc0     = R10;
+      const Register tc1     = R11;
+      const Register tc2     = R12;
+
+      BLOCK_COMMENT("Stub body {");
+      assert_different_registers(crc, data, dataLen, table);
+
+      __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, table, invertCRC);
+
+      BLOCK_COMMENT("return");
+      __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
+      __ blr();
+
+      BLOCK_COMMENT("} Stub body");
+  }
+
+
   /**
    * Arguments:
    *
@@ -3296,14 +3327,14 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();  // Remember stub start address (is rtn value).
 
+    const Register table   = R6;       // crc table address
+
+#ifdef VM_LITTLE_ENDIAN
     // arguments to kernel_crc32:
     const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
     const Register data    = R4_ARG2;  // source byte array
     const Register dataLen = R5_ARG3;  // #bytes to process
 
-    const Register table   = R6;       // crc table address
-
-#ifdef VM_LITTLE_ENDIAN
     if (VM_Version::has_vpmsumb()) {
       const Register constants    = R2;  // constants address
       const Register bconstants   = R8;  // barret table address
@@ -3321,7 +3352,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::ppc64::generate_load_crc_constants_addr(_masm, constants);
       StubRoutines::ppc64::generate_load_crc_barret_constants_addr(_masm, bconstants);
 
-      __ kernel_crc32_1word_vpmsumd(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4);
+      __ kernel_crc32_1word_vpmsumd(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, true);
 
       BLOCK_COMMENT("return");
       __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
@@ -3331,30 +3362,78 @@ class StubGenerator: public StubCodeGenerator {
     } else
 #endif
     {
-      const Register t0      = R2;
-      const Register t1      = R7;
-      const Register t2      = R8;
-      const Register t3      = R9;
-      const Register tc0     = R10;
-      const Register tc1     = R11;
-      const Register tc2     = R12;
+      StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
+      generate_CRC_updateBytes(name, table, true);
+    }
+
+    return start;
+  }
+
+
+  /**
+   * Arguments:
+   *
+   * Inputs:
+   *   R3_ARG1    - int   crc
+   *   R4_ARG2    - byte* buf
+   *   R5_ARG3    - int   length (of buffer)
+   *
+   * scratch:
+   *   R2, R6-R12
+   *
+   * Ouput:
+   *   R3_RET     - int   crc result
+   */
+  // Compute CRC32C function.
+  address generate_CRC32C_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ function_entry();  // Remember stub start address (is rtn value).
+
+    const Register table   = R6;       // crc table address
+
+#if 0   // no vector support yet for CRC32C
+#ifdef VM_LITTLE_ENDIAN
+    // arguments to kernel_crc32:
+    const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
+    const Register data    = R4_ARG2;  // source byte array
+    const Register dataLen = R5_ARG3;  // #bytes to process
+
+    if (VM_Version::has_vpmsumb()) {
+      const Register constants    = R2;  // constants address
+      const Register bconstants   = R8;  // barret table address
+
+      const Register t0      = R9;
+      const Register t1      = R10;
+      const Register t2      = R11;
+      const Register t3      = R12;
+      const Register t4      = R7;
 
       BLOCK_COMMENT("Stub body {");
       assert_different_registers(crc, data, dataLen, table);
 
-      StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
+      StubRoutines::ppc64::generate_load_crc32c_table_addr(_masm, table);
+      StubRoutines::ppc64::generate_load_crc32c_constants_addr(_masm, constants);
+      StubRoutines::ppc64::generate_load_crc32c_barret_constants_addr(_masm, bconstants);
 
-      __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, table);
+      __ kernel_crc32_1word_vpmsumd(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, false);
 
       BLOCK_COMMENT("return");
       __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
       __ blr();
 
       BLOCK_COMMENT("} Stub body");
+    } else
+#endif
+#endif
+    {
+      StubRoutines::ppc64::generate_load_crc32c_table_addr(_masm, table);
+      generate_CRC_updateBytes(name, table, false);
     }
 
     return start;
   }
+
 
   // Initialization
   void generate_initial() {
@@ -3382,6 +3461,12 @@ class StubGenerator: public StubCodeGenerator {
     if (UseCRC32Intrinsics) {
       StubRoutines::_crc_table_adr    = (address)StubRoutines::ppc64::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes("CRC32_updateBytes");
+    }
+
+    // CRC32C Intrinsics.
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_crc32c_table_addr = (address)StubRoutines::ppc64::_crc32c_table;
+      StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes("CRC32C_updateBytes");
     }
   }
 

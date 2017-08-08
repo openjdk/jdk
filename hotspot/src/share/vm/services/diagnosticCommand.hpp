@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 #ifndef SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
 #define SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
 
+#include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -721,6 +724,118 @@ public:
     return p;
   }
   static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+///////////////////////////////////////////////////////////////////////
+//
+// jcmd command support for symbol table, string table and system dictionary dumping:
+//   VM.symboltable -verbose: for dumping the symbol table
+//   VM.stringtable -verbose: for dumping the string table
+//   VM.systemdictionary -verbose: for dumping the system dictionary table
+//
+class VM_DumpHashtable : public VM_Operation {
+private:
+  outputStream* _out;
+  int _which;
+  bool _verbose;
+public:
+  enum {
+    DumpSymbols = 1 << 0,
+    DumpStrings = 1 << 1,
+    DumpSysDict = 1 << 2  // not implemented yet
+  };
+  VM_DumpHashtable(outputStream* out, int which, bool verbose) {
+    _out = out;
+    _which = which;
+    _verbose = verbose;
+  }
+
+  virtual VMOp_Type type() const { return VMOp_DumpHashtable; }
+
+  virtual void doit() {
+    switch (_which) {
+    case DumpSymbols:
+      SymbolTable::dump(_out, _verbose);
+      break;
+    case DumpStrings:
+      StringTable::dump(_out, _verbose);
+      break;
+    case DumpSysDict:
+      SystemDictionary::dump(_out, _verbose);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  }
+};
+
+class SymboltableDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  SymboltableDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.symboltable";
+  }
+  static const char* description() {
+    return "Dump symbol table.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on Java content.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class StringtableDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  StringtableDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.stringtable";
+  }
+  static const char* description() {
+    return "Dump string table.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on Java content.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class SystemDictionaryDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  SystemDictionaryDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.systemdictionary";
+  }
+  static const char* description() {
+    return "Prints the statistics for dictionary hashtable sizes and bucket length";
+  }
+  static const char* impact() {
+      return "Medium: Depends on Java content.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 

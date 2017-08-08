@@ -39,6 +39,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "memory/oopFactory.hpp"
+#include "oops/array.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -54,7 +55,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
-#include "utilities/array.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -126,8 +127,8 @@ public:
 };
 
 WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
-  Handle h_name = JNIHandles::resolve(name);
-  if (h_name.is_null()) return false;
+  oop h_name = JNIHandles::resolve(name);
+  if (h_name == NULL) return false;
   Symbol* sym = java_lang_String::as_symbol(h_name, CHECK_false);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -227,8 +228,8 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
     return 3;
   }
 
-  long seed = os::random();
-  tty->print_cr("Random seed is %ld", seed);
+  int seed = os::random();
+  tty->print_cr("Random seed is %d", seed);
   os::init_random(seed);
 
   for (size_t i = 0; i < iterations; i++) {
@@ -357,54 +358,115 @@ WB_ENTRY(jlong, WB_GetHeapAlignment(JNIEnv* env, jobject o))
   return (jlong)alignment;
 WB_END
 
+WB_ENTRY(jboolean, WB_SupportsConcurrentGCPhaseControl(JNIEnv* env, jobject o))
+  return Universe::heap()->supports_concurrent_phase_control();
+WB_END
+
+WB_ENTRY(jobjectArray, WB_GetConcurrentGCPhases(JNIEnv* env, jobject o))
+  const char* const* phases = Universe::heap()->concurrent_phases();
+  jint nphases = 0;
+  for ( ; phases[nphases] != NULL; ++nphases) ;
+
+  ResourceMark rm(thread);
+  ThreadToNativeFromVM ttn(thread);
+  jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  jobjectArray result = env->NewObjectArray(nphases, clazz, NULL);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  // If push fails, return with pending exception.
+  if (env->PushLocalFrame(nphases) < 0) return NULL;
+  for (jint i = 0; i < nphases; ++i) {
+    jstring phase = env->NewStringUTF(phases[i]);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+    env->SetObjectArrayElement(result, i, phase);
+    CHECK_JNI_EXCEPTION_(env, NULL);
+  }
+  env->PopLocalFrame(NULL);
+
+  return result;
+WB_END
+
+WB_ENTRY(jboolean, WB_RequestConcurrentGCPhase(JNIEnv* env, jobject o, jstring name))
+  Handle h_name(THREAD, JNIHandles::resolve(name));
+  ResourceMark rm;
+  const char* c_name = java_lang_String::as_utf8_string(h_name());
+  return Universe::heap()->request_concurrent_phase(c_name);
+WB_END
+
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  oop result = JNIHandles::resolve(obj);
-  const HeapRegion* hr = g1->heap_region_containing(result);
-  return hr->is_humongous();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    oop result = JNIHandles::resolve(obj);
+    const HeapRegion* hr = g1->heap_region_containing(result);
+    return hr->is_humongous();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1IsHumongous: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
-  return hr->is_humongous();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    return hr->is_humongous();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToHumongousRegion: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
-  return hr->is_free();
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    return hr->is_free();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToFreeRegion: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->max_regions();
-  return (jlong)nr;
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    size_t nr = g1->max_regions();
+    return (jlong)nr;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumMaxRegions: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->num_free_regions();
-  return (jlong)nr;
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    size_t nr = g1->num_free_regions();
+    return (jlong)nr;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumFreeRegions: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  return g1h->concurrent_mark()->cmThread()->during_cycle();
+  if (UseG1GC) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    return g1h->concurrent_mark()->cmThread()->during_cycle();
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
-    g1h->collect(GCCause::_wb_conc_mark);
-    return true;
+  if (UseG1GC) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    if (!g1h->concurrent_mark()->cmThread()->during_cycle()) {
+      g1h->collect(GCCause::_wb_conc_mark);
+      return true;
+    }
+    return false;
   }
-  return false;
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1StartMarkCycle: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
-  return (jint)HeapRegion::GrainBytes;
+  if (UseG1GC) {
+    return (jint)HeapRegion::GrainBytes;
+  }
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1RegionSize: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
@@ -413,7 +475,7 @@ WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
     return ParallelScavengeHeap::heap()->gens()->virtual_spaces()->alignment();
   }
 #endif // INCLUDE_ALL_GCS
-  THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSVirtualSpaceAlignment: Parallel GC is not enabled");
 WB_END
 
 WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
@@ -422,15 +484,20 @@ WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
     return ParallelScavengeHeap::heap()->generation_alignment();
   }
 #endif // INCLUDE_ALL_GCS
-  THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "WB_PSHeapGenerationAlignment: Parallel GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_PSHeapGenerationAlignment: Parallel GC is not enabled");
 WB_END
 
 WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
-  ResourceMark rm(THREAD);
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
-  Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
-  return JNIHandles::make_local(env, h());
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    ResourceMark rm(THREAD);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    MemoryUsage usage = g1h->get_auxiliary_data_memory_usage();
+    Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
+    return JNIHandles::make_local(env, h());
+  }
+#endif // INCLUDE_ALL_GCS
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
 
 class OldRegionsLivenessClosure: public HeapRegionClosure {
@@ -475,7 +542,7 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
 
 WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
   if (!UseG1GC) {
-    THROW_MSG_NULL(vmSymbols::java_lang_RuntimeException(), "WB_G1GetMixedGCInfo: G1 is not enabled");
+    THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1GetMixedGCInfo: G1 GC is not enabled");
   }
   if (liveness < 0) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "liveness value should be non-negative");
@@ -491,8 +558,6 @@ WB_ENTRY(jlongArray, WB_G1GetMixedGCInfo(JNIEnv* env, jobject o, jint liveness))
   result->long_at_put(2, rli.total_memory_to_free());
   return (jlongArray) JNIHandles::make_local(env, result);
 WB_END
-
-
 
 #endif // INCLUDE_ALL_GCS
 
@@ -782,8 +847,8 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
 WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
-  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  return WhiteBox::compile_method(ikh->class_initializer(), comp_level, InvocationEntryBci, THREAD);
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  return WhiteBox::compile_method(ik->class_initializer(), comp_level, InvocationEntryBci, THREAD);
 WB_END
 
 WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method, jint comp_level))
@@ -1276,7 +1341,7 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
   BufferBlob* blob;
   int full_size = CodeBlob::align_code_offset(sizeof(BufferBlob));
   if (full_size < size) {
-    full_size += round_to(size - full_size, oopSize);
+    full_size += align_up(size - full_size, oopSize);
   }
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1389,7 +1454,7 @@ WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_load
       ? java_lang_ClassLoader::loader_data(class_loader_oop)
       : ClassLoaderData::the_null_class_loader_data();
 
-  void* metadata = MetadataFactory::new_writeable_array<u1>(cld, WhiteBox::array_bytes_to_length((size_t)size), thread);
+  void* metadata = MetadataFactory::new_array<u1>(cld, WhiteBox::array_bytes_to_length((size_t)size), thread);
 
   return (jlong)(uintptr_t)metadata;
 WB_END
@@ -1403,8 +1468,8 @@ WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, j
   MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
-WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jstring version, jstring location,
-                                jobjectArray packages))
+WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jboolean is_open,
+                                jstring version, jstring location, jobjectArray packages))
   ResourceMark rm(THREAD);
 
   objArrayOop packages_oop = objArrayOop(JNIHandles::resolve(packages));
@@ -1423,7 +1488,7 @@ WB_ENTRY(void, WB_DefineModule(JNIEnv* env, jobject o, jobject module, jstring v
       pkgs[x] = java_lang_String::as_utf8_string(pkg_str);
     }
   }
-  Modules::define_module(module, version, location, (const char* const*)pkgs, num_packages, CHECK);
+  Modules::define_module(module, is_open, version, location, (const char* const*)pkgs, num_packages, CHECK);
 WB_END
 
 WB_ENTRY(void, WB_AddModuleExports(JNIEnv* env, jobject o, jobject from_module, jstring package, jobject to_module))
@@ -1457,15 +1522,6 @@ WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jo
   Modules::add_reads_module(from_module, source_module, CHECK);
 WB_END
 
-WB_ENTRY(jobject, WB_GetModuleByPackageName(JNIEnv* env, jobject o, jobject loader, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  return Modules::get_module_by_package_name(loader, package_name, THREAD);
-WB_END
-
 WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
   if (inc < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1479,7 +1535,7 @@ WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong in
   }
 
   size_t new_cap_until_GC = 0;
-  size_t aligned_inc = align_size_down((size_t) inc, Metaspace::commit_alignment());
+  size_t aligned_inc = align_down((size_t) inc, Metaspace::commit_alignment());
   bool success = MetaspaceGC::inc_capacity_until_GC(aligned_inc, &new_cap_until_GC);
   if (!success) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(),
@@ -1497,6 +1553,9 @@ WB_ENTRY(jboolean, WB_MetaspaceShouldConcurrentCollect(JNIEnv* env, jobject wb))
   return MetaspaceGC::should_concurrent_collect();
 WB_END
 
+WB_ENTRY(jlong, WB_MetaspaceReserveAlignment(JNIEnv* env, jobject wb))
+  return (jlong)Metaspace::reserve_alignment();
+WB_END
 
 WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean mutexSafepointValue, jboolean attemptedNoSafepointValue))
   Monitor::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
@@ -1517,8 +1576,8 @@ WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
-  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  return (jlong) ikh->constants();
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  return (jlong) ik->constants();
 WB_END
 
 WB_ENTRY(jint, WB_GetConstantPoolCacheIndexTag(JNIEnv* env, jobject wb))
@@ -1526,8 +1585,8 @@ WB_ENTRY(jint, WB_GetConstantPoolCacheIndexTag(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass klass))
-  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  ConstantPool* cp = ikh->constants();
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
   if (cp->cache() == NULL) {
       return -1;
   }
@@ -1535,8 +1594,8 @@ WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass kla
 WB_END
 
 WB_ENTRY(jint, WB_ConstantPoolRemapInstructionOperandFromCache(JNIEnv* env, jobject wb, jclass klass, jint index))
-  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  ConstantPool* cp = ikh->constants();
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
   if (cp->cache() == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "Constant pool does not have a cache");
   }
@@ -1881,6 +1940,7 @@ static JNINativeMethod methods[] = {
   {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
   {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"metaspaceShouldConcurrentCollect", CC"()Z",     (void*)&WB_MetaspaceShouldConcurrentCollect },
+  {CC"metaspaceReserveAlignment", CC"()J",            (void*)&WB_MetaspaceReserveAlignment },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
@@ -1895,14 +1955,12 @@ static JNINativeMethod methods[] = {
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
-  {CC"DefineModule",       CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
+  {CC"DefineModule",       CC"(Ljava/lang/Object;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
                                                       (void*)&WB_DefineModule },
   {CC"AddModuleExports",   CC"(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddModuleExports },
   {CC"AddReadsModule",     CC"(Ljava/lang/Object;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddReadsModule },
-  {CC"GetModuleByPackageName", CC"(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;",
-                                                      (void*)&WB_GetModuleByPackageName },
   {CC"AddModuleExportsToAllUnnamed", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
                                                       (void*)&WB_AddModuleExportsToAllUnnamed },
   {CC"AddModuleExportsToAll", CC"(Ljava/lang/Object;Ljava/lang/String;)V",
@@ -1942,6 +2000,11 @@ static JNINativeMethod methods[] = {
   {CC"currentGC",                 CC"()I",            (void*)&WB_CurrentGC},
   {CC"allSupportedGC",            CC"()I",            (void*)&WB_AllSupportedGC},
   {CC"gcSelectedByErgo",          CC"()Z",            (void*)&WB_GCSelectedByErgo},
+  {CC"supportsConcurrentGCPhaseControl", CC"()Z",     (void*)&WB_SupportsConcurrentGCPhaseControl},
+  {CC"getConcurrentGCPhases",     CC"()[Ljava/lang/String;",
+                                                      (void*)&WB_GetConcurrentGCPhases},
+  {CC"requestConcurrentGCPhase0", CC"(Ljava/lang/String;)Z",
+                                                      (void*)&WB_RequestConcurrentGCPhase},
 };
 
 #undef CC
@@ -1950,8 +2013,8 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
   {
     if (WhiteBoxAPI) {
       // Make sure that wbclass is loaded by the null classloader
-      instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
-      Handle loader(ikh->class_loader());
+      InstanceKlass* ik = InstanceKlass::cast(JNIHandles::resolve(wbclass)->klass());
+      Handle loader(THREAD, ik->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));
         WhiteBox::register_extended(env, wbclass, thread);

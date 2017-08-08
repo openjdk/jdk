@@ -47,6 +47,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -407,7 +408,8 @@ void ParScanThreadStateSet::print_termination_stats() {
   }
 
   ResourceMark rm;
-  outputStream* st = log.debug_stream();
+  LogStream ls(log.debug());
+  outputStream* st = &ls;
 
   print_termination_stats_hdr(st);
 
@@ -435,7 +437,8 @@ void ParScanThreadStateSet::print_taskqueue_stats() {
   }
   Log(gc, task, stats) log;
   ResourceMark rm;
-  outputStream* st = log.trace_stream();
+  LogStream ls(log.trace());
+  outputStream* st = &ls;
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/cpCache.hpp"
@@ -101,14 +102,14 @@ bool ConstantPoolCacheEntry::init_flags_atomic(intptr_t flags) {
 // are updated, lest other processors see a non-zero bytecode but zero f1/f2.
 void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        Bytecodes::Code put_code,
-                                       KlassHandle field_holder,
+                                       Klass* field_holder,
                                        int field_index,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile,
                                        Klass* root_klass) {
-  set_f1(field_holder());
+  set_f1(field_holder);
   set_f2(field_offset);
   assert((field_index & field_index_mask) == field_index,
          "field index does not fit in low flag bits");
@@ -139,7 +140,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
 }
 
 void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
-                                                       methodHandle method,
+                                                       const methodHandle& method,
                                                        int vtable_index,
                                                        bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
@@ -241,14 +242,14 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
   NOT_PRODUCT(verify(tty));
 }
 
-void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, methodHandle method,
+void ConstantPoolCacheEntry::set_direct_call(Bytecodes::Code invoke_code, const methodHandle& method,
                                              bool sender_is_interface) {
   int index = Method::nonvirtual_vtable_index;
   // index < 0; FIXME: inline and customize set_direct_or_vtable_call
   set_direct_or_vtable_call(invoke_code, method, index, sender_is_interface);
 }
 
-void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
+void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {
   // either the method is a miranda or its holder should accept the given index
   assert(method->method_holder()->is_interface() || method->method_holder()->verify_vtable_index(index), "");
   // index >= 0; FIXME: inline and customize set_direct_or_vtable_call
@@ -290,7 +291,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  objArrayHandle resolved_references = cpool->resolved_references();
+  objArrayHandle resolved_references(Thread::current(), cpool->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
@@ -389,6 +390,8 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       case Bytecodes::_invokedynamic:
         assert(f1->is_method(), "");
         return (Method*)f1;
+      default:
+        break;
       }
     }
   }
@@ -408,6 +411,8 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
           return klass->method_at_vtable(f2_as_index());
         }
       }
+      break;
+    default:
       break;
     }
   }
@@ -562,7 +567,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   const int length = index_map.length() + invokedynamic_index_map.length();
   int size = ConstantPoolCache::size(length);
 
-  return new (loader_data, size, false, MetaspaceObj::ConstantPoolCacheType, THREAD)
+  return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
     ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map);
 }
 
@@ -648,6 +653,11 @@ void ConstantPoolCache::dump_cache() {
 }
 #endif // INCLUDE_JVMTI
 
+void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ConstantPoolCache): %p", this);
+  it->push(&_constant_pool);
+  it->push(&_reference_map);
+}
 
 // Printing
 

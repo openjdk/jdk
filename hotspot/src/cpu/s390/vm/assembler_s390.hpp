@@ -28,8 +28,6 @@
 
 #undef  LUCY_DBG
 
-#define NearLabel Label
-
 // Immediate is an abstraction to represent the various immediate
 // operands which exist on z/Architecture. Neither this class nor
 // instances hereof have an own state. It consists of methods only.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -94,11 +95,20 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                   _invokedynamic_references_map, CHECK);
 
   // initialize object cache in constant pool
-  _pool->initialize_resolved_references(loader_data, _resolved_references_map,
-                                        _resolved_reference_limit,
-                                        CHECK);
   _pool->set_cache(cache);
   cache->set_constant_pool(_pool());
+
+  // _resolved_references is stored in pool->cache(), so need to be done after
+  // the above lines.
+  _pool->initialize_resolved_references(loader_data, _resolved_references_map,
+                                        _resolved_reference_limit,
+                                        THREAD);
+
+  // Clean up constant pool cache if initialize_resolved_references() failed.
+  if (HAS_PENDING_EXCEPTION) {
+    MetadataFactory::free_metadata(loader_data, cache);
+    _pool->set_cache(NULL);  // so the verifier isn't confused
+  }
 }
 
 
@@ -114,7 +124,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
 // require that local 0 is never overwritten so it's available as an
 // argument for registration.
 
-void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
+void Rewriter::rewrite_Object_init(const methodHandle& method, TRAPS) {
   RawBytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.raw_next();
@@ -136,6 +146,9 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
       case Bytecodes::_astore_0:
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
                   "can't overwrite local 0 in Object.<init>");
+        break;
+
+      default:
         break;
     }
   }
@@ -163,9 +176,7 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
 // If the constant pool entry for invokespecial is InterfaceMethodref,
 // we need to add a separate cpCache entry for its resolution, because it is
 // different than the resolution for invokeinterface with InterfaceMethodref.
-// These cannot share cpCache entries.  It's unclear if all invokespecial to
-// InterfaceMethodrefs would resolve to the same thing so a new cpCache entry
-// is created for each one.  This was added with lambda.
+// These cannot share cpCache entries.
 void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error) {
   address p = bcp + offset;
   if (!reverse) {
@@ -466,6 +477,8 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
         case Bytecodes::_monitorenter   : // fall through
         case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
+
+        default: break;
       }
     }
   }
@@ -485,17 +498,16 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
 }
 
 // After constant pool is created, revisit methods containing jsrs.
-methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
+methodHandle Rewriter::rewrite_jsrs(const methodHandle& method, TRAPS) {
   ResourceMark rm(THREAD);
   ResolveOopMapConflicts romc(method);
-  methodHandle original_method = method;
-  method = romc.do_potential_rewrite(CHECK_(methodHandle()));
+  methodHandle new_method = romc.do_potential_rewrite(CHECK_(methodHandle()));
   // Update monitor matching info.
   if (romc.monitor_safe()) {
-    method->set_guaranteed_monitor_matching();
+    new_method->set_guaranteed_monitor_matching();
   }
 
-  return method;
+  return new_method;
 }
 
 void Rewriter::rewrite_bytecodes(TRAPS) {
@@ -544,16 +556,16 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   patch_invokedynamic_bytecodes();
 }
 
-void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
+void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
   if (!DumpSharedSpaces) {
-    assert(!MetaspaceShared::is_in_shared_space(klass()), "archive methods must not be rewritten at run time");
+    assert(!MetaspaceShared::is_in_shared_space(klass), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
+Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
     _methods(methods),

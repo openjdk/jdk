@@ -22,11 +22,8 @@
  */
 package org.graalvm.compiler.core.test.ea;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FrameState;
@@ -40,6 +37,7 @@ import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 /**
  * Tests {@link AbstractNewObjectNode#simplify(org.graalvm.compiler.graph.spi.SimplifierTool)}.
@@ -63,7 +61,8 @@ public class PoorMansEATest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     private void test(final String snippet) {
-        try (Scope s = Debug.scope("PoorMansEATest", new DebugDumpScope(snippet))) {
+        DebugContext debug = getDebugContext();
+        try (DebugContext.Scope s = debug.scope("PoorMansEATest", new DebugDumpScope(snippet))) {
             StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
             HighTierContext highTierContext = getDefaultHighTierContext();
             new InliningPhase(new CanonicalizerPhase()).apply(graph, highTierContext);
@@ -82,7 +81,7 @@ public class PoorMansEATest extends GraalCompilerTest {
             }
             new CanonicalizerPhase().apply(graph, context);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }

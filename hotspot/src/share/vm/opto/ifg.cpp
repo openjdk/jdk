@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ void PhaseIFG::init( uint maxlrg ) {
   _adjs = (IndexSet*)_arena->Amalloc(sizeof(IndexSet)*maxlrg);
   // Also make empty live range structures
   _lrgs = (LRG *)_arena->Amalloc( maxlrg * sizeof(LRG) );
-  memset(_lrgs,0,sizeof(LRG)*maxlrg);
+  memset((void*)_lrgs,0,sizeof(LRG)*maxlrg);
   // Init all to empty
   for( uint i = 0; i < maxlrg; i++ ) {
     _adjs[i].initialize(maxlrg);

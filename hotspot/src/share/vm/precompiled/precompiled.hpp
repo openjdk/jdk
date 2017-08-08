@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@
 # include "memory/universe.hpp"
 # include "memory/universe.inline.hpp"
 # include "memory/virtualspace.hpp"
+# include "oops/array.hpp"
 # include "oops/arrayKlass.hpp"
 # include "oops/arrayOop.hpp"
 # include "oops/constMethod.hpp"
@@ -223,7 +224,6 @@
 # include "services/nmtCommon.hpp"
 # include "services/virtualMemoryTracker.hpp"
 # include "utilities/accessFlags.hpp"
-# include "utilities/array.hpp"
 # include "utilities/bitMap.hpp"
 # include "utilities/bitMap.inline.hpp"
 # include "utilities/bytes.hpp"

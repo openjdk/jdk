@@ -36,6 +36,7 @@
 #include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
@@ -340,7 +341,7 @@ void C1_MacroAssembler::allocate_array(
   // Check for negative or excessive length.
   size_t max_length = max_array_allocation_length >> log2_elt_size;
   if (UseTLAB) {
-    size_t max_tlab = align_size_up(ThreadLocalAllocBuffer::max_size() >> log2_elt_size, 64*K);
+    size_t max_tlab = align_up(ThreadLocalAllocBuffer::max_size() >> log2_elt_size, 64*K);
     if (max_tlab < max_length) { max_length = max_tlab; }
   }
   load_const_optimized(t1, max_length);

@@ -783,7 +783,7 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   void add(int index, char type, int offset);
 
   // returns the field count for the given class
-  static int compute_field_count(instanceKlassHandle ikh);
+  static int compute_field_count(InstanceKlass* ik);
 
  public:
   ~ClassFieldMap();
@@ -819,16 +819,16 @@ void ClassFieldMap::add(int index, char type, int offset) {
 //
 ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // create the field map
   ClassFieldMap* field_map = new ClassFieldMap();
 
-  FilteredFieldStream f(ikh, false, false);
+  FilteredFieldStream f(ik, false, false);
   int max_field_index = f.field_count()-1;
 
   int index = 0;
-  for (FilteredFieldStream fld(ikh, true, true); !fld.eos(); fld.next(), index++) {
+  for (FilteredFieldStream fld(ik, true, true); !fld.eos(); fld.next(), index++) {
     // ignore instance fields
     if (!fld.access_flags().is_static()) {
       continue;
@@ -844,17 +844,17 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
 //
 ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
   HandleMark hm;
-  instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), obj->klass());
+  InstanceKlass* ik = InstanceKlass::cast(obj->klass());
 
   // create the field map
   ClassFieldMap* field_map = new ClassFieldMap();
 
-  FilteredFieldStream f(ikh, false, false);
+  FilteredFieldStream f(ik, false, false);
 
   int max_field_index = f.field_count()-1;
 
   int index = 0;
-  for (FilteredFieldStream fld(ikh, false, false); !fld.eos(); fld.next(), index++) {
+  for (FilteredFieldStream fld(ik, false, false); !fld.eos(); fld.next(), index++) {
     // ignore static fields
     if (fld.access_flags().is_static()) {
       continue;
@@ -1008,9 +1008,9 @@ static inline bool is_filtered_by_heap_filter(jlong obj_tag,
 }
 
 // helper function to indicate if an object is filtered by a klass filter
-static inline bool is_filtered_by_klass_filter(oop obj, KlassHandle klass_filter) {
-  if (!klass_filter.is_null()) {
-    if (obj->klass() != klass_filter()) {
+static inline bool is_filtered_by_klass_filter(oop obj, Klass* klass_filter) {
+  if (klass_filter != NULL) {
+    if (obj->klass() != klass_filter) {
       return true;
     }
   }
@@ -1272,7 +1272,7 @@ class VM_HeapIterateOperation: public VM_Operation {
 class IterateOverHeapObjectClosure: public ObjectClosure {
  private:
   JvmtiTagMap* _tag_map;
-  KlassHandle _klass;
+  Klass* _klass;
   jvmtiHeapObjectFilter _object_filter;
   jvmtiHeapObjectCallback _heap_object_callback;
   const void* _user_data;
@@ -1281,7 +1281,7 @@ class IterateOverHeapObjectClosure: public ObjectClosure {
   JvmtiTagMap* tag_map() const                    { return _tag_map; }
   jvmtiHeapObjectFilter object_filter() const     { return _object_filter; }
   jvmtiHeapObjectCallback object_callback() const { return _heap_object_callback; }
-  KlassHandle klass() const                       { return _klass; }
+  Klass* klass() const                            { return _klass; }
   const void* user_data() const                   { return _user_data; }
 
   // indicates if iteration has been aborted
@@ -1291,7 +1291,7 @@ class IterateOverHeapObjectClosure: public ObjectClosure {
 
  public:
   IterateOverHeapObjectClosure(JvmtiTagMap* tag_map,
-                               KlassHandle klass,
+                               Klass* klass,
                                jvmtiHeapObjectFilter object_filter,
                                jvmtiHeapObjectCallback heap_object_callback,
                                const void* user_data) :
@@ -1316,7 +1316,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   if (!ServiceUtil::visible_oop(o)) return;
 
   // instanceof check when filtering by klass
-  if (!klass().is_null() && !o->is_a(klass()())) {
+  if (klass() != NULL && !o->is_a(klass())) {
     return;
   }
   // prepare for the calllback
@@ -1345,7 +1345,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
 class IterateThroughHeapObjectClosure: public ObjectClosure {
  private:
   JvmtiTagMap* _tag_map;
-  KlassHandle _klass;
+  Klass* _klass;
   int _heap_filter;
   const jvmtiHeapCallbacks* _callbacks;
   const void* _user_data;
@@ -1354,7 +1354,7 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
   JvmtiTagMap* tag_map() const                     { return _tag_map; }
   int heap_filter() const                          { return _heap_filter; }
   const jvmtiHeapCallbacks* callbacks() const      { return _callbacks; }
-  KlassHandle klass() const                        { return _klass; }
+  Klass* klass() const                             { return _klass; }
   const void* user_data() const                    { return _user_data; }
 
   // indicates if the iteration has been aborted
@@ -1374,7 +1374,7 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
 
  public:
   IterateThroughHeapObjectClosure(JvmtiTagMap* tag_map,
-                                  KlassHandle klass,
+                                  Klass* klass,
                                   int heap_filter,
                                   const jvmtiHeapCallbacks* heap_callbacks,
                                   const void* user_data) :
@@ -1470,7 +1470,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 
 // Deprecated function to iterate over all objects in the heap
 void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
-                                    KlassHandle klass,
+                                    Klass* klass,
                                     jvmtiHeapObjectCallback heap_object_callback,
                                     const void* user_data)
 {
@@ -1487,7 +1487,7 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
 
 // Iterates over all objects in the heap
 void JvmtiTagMap::iterate_through_heap(jint heap_filter,
-                                       KlassHandle klass,
+                                       Klass* klass,
                                        const jvmtiHeapCallbacks* callbacks,
                                        const void* user_data)
 {
@@ -1806,14 +1806,14 @@ class BasicHeapWalkContext: public HeapWalkContext {
 class AdvancedHeapWalkContext: public HeapWalkContext {
  private:
   jint _heap_filter;
-  KlassHandle _klass_filter;
+  Klass* _klass_filter;
   const jvmtiHeapCallbacks* _heap_callbacks;
 
  public:
   AdvancedHeapWalkContext() : HeapWalkContext(false) { }
 
   AdvancedHeapWalkContext(jint heap_filter,
-                           KlassHandle klass_filter,
+                           Klass* klass_filter,
                            const jvmtiHeapCallbacks* heap_callbacks) :
     HeapWalkContext(true),
     _heap_filter(heap_filter),
@@ -1823,7 +1823,7 @@ class AdvancedHeapWalkContext: public HeapWalkContext {
 
   // accessors
   jint heap_filter() const         { return _heap_filter; }
-  KlassHandle klass_filter() const { return _klass_filter; }
+  Klass* klass_filter() const      { return _klass_filter; }
 
   const jvmtiHeapReferenceCallback heap_reference_callback() const {
     return _heap_callbacks->heap_reference_callback;
@@ -3296,7 +3296,7 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
 
 // follow references from an initial object or the GC roots
 void JvmtiTagMap::follow_references(jint heap_filter,
-                                    KlassHandle klass,
+                                    Klass* klass,
                                     jobject object,
                                     const jvmtiHeapCallbacks* callbacks,
                                     const void* user_data)

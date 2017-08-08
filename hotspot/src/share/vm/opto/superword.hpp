@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,7 +599,7 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
   // Comparable?
   int cmp(SWPointer& q) {
     if (valid() && q.valid() &&
-        (_adr == q._adr || _base == _adr && q._base == q._adr) &&
+        (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
         _scale == q._scale   &&
         _invar == q._invar   &&
         _negate_invar == q._negate_invar) {

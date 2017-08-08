@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/macros.hpp"
 
 class LineBuffer;
 
@@ -76,6 +77,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     GCParPhasesSentinel
   };
 
+  enum GCScanRSWorkItems {
+    ScannedCards,
+    ClaimedCards,
+    SkippedCards
+  };
+
  private:
   // Markers for grouping the phases in the GCPhases enum above
   static const int GCMainParPhasesLast = GCWorkerEnd;
@@ -83,8 +90,15 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   static const int StringDedupPhasesLast = StringDedupTableFixup;
 
   WorkerDataArray<double>* _gc_par_phases[GCParPhasesSentinel];
+
   WorkerDataArray<size_t>* _update_rs_processed_buffers;
+
+  WorkerDataArray<size_t>* _scan_rs_scanned_cards;
+  WorkerDataArray<size_t>* _scan_rs_claimed_cards;
+  WorkerDataArray<size_t>* _scan_rs_skipped_cards;
+
   WorkerDataArray<size_t>* _termination_attempts;
+
   WorkerDataArray<size_t>* _redirtied_cards;
 
   double _cur_collection_par_time_ms;
@@ -92,10 +106,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_strong_code_root_purge_time_ms;
 
   double _cur_evac_fail_recalc_used;
-  double _cur_evac_fail_restore_remsets;
   double _cur_evac_fail_remove_self_forwards;
 
   double _cur_string_dedup_fixup_time_ms;
+
+  double _cur_prepare_tlab_time_ms;
+  double _cur_resize_tlab_time_ms;
+
+  double _cur_derived_pointer_table_update_time_ms;
 
   double _cur_clear_ct_time_ms;
   double _cur_expand_heap_time_ms;
@@ -117,6 +135,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_preserve_cm_referents_time_ms;
 
   double _recorded_merge_pss_time_ms;
+
+  double _recorded_start_new_cset_time_ms;
 
   double _recorded_total_free_cset_time_ms;
 
@@ -163,14 +183,26 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   // add a number of seconds to a phase
   void add_time_secs(GCParPhases phase, uint worker_i, double secs);
 
-  void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count);
+  void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
 
   // return the average time for a phase in milliseconds
   double average_time_ms(GCParPhases phase);
 
-  size_t sum_thread_work_items(GCParPhases phase);
+  size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
  public:
+
+  void record_prepare_tlab_time_ms(double ms) {
+    _cur_prepare_tlab_time_ms = ms;
+  }
+
+  void record_resize_tlab_time_ms(double ms) {
+    _cur_resize_tlab_time_ms = ms;
+  }
+
+  void record_derived_pointer_table_update_time(double ms) {
+    _cur_derived_pointer_table_update_time_ms = ms;
+  }
 
   void record_clear_ct_time(double ms) {
     _cur_clear_ct_time_ms = ms;
@@ -194,10 +226,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_evac_fail_recalc_used_time(double ms) {
     _cur_evac_fail_recalc_used = ms;
-  }
-
-  void record_evac_fail_restore_remsets(double ms) {
-    _cur_evac_fail_restore_remsets = ms;
   }
 
   void record_evac_fail_remove_self_forwards(double ms) {
@@ -257,6 +285,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_merge_pss_time_ms(double time_ms) {
     _recorded_merge_pss_time_ms = time_ms;
+  }
+
+  void record_start_new_cset_time_ms(double time_ms) {
+    _recorded_start_new_cset_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {

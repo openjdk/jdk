@@ -30,12 +30,15 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -245,6 +248,7 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   assert(!Universe::heap()->is_in_reserved(name),
          "proposed name of symbol must be stable");
 
+  HandleMark hm(THREAD);  // cleanup strings created
   Handle string;
   // try to reuse the string if possible
   if (!string_or_null.is_null()) {
@@ -437,7 +441,7 @@ void StringTable::verify() {
 
 void StringTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    the_table()->dump_table(st, "StringTable");
+    the_table()->print_table_statistics(st, "StringTable");
   } else {
     Thread* THREAD = Thread::current();
     st->print_cr("VERSION: 1.1");
@@ -728,6 +732,9 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
 
       // add to the compact table
       writer->add(hash, new_s);
+
+      MetaspaceShared::relocate_klass_ptr(new_s);
+      MetaspaceShared::relocate_klass_ptr(new_v);
     }
   }
 
@@ -737,37 +744,33 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   return true;
 }
 
-void StringTable::serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
-                            size_t* space_size) {
-#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
+void StringTable::write_to_archive(GrowableArray<MemRegion> *string_space) {
+#if INCLUDE_CDS
   _shared_table.reset();
-  if (soc->writing()) {
-    if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
-      if (PrintSharedSpaces) {
-        tty->print_cr(
-          "Shared strings are excluded from the archive as UseG1GC, "
-          "UseCompressedOops and UseCompressedClassPointers are required."
-          "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-          BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-          BOOL_TO_STR(UseCompressedClassPointers));
-      }
-    } else {
-      int num_buckets = the_table()->number_of_entries() /
-                             SharedSymbolTableBucketSize;
-      // calculation of num_buckets can result in zero buckets, we need at least one
-      CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
-                                      &MetaspaceShared::stats()->string);
+  if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
+      log_info(cds)(
+        "Shared strings are excluded from the archive as UseG1GC, "
+        "UseCompressedOops and UseCompressedClassPointers are required."
+        "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
+        BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
+        BOOL_TO_STR(UseCompressedClassPointers));
+  } else {
+    int num_buckets = the_table()->number_of_entries() /
+                           SharedSymbolTableBucketSize;
+    // calculation of num_buckets can result in zero buckets, we need at least one
+    CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
+                                    &MetaspaceShared::stats()->string);
 
-      // Copy the interned strings into the "string space" within the java heap
-      if (copy_shared_string(string_space, &writer)) {
-        for (int i = 0; i < string_space->length(); i++) {
-          *space_size += string_space->at(i).byte_size();
-        }
-        writer.dump(&_shared_table);
-      }
+    // Copy the interned strings into the "string space" within the java heap
+    if (copy_shared_string(string_space, &writer)) {
+      writer.dump(&_shared_table);
     }
   }
+#endif
+}
 
+void StringTable::serialize(SerializeClosure* soc) {
+#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
   _shared_table.set_type(CompactHashtable<oop, char>::_string_table);
   _shared_table.serialize(soc);
 

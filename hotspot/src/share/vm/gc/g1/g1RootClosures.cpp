@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public:
 // The treatment of "weak" roots is selectable through the template parameter,
 // this is usually used to control unloading of classes and interned strings.
 template <G1Mark MarkWeak>
-class G1InitalMarkClosures : public G1EvacuationRootClosures {
+class G1InitialMarkClosures : public G1EvacuationRootClosures {
   G1SharedClosures<G1MarkFromRoot> _strong;
   G1SharedClosures<MarkWeak>       _weak;
 
@@ -74,8 +74,8 @@ class G1InitalMarkClosures : public G1EvacuationRootClosures {
   }
 
 public:
-  G1InitalMarkClosures(G1CollectedHeap* g1h,
-                       G1ParScanThreadState* pss) :
+  G1InitialMarkClosures(G1CollectedHeap* g1h,
+                        G1ParScanThreadState* pss) :
       _strong(g1h, pss, /* process_only_dirty_klasses */ false, /* must_claim_cld */ true),
       _weak(g1h, pss,   /* process_only_dirty_klasses */ false, /* must_claim_cld */ true) {}
 
@@ -118,9 +118,9 @@ G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParSc
 
   if (g1h->collector_state()->during_initial_mark_pause()) {
     if (ClassUnloadingWithConcurrentMark) {
-      res = new G1InitalMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
+      res = new G1InitialMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
     } else {
-      res = new G1InitalMarkClosures<G1MarkFromRoot>(g1h, pss);
+      res = new G1InitialMarkClosures<G1MarkFromRoot>(g1h, pss);
     }
   } else {
     res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->gcs_are_young());

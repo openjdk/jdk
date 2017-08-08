@@ -73,6 +73,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -130,8 +131,6 @@ extern "C" int getargs   (procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// Query dimensions of the stack of the calling thread.
-static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
 static address resolve_function_descriptor_to_code_pointer(address p);
 
 static void vmembk_print_on(outputStream* os);
@@ -595,7 +594,7 @@ extern "C" void breakpoint() {
 // signal support
 
 debug_only(static bool signal_sets_initialized = false);
-static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
+static sigset_t unblocked_sigs, vm_sigs;
 
 bool os::Aix::is_sig_ignored(int sig) {
   struct sigaction oact;
@@ -626,7 +625,6 @@ void os::Aix::signal_sets_init() {
   // In reality, though, unblocking these signals is really a nop, since
   // these signals are not blocked by default.
   sigemptyset(&unblocked_sigs);
-  sigemptyset(&allowdebug_blocked_sigs);
   sigaddset(&unblocked_sigs, SIGILL);
   sigaddset(&unblocked_sigs, SIGSEGV);
   sigaddset(&unblocked_sigs, SIGBUS);
@@ -637,15 +635,12 @@ void os::Aix::signal_sets_init() {
   if (!ReduceSignalUsage) {
    if (!os::Aix::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN1_SIGNAL);
-     sigaddset(&allowdebug_blocked_sigs, SHUTDOWN1_SIGNAL);
    }
    if (!os::Aix::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN2_SIGNAL);
-     sigaddset(&allowdebug_blocked_sigs, SHUTDOWN2_SIGNAL);
    }
    if (!os::Aix::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN3_SIGNAL);
-     sigaddset(&allowdebug_blocked_sigs, SHUTDOWN3_SIGNAL);
    }
   }
   // Fill in signals that are blocked by all but the VM thread.
@@ -667,12 +662,6 @@ sigset_t* os::Aix::unblocked_signals() {
 sigset_t* os::Aix::vm_signals() {
   assert(signal_sets_initialized, "Not initialized");
   return &vm_sigs;
-}
-
-// These are signals that are blocked during cond_wait to allow debugger in
-sigset_t* os::Aix::allowdebug_blocked_signals() {
-  assert(signal_sets_initialized, "Not initialized");
-  return &allowdebug_blocked_sigs;
 }
 
 void os::Aix::hotspot_sigmask(Thread* thread) {
@@ -774,11 +763,8 @@ static void *thread_native_entry(Thread *thread) {
   // find out my own stack dimensions
   {
     // actually, this should do exactly the same as thread->record_stack_base_and_size...
-    address base = 0;
-    size_t size = 0;
-    query_stack_dimensions(&base, &size);
-    thread->set_stack_base(base);
-    thread->set_stack_size(size);
+    thread->set_stack_base(os::current_stack_base());
+    thread->set_stack_size(os::current_stack_size());
   }
 
   const pthread_t pthread_id = ::pthread_self();
@@ -877,7 +863,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  pthread_attr_setstacksize(&attr, stack_size);
+  int status = pthread_attr_setstacksize(&attr, stack_size);
+  assert_status(status == 0, status, "pthread_attr_setstacksize");
 
   // Configure libc guard page.
   pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
@@ -1389,39 +1376,7 @@ void os::print_os_info(outputStream* st) {
   st->print_cr("AIX kernel version %u.%u.%u.%u",
                (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
 
-  // rlimit
-  st->print("rlimit:");
-  struct rlimit rlim;
-
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", NPROC ");
-  st->print("%d", sysconf(_SC_CHILD_MAX));
-
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  // Print limits on DATA, because it limits the C-heap.
-  st->print(", DATA ");
-  getrlimit(RLIMIT_DATA, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-  st->cr();
+  os::Posix::print_rlimit_info(st);
 
   // load average
   st->print("load average:");
@@ -1576,8 +1531,66 @@ void os::jvm_path(char *buf, jint buflen) {
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  char* rp = realpath((char *)dlinfo.dli_fname, buf);
+  char* rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
+
+  if (Arguments::sun_java_launcher_is_altjvm()) {
+    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
+    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
+    // If "/jre/lib/" appears at the right place in the string, then
+    // assume we are installed in a JDK and we're done. Otherwise, check
+    // for a JAVA_HOME environment variable and fix up the path so it
+    // looks like libjvm.so is installed there (append a fake suffix
+    // hotspot/libjvm.so).
+    const char *p = buf + strlen(buf) - 1;
+    for (int count = 0; p > buf && count < 4; ++count) {
+      for (--p; p > buf && *p != '/'; --p)
+        /* empty */ ;
+    }
+
+    if (strncmp(p, "/jre/lib/", 9) != 0) {
+      // Look for JAVA_HOME in the environment.
+      char* java_home_var = ::getenv("JAVA_HOME");
+      if (java_home_var != NULL && java_home_var[0] != 0) {
+        char* jrelib_p;
+        int len;
+
+        // Check the current module name "libjvm.so".
+        p = strrchr(buf, '/');
+        if (p == NULL) {
+          return;
+        }
+        assert(strstr(p, "/libjvm") == p, "invalid library name");
+
+        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        if (rp == NULL) {
+          return;
+        }
+
+        // determine if this is a legacy image or modules image
+        // modules image doesn't have "jre" subdirectory
+        len = strlen(buf);
+        assert(len < buflen, "Ran out of buffer room");
+        jrelib_p = buf + len;
+        snprintf(jrelib_p, buflen-len, "/jre/lib");
+        if (0 != access(buf, F_OK)) {
+          snprintf(jrelib_p, buflen-len, "/lib");
+        }
+
+        if (0 == access(buf, F_OK)) {
+          // Use current module name "libjvm.so"
+          len = strlen(buf);
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
+        } else {
+          // Go back to path of .so
+          rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
+          if (rp == NULL) {
+            return;
+          }
+        }
+      }
+    }
+  }
 
   strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
   saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
@@ -1606,7 +1619,7 @@ UserHandler(int sig, void *siginfo, void *context) {
 
   // Ctrl-C is pressed during error reporting, likely because the error
   // handler fails to abort. Let VM die immediately.
-  if (sig == SIGINT && is_error_reported()) {
+  if (sig == SIGINT && VMError::is_error_reported()) {
     os::die();
   }
 
@@ -1924,7 +1937,7 @@ static char* reserve_shmated_memory (
   }
 
   // Align size of shm up to 64K to avoid errors if we later try to change the page size.
-  const size_t size = align_size_up(bytes, 64*K);
+  const size_t size = align_up(bytes, 64*K);
 
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -2065,7 +2078,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Size shall always be a multiple of os::vm_page_size (esp. in 64K mode).
-  const size_t size = align_size_up(bytes, os::vm_page_size());
+  const size_t size = align_up(bytes, os::vm_page_size());
 
   // alignment: Allocate memory large enough to include an aligned range of the right size and
   // cut off the leading and trailing waste pages.
@@ -2098,7 +2111,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // Handle alignment.
-  char* const addr_aligned = (char *)align_ptr_up(addr, alignment_hint);
+  char* const addr_aligned = align_up(addr, alignment_hint);
   const size_t waste_pre = addr_aligned - addr;
   char* const addr_aligned_end = addr_aligned + size;
   const size_t waste_post = extra_size - waste_pre - size;
@@ -2324,9 +2337,9 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment
   assert0(requested_addr == NULL);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  bytes = align_size_up(bytes, os::vm_page_size());
+  bytes = align_up(bytes, os::vm_page_size());
   const size_t alignment_hint0 =
-    alignment_hint ? align_size_up(alignment_hint, os::vm_page_size()) : 0;
+    alignment_hint ? align_up(alignment_hint, os::vm_page_size()) : 0;
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
@@ -2348,8 +2361,8 @@ bool os::pd_release_memory(char* addr, size_t size) {
   guarantee0(vmi);
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  size = align_size_up(size, os::vm_page_size());
-  addr = (char *)align_ptr_up(addr, os::vm_page_size());
+  size = align_up(size, os::vm_page_size());
+  addr = align_up(addr, os::vm_page_size());
 
   bool rc = false;
   bool remove_bookkeeping = false;
@@ -2515,7 +2528,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   char* addr = NULL;
 
   // Always round to os::vm_page_size(), which may be larger than 4K.
-  bytes = align_size_up(bytes, os::vm_page_size());
+  bytes = align_up(bytes, os::vm_page_size());
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
@@ -3481,10 +3494,14 @@ void os::init(void) {
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
+
+  os::Posix::init();
 }
 
 // This is called _after_ the global arguments have been parsed.
 jint os::init_2(void) {
+
+  os::Posix::init_2();
 
   if (os::Aix::on_pase()) {
     trcVerbose("Running on PASE.");
@@ -4276,437 +4293,29 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// Function to query the current stack size using pthread_getthrds_np.
-static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) {
-  // This only works when invoked on a pthread. As we agreed not to use
-  // primordial threads anyway, I assert here.
-  guarantee(!os::Aix::is_primordial_thread(), "not allowed on the primordial thread");
-
-  // Information about this api can be found (a) in the pthread.h header and
-  // (b) in http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/pthread_getthrds_np.htm
-  //
-  // The use of this API to find out the current stack is kind of undefined.
-  // But after a lot of tries and asking IBM about it, I concluded that it is safe
-  // enough for cases where I let the pthread library create its stacks. For cases
-  // where I create an own stack and pass this to pthread_create, it seems not to
-  // work (the returned stack size in that case is 0).
-
-  pthread_t tid = pthread_self();
-  struct __pthrdsinfo pinfo;
-  char dummy[1]; // Just needed to satisfy pthread_getthrds_np.
-  int dummy_size = sizeof(dummy);
-
-  memset(&pinfo, 0, sizeof(pinfo));
-
-  const int rc = pthread_getthrds_np(&tid, PTHRDSINFO_QUERY_ALL, &pinfo,
-                                     sizeof(pinfo), dummy, &dummy_size);
-
-  if (rc != 0) {
-    assert0(false);
-    trcVerbose("pthread_getthrds_np failed (%d)", rc);
-    return false;
-  }
-  guarantee0(pinfo.__pi_stackend);
-
-  // The following may happen when invoking pthread_getthrds_np on a pthread
-  // running on a user provided stack (when handing down a stack to pthread
-  // create, see pthread_attr_setstackaddr).
-  // Not sure what to do then.
-
-  guarantee0(pinfo.__pi_stacksize);
-
-  // Note: we get three values from pthread_getthrds_np:
-  //       __pi_stackaddr, __pi_stacksize, __pi_stackend
-  //
-  // high addr    ---------------------
-  //
-  //    |         pthread internal data, like ~2K
-  //    |
-  //    |         ---------------------   __pi_stackend   (usually not page aligned, (xxxxF890))
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |
-  //    |          ---------------------   (__pi_stackend - __pi_stacksize)
-  //    |
-  //    |          padding to align the following AIX guard pages, if enabled.
-  //    |
-  //    V          ---------------------   __pi_stackaddr
-  //
-  // low addr      AIX guard pages, if enabled (AIXTHREAD_GUARDPAGES > 0)
-  //
-
-  address stack_base = (address)(pinfo.__pi_stackend);
-  address stack_low_addr = (address)align_ptr_up(pinfo.__pi_stackaddr,
-    os::vm_page_size());
-  size_t stack_size = stack_base - stack_low_addr;
-
-  if (p_stack_base) {
-    *p_stack_base = stack_base;
-  }
-
-  if (p_stack_size) {
-    *p_stack_size = stack_size;
-  }
-
-  return true;
-}
-
 // Get the current stack base from the OS (actually, the pthread library).
+// Note: usually not page aligned.
 address os::current_stack_base() {
-  address p;
-  query_stack_dimensions(&p, 0);
-  return p;
+  AixMisc::stackbounds_t bounds;
+  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
+  guarantee(rc, "Unable to retrieve stack bounds.");
+  return bounds.base;
 }
 
 // Get the current stack size from the OS (actually, the pthread library).
+// Returned size is such that (base - size) is always aligned to page size.
 size_t os::current_stack_size() {
-  size_t s;
-  query_stack_dimensions(0, &s);
+  AixMisc::stackbounds_t bounds;
+  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
+  guarantee(rc, "Unable to retrieve stack bounds.");
+  // Align the returned stack size such that the stack low address
+  // is aligned to page size (Note: base is usually not and we do not care).
+  // We need to do this because caller code will assume stack low address is
+  // page aligned and will place guard pages without checking.
+  address low = bounds.base - bounds.size;
+  address low_aligned = (address)align_up(low, os::vm_page_size());
+  size_t s = bounds.base - low_aligned;
   return s;
-}
-
-// Refer to the comments in os_solaris.cpp park-unpark.
-
-// utility to compute the abstime argument to timedwait:
-// millis is the relative timeout time
-// abstime will be the absolute timeout time
-// TODO: replace compute_abstime() with unpackTime()
-
-static struct timespec* compute_abstime(timespec* abstime, jlong millis) {
-  if (millis < 0) millis = 0;
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
-  jlong seconds = millis / 1000;
-  millis %= 1000;
-  if (seconds > 50000000) { // see man cond_timedwait(3T)
-    seconds = 50000000;
-  }
-  abstime->tv_sec = now.tv_sec  + seconds;
-  long       usec = now.tv_usec + millis * 1000;
-  if (usec >= 1000000) {
-    abstime->tv_sec += 1;
-    usec -= 1000000;
-  }
-  abstime->tv_nsec = usec * 1000;
-  return abstime;
-}
-
-// Test-and-clear _Event, always leaves _Event set to 0, returns immediately.
-// Conceptually TryPark() should be equivalent to park(0).
-
-int os::PlatformEvent::TryPark() {
-  for (;;) {
-    const int v = _Event;
-    guarantee ((v == 0) || (v == 1), "invariant");
-    if (Atomic::cmpxchg (0, &_Event, v) == v) return v;
-  }
-}
-
-void os::PlatformEvent::park() {       // AKA "down()"
-  // Invariant: Only the thread associated with the Event/PlatformEvent
-  // may call park().
-  // TODO: assert that _Assoc != NULL or _Assoc == Self
-  int v;
-  for (;;) {
-    v = _Event;
-    if (Atomic::cmpxchg (v-1, &_Event, v) == v) break;
-  }
-  guarantee (v >= 0, "invariant");
-  if (v == 0) {
-    // Do this the hard way by blocking ...
-    int status = pthread_mutex_lock(_mutex);
-    assert_status(status == 0, status, "mutex_lock");
-    guarantee (_nParked == 0, "invariant");
-    ++ _nParked;
-    while (_Event < 0) {
-      status = pthread_cond_wait(_cond, _mutex);
-      assert_status(status == 0 || status == ETIMEDOUT, status, "cond_timedwait");
-    }
-    -- _nParked;
-
-    // In theory we could move the ST of 0 into _Event past the unlock(),
-    // but then we'd need a MEMBAR after the ST.
-    _Event = 0;
-    status = pthread_mutex_unlock(_mutex);
-    assert_status(status == 0, status, "mutex_unlock");
-  }
-  guarantee (_Event >= 0, "invariant");
-}
-
-int os::PlatformEvent::park(jlong millis) {
-  guarantee (_nParked == 0, "invariant");
-
-  int v;
-  for (;;) {
-    v = _Event;
-    if (Atomic::cmpxchg (v-1, &_Event, v) == v) break;
-  }
-  guarantee (v >= 0, "invariant");
-  if (v != 0) return OS_OK;
-
-  // We do this the hard way, by blocking the thread.
-  // Consider enforcing a minimum timeout value.
-  struct timespec abst;
-  compute_abstime(&abst, millis);
-
-  int ret = OS_TIMEOUT;
-  int status = pthread_mutex_lock(_mutex);
-  assert_status(status == 0, status, "mutex_lock");
-  guarantee (_nParked == 0, "invariant");
-  ++_nParked;
-
-  // Object.wait(timo) will return because of
-  // (a) notification
-  // (b) timeout
-  // (c) thread.interrupt
-  //
-  // Thread.interrupt and object.notify{All} both call Event::set.
-  // That is, we treat thread.interrupt as a special case of notification.
-  // We ignore spurious OS wakeups unless FilterSpuriousWakeups is false.
-  // We assume all ETIME returns are valid.
-  //
-  // TODO: properly differentiate simultaneous notify+interrupt.
-  // In that case, we should propagate the notify to another waiter.
-
-  while (_Event < 0) {
-    status = pthread_cond_timedwait(_cond, _mutex, &abst);
-    assert_status(status == 0 || status == ETIMEDOUT,
-                  status, "cond_timedwait");
-    if (!FilterSpuriousWakeups) break;         // previous semantics
-    if (status == ETIMEDOUT) break;
-    // We consume and ignore EINTR and spurious wakeups.
-  }
-  --_nParked;
-  if (_Event >= 0) {
-     ret = OS_OK;
-  }
-  _Event = 0;
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "mutex_unlock");
-  assert (_nParked == 0, "invariant");
-  return ret;
-}
-
-void os::PlatformEvent::unpark() {
-  int v, AnyWaiters;
-  for (;;) {
-    v = _Event;
-    if (v > 0) {
-      // The LD of _Event could have reordered or be satisfied
-      // by a read-aside from this processor's write buffer.
-      // To avoid problems execute a barrier and then
-      // ratify the value.
-      OrderAccess::fence();
-      if (_Event == v) return;
-      continue;
-    }
-    if (Atomic::cmpxchg (v+1, &_Event, v) == v) break;
-  }
-  if (v < 0) {
-    // Wait for the thread associated with the event to vacate
-    int status = pthread_mutex_lock(_mutex);
-    assert_status(status == 0, status, "mutex_lock");
-    AnyWaiters = _nParked;
-
-    if (AnyWaiters != 0) {
-      // We intentional signal *after* dropping the lock
-      // to avoid a common class of futile wakeups.
-      status = pthread_cond_signal(_cond);
-      assert_status(status == 0, status, "cond_signal");
-    }
-    // Mutex should be locked for pthread_cond_signal(_cond).
-    status = pthread_mutex_unlock(_mutex);
-    assert_status(status == 0, status, "mutex_unlock");
-  }
-
-  // Note that we signal() _after dropping the lock for "immortal" Events.
-  // This is safe and avoids a common class of futile wakeups. In rare
-  // circumstances this can cause a thread to return prematurely from
-  // cond_{timed}wait() but the spurious wakeup is benign and the victim will
-  // simply re-test the condition and re-park itself.
-}
-
-
-// JSR166
-// -------------------------------------------------------
-
-//
-// The solaris and linux implementations of park/unpark are fairly
-// conservative for now, but can be improved. They currently use a
-// mutex/condvar pair, plus a a count.
-// Park decrements count if > 0, else does a condvar wait. Unpark
-// sets count to 1 and signals condvar. Only one thread ever waits
-// on the condvar. Contention seen when trying to park implies that someone
-// is unparking you, so don't wait. And spurious returns are fine, so there
-// is no need to track notifications.
-//
-
-#define MAX_SECS 100000000
-//
-// This code is common to linux and solaris and will be moved to a
-// common place in dolphin.
-//
-// The passed in time value is either a relative time in nanoseconds
-// or an absolute time in milliseconds. Either way it has to be unpacked
-// into suitable seconds and nanoseconds components and stored in the
-// given timespec structure.
-// Given time is a 64-bit value and the time_t used in the timespec is only
-// a signed-32-bit value (except on 64-bit Linux) we have to watch for
-// overflow if times way in the future are given. Further on Solaris versions
-// prior to 10 there is a restriction (see cond_timedwait) that the specified
-// number of seconds, in abstime, is less than current_time + 100,000,000.
-// As it will be 28 years before "now + 100000000" will overflow we can
-// ignore overflow and just impose a hard-limit on seconds using the value
-// of "now + 100,000,000". This places a limit on the timeout of about 3.17
-// years from "now".
-//
-
-static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
-  assert (time > 0, "convertTime");
-
-  struct timeval now;
-  int status = gettimeofday(&now, NULL);
-  assert(status == 0, "gettimeofday");
-
-  time_t max_secs = now.tv_sec + MAX_SECS;
-
-  if (isAbsolute) {
-    jlong secs = time / 1000;
-    if (secs > max_secs) {
-      absTime->tv_sec = max_secs;
-    }
-    else {
-      absTime->tv_sec = secs;
-    }
-    absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
-  }
-  else {
-    jlong secs = time / NANOSECS_PER_SEC;
-    if (secs >= MAX_SECS) {
-      absTime->tv_sec = max_secs;
-      absTime->tv_nsec = 0;
-    }
-    else {
-      absTime->tv_sec = now.tv_sec + secs;
-      absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
-      if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
-        absTime->tv_nsec -= NANOSECS_PER_SEC;
-        ++absTime->tv_sec; // note: this must be <= max_secs
-      }
-    }
-  }
-  assert(absTime->tv_sec >= 0, "tv_sec < 0");
-  assert(absTime->tv_sec <= max_secs, "tv_sec > max_secs");
-  assert(absTime->tv_nsec >= 0, "tv_nsec < 0");
-  assert(absTime->tv_nsec < NANOSECS_PER_SEC, "tv_nsec >= nanos_per_sec");
-}
-
-void Parker::park(bool isAbsolute, jlong time) {
-  // Optional fast-path check:
-  // Return immediately if a permit is available.
-  if (_counter > 0) {
-    _counter = 0;
-    OrderAccess::fence();
-    return;
-  }
-
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
-
-  // Optional optimization -- avoid state transitions if there's an interrupt pending.
-  // Check interrupt before trying to wait
-  if (Thread::is_interrupted(thread, false)) {
-    return;
-  }
-
-  // Next, demultiplex/decode time arguments
-  timespec absTime;
-  if (time < 0 || (isAbsolute && time == 0)) { // don't wait at all
-    return;
-  }
-  if (time > 0) {
-    unpackTime(&absTime, isAbsolute, time);
-  }
-
-  // Enter safepoint region
-  // Beware of deadlocks such as 6317397.
-  // The per-thread Parker:: mutex is a classic leaf-lock.
-  // In particular a thread must never block on the Threads_lock while
-  // holding the Parker:: mutex. If safepoints are pending both the
-  // the ThreadBlockInVM() CTOR and DTOR may grab Threads_lock.
-  ThreadBlockInVM tbivm(jt);
-
-  // Don't wait if cannot get lock since interference arises from
-  // unblocking. Also. check interrupt before trying wait
-  if (Thread::is_interrupted(thread, false) || pthread_mutex_trylock(_mutex) != 0) {
-    return;
-  }
-
-  int status;
-  if (_counter > 0) { // no wait needed
-    _counter = 0;
-    status = pthread_mutex_unlock(_mutex);
-    assert (status == 0, "invariant");
-    OrderAccess::fence();
-    return;
-  }
-
-#ifdef ASSERT
-  // Don't catch signals while blocked; let the running threads have the signals.
-  // (This allows a debugger to break into the running thread.)
-  sigset_t oldsigs;
-  sigset_t* allowdebug_blocked = os::Aix::allowdebug_blocked_signals();
-  pthread_sigmask(SIG_BLOCK, allowdebug_blocked, &oldsigs);
-#endif
-
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-  jt->set_suspend_equivalent();
-  // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-
-  if (time == 0) {
-    status = pthread_cond_wait (_cond, _mutex);
-  } else {
-    status = pthread_cond_timedwait (_cond, _mutex, &absTime);
-  }
-  assert_status(status == 0 || status == EINTR ||
-                status == ETIME || status == ETIMEDOUT,
-                status, "cond_timedwait");
-
-#ifdef ASSERT
-  pthread_sigmask(SIG_SETMASK, &oldsigs, NULL);
-#endif
-
-  _counter = 0;
-  status = pthread_mutex_unlock(_mutex);
-  assert_status(status == 0, status, "invariant");
-  // If externally suspended while waiting, re-suspend
-  if (jt->handle_special_suspend_equivalent_condition()) {
-    jt->java_suspend_self();
-  }
-
-  OrderAccess::fence();
-}
-
-void Parker::unpark() {
-  int s, status;
-  status = pthread_mutex_lock(_mutex);
-  assert (status == 0, "invariant");
-  s = _counter;
-  _counter = 1;
-  if (s < 1) {
-    status = pthread_mutex_unlock(_mutex);
-    assert (status == 0, "invariant");
-    status = pthread_cond_signal (_cond);
-    assert (status == 0, "invariant");
-  } else {
-    pthread_mutex_unlock(_mutex);
-    assert (status == 0, "invariant");
-  }
 }
 
 extern char** environ;
