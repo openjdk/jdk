@@ -281,7 +281,7 @@ static BOOL shouldUsePressAndHold() {
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
     
-    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod]) {
+    if (fEnablePressAndHold && [event willBeHandledByComplexInputMethod] && fInputMethodLOCKABLE) {
         fProcessingKeystroke = NO;
         if (!fInPressAndHold) {
             fInPressAndHold = YES;
