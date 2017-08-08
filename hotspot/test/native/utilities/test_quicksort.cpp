@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ static int test_comparator(int a, int b) {
   return 1;
 }
 
-static bool compare_arrays(int* actual, int* expected, int length) {
-  for (int i = 0; i < length; i++) {
+static bool compare_arrays(int* actual, int* expected, size_t length) {
+  for (size_t i = 0; i < length; i++) {
     if (actual[i] != expected[i]) {
       return false;
     }
@@ -48,8 +48,8 @@ static bool compare_arrays(int* actual, int* expected, int length) {
 }
 
 template <class C>
-static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false) {
-  QuickSort::sort<int, C>(arrayToSort, length, comparator, idempotent);
+static bool sort_and_compare(int* arrayToSort, int* expectedResult, size_t length, C comparator, bool idempotent = false) {
+  QuickSort::sort(arrayToSort, length, comparator, idempotent);
   return compare_arrays(arrayToSort, expectedResult, length);
 }
 
@@ -174,10 +174,10 @@ TEST(QuickSort, idempotent) {
 
 TEST(QuickSort, random) {
   for (int i = 0; i < 1000; i++) {
-    int length = os::random() % 100;
+    size_t length = os::random() % 100;
     int* test_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
     int* expected_array = NEW_C_HEAP_ARRAY(int, length, mtInternal);
-    for (int j = 0; j < length; j++) {
+    for (size_t j = 0; j < length; j++) {
         // Choose random values, but get a chance of getting duplicates
         test_array[j] = os::random() % (length * 2);
         expected_array[j] = test_array[j];

@@ -1631,7 +1631,7 @@ void Method::sort_methods(Array<Method*>* methods, bool idempotent, bool set_idn
   if (length > 1) {
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort<Method*>(methods->data(), length, method_comparator, idempotent);
+      QuickSort::sort(methods->data(), length, method_comparator, idempotent);
     }
     // Reset method ordering
     if (set_idnums) {
