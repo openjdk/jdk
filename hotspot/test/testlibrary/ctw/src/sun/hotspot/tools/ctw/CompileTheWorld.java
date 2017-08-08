@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -73,12 +74,16 @@ public class CompileTheWorld {
             ExecutorService executor = createExecutor();
             long start = System.currentTimeMillis();
             try {
-                String path;
-                for (int i = 0, n = paths.length; i < n
-                        && !PathHandler.isFinished(); ++i) {
-                    path = paths[i];
-                    PathHandler.create(path, executor).process();
-                }
+                Arrays.stream(paths)
+                      .map(PathHandler::create)
+                      .flatMap(List::stream)
+                      .forEach(p -> {
+                          try {
+                              p.process(executor);
+                          } finally {
+                              p.close();
+                          }
+                        });
             } finally {
                 await(executor);
             }
