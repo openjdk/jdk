@@ -203,21 +203,19 @@ public class ForkJoinWorkerThread extends Thread {
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
         private static final ThreadGroup innocuousThreadGroup =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public ThreadGroup run() {
-                        ThreadGroup group = Thread.currentThread().getThreadGroup();
-                        for (ThreadGroup p; (p = group.getParent()) != null; )
-                            group = p;
-                        return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
-                    }});
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+                public ThreadGroup run() {
+                    ThreadGroup group = Thread.currentThread().getThreadGroup();
+                    for (ThreadGroup p; (p = group.getParent()) != null; )
+                        group = p;
+                    return new ThreadGroup(
+                        group, "InnocuousForkJoinWorkerThreadGroup");
+                }});
 
         /** An AccessControlContext supporting no privileges */
         private static final AccessControlContext INNOCUOUS_ACC =
             new AccessControlContext(
-                new ProtectionDomain[] {
-                    new ProtectionDomain(null, null)
-                });
+                new ProtectionDomain[] { new ProtectionDomain(null, null) });
 
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
             super(pool,

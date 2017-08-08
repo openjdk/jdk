@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4328178
-   @summary Performs baseline and regression test on the ISCII91 charset
+ * @bug 4328178
+ * @summary Performs baseline and regression test on the ISCII91 charset
+ * @modules jdk.charsets
  */
 
 import java.io.*;

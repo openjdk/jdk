@@ -26,6 +26,7 @@
  * @bug 7152176 8168518 8172017
  * @summary More krb5 tests
  * @library ../../../../java/security/testlibrary/ /test/lib
+ * @build jdk.test.lib.Platform
  * @run main/othervm/timeout=300 ReplayCacheTestProc
  */
 

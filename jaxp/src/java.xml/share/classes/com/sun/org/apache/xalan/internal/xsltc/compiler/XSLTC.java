@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -342,7 +342,7 @@ public final class XSLTC {
         _elements       = new HashMap<>();
         _attributes     = new HashMap<>();
         _namespaces     = new HashMap<>();
-        _namespaces.put("",new Integer(_nextNSType));
+        _namespaces.put("", _nextNSType);
         _namesIndex     = new Vector(128);
         _namespaceIndex = new Vector(32);
         _namespacePrefixes = new HashMap<>();
@@ -852,7 +852,7 @@ public final class XSLTC {
             _namespaces.put(namespaceURI,code);
             _namespaceIndex.addElement(namespaceURI);
         }
-        return code.intValue();
+        return code;
     }
 
     public int nextModeSerial() {

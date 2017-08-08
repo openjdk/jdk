@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7069824 8042360
+ * @bug 7069824 8042360 8032842 8175539
  * @summary Verify implementation for Locale matching.
  * @run main Bug7069824
  */
@@ -747,7 +747,7 @@ public class Bug7069824 {
         priorityList = LanguageRange.parse(ranges);
         tagList = generateLanguageTags(tags);
         actualTags = showLanguageTags(Locale.filterTags(priorityList, tagList));
-        expectedTags = "ja-jp-hepburn, en";
+        expectedTags = "ja-JP-hepburn, en";
 
         if (!expectedTags.equals(actualTags)) {
             error = true;
@@ -763,7 +763,7 @@ public class Bug7069824 {
         priorityList = LanguageRange.parse(ranges);
         tagList = generateLanguageTags(tags);
         actualTags = showLanguageTags(Locale.filterTags(priorityList, tagList, mode));
-        expectedTags = "de-de, de-de-x-goethe";
+        expectedTags = "de-DE, de-DE-x-goethe";
 
         if (!expectedTags.equals(actualTags)) {
             error = true;
@@ -779,8 +779,8 @@ public class Bug7069824 {
         priorityList = LanguageRange.parse(ranges);
         tagList = generateLanguageTags(tags);
         actualTags = showLanguageTags(Locale.filterTags(priorityList, tagList, mode));
-        expectedTags = "de-de, de-latn-de, de-latf-de, de-de-x-goethe, "
-                       + "de-latn-de-1996, de-deva-de";
+        expectedTags = "de-DE, de-Latn-DE, de-Latf-DE, de-DE-x-goethe, "
+                       + "de-Latn-DE-1996, de-Deva-DE";
 
         if (!expectedTags.equals(actualTags)) {
             error = true;
@@ -796,8 +796,8 @@ public class Bug7069824 {
         priorityList = LanguageRange.parse(ranges);
         tagList = generateLanguageTags(tags);
         actualTags = showLanguageTags(Locale.filterTags(priorityList, tagList, mode));
-        expectedTags = "de-de, de-latn-de, de-latf-de, de-de-x-goethe, "
-                       + "de-latn-de-1996, de-deva-de";
+        expectedTags = "de-DE, de-Latn-DE, de-Latf-DE, de-DE-x-goethe, "
+                       + "de-Latn-DE-1996, de-Deva-DE";
 
         if (!expectedTags.equals(actualTags)) {
             error = true;
@@ -884,7 +884,7 @@ public class Bug7069824 {
         priorityList = LanguageRange.parse(ranges);
         tagList = generateLanguageTags(tags);
         actualTag = Locale.lookupTag(priorityList, tagList);
-        expectedTag = "fr-jp";
+        expectedTag = "fr-JP";
 
         if (!expectedTag.equals(actualTag)) {
             error = true;

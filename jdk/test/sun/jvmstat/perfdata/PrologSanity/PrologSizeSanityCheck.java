@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 4990825
- * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData PrologSizeSanityCheck
  * @summary prolog size and overflow sanity checks
+ *
+ * @run main/othervm -XX:+UsePerfData PrologSizeSanityCheck
  */
 
 import sun.jvmstat.monitor.*;

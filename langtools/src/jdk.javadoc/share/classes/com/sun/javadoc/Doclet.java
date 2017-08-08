@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package com.sun.javadoc;
  * showing the entry-point methods.  A starting class must
  * import com.sun.javadoc.* and implement the
  * {@code start(RootDoc)} method, as described in the
- * <a href="package-summary.html#package_description">package
+ * <a href="package-summary.html#package.description">package
  * description</a>.  If the doclet takes command line options,
  * it must also implement {@code optionLength} and
  * {@code validOptions}.

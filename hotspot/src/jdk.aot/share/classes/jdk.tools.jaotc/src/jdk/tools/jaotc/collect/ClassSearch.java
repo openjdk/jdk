@@ -77,7 +77,7 @@ public class ClassSearch {
         }
 
         if (found == null) {
-            throw new InternalError("Failed to find: " + searchFor.toString());
+            throw new InternalError("Failed to find " + searchFor.getType() + " file: " + searchFor.getName());
         }
         return found;
     }

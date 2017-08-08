@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,10 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReader;
-import java.lang.module.ModuleReference;
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
-
-import jdk.internal.module.ModuleHashes;
 
 /**
  * Provides access to non-public methods in java.lang.module.
@@ -59,20 +53,21 @@ public interface JavaLangModuleAccess {
      */
     ModuleDescriptor.Builder newModuleBuilder(String mn,
                                               boolean strict,
-                                              boolean open,
-                                              boolean synthetic);
+                                              Set<ModuleDescriptor.Modifier> ms);
 
     /**
-     * Returns the set of packages that are exported (unconditionally or
-     * unconditionally).
+     * Returns a snapshot of the packages in the module.
      */
-    Set<String> exportedPackages(ModuleDescriptor.Builder builder);
+    Set<String> packages(ModuleDescriptor.Builder builder);
 
     /**
-     * Returns the set of packages that are opened (unconditionally or
-     * unconditionally).
+     * Adds a dependence on a module with the given (possibly un-parsable)
+     * version string.
      */
-    Set<String> openPackages(ModuleDescriptor.Builder builder);
+    void requires(ModuleDescriptor.Builder builder,
+                  Set<Requires.Modifier> ms,
+                  String mn,
+                  String rawCompiledVersion);
 
     /**
      * Returns a {@code ModuleDescriptor.Requires} of the given modifiers
@@ -114,23 +109,11 @@ public interface JavaLangModuleAccess {
     Provides newProvides(String service, List<String> providers);
 
     /**
-     * Returns a {@code ModuleDescriptor.Version} of the given version.
-     */
-    Version newVersion(String v);
-
-    /**
-     * Clones the given module descriptor with an augmented set of packages
-     */
-    ModuleDescriptor newModuleDescriptor(ModuleDescriptor md, Set<String> pkgs);
-
-    /**
      * Returns a new {@code ModuleDescriptor} instance.
      */
     ModuleDescriptor newModuleDescriptor(String name,
                                          Version version,
-                                         boolean open,
-                                         boolean automatic,
-                                         boolean synthetic,
+                                         Set<ModuleDescriptor.Modifier> ms,
                                          Set<Requires> requires,
                                          Set<Exports> exports,
                                          Set<Opens> opens,
@@ -138,19 +121,20 @@ public interface JavaLangModuleAccess {
                                          Set<Provides> provides,
                                          Set<String> packages,
                                          String mainClass,
-                                         String osName,
-                                         String osArch,
-                                         String osVersion,
                                          int hashCode);
 
     /**
      * Resolves a collection of root modules, with service binding
-     * and the empty configuration as the parent. The post resolution
-     * checks are optionally run.
+     * and the empty configuration as the parent.
      */
-    Configuration resolveRequiresAndUses(ModuleFinder finder,
-                                         Collection<String> roots,
-                                         boolean check,
-                                         PrintStream traceOutput);
+    Configuration resolveAndBind(ModuleFinder finder,
+                                 Collection<String> roots,
+                                 PrintStream traceOutput);
+
+    /**
+     * Creates a configuration from a pre-generated readability graph.
+     */
+    Configuration newConfiguration(ModuleFinder finder,
+                                   Map<String, Set<String>> graph);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 import java.net.SocketTimeoutException;
 import java.util.Map;
+import static jdk.testlibrary.Asserts.assertNotEquals;
 
 public class JdpOnTestCase extends JdpTestCase {
 
@@ -58,6 +59,7 @@ public class JdpOnTestCase extends JdpTestCase {
         final String jdpName = payload.get("INSTANCE_NAME");
         log.fine("Received correct JDP packet #" + String.valueOf(receivedJDPpackets) +
                 ", jdp.name=" + jdpName);
+        assertNotEquals(null, payload.get("PROCESS_ID"), "Expected payload.get(\"PROCESS_ID\") to be not null.");
     }
 
     /**

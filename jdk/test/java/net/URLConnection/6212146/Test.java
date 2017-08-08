@@ -21,49 +21,43 @@
  * questions.
  */
 
-import java.net.*;
-import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Paths;
 
 public class Test {
 
     public static void main(String[] args)
          throws Exception {
-      String BASE_DIR = args[0];
-      String ARCHIVE_NAME = args[1];
-      String lProperty = System.getProperty( "do.iterations", "5000" );
-      int lRepetitions = new Integer( lProperty ).intValue();
-      System.out.println ( "Start creating copys of the archive, " + lRepetitions + " times" );
-      for( int i = 0; i < lRepetitions; i++ ) {
-         // Copy the given jar file and add a prefix
-         copyFile( BASE_DIR, ARCHIVE_NAME, i);
+        String baseDir = args[0];
+        String archiveName = args[1];
+        String lProperty = System.getProperty("do.iterations", "5000");
+        int lRepetitions = Integer.valueOf(lProperty);
+        System.out.println("Start creating copys of the archive, "
+                + lRepetitions + " times");
+        for (int i = 0; i < lRepetitions; i++) {
+            // Copy the given jar file and add a prefix
+            copyFile(baseDir, archiveName, i);
+        }
+        System.out.println("Start opening the archives archive, "
+                + lRepetitions + " times");
+        System.out.println("First URL is jar:" + Paths.get(baseDir,
+                0 + archiveName).toUri() + "!/foo/Test.class");
+        for (int i = 0; i < lRepetitions; i++) {
+            // Create URL
+            String lURLPath = "jar:" + Paths.get(baseDir, i
+                    + archiveName).toUri() + "!/foo/Test.class";
+            URL lURL = new URL(lURLPath);
+            // Open URL Connection
+            try {
+                URLConnection lConnection = lURL.openConnection();
+                lConnection.getInputStream();
+            } catch (java.io.FileNotFoundException fnfe) {
+                // Ignore this one because we expect this one
+            } catch (java.util.zip.ZipException ze) {
+                throw new RuntimeException("Test failed: " + ze.getMessage());
+            }
       }
-      System.out.println ( "Start opening the archives archive, " + lRepetitions + " times" );
-      System.out.println ( "First URL is jar:file://" + BASE_DIR + "1" + ARCHIVE_NAME + "!/foo/Test.class");
-      for( int i = 0; i < lRepetitions; i++ ) {
-         // Create ULR
-         String lURLPath = "jar:file://" + BASE_DIR + i + ARCHIVE_NAME + "!/foo/Test.class";
-         URL lURL = new URL( lURLPath );
-         // Open URL Connection
-         try {
-            URLConnection lConnection = lURL.openConnection();
-            lConnection.getInputStream();
-         } catch( java.io.FileNotFoundException fnfe ) {
-            // Ignore this one because we expect this one
-         } catch( java.util.zip.ZipException ze ) {
-            throw new RuntimeException ("Test failed: " + ze.getMessage());
-         }
-      }
-      //System.out.println ( "Done testing, waiting 20 seconds for checking" );
-      //System.out.println ( "Cleaning up");
-      //for( int i = 0; i < lRepetitions; i++ ) {
-         // Copy the given jar file and add a prefix
-         //deleteFile( BASE_DIR, i, ARCHIVE_NAME);
-      ////}
-   }
-
-   private static void deleteFile (String BASE_DIR, int pIndex, String pArchiveName) {
-         java.io.File file = new java.io.File (BASE_DIR, pIndex + pArchiveName );
-         file.delete ();
    }
 
    private static void copyFile( String pBaseDir, String pArchiveName, int pIndex) {

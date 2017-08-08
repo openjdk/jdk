@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -38,6 +38,7 @@
  *   Nils Larsch <nla@trustcenter.de>, and
  *   Lenka Fibikova <fibikova@exp-math.uni-essen.de>, the OpenSSL Project
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "ecp.h"
@@ -340,7 +341,8 @@ ec_GFp_validate_point(const mp_int *px, const mp_int *py, const ECGroup *group)
     /* 4: Verify that the order of the curve times the publicValue
      *    is the point at infinity.
      */
-        MP_CHECKOK( ECPoint_mul(group, &group->order, px, py, &pxt, &pyt) );
+        /* timing mitigation is not supported */
+        MP_CHECKOK( ECPoint_mul(group, &group->order, px, py, &pxt, &pyt, /*timing*/ 0) );
         if (ec_GFp_pt_is_inf_aff(&pxt, &pyt) != MP_YES) {
                 res = MP_NO;
                 goto CLEANUP;

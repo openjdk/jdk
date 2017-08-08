@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,30 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
-import com.sun.jdi.connect.*;
-import com.sun.jdi.connect.spi.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ResourceBundle;
-import java.io.IOException;
-
 import java.util.ServiceLoader;
+
+import com.sun.jdi.JDIPermission;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.VirtualMachineManager;
+import com.sun.jdi.connect.AttachingConnector;
+import com.sun.jdi.connect.Connector;
+import com.sun.jdi.connect.LaunchingConnector;
+import com.sun.jdi.connect.ListeningConnector;
+import com.sun.jdi.connect.spi.Connection;
+import com.sun.jdi.connect.spi.TransportService;
 
 /* Public for use by com.sun.jdi.Bootstrap */
 public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
-    private List<Connector> connectors = new ArrayList<Connector>();
+    private List<Connector> connectors = new ArrayList<>();
     private LaunchingConnector defaultConnector = null;
-    private List<VirtualMachine> targets = new ArrayList<VirtualMachine>();
+    private List<VirtualMachine> targets = new ArrayList<>();
     private final ThreadGroup mainGroupForJDI;
     private ResourceBundle messages = null;
     private int vmSequenceNumber = 0;
@@ -158,7 +163,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
         if (!found && launchers.size() > 0) {
             setDefaultConnector(launchers.get(0));
         }
-
     }
 
     public LaunchingConnector defaultConnector() {
@@ -173,7 +177,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     }
 
     public List<LaunchingConnector> launchingConnectors() {
-        List<LaunchingConnector> launchingConnectors = new ArrayList<LaunchingConnector>(connectors.size());
+        List<LaunchingConnector> launchingConnectors = new ArrayList<>(connectors.size());
         for (Connector connector: connectors) {
             if (connector instanceof LaunchingConnector) {
                 launchingConnectors.add((LaunchingConnector)connector);
@@ -183,7 +187,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     }
 
     public List<AttachingConnector> attachingConnectors() {
-        List<AttachingConnector> attachingConnectors = new ArrayList<AttachingConnector>(connectors.size());
+        List<AttachingConnector> attachingConnectors = new ArrayList<>(connectors.size());
         for (Connector connector: connectors) {
             if (connector instanceof AttachingConnector) {
                 attachingConnectors.add((AttachingConnector)connector);
@@ -193,7 +197,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     }
 
     public List<ListeningConnector> listeningConnectors() {
-        List<ListeningConnector> listeningConnectors = new ArrayList<ListeningConnector>(connectors.size());
+        List<ListeningConnector> listeningConnectors = new ArrayList<>(connectors.size());
         for (Connector connector: connectors) {
             if (connector instanceof ListeningConnector) {
                 listeningConnectors.add((ListeningConnector)connector);
@@ -267,5 +271,4 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
         }
         return messages.getString(key);
     }
-
 }

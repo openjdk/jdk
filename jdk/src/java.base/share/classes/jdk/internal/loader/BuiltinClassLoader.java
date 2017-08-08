@@ -49,16 +49,20 @@ import java.security.SecureClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
-import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModulePatcher.PatchedModuleReader;
+import jdk.internal.module.Resources;
 
 
 /**
@@ -162,12 +166,18 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Register a module this this class loader. This has the effect of making
-     * the types in the module visible.
+     * Returns {@code true} if there is a class path associated with this
+     * class loader.
+     */
+    boolean hasClassPath() {
+        return ucp != null;
+    }
+
+    /**
+     * Register a module this class loader. This has the effect of making the
+     * types in the module visible.
      */
     public void loadModule(ModuleReference mref) {
-        assert !VM.isModuleSystemInited();
-
         String mn = mref.descriptor().name();
         if (nameToModule.putIfAbsent(mn, mref) != null) {
             throw new InternalError(mn + " already defined to this loader");
@@ -180,6 +190,11 @@ public class BuiltinClassLoader
                 throw new InternalError(pn + " in modules " + mn + " and "
                                         + other.mref().descriptor().name());
             }
+        }
+
+        // clear resources cache if VM is already initialized
+        if (VM.isModuleSystemInited() && resourceCache != null) {
+            resourceCache = null;
         }
     }
 
@@ -247,17 +262,23 @@ public class BuiltinClassLoader
      */
     @Override
     public URL findResource(String name) {
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = packageToModule.get(pn);
         if (module != null) {
 
             // resource is in a package of a module defined to this loader
-            if (module.loader() == this
-                && (name.endsWith(".class") || isOpen(module.mref(), pn))) {
+            if (module.loader() == this) {
+                URL url;
                 try {
-                    return findResource(module.name(), name); // checks URL
+                    url = findResource(module.name(), name); // checks URL
                 } catch (IOException ioe) {
                     return null;
+                }
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
+                    return url;
                 }
             }
 
@@ -292,15 +313,17 @@ public class BuiltinClassLoader
     public Enumeration<URL> findResources(String name) throws IOException {
         List<URL> checked = new ArrayList<>();  // list of checked URLs
 
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = packageToModule.get(pn);
         if (module != null) {
 
             // resource is in a package of a module defined to this loader
-            if (module.loader() == this
-                && (name.endsWith(".class") || isOpen(module.mref(), pn))) {
-                URL url = findResource(module.name(), name);  // checks URL
-                if (url != null) {
+            if (module.loader() == this) {
+                URL url = findResource(module.name(), name); // checks URL
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
                     checked.add(url);
                 }
             }
@@ -315,16 +338,43 @@ public class BuiltinClassLoader
             }
         }
 
-        // search class path
+        // class path (not checked)
         Enumeration<URL> e = findResourcesOnClassPath(name);
-        while (e.hasMoreElements()) {
-            URL url = checkURL(e.nextElement());
-            if (url != null) {
-                checked.add(url);
-            }
-        }
 
-        return Collections.enumeration(checked);
+        // concat the checked URLs and the (not checked) class path
+        return new Enumeration<>() {
+            final Iterator<URL> iterator = checked.iterator();
+            URL next;
+            private boolean hasNext() {
+                if (next != null) {
+                    return true;
+                } else if (iterator.hasNext()) {
+                    next = iterator.next();
+                    return true;
+                } else {
+                    // need to check each URL
+                    while (e.hasMoreElements() && next == null) {
+                        next = checkURL(e.nextElement());
+                    }
+                    return next != null;
+                }
+            }
+            @Override
+            public boolean hasMoreElements() {
+                return hasNext();
+            }
+            @Override
+            public URL nextElement() {
+                if (hasNext()) {
+                    URL result = next;
+                    next = null;
+                    return result;
+                } else {
+                    throw new NoSuchElementException();
+                }
+            }
+        };
+
     }
 
     /**
@@ -337,7 +387,10 @@ public class BuiltinClassLoader
     private List<URL> findMiscResource(String name) throws IOException {
         SoftReference<Map<String, List<URL>>> ref = this.resourceCache;
         Map<String, List<URL>> map = (ref != null) ? ref.get() : null;
-        if (map != null) {
+        if (map == null) {
+            map = new ConcurrentHashMap<>();
+            this.resourceCache = new SoftReference<>(map);
+        } else {
             List<URL> urls = map.get(name);
             if (urls != null)
                 return urls;
@@ -350,34 +403,31 @@ public class BuiltinClassLoader
                 new PrivilegedExceptionAction<>() {
                     @Override
                     public List<URL> run() throws IOException {
-                        List<URL> result = new ArrayList<>();
+                        List<URL> result = null;
                         for (ModuleReference mref : nameToModule.values()) {
                             URI u = moduleReaderFor(mref).find(name).orElse(null);
                             if (u != null) {
                                 try {
+                                    if (result == null)
+                                        result = new ArrayList<>();
                                     result.add(u.toURL());
                                 } catch (MalformedURLException |
                                          IllegalArgumentException e) {
                                 }
                             }
                         }
-                        return result;
+                        return (result != null) ? result : Collections.emptyList();
                     }
                 });
         } catch (PrivilegedActionException pae) {
             throw (IOException) pae.getCause();
         }
 
-        // only cache resources after all modules have been defined
+        // only cache resources after VM is fully initialized
         if (VM.isModuleSystemInited()) {
-            if (map == null) {
-                map = new ConcurrentHashMap<>();
-                this.resourceCache = new SoftReference<>(map);
-            }
-            if (urls.isEmpty())
-                urls = Collections.emptyList();
             map.putIfAbsent(name, urls);
         }
+
         return urls;
     }
 
@@ -424,7 +474,7 @@ public class BuiltinClassLoader
      * Returns a URL to a resource on the class path.
      */
     private URL findResourceOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResource(name, false);
             } else {
@@ -441,7 +491,7 @@ public class BuiltinClassLoader
      * Returns the URLs of all resources of the given name on the class path.
      */
     private Enumeration<URL> findResourcesOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResources(name, false);
             } else {
@@ -480,7 +530,7 @@ public class BuiltinClassLoader
         } else {
 
             // search class path
-            if (ucp != null) {
+            if (hasClassPath()) {
                 c = findClassOnClassPathOrNull(cn);
             }
 
@@ -513,7 +563,7 @@ public class BuiltinClassLoader
         }
 
         // search class path
-        if (ucp != null) {
+        if (hasClassPath()) {
             return findClassOnClassPathOrNull(cn);
         }
 
@@ -568,7 +618,7 @@ public class BuiltinClassLoader
                     }
 
                     // check class path
-                    if (c == null && ucp != null && VM.isModuleSystemInited()) {
+                    if (c == null && hasClassPath() && VM.isModuleSystemInited()) {
                         c = findClassOnClassPathOrNull(cn);
                     }
                 }
@@ -896,9 +946,16 @@ public class BuiltinClassLoader
         URL url = cs.getLocation();
         if (url == null)
             return perms;
-        Permission p = null;
+
+        // avoid opening connection when URL is to resource in run-time image
+        if (url.getProtocol().equals("jrt")) {
+            perms.add(new RuntimePermission("accessSystemModules"));
+            return perms;
+        }
+
+        // open connection to determine the permission needed
         try {
-            p = url.openConnection().getPermission();
+            Permission p = url.openConnection().getPermission();
             if (p != null) {
                 // for directories then need recursive access
                 if (p instanceof FilePermission) {
@@ -919,23 +976,26 @@ public class BuiltinClassLoader
     // -- miscellaneous supporting methods
 
     /**
-     * Returns the ModuleReader for the given module.
+     * Returns the ModuleReader for the given module, creating it if needed
      */
     private ModuleReader moduleReaderFor(ModuleReference mref) {
-        return moduleToReader.computeIfAbsent(mref, m -> createModuleReader(mref));
-    }
-
-    /**
-     * Creates a ModuleReader for the given module.
-     */
-    private ModuleReader createModuleReader(ModuleReference mref) {
-        try {
-            return mref.open();
-        } catch (IOException e) {
-            // Return a null module reader to avoid a future class load
-            // attempting to open the module again.
-            return new NullModuleReader();
+        ModuleReader reader = moduleToReader.get(mref);
+        if (reader == null) {
+            // avoid method reference during startup
+            Function<ModuleReference, ModuleReader> create = new Function<>() {
+                public ModuleReader apply(ModuleReference moduleReference) {
+                    try {
+                        return mref.open();
+                    } catch (IOException e) {
+                        // Return a null module reader to avoid a future class
+                        // load attempting to open the module again.
+                        return new NullModuleReader();
+                    }
+                }
+            };
+            reader = moduleToReader.computeIfAbsent(mref, create);
         }
+        return reader;
     }
 
     /**
@@ -966,7 +1026,7 @@ public class BuiltinClassLoader
      */
     private boolean isOpen(ModuleReference mref, String pn) {
         ModuleDescriptor descriptor = mref.descriptor();
-        if (descriptor.isOpen())
+        if (descriptor.isOpen() || descriptor.isAutomatic())
             return true;
         for (ModuleDescriptor.Opens opens : descriptor.opens()) {
             String source = opens.source();

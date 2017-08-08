@@ -38,6 +38,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -154,11 +155,13 @@ public class SemaphoreTest extends JSR166TestCase {
             void acquire(Semaphore s) throws InterruptedException {
                 assertTrue(s.tryAcquire(2 * LONG_DELAY_MS, MILLISECONDS));
             }
+            Thread.State parkedState() { return Thread.State.TIMED_WAITING; }
         },
         tryAcquireTimedN {
             void acquire(Semaphore s, int permits) throws InterruptedException {
                 assertTrue(s.tryAcquire(permits, 2 * LONG_DELAY_MS, MILLISECONDS));
             }
+            Thread.State parkedState() { return Thread.State.TIMED_WAITING; }
         };
 
         // Intentionally meta-circular
@@ -172,6 +175,7 @@ public class SemaphoreTest extends JSR166TestCase {
             for (int i = 0; i < permits; i++)
                 acquire(s);
         }
+        Thread.State parkedState() { return Thread.State.WAITING; }
     }
 
     /**
@@ -217,11 +221,10 @@ public class SemaphoreTest extends JSR166TestCase {
     /**
      * timed tryAcquire times out
      */
-    public void testTryAcquire_timeout()      { testTryAcquire_timeout(false); }
-    public void testTryAcquire_timeout_fair() { testTryAcquire_timeout(true); }
-    public void testTryAcquire_timeout(boolean fair) {
-        Semaphore s = new Semaphore(0, fair);
-        long startTime = System.nanoTime();
+    public void testTryAcquire_timeout() {
+        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+        final Semaphore s = new Semaphore(0, fair);
+        final long startTime = System.nanoTime();
         try { assertFalse(s.tryAcquire(timeoutMillis(), MILLISECONDS)); }
         catch (InterruptedException e) { threadUnexpectedException(e); }
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
@@ -230,11 +233,10 @@ public class SemaphoreTest extends JSR166TestCase {
     /**
      * timed tryAcquire(N) times out
      */
-    public void testTryAcquireN_timeout()      { testTryAcquireN_timeout(false); }
-    public void testTryAcquireN_timeout_fair() { testTryAcquireN_timeout(true); }
-    public void testTryAcquireN_timeout(boolean fair) {
-        Semaphore s = new Semaphore(2, fair);
-        long startTime = System.nanoTime();
+    public void testTryAcquireN_timeout() {
+        final boolean fair = ThreadLocalRandom.current().nextBoolean();
+        final Semaphore s = new Semaphore(2, fair);
+        final long startTime = System.nanoTime();
         try { assertFalse(s.tryAcquire(3, timeoutMillis(), MILLISECONDS)); }
         catch (InterruptedException e) { threadUnexpectedException(e); }
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
@@ -254,7 +256,8 @@ public class SemaphoreTest extends JSR166TestCase {
     public void testInterruptible_tryAcquireTimedN_fair() { testInterruptible(true,  AcquireMethod.tryAcquireTimedN); }
     public void testInterruptible(boolean fair, final AcquireMethod acquirer) {
         final PublicSemaphore s = new PublicSemaphore(0, fair);
-        final Semaphore pleaseInterrupt = new Semaphore(0, fair);
+        final java.util.concurrent.CyclicBarrier pleaseInterrupt
+            = new java.util.concurrent.CyclicBarrier(2);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() {
                 // Interrupt before acquire
@@ -263,12 +266,7 @@ public class SemaphoreTest extends JSR166TestCase {
                     acquirer.acquire(s);
                     shouldThrow();
                 } catch (InterruptedException success) {}
-
-                // Interrupt during acquire
-                try {
-                    acquirer.acquire(s);
-                    shouldThrow();
-                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
 
                 // Interrupt before acquire(N)
                 Thread.currentThread().interrupt();
@@ -276,21 +274,31 @@ public class SemaphoreTest extends JSR166TestCase {
                     acquirer.acquire(s, 3);
                     shouldThrow();
                 } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
 
-                pleaseInterrupt.release();
+                // Interrupt during acquire
+                await(pleaseInterrupt);
+                try {
+                    acquirer.acquire(s);
+                    shouldThrow();
+                } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
 
                 // Interrupt during acquire(N)
+                await(pleaseInterrupt);
                 try {
                     acquirer.acquire(s, 3);
                     shouldThrow();
                 } catch (InterruptedException success) {}
+                assertFalse(Thread.interrupted());
             }});
 
-        waitForQueuedThread(s, t);
-        t.interrupt();
-        await(pleaseInterrupt);
-        waitForQueuedThread(s, t);
-        t.interrupt();
+        for (int n = 2; n-->0; ) {
+            await(pleaseInterrupt);
+            assertThreadBlocks(t, acquirer.parkedState());
+            t.interrupt();
+        }
+
         awaitTermination(t);
     }
 
@@ -328,8 +336,8 @@ public class SemaphoreTest extends JSR166TestCase {
         waitForQueuedThread(s, t2);
         t2.interrupt();
 
-        assertThreadStaysAlive(t1);
-        assertTrue(t2.isAlive());
+        assertThreadBlocks(t1, Thread.State.WAITING);
+        assertThreadBlocks(t2, Thread.State.WAITING);
 
         s.release(2);
 
@@ -627,8 +635,10 @@ public class SemaphoreTest extends JSR166TestCase {
         Thread t2 = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 // Will fail, even though 1 permit is available
-                assertFalse(s.tryAcquire(0L, MILLISECONDS));
-                assertFalse(s.tryAcquire(1, 0L, MILLISECONDS));
+                assertFalse(
+                    s.tryAcquire(randomExpiredTimeout(), randomTimeUnit()));
+                assertFalse(
+                    s.tryAcquire(1, randomExpiredTimeout(), randomTimeUnit()));
 
                 // untimed tryAcquire will barge and succeed
                 assertTrue(s.tryAcquire());
