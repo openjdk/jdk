@@ -75,37 +75,9 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                 }
             }
 
-            if (code < 0x0590) {
+            if (code < FontUtilities.MIN_LAYOUT_CHARCODE) {
                 continue;
-            } else if (code <= 0x05ff) {
-                // Hebrew 0x0590->0x05ff
-                return true;
-            } else if (code >= 0x0600 && code <= 0x06ff) {
-                // Arabic
-                return true;
-            } else if (code >= 0x0900 && code <= 0x0d7f) {
-                // if Indic, assume shaping for conjuncts, reordering:
-                // 0900 - 097F Devanagari
-                // 0980 - 09FF Bengali
-                // 0A00 - 0A7F Gurmukhi
-                // 0A80 - 0AFF Gujarati
-                // 0B00 - 0B7F Oriya
-                // 0B80 - 0BFF Tamil
-                // 0C00 - 0C7F Telugu
-                // 0C80 - 0CFF Kannada
-                // 0D00 - 0D7F Malayalam
-                return true;
-            } else if (code >= 0x0e00 && code <= 0x0e7f) {
-                // if Thai, assume shaping for vowel, tone marks
-                return true;
-            } else if (code >= 0x200c && code <= 0x200d) {
-                // zwj or zwnj
-                return true;
-            } else if (code >= 0x202a && code <= 0x202e) {
-                // directional control
-                return true;
-            } else if (code >= 0x206a && code <= 0x206f) {
-                // directional control
+            } else if (FontUtilities.isComplexCharCode(code)) {
                 return true;
             } else if (code >= 0x10000) {
                 i += 1; // Empty glyph slot after surrogate

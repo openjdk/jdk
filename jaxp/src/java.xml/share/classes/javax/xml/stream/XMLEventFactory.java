@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,10 +125,6 @@ public abstract class XMLEventFactory {
    * <p>
    *   Once an application has obtained a reference to a XMLEventFactory it
    *   can use the factory to configure and obtain stream instances.
-   * <p>
-   *   Note that this is a new method that replaces the deprecated newInstance() method.
-   *     No changes in behavior are defined by this replacement method relative to
-   *     the deprecated method.
    *
    * @throws FactoryConfigurationError in case of {@linkplain
    *   java.util.ServiceConfigurationError service configuration error} or if
@@ -155,7 +151,7 @@ public abstract class XMLEventFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)}
    *              method defines no changes in behavior.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLEventFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {

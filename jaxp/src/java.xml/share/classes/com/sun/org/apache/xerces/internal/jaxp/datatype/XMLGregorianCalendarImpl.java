@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,23 @@
 
 package com.sun.org.apache.xerces.internal.jaxp.datatype;
 
+import com.sun.org.apache.xerces.internal.util.DatatypeMessageFormatter;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.TimeZone;
+import java.math.RoundingMode;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
-
+import java.util.TimeZone;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
-import com.sun.org.apache.xerces.internal.util.DatatypeMessageFormatter;
-import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 
 /**
  * <p>Representation for W3C XML Schema 1.0 date/time datatypes.
@@ -379,7 +379,7 @@ public class XMLGregorianCalendarImpl
             throws IllegalArgumentException {
 
         // compute format string for this lexical representation.
-        String format = null;
+        String format;
         String lexRep = lexicalRepresentation;
         final int NOT_FOUND = -1;
         int lexRepLength = lexRep.length();
@@ -525,34 +525,10 @@ public class XMLGregorianCalendarImpl
             throw new IllegalArgumentException(
                 DatatypeMessageFormatter.formatMessage(null,
                     "InvalidXGCValue-fractional",
-                    new Object[] { year, new Integer(month), new Integer(day),
-                    new Integer(hour), new Integer(minute), new Integer(second),
-                    fractionalSecond, new Integer(timezone)})
+                    new Object[] { year, month, day,
+                    hour, minute, second,
+                    fractionalSecond, timezone})
                         );
-
-                        /**
-                String yearString = "null";
-                if (year != null) {
-                    yearString = year.toString();
-                }
-                String fractionalSecondString = "null";
-                if (fractionalSecond != null) {
-                    fractionalSecondString = fractionalSecond.toString();
-                }
-
-                throw new IllegalArgumentException(
-                    "year = " + yearString
-                    + ", month = " + month
-                    + ", day = " + day
-                    + ", hour = " + hour
-                    + ", minute = " + minute
-                    + ", second = " + second
-                    + ", fractionalSecond = " + fractionalSecondString
-                    + ", timezone = " + timezone
-                    + ", is not a valid representation of an XML Gregorian Calendar value."
-                );
-                */
-
         }
 
         save();
@@ -601,24 +577,10 @@ public class XMLGregorianCalendarImpl
             throw new IllegalArgumentException(
                 DatatypeMessageFormatter.formatMessage(null,
                 "InvalidXGCValue-milli",
-                new Object[] { new Integer(year), new Integer(month), new Integer(day),
-                new Integer(hour), new Integer(minute), new Integer(second),
-                new Integer(millisecond), new Integer(timezone)})
+                new Object[] { year, month, day,
+                hour, minute, second,
+                millisecond, timezone})
                         );
-                /*
-                throw new IllegalArgumentException(
-                    "year = " + year
-                    + ", month = " + month
-                    + ", day = " + day
-                    + ", hour = " + hour
-                    + ", minute = " + minute
-                    + ", second = " + second
-                    + ", millisecond = " + millisecond
-                    + ", timezone = " + timezone
-                    + ", is not a valid representation of an XML Gregorian Calendar value."
-                    );
-                 */
-
         }
 
         save();
@@ -683,11 +645,11 @@ public class XMLGregorianCalendarImpl
          */
     public XMLGregorianCalendarImpl(GregorianCalendar cal) {
 
-        int year = cal.get(Calendar.YEAR);
+        int year1 = cal.get(Calendar.YEAR);
         if (cal.get(Calendar.ERA) == GregorianCalendar.BC) {
-            year = -year;
+            year1 = -year1;
         }
-        this.setYear(year);
+        this.setYear(year1);
 
         // Calendar.MONTH is zero based, XSD Date datatype's month field starts
         // with JANUARY as 1.
@@ -1201,7 +1163,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setYear(BigInteger year) {
+    public final void setYear(BigInteger year) {
         if (year == null) {
             this.eon = null;
             this.year = DatatypeConstants.FIELD_UNDEFINED;
@@ -1225,7 +1187,7 @@ public class XMLGregorianCalendarImpl
      * @param year value constraints are summarized in <a href="#datetimefield-year">year field of date/time field mapping table</a>.
      *   If year is {@link DatatypeConstants#FIELD_UNDEFINED}, then eon is set to <code>null</code>.
      */
-    public void setYear(int year) {
+    public final void setYear(int year) {
         if (year == DatatypeConstants.FIELD_UNDEFINED) {
             this.year = DatatypeConstants.FIELD_UNDEFINED;
             this.eon = null;
@@ -1269,7 +1231,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setMonth(int month) {
+    public final void setMonth(int month) {
         if(month<DatatypeConstants.JANUARY || DatatypeConstants.DECEMBER<month)
             if(month!=DatatypeConstants.FIELD_UNDEFINED)
                 invalidFieldValue(MONTH, month);
@@ -1287,7 +1249,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setDay(int day) {
+    public final void setDay(int day) {
         if(day<1 || 31<day)
             if(day!=DatatypeConstants.FIELD_UNDEFINED)
                 invalidFieldValue(DAY,day);
@@ -1306,7 +1268,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setTimezone(int offset) {
+    public final void setTimezone(int offset) {
             if(offset<-14*60 || 14*60<offset)
             if(offset!=DatatypeConstants.FIELD_UNDEFINED)
                 invalidFieldValue(TIMEZONE,offset);
@@ -1329,14 +1291,14 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setTime(int hour, int minute, int second) {
+    public final void setTime(int hour, int minute, int second) {
         setTime(hour, minute, second, null);
     }
 
     private void invalidFieldValue(int field, int value) {
         throw new IllegalArgumentException(
             DatatypeMessageFormatter.formatMessage(null, "InvalidFieldValue",
-                new Object[]{ new Integer(value), FIELD_NAME[field]})
+                new Object[]{ value, FIELD_NAME[field]})
         );
     }
 
@@ -1406,7 +1368,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setTime(
+    public final void setTime(
             int hour,
             int minute,
             int second,
@@ -1446,7 +1408,7 @@ public class XMLGregorianCalendarImpl
      * outside value constraints for the field as specified in
      * <a href="#datetimefieldmapping">date/time field mapping table</a>.
      */
-    public void setTime(int hour, int minute, int second, int millisecond) {
+    public final void setTime(int hour, int minute, int second, int millisecond) {
 
         setHour(hour, false);
 
@@ -1990,7 +1952,7 @@ public class XMLGregorianCalendarImpl
      * Validate instance by <code>getXMLSchemaType()</code> constraints.
      * @return true if data values are valid.
      */
-    public boolean isValid() {
+    public final boolean isValid() {
         // since setters do not allow for invalid values,
         // (except for exceptional case of year field of zero),
         // no need to check for anything except for constraints
@@ -2091,7 +2053,8 @@ public class XMLGregorianCalendarImpl
         BigInteger temp = BigInteger.valueOf((long) startMonth).add(dMonths);
         setMonth(temp.subtract(BigInteger.ONE).mod(TWELVE).intValue() + 1);
         BigInteger carry =
-                new BigDecimal(temp.subtract(BigInteger.ONE)).divide(new BigDecimal(TWELVE), BigDecimal.ROUND_FLOOR).toBigInteger();
+                new BigDecimal(temp.subtract(BigInteger.ONE))
+                        .divide(DECIMAL_TWELVE, RoundingMode.FLOOR).toBigInteger();
 
         /* Years (may be modified additionally below)
             *  E[year] := S[year] + D[year] + carry
@@ -2129,7 +2092,7 @@ public class XMLGregorianCalendarImpl
         BigDecimal dSeconds = DurationImpl.sanitize((BigDecimal) duration.getField(DatatypeConstants.SECONDS), signum);
         BigDecimal tempBD = startSeconds.add(dSeconds);
         BigDecimal fQuotient =
-                new BigDecimal(new BigDecimal(tempBD.toBigInteger()).divide(DECIMAL_SIXTY, BigDecimal.ROUND_FLOOR).toBigInteger());
+                new BigDecimal(new BigDecimal(tempBD.toBigInteger()).divide(DECIMAL_SIXTY, RoundingMode.FLOOR).toBigInteger());
         BigDecimal endSeconds = tempBD.subtract(fQuotient.multiply(DECIMAL_SIXTY));
 
         carry = fQuotient.toBigInteger();
@@ -2161,7 +2124,7 @@ public class XMLGregorianCalendarImpl
 
         temp = BigInteger.valueOf(startMinutes).add(dMinutes).add(carry);
         setMinute(temp.mod(SIXTY).intValue());
-        carry = new BigDecimal(temp).divide(DECIMAL_SIXTY, BigDecimal.ROUND_FLOOR).toBigInteger();
+        carry = new BigDecimal(temp).divide(DECIMAL_SIXTY, RoundingMode.FLOOR).toBigInteger();
 
         /* Hours
                *  temp := S[hour] + D[hour] + carry
@@ -2177,7 +2140,8 @@ public class XMLGregorianCalendarImpl
 
         temp = BigInteger.valueOf(startHours).add(dHours).add(carry);
         setHour(temp.mod(TWENTY_FOUR).intValue(), false);
-        carry = new BigDecimal(temp).divide(new BigDecimal(TWENTY_FOUR), BigDecimal.ROUND_FLOOR).toBigInteger();
+        carry = new BigDecimal(temp).divide(DECIMAL_TWENTY_FOUR,
+                RoundingMode.FLOOR).toBigInteger();
 
         /* Days
            *  if S[day] > maximumDayInMonthFor(E[year], E[month])
@@ -2225,15 +2189,19 @@ public class XMLGregorianCalendarImpl
                 // calculate days in previous month, watch for month roll over
                 BigInteger mdimf = null;
                 if (month >= 2) {
-                    mdimf = BigInteger.valueOf(maximumDayInMonthFor(getEonAndYear(), getMonth() - 1));
+                    mdimf = BigInteger.valueOf(maximumDayInMonthFor(getEonAndYear(),
+                            getMonth() - 1));
                 } else {
                     // roll over to December of previous year
-                    mdimf = BigInteger.valueOf(maximumDayInMonthFor(getEonAndYear().subtract(BigInteger.valueOf((long) 1)), 12));
+                    mdimf = BigInteger.valueOf(maximumDayInMonthFor(getEonAndYear()
+                            .subtract(BigInteger.ONE), 12));
                 }
                 endDays = endDays.add(mdimf);
                 monthCarry = -1;
-            } else if (endDays.compareTo(BigInteger.valueOf(maximumDayInMonthFor(getEonAndYear(), getMonth()))) > 0) {
-                endDays = endDays.add(BigInteger.valueOf(-maximumDayInMonthFor(getEonAndYear(), getMonth())));
+            } else if (endDays.compareTo(BigInteger.valueOf(
+                    maximumDayInMonthFor(getEonAndYear(), getMonth()))) > 0) {
+                endDays = endDays.add(BigInteger.valueOf(
+                        -maximumDayInMonthFor(getEonAndYear(), getMonth())));
                 monthCarry = 1;
             } else {
                 break;
@@ -2244,7 +2212,8 @@ public class XMLGregorianCalendarImpl
             int quotient;
             if (endMonth < 0) {
                 endMonth = (13 - 1) + endMonth + 1;
-                quotient = BigDecimal.valueOf(intTemp - 1).divide(new BigDecimal(TWELVE), BigDecimal.ROUND_UP).intValue();
+                quotient = BigDecimal.valueOf(intTemp - 1)
+                        .divide(DECIMAL_TWELVE, RoundingMode.UP).intValue();
             } else {
                 quotient = (intTemp - 1) / (13 - 1);
                 endMonth += 1;
@@ -2292,6 +2261,8 @@ public class XMLGregorianCalendarImpl
     private static final BigInteger TWELVE = BigInteger.valueOf(12);
     private static final BigDecimal DECIMAL_ZERO = BigDecimal.valueOf(0);
     private static final BigDecimal DECIMAL_ONE = BigDecimal.valueOf(1);
+    private static final BigDecimal DECIMAL_TWELVE = BigDecimal.valueOf(12);
+    private static final BigDecimal DECIMAL_TWENTY_FOUR = BigDecimal.valueOf(24);
     private static final BigDecimal DECIMAL_SIXTY = BigDecimal.valueOf(60);
 
 
@@ -2779,7 +2750,7 @@ public class XMLGregorianCalendarImpl
         }
     }
 
-    public void setFractionalSecond(BigDecimal fractional) {
+    public final void setFractionalSecond(BigDecimal fractional) {
         if (fractional != null) {
             if ((fractional.compareTo(DECIMAL_ZERO) < 0) ||
                     (fractional.compareTo(DECIMAL_ONE) > 0)) {

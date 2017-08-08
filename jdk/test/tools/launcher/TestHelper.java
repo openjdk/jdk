@@ -51,8 +51,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Arrays;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.util.spi.ToolProvider;
 
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
@@ -75,7 +74,7 @@ public class TestHelper {
     static final boolean haveServerVM;
     static final boolean haveClientVM;
 
-    static final JavaCompiler compiler;
+    static final ToolProvider compiler = ToolProvider.findFirst("javac").orElse(null);
 
     static final boolean debug = Boolean.getBoolean("TestHelper.Debug");
     static final boolean isWindows =
@@ -130,7 +129,6 @@ public class TestHelper {
         if (!is64Bit && !is32Bit) {
             throw new RuntimeException("arch model is not 32 or 64 bit ?");
         }
-        compiler = ToolProvider.getSystemJavaCompiler();
 
         File binDir = new File(JAVAHOME, "bin");
         JAVA_BIN = binDir.getAbsolutePath();
@@ -275,7 +273,7 @@ public class TestHelper {
      * A convenience method to compile java files.
      */
     static void compile(String... compilerArgs) {
-        if (compiler.run(null, null, null, compilerArgs) != 0) {
+        if (compiler.run(System.out, System.err, compilerArgs) != 0) {
             String sarg = "";
             for (String x : compilerArgs) {
                 sarg.concat(x + " ");
@@ -308,7 +306,7 @@ public class TestHelper {
         String compileArgs[] = {
             mainClass + ".java"
         };
-        if (compiler.run(null, null, null, compileArgs) != 0) {
+        if (compiler.run(System.out, System.err, compileArgs) != 0) {
             throw new RuntimeException("compilation failed " + mainClass + ".java");
         }
         if (mEntry == null) {

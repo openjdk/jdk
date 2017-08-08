@@ -27,7 +27,7 @@
  * @bug 4939578
  * @summary test to get an IOException.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean FailedConnectionTest
  * @run build FailedConnectionTest
  * @run main FailedConnectionTest

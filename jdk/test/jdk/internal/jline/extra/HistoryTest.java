@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8178821
  * @summary Test Completion
  * @modules jdk.internal.le/jdk.internal.jline
  *          jdk.internal.le/jdk.internal.jline.console
@@ -152,6 +153,15 @@ public class HistoryTest {
         complete.set(true);  history.add("}");
 
         previousSnippetAndAssert(history, "void test() { /*after full*/");
+        nextSnippetAndAssert(history, "");
+
+        assertFalse(history.nextSnippet());
+
+        while (history.previousSnippet())
+            ;
+
+        while (history.nextSnippet())
+            ;
     }
 
     private void previousAndAssert(EditingHistory history, String expected) {

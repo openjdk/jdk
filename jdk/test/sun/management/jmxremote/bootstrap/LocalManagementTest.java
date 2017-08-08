@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@ import jdk.testlibrary.Utils;
 
 /**
  * @test
- * @library /lib/testlibrary
  * @bug 5016507 6173612 6319776 6342019 6484550 8004926
  * @summary Start a managed VM and test that a management tool can connect
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
- * @modules jdk.management.agent/jdk.internal.agent
+ *
+ * @library /lib/testlibrary
+ * @modules java.management
+ *          jdk.attach
+ *          jdk.management.agent/jdk.internal.agent
+ *
  * @build jdk.testlibrary.* TestManager TestApplication
  * @run main/othervm/timeout=300 LocalManagementTest
  */
@@ -125,7 +129,7 @@ public class LocalManagementTest {
 
             System.out.println("Attaching test manager:");
             System.out.println("=========================");
-            System.out.println("  PID           : " + serverPrc.getPid());
+            System.out.println("  PID           : " + serverPrc.pid());
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
@@ -133,7 +137,7 @@ public class LocalManagementTest {
                 TEST_CLASSPATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",
                 "TestManager",
-                String.valueOf(serverPrc.getPid()),
+                String.valueOf(serverPrc.pid()),
                 port.get(),
                 "true"
             );

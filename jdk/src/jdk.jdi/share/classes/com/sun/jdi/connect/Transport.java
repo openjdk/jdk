@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
 
 package com.sun.jdi.connect;
 
-import com.sun.jdi.connect.spi.TransportService;        // for javadoc
+import com.sun.jdi.connect.spi.TransportService;
 
 /**
  * A method of communication between a debugger and a target VM.
  *
  * <p> A Transport represents the transport mechanism used by a
- * {@link com.sun.jdi.connect.Connector Connector} to establish a
- * connection with a target VM. It consists of a name which is obtained
- * by invoking the {@link #name} method. Furthermore, a Transport
- * encapsulates a {@link com.sun.jdi.connect.spi.TransportService
- * TransportService} which is the underlying service used
- * to establish connections and exchange Java Debug Wire Protocol
- * (JDWP) packets with a target VM.
+ * {@link Connector Connector} to establish a connection with a
+ * target VM. It consists of a name which is obtained by invoking
+ * the {@link #name} method. Furthermore, a Transport encapsulates a
+ * {@link TransportService TransportService} which is the underlying
+ * service used to establish connections and exchange
+ * Java Debug Wire Protocol (JDWP) packets with a target VM.
  *
  * @author Gordon Hirsch
  * @since  1.3
  */
 public interface Transport {
+
     /**
      * Returns a short identifier for the transport.
      *

@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
 import java.util.*;
 import java.util.logging.*;
 

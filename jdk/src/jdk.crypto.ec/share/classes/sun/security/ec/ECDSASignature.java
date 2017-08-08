@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,9 +370,15 @@ abstract class ECDSASignature extends SignatureSpi {
         }
         random.nextBytes(seed);
 
+        // random bits needed for timing countermeasures
+        int timingArgument = random.nextInt();
+        // values must be non-zero to enable countermeasures
+        timingArgument |= 1;
+
         byte[] sig;
         try {
-            sig = signDigest(getDigestValue(), s, encodedParams, seed);
+            sig = signDigest(getDigestValue(), s, encodedParams, seed,
+                timingArgument);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
         }
@@ -509,11 +515,19 @@ abstract class ECDSASignature extends SignatureSpi {
      * @param s the private key's S value.
      * @param encodedParams the curve's DER encoded object identifier.
      * @param seed the random seed.
+     * @param timing When non-zero, the implmentation will use timing
+     *     countermeasures to hide secrets from timing channels. The EC
+     *     implementation will disable the countermeasures when this value is
+     *     zero, because the underlying EC functions are shared by several
+     *     crypto operations, some of which do not use the countermeasures.
+     *     The high-order 31 bits must be uniformly random. The entropy from
+     *     these bits is used by the countermeasures.
      *
      * @return byte[] the signature.
      */
     private static native byte[] signDigest(byte[] digest, byte[] s,
-        byte[] encodedParams, byte[] seed) throws GeneralSecurityException;
+        byte[] encodedParams, byte[] seed, int timing)
+            throws GeneralSecurityException;
 
     /**
      * Verifies the signed digest using the public key.

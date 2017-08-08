@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,8 +119,26 @@ getLastError() {
     return (char *)dbgsysTlsGet(tlsIndex);
 }
 
+/* Set options common to client and server sides */
 static jdwpTransportError
-setOptions(int fd)
+setOptionsCommon(int fd)
+{
+    jvalue dontcare;
+    int err;
+
+    dontcare.i = 0;  /* keep compiler happy */
+
+    err = dbgsysSetSocketOption(fd, TCP_NODELAY, JNI_TRUE, dontcare);
+    if (err < 0) {
+        RETURN_IO_ERROR("setsockopt TCPNODELAY failed");
+    }
+
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+/* Set the SO_REUSEADDR option */
+static jdwpTransportError
+setReuseAddrOption(int fd)
 {
     jvalue dontcare;
     int err;
@@ -130,11 +148,6 @@ setOptions(int fd)
     err = dbgsysSetSocketOption(fd, SO_REUSEADDR, JNI_TRUE, dontcare);
     if (err < 0) {
         RETURN_IO_ERROR("setsockopt SO_REUSEADDR failed");
-    }
-
-    err = dbgsysSetSocketOption(fd, TCP_NODELAY, JNI_TRUE, dontcare);
-    if (err < 0) {
-        RETURN_IO_ERROR("setsockopt TCPNODELAY failed");
     }
 
     return JDWPTRANSPORT_ERROR_NONE;
@@ -350,9 +363,20 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         RETURN_IO_ERROR("socket creation failed");
     }
 
-    err = setOptions(serverSocketFD);
+    err = setOptionsCommon(serverSocketFD);
     if (err) {
         return err;
+    }
+    if (sa.sin_port != 0) {
+        /*
+         * Only need SO_REUSEADDR if we're using a fixed port. If we
+         * start seeing EADDRINUSE due to collisions in free ports
+         * then we should retry the dbgsysBind() a few times.
+         */
+        err = setReuseAddrOption(serverSocketFD);
+        if (err) {
+            return err;
+        }
     }
 
     err = dbgsysBind(serverSocketFD, (struct sockaddr *)&sa, sizeof(sa));
@@ -510,10 +534,16 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         RETURN_IO_ERROR("unable to create socket");
     }
 
-    err = setOptions(socketFD);
+    err = setOptionsCommon(socketFD);
     if (err) {
         return err;
     }
+
+    /*
+     * We don't call setReuseAddrOption() for the non-server socket
+     * case. If we start seeing EADDRINUSE due to collisions in free
+     * ports then we should retry the dbgsysConnect() a few times.
+     */
 
     /*
      * To do a timed connect we make the socket non-blocking

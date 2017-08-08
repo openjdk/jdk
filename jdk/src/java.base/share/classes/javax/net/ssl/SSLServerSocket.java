@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@ import java.net.*;
 
 
 /**
- * This class extends <code>ServerSocket</code>s and
+ * This class extends <code>ServerSocket</code> and
  * provides secure server sockets using protocols such as the Secure
  * Sockets Layer (SSL) or Transport Layer Security (TLS) protocols.
  * <P>
- * Instances of this class are generally created using a
+ * Instances of this class are generally created using an
  * <code>SSLServerSocketFactory</code>.  The primary function
- * of <code>SSLServerSocket</code>s
+ * of an <code>SSLServerSocket</code>
  * is to create <code>SSLSocket</code>s by <code>accept</code>ing
  * connections.
  * <P>
- * <code>SSLServerSocket</code>s contain several pieces of state data
+ * An <code>SSLServerSocket</code> contains several pieces of state data
  * which are inherited by the <code>SSLSocket</code> at
  * socket creation.  These include the enabled cipher
  * suites and protocols, whether client
@@ -198,7 +198,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * <P>
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation, and may also
      * include other cipher suites that the provider supports.
@@ -224,7 +224,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * <P>
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation.  Providers
      * may support cipher suite names not found in this list or might not
@@ -254,7 +254,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      * <P>
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#ciphersuites">
+     * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Cryptography
      * Architecture Standard Algorithm Name Documentation, and may also
      * include other cipher suites that the provider supports.

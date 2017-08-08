@@ -30,8 +30,9 @@ import jdk.testlibrary.ProcessTools;
  * @bug        4554734 4724714
  * @summary    Test for -Xrunjdwp:[onthrow,onuncaught] suboptions require launch suboption
  * @author     Tim Bell
+ *
  * @library /lib/testlibrary
- * @modules jdk.jdi
+ *
  * @run compile -g NoLaunchOptionTest.java
  * @build jdk.testlibrary.* VMConnection
  * @run driver NoLaunchOptionTest

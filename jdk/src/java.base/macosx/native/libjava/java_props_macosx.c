@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@ char *getPosixLocale(int cat) {
 
 #define LOCALEIDLENGTH  128
 char *getMacOSXLocale(int cat) {
+    const char* retVal = NULL;
+    char localeString[LOCALEIDLENGTH];
+
     switch (cat) {
     case LC_MESSAGES:
         {
@@ -72,61 +75,114 @@ char *getMacOSXLocale(int cat) {
             }
             CFRelease(languages);
 
-            // Language IDs use the language designators and (optional) region
-            // and script designators of BCP 47.  So possible formats are:
-            //
-            // "en"         (language designator only)
-            // "haw"        (3-letter lanuage designator)
-            // "en-GB"      (language with alpha-2 region designator)
-            // "es-419"     (language with 3-digit UN M.49 area code)
-            // "zh-Hans"    (language with ISO 15924 script designator)
-            //
-            // In the case of region designators (alpha-2 or UN M.49), we convert
-            // to our locale string format by changing '-' to '_'.  That is, if
-            // the '-' is followed by fewer than 4 chars.
-            char* scriptOrRegion = strchr(languageString, '-');
-            if (scriptOrRegion != NULL && strlen(scriptOrRegion) < 5) {
-                *scriptOrRegion = '_';
+            // Explicitly supply region, if there is none
+            char *hyphenPos = strchr(languageString, '-');
+            int langStrLen = strlen(languageString);
 
-                assert((strlen(scriptOrRegion) == 3 &&
-                        // '-' followed by a 2 character region designator
-                          isalpha(scriptOrRegion[1]) &&
-                          isalpha(scriptOrRegion[2])) ||
-                       (strlen(scriptOrRegion) == 4 &&
-                        // '-' followed by a 3-digit UN M.49 area code
-                          isdigit(scriptOrRegion[1]) &&
-                          isdigit(scriptOrRegion[2]) &&
-                          isdigit(scriptOrRegion[3])));
-            }
-            const char* retVal = languageString;
+            if (hyphenPos == NULL || // languageString contains ISO639 only, e.g., "en"
+                languageString + langStrLen - hyphenPos == 5) { // ISO639-ScriptCode, e.g., "en-Latn"
+                CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
+                               localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding());
+                char *underscorePos = strrchr(localeString, '_');
+                char *region = NULL;
 
-            // Special case for Portuguese in Brazil:
-            // The language code needs the "_BR" region code (to distinguish it
-            // from Portuguese in Portugal), but this is missing when using the
-            // "Portuguese (Brazil)" language.
-            // If language is "pt" and the current locale is pt_BR, return pt_BR.
-            char localeString[LOCALEIDLENGTH];
-            if (strcmp(retVal, "pt") == 0 &&
-                    CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
-                                       localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding()) &&
-                    strcmp(localeString, "pt_BR") == 0) {
-                retVal = localeString;
+                if (underscorePos != NULL) {
+                    region = underscorePos + 1;
+                }
+
+                if (region != NULL) {
+                    strcat(languageString, "-");
+                    strcat(languageString, region);
+                }
             }
-            return strdup(retVal);
+
+            retVal = languageString;
         }
         break;
+
     default:
         {
-            char localeString[LOCALEIDLENGTH];
-            if (CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
-                                   localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
-                return strdup(localeString);
+            if (!CFStringGetCString(CFLocaleGetIdentifier(CFLocaleCopyCurrent()),
+                                    localeString, LOCALEIDLENGTH, CFStringGetSystemEncoding())) {
+                return NULL;
             }
+
+            retVal = localeString;
         }
         break;
     }
 
+    if (retVal != NULL) {
+        return strdup(convertToPOSIXLocale(retVal));
+    }
+
     return NULL;
+}
+
+/* Language IDs use the language designators and (optional) region
+ * and script designators of BCP 47.  So possible formats are:
+ *
+ * "en"         (language designator only)
+ * "haw"        (3-letter lanuage designator)
+ * "en-GB"      (language with alpha-2 region designator)
+ * "es-419"     (language with 3-digit UN M.49 area code)
+ * "zh-Hans"    (language with ISO 15924 script designator)
+ * "zh-Hans-US"  (language with ISO 15924 script designator and region)
+ * "zh-Hans-419" (language with ISO 15924 script designator and UN M.49)
+ *
+ * convert these tags into POSIX conforming locale string, i.e.,
+ * lang{_region}{@script}. e.g., for "zh-Hans-US" into "zh_US@Hans"
+ */
+const char * convertToPOSIXLocale(const char* src) {
+    char* scriptRegion = strchr(src, '-');
+    if (scriptRegion != NULL) {
+        int length = strlen(scriptRegion);
+        char* region = strchr(scriptRegion + 1, '-');
+        char* atMark = NULL;
+
+        if (region == NULL) {
+            // CFLocaleGetIdentifier() returns '_' before region
+            region = strchr(scriptRegion + 1, '_');
+        }
+
+        *scriptRegion = '_';
+        if (length > 5) {
+            // Region and script both exist.
+            char tmpScript[4];
+            int regionLength = length - 6;
+            atMark = scriptRegion + 1 + regionLength;
+            memcpy(tmpScript, scriptRegion + 1, 4);
+            memmove(scriptRegion + 1, region + 1, regionLength);
+            memcpy(atMark + 1, tmpScript, 4);
+        } else if (length == 5) {
+            // script only
+            atMark = scriptRegion;
+        }
+
+        if (atMark != NULL) {
+            *atMark = '@';
+
+            // assert script code
+            assert(isalpha(atMark[1]) &&
+                   isalpha(atMark[2]) &&
+                   isalpha(atMark[3]) &&
+                   isalpha(atMark[4]));
+        }
+
+        assert(((length == 3 || length == 8) &&
+            // '_' followed by a 2 character region designator
+                isalpha(scriptRegion[1]) &&
+                isalpha(scriptRegion[2])) ||
+                ((length == 4 || length == 9) &&
+            // '_' followed by a 3-digit UN M.49 area code
+                isdigit(scriptRegion[1]) &&
+                isdigit(scriptRegion[2]) &&
+                isdigit(scriptRegion[3])) ||
+            // '@' followed by a 4 character script code (already validated above)
+                (length == 5));
+    }
+
+    return src;
 }
 
 char *setupMacOSXLocale(int cat) {
