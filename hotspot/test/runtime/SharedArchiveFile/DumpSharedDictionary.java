@@ -26,6 +26,7 @@
  * @bug 8130072
  * @summary Check that Shared Dictionary is printed out with jcmd
  * Feature support: compressed oops/kptrs, 64-bit os, not on windows
+ * @requires vm.cds
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib

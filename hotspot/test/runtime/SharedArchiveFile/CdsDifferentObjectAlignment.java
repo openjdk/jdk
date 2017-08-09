@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test CdsDifferentObjectAlignment
+ * @requires vm.cds
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using different object alignment for each dump/load pair.
  *          This is a negative test; using  object alignment for loading that

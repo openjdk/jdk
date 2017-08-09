@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @summary Check to make sure that shared strings in the bootstrap CDS archive
  *          are actually shared
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows

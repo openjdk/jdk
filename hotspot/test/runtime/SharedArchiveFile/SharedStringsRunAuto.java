@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test SharedStringsAuto
+ * @requires vm.cds
  * @summary Test -Xshare:auto with shared strings.
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
