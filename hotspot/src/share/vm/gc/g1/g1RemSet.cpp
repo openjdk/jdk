@@ -429,9 +429,9 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
   G1GCPhaseTimes* p = _g1p->phase_times();
 
   p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
-  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScannedCards);
-  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ClaimedCards);
-  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::SkippedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScanRSScannedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ScanRSClaimedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::ScanRSSkippedCards);
 
   p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
 }
@@ -440,9 +440,12 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
 class G1RefineCardClosure: public CardTableEntryClosure {
   G1RemSet* _g1rs;
   G1ScanObjsDuringUpdateRSClosure* _update_rs_cl;
+
+  size_t _cards_scanned;
+  size_t _cards_skipped;
 public:
   G1RefineCardClosure(G1CollectedHeap* g1h, G1ScanObjsDuringUpdateRSClosure* update_rs_cl) :
-    _g1rs(g1h->g1_rem_set()), _update_rs_cl(update_rs_cl)
+    _g1rs(g1h->g1_rem_set()), _update_rs_cl(update_rs_cl), _cards_scanned(0), _cards_skipped(0)
   {}
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
@@ -452,9 +455,18 @@ public:
     // In this case worker_i should be the id of a GC worker thread.
     assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
 
-    _g1rs->refine_card_during_gc(card_ptr, _update_rs_cl);
+    bool card_scanned = _g1rs->refine_card_during_gc(card_ptr, _update_rs_cl);
+
+    if (card_scanned) {
+      _cards_scanned++;
+    } else {
+      _cards_skipped++;
+    }
     return true;
   }
+
+  size_t cards_scanned() const { return _cards_scanned; }
+  size_t cards_skipped() const { return _cards_skipped; }
 };
 
 void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
@@ -469,6 +481,10 @@ void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   }
   // Apply the closure to all remaining log entries.
   _g1->iterate_dirty_card_closure(&refine_card_cl, worker_i);
+
+  G1GCPhaseTimes* p = _g1p->phase_times();
+  p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_scanned(), G1GCPhaseTimes::UpdateRSScannedCards);
+  p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_skipped(), G1GCPhaseTimes::UpdateRSSkippedCards);
 }
 
 void G1RemSet::cleanupHRRS() {
@@ -680,7 +696,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   }
 }
 
-void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
+bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1->is_gc_active(), "Only call during GC");
 
@@ -689,7 +705,7 @@ void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   // If the card is no longer dirty, nothing to do. This covers cards that were already
   // scanned as parts of the remembered sets.
   if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-    return;
+    return false;
   }
 
   // We claim lazily (so races are possible but they're benign), which reduces the
@@ -705,7 +721,7 @@ void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   HeapWord* scan_limit = _scan_state->scan_top(card_region_idx);
   if (scan_limit <= card_start) {
     // If the card starts above the area in the region containing objects to scan, skip it.
-    return;
+    return false;
   }
 
   // Don't use addr_for(card_ptr + 1) which can ask for
@@ -718,6 +734,7 @@ void G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   update_rs_cl->set_region(card_region);
   bool card_processed = card_region->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
+  return true;
 }
 
 void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {

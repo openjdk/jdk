@@ -78,9 +78,15 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   enum GCScanRSWorkItems {
-    ScannedCards,
-    ClaimedCards,
-    SkippedCards
+    ScanRSScannedCards,
+    ScanRSClaimedCards,
+    ScanRSSkippedCards
+  };
+
+  enum GCUpdateRSWorkItems {
+    UpdateRSProcessedBuffers,
+    UpdateRSScannedCards,
+    UpdateRSSkippedCards
   };
 
  private:
@@ -92,6 +98,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<double>* _gc_par_phases[GCParPhasesSentinel];
 
   WorkerDataArray<size_t>* _update_rs_processed_buffers;
+  WorkerDataArray<size_t>* _update_rs_scanned_cards;
+  WorkerDataArray<size_t>* _update_rs_skipped_cards;
 
   WorkerDataArray<size_t>* _scan_rs_scanned_cards;
   WorkerDataArray<size_t>* _scan_rs_claimed_cards;
