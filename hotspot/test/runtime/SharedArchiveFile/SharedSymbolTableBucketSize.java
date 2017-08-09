@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @bug 8059510
  * @summary Test SharedSymbolTableBucketSize option
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)

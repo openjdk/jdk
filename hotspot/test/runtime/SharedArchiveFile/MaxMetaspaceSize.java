@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @bug 8067187
  * @summary Testing CDS dumping with the -XX:MaxMetaspaceSize=<size> option
  * @library /test/lib

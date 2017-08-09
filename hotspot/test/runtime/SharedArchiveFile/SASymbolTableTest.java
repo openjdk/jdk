@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test SASymbolTableTest
+ * @requires vm.cds
  * @summary Walk symbol table using SA, with and without CDS.
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
