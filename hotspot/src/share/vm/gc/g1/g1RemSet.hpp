@@ -128,7 +128,8 @@ public:
 
   // Refine the card corresponding to "card_ptr", applying the given closure to
   // all references found. Must only be called during gc.
-  void refine_card_during_gc(jbyte* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
+  // Returns whether the card has been scanned.
+  bool refine_card_during_gc(jbyte* card_ptr, G1ScanObjsDuringUpdateRSClosure* update_rs_cl);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();
