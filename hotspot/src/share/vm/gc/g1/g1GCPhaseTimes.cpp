@@ -81,14 +81,18 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms):");
 
   _scan_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
-  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_scanned_cards, ScannedCards);
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_scanned_cards, ScanRSScannedCards);
   _scan_rs_claimed_cards = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Cards:");
-  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_claimed_cards, ClaimedCards);
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_claimed_cards, ScanRSClaimedCards);
   _scan_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
-  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_skipped_cards, SkippedCards);
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_skipped_cards, ScanRSSkippedCards);
 
   _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
-  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers);
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers, UpdateRSProcessedBuffers);
+  _update_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_scanned_cards, UpdateRSScannedCards);
+  _update_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_skipped_cards, ScanRSSkippedCards);
 
   _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
   _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
