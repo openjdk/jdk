@@ -63,7 +63,9 @@ public class DumpSharedDictionary {
                     "-Xshare:on", "DumpSharedDictionary", "test");
 
             out = CDSTestUtils.executeAndLog(pb, "exec");
-            out.shouldHaveExitValue(0);
+            if (!CDSTestUtils.isUnableToMap(out)) {
+                out.shouldHaveExitValue(0);
+            }
         } else {
             // Grab my own PID
             String pid = Long.toString(ProcessTools.getProcessId());
