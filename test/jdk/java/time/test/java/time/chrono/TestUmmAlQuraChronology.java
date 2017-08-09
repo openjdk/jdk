@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,8 +775,10 @@ public class TestUmmAlQuraChronology {
             {HijrahDate.of(1350,5,15), "Japanese Showa 6-09-28"},
             {HijrahDate.of(1434,5,1), "Japanese Heisei 25-03-13"},
             {HijrahDate.of(1436,1,1), "Japanese Heisei 26-10-25"},
-            {HijrahDate.of(1500,6,12), "Japanese Heisei 89-05-05"},
-            {HijrahDate.of(1550,3,11), "Japanese Heisei 137-08-11"},
+            {HijrahDate.of(1440,8,25), "Japanese Heisei 31-04-30"},
+            {HijrahDate.of(1440,8,26), "Japanese NewEra 1-05-01"},
+            {HijrahDate.of(1500,6,12), "Japanese NewEra 59-05-05"},
+            {HijrahDate.of(1550,3,11), "Japanese NewEra 107-08-11"},
         };
     }
 

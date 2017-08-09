@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,20 +137,28 @@ public class WeekDateTest {
         Calendar jcal = Calendar.getInstance(TimeZone.getTimeZone("GMT"),
                                              new Locale("ja", "JP", "JP"));
 
+        String format = "2-W01-2"; // 2019-12-31 == N1-12-31
+        int expectedYear = 2019;
+        // Check the current era, Heisei or NewEra
+        if (System.currentTimeMillis() < 1556668800000L) {
+            format = "21-W01-3"; // 2008-12-31 == H20-12-31
+            expectedYear = 2008;
+        }
         jcal.setFirstDayOfWeek(MONDAY);
         jcal.setMinimalDaysInFirstWeek(4);
         SimpleDateFormat sdf = new SimpleDateFormat("Y-'W'ww-u");
         sdf.setCalendar(jcal);
-        Date d = sdf.parse("21-W01-3"); // 2008-12-31 == H20-12-31
+        Date d = sdf.parse(format);
         GregorianCalendar gcal = newCalendar();
         gcal.setTime(d);
-        if (gcal.get(YEAR) != 2008
+        if (gcal.get(YEAR) != expectedYear
             || gcal.get(MONTH) != DECEMBER
             || gcal.get(DAY_OF_MONTH) != 31) {
-            String s = String.format("noWeekDateSupport: got %04d-%02d-%02d, expected 2008-12-31%n",
+            String s = String.format("noWeekDateSupport: got %04d-%02d-%02d, expected %4d-12-31%n",
                                      gcal.get(YEAR),
                                      gcal.get(MONTH)+1,
-                                     gcal.get(DAY_OF_MONTH));
+                                     gcal.get(DAY_OF_MONTH),
+                                     expectedYear);
             throw new RuntimeException(s);
         }
     }
