@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import sun.util.calendar.CalendarSystem;
 import sun.util.calendar.Era;
 
 /**
- * Concrete implementation of the  {@link java.util.spi.CalendarDataProvider
- * CalendarDataProvider} class for the JRE LocaleProviderAdapter.
+ * Concrete implementation of the {@link java.util.spi.CalendarNameProvider
+ * CalendarNameProvider} class for the JRE LocaleProviderAdapter.
  *
  * @author Masayoshi Okutsu
  * @author Naoto Sato
@@ -77,28 +77,43 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 if (field == DAY_OF_WEEK || field == YEAR) {
                     --value;
                 }
-                if (value < 0 || value > strings.length) {
+                if (value < 0) {
                     return null;
-                } else if (value == strings.length) {
+                } else if (value >= strings.length) {
                     if (field == ERA && "japanese".equals(calendarType)) {
-                        // get the supplemental era, if any, specified through
-                        // the property "jdk.calendar.japanese.supplemental.era"
-                        // which is always the last element.
                         Era[] jeras = CalendarSystem.forName("japanese").getEras();
-                        if (jeras.length == value) {
-                            Era supEra = jeras[value - 1]; // 0-based index
-                            if (javatime) {
-                                return getBaseStyle(style) == NARROW_FORMAT ?
-                                    supEra.getAbbreviation() :
-                                    supEra.getName();
-                            } else {
-                                return (style & LONG) != 0 ?
-                                    supEra.getName() :
-                                    supEra.getAbbreviation();
+                        if (value <= jeras.length) {
+                            // Localized era name could not be retrieved from this provider.
+                            // This can occur either for NewEra or SupEra.
+                            //
+                            // If it's CLDR provider, try COMPAT first, which is guaranteed to have
+                            // the name for NewEra.
+                            if (type == LocaleProviderAdapter.Type.CLDR) {
+                                lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
+                                key = getResourceKeyFor(LocaleProviderAdapter.Type.JRE,
+                                                calendarType, field, style, javatime);
+                                strings =
+                                    javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
                             }
+                            if (strings == null || value >= strings.length) {
+                                // Get the default name for SupEra
+                                Era supEra = jeras[value - 1]; // 0-based index
+                                if (javatime) {
+                                    return getBaseStyle(style) == NARROW_FORMAT ?
+                                        supEra.getAbbreviation() :
+                                        supEra.getName();
+                                } else {
+                                    return (style & LONG) != 0 ?
+                                        supEra.getName() :
+                                        supEra.getAbbreviation();
+                                }
+                            }
+                        } else {
+                            return null;
                         }
+                    } else {
+                        return null;
                     }
-                    return null;
                 }
                 name = strings[value];
                 // If name is empty in standalone, try its `format' style.
@@ -180,7 +195,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return map;
     }
 
-    private int getBaseStyle(int style) {
+    private static int getBaseStyle(int style) {
         return style & ~(SHORT_STANDALONE - SHORT_FORMAT);
     }
 
@@ -261,6 +276,11 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
     }
 
     private String getResourceKey(String type, int field, int style, boolean javatime) {
+        return getResourceKeyFor(this.type, type, field, style, javatime);
+    }
+
+    private static String getResourceKeyFor(LocaleProviderAdapter.Type adapterType,
+                            String type, int field, int style, boolean javatime) {
         int baseStyle = getBaseStyle(style);
         boolean isStandalone = (style != baseStyle);
 
@@ -284,7 +304,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 // JRE and CLDR use different resource key conventions
                 // due to historical reasons. (JRE DateFormatSymbols.getEras returns
                 // abbreviations while other getShort*() return abbreviations.)
-                if (this.type == LocaleProviderAdapter.Type.JRE) {
+                if (adapterType == LocaleProviderAdapter.Type.JRE) {
                     if (javatime) {
                         if (baseStyle == LONG) {
                             key.append("long.");
@@ -336,7 +356,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return key.length() > 0 ? key.toString() : null;
     }
 
-    private String toStyleName(int baseStyle) {
+    private static String toStyleName(int baseStyle) {
         switch (baseStyle) {
         case SHORT:
             return "Abbreviations";

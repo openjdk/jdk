@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,      1, 12, 25, 1926 },
             { JapaneseEra.SHOWA,     64,  1,  7, 1989 },
             { JapaneseEra.HEISEI,     1,  1,  8, 1989 },
+            { JapaneseEra.HEISEI,    31,  4, 30, 2019 },
+            { JapaneseEra.of(3),      1,  5,  1, 2019 }, // NEWERA
         };
     }
 
@@ -74,6 +76,8 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,  64,    7,  1,  7 },
             { JapaneseEra.HEISEI,  1,    1,  1,  8 },
             { JapaneseEra.HEISEI,  2,    8,  1,  8 },
+            { JapaneseEra.HEISEI, 31,  120,  4, 30 },
+            { JapaneseEra.of(3),   1,    1,  5,  1 }, // NEWERA
         };
     }
 
@@ -81,8 +85,8 @@ public class TestJapaneseChronology {
     Object[][] rangeData() {
         return new Object[][] {
             // field, minSmallest, minLargest, maxSmallest, maxLargest
-            { ChronoField.ERA,         -1, -1, 2, 2},
-            { ChronoField.YEAR_OF_ERA, 1, 1, 15, 999999999-1989 }, // depends on the current era
+            { ChronoField.ERA,         -1, -1, 3, 3},
+            { ChronoField.YEAR_OF_ERA, 1, 1, 15, 999999999-2019}, // depends on the current era
             { ChronoField.DAY_OF_YEAR, 1, 1, 7, 366},
             { ChronoField.YEAR, 1873, 1873, 999999999, 999999999},
         };
@@ -105,7 +109,9 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,     65,  1,  1 },
             { JapaneseEra.HEISEI,     1,  1,  7 },
             { JapaneseEra.HEISEI,     1,  2, 29 },
-            { JapaneseEra.HEISEI, Year.MAX_VALUE,  12, 31 },
+            { JapaneseEra.HEISEI,    31,  5,  1 },
+            { JapaneseEra.of(3),      1,  4, 30 }, // NEWERA
+            { JapaneseEra.of(3), Year.MAX_VALUE,  12, 31 }, // NEWERA
         };
     }
 
@@ -124,7 +130,10 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,     65 },
             { JapaneseEra.HEISEI,    -1 },
             { JapaneseEra.HEISEI,     0 },
-            { JapaneseEra.HEISEI, Year.MAX_VALUE },
+            { JapaneseEra.HEISEI,    32 },
+            { JapaneseEra.of(3),     -1 }, // NEWERA
+            { JapaneseEra.of(3),      0 }, // NEWERA
+            { JapaneseEra.of(3), Year.MAX_VALUE }, // NEWERA
         };
     }
 
@@ -141,6 +150,9 @@ public class TestJapaneseChronology {
             { JapaneseEra.SHOWA,  64,   8 },
             { JapaneseEra.HEISEI,  1, 360 },
             { JapaneseEra.HEISEI,  2, 366 },
+            { JapaneseEra.HEISEI, 31, 121 },
+            { JapaneseEra.of(3),   1, 246 }, // NEWERA
+            { JapaneseEra.of(3),   2, 367 }, // NEWERA
         };
     }
 

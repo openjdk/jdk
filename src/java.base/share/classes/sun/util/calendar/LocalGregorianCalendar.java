@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.util.calendar;
 
 import java.security.AccessController;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -41,11 +43,12 @@ public class LocalGregorianCalendar extends BaseCalendar {
         new Era("Taisho", "T", -1812153600000L, true),
         new Era("Showa",  "S", -1357603200000L, true),
         new Era("Heisei", "H",   600220800000L, true),
+        new Era("NewEra", "N",  1556668800000L, true),
     };
 
     private static boolean isValidEra(Era newEra, Era[] eras) {
         Era last = eras[eras.length - 1];
-        if (last.getSinceDate().getYear() >= newEra.getSinceDate().getYear()) {
+        if (last.getSince(null) >= newEra.getSince(null)) {
             return false;
         }
         // The new era name should be unique. Its abbr may not.
@@ -173,7 +176,7 @@ public class LocalGregorianCalendar extends BaseCalendar {
                 return null;
             }
             String key = keyvalue[0].trim();
-            String value = keyvalue[1].trim();
+            String value = convertUnicodeEscape(keyvalue[1].trim());
             switch (key) {
             case "name":
                 eraName = value;
@@ -201,6 +204,17 @@ public class LocalGregorianCalendar extends BaseCalendar {
             return null;
         }
         return new Era(eraName, abbr, since, localTime);
+    }
+
+    private static String convertUnicodeEscape(String src) {
+        Matcher m = Pattern.compile("\\\\u([0-9a-fA-F]{4})").matcher(src);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb,
+                Character.toString((char)Integer.parseUnsignedInt(m.group(1), 16)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     private LocalGregorianCalendar(String name, Era[] eras) {
