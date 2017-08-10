@@ -623,7 +623,7 @@ public class TimeUnitTest extends JSR166TestCase {
     }
 
     /**
-     * a deserialized serialized unit is the same instance
+     * a deserialized/reserialized unit is the same instance
      */
     public void testSerialization() throws Exception {
         for (TimeUnit x : TimeUnit.values())
