@@ -55,7 +55,7 @@ public class PatchModuleClassList {
                         "}";
 
         ClassFileInstaller.writeClassToDisk(BOOT_CLASS,
-             InMemoryJavaCompiler.compile(BOOT_CLASS.replace('/', '.'), source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile(BOOT_CLASS.replace('/', '.'), source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.naming".
@@ -88,7 +88,7 @@ public class PatchModuleClassList {
                  "}";
 
         ClassFileInstaller.writeClassToDisk(PLATFORM_CLASS,
-             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "-Xmodule:java.transaction"),
+             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "--patch-module=java.transaction"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.transaction".
