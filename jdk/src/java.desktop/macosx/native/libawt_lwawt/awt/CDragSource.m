@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,12 +432,11 @@ static BOOL                sNeedsEnter;
     NSWindow* window = [fView window];
 
     NSInteger windowNumber = [window windowNumber];
-    NSGraphicsContext* graphicsContext = [NSGraphicsContext graphicsContextWithWindow:window];
 
     // Convert mouse coordinates to NS:
     NSPoint eventLocation = [fView convertPoint:NSMakePoint(fDragPos.x, fDragPos.y) toView:nil];
     eventLocation.y = [[fView window] frame].size.height - eventLocation.y;
-    
+
     // Convert fTriggerEventTimeStamp to NS - AWTEvent.h defines UTC(nsEvent) as ((jlong)[event timestamp] * 1000):
     NSTimeInterval timeStamp = fTriggerEventTimeStamp / 1000;
 
@@ -452,14 +451,16 @@ static BOOL                sNeedsEnter;
     }
 
     // Convert fModifiers (extModifiers) to NS:
-    NSUInteger modifiers = JavaModifiersToNsKeyModifiers(fModifiers, TRUE); 
+    NSUInteger modifiers = JavaModifiersToNsKeyModifiers(fModifiers, TRUE);
 
     // Just a dummy value ...
     NSInteger eventNumber = 0;
+    // NSEvent.context is deprecated and unused
+    NSGraphicsContext* unusedPassNil = nil;
 
     // Make a native autoreleased dragging event:
     NSEvent* dragEvent = [NSEvent mouseEventWithType:mouseButtons location:eventLocation
-        modifierFlags:modifiers timestamp:timeStamp windowNumber:windowNumber context:graphicsContext
+        modifierFlags:modifiers timestamp:timeStamp windowNumber:windowNumber context:unusedPassNil
         eventNumber:eventNumber clickCount:fClickCount pressure:pressure];
 
     return dragEvent;
