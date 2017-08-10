@@ -2027,7 +2027,7 @@ class Assembler : public AbstractAssembler {
   inline void vperm(    VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vsel(     VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vsl(      VectorRegister d, VectorRegister a, VectorRegister b);
-  inline void vsldoi(   VectorRegister d, VectorRegister a, VectorRegister b, int si4);
+  inline void vsldoi(   VectorRegister d, VectorRegister a, VectorRegister b, int ui4);
   inline void vslo(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsr(      VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsro(     VectorRegister d, VectorRegister a, VectorRegister b);
