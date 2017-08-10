@@ -3353,7 +3353,7 @@ assert((int)twice.invokeExact(21) == 42);
      * That is, it returns a zero primitive value, a {@code null}, or {@code void}.
      * <p>The returned method handle is equivalent to
      * {@code dropArguments(zero(type.returnType()), 0, type.parameterList())}.
-     * <p>
+     *
      * @apiNote Given a predicate and target, a useful "if-then" construct can be produced as
      * {@code guardWithTest(pred, target, empty(target.type())}.
      * @param type the type of the desired method handle
@@ -3676,7 +3676,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      * Given these assumptions, the result of an invocation of {@code dropArgumentsToMatch} will have the parameter type
      * list {@code S..., P..., M..., A...}, with the {@code P} and {@code A} types inserted as if by
      * {@link #dropArguments(MethodHandle, int, Class[])}.
-     * <p>
+     *
      * @apiNote
      * Two method handles whose argument lists are "effectively identical" (i.e., identical in a common prefix) may be
      * mutually converted to a common type by two calls to {@code dropArgumentsToMatch}, as follows:
@@ -4169,7 +4169,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * position in the parameter list at which folding takes place. The argument controlling this, {@code pos}, is a
      * zero-based index. The aforementioned method {@link #foldArguments(MethodHandle, MethodHandle)} assumes position
      * 0.
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
     import static java.lang.invoke.MethodHandles.*;
@@ -4698,7 +4698,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * Note that the parameter type lists {@code (V...)} and {@code (A...)} have been expanded
      * to their full length, even though individual clause functions may neglect to take them all.
      * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch}.
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // iterative implementation of the factorial function as a loop handle
@@ -4991,7 +4991,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return v;
      * }
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // implement the zip function for lists as a loop handle
@@ -5010,7 +5010,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals(zipped, (List<String>) loop.invoke(a.iterator(), b.iterator()));
      * }</pre></blockquote>
      *
-     * <p>
+     *
      * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle whileLoop(MethodHandle init, MethodHandle pred, MethodHandle body) {
@@ -5104,7 +5104,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return v;
      * }
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // int i = 0; while (i < limit) { ++i; } return i; => limit
@@ -5116,7 +5116,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * assertEquals(23, loop.invoke(23));
      * }</pre></blockquote>
      *
-     * <p>
+     *
      * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle doWhileLoop(MethodHandle init, MethodHandle body, MethodHandle pred) {
@@ -5248,7 +5248,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return v;
      * }
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example with a fully conformant body method:
      * <blockquote><pre>{@code
      * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
@@ -5260,7 +5260,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * MethodHandle loop = MethodHandles.countedLoop(fit13, start, MH_step);
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example with the simplest possible body method type,
      * and passing the number of iterations to the loop invocation:
      * <blockquote><pre>{@code
@@ -5273,7 +5273,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i) -> "na " + v
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "Lambdaman!"));
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example that treats the number of iterations, string to append to, and string to append
      * as loop parameters:
      * <blockquote><pre>{@code
@@ -5286,7 +5286,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * MethodHandle loop = MethodHandles.countedLoop(count, start, MH_step);  // (v, i, _, pre, _) -> pre + " " + v
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke(13, "na", "Lambdaman!"));
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example that illustrates the usage of {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}
      * to enforce a loop type:
      * <blockquote><pre>{@code
@@ -5301,7 +5301,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * MethodHandle loop = MethodHandles.countedLoop(count, start, body);  // (v, i, pre, _, _) -> pre + " " + v
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("na", 13, "Lambdaman!"));
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle countedLoop(MethodHandle iterations, MethodHandle init, MethodHandle body) {
@@ -5406,7 +5406,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }</pre></blockquote>
      *
-     * <p>
      * @apiNote The implementation of this method can be expressed as follows:
      * <blockquote><pre>{@code
      * MethodHandle countedLoop(MethodHandle start, MethodHandle end, MethodHandle init, MethodHandle body) {
@@ -5607,7 +5606,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return v;
      * }
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // get an iterator from a list
@@ -5622,7 +5621,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * List<String> reversedList = Arrays.asList("e", "d", "c", "b", "a");
      * assertEquals(reversedList, (List<String>) loop.invoke(list));
      * }</pre></blockquote>
-     * <p>
+     *
      * @apiNote The implementation of this method can be expressed approximately as follows:
      * <blockquote><pre>{@code
      * MethodHandle iteratedLoop(MethodHandle iterator, MethodHandle init, MethodHandle body) {
