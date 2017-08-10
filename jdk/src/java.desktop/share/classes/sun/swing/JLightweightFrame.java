@@ -509,7 +509,16 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
      * and could not be overridden.
      */
     private void updateClientCursor() {
-        Point p = MouseInfo.getPointerInfo().getLocation();
+        PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+        if (pointerInfo == null) {
+            /*
+             * This can happen when multiple graphics device cannot decide
+             * which graphics device contains the current mouse position
+             * or on systems without a mouse
+             */
+             return;
+        }
+        Point p = pointerInfo.getLocation();
         SwingUtilities.convertPointFromScreen(p, this);
         Component target = SwingUtilities.getDeepestComponentAt(this, p.x, p.y);
         if (target != null) {
