@@ -1,0 +1,24 @@
+[
+  {
+    "expression": {
+      "endPosition": "3",
+      "kind": "NUMBER_LITERAL",
+      "value": "1",
+      "startPosition": "2"
+    },
+    "endPosition": "3",
+    "kind": "UNARY_PLUS",
+    "startPosition": "1"
+  },
+  {
+    "expression": {
+      "endPosition": "7",
+      "kind": "NUMBER_LITERAL",
+      "value": "1",
+      "startPosition": "6"
+    },
+    "endPosition": "7",
+    "kind": "UNARY_MINUS",
+    "startPosition": "5"
+  }
+]
