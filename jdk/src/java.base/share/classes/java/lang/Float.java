@@ -256,25 +256,25 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * </ul>
      *
-     * <table class="plain">
+     * <table class="striped">
      * <caption>Examples</caption>
      * <thead>
-     * <tr><th>Floating-point Value</th><th>Hexadecimal String</th>
+     * <tr><th scope="col">Floating-point Value</th><th scope="col">Hexadecimal String</th>
      * </thead>
      * <tbody>
-     * <tr><td>{@code 1.0}</td> <td>{@code 0x1.0p0}</td>
-     * <tr><td>{@code -1.0}</td>        <td>{@code -0x1.0p0}</td>
-     * <tr><td>{@code 2.0}</td> <td>{@code 0x1.0p1}</td>
-     * <tr><td>{@code 3.0}</td> <td>{@code 0x1.8p1}</td>
-     * <tr><td>{@code 0.5}</td> <td>{@code 0x1.0p-1}</td>
-     * <tr><td>{@code 0.25}</td>        <td>{@code 0x1.0p-2}</td>
-     * <tr><td>{@code Float.MAX_VALUE}</td>
+     * <tr><th scope="row">{@code 1.0}</th> <td>{@code 0x1.0p0}</td>
+     * <tr><th scope="row">{@code -1.0}</th>        <td>{@code -0x1.0p0}</td>
+     * <tr><th scope="row">{@code 2.0}</th> <td>{@code 0x1.0p1}</td>
+     * <tr><th scope="row">{@code 3.0}</th> <td>{@code 0x1.8p1}</td>
+     * <tr><th scope="row">{@code 0.5}</th> <td>{@code 0x1.0p-1}</td>
+     * <tr><th scope="row">{@code 0.25}</th>        <td>{@code 0x1.0p-2}</td>
+     * <tr><th scope="row">{@code Float.MAX_VALUE}</th>
      *     <td>{@code 0x1.fffffep127}</td>
-     * <tr><td>{@code Minimum Normal Value}</td>
+     * <tr><th scope="row">{@code Minimum Normal Value}</th>
      *     <td>{@code 0x1.0p-126}</td>
-     * <tr><td>{@code Maximum Subnormal Value}</td>
+     * <tr><th scope="row">{@code Maximum Subnormal Value}</th>
      *     <td>{@code 0x0.fffffep-126}</td>
-     * <tr><td>{@code Float.MIN_VALUE}</td>
+     * <tr><th scope="row">{@code Float.MIN_VALUE}</th>
      *     <td>{@code 0x0.000002p-126}</td>
      * </tbody>
      * </table>

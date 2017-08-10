@@ -583,7 +583,7 @@ public final class System {
      * system properties, a set of system properties is first created and
      * initialized. This set of system properties always includes values
      * for the following keys:
-     * <table class="striped">
+     * <table class="striped" style="text-align:left">
      * <caption style="display:none">Shows property keys and associated values</caption>
      * <thead>
      * <tr><th scope="col">Key</th>
@@ -1049,26 +1049,28 @@ public final class System {
          * of corresponding severity.
          * <br>The mapping is as follows:
          * <br><br>
-         * <table border="1">
+         * <table class="striped">
          * <caption>System.Logger Severity Level Mapping</caption>
-         * <tr><td><b>System.Logger Levels</b></td>
-         * <td>{@link Logger.Level#ALL ALL}</td>
-         * <td>{@link Logger.Level#TRACE TRACE}</td>
-         * <td>{@link Logger.Level#DEBUG DEBUG}</td>
-         * <td>{@link Logger.Level#INFO INFO}</td>
-         * <td>{@link Logger.Level#WARNING WARNING}</td>
-         * <td>{@link Logger.Level#ERROR ERROR}</td>
-         * <td>{@link Logger.Level#OFF OFF}</td>
-         * </tr>
-         * <tr><td><b>java.util.logging Levels</b></td>
-         * <td>{@link java.util.logging.Level#ALL ALL}</td>
-         * <td>{@link java.util.logging.Level#FINER FINER}</td>
-         * <td>{@link java.util.logging.Level#FINE FINE}</td>
-         * <td>{@link java.util.logging.Level#INFO INFO}</td>
-         * <td>{@link java.util.logging.Level#WARNING WARNING}</td>
-         * <td>{@link java.util.logging.Level#SEVERE SEVERE}</td>
-         * <td>{@link java.util.logging.Level#OFF OFF}</td>
-         * </tr>
+         * <thead>
+         * <tr><th scope="col">System.Logger Levels</th>
+         *     <th scope="col">java.util.logging Levels</th>
+         * </thead>
+         * <tbody>
+         * <tr><th scope="row">{@link Logger.Level#ALL ALL}</th>
+         *     <td>{@link java.util.logging.Level#ALL ALL}</td>
+         * <tr><th scope="row">{@link Logger.Level#TRACE TRACE}</th>
+         *     <td>{@link java.util.logging.Level#FINER FINER}</td>
+         * <tr><th scope="row">{@link Logger.Level#DEBUG DEBUG}</th>
+         *     <td>{@link java.util.logging.Level#FINE FINE}</td>
+         * <tr><th scope="row">{@link Logger.Level#INFO INFO}</th>
+         *     <td>{@link java.util.logging.Level#INFO INFO}</td>
+         * <tr><th scope="row">{@link Logger.Level#WARNING WARNING}</th>
+         *     <td>{@link java.util.logging.Level#WARNING WARNING}</td>
+         * <tr><th scope="row">{@link Logger.Level#ERROR ERROR}</th>
+         *     <td>{@link java.util.logging.Level#SEVERE SEVERE}</td>
+         * <tr><th scope="row">{@link Logger.Level#OFF OFF}</th>
+         *     <td>{@link java.util.logging.Level#OFF OFF}</td>
+         * </tbody>
          * </table>
          *
          * @since 9
