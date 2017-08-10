@@ -54,83 +54,90 @@ package java.io;
  * Unicode strings in a format that is a slight modification of UTF-8.
  * (For information regarding the standard UTF-8 format, see section
  * <i>3.9 Unicode Encoding Forms</i> of <i>The Unicode Standard, Version
- * 4.0</i>).
- * Note that in the following table, the most significant bit appears in the
- * far left-hand column.
+ * 4.0</i>)
  *
- * <blockquote>
- *   <table class="plain">
- *     <caption style="display:none">Bit values and bytes</caption>
+ * <ul>
+ * <li>Characters in the range {@code '\u005Cu0001'} to
+ *         {@code '\u005Cu007F'} are represented by a single byte.
+ * <li>The null character {@code '\u005Cu0000'} and characters
+ *         in the range {@code '\u005Cu0080'} to {@code '\u005Cu07FF'} are
+ *         represented by a pair of bytes.
+ * <li>Characters in the range {@code '\u005Cu0800'}
+ *         to {@code '\u005CuFFFF'} are represented by three bytes.
+ * </ul>
+ *
+ *   <table class="plain" style="margin-left:2em;">
+ *     <caption>Encoding of UTF-8 values</caption>
+ *     <thead>
+ *     <tr>
+ *       <th scope="col" rowspan="2">Value</th>
+ *       <th scope="col" rowspan="2">Byte</th>
+ *       <th scope="col" colspan="8" id="bit_a">Bit Values</th>
+ *     </tr>
+ *     <tr>
+ *       <!-- Value -->
+ *       <!-- Byte -->
+ *       <th scope="col" style="width:3em"> 7 </th>
+ *       <th scope="col" style="width:3em"> 6 </th>
+ *       <th scope="col" style="width:3em"> 5 </th>
+ *       <th scope="col" style="width:3em"> 4 </th>
+ *       <th scope="col" style="width:3em"> 3 </th>
+ *       <th scope="col" style="width:3em"> 2 </th>
+ *       <th scope="col" style="width:3em"> 1 </th>
+ *       <th scope="col" style="width:3em"> 0 </th>
+ *     </thead>
  *     <tbody>
  *     <tr>
- *       <th colspan="9"><span style="font-weight:normal">
- *         All characters in the range {@code '\u005Cu0001'} to
- *         {@code '\u005Cu007F'} are represented by a single byte:</span></th>
- *     </tr>
- *     <tr>
- *       <td></td>
- *       <th colspan="8" id="bit_a">Bit Values</th>
- *     </tr>
- *     <tr>
- *       <th id="byte1_a" style="text-align:left">Byte 1</th>
+ *       <th scope="row" style="text-align:left; font-weight:normal">
+ *         {@code \u005Cu0001} to {@code \u005Cu007F} </th>
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 1 </th>
  *       <td style="text-align:center">0
- *       <td colspan="7" style="text-align:center">bits 6-0
+ *       <td colspan="7" style="text-align:right; padding-right:6em">bits 6-0
  *     </tr>
  *     <tr>
- *       <th colspan="9"><span style="font-weight:normal">
- *         The null character {@code '\u005Cu0000'} and characters
- *         in the range {@code '\u005Cu0080'} to {@code '\u005Cu07FF'} are
- *         represented by a pair of bytes:</span></th>
- *     </tr>
- *     <tr>
- *       <td></td>
- *       <th colspan="8" id="bit_b">Bit Values</th>
- *     </tr>
- *     <tr>
- *       <th id="byte1_b" style="text-align:left">Byte 1</th>
+ *       <th scope="row" rowspan="2" style="text-align:left; font-weight:normal">
+ *           {@code \u005Cu0000},<br>
+ *           {@code \u005Cu0080} to {@code \u005Cu07FF} </th>
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 1 </th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
- *       <td colspan="5" style="text-align:center">bits 10-6
+ *       <td colspan="5" style="text-align:right; padding-right:6em">bits 10-6
  *     </tr>
  *     <tr>
- *       <th id="byte2_a" style="text-align:left">Byte 2</th>
+ *       <!-- (value) -->
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 2 </th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
- *       <td colspan="6" style="text-align:center">bits 5-0
+ *       <td colspan="6" style="text-align:right; padding-right:6em">bits 5-0
  *     </tr>
  *     <tr>
- *       <th colspan="9"><span style="font-weight:normal">
- *         {@code char} values in the range {@code '\u005Cu0800'}
- *         to {@code '\u005CuFFFF'} are represented by three bytes:</span></th>
- *     </tr>
- *     <tr>
- *       <td></td>
- *       <th colspan="8"id="bit_c">Bit Values</th>
- *     </tr>
- *     <tr>
- *       <th id="byte1_c" style="text-align:left">Byte 1</th>
+ *       <th scope="row" rowspan="3" style="text-align:left; font-weight:normal">
+ *         {@code \u005Cu0800} to {@code \u005CuFFFF} </th>
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 1 </th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
- *       <td colspan="4" style="text-align:center">bits 15-12
+ *       <td colspan="4" style="text-align:right; padding-right:6em">bits 15-12
  *     </tr>
  *     <tr>
- *       <th id="byte2_b" style="text-align:left">Byte 2</th>
+ *       <!-- (value) -->
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 2 </th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
- *       <td colspan="6" style="text-align:center">bits 11-6
+ *       <td colspan="6" style="text-align:right; padding-right:6em">bits 11-6
  *     </tr>
  *     <tr>
- *       <th id="byte3" style="text-align:left">Byte 3</th>
+ *       <!-- (value) -->
+ *       <th scope="row" style="font-weight:normal; text-align:center"> 3 </th>
  *       <td style="text-align:center">1
  *       <td style="text-align:center">0
- *       <td colspan="6" style="text-align:center">bits 5-0
+ *       <td colspan="6" style="text-align:right; padding-right:6em">bits 5-0
  *     </tr>
  *     </tbody>
  *   </table>
- * </blockquote>
+ *
  * <p>
  * The differences between this format and the
  * standard UTF-8 format are the following:

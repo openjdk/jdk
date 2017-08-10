@@ -48,7 +48,7 @@
  *   <li><p> <i>Selectors</i> and <i>selection keys</i>, which
  *   together with <br> <i>selectable channels</i> define a <a
  *   href="channels/package-summary.html#multiplex">multiplexed,
- *   non-blocking <br> I/O</a>&nbsp;facility.  </p></li>
+ *   non-blocking <br> I/O</a> facility.  </p></li>
  *
  *  </ul>
  *
@@ -62,33 +62,44 @@
  *
  * <a id="buffers"> </a>
  *
- * <blockquote><table class="borderless">
+ * <table class="striped" style="margin-left:2em; text-align:left">
  *     <caption style="display:none">Description of the various buffers</caption>
- *   <tr><th style="text-align:left">Buffers</th>
- *       <th style="text-align:left">Description</th></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.Buffer}</td>
+ *   <thead>
+ *   <tr><th scope="col">Buffers</th>
+ *       <th scope="col">Description</th></tr>
+ *   </thead>
+ *   <tbody>
+ *   <tr><th scope="row">{@link java.nio.Buffer}</th>
  *       <td>Position, limit, and capacity;
- *           <br>clear, flip, rewind, and mark/reset</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.ByteBuffer}</td>
- *       <td>Get/put, compact, views; allocate,&nbsp;wrap</td></tr>
- *   <tr><td style="vertical-align:top">
- *       &nbsp;&nbsp;&nbsp;&nbsp;{@link java.nio.MappedByteBuffer}&nbsp;&nbsp;</td>
+ *           clear, flip, rewind, and mark/reset</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.ByteBuffer}</span></th>
+ *       <td>Get/put, compact, views; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:2em">{@link java.nio.MappedByteBuffer}</span></th>
  *       <td>A byte buffer mapped to a file</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.CharBuffer}</td>
- *       <td>Get/put, compact; allocate,&nbsp;wrap</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.DoubleBuffer}</td>
- *       <td>&nbsp;&nbsp;&nbsp;&nbsp;'&nbsp;'</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.FloatBuffer}</td>
- *       <td>&nbsp;&nbsp;&nbsp;&nbsp;'&nbsp;'</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.IntBuffer}</td>
- *       <td>&nbsp;&nbsp;&nbsp;&nbsp;'&nbsp;'</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.LongBuffer}</td>
- *       <td>&nbsp;&nbsp;&nbsp;&nbsp;'&nbsp;'</td></tr>
- *   <tr><td style="vertical-align:top">&nbsp;&nbsp;{@link java.nio.ShortBuffer}</td>
- *       <td>&nbsp;&nbsp;&nbsp;&nbsp;'&nbsp;'</td></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.ByteOrder}</td>
- *       <td>Typesafe enumeration for&nbsp;byte&nbsp;orders</td></tr>
- * </table></blockquote>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.CharBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.DoubleBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.FloatBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.IntBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.LongBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">
+ *         <span style="padding-left:1em">{@link java.nio.ShortBuffer}</span></th>
+ *       <td>Get/put, compact; allocate, wrap</td></tr>
+ *   <tr><th scope="row">{@link java.nio.ByteOrder}</th>
+ *       <td>Typesafe enumeration for byte orders</td></tr>
+ * </tbody>
+ * </table>
  *
  * <p> A <i>buffer</i> is a container for a fixed amount of data of a
  * specific primitive type.  In addition to its content a buffer has a
