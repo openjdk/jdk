@@ -62,7 +62,7 @@ public class PatchModuleCDS {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         pb = ProcessTools.createJavaProcessBuilder(

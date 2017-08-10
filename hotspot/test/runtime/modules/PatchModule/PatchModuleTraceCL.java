@@ -48,7 +48,7 @@ public class PatchModuleTraceCL {
 
         // Test -Xlog:class+load=info output for --patch-module
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              "mods/java.naming");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=mods/java.naming",
