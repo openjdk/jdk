@@ -209,6 +209,14 @@ ScopeDesc* CompiledMethod::scope_desc_at(address pc) {
                        pd->return_oop());
 }
 
+ScopeDesc* CompiledMethod::scope_desc_near(address pc) {
+  PcDesc* pd = pc_desc_near(pc);
+  guarantee(pd != NULL, "scope must be present");
+  return new ScopeDesc(this, pd->scope_decode_offset(),
+                       pd->obj_decode_offset(), pd->should_reexecute(), pd->rethrow_exception(),
+                       pd->return_oop());
+}
+
 void CompiledMethod::cleanup_inline_caches(bool clean_all/*=false*/) {
   assert_locked_or_safepoint(CompiledIC_lock);
 

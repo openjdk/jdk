@@ -3128,11 +3128,14 @@ void AdapterHandlerLibrary::print_statistics() {
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
   assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
+  if (thread->stack_reserved_zone_disabled()) {
   thread->enable_stack_reserved_zone();
+  }
   thread->set_reserved_stack_activation(thread->stack_base());
 JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
+  ResourceMark rm(thread);
   frame activation;
   CompiledMethod* nm = NULL;
   int count = 1;
@@ -3141,17 +3144,28 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
 
   while (true) {
     Method* method = NULL;
+    bool found = false;
     if (fr.is_interpreted_frame()) {
       method = fr.interpreter_frame_method();
+      if (method != NULL && method->has_reserved_stack_access()) {
+        found = true;
+      }
     } else {
       CodeBlob* cb = fr.cb();
       if (cb != NULL && cb->is_compiled()) {
         nm = cb->as_compiled_method();
         method = nm->method();
+        // scope_desc_near() must be used, instead of scope_desc_at() because on
+        // SPARC, the pcDesc can be on the delay slot after the call instruction.
+        for (ScopeDesc *sd = nm->scope_desc_near(fr.pc()); sd != NULL; sd = sd->sender()) {
+          method = sd->method();
+          if (method != NULL && method->has_reserved_stack_access()) {
+            found = true;
       }
     }
-    if ((method != NULL) && method->has_reserved_stack_access()) {
-      ResourceMark rm(thread);
+      }
+    }
+    if (found) {
       activation = fr;
       warning("Potentially dangerous stack overflow in "
               "ReservedStackAccess annotated method %s [%d]",

@@ -213,11 +213,12 @@ public:
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
-  // pc_desc_near returns the first PcDesc at or after the givne pc.
+  // pc_desc_near returns the first PcDesc at or after the given pc.
   PcDesc* pc_desc_near(address pc) { return find_pc_desc(pc, true); }
 
   // ScopeDesc for an instruction
   ScopeDesc* scope_desc_at(address pc);
+  ScopeDesc* scope_desc_near(address pc);
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
