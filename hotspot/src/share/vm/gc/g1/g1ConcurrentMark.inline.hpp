@@ -47,7 +47,7 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop cons
   }
 
   // Some callers may have stale objects to mark above nTAMS after humongous reclaim.
-  assert(obj->is_oop(true /* ignore mark word */), "Address " PTR_FORMAT " to mark is not an oop", p2i(obj));
+  // Can't assert that this is a valid object at this point, since it might be in the process of being copied by another thread.
   assert(!hr->is_continues_humongous(), "Should not try to mark object " PTR_FORMAT " in Humongous continues region %u above nTAMS " PTR_FORMAT, p2i(obj), hr->hrm_index(), p2i(hr->next_top_at_mark_start()));
 
   HeapWord* const obj_addr = (HeapWord*)obj;
