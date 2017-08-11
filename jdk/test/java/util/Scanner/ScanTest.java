@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,14 @@ public class ScanTest {
                 !"ja".equals(lang)) {
                 //Before we have resource to improve the test to be ready for
                 //arbitrary locale, force the default locale to be "English"
-                //for now.
+                //for now. First we check whether the "English" locale is
+                //available on the system as it could be absent due to varying
+                //configurations.
+                if (!Arrays.asList(Locale.getAvailableLocales())
+                    .contains(Locale.ENGLISH)) {
+                    throw new RuntimeException
+                       ("The \"English\" Locale is unavailable on this system");
+                }
                 Locale.setDefault(Locale.ENGLISH);
             }
             skipTest();
