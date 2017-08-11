@@ -993,7 +993,8 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_output(NULL),
     _allowed_reasons(0),
     _interpreter_frame_size(0),
-    _max_node_limit(MaxNodeLimit) {
+    _max_node_limit(MaxNodeLimit),
+    _has_reserved_stack_access(false) {
   C = this;
 
   TraceTime t1(NULL, &_t_totalCompilation, CITime, false);

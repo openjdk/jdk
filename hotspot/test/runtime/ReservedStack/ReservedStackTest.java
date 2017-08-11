@@ -26,8 +26,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -Xint ReservedStackTest
- * @run main/othervm -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
+ * @run main/othervm -XX:MaxInlineLevel=2 -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
 
 /* The exclusion of java.util.concurrent.locks.AbstractOwnableSynchronizer.setExclusiveOwnerThread()
@@ -161,6 +160,7 @@ public class ReservedStackTest {
             } catch (StackOverflowError e) {
                 soe = e;
                 stackOverflowErrorReceived = true;
+                throw e;
             }
         }
 
@@ -194,13 +194,10 @@ public class ReservedStackTest {
             decounter = deframe;
             test.initialize();
             recursiveCall();
-            System.out.println("Framework got StackOverflowError at frame = " + counter);
-            System.out.println("Test started execution at frame = " + (counter - deframe));
             String result = test.getResult();
             // The feature is not fully implemented on all platforms,
             // corruptions are still possible.
             if (isSupportedPlatform && !result.contains("PASSED")) {
-                System.out.println(result);
                 throw new Error(result);
             } else {
                 // Either the test passed or this platform is not supported.
@@ -289,7 +286,7 @@ public class ReservedStackTest {
 
     public static void main(String[] args) throws Exception {
         initIsSupportedPlatform();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             // Each iteration has to be executed by a new thread. The test
             // relies on the random size area pushed by the VM at the beginning
             // of the stack of each Java thread it creates.

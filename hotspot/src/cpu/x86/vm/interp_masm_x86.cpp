@@ -1089,7 +1089,6 @@ void InterpreterMacroAssembler::remove_activation(
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
-    push(rthread);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_delayed_StackOverflowError));
     should_not_reach_here();
