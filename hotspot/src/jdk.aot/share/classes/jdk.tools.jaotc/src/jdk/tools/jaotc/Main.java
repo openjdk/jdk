@@ -247,7 +247,7 @@ public class Main implements LogPrinter {
 
     public static class Options {
         public List<SearchFor> files = new LinkedList<>();
-        public String outputName = "unnamed.so";
+        public String outputName = defaultOutputName();
         public String methodList;
         public List<ClassSource> sources = new ArrayList<>();
         public String linkerpath = null;
@@ -269,6 +269,30 @@ public class Main implements LogPrinter {
         public boolean version;
         public boolean compileWithAssertions;
         public boolean tiered;
+
+        private static String defaultOutputName() {
+            String osName = System.getProperty("os.name");
+            String name = "unnamed.";
+            String ext;
+
+            switch (osName) {
+                case "Linux":
+                case "SunOS":
+                    ext = "so";
+                    break;
+                case "Mac OS X":
+                    ext = "dylib";
+                    break;
+                default:
+                    if (osName.startsWith("Windows")) {
+                        ext = "dll";
+                    } else {
+                        ext = "so";
+                    }
+            }
+
+            return name + ext;
+        }
     }
 
     /* package */final Options options = new Options();
@@ -529,45 +553,41 @@ public class Main implements LogPrinter {
             String name = options.outputName;
             String objectFileName = name;
 
-            // [TODO] The jtregs tests expect .so extension so don't
-            // override with platform specific file extension until the
-            // tests are fixed.
             String libraryFileName = name;
 
             String linkerCmd;
             String linkerPath;
             String osName = System.getProperty("os.name");
 
-            if (name.endsWith(".so")) {
-                objectFileName = name.substring(0, name.length() - ".so".length());
-            } else if (name.endsWith(".dylib")) {
-                objectFileName = name.substring(0, name.length() - ".dylib".length());
-            } else if (name.endsWith(".dll")) {
-                objectFileName = name.substring(0, name.length() - ".dll".length());
-            }
-
             switch (osName) {
                 case "Linux":
-                    // libraryFileName = options.outputName + ".so";
-                    objectFileName = objectFileName + ".o";
+                    if (name.endsWith(".so")) {
+                        objectFileName = name.substring(0, name.length() - ".so".length());
+                    }
                     linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
                     linkerCmd = linkerPath + " -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
                     break;
                 case "SunOS":
-                    // libraryFileName = options.outputName + ".so";
+                    if (name.endsWith(".so")) {
+                        objectFileName = name.substring(0, name.length() - ".so".length());
+                    }
                     objectFileName = objectFileName + ".o";
                     linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
                     linkerCmd = linkerPath + " -shared -o " + libraryFileName + " " + objectFileName;
                     break;
                 case "Mac OS X":
-                    // libraryFileName = options.outputName + ".dylib";
+                    if (name.endsWith(".dylib")) {
+                        objectFileName = name.substring(0, name.length() - ".dylib".length());
+                    }
                     objectFileName = objectFileName + ".o";
                     linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
                     linkerCmd = linkerPath + " -dylib -o " + libraryFileName + " " + objectFileName;
                     break;
                 default:
                     if (osName.startsWith("Windows")) {
-                        // libraryFileName = options.outputName + ".dll";
+                        if (name.endsWith(".dll")) {
+                            objectFileName = name.substring(0, name.length() - ".dll".length());
+                        }
                         objectFileName = objectFileName + ".obj";
                         linkerPath = (options.linkerpath != null) ? options.linkerpath : getWindowsLinkPath();
                         if (linkerPath == null) {
@@ -575,8 +595,9 @@ public class Main implements LogPrinter {
                         }
                         linkerCmd = linkerPath + " /DLL /OPT:NOREF /NOLOGO /NOENTRY" + " /OUT:" + libraryFileName + " " + objectFileName;
                         break;
-                    } else
+                    } else {
                         throw new InternalError("Unsupported platform: " + osName);
+                    }
             }
 
             try (Timer t = new Timer(this, "Creating binary: " + objectFileName)) {
