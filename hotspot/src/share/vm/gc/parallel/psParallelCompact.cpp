@@ -1041,7 +1041,11 @@ void PSParallelCompact::post_compact()
   DerivedPointerTable::update_pointers();
 #endif
 
-  ref_processor()->enqueue_discovered_references(NULL);
+  ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_q());
+
+  ref_processor()->enqueue_discovered_references(NULL, &pt);
+
+  pt.print_enqueue_phase();
 
   if (ZapUnusedHeapArea) {
     heap->gen_mangle_unused_area();
@@ -2103,18 +2107,20 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
     ReferenceProcessorStats stats;
+    ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_q());
     if (ref_processor()->processing_is_mt()) {
       RefProcTaskExecutor task_executor;
       stats = ref_processor()->process_discovered_references(
         is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
-        &task_executor, &_gc_timer);
+        &task_executor, &pt);
     } else {
       stats = ref_processor()->process_discovered_references(
         is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL,
-        &_gc_timer);
+        &pt);
     }
 
     gc_tracer->report_gc_reference_stats(stats);
+    pt.print_all_references();
   }
 
   // This is the point where the entire marking should have completed.

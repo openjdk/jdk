@@ -27,7 +27,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/workerDataArray.inline.hpp"
+#include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -37,10 +37,11 @@
 
 static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
-G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
+G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
   _gc_start_counter(0),
-  _gc_pause_time_ms(0.0)
+  _gc_pause_time_ms(0.0),
+  _ref_phase_times((GCTimer*)gc_timer, max_gc_threads)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
@@ -156,6 +157,8 @@ void G1GCPhaseTimes::reset() {
       _gc_par_phases[i]->reset();
     }
   }
+
+  _ref_phase_times.reset();
 }
 
 void G1GCPhaseTimes::note_gc_start() {
@@ -288,6 +291,19 @@ void G1GCPhaseTimes::debug_time(const char* name, double value) const {
   log_debug(gc, phases)("%s%s: " TIME_FORMAT, Indents[2], name, value);
 }
 
+void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) const {
+  LogTarget(Debug, gc, phases) lt;
+  LogTarget(Debug, gc, phases, ref) lt2;
+
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s%s: " TIME_FORMAT, Indents[2], name, value);
+  } else if (lt2.is_enabled()) {
+    LogStream ls(lt2);
+    ls.print_cr("%s%s: " TIME_FORMAT, Indents[2], name, value);
+  }
+}
+
 void G1GCPhaseTimes::trace_time(const char* name, double value) const {
   log_trace(gc, phases)("%s%s: " TIME_FORMAT, Indents[3], name, value);
 }
@@ -374,7 +390,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_time("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
   trace_phase(_gc_par_phases[PreserveCMReferents]);
 
-  debug_time("Reference Processing", _cur_ref_proc_time_ms);
+  debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
+  _ref_phase_times.print_all_references(2, false);
 
   if (G1StringDedup::is_enabled()) {
     debug_time("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
@@ -390,7 +407,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
   }
 
-  debug_time("Reference Enqueuing", _cur_ref_enq_time_ms);
+  debug_time_for_reference("Reference Enqueuing", _cur_ref_enq_time_ms);
+  _ref_phase_times.print_enqueue_phase(2, false);
 
   debug_time("Merge Per-Thread State", _recorded_merge_pss_time_ms);
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);

@@ -298,7 +298,7 @@ private:
                                                          size_t size,
                                                          size_t translation_factor);
 
-  static G1Policy* create_g1_policy();
+  static G1Policy* create_g1_policy(STWGCTimer* gc_timer);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -369,6 +369,10 @@ protected:
   // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;
+
+  STWGCTimer* _gc_timer_stw;
+
+  G1NewTracer* _gc_tracer_stw;
 
   // The current policy object for the collector.
   G1Policy* _g1_policy;
@@ -900,10 +904,6 @@ protected:
 
   // The (stw) reference processor...
   ReferenceProcessor* _ref_processor_stw;
-
-  STWGCTimer* _gc_timer_stw;
-
-  G1NewTracer* _gc_tracer_stw;
 
   // During reference object discovery, the _is_alive_non_header
   // closure (if non-null) is applied to the referent object to

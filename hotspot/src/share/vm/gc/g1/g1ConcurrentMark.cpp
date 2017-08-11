@@ -1660,14 +1660,17 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
+    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
+
     // Process the weak references.
     const ReferenceProcessorStats& stats =
         rp->process_discovered_references(&g1_is_alive,
                                           &g1_keep_alive,
                                           &g1_drain_mark_stack,
                                           executor,
-                                          _gc_timer_cm);
+                                          &pt);
     _gc_tracer_cm->report_gc_reference_stats(stats);
+    pt.print_all_references();
 
     // The do_oop work routines of the keep_alive and drain_marking_stack
     // oop closures will set the has_overflown flag if we overflow the
@@ -1678,9 +1681,12 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
     assert(rp->num_q() == active_workers, "why not");
 
-    rp->enqueue_discovered_references(executor);
+    rp->enqueue_discovered_references(executor, &pt);
 
     rp->verify_no_references_recorded();
+
+    pt.print_enqueue_phase();
+
     assert(!rp->discovery_enabled(), "Post condition");
   }
 
