@@ -51,20 +51,6 @@ final class CDropTargetContextPeer extends SunDropTargetContextPeer {
         super();
     }
 
-    // We block, waiting for an empty event to get posted (CToolkit.invokeAndWait)
-    // This is so we finish dispatching DropTarget events before we dispatch the dragDropFinished event (which is a higher priority).
-    private void flushEvents(Component c) {
-        try {
-            LWCToolkit.invokeAndWait(new Runnable() {
-                public synchronized void run() {
-                }
-            }, c);
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     protected Object getNativeData(long format) {
         long nativeDropTarget = this.getNativeDragContext();
 
