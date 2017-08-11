@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -405,7 +405,7 @@ Declares a structure type that can be used in other events.
 
   <!-- Promotion events, Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. -->
   <event id="PromoteObjectInNewPLAB" path="vm/gc/detailed/object_promotion_in_new_PLAB" label="Promotion in new PLAB"
-         description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 
+         description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
          has_thread="true" has_stacktrace="false" is_instant="true">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted"/>
     <value type="CLASS" field="objectClass" label="Object Class" description="Class of promoted object"/>
@@ -414,9 +414,9 @@ Declares a structure type that can be used in other events.
     <value type="BOOLEAN" field="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space"/>
     <value type="BYTES64" field="plabSize" label="PLAB Size" description="Size of the allocated PLAB to which the object was copied"/>
   </event>
-  
+
   <event id="PromoteObjectOutsidePLAB" path="vm/gc/detailed/object_promotion_outside_PLAB" label="Promotion outside PLAB"
-         description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects." 
+         description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
          has_thread="true" has_stacktrace="false" is_instant="true">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted"/>
     <value type="CLASS" field="objectClass" label="Object Class" description="Class of promoted object"/>
@@ -459,6 +459,11 @@ Declares a structure type that can be used in other events.
   </event>
 
   <event id="GCPhasePauseLevel3" path="vm/gc/phases/pause_level_3" label="GC Phase Pause Level 3" has_thread="true">
+    <value type="UINT" field="gcId" label="GC Identifier" relation="GcId"/>
+    <value type="STRING" field="name" label="Name" />
+  </event>
+
+  <event id="GCPhasePauseLevel4" path="vm/gc/phases/pause_level_4" label="GC Phase Pause Level 4" has_thread="true">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId"/>
     <value type="STRING" field="name" label="Name" />
   </event>

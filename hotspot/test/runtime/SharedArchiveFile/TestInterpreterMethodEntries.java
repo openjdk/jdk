@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test InterpreterMethodEntries
+ * @requires vm.cds
  * @bug 8169711
  * @summary Test interpreter method entries for intrinsics with CDS (class data sharing)
  *          and different settings of the intrinsic flag during dump/use of the archive.

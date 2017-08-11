@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
   // past clock value.
 }
 
-size_t ReferenceProcessor::total_count(DiscoveredList lists[]) {
+size_t ReferenceProcessor::total_count(DiscoveredList lists[]) const {
   size_t total = 0;
   for (uint i = 0; i < _max_num_q; ++i) {
     total += lists[i].length();
@@ -188,11 +188,13 @@ size_t ReferenceProcessor::total_count(DiscoveredList lists[]) {
 }
 
 ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
-  BoolObjectClosure*           is_alive,
-  OopClosure*                  keep_alive,
-  VoidClosure*                 complete_gc,
-  AbstractRefProcTaskExecutor* task_executor,
-  GCTimer*                     gc_timer) {
+  BoolObjectClosure*            is_alive,
+  OopClosure*                   keep_alive,
+  VoidClosure*                  complete_gc,
+  AbstractRefProcTaskExecutor*  task_executor,
+  ReferenceProcessorPhaseTimes* phase_times) {
+
+  double start_time = os::elapsedTime();
 
   assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
@@ -208,40 +210,39 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 
   _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
 
-  ReferenceProcessorStats stats(
-      total_count(_discoveredSoftRefs),
-      total_count(_discoveredWeakRefs),
-      total_count(_discoveredFinalRefs),
-      total_count(_discoveredPhantomRefs));
+  ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
+                                total_count(_discoveredWeakRefs),
+                                total_count(_discoveredFinalRefs),
+                                total_count(_discoveredPhantomRefs));
 
   // Soft references
   {
-    GCTraceTime(Debug, gc, ref) tt("SoftReference", gc_timer);
+    RefProcPhaseTimesTracker tt(REF_SOFT, phase_times, this);
     process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
-                               is_alive, keep_alive, complete_gc, task_executor);
+                               is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
   update_soft_ref_master_clock();
 
   // Weak references
   {
-    GCTraceTime(Debug, gc, ref) tt("WeakReference", gc_timer);
+    RefProcPhaseTimesTracker tt(REF_WEAK, phase_times, this);
     process_discovered_reflist(_discoveredWeakRefs, NULL, true,
-                               is_alive, keep_alive, complete_gc, task_executor);
+                               is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
   // Final references
   {
-    GCTraceTime(Debug, gc, ref) tt("FinalReference", gc_timer);
+    RefProcPhaseTimesTracker tt(REF_FINAL, phase_times, this);
     process_discovered_reflist(_discoveredFinalRefs, NULL, false,
-                               is_alive, keep_alive, complete_gc, task_executor);
+                               is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
   // Phantom references
   {
-    GCTraceTime(Debug, gc, ref) tt("PhantomReference", gc_timer);
+    RefProcPhaseTimesTracker tt(REF_PHANTOM, phase_times, this);
     process_discovered_reflist(_discoveredPhantomRefs, NULL, true,
-                               is_alive, keep_alive, complete_gc, task_executor);
+                               is_alive, keep_alive, complete_gc, task_executor, phase_times);
   }
 
   // Weak global JNI references. It would make more sense (semantically) to
@@ -250,15 +251,15 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // thus use JNI weak references to circumvent the phantom references and
   // resurrect a "post-mortem" object.
   {
-    GCTraceTime(Debug, gc, ref) tt("JNI Weak Reference", gc_timer);
+    GCTraceTime(Debug, gc, ref) tt("JNI Weak Reference", phase_times->gc_timer());
     if (task_executor != NULL) {
       task_executor->set_single_threaded_mode();
     }
     process_phaseJNI(is_alive, keep_alive, complete_gc);
   }
 
-  log_debug(gc, ref)("Ref Counts: Soft: " SIZE_FORMAT " Weak: " SIZE_FORMAT " Final: " SIZE_FORMAT " Phantom: " SIZE_FORMAT,
-                     stats.soft_count(), stats.weak_count(), stats.final_count(), stats.phantom_count());
+  phase_times->set_total_time_ms((os::elapsedTime() - start_time) * 1000);
+
   log_develop_trace(gc, ref)("JNI Weak Reference count: " SIZE_FORMAT, count_jni_refs());
 
   return stats;
@@ -289,10 +290,11 @@ void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
   complete_gc->do_void();
 }
 
-void ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor) {
+void ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor*  task_executor,
+                                                       ReferenceProcessorPhaseTimes* phase_times) {
   // Enqueue references that are not made active again, and
   // clear the decks for the next collection (cycle).
-  enqueue_discovered_reflists(task_executor);
+  enqueue_discovered_reflists(task_executor, phase_times);
 
   // Stop treating discovered references specially.
   disable_discovery();
@@ -343,13 +345,16 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list) {
 // Parallel enqueue task
 class RefProcEnqueueTask: public AbstractRefProcTaskExecutor::EnqueueTask {
 public:
-  RefProcEnqueueTask(ReferenceProcessor& ref_processor,
-                     DiscoveredList      discovered_refs[],
-                     int                 n_queues)
-    : EnqueueTask(ref_processor, discovered_refs, n_queues)
+  RefProcEnqueueTask(ReferenceProcessor&           ref_processor,
+                     DiscoveredList                discovered_refs[],
+                     int                           n_queues,
+                     ReferenceProcessorPhaseTimes* phase_times)
+    : EnqueueTask(ref_processor, discovered_refs, n_queues, phase_times)
   { }
 
   virtual void work(unsigned int work_id) {
+    RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefEnqueue, _phase_times, work_id);
+
     assert(work_id < (unsigned int)_ref_processor.max_num_q(), "Index out-of-bounds");
     // Simplest first cut: static partitioning.
     int index = work_id;
@@ -369,10 +374,19 @@ public:
 };
 
 // Enqueue references that are not made active again
-void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor) {
+void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor*  task_executor,
+                                                     ReferenceProcessorPhaseTimes* phase_times) {
+
+  ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
+                                total_count(_discoveredWeakRefs),
+                                total_count(_discoveredFinalRefs),
+                                total_count(_discoveredPhantomRefs));
+
+  RefProcEnqueueTimeTracker tt(phase_times, stats);
+
   if (_processing_is_mt && task_executor != NULL) {
     // Parallel code
-    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_q);
+    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_q, phase_times);
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
@@ -469,7 +483,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   complete_gc->do_void();
   log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " dead Refs out of " SIZE_FORMAT " discovered Refs by policy, from list " INTPTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
-    }
+}
 
 // Traverse the list and remove any Refs that are not active, or
 // whose referents are either alive or NULL.
@@ -598,19 +612,46 @@ void ReferenceProcessor::abandon_partial_discovery() {
   }
 }
 
+size_t ReferenceProcessor::total_reference_count(ReferenceType type) const {
+  DiscoveredList* list = NULL;
+
+  switch (type) {
+    case REF_SOFT:
+      list = _discoveredSoftRefs;
+      break;
+    case REF_WEAK:
+      list = _discoveredWeakRefs;
+      break;
+    case REF_FINAL:
+      list = _discoveredFinalRefs;
+      break;
+    case REF_PHANTOM:
+      list = _discoveredPhantomRefs;
+      break;
+    case REF_OTHER:
+    case REF_NONE:
+    default:
+      ShouldNotReachHere();
+  }
+  return total_count(list);
+}
+
 class RefProcPhase1Task: public AbstractRefProcTaskExecutor::ProcessTask {
 public:
-  RefProcPhase1Task(ReferenceProcessor& ref_processor,
-                    DiscoveredList      refs_lists[],
-                    ReferencePolicy*    policy,
-                    bool                marks_oops_alive)
-    : ProcessTask(ref_processor, refs_lists, marks_oops_alive),
+  RefProcPhase1Task(ReferenceProcessor&           ref_processor,
+                    DiscoveredList                refs_lists[],
+                    ReferencePolicy*              policy,
+                    bool                          marks_oops_alive,
+                    ReferenceProcessorPhaseTimes* phase_times)
+    : ProcessTask(ref_processor, refs_lists, marks_oops_alive, phase_times),
       _policy(policy)
   { }
   virtual void work(unsigned int i, BoolObjectClosure& is_alive,
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
+    RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase1, _phase_times, i);
+
     _ref_processor.process_phase1(_refs_lists[i], _policy,
                                   &is_alive, &keep_alive, &complete_gc);
   }
@@ -620,15 +661,18 @@ private:
 
 class RefProcPhase2Task: public AbstractRefProcTaskExecutor::ProcessTask {
 public:
-  RefProcPhase2Task(ReferenceProcessor& ref_processor,
-                    DiscoveredList      refs_lists[],
-                    bool                marks_oops_alive)
-    : ProcessTask(ref_processor, refs_lists, marks_oops_alive)
+  RefProcPhase2Task(ReferenceProcessor&           ref_processor,
+                    DiscoveredList                refs_lists[],
+                    bool                          marks_oops_alive,
+                    ReferenceProcessorPhaseTimes* phase_times)
+    : ProcessTask(ref_processor, refs_lists, marks_oops_alive, phase_times)
   { }
   virtual void work(unsigned int i, BoolObjectClosure& is_alive,
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
+    RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase2, _phase_times, i);
+
     _ref_processor.process_phase2(_refs_lists[i],
                                   &is_alive, &keep_alive, &complete_gc);
   }
@@ -636,17 +680,20 @@ public:
 
 class RefProcPhase3Task: public AbstractRefProcTaskExecutor::ProcessTask {
 public:
-  RefProcPhase3Task(ReferenceProcessor& ref_processor,
-                    DiscoveredList      refs_lists[],
-                    bool                clear_referent,
-                    bool                marks_oops_alive)
-    : ProcessTask(ref_processor, refs_lists, marks_oops_alive),
+  RefProcPhase3Task(ReferenceProcessor&           ref_processor,
+                    DiscoveredList                refs_lists[],
+                    bool                         clear_referent,
+                    bool                          marks_oops_alive,
+                    ReferenceProcessorPhaseTimes* phase_times)
+    : ProcessTask(ref_processor, refs_lists, marks_oops_alive, phase_times),
       _clear_referent(clear_referent)
   { }
   virtual void work(unsigned int i, BoolObjectClosure& is_alive,
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
+    RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase3, _phase_times, i);
+
     _ref_processor.process_phase3(_refs_lists[i], _clear_referent,
                                   &is_alive, &keep_alive, &complete_gc);
   }
@@ -770,15 +817,19 @@ void ReferenceProcessor::balance_all_queues() {
 }
 
 void ReferenceProcessor::process_discovered_reflist(
-  DiscoveredList               refs_lists[],
-  ReferencePolicy*             policy,
-  bool                         clear_referent,
-  BoolObjectClosure*           is_alive,
-  OopClosure*                  keep_alive,
-  VoidClosure*                 complete_gc,
-  AbstractRefProcTaskExecutor* task_executor)
+  DiscoveredList                refs_lists[],
+  ReferencePolicy*              policy,
+  bool                          clear_referent,
+  BoolObjectClosure*            is_alive,
+  OopClosure*                   keep_alive,
+  VoidClosure*                  complete_gc,
+  AbstractRefProcTaskExecutor*  task_executor,
+  ReferenceProcessorPhaseTimes* phase_times)
 {
   bool mt_processing = task_executor != NULL && _processing_is_mt;
+
+  phase_times->set_processing_is_mt(mt_processing);
+
   // If discovery used MT and a dynamic number of GC threads, then
   // the queues must be balanced for correctness if fewer than the
   // maximum number of queues were used.  The number of queue used
@@ -789,6 +840,7 @@ void ReferenceProcessor::process_discovered_reflist(
 
   if ((mt_processing && ParallelRefProcBalancingEnabled) ||
       must_balance) {
+    RefProcBalanceQueuesTimeTracker tt(phase_times);
     balance_queues(refs_lists);
   }
 
@@ -798,8 +850,10 @@ void ReferenceProcessor::process_discovered_reflist(
   //   policy reasons. Keep alive the transitive closure of all
   //   such referents.
   if (policy != NULL) {
+    RefProcParPhaseTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase1, phase_times);
+
     if (mt_processing) {
-      RefProcPhase1Task phase1(*this, refs_lists, policy, true /*marks_oops_alive*/);
+      RefProcPhase1Task phase1(*this, refs_lists, policy, true /*marks_oops_alive*/, phase_times);
       task_executor->execute(phase1);
     } else {
       for (uint i = 0; i < _max_num_q; i++) {
@@ -814,24 +868,32 @@ void ReferenceProcessor::process_discovered_reflist(
 
   // Phase 2:
   // . Traverse the list and remove any refs whose referents are alive.
-  if (mt_processing) {
-    RefProcPhase2Task phase2(*this, refs_lists, !discovery_is_atomic() /*marks_oops_alive*/);
-    task_executor->execute(phase2);
-  } else {
-    for (uint i = 0; i < _max_num_q; i++) {
-      process_phase2(refs_lists[i], is_alive, keep_alive, complete_gc);
+  {
+    RefProcParPhaseTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase2, phase_times);
+
+    if (mt_processing) {
+      RefProcPhase2Task phase2(*this, refs_lists, !discovery_is_atomic() /*marks_oops_alive*/, phase_times);
+      task_executor->execute(phase2);
+    } else {
+      for (uint i = 0; i < _max_num_q; i++) {
+        process_phase2(refs_lists[i], is_alive, keep_alive, complete_gc);
+      }
     }
   }
 
   // Phase 3:
   // . Traverse the list and process referents as appropriate.
-  if (mt_processing) {
-    RefProcPhase3Task phase3(*this, refs_lists, clear_referent, true /*marks_oops_alive*/);
-    task_executor->execute(phase3);
-  } else {
-    for (uint i = 0; i < _max_num_q; i++) {
-      process_phase3(refs_lists[i], clear_referent,
-                     is_alive, keep_alive, complete_gc);
+  {
+    RefProcParPhaseTimeTracker tt(ReferenceProcessorPhaseTimes::RefPhase3, phase_times);
+
+    if (mt_processing) {
+      RefProcPhase3Task phase3(*this, refs_lists, clear_referent, true /*marks_oops_alive*/, phase_times);
+      task_executor->execute(phase3);
+    } else {
+      for (uint i = 0; i < _max_num_q; i++) {
+        process_phase3(refs_lists[i], clear_referent,
+                       is_alive, keep_alive, complete_gc);
+      }
     }
   }
 }
@@ -1196,4 +1258,3 @@ const char* ReferenceProcessor::list_name(uint i) {
    ShouldNotReachHere();
    return NULL;
 }
-

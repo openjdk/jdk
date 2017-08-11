@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test SpaceUtilizationCheck
+ * @requires vm.cds
  * @summary Check if the space utilization for shared spaces is adequate
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib

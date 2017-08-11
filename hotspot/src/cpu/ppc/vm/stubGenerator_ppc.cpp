@@ -2729,7 +2729,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vspltisb        (vTmp2, -16);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vsldoi          (keyPerm, keyPerm, keyPerm, -8);
+    __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
 
     // load the 1st round key to vKey1
     __ li              (keypos, 0);
@@ -2929,7 +2929,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vspltisb        (vTmp2, -16);
     __ vrld            (keyPerm, keyPerm, vTmp2);
     __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vsldoi          (keyPerm, keyPerm, keyPerm, -8);
+    __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
 
     __ cmpwi           (CCR0, keylen, 44);
     __ beq             (CCR0, L_do44);

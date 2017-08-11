@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,11 +661,13 @@ void DefNewGeneration::collect(bool   full,
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
   rp->setup_policy(clear_all_soft_refs);
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_q());
   const ReferenceProcessorStats& stats =
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
-                                    NULL, _gc_timer);
+                                    NULL, &pt);
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
+  pt.print_all_references();
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.

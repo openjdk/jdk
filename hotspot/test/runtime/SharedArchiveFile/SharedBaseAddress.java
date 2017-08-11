@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test SharedBaseAddress
+ * @requires vm.cds
  * @summary Test variety of values for SharedBaseAddress, making sure
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)

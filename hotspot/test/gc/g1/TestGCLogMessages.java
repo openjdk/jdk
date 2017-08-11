@@ -142,6 +142,9 @@ public class TestGCLogMessages {
         // TLAB handling
         new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+        // Reference Processing
+        new LogMessageWithLevel("Reference Processing", Level.DEBUG),
+        new LogMessageWithLevel("Reference Enqueuing", Level.DEBUG),
 
         new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),

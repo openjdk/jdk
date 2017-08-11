@@ -355,131 +355,124 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
+  Bytecodes::Code c;
 
-  {
-    // We cannot tolerate a GC in this block, because we've
-    // cached the bytecodes in 'code_base'. If the Method*
-    // moves, the bytecodes will also move.
-    NoSafepointVerifier nsv;
-    Bytecodes::Code c;
+  // Bytecodes and their length
+  const address code_base = method->code_base();
+  const int code_length = method->code_size();
 
-    // Bytecodes and their length
-    const address code_base = method->code_base();
-    const int code_length = method->code_size();
+  int bc_length;
+  for (int bci = 0; bci < code_length; bci += bc_length) {
+    address bcp = code_base + bci;
+    int prefix_length = 0;
+    c = (Bytecodes::Code)(*bcp);
 
-    int bc_length;
-    for (int bci = 0; bci < code_length; bci += bc_length) {
-      address bcp = code_base + bci;
-      int prefix_length = 0;
-      c = (Bytecodes::Code)(*bcp);
+    // Since we have the code, see if we can get the length
+    // directly. Some more complicated bytecodes will report
+    // a length of zero, meaning we need to make another method
+    // call to calculate the length.
+    bc_length = Bytecodes::length_for(c);
+    if (bc_length == 0) {
+      bc_length = Bytecodes::length_at(method, bcp);
 
-      // Since we have the code, see if we can get the length
-      // directly. Some more complicated bytecodes will report
-      // a length of zero, meaning we need to make another method
-      // call to calculate the length.
-      bc_length = Bytecodes::length_for(c);
-      if (bc_length == 0) {
-        bc_length = Bytecodes::length_at(method, bcp);
+      // length_at will put us at the bytecode after the one modified
+      // by 'wide'. We don't currently examine any of the bytecodes
+      // modified by wide, but in case we do in the future...
+      if (c == Bytecodes::_wide) {
+        prefix_length = 1;
+        c = (Bytecodes::Code)bcp[1];
+      }
+    }
 
-        // length_at will put us at the bytecode after the one modified
-        // by 'wide'. We don't currently examine any of the bytecodes
-        // modified by wide, but in case we do in the future...
-        if (c == Bytecodes::_wide) {
-          prefix_length = 1;
-          c = (Bytecodes::Code)bcp[1];
-        }
+    assert(bc_length != 0, "impossible bytecode length");
+
+    switch (c) {
+      case Bytecodes::_lookupswitch   : {
+#ifndef CC_INTERP
+        Bytecode_lookupswitch bc(method, bcp);
+        (*bcp) = (
+          bc.number_of_pairs() < BinarySwitchThreshold
+          ? Bytecodes::_fast_linearswitch
+          : Bytecodes::_fast_binaryswitch
+        );
+#endif
+        break;
+      }
+      case Bytecodes::_fast_linearswitch:
+      case Bytecodes::_fast_binaryswitch: {
+#ifndef CC_INTERP
+        (*bcp) = Bytecodes::_lookupswitch;
+#endif
+        break;
       }
 
-      assert(bc_length != 0, "impossible bytecode length");
+      case Bytecodes::_invokespecial  : {
+        rewrite_invokespecial(bcp, prefix_length+1, reverse, invokespecial_error);
+        break;
+      }
 
-      switch (c) {
-        case Bytecodes::_lookupswitch   : {
-#ifndef CC_INTERP
-          Bytecode_lookupswitch bc(method, bcp);
-          (*bcp) = (
-            bc.number_of_pairs() < BinarySwitchThreshold
-            ? Bytecodes::_fast_linearswitch
-            : Bytecodes::_fast_binaryswitch
-          );
-#endif
-          break;
-        }
-        case Bytecodes::_fast_linearswitch:
-        case Bytecodes::_fast_binaryswitch: {
-#ifndef CC_INTERP
-          (*bcp) = Bytecodes::_lookupswitch;
-#endif
-          break;
-        }
+      case Bytecodes::_putstatic      :
+      case Bytecodes::_putfield       : {
+        if (!reverse) {
+          // Check if any final field of the class given as parameter is modified
+          // outside of initializer methods of the class. Fields that are modified
+          // are marked with a flag. For marked fields, the compilers do not perform
+          // constant folding (as the field can be changed after initialization).
+          //
+          // The check is performed after verification and only if verification has
+          // succeeded. Therefore, the class is guaranteed to be well-formed.
+          InstanceKlass* klass = method->method_holder();
+          u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
+          constantPoolHandle cp(method->constants());
+          Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
 
-        case Bytecodes::_invokespecial  : {
-          rewrite_invokespecial(bcp, prefix_length+1, reverse, invokespecial_error);
-          break;
-        }
+          if (klass->name() == ref_class_name) {
+            Symbol* field_name = cp->name_ref_at(bc_index);
+            Symbol* field_sig = cp->signature_ref_at(bc_index);
 
-        case Bytecodes::_putstatic      :
-        case Bytecodes::_putfield       : {
-          if (!reverse) {
-            // Check if any final field of the class given as parameter is modified
-            // outside of initializer methods of the class. Fields that are modified
-            // are marked with a flag. For marked fields, the compilers do not perform
-            // constant folding (as the field can be changed after initialization).
-            //
-            // The check is performed after verification and only if verification has
-            // succeeded. Therefore, the class is guaranteed to be well-formed.
-            InstanceKlass* klass = method->method_holder();
-            u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
-            constantPoolHandle cp(method->constants());
-            Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
-
-            if (klass->name() == ref_class_name) {
-              Symbol* field_name = cp->name_ref_at(bc_index);
-              Symbol* field_sig = cp->signature_ref_at(bc_index);
-
-              fieldDescriptor fd;
-              if (klass->find_field(field_name, field_sig, &fd) != NULL) {
-                if (fd.access_flags().is_final()) {
-                  if (fd.access_flags().is_static()) {
-                    if (!method->is_static_initializer()) {
-                      fd.set_has_initialized_final_update(true);
-                    }
-                  } else {
-                    if (!method->is_object_initializer()) {
-                      fd.set_has_initialized_final_update(true);
-                    }
+            fieldDescriptor fd;
+            if (klass->find_field(field_name, field_sig, &fd) != NULL) {
+              if (fd.access_flags().is_final()) {
+                if (fd.access_flags().is_static()) {
+                  if (!method->is_static_initializer()) {
+                    fd.set_has_initialized_final_update(true);
+                  }
+                } else {
+                  if (!method->is_object_initializer()) {
+                    fd.set_has_initialized_final_update(true);
                   }
                 }
               }
             }
           }
         }
-        // fall through
-        case Bytecodes::_getstatic      : // fall through
-        case Bytecodes::_getfield       : // fall through
-        case Bytecodes::_invokevirtual  : // fall through
-        case Bytecodes::_invokestatic   :
-        case Bytecodes::_invokeinterface:
-        case Bytecodes::_invokehandle   : // if reverse=true
-          rewrite_member_reference(bcp, prefix_length+1, reverse);
-          break;
-        case Bytecodes::_invokedynamic:
-          rewrite_invokedynamic(bcp, prefix_length+1, reverse);
-          break;
-        case Bytecodes::_ldc:
-        case Bytecodes::_fast_aldc:  // if reverse=true
-          maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
-          break;
-        case Bytecodes::_ldc_w:
-        case Bytecodes::_fast_aldc_w:  // if reverse=true
-          maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
-          break;
-        case Bytecodes::_jsr            : // fall through
-        case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
-        case Bytecodes::_monitorenter   : // fall through
-        case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
-
-        default: break;
       }
+      // fall through
+      case Bytecodes::_getstatic      : // fall through
+      case Bytecodes::_getfield       : // fall through
+      case Bytecodes::_invokevirtual  : // fall through
+      case Bytecodes::_invokestatic   :
+      case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokehandle   : // if reverse=true
+        rewrite_member_reference(bcp, prefix_length+1, reverse);
+        break;
+      case Bytecodes::_invokedynamic:
+        rewrite_invokedynamic(bcp, prefix_length+1, reverse);
+        break;
+      case Bytecodes::_ldc:
+      case Bytecodes::_fast_aldc:  // if reverse=true
+        maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
+        break;
+      case Bytecodes::_ldc_w:
+      case Bytecodes::_fast_aldc_w:  // if reverse=true
+        maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
+        break;
+      case Bytecodes::_jsr            : // fall through
+      case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
+      case Bytecodes::_monitorenter   : // fall through
+      case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
+
+      default: break;
     }
   }
 

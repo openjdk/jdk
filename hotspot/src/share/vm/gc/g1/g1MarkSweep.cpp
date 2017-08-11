@@ -149,13 +149,16 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     assert(rp == g1h->ref_processor_stw(), "Sanity");
 
     rp->setup_policy(clear_all_softrefs);
+    ReferenceProcessorPhaseTimes pt(gc_timer(), rp->num_q());
+
     const ReferenceProcessorStats& stats =
         rp->process_discovered_references(&GenMarkSweep::is_alive,
                                           &GenMarkSweep::keep_alive,
                                           &GenMarkSweep::follow_stack_closure,
                                           NULL,
-                                          gc_timer());
+                                          &pt);
     gc_tracer()->report_gc_reference_stats(stats);
+    pt.print_all_references();
   }
 
   // This is the point where the entire marking should have completed.

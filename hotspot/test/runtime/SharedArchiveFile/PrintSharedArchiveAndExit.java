@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @bug 8066670
  * @summary Testing -XX:+PrintSharedArchiveAndExit option
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)

@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test ArchiveDoesNotExist
+ * @requires vm.cds
  * @summary Test how VM handles "file does not exist" situation while
  *          attempting to use CDS archive. JVM should exit gracefully
  *          when sharing mode is ON, and continue w/o sharing if sharing

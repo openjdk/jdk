@@ -1700,6 +1700,14 @@ WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
   return StringTable::shared_string_ignored();
 WB_END
 
+WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
+#if INCLUDE_CDS
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -1993,6 +2001,7 @@ static JNINativeMethod methods[] = {
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
+  {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },

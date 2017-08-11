@@ -210,9 +210,11 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) tm_m("Reference Processing", gc_timer());
 
     ref_processor()->setup_policy(clear_all_softrefs);
+    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_q());
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
-        &is_alive, &keep_alive, &follow_stack_closure, NULL, _gc_timer);
+        &is_alive, &keep_alive, &follow_stack_closure, NULL, &pt);
+    pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
 
