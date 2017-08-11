@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,20 +984,22 @@ void ParNewGeneration::collect(bool   full,
   // Can  the mt_degree be set later (at run_task() time would be best)?
   rp->set_active_mt_degree(active_workers);
   ReferenceProcessorStats stats;
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_q());
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, &task_executor,
-                                              _gc_timer);
+                                              &pt);
   } else {
     thread_state_set.flush();
     gch->save_marks();
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, NULL,
-                                              _gc_timer);
+                                              &pt);
   }
   _gc_tracer.report_gc_reference_stats(stats);
   _gc_tracer.report_tenuring_threshold(tenuring_threshold());
+  pt.print_all_references();
 
   if (!promotion_failed()) {
     // Swap the survivor spaces.
@@ -1049,13 +1051,15 @@ void ParNewGeneration::collect(bool   full,
   rp->set_enqueuing_is_done(true);
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
-    rp->enqueue_discovered_references(&task_executor);
+    rp->enqueue_discovered_references(&task_executor, &pt);
   } else {
-    rp->enqueue_discovered_references(NULL);
+    rp->enqueue_discovered_references(NULL, &pt);
   }
   rp->verify_no_references_recorded();
 
   gch->trace_heap_after_gc(gc_tracer());
+
+  pt.print_enqueue_phase();
 
   _gc_timer->register_gc_end();
 

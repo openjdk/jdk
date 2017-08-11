@@ -1260,9 +1260,13 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       assert(num_free_regions() == 0, "we should not have added any free regions");
       rebuild_region_sets(false /* free_list_only */);
 
+      ReferenceProcessorPhaseTimes pt(NULL, ref_processor_stw()->num_q());
+
       // Enqueue any discovered reference objects that have
       // not been removed from the discovered lists.
-      ref_processor_stw()->enqueue_discovered_references();
+      ref_processor_stw()->enqueue_discovered_references(NULL, &pt);
+
+      pt.print_enqueue_phase();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
       DerivedPointerTable::update_pointers();
@@ -1667,7 +1671,9 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _collector_policy(collector_policy),
-  _g1_policy(create_g1_policy()),
+  _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
+  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
+  _g1_policy(create_g1_policy(_gc_timer_stw)),
   _collection_set(this, _g1_policy),
   _dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
@@ -1694,9 +1700,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _expand_heap_after_alloc_failure(true),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
-  _in_cset_fast_test(),
-  _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
-  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()) {
+  _in_cset_fast_test() {
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
@@ -2015,10 +2019,12 @@ void G1CollectedHeap::ref_processing_init() {
 
   MemRegion mr = reserved_region();
 
+  bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
+
   // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(mr,    // span
-                           ParallelRefProcEnabled && (ParallelGCThreads > 1),
+                           mt_processing,
                                 // mt processing
                            ParallelGCThreads,
                                 // degree of mt processing
@@ -2035,7 +2041,7 @@ void G1CollectedHeap::ref_processing_init() {
   // STW ref processor
   _ref_processor_stw =
     new ReferenceProcessor(mr,    // span
-                           ParallelRefProcEnabled && (ParallelGCThreads > 1),
+                           mt_processing,
                                 // mt processing
                            ParallelGCThreads,
                                 // degree of mt processing
@@ -4313,6 +4319,8 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   // Setup the soft refs policy...
   rp->setup_policy(false);
 
+  ReferenceProcessorPhaseTimes* pt = g1_policy()->phase_times()->ref_phase_times();
+
   ReferenceProcessorStats stats;
   if (!rp->processing_is_mt()) {
     // Serial reference processing...
@@ -4320,7 +4328,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               &keep_alive,
                                               &drain_queue,
                                               NULL,
-                                              _gc_timer_stw);
+                                              pt);
   } else {
     uint no_of_gc_workers = workers()->active_workers();
 
@@ -4334,7 +4342,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               &keep_alive,
                                               &drain_queue,
                                               &par_task_executor,
-                                              _gc_timer_stw);
+                                              pt);
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
@@ -4353,11 +4361,13 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
   ReferenceProcessor* rp = _ref_processor_stw;
   assert(!rp->discovery_enabled(), "should have been disabled as part of processing");
 
+  ReferenceProcessorPhaseTimes* pt = g1_policy()->phase_times()->ref_phase_times();
+
   // Now enqueue any remaining on the discovered lists on to
   // the pending list.
   if (!rp->processing_is_mt()) {
     // Serial reference processing...
-    rp->enqueue_discovered_references();
+    rp->enqueue_discovered_references(NULL, pt);
   } else {
     // Parallel reference enqueueing
 
@@ -4368,7 +4378,7 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
            n_workers,  rp->max_num_q());
 
     G1STWRefProcTaskExecutor par_task_executor(this, per_thread_states, workers(), _task_queues, n_workers);
-    rp->enqueue_discovered_references(&par_task_executor);
+    rp->enqueue_discovered_references(&par_task_executor, pt);
   }
 
   rp->verify_no_references_recorded();

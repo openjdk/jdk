@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.cds
  * @summary Testing -Xbootclasspath/a support for CDS
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib

@@ -26,6 +26,7 @@
  * @test TestGCLockerWithSerial
  * @key gc
  * @requires vm.gc.Serial
+ * @requires vm.flavor != "minimal"
  * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
  * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xmx1500m -Xmx1500m -XX:+UseSerialGC TestGCLockerWithSerial
  */

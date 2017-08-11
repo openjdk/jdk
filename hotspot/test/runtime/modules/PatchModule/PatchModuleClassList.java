@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @requires vm.cds
  * @summary classes which are not useable during run time should not be included in the classlist
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -54,7 +55,7 @@ public class PatchModuleClassList {
                         "}";
 
         ClassFileInstaller.writeClassToDisk(BOOT_CLASS,
-             InMemoryJavaCompiler.compile(BOOT_CLASS.replace('/', '.'), source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile(BOOT_CLASS.replace('/', '.'), source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.naming".
@@ -87,7 +88,7 @@ public class PatchModuleClassList {
                  "}";
 
         ClassFileInstaller.writeClassToDisk(PLATFORM_CLASS,
-             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "-Xmodule:java.transaction"),
+             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "--patch-module=java.transaction"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.transaction".
