@@ -5185,6 +5185,7 @@ void CMSCollector::refProcessingWork() {
   CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
                                 _span, &_markBitMap, &_markStack,
                                 &cmsKeepAliveClosure, false /* !preclean */);
+  ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
   {
     GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer_cm);
 
@@ -5211,16 +5212,16 @@ void CMSCollector::refProcessingWork() {
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         &task_executor,
-                                        _gc_timer_cm);
+                                        &pt);
     } else {
       stats = rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         NULL,
-                                        _gc_timer_cm);
+                                        &pt);
     }
     _gc_tracer_cm->report_gc_reference_stats(stats);
-
+    pt.print_all_references();
   }
 
   // This is the point where the entire marking should have completed.
@@ -5261,11 +5262,12 @@ void CMSCollector::refProcessingWork() {
   if (rp->processing_is_mt()) {
     rp->balance_all_queues();
     CMSRefProcTaskExecutor task_executor(*this);
-    rp->enqueue_discovered_references(&task_executor);
+    rp->enqueue_discovered_references(&task_executor, &pt);
   } else {
-    rp->enqueue_discovered_references(NULL);
+    rp->enqueue_discovered_references(NULL, &pt);
   }
   rp->verify_no_references_recorded();
+  pt.print_enqueue_phase();
   assert(!rp->discovery_enabled(), "should have been disabled");
 }
 

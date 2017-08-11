@@ -28,6 +28,8 @@
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 
+class STWGCTimer;
+
 bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
                                                     jlong* totals,
                                                     jbyte* accuracy,
@@ -40,6 +42,6 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
   return new HeapRegion(hrs_index, bot(), mr);
 }
 
-G1Policy* G1CollectedHeap::create_g1_policy() {
-  return new G1DefaultPolicy();
+G1Policy* G1CollectedHeap::create_g1_policy(STWGCTimer* gc_timer) {
+  return new G1DefaultPolicy(gc_timer);
 }

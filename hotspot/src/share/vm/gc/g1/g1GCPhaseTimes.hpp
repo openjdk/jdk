@@ -25,11 +25,13 @@
 #ifndef SHARE_VM_GC_G1_G1GCPHASETIMES_HPP
 #define SHARE_VM_GC_G1_G1GCPHASETIMES_HPP
 
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
 
 class LineBuffer;
+class STWGCTimer;
 
 template <class T> class WorkerDataArray;
 
@@ -159,6 +161,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
+  ReferenceProcessorPhaseTimes _ref_phase_times;
+
   double worker_time(GCParPhases phase, uint worker);
   void note_gc_end();
   void reset();
@@ -172,6 +176,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void info_time(const char* name, double value) const;
   void debug_time(const char* name, double value) const;
+  // This will print logs for both 'gc+phases' and 'gc+phases+ref'.
+  void debug_time_for_reference(const char* name, double value) const;
   void trace_time(const char* name, double value) const;
   void trace_count(const char* name, size_t value) const;
 
@@ -181,7 +187,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void print_other(double accounted_ms) const;
 
  public:
-  G1GCPhaseTimes(uint max_gc_threads);
+  G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
   void note_gc_start();
   void print();
 
@@ -354,6 +360,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double fast_reclaim_humongous_time_ms() {
     return _cur_fast_reclaim_humongous_time_ms;
   }
+
+  ReferenceProcessorPhaseTimes* ref_phase_times() { return &_ref_phase_times; }
 };
 
 class G1GCParPhaseTimesTracker : public StackObj {

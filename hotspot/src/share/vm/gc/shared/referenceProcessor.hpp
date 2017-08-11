@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referencePolicy.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
@@ -168,7 +169,7 @@ public:
 class ReferenceProcessor : public CHeapObj<mtGC> {
 
  private:
-  size_t total_count(DiscoveredList lists[]);
+  size_t total_count(DiscoveredList lists[]) const;
 
  protected:
   // The SoftReference master timestamp clock
@@ -236,13 +237,14 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   }
 
   // Process references with a certain reachability level.
-  void process_discovered_reflist(DiscoveredList               refs_lists[],
-                                  ReferencePolicy*             policy,
-                                  bool                         clear_referent,
-                                  BoolObjectClosure*           is_alive,
-                                  OopClosure*                  keep_alive,
-                                  VoidClosure*                 complete_gc,
-                                  AbstractRefProcTaskExecutor* task_executor);
+  void process_discovered_reflist(DiscoveredList                refs_lists[],
+                                  ReferencePolicy*              policy,
+                                  bool                          clear_referent,
+                                  BoolObjectClosure*            is_alive,
+                                  OopClosure*                   keep_alive,
+                                  VoidClosure*                  complete_gc,
+                                  AbstractRefProcTaskExecutor*  task_executor,
+                                  ReferenceProcessorPhaseTimes* phase_times);
 
   void process_phaseJNI(BoolObjectClosure* is_alive,
                         OopClosure*        keep_alive,
@@ -310,7 +312,8 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // occupying the i / _num_q slot.
   const char* list_name(uint i);
 
-  void enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor);
+  void enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor,
+                                   ReferenceProcessorPhaseTimes* phase_times);
 
  protected:
   // "Preclean" the given discovered reference list
@@ -416,19 +419,22 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
-  process_discovered_references(BoolObjectClosure*           is_alive,
-                                OopClosure*                  keep_alive,
-                                VoidClosure*                 complete_gc,
-                                AbstractRefProcTaskExecutor* task_executor,
-                                GCTimer *gc_timer);
+  process_discovered_references(BoolObjectClosure*            is_alive,
+                                OopClosure*                   keep_alive,
+                                VoidClosure*                  complete_gc,
+                                AbstractRefProcTaskExecutor*  task_executor,
+                                ReferenceProcessorPhaseTimes* phase_times);
 
   // Enqueue references at end of GC (called by the garbage collector)
-  void enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
+  void enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor,
+                                     ReferenceProcessorPhaseTimes* phase_times);
 
   // If a discovery is in process that is being superceded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
   // have NULL discovered fields.  Must be called only at a safepoint.
   void abandon_partial_discovery();
+
+  size_t total_reference_count(ReferenceType rt) const;
 
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
@@ -584,11 +590,13 @@ public:
 // Abstract reference processing task to execute.
 class AbstractRefProcTaskExecutor::ProcessTask {
 protected:
-  ProcessTask(ReferenceProcessor& ref_processor,
-              DiscoveredList      refs_lists[],
-              bool                marks_oops_alive)
+  ProcessTask(ReferenceProcessor&           ref_processor,
+              DiscoveredList                refs_lists[],
+              bool                          marks_oops_alive,
+              ReferenceProcessorPhaseTimes* phase_times)
     : _ref_processor(ref_processor),
       _refs_lists(refs_lists),
+      _phase_times(phase_times),
       _marks_oops_alive(marks_oops_alive)
   { }
 
@@ -602,29 +610,33 @@ public:
   { return _marks_oops_alive; }
 
 protected:
-  ReferenceProcessor& _ref_processor;
-  DiscoveredList*     _refs_lists;
-  const bool          _marks_oops_alive;
+  ReferenceProcessor&           _ref_processor;
+  DiscoveredList*               _refs_lists;
+  ReferenceProcessorPhaseTimes* _phase_times;
+  const bool                    _marks_oops_alive;
 };
 
 // Abstract reference processing task to execute.
 class AbstractRefProcTaskExecutor::EnqueueTask {
 protected:
-  EnqueueTask(ReferenceProcessor& ref_processor,
-              DiscoveredList      refs_lists[],
-              int                 n_queues)
+  EnqueueTask(ReferenceProcessor&           ref_processor,
+              DiscoveredList                refs_lists[],
+              int                           n_queues,
+              ReferenceProcessorPhaseTimes* phase_times)
     : _ref_processor(ref_processor),
       _refs_lists(refs_lists),
-      _n_queues(n_queues)
+      _n_queues(n_queues),
+      _phase_times(phase_times)
   { }
 
 public:
   virtual void work(unsigned int work_id) = 0;
 
 protected:
-  ReferenceProcessor& _ref_processor;
-  DiscoveredList*     _refs_lists;
-  int                 _n_queues;
+  ReferenceProcessor&           _ref_processor;
+  DiscoveredList*               _refs_lists;
+  ReferenceProcessorPhaseTimes* _phase_times;
+  int                           _n_queues;
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_HPP
