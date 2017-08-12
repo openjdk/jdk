@@ -28,7 +28,6 @@ import static org.graalvm.compiler.serviceprovider.JDK9Method.getResourceAsStrea
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.instrument.Instrumentation;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.Bytecode;
@@ -45,8 +44,8 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * A {@link BytecodeProvider} that provides bytecode properties of a {@link ResolvedJavaMethod} as
- * parsed from a class file. This avoids all {@linkplain Instrumentation instrumentation} and any
- * bytecode rewriting performed by the VM.
+ * parsed from a class file. This avoids all {@linkplain java.lang.instrument.Instrumentation
+ * instrumentation} and any bytecode rewriting performed by the VM.
  *
  * This mechanism retrieves class files based on the name and {@link ClassLoader} of existing
  * {@link Class} instances. It bypasses all VM parsing and verification of the class file and

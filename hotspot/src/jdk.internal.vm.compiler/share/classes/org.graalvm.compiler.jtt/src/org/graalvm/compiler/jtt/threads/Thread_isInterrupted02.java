@@ -27,17 +27,17 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
+import org.graalvm.compiler.jtt.hotspot.NotOnDebug;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.DisableOnDebug;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 
 //Test all, mainly monitors
 public class Thread_isInterrupted02 extends JTTTest {
 
-    @Rule public TestRule timeout = new DisableOnDebug(Timeout.seconds(20));
+    @Rule public TestRule timeout = NotOnDebug.create(Timeout.seconds(20));
 
     private static final Object start = new Object();
     private static final Object end = new Object();

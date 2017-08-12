@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.loop;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -59,9 +62,6 @@ import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
-
-import java.util.LinkedList;
-import java.util.List;
 
 public class LoopFragmentInside extends LoopFragment {
 
@@ -153,7 +153,7 @@ public class LoopFragmentInside extends LoopFragment {
             if (duplicatedNode != null) {
                 mainPhiNode.setValueAt(1, duplicatedNode);
             } else {
-                assert mainLoopBegin.isPhiAtMerge(mainPhiNode.valueAt(1));
+                assert mainPhiNode.valueAt(1).isConstant() || mainLoopBegin.isPhiAtMerge(mainPhiNode.valueAt(1)) : mainPhiNode.valueAt(1);
             }
         }
 
@@ -162,7 +162,7 @@ public class LoopFragmentInside extends LoopFragment {
         // Remove any safepoints from the original copy leaving only the duplicated one
         assert loop.whole().nodes().filter(SafepointNode.class).count() == nodes().filter(SafepointNode.class).count();
         for (SafepointNode safepoint : loop.whole().nodes().filter(SafepointNode.class)) {
-            GraphUtil.removeFixedWithUnusedInputs(safepoint);
+            graph().removeFixed(safepoint);
         }
 
         int unrollFactor = mainLoopBegin.getUnrollFactor();

@@ -100,6 +100,12 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
 
     @Test
     public void test() throws Throwable {
+        try {
+            Class.forName("java.lang.instrument.Instrumentation");
+        } catch (ClassNotFoundException ex) {
+            // skip this test if java.instrument JDK9 module is missing
+            return;
+        }
         String recursionPropName = getClass().getName() + ".recursion";
         if (Java8OrEarlier || Boolean.getBoolean(recursionPropName)) {
             testHelper();
@@ -134,7 +140,10 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         testAgainstExpected(callIntrinsicGetValue, new Result("intrinsic", null), receiver, args);
 
         // Apply redefinition of intrinsic bytecode
-        redefineIntrinsic();
+        if (!redefineIntrinsic()) {
+            // running on JDK9 without agent
+            return;
+        }
 
         // Expect redefinition to have no effect
         Assert.assertEquals("original", Original.getValue());
@@ -166,7 +175,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         jar.closeEntry();
     }
 
-    static void redefineIntrinsic() throws Exception {
+    static boolean redefineIntrinsic() throws Exception {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         Attributes mainAttrs = manifest.getMainAttributes();
@@ -181,13 +190,13 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
             add(jarStream, Redefiner.class);
             jarStream.close();
 
-            loadAgent(jar);
+            return loadAgent(jar);
         } finally {
             Files.deleteIfExists(jar);
         }
     }
 
-    public static void loadAgent(Path agent) throws Exception {
+    public static boolean loadAgent(Path agent) throws Exception {
         String vmName = ManagementFactory.getRuntimeMXBean().getName();
         int p = vmName.indexOf('@');
         assumeTrue("VM name not in <pid>@<host> format: " + vmName, p != -1);
@@ -197,8 +206,19 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
             ClassLoader cl = ToolProvider.getSystemToolClassLoader();
             c = Class.forName("com.sun.tools.attach.VirtualMachine", true, cl);
         } else {
-            // I don't know what changed to make this necessary...
-            c = Class.forName("com.sun.tools.attach.VirtualMachine", true, RedefineIntrinsicTest.class.getClassLoader());
+            try {
+                // I don't know what changed to make this necessary...
+                c = Class.forName("com.sun.tools.attach.VirtualMachine", true, RedefineIntrinsicTest.class.getClassLoader());
+            } catch (ClassNotFoundException ex) {
+                try {
+                    Class.forName("javax.naming.Reference");
+                } catch (ClassNotFoundException coreNamingMissing) {
+                    // if core JDK classes aren't found, we are probably running in a
+                    // JDK9 java.base environment and then missing class is OK
+                    return false;
+                }
+                throw ex;
+            }
         }
         Method attach = c.getDeclaredMethod("attach", String.class);
         Method loadAgent = c.getDeclaredMethod("loadAgent", String.class, String.class);
@@ -206,6 +226,7 @@ public class RedefineIntrinsicTest extends ReplacementsTest {
         Object vm = attach.invoke(null, pid);
         loadAgent.invoke(vm, agent.toString(), "");
         detach.invoke(vm);
+        return true;
     }
 
     public static class RedefinerAgent {

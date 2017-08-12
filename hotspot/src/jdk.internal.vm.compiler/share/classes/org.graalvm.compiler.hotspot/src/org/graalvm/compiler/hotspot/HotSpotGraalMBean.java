@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import java.lang.management.ManagementFactory;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -30,22 +29,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.AttributeNotFoundException;
-import javax.management.DynamicMBean;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
@@ -66,14 +49,14 @@ import org.graalvm.util.EconomicSet;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
 
-public final class HotSpotGraalMBean implements DynamicMBean {
+public final class HotSpotGraalMBean implements javax.management.DynamicMBean {
     private static Object mBeanServerField;
     private final HotSpotGraalCompiler compiler;
     private final OptionValues options;
     private final EconomicMap<OptionKey<?>, Object> changes;
     private final EconomicSet<Dump> methodDumps;
     private volatile EconomicSet<Reference<ClassLoader>> loaders;
-    private ObjectName registered;
+    private javax.management.ObjectName registered;
     private OptionValues cachedOptions;
 
     private HotSpotGraalMBean(HotSpotGraalCompiler compiler, OptionValues options) {
@@ -89,11 +72,11 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     private static boolean isMXServerOn() {
         if (mBeanServerField == null) {
             try {
-                final Field field = ManagementFactory.class.getDeclaredField("platformMBeanServer");
+                final Field field = java.lang.management.ManagementFactory.class.getDeclaredField("platformMBeanServer");
                 field.setAccessible(true);
                 mBeanServerField = field;
             } catch (Exception ex) {
-                mBeanServerField = ManagementFactory.class;
+                mBeanServerField = java.lang.management.ManagementFactory.class;
             }
         }
         if (mBeanServerField instanceof Field) {
@@ -113,7 +96,7 @@ public final class HotSpotGraalMBean implements DynamicMBean {
         return mbean;
     }
 
-    public ObjectName ensureRegistered(boolean check) {
+    public javax.management.ObjectName ensureRegistered(boolean check) {
         for (int cnt = 0;; cnt++) {
             if (registered != null) {
                 return registered;
@@ -122,14 +105,14 @@ public final class HotSpotGraalMBean implements DynamicMBean {
                 return null;
             }
             try {
-                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-                ObjectName name = new ObjectName("org.graalvm.compiler.hotspot:type=Options" + (cnt == 0 ? "" : cnt));
+                javax.management.MBeanServer mbs = java.lang.management.ManagementFactory.getPlatformMBeanServer();
+                javax.management.ObjectName name = new javax.management.ObjectName("org.graalvm.compiler.hotspot:type=Options" + (cnt == 0 ? "" : cnt));
                 mbs.registerMBean(this, name);
                 registered = name;
                 break;
-            } catch (MalformedObjectNameException | MBeanRegistrationException | NotCompliantMBeanException ex) {
+            } catch (javax.management.MalformedObjectNameException | javax.management.MBeanRegistrationException | javax.management.NotCompliantMBeanException ex) {
                 throw new IllegalStateException(ex);
-            } catch (InstanceAlreadyExistsException ex) {
+            } catch (javax.management.InstanceAlreadyExistsException ex) {
                 continue;
             }
         }
@@ -188,14 +171,14 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     }
 
     @Override
-    public void setAttribute(Attribute attribute) throws AttributeNotFoundException {
-        Attribute newAttr = setImpl(attribute);
+    public void setAttribute(javax.management.Attribute attribute) throws javax.management.AttributeNotFoundException {
+        javax.management.Attribute newAttr = setImpl(attribute);
         if (newAttr == null) {
-            throw new AttributeNotFoundException();
+            throw new javax.management.AttributeNotFoundException();
         }
     }
 
-    private Attribute setImpl(Attribute attribute) {
+    private javax.management.Attribute setImpl(javax.management.Attribute attribute) {
         cachedOptions = null;
         for (OptionDescriptor option : allOptionDescriptors()) {
             if (option.getName().equals(attribute.getName())) {
@@ -207,22 +190,22 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     }
 
     @Override
-    public AttributeList getAttributes(String[] names) {
-        AttributeList list = new AttributeList();
+    public javax.management.AttributeList getAttributes(String[] names) {
+        javax.management.AttributeList list = new javax.management.AttributeList();
         for (String name : names) {
             Object value = getAttribute(name);
             if (value != null) {
-                list.add(new Attribute(name, value));
+                list.add(new javax.management.Attribute(name, value));
             }
         }
         return list;
     }
 
     @Override
-    public AttributeList setAttributes(AttributeList attributes) {
-        AttributeList setOk = new AttributeList();
-        for (Attribute attr : attributes.asList()) {
-            Attribute newAttr = setImpl(attr);
+    public javax.management.AttributeList setAttributes(javax.management.AttributeList attributes) {
+        javax.management.AttributeList setOk = new javax.management.AttributeList();
+        for (javax.management.Attribute attr : attributes.asList()) {
+            javax.management.Attribute newAttr = setImpl(attr);
             if (newAttr != null) {
                 setOk.add(newAttr);
             }
@@ -231,7 +214,7 @@ public final class HotSpotGraalMBean implements DynamicMBean {
     }
 
     @Override
-    public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
+    public Object invoke(String actionName, Object[] params, String[] signature) throws javax.management.MBeanException, javax.management.ReflectionException {
         if ("dumpMethod".equals(actionName)) {
             try {
                 String className = param(params, 0, "className", String.class, null);
@@ -241,7 +224,7 @@ public final class HotSpotGraalMBean implements DynamicMBean {
                 Number port = param(params, 4, "port", Number.class, 4445);
                 dumpMethod(className, methodName, filter, host, port.intValue());
             } catch (Exception ex) {
-                throw new ReflectionException(ex);
+                throw new javax.management.ReflectionException(ex);
             }
         }
         return null;
@@ -261,7 +244,7 @@ public final class HotSpotGraalMBean implements DynamicMBean {
         throw new IllegalArgumentException("Expecting " + type.getName() + " for " + name + " but was " + value);
     }
 
-    public void dumpMethod(String className, String methodName, String filter, String host, int port) throws MBeanException {
+    public void dumpMethod(String className, String methodName, String filter, String host, int port) throws javax.management.MBeanException {
         String jvmName = MetaUtil.toInternalName(className);
         methodDumps.add(new Dump(host, port, jvmName, methodName, filter));
 
@@ -293,41 +276,41 @@ public final class HotSpotGraalMBean implements DynamicMBean {
             }
         }
         if (found.isEmpty()) {
-            throw new MBeanException(last, "Cannot find class " + className + " to schedule recompilation");
+            throw new javax.management.MBeanException(last, "Cannot find class " + className + " to schedule recompilation");
         }
     }
 
     @Override
-    public MBeanInfo getMBeanInfo() {
-        List<MBeanAttributeInfo> attrs = new ArrayList<>();
+    public javax.management.MBeanInfo getMBeanInfo() {
+        List<javax.management.MBeanAttributeInfo> attrs = new ArrayList<>();
         if (registered != null) {
             for (OptionDescriptor descr : allOptionDescriptors()) {
-                attrs.add(new MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, true, false));
+                attrs.add(new javax.management.MBeanAttributeInfo(descr.getName(), descr.getType().getName(), descr.getHelp(), true, true, false));
             }
         }
-        MBeanOperationInfo[] ops = {
-                        new MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new MBeanParameterInfo[]{
-                                        new MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
-                                        new MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
-                        }, "void", MBeanOperationInfo.ACTION),
-                        new MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new MBeanParameterInfo[]{
-                                        new MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
-                                        new MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
-                                        new MBeanParameterInfo("filter", "java.lang.String", "The parameter for Dump option"),
-                        }, "void", MBeanOperationInfo.ACTION),
-                        new MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new MBeanParameterInfo[]{
-                                        new MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
-                                        new MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
-                                        new MBeanParameterInfo("filter", "java.lang.String", "The parameter for Dump option"),
-                                        new MBeanParameterInfo("host", "java.lang.String", "The host where the IGV tool is running at"),
-                                        new MBeanParameterInfo("port", "int", "The port where the IGV tool is listening at"),
-                        }, "void", MBeanOperationInfo.ACTION)
+        javax.management.MBeanOperationInfo[] ops = {
+                        new javax.management.MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new javax.management.MBeanParameterInfo[]{
+                                        new javax.management.MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
+                                        new javax.management.MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
+                        }, "void", javax.management.MBeanOperationInfo.ACTION),
+                        new javax.management.MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new javax.management.MBeanParameterInfo[]{
+                                        new javax.management.MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
+                                        new javax.management.MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
+                                        new javax.management.MBeanParameterInfo("filter", "java.lang.String", "The parameter for Dump option"),
+                        }, "void", javax.management.MBeanOperationInfo.ACTION),
+                        new javax.management.MBeanOperationInfo("dumpMethod", "Enable IGV dumps for provided method", new javax.management.MBeanParameterInfo[]{
+                                        new javax.management.MBeanParameterInfo("className", "java.lang.String", "Class to observe"),
+                                        new javax.management.MBeanParameterInfo("methodName", "java.lang.String", "Method to observe"),
+                                        new javax.management.MBeanParameterInfo("filter", "java.lang.String", "The parameter for Dump option"),
+                                        new javax.management.MBeanParameterInfo("host", "java.lang.String", "The host where the IGV tool is running at"),
+                                        new javax.management.MBeanParameterInfo("port", "int", "The port where the IGV tool is listening at"),
+                        }, "void", javax.management.MBeanOperationInfo.ACTION)
         };
 
-        return new MBeanInfo(
+        return new javax.management.MBeanInfo(
                         HotSpotGraalMBean.class.getName(),
                         "Graal",
-                        attrs.toArray(new MBeanAttributeInfo[attrs.size()]),
+                        attrs.toArray(new javax.management.MBeanAttributeInfo[attrs.size()]),
                         null, ops, null);
     }
 

@@ -30,11 +30,11 @@ import org.graalvm.compiler.jtt.JTTTest;
 import org.graalvm.compiler.nodes.Cancellable;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.DisableOnDebug;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.graalvm.compiler.jtt.hotspot.NotOnDebug;
 
 public class Object_wait03 extends JTTTest {
 
@@ -48,7 +48,7 @@ public class Object_wait03 extends JTTTest {
      */
     static final long TIMEOUT_MS = COMPILATION_TIMEOUT_MS * 2;
 
-    @Rule public TestRule timeout = new DisableOnDebug(Timeout.millis(TIMEOUT_MS));
+    @Rule public TestRule timeout = NotOnDebug.create(Timeout.millis(TIMEOUT_MS));
 
     private static class TestClass implements Runnable {
         @Override

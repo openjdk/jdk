@@ -26,6 +26,7 @@ import static org.graalvm.compiler.core.CompilationWrapper.ExceptionAction.ExitV
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
+import static org.graalvm.compiler.core.GraalCompilerOptions.MaxCompilationProblemsPerAction;
 import static org.graalvm.compiler.debug.DebugContext.VERBOSE_LEVEL;
 import static org.graalvm.compiler.debug.DebugOptions.Dump;
 import static org.graalvm.compiler.debug.DebugOptions.DumpPath;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Map;
 
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
@@ -59,6 +61,8 @@ public abstract class CompilationWrapper<T> {
      * {@link CompilationWrapper}. The actions are with respect to what the user sees on the
      * console. The compilation requester determines what ultimate action is taken in
      * {@link CompilationWrapper#handleException(Throwable)}.
+     *
+     * The actions are in ascending order of verbosity.
      */
     public enum ExceptionAction {
         /**
@@ -97,16 +101,32 @@ public abstract class CompilationWrapper<T> {
                 return null;
             }
         }
+
+        /**
+         * Gets the action that is one level less verbose than this action, bottoming out at the
+         * least verbose action.
+         */
+        ExceptionAction quieter() {
+            assert ExceptionAction.Silent.ordinal() == 0;
+            int index = Math.max(ordinal() - 1, 0);
+            return values()[index];
+        }
     }
 
     private final DiagnosticsOutputDirectory outputDirectory;
 
+    private final Map<ExceptionAction, Integer> problemsHandledPerAction;
+
     /**
      * @param outputDirectory object used to access a directory for dumping if the compilation is
      *            re-executed
+     * @param problemsHandledPerAction map used to count the number of compilation failures or
+     *            bailouts handled by each action. This is provided by the caller as it is expected
+     *            to be shared between instances of {@link CompilationWrapper}.
      */
-    public CompilationWrapper(DiagnosticsOutputDirectory outputDirectory) {
+    public CompilationWrapper(DiagnosticsOutputDirectory outputDirectory, Map<ExceptionAction, Integer> problemsHandledPerAction) {
         this.outputDirectory = outputDirectory;
+        this.problemsHandledPerAction = problemsHandledPerAction;
     }
 
     /**
@@ -177,9 +197,12 @@ public abstract class CompilationWrapper<T> {
             }
             ExceptionAction action = lookupAction(initialOptions, actionKey);
 
+            action = adjustAction(initialOptions, actionKey, action);
+
             if (action == ExceptionAction.Silent) {
                 return handleException(cause);
             }
+
             if (action == ExceptionAction.Print) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (PrintStream ps = new PrintStream(baos)) {
@@ -214,7 +237,7 @@ public abstract class CompilationWrapper<T> {
 
             String dir = this.outputDirectory.getPath();
             if (dir == null) {
-                return null;
+                return handleException(cause);
             }
             String dumpName = PathUtilities.sanitizeFileName(toString());
             File dumpPath = new File(dir, dumpName);
@@ -273,5 +296,32 @@ public abstract class CompilationWrapper<T> {
                 }
             }
         }
+    }
+
+    /**
+     * Adjusts {@code initialAction} if necessary based on
+     * {@link GraalCompilerOptions#MaxCompilationProblemsPerAction}.
+     */
+    private ExceptionAction adjustAction(OptionValues initialOptions, EnumOptionKey<ExceptionAction> actionKey, ExceptionAction initialAction) {
+        ExceptionAction action = initialAction;
+        int maxProblems = MaxCompilationProblemsPerAction.getValue(initialOptions);
+        synchronized (problemsHandledPerAction) {
+            while (action != ExceptionAction.Silent) {
+                int problems = problemsHandledPerAction.getOrDefault(action, 0);
+                if (problems >= maxProblems) {
+                    if (problems == maxProblems) {
+                        TTY.printf("Warning: adjusting %s from %s to %s after %s (%d) failed compilations%n", actionKey, action, action.quieter(),
+                                        MaxCompilationProblemsPerAction, maxProblems);
+                        // Ensure that the message above is only printed once
+                        problemsHandledPerAction.put(action, problems + 1);
+                    }
+                    action = action.quieter();
+                } else {
+                    break;
+                }
+            }
+            problemsHandledPerAction.put(action, problemsHandledPerAction.getOrDefault(action, 0) + 1);
+        }
+        return action;
     }
 }
