@@ -29,12 +29,10 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 /**
  * Benchmarks cost of Math intrinsics.
  */
-public class MathFunctionBenchmark extends GraalBenchmark {
+public class MathFunctionBenchmark extends BenchmarkBase {
 
     @State(Scope.Benchmark)
     public static class ThreadState {

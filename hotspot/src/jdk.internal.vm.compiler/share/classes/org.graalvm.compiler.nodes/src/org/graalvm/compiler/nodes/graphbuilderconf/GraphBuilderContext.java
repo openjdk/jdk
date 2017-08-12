@@ -34,8 +34,8 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.CallTargetNode;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.PiNode;
@@ -241,7 +241,12 @@ public interface GraphBuilderContext extends GraphBuilderTool {
      */
     default int getDepth() {
         GraphBuilderContext parent = getParent();
-        return parent == null ? 0 : 1 + parent.getDepth();
+        int result = 0;
+        while (parent != null) {
+            result++;
+            parent = parent.getParent();
+        }
+        return result;
     }
 
     /**

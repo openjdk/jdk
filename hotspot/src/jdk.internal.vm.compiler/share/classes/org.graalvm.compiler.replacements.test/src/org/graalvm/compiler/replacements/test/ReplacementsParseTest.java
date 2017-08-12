@@ -29,24 +29,46 @@ import java.util.function.Function;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
+import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
+import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.GraalGraphError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
+import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.debug.OpaqueNode;
+import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin.Receiver;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
+import org.graalvm.compiler.phases.common.FloatingReadPhase;
+import org.graalvm.compiler.phases.common.FrameStateAssignmentPhase;
+import org.graalvm.compiler.phases.common.GuardLoweringPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
+import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.graalvm.word.LocationIdentity;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
@@ -158,6 +180,14 @@ public class ReplacementsParseTest extends ReplacementsTest {
         static int copyFirstL2R(byte[] left, byte[] right) {
             return copyFirstL2RBody(left, right);
         }
+
+        static int nonVoidIntrinsicWithCall(@SuppressWarnings("unused") int x, int y) {
+            return y;
+        }
+
+        static int nonVoidIntrinsicWithOptimizedSplit(int x) {
+            return x;
+        }
     }
 
     @ClassSubstitution(TestObject.class)
@@ -240,18 +270,45 @@ public class ReplacementsParseTest extends ReplacementsTest {
         private static String apply(Function<String, String> f, String value) {
             return f.apply(value);
         }
+
+        @MethodSubstitution(isStatic = true)
+        static int nonVoidIntrinsicWithCall(int x, int y) {
+            nonVoidIntrinsicWithCallStub(x);
+            return y;
+        }
+
+        @MethodSubstitution(isStatic = true)
+        static int nonVoidIntrinsicWithOptimizedSplit(int x) {
+            if (x == GraalDirectives.opaque(x)) {
+                nonVoidIntrinsicWithCallStub(x);
+            }
+            return x;
+        }
+
+        public static void nonVoidIntrinsicWithCallStub(int zLen) {
+            nonVoidIntrinsicWithCallStub(STUB_CALL, zLen);
+        }
+
+        static final ForeignCallDescriptor STUB_CALL = new ForeignCallDescriptor("stubCall", void.class, int.class);
+
+        @NodeIntrinsic(ForeignCallNode.class)
+        private static native void nonVoidIntrinsicWithCallStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, int zLen);
+
     }
 
     @Override
     protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         BytecodeProvider replacementBytecodeProvider = getSystemClassLoaderBytecodeProvider();
         Registration r = new Registration(invocationPlugins, TestObject.class, replacementBytecodeProvider);
-        new PluginFactory_ReplacementsParseTest().registerPlugins(invocationPlugins, null);
+        NodeIntrinsicPluginFactory.InjectionProvider injections = new DummyInjectionProvider();
+        new PluginFactory_ReplacementsParseTest().registerPlugins(invocationPlugins, injections);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "nextAfter", double.class, double.class);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringize", Object.class);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "stringizeId", Receiver.class);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "copyFirst", byte[].class, byte[].class, boolean.class);
         r.registerMethodSubstitution(TestObjectSubstitutions.class, "copyFirstL2R", byte[].class, byte[].class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "nonVoidIntrinsicWithCall", int.class, int.class);
+        r.registerMethodSubstitution(TestObjectSubstitutions.class, "nonVoidIntrinsicWithOptimizedSplit", int.class);
 
         if (replacementBytecodeProvider.supportsInvokedynamic()) {
             r.registerMethodSubstitution(TestObjectSubstitutions.class, "identity", String.class);
@@ -494,6 +551,110 @@ public class ReplacementsParseTest extends ReplacementsTest {
             test(options, "callCopyFirstWrapper", in, out, false);
         } finally {
             inlineInvokeDecision = null;
+        }
+    }
+
+    public static int nonVoidIntrinsicWithCall(int x, int y) {
+        if (TestObject.nonVoidIntrinsicWithCall(x, y) == x) {
+            GraalDirectives.deoptimize();
+        }
+        return y;
+    }
+
+    /**
+     * This tests the case where an intrinsic ends with a runtime call but returns some kind of
+     * value. This requires that a FrameState is available after the {@link ForeignCallNode} since
+     * the return value must be computed on return from the call.
+     */
+    @Test
+    public void testNonVoidIntrinsicWithCall() {
+        testGraph("nonVoidIntrinsicWithCall");
+    }
+
+    public static int nonVoidIntrinsicWithOptimizedSplit(int x) {
+        if (TestObject.nonVoidIntrinsicWithOptimizedSplit(x) == x) {
+            GraalDirectives.deoptimize();
+        }
+        return x;
+    }
+
+    /**
+     * This is similar to {@link #testNonVoidIntrinsicWithCall()} but has a merge after the call
+     * which would normally capture the {@link FrameState} but in this case we force the merge to be
+     * optimized away.
+     */
+    @Test
+    public void testNonVoidIntrinsicWithOptimizedSplit() {
+        testGraph("nonVoidIntrinsicWithOptimizedSplit");
+    }
+
+    @SuppressWarnings("try")
+    private void testGraph(String name) {
+        StructuredGraph graph = parseEager(name, StructuredGraph.AllowAssumptions.YES);
+        try (DebugContext.Scope s0 = graph.getDebug().scope(name, graph)) {
+            for (OpaqueNode node : graph.getNodes().filter(OpaqueNode.class)) {
+                node.replaceAndDelete(node.getValue());
+            }
+            HighTierContext context = getDefaultHighTierContext();
+            CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+            new FloatingReadPhase().apply(graph);
+            canonicalizer.apply(graph, context);
+            new DeadCodeEliminationPhase().apply(graph);
+            new GuardLoweringPhase().apply(graph, getDefaultMidTierContext());
+            new FrameStateAssignmentPhase().apply(graph);
+        } catch (Throwable e) {
+            throw graph.getDebug().handle(e);
+        }
+    }
+
+    private class DummyInjectionProvider implements NodeIntrinsicPluginFactory.InjectionProvider {
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T getInjectedArgument(Class<T> type) {
+            if (type == ForeignCallsProvider.class) {
+                return (T) new ForeignCallsProvider() {
+                    @Override
+                    public LIRKind getValueKind(JavaKind javaKind) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isReexecutable(ForeignCallDescriptor descriptor) {
+                        return false;
+                    }
+
+                    @Override
+                    public LocationIdentity[] getKilledLocations(ForeignCallDescriptor descriptor) {
+                        return new LocationIdentity[0];
+                    }
+
+                    @Override
+                    public boolean canDeoptimize(ForeignCallDescriptor descriptor) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isGuaranteedSafepoint(ForeignCallDescriptor descriptor) {
+                        return false;
+                    }
+
+                    @Override
+                    public ForeignCallLinkage lookupForeignCall(ForeignCallDescriptor descriptor) {
+                        return null;
+                    }
+                };
+            }
+            if (type == SnippetReflectionProvider.class) {
+                return (T) getSnippetReflection();
+            }
+            return null;
+        }
+
+        @Override
+        public Stamp getInjectedStamp(Class<?> type, boolean nonNull) {
+            JavaKind kind = JavaKind.fromJavaClass(type);
+            return StampFactory.forKind(kind);
         }
     }
 }

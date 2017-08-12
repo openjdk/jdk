@@ -145,14 +145,45 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
     }
 
     public static ValueNode canonicalizeConditional(LogicNode condition, ValueNode trueValue, ValueNode falseValue, Stamp stamp) {
-        // this optimizes the case where a value that can only be 0 or 1 is materialized to 0 or 1
-        if (trueValue.isConstant() && falseValue.isConstant() && condition instanceof IntegerEqualsNode) {
-            IntegerEqualsNode equals = (IntegerEqualsNode) condition;
-            if (equals.getY().isConstant() && equals.getY().asConstant().equals(JavaConstant.INT_0) && equals.getX().stamp() instanceof IntegerStamp) {
-                IntegerStamp equalsXStamp = (IntegerStamp) equals.getX().stamp();
-                if (equalsXStamp.upMask() == 1) {
-                    if (trueValue.asConstant().equals(JavaConstant.INT_0) && falseValue.asConstant().equals(JavaConstant.INT_1)) {
-                        return IntegerConvertNode.convertUnsigned(equals.getX(), stamp);
+        // this optimizes the case where a value from the range 0 - 1 is mapped to the range 0 - 1
+        if (trueValue.isConstant() && falseValue.isConstant() && trueValue.stamp() instanceof IntegerStamp && falseValue.stamp() instanceof IntegerStamp) {
+            long constTrueValue = trueValue.asJavaConstant().asLong();
+            long constFalseValue = falseValue.asJavaConstant().asLong();
+            if (condition instanceof IntegerEqualsNode) {
+                IntegerEqualsNode equals = (IntegerEqualsNode) condition;
+                if (equals.getY().isConstant() && equals.getX().stamp() instanceof IntegerStamp) {
+                    IntegerStamp equalsXStamp = (IntegerStamp) equals.getX().stamp();
+                    if (equalsXStamp.upMask() == 1) {
+                        long equalsY = equals.getY().asJavaConstant().asLong();
+                        if (equalsY == 0) {
+                            if (constTrueValue == 0 && constFalseValue == 1) {
+                                // return x when: x == 0 ? 0 : 1;
+                                return IntegerConvertNode.convertUnsigned(equals.getX(), stamp);
+                            } else if (constTrueValue == 1 && constFalseValue == 0) {
+                                // negate a boolean value via xor
+                                return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(), 1)), stamp);
+                            }
+                        } else if (equalsY == 1) {
+                            if (constTrueValue == 1 && constFalseValue == 0) {
+                                // return x when: x == 1 ? 1 : 0;
+                                return IntegerConvertNode.convertUnsigned(equals.getX(), stamp);
+                            } else if (constTrueValue == 0 && constFalseValue == 1) {
+                                // negate a boolean value via xor
+                                return IntegerConvertNode.convertUnsigned(XorNode.create(equals.getX(), ConstantNode.forIntegerStamp(equals.getX().stamp(), 1)), stamp);
+                            }
+                        }
+                    }
+                }
+            } else if (condition instanceof IntegerTestNode) {
+                // replace IntegerTestNode with AndNode for the following patterns:
+                // (value & 1) == 0 ? 0 : 1
+                // (value & 1) == 1 ? 1 : 0
+                IntegerTestNode integerTestNode = (IntegerTestNode) condition;
+                if (integerTestNode.getY().isConstant()) {
+                    assert integerTestNode.getX().stamp() instanceof IntegerStamp;
+                    long testY = integerTestNode.getY().asJavaConstant().asLong();
+                    if (testY == 1 && constTrueValue == 0 && constFalseValue == 1) {
+                        return IntegerConvertNode.convertUnsigned(AndNode.create(integerTestNode.getX(), integerTestNode.getY()), stamp);
                     }
                 }
             }

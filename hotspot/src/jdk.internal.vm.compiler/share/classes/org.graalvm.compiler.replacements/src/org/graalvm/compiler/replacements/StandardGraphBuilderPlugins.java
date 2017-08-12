@@ -435,11 +435,11 @@ public class StandardGraphBuilderPlugins {
         }
 
         @Override
-        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode arg1, ValueNode arg2, ValueNode arg3, ValueNode arg4,
-                        ValueNode arg5, ValueNode arg6, ValueNode arg7) {
-            if (arg3.isConstant()) {
-                b.addPush(JavaKind.Int,
-                                new StringIndexOfNode(b.getInvokeKind(), targetMethod, b.bci(), b.getInvokeReturnStamp(b.getAssumptions()), arg1, arg2, arg3, arg4, arg5, arg6, arg7));
+        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, InvocationPlugin.Receiver receiver, ValueNode source, ValueNode sourceOffset, ValueNode sourceCount,
+                        ValueNode target, ValueNode targetOffset, ValueNode targetCount, ValueNode origFromIndex) {
+            if (target.isConstant()) {
+                b.addPush(JavaKind.Int, new StringIndexOfNode(b.getInvokeKind(), targetMethod, b.bci(), b.getInvokeReturnStamp(b.getAssumptions()), source, sourceOffset, sourceCount,
+                                target, targetOffset, targetCount, origFromIndex));
                 return true;
             }
             return false;

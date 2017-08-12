@@ -510,6 +510,8 @@ public class BytecodeParser implements GraphBuilderContext {
          */
         private void processPlaceholderFrameStates(IntrinsicContext intrinsic) {
             StructuredGraph graph = parser.getGraph();
+            graph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph, "Before processPlaceholderFrameStates in %s", parser.method);
+            boolean sawInvalidFrameState = false;
             for (Node node : graph.getNewNodes(mark)) {
                 if (node instanceof FrameState) {
                     FrameState frameState = (FrameState) node;
@@ -547,6 +549,7 @@ public class BytecodeParser implements GraphBuilderContext {
                                     FrameState newFrameState = graph.add(new FrameState(BytecodeFrame.INVALID_FRAMESTATE_BCI));
                                     newFrameState.setNodeSourcePosition(frameState.getNodeSourcePosition());
                                     frameState.replaceAndDelete(newFrameState);
+                                    sawInvalidFrameState = true;
                                 } else {
                                     // An intrinsic for a void method.
                                     FrameState newFrameState = frameStateBuilder.create(parser.stream.nextBCI(), null);
@@ -585,6 +588,17 @@ public class BytecodeParser implements GraphBuilderContext {
                     }
                 }
             }
+            if (sawInvalidFrameState) {
+                JavaKind returnKind = parser.getInvokeReturnType().getJavaKind();
+                FrameStateBuilder frameStateBuilder = parser.frameState;
+                ValueNode returnValue = frameStateBuilder.pop(returnKind);
+                StateSplitProxyNode proxy = graph.add(new StateSplitProxyNode(returnValue));
+                parser.lastInstr.setNext(proxy);
+                frameStateBuilder.push(returnKind, proxy);
+                proxy.setStateAfter(parser.createFrameState(parser.stream.nextBCI(), proxy));
+                parser.lastInstr = proxy;
+            }
+            graph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph, "After processPlaceholderFrameStates in %s", parser.method);
         }
     }
 
@@ -1345,7 +1359,7 @@ public class BytecodeParser implements GraphBuilderContext {
             /*
              * Special handling for runtimes that rewrite an invocation of MethodHandle.invoke(...)
              * or MethodHandle.invokeExact(...) to a static adapter. HotSpot does this - see
-             * https://wiki.openjdk.java.net/display/HotSpot/Method+handles+and+invokedynamic
+             * https://wikis.oracle.com/display/HotSpotInternals/Method+handles +and+invokedynamic
              */
             boolean hasReceiver = !((ResolvedJavaMethod) target).isStatic();
             JavaConstant appendix = constantPool.lookupAppendix(stream.readCPI(), Bytecodes.INVOKEVIRTUAL);
@@ -1987,7 +2001,7 @@ public class BytecodeParser implements GraphBuilderContext {
      */
     private boolean tryFastInlineAccessor(ValueNode[] args, ResolvedJavaMethod targetMethod) {
         byte[] bytecode = targetMethod.getCode();
-        if (bytecode.length == ACCESSOR_BYTECODE_LENGTH &&
+        if (bytecode != null && bytecode.length == ACCESSOR_BYTECODE_LENGTH &&
                         Bytes.beU1(bytecode, 0) == ALOAD_0 &&
                         Bytes.beU1(bytecode, 1) == GETFIELD) {
             int b4 = Bytes.beU1(bytecode, 4);
@@ -2186,6 +2200,14 @@ public class BytecodeParser implements GraphBuilderContext {
                 if (returnMergeNode != null) {
                     returnMergeNode.setStateAfter(createFrameState(stream.nextBCI(), returnMergeNode));
                     lastInstr = finishInstruction(returnMergeNode, frameState);
+                }
+            }
+            /*
+             * Propagate any side effects into the caller when parsing intrinsics.
+             */
+            if (parser.frameState.isAfterSideEffect() && parsingIntrinsic()) {
+                for (StateSplit sideEffect : parser.frameState.sideEffects()) {
+                    frameState.addSideEffect(sideEffect);
                 }
             }
 
@@ -3037,7 +3059,7 @@ public class BytecodeParser implements GraphBuilderContext {
         ConstantNode falseValue = graph.unique(ConstantNode.forInt(falseBlockInt));
         ValueNode conditionalNode = ConditionalNode.create(condition, trueValue, falseValue);
         if (conditionalNode.graph() == null) {
-            conditionalNode = graph.addOrUnique(conditionalNode);
+            conditionalNode = graph.addOrUniqueWithInputs(conditionalNode);
         }
         if (genReturn) {
             JavaKind returnKind = method.getSignature().getReturnKind().getStackKind();

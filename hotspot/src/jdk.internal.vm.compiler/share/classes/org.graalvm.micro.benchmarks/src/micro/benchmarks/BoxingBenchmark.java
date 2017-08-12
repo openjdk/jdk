@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,40 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+package micro.benchmarks;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
+
+/**
+ * Benchmarks cost of ArrayList.
  */
-package org.graalvm.compiler.jtt.threads;
+public class BoxingBenchmark extends BenchmarkBase {
 
-import org.graalvm.compiler.jtt.JTTTest;
-import org.graalvm.compiler.jtt.hotspot.NotOnDebug;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
-
-public final class Monitorenter02 extends JTTTest {
-
-    @Rule public TestRule timeout = NotOnDebug.create(Timeout.seconds(20));
-
-    static final Object object = new Object();
-
-    public static boolean test() {
-        // test nested locking.
-        synchronized (object) {
-            return test2();
-        }
+    @State(Scope.Benchmark)
+    public static class ThreadState {
+        int value = 42;
     }
 
-    private static boolean test2() {
-        synchronized (object) {
-            return true;
-        }
+    @Benchmark
+    @Warmup(iterations = 20)
+    public Integer addBoxed(ThreadState state) {
+        return Integer.valueOf(state.value);
     }
 
-    @Test
-    public void run0() throws Throwable {
-        initializeForTimeout();
-        runTest("test");
+    @SuppressWarnings("unused")
+    @Benchmark
+    @Warmup(iterations = 20)
+    public int doNothing(ThreadState state) {
+        return 42;
     }
-
 }

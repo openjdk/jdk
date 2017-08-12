@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,28 +27,59 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 /**
- * Benchmarks cost of ArrayList.
+ * Benchmarks cost of non-contended synchronization.
  */
-public class BoxingBenchmark extends GraalBenchmark {
+public class SimpleSyncBenchmark extends BenchmarkBase {
+
+    public static class Person {
+        public int age;
+
+        public Person(int age) {
+            this.age = age;
+        }
+
+        public synchronized int getAge() {
+            return age;
+        }
+
+        public synchronized void setAge(int age) {
+            this.age = age;
+        }
+
+        public synchronized void setAgeIfNonZero(int age) {
+            if (age != 0) {
+                this.age = age;
+            }
+        }
+    }
 
     @State(Scope.Benchmark)
     public static class ThreadState {
-        int value = 42;
+        Person person = new Person(22);
+        int newAge = 45;
     }
 
     @Benchmark
     @Warmup(iterations = 20)
-    public Integer addBoxed(ThreadState state) {
-        return Integer.valueOf(state.value);
+    public void setAgeCond(ThreadState state) {
+        Person person = state.person;
+        person.setAgeIfNonZero(state.newAge);
     }
 
-    @SuppressWarnings("unused")
     @Benchmark
     @Warmup(iterations = 20)
-    public int doNothing(ThreadState state) {
-        return 42;
+    public int getAge(ThreadState state) {
+        Person person = state.person;
+        return person.getAge();
+    }
+
+    @Benchmark
+    @Warmup(iterations = 20)
+    public int getAndIncAge(ThreadState state) {
+        Person person = state.person;
+        int oldAge = person.getAge();
+        person.setAge(oldAge + 1);
+        return oldAge;
     }
 }
