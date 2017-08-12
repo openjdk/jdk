@@ -29,28 +29,38 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.graalvm.compiler.core.GraalCompilerOptions;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
  * Tests support for dumping graphs and other info useful for debugging a compiler crash.
  */
 public class CompilationWrapperTest extends GraalCompilerTest {
+    public CompilationWrapperTest() {
+        try {
+            Class.forName("java.lang.management.ManagementFactory");
+        } catch (ClassNotFoundException ex) {
+            Assume.assumeNoException("skip this test if there is no java.management JDK9 module around", ex);
+        }
+    }
 
     /**
      * Tests compilation requested by the VM.
      */
     @Test
     public void testVMCompilation1() throws IOException, InterruptedException {
-        testHelper(Arrays.asList("-XX:+BootstrapJVMCI",
+        testHelper(Collections.emptyList(), Arrays.asList("-XX:+BootstrapJVMCI",
                         "-XX:+UseJVMCICompiler",
                         "-Dgraal.CompilationFailureAction=ExitVM",
                         "-Dgraal.CrashAt=Object.*,String.*",
@@ -63,9 +73,55 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      */
     @Test
     public void testVMCompilation2() throws IOException, InterruptedException {
-        testHelper(Arrays.asList("-XX:+BootstrapJVMCI",
+        testHelper(Collections.emptyList(), Arrays.asList("-XX:+BootstrapJVMCI",
                         "-XX:+UseJVMCICompiler",
                         "-Dgraal.ExitVMOnException=true",
+                        "-Dgraal.CrashAt=Object.*,String.*",
+                        "-version"));
+    }
+
+    static class Probe {
+        final String substring;
+        final int expectedOccurrences;
+        int actualOccurrences;
+        String lastMatchingLine;
+
+        Probe(String substring, int expectedOccurrences) {
+            this.substring = substring;
+            this.expectedOccurrences = expectedOccurrences;
+        }
+
+        boolean matches(String line) {
+            if (line.contains(substring)) {
+                actualOccurrences++;
+                lastMatchingLine = line;
+                return true;
+            }
+            return false;
+        }
+
+        String test() {
+            return expectedOccurrences == actualOccurrences ? null : String.format("expected %d, got %d occurrences", expectedOccurrences, actualOccurrences);
+        }
+    }
+
+    /**
+     * Tests {@link GraalCompilerOptions#MaxCompilationProblemsPerAction} in context of a
+     * compilation requested by the VM.
+     */
+    @Test
+    public void testVMCompilation3() throws IOException, InterruptedException {
+        final int maxProblems = 4;
+        Probe[] probes = {
+                        new Probe("To capture more information for diagnosing or reporting a compilation", maxProblems),
+                        new Probe("Retrying compilation of", maxProblems),
+                        new Probe("adjusting CompilationFailureAction from Diagnose to Print", 1),
+                        new Probe("adjusting CompilationFailureAction from Print to Silent", 1),
+        };
+        testHelper(Arrays.asList(probes), Arrays.asList("-XX:+BootstrapJVMCI",
+                        "-XX:+UseJVMCICompiler",
+                        "-Dgraal.CompilationFailureAction=Diagnose",
+                        "-Dgraal.MaxCompilationProblemsPerAction=" + maxProblems,
                         "-Dgraal.CrashAt=Object.*,String.*",
                         "-version"));
     }
@@ -75,19 +131,21 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      */
     @Test
     public void testTruffleCompilation() throws IOException, InterruptedException {
-        testHelper(Arrays.asList(
-                        "-Dgraal.CompilationFailureAction=ExitVM",
-                        "-Dgraal.CrashAt=root test1"),
-                        "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite",
-                        "test");
+        testHelper(Collections.emptyList(),
+                        Arrays.asList(
+                                        "-Dgraal.CompilationFailureAction=ExitVM",
+                                        "-Dgraal.CrashAt=root test1"),
+                        "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
     }
 
     private static final boolean VERBOSE = Boolean.getBoolean(CompilationWrapperTest.class.getSimpleName() + ".verbose");
 
-    private static void testHelper(List<String> extraVmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
+    private static void testHelper(List<Probe> initialProbes, List<String> extraVmArgs, String... mainClassAndArgs) throws IOException, InterruptedException {
         final File dumpPath = new File(CompilationWrapperTest.class.getSimpleName() + "_" + System.currentTimeMillis()).getAbsoluteFile();
         List<String> vmArgs = withoutDebuggerArguments(getVMCommandLine());
         vmArgs.removeIf(a -> a.startsWith("-Dgraal."));
+        vmArgs.remove("-esa");
+        vmArgs.remove("-ea");
         vmArgs.add("-Dgraal.DumpPath=" + dumpPath);
         // Force output to a file even if there's a running IGV instance available.
         vmArgs.add("-Dgraal.PrintGraphFile=true");
@@ -98,35 +156,37 @@ public class CompilationWrapperTest extends GraalCompilerTest {
             System.out.println(proc);
         }
 
-        String forcedCrashString = "Forced crash after compiling";
-        String diagnosticOutputFilePrefix = "Graal diagnostic output saved in ";
-
-        boolean seenForcedCrashString = false;
-        String diagnosticOutputZip = null;
+        List<Probe> probes = new ArrayList<>(initialProbes);
+        Probe diagnosticProbe = new Probe("Graal diagnostic output saved in ", 1);
+        probes.add(diagnosticProbe);
+        probes.add(new Probe("Forced crash after compiling", Integer.MAX_VALUE) {
+            @Override
+            String test() {
+                return actualOccurrences > 0 ? null : "expected at least 1 occurrence";
+            }
+        });
 
         for (String line : proc.output) {
-            if (line.contains(forcedCrashString)) {
-                seenForcedCrashString = true;
-            } else if (diagnosticOutputZip == null) {
-                int index = line.indexOf(diagnosticOutputFilePrefix);
-                if (index != -1) {
-                    diagnosticOutputZip = line.substring(diagnosticOutputFilePrefix.length()).trim();
+            for (Probe probe : probes) {
+                if (probe.matches(line)) {
+                    break;
                 }
             }
         }
-
-        if (!seenForcedCrashString) {
-            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", forcedCrashString, proc));
+        for (Probe probe : probes) {
+            String error = probe.test();
+            if (error != null) {
+                Assert.fail(String.format("Did not find expected occurences of '%s' in output of command: %s%n%s", probe.substring, error, proc));
+            }
         }
-        if (diagnosticOutputZip == null) {
-            Assert.fail(String.format("Did not find '%s' in output of command:%n%s", diagnosticOutputFilePrefix, proc));
-        }
 
-        String[] dumpPathEntries = dumpPath.list();
+        String diagnosticOutputZip = diagnosticProbe.lastMatchingLine.substring(diagnosticProbe.substring.length()).trim();
+
+        List<String> dumpPathEntries = Arrays.asList(dumpPath.list());
 
         File zip = new File(diagnosticOutputZip).getAbsoluteFile();
         Assert.assertTrue(zip.toString(), zip.exists());
-        Assert.assertArrayEquals(dumpPathEntries, new String[]{zip.getName()});
+        Assert.assertTrue(zip + " not in " + dumpPathEntries, dumpPathEntries.contains(zip.getName()));
         try {
             int bgv = 0;
             int cfg = 0;

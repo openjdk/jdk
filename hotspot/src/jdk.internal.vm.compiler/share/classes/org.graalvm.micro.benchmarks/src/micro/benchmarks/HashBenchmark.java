@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,61 +27,24 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 /**
- * Benchmarks cost of non-contended synchronization.
+ * Benchmarks cost of hashing a character array.
  */
-public class SimpleSyncBenchmark extends GraalBenchmark {
-
-    public static class Person {
-        public int age;
-
-        public Person(int age) {
-            this.age = age;
-        }
-
-        public synchronized int getAge() {
-            return age;
-        }
-
-        public synchronized void setAge(int age) {
-            this.age = age;
-        }
-
-        public synchronized void setAgeIfNonZero(int age) {
-            if (age != 0) {
-                this.age = age;
-            }
-        }
-    }
+public class HashBenchmark extends BenchmarkBase {
 
     @State(Scope.Benchmark)
     public static class ThreadState {
-        Person person = new Person(22);
-        int newAge = 45;
+        char[] characters = ("Hello world from the HashBenchmark!").toCharArray();
     }
 
     @Benchmark
     @Warmup(iterations = 20)
-    public void setAgeCond(ThreadState state) {
-        Person person = state.person;
-        person.setAgeIfNonZero(state.newAge);
-    }
-
-    @Benchmark
-    @Warmup(iterations = 20)
-    public int getAge(ThreadState state) {
-        Person person = state.person;
-        return person.getAge();
-    }
-
-    @Benchmark
-    @Warmup(iterations = 20)
-    public int getAndIncAge(ThreadState state) {
-        Person person = state.person;
-        int oldAge = person.getAge();
-        person.setAge(oldAge + 1);
-        return oldAge;
+    public int hash(ThreadState state) {
+        int value = 0;
+        char[] array = state.characters;
+        for (int i = 0; i < array.length; ++i) {
+            value = value * 31 + array[i];
+        }
+        return value;
     }
 }

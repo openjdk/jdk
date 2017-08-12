@@ -102,6 +102,7 @@ public final class FrameStateBuilder implements SideEffectsState {
     private final StructuredGraph graph;
     private final boolean clearNonLiveLocals;
     private FrameState outerFrameState;
+    private NodeSourcePosition outerSourcePosition;
 
     /**
      * The closest {@link StateSplit#hasSideEffect() side-effect} predecessors. There will be more
@@ -364,13 +365,12 @@ public final class FrameStateBuilder implements SideEffectsState {
             // Skip intrinsic frames
             parent = parser.getNonIntrinsicAncestor();
         }
-        return create(null, constantReceiver, bci, parent, hideSubstitutionStates);
+        return create(constantReceiver, bci, parent, hideSubstitutionStates);
     }
 
-    private NodeSourcePosition create(NodeSourcePosition o, JavaConstant receiver, int bci, BytecodeParser parent, boolean hideSubstitutionStates) {
-        NodeSourcePosition outer = o;
-        if (outer == null && parent != null) {
-            outer = parent.getFrameStateBuilder().createBytecodePosition(parent.bci(), hideSubstitutionStates);
+    private NodeSourcePosition create(JavaConstant receiver, int bci, BytecodeParser parent, boolean hideSubstitutionStates) {
+        if (outerSourcePosition == null && parent != null) {
+            outerSourcePosition = parent.getFrameStateBuilder().createBytecodePosition(parent.bci(), hideSubstitutionStates);
         }
         if (bci == BytecodeFrame.AFTER_EXCEPTION_BCI && parent != null) {
             return FrameState.toSourcePosition(outerFrameState);
@@ -378,7 +378,7 @@ public final class FrameStateBuilder implements SideEffectsState {
         if (bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
             throw shouldNotReachHere();
         }
-        return new NodeSourcePosition(receiver, outer, code.getMethod(), bci);
+        return new NodeSourcePosition(receiver, outerSourcePosition, code.getMethod(), bci);
     }
 
     public FrameStateBuilder copy() {

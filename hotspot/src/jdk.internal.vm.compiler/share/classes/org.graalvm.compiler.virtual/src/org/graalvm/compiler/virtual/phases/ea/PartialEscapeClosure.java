@@ -263,10 +263,10 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
     /**
      * This tries to canonicalize the node based on improved (replaced) inputs.
      */
+    @SuppressWarnings("unchecked")
     private boolean processNodeWithScalarReplacedInputs(ValueNode node, FixedNode insertBefore, BlockT state, GraphEffectList effects) {
         ValueNode canonicalizedValue = node;
         if (node instanceof Canonicalizable.Unary<?>) {
-            @SuppressWarnings("unchecked")
             Canonicalizable.Unary<ValueNode> canonicalizable = (Canonicalizable.Unary<ValueNode>) node;
             ObjectState valueObj = getObjectState(state, canonicalizable.getValue());
             ValueNode valueAlias = valueObj != null ? valueObj.getMaterializedValue() : getScalarAlias(canonicalizable.getValue());
@@ -274,7 +274,6 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
                 canonicalizedValue = (ValueNode) canonicalizable.canonical(tool, valueAlias);
             }
         } else if (node instanceof Canonicalizable.Binary<?>) {
-            @SuppressWarnings("unchecked")
             Canonicalizable.Binary<ValueNode> canonicalizable = (Canonicalizable.Binary<ValueNode>) node;
             ObjectState xObj = getObjectState(state, canonicalizable.getX());
             ValueNode xAlias = xObj != null ? xObj.getMaterializedValue() : getScalarAlias(canonicalizable.getX());

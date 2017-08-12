@@ -22,6 +22,14 @@
  */
 package org.graalvm.compiler.loop.phases;
 
+import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
+import static org.graalvm.compiler.loop.MathUtil.add;
+import static org.graalvm.compiler.loop.MathUtil.sub;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.graalvm.compiler.core.common.RetryableBailoutException;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
@@ -56,17 +64,8 @@ import org.graalvm.compiler.nodes.calc.CompareNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerLessThanNode;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
-import static org.graalvm.compiler.loop.MathUtil.add;
-import static org.graalvm.compiler.loop.MathUtil.sub;
 
 public abstract class LoopTransformations {
 
@@ -282,10 +281,10 @@ public abstract class LoopTransformations {
 
             // The pre and post loops don't require safepoints at all
             for (SafepointNode safepoint : preLoop.nodes().filter(SafepointNode.class)) {
-                GraphUtil.removeFixedWithUnusedInputs(safepoint);
+                graph.removeFixed(safepoint);
             }
             for (SafepointNode safepoint : postLoop.nodes().filter(SafepointNode.class)) {
-                GraphUtil.removeFixedWithUnusedInputs(safepoint);
+                graph.removeFixed(safepoint);
             }
         }
         graph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph, "InsertPrePostLoops %s", loop);
@@ -442,7 +441,7 @@ public abstract class LoopTransformations {
     }
 
     public static boolean isUnrollableLoop(LoopEx loop) {
-        if (!loop.isCounted() || !loop.counted().getCounter().isConstantStride()) {
+        if (!loop.isCounted() || !loop.counted().getCounter().isConstantStride() || !loop.loop().getChildren().isEmpty()) {
             return false;
         }
         LoopBeginNode loopBegin = loop.loopBegin();

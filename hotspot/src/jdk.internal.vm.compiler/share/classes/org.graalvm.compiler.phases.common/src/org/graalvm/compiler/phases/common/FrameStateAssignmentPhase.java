@@ -42,6 +42,8 @@ import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
 import org.graalvm.util.EconomicMap;
 
+import jdk.vm.ci.code.BytecodeFrame;
+
 /**
  * This phase transfers {@link FrameState} nodes from {@link StateSplit} nodes to
  * {@link DeoptimizingNode DeoptimizingNodes}.
@@ -71,7 +73,11 @@ public class FrameStateAssignmentPhase extends Phase {
                 StateSplit stateSplit = (StateSplit) node;
                 FrameState stateAfter = stateSplit.stateAfter();
                 if (stateAfter != null) {
-                    currentState = stateAfter;
+                    if (stateAfter.bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                        currentState = null;
+                    } else {
+                        currentState = stateAfter;
+                    }
                     stateSplit.setStateAfter(null);
                 }
             }
@@ -141,7 +147,10 @@ public class FrameStateAssignmentPhase extends Phase {
                 return null;
             }
         }
-        return singleState;
+        if (singleState != null && singleState.bci != BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+            return singleState;
+        }
+        return null;
     }
 
     @Override

@@ -96,7 +96,7 @@ public class CompilationTask {
         CompilationResult result;
 
         HotSpotCompilationWrapper(EventProvider.CompilationEvent compilationEvent) {
-            super(compiler.getGraalRuntime().getOutputDirectory());
+            super(compiler.getGraalRuntime().getOutputDirectory(), compiler.getGraalRuntime().getCompilationProblemsPerAction());
             this.compilationEvent = compilationEvent;
         }
 

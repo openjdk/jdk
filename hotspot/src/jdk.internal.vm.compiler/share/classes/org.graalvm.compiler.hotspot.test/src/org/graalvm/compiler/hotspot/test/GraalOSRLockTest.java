@@ -43,6 +43,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import org.junit.Assume;
 
 /**
  * Test on-stack-replacement with locks.
@@ -50,6 +51,14 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class GraalOSRLockTest extends GraalOSRTestBase {
 
     private static boolean TestInSeparateThread = false;
+
+    public GraalOSRLockTest() {
+        try {
+            Class.forName("java.lang.management.ManagementFactory");
+        } catch (ClassNotFoundException ex) {
+            Assume.assumeNoException("cannot check for monitors without java.management JDK9 module", ex);
+        }
+    }
 
     // testing only
     public static boolean isMonitorLockHeld(Object o) {

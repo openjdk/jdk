@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,21 @@
  */
 package micro.benchmarks;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 /**
- * Benchmarks cost of hasing a character array.
+ * Base class for JMH benchmarks.
  */
-public class HashBenchmark extends GraalBenchmark {
+@Warmup(iterations = BenchmarkBase.Defaults.WARMUP_ITERATIONS)
+@Measurement(iterations = BenchmarkBase.Defaults.MEASUREMENT_ITERATIONS)
+@Fork(BenchmarkBase.Defaults.FORKS)
+public class BenchmarkBase {
 
-    @State(Scope.Benchmark)
-    public static class ThreadState {
-        char[] characters = ("Hello world from the HashBenchmark!").toCharArray();
-    }
-
-    @Benchmark
-    @Warmup(iterations = 20)
-    public int hash(ThreadState state) {
-        int value = 0;
-        char[] array = state.characters;
-        for (int i = 0; i < array.length; ++i) {
-            value = value * 31 + array[i];
-        }
-        return value;
+    public static class Defaults {
+        public static final int MEASUREMENT_ITERATIONS = 5;
+        public static final int WARMUP_ITERATIONS = 5;
+        public static final int FORKS = 1;
     }
 }

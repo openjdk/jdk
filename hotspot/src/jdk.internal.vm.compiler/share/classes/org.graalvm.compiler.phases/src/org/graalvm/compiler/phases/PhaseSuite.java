@@ -131,13 +131,13 @@ public class PhaseSuite<C> extends BasePhase<C> {
         return findNextPhase(it, phaseClass, false);
     }
 
+    @SuppressWarnings("unchecked")
     public static <C> boolean findNextPhase(ListIterator<BasePhase<? super C>> it, Class<? extends BasePhase<? super C>> phaseClass, boolean recursive) {
         while (it.hasNext()) {
             BasePhase<? super C> phase = it.next();
             if (phaseClass.isInstance(phase)) {
                 return true;
             } else if (recursive && phase instanceof PhaseSuite) {
-                @SuppressWarnings("unchecked")
                 PhaseSuite<C> suite = (PhaseSuite<C>) phase;
                 if (suite.findPhase(phaseClass, true) != null) {
                     return true;
@@ -151,6 +151,7 @@ public class PhaseSuite<C> extends BasePhase<C> {
      * Removes the first instance of the given phase class, looking recursively into inner phase
      * suites.
      */
+    @SuppressWarnings("unchecked")
     public boolean removePhase(Class<? extends BasePhase<? super C>> phaseClass) {
         ListIterator<BasePhase<? super C>> it = phases.listIterator();
         while (it.hasNext()) {
@@ -159,7 +160,6 @@ public class PhaseSuite<C> extends BasePhase<C> {
                 it.remove();
                 return true;
             } else if (phase instanceof PhaseSuite) {
-                @SuppressWarnings("unchecked")
                 PhaseSuite<C> innerSuite = (PhaseSuite<C>) phase;
                 if (innerSuite.removePhase(phaseClass)) {
                     if (innerSuite.phases.isEmpty()) {
@@ -176,6 +176,7 @@ public class PhaseSuite<C> extends BasePhase<C> {
      * Removes the first instance of the given phase class, looking recursively into inner phase
      * suites.
      */
+    @SuppressWarnings("unchecked")
     public boolean replacePhase(Class<? extends BasePhase<? super C>> phaseClass, BasePhase<? super C> newPhase) {
         ListIterator<BasePhase<? super C>> it = phases.listIterator();
         while (it.hasNext()) {
@@ -184,7 +185,6 @@ public class PhaseSuite<C> extends BasePhase<C> {
                 it.set(newPhase);
                 return true;
             } else if (phase instanceof PhaseSuite) {
-                @SuppressWarnings("unchecked")
                 PhaseSuite<C> innerSuite = (PhaseSuite<C>) phase;
                 if (innerSuite.removePhase(phaseClass)) {
                     if (innerSuite.phases.isEmpty()) {

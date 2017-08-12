@@ -146,7 +146,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         }
     }
 
-    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
+    public StructuredGraph createGraph(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
         HotSpotBackend backend = graalRuntime.getHostBackend();
         HotSpotProviders providers = backend.getProviders();
         final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
@@ -160,6 +160,15 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.ifTrue(OptAssumptions.getValue(options))).method(method).entryBCI(entryBCI).speculationLog(
                             speculationLog).useProfilingInfo(useProfilingInfo).compilationId(compilationId).build();
         }
+        return graph;
+    }
+
+    public CompilationResult compileHelper(CompilationResultBuilderFactory crbf, CompilationResult result, StructuredGraph graph, ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo,
+                    OptionValues options) {
+
+        HotSpotBackend backend = graalRuntime.getHostBackend();
+        HotSpotProviders providers = backend.getProviders();
+        final boolean isOSR = entryBCI != JVMCICompiler.INVOCATION_ENTRY_BCI;
 
         Suites suites = getSuites(providers, options);
         LIRSuites lirSuites = getLIRSuites(providers, options);
@@ -173,11 +182,11 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         if (isOSR && !OnStackReplacementPhase.Options.DeoptAfterOSR.getValue(options)) {
             optimisticOpts.remove(Optimization.RemoveNeverExecutedCode);
         }
-        CompilationResult result = new CompilationResult();
+
         result.setEntryBCI(entryBCI);
         boolean shouldDebugNonSafepoints = providers.getCodeCache().shouldDebugNonSafepoints();
         PhaseSuite<HighTierContext> graphBuilderSuite = configGraphBuilderSuite(providers.getSuites().getDefaultGraphBuilderSuite(), shouldDebugNonSafepoints, isOSR);
-        GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, result, CompilationResultBuilderFactory.Default);
+        GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, result, crbf);
 
         if (!isOSR && useProfilingInfo) {
             ProfilingInfo profile = profilingInfo;
@@ -185,6 +194,12 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         }
 
         return result;
+    }
+
+    public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
+        StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, options, debug);
+        CompilationResult result = new CompilationResult();
+        return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, options);
     }
 
     /**

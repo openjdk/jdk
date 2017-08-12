@@ -25,7 +25,6 @@ package org.graalvm.compiler.replacements.classfile;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.lang.instrument.Instrumentation;
 
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
@@ -45,7 +44,8 @@ import jdk.vm.ci.meta.TriState;
 
 /**
  * The bytecode properties of a method as parsed directly from a class file without any
- * {@linkplain Instrumentation instrumentation} or other rewriting performed on the bytecode.
+ * {@linkplain java.lang.instrument.Instrumentation instrumentation} or other rewriting performed on
+ * the bytecode.
  */
 public class ClassfileBytecode implements Bytecode {
 

@@ -46,7 +46,6 @@ import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import com.sun.management.ThreadMXBean;
 
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -88,7 +87,7 @@ public final class CompilationStatistics {
     private static long zeroTime = System.nanoTime();
 
     private static long getThreadAllocatedBytes() {
-        ThreadMXBean thread = (ThreadMXBean) Management.getThreadMXBean();
+        com.sun.management.ThreadMXBean thread = (com.sun.management.ThreadMXBean) Management.getThreadMXBean();
         return thread.getThreadAllocatedBytes(currentThread().getId());
     }
 

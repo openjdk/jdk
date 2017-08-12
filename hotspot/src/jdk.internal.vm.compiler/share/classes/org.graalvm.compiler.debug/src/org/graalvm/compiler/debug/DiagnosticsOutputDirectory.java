@@ -25,7 +25,6 @@ package org.graalvm.compiler.debug;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,16 +73,20 @@ public class DiagnosticsOutputDirectory {
      * Gets a unique identifier for this execution such as a process ID.
      */
     protected String getExecutionID() {
-        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
         try {
-            int index = runtimeName.indexOf('@');
-            if (index != -1) {
-                long pid = Long.parseLong(runtimeName.substring(0, index));
-                return Long.toString(pid);
+            String runtimeName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+            try {
+                int index = runtimeName.indexOf('@');
+                if (index != -1) {
+                    long pid = Long.parseLong(runtimeName.substring(0, index));
+                    return Long.toString(pid);
+                }
+            } catch (NumberFormatException e) {
             }
-        } catch (NumberFormatException e) {
+            return runtimeName;
+        } catch (LinkageError err) {
+            return String.valueOf(org.graalvm.compiler.debug.PathUtilities.getGlobalTimeStamp());
         }
-        return runtimeName;
     }
 
     private synchronized String getPath(boolean createIfNull) {
