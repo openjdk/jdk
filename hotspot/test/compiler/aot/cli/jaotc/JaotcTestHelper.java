@@ -26,13 +26,14 @@ package compiler.aot.cli.jaotc;
 import java.io.File;
 import java.io.IOException;
 import jdk.test.lib.process.ExitCode;
+import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class JaotcTestHelper {
-    public static final String DEFAULT_LIB_PATH = "./unnamed.so";
+    public static final String DEFAULT_LIB_PATH = "./unnamed." + Platform.sharedLibraryExt();
     public static final String DEFAULT_LIBRARY_LOAD_MESSAGE = "loaded    " + DEFAULT_LIB_PATH
             + "  aot library";
     private static final String ENABLE_AOT = "-XX:+UseAOT";
