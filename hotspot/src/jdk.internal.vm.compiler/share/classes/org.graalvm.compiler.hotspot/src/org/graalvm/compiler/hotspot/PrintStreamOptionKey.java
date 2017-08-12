@@ -27,7 +27,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
 
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
@@ -53,8 +52,8 @@ public class PrintStreamOptionKey extends OptionKey<String> {
     private String getFilename(OptionValues options) {
         String name = getValue(options);
         if (name.contains("%p")) {
-            String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
             try {
+                String runtimeName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
                 int index = runtimeName.indexOf('@');
                 if (index != -1) {
                     long pid = Long.parseLong(runtimeName.substring(0, index));
@@ -63,6 +62,8 @@ public class PrintStreamOptionKey extends OptionKey<String> {
                 name = name.replaceAll("%p", runtimeName);
             } catch (NumberFormatException e) {
 
+            } catch (LinkageError err) {
+                name = String.valueOf(org.graalvm.compiler.debug.PathUtilities.getGlobalTimeStamp());
             }
         }
         if (name.contains("%t")) {
@@ -124,7 +125,7 @@ public class PrintStreamOptionKey extends OptionKey<String> {
                 /*
                  * Add the JVM and Java arguments to the log file to help identity it.
                  */
-                String inputArguments = String.join(" ", ManagementFactory.getRuntimeMXBean().getInputArguments());
+                String inputArguments = String.join(" ", java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
                 ps.println("VM Arguments: " + inputArguments);
                 String cmd = System.getProperty("sun.java.command");
                 if (cmd != null) {

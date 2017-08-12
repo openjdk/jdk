@@ -22,7 +22,10 @@
  */
 package org.graalvm.compiler.hotspot;
 
+import java.util.Map;
+
 import org.graalvm.compiler.api.runtime.GraalRuntime;
+import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
@@ -95,4 +98,9 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * Gets a directory into which diagnostics such crash reports and dumps should be written.
      */
     DiagnosticsOutputDirectory getOutputDirectory();
+
+    /**
+     * Gets the map used to count compilation problems at each {@link ExceptionAction} level.
+     */
+    Map<ExceptionAction, Integer> getCompilationProblemsPerAction();
 }

@@ -45,11 +45,14 @@ import org.junit.Test;
 @SuppressWarnings("try")
 public class TimerKeyTest {
 
-    private static final ThreadMXBean threadMXBean = Management.getThreadMXBean();
-
     @Before
     public void checkCapabilities() {
-        Assume.assumeTrue("skipping management interface test", threadMXBean.isCurrentThreadCpuTimeSupported());
+        try {
+            ThreadMXBean threadMXBean = Management.getThreadMXBean();
+            Assume.assumeTrue("skipping management interface test", threadMXBean.isCurrentThreadCpuTimeSupported());
+        } catch (LinkageError err) {
+            Assume.assumeNoException("Cannot run without java.management JDK9 module", err);
+        }
     }
 
     /**
@@ -60,6 +63,7 @@ public class TimerKeyTest {
      *         {@code ms}
      */
     private static long spin(long ms) {
+        ThreadMXBean threadMXBean = Management.getThreadMXBean();
         long start = threadMXBean.getCurrentThreadCpuTime();
         do {
             long durationMS = (threadMXBean.getCurrentThreadCpuTime() - start) / 1000;

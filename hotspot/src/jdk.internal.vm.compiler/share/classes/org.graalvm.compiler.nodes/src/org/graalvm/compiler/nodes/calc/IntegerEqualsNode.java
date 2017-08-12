@@ -153,6 +153,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
             } else if (forX.stamp().alwaysDistinct(forY.stamp())) {
                 return LogicConstantNode.contradiction();
             }
+
             if (forX instanceof AddNode && forY instanceof AddNode) {
                 AddNode addX = (AddNode) forX;
                 AddNode addY = (AddNode) forY;
@@ -176,6 +177,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
                     return create(v1, v2);
                 }
             }
+
             return super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY);
         }
 
@@ -253,6 +255,15 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
                     AndNode andNode = (AndNode) nonConstant;
                     if (Long.bitCount(((PrimitiveConstant) constant).asLong()) == 1 && andNode.getY().isConstant() && andNode.getY().asJavaConstant().equals(constant)) {
                         return new LogicNegationNode(new IntegerTestNode(andNode.getX(), andNode.getY()));
+                    }
+                }
+
+                if (nonConstant instanceof XorNode && nonConstant.stamp() instanceof IntegerStamp) {
+                    XorNode xorNode = (XorNode) nonConstant;
+                    if (xorNode.getY().isJavaConstant() && xorNode.getY().asJavaConstant().asLong() == 1 && ((IntegerStamp) xorNode.getX().stamp()).upMask() == 1) {
+                        // x ^ 1 == 0 is the same as x == 1 if x in [0, 1]
+                        // x ^ 1 == 1 is the same as x == 0 if x in [0, 1]
+                        return new IntegerEqualsNode(xorNode.getX(), ConstantNode.forIntegerStamp(xorNode.getX().stamp(), primitiveConstant.asLong() ^ 1));
                     }
                 }
             }

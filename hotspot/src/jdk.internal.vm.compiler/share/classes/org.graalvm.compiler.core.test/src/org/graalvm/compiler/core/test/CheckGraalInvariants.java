@@ -101,6 +101,14 @@ import jdk.vm.ci.meta.Value;
  */
 public class CheckGraalInvariants extends GraalCompilerTest {
 
+    public CheckGraalInvariants() {
+        try {
+            Class.forName("java.lang.management.ManagementFactory");
+        } catch (ClassNotFoundException ex) {
+            Assume.assumeNoException("cannot run without java.management JDK9 module", ex);
+        }
+    }
+
     private static boolean shouldVerifyEquals(ResolvedJavaMethod m) {
         if (m.getName().equals("identityEquals")) {
             ResolvedJavaType c = m.getDeclaringClass();

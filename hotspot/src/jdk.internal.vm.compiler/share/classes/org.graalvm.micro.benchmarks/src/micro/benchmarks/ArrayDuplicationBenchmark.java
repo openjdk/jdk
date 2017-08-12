@@ -32,10 +32,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 @State(Scope.Thread)
-public class ArrayDuplicationBenchmark extends GraalBenchmark {
+public class ArrayDuplicationBenchmark extends BenchmarkBase {
 
     /** How large should the test-arrays be. */
     private static final int TESTSIZE = 300;

@@ -29,12 +29,10 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.graalvm.compiler.microbenchmarks.graal.GraalBenchmark;
-
 /**
  * Benchmarks cost of guarded intrinsics at indirect call sites.
  */
-public class GuardedIntrinsicBenchmark extends GraalBenchmark {
+public class GuardedIntrinsicBenchmark extends BenchmarkBase {
 
     public static class HashcodeState {
         public Object val1;
