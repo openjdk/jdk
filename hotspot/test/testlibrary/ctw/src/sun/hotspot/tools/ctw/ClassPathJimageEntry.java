@@ -43,7 +43,14 @@ public class ClassPathJimageEntry extends PathHandler.PathEntry {
         return Arrays.stream(reader.getEntryNames())
                      .filter(name -> name.endsWith(".class"))
                      .filter(name -> !name.endsWith("module-info.class"))
+                     .map(ClassPathJimageEntry::toFileName)
                      .map(Utils::fileNameToClassName);
+    }
+
+    private static String toFileName(String name) {
+        final char nameSeparator = '/';
+        assert name.charAt(0) == nameSeparator : name;
+        return name.substring(name.indexOf(nameSeparator, 1) + 1);
     }
 
     @Override
