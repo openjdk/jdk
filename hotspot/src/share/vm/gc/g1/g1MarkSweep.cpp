@@ -222,7 +222,7 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
         // point all the oops to the new location
         MarkSweep::adjust_pointers(obj);
       }
-    } else if (!r->is_pinned()) {
+    } else if (!r->is_closed_archive()) {
       // This really ought to be "as_CompactibleSpace"...
       r->adjust_pointers();
     }

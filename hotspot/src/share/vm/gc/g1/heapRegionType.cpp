@@ -34,7 +34,8 @@ bool HeapRegionType::is_valid(Tag tag) {
     case StartsHumongousTag:
     case ContinuesHumongousTag:
     case OldTag:
-    case ArchiveTag:
+    case OpenArchiveTag:
+    case ClosedArchiveTag:
       return true;
     default:
       return false;
@@ -50,7 +51,8 @@ const char* HeapRegionType::get_str() const {
     case StartsHumongousTag:    return "HUMS";
     case ContinuesHumongousTag: return "HUMC";
     case OldTag:                return "OLD";
-    case ArchiveTag:            return "ARC";
+    case OpenArchiveTag:        return "OARC";
+    case ClosedArchiveTag:      return "CARC";
     default:
       ShouldNotReachHere();
       return NULL; // keep some compilers happy
@@ -66,7 +68,8 @@ const char* HeapRegionType::get_short_str() const {
     case StartsHumongousTag:    return "HS";
     case ContinuesHumongousTag: return "HC";
     case OldTag:                return "O";
-    case ArchiveTag:            return "A";
+    case OpenArchiveTag:        return "OA";
+    case ClosedArchiveTag:      return "CA";
     default:
       ShouldNotReachHere();
       return NULL; // keep some compilers happy
@@ -82,7 +85,8 @@ G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
     case StartsHumongousTag:    return G1HeapRegionTraceType::StartsHumongous;
     case ContinuesHumongousTag: return G1HeapRegionTraceType::ContinuesHumongous;
     case OldTag:                return G1HeapRegionTraceType::Old;
-    case ArchiveTag:            return G1HeapRegionTraceType::Archive;
+    case OpenArchiveTag:        return G1HeapRegionTraceType::OpenArchive;
+    case ClosedArchiveTag:      return G1HeapRegionTraceType::ClosedArchive;
     default:
       ShouldNotReachHere();
       return G1HeapRegionTraceType::Free; // keep some compilers happy

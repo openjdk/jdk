@@ -1689,7 +1689,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
-  return MetaspaceShared::is_in_shared_space((void*)obj_oop);
+  return oopDesc::is_archive_object(obj_oop);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -1697,7 +1697,19 @@ WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
-  return StringTable::shared_string_ignored();
+  return !StringTable::shared_string_mapped();
+WB_END
+
+WB_ENTRY(jobject, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass clazz))
+  Klass *k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
+  if (k->is_instance_klass()) {
+    InstanceKlass *ik = InstanceKlass::cast(k);
+    ConstantPool *cp = ik->constants();
+    objArrayOop refs =  cp->resolved_references();
+    return (jobject)JNIHandles::make_local(env, refs);
+  } else {
+    return NULL;
+  }
 WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
@@ -2001,6 +2013,7 @@ static JNINativeMethod methods[] = {
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
+  {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",

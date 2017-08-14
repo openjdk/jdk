@@ -185,14 +185,25 @@ void HeapRegion::set_survivor() {
   _type.set_survivor();
 }
 
+void HeapRegion::move_to_old() {
+  if (_type.relabel_as_old()) {
+    report_region_type_change(G1HeapRegionTraceType::Old);
+  }
+}
+
 void HeapRegion::set_old() {
   report_region_type_change(G1HeapRegionTraceType::Old);
   _type.set_old();
 }
 
-void HeapRegion::set_archive() {
-  report_region_type_change(G1HeapRegionTraceType::Archive);
-  _type.set_archive();
+void HeapRegion::set_open_archive() {
+  report_region_type_change(G1HeapRegionTraceType::OpenArchive);
+  _type.set_open_archive();
+}
+
+void HeapRegion::set_closed_archive() {
+  report_region_type_change(G1HeapRegionTraceType::ClosedArchive);
+  _type.set_closed_archive();
 }
 
 void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {

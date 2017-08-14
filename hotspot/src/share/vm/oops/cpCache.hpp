@@ -415,6 +415,9 @@ class ConstantPoolCache: public MetaspaceObj {
   // object index to original constant pool index
   jobject              _resolved_references;
   Array<u2>*           _reference_map;
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_references;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -426,6 +429,7 @@ class ConstantPoolCache: public MetaspaceObj {
                     const intStack& invokedynamic_references_map) :
                           _length(length),
                           _constant_pool(NULL) {
+    CDS_JAVA_HEAP_ONLY(_archived_references = 0;)
     initialize(inverse_index_map, invokedynamic_inverse_index_map,
                invokedynamic_references_map);
     for (int i = 0; i < length; i++) {
@@ -444,9 +448,12 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& invokedynamic_references_map, TRAPS);
   bool is_constantPoolCache() const { return true; }
 
-  int length() const                             { return _length; }
+  int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
-  MetaspaceObj::Type type() const                { return ConstantPoolCacheType; }
+  MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
+
+  oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
 
   jobject resolved_references()           { return _resolved_references; }
   void set_resolved_references(jobject s) { _resolved_references = s; }

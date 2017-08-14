@@ -33,6 +33,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"
@@ -47,6 +48,9 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/copy.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#endif // INCLUDE_ALL_GCS
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
@@ -238,11 +242,53 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
   release_tag_at_put(class_index, JVM_CONSTANT_Class);
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+// Archive the resolved references
+void ConstantPool::archive_resolved_references(Thread* THREAD) {
+  if (_cache == NULL) {
+    return; // nothing to do
+  }
+
+  InstanceKlass *ik = pool_holder();
+  if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
+        ik->is_shared_app_class())) {
+    // Archiving resolved references for classes from non-builtin loaders
+    // is not yet supported.
+    set_resolved_references(NULL);
+    return;
+  }
+
+  objArrayOop rr = resolved_references();
+  if (rr != NULL) {
+    for (int i = 0; i < rr->length(); i++) {
+      oop p = rr->obj_at(i);
+      if (p != NULL) {
+        int index = object_to_cp_index(i);
+        if (tag_at(index).is_string()) {
+          oop op = StringTable::create_archived_string(p, THREAD);
+          // If the String object is not archived (possibly too large),
+          // NULL is returned. Also set it in the array, so we won't
+          // have a 'bad' reference in the archived resolved_reference
+          // array.
+          rr->obj_at_put(i, op);
+        } else {
+          rr->obj_at_put(i, NULL);
+        }
+      }
+    }
+    oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
+    _cache->set_archived_references(archived);
+    set_resolved_references(NULL);
+  }
+}
+#endif
+
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
+  assert(_cache != NULL, "constant pool _cache should not be NULL");
 
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != NULL) return;
@@ -251,14 +297,30 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   restore_vtable();
 
   if (SystemDictionary::Object_klass_loaded()) {
-    // Recreate the object array and add to ClassLoaderData.
-    int map_length = resolved_reference_length();
-    if (map_length > 0) {
-      objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
-      Handle refs_handle (THREAD, (oop)stom);  // must handleize.
-
-      ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+    ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+#if INCLUDE_CDS_JAVA_HEAP
+    if (MetaspaceShared::open_archive_heap_region_mapped() &&
+        _cache->archived_references() != NULL) {
+      oop archived = _cache->archived_references();
+      // Make sure GC knows the cached object is now live. This is necessary after
+      // initial GC marking and during concurrent marking as strong roots are only
+      // scanned during initial marking (at the start of the GC marking).
+      assert(UseG1GC, "Requires G1 GC");
+      G1SATBCardTableModRefBS::enqueue(archived);
+      // Create handle for the archived resolved reference array object
+      Handle refs_handle(THREAD, (oop)archived);
       set_resolved_references(loader_data->add_handle(refs_handle));
+    } else
+#endif
+    {
+      // No mapped archived resolved reference array
+      // Recreate the object array and add to ClassLoaderData.
+      int map_length = resolved_reference_length();
+      if (map_length > 0) {
+        objArrayOop stom = oopFactory::new_objArray(SystemDictionary::Object_klass(), map_length, CHECK);
+        Handle refs_handle(THREAD, (oop)stom);  // must handleize.
+        set_resolved_references(loader_data->add_handle(refs_handle));
+      }
     }
   }
 }
@@ -266,10 +328,18 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 void ConstantPool::remove_unshareable_info() {
   // Resolved references are not in the shared archive.
   // Save the length for restoration.  It is not necessarily the same length
-  // as reference_map.length() if invokedynamic is saved.
+  // as reference_map.length() if invokedynamic is saved. It is needed when
+  // re-creating the resolved reference array if archived heap data cannot be map
+  // at runtime.
   set_resolved_reference_length(
     resolved_references() != NULL ? resolved_references()->length() : 0);
-  set_resolved_references(NULL);
+
+  // If archiving heap objects is not allowed, clear the resolved references.
+  // Otherwise, it is cleared after the resolved references array is cached
+  // (see archive_resolved_references()).
+  if (!MetaspaceShared::is_heap_object_archiving_allowed()) {
+    set_resolved_references(NULL);
+  }
 
   // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
   // The _on_stack flag is used to prevent ConstantPools from deallocation during
@@ -619,19 +689,19 @@ void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_
   }
 }
 
-// Resolve all the classes in the constant pool.  If they are all resolved,
-// the constant pool is read-only.  Enhancement: allocate cp entries to
-// another metaspace, and copy to read-only or read-write space if this
-// bit is set.
 bool ConstantPool::resolve_class_constants(TRAPS) {
   constantPoolHandle cp(THREAD, this);
   for (int index = 1; index < length(); index++) { // Index 0 is unused
-    if (tag_at(index).is_unresolved_klass() &&
-        klass_at_if_loaded(cp, index) == NULL) {
-      return false;
+    if (tag_at(index).is_string()) {
+      Symbol* sym = cp->unresolved_string_at(index);
+      // Look up only. Only resolve references to already interned strings.
+      oop str = StringTable::lookup(sym);
+      if (str != NULL) {
+        int cache_index = cp->cp_to_object_index(index);
+        cp->string_at_put(index, cache_index, str);
+      }
+    }
   }
-  }
-  // set_preresolution(); or some bit for future use
   return true;
 }
 

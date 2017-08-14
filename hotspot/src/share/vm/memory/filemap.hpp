@@ -242,17 +242,14 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  void  write_string_regions(GrowableArray<MemRegion> *regions,
-                             char** s0_start, char** s0_top, char** s0_end,
-                             char** s1_start, char** s1_top, char** s1_end);
+  size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
+                                    int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
   char* map_region(int i);
-  bool  map_string_regions();
-  bool  verify_string_regions();
-  void  fixup_string_regions();
+  void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  unmap_region(int i);
-  void  dealloc_string_regions();
   bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }
@@ -294,6 +291,12 @@ public:
   static int get_number_of_share_classpaths() {
     return _classpath_entry_table_size;
   }
+
+ private:
+  bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
+                      bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  verify_mapped_heap_regions(int first, int num) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

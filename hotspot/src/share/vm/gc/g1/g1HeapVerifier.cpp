@@ -234,29 +234,62 @@ public:
 };
 
 class VerifyArchiveOopClosure: public OopClosure {
+  HeapRegion* _hr;
 public:
-  VerifyArchiveOopClosure(HeapRegion *hr) { }
+  VerifyArchiveOopClosure(HeapRegion *hr)
+    : _hr(hr) { }
   void do_oop(narrowOop *p) { do_oop_work(p); }
   void do_oop(      oop *p) { do_oop_work(p); }
 
   template <class T> void do_oop_work(T *p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj == NULL || G1ArchiveAllocator::is_archive_object(obj),
-              "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
-              p2i(p), p2i(obj));
+
+    if (_hr->is_open_archive()) {
+      guarantee(obj == NULL || G1ArchiveAllocator::is_archive_object(obj),
+                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
+                p2i(p), p2i(obj));
+    } else {
+      assert(_hr->is_closed_archive(), "should be closed archive region");
+      guarantee(obj == NULL || G1ArchiveAllocator::is_closed_archive_object(obj),
+                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
+                p2i(p), p2i(obj));
+    }
   }
 };
 
-class VerifyArchiveRegionClosure: public ObjectClosure {
+class VerifyObjectInArchiveRegionClosure: public ObjectClosure {
+  HeapRegion* _hr;
 public:
-  VerifyArchiveRegionClosure(HeapRegion *hr) { }
+  VerifyObjectInArchiveRegionClosure(HeapRegion *hr, bool verbose)
+    : _hr(hr) { }
   // Verify that all object pointers are to archive regions.
   void do_object(oop o) {
-    VerifyArchiveOopClosure checkOop(NULL);
+    VerifyArchiveOopClosure checkOop(_hr);
     assert(o != NULL, "Should not be here for NULL oops");
     o->oop_iterate_no_header(&checkOop);
   }
 };
+
+// Should be only used at CDS dump time
+class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
+private:
+  G1CollectedHeap* _g1h;
+public:
+  VerifyArchivePointerRegionClosure(G1CollectedHeap* g1h) { }
+  virtual bool doHeapRegion(HeapRegion* r) {
+   if (r->is_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
+      r->object_iterate(&verify_oop_pointers);
+    }
+    return false;
+  }
+};
+
+void G1HeapVerifier::verify_archive_regions() {
+  G1CollectedHeap*  g1h = G1CollectedHeap::heap();
+  VerifyArchivePointerRegionClosure cl(NULL);
+  g1h->heap_region_iterate(&cl);
+}
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
@@ -279,12 +312,15 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     // For archive regions, verify there are no heap pointers to
     // non-pinned regions. For all others, verify liveness info.
-    if (r->is_archive()) {
-      VerifyArchiveRegionClosure verify_oop_pointers(r);
+    if (r->is_closed_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
       r->object_iterate(&verify_oop_pointers);
       return true;
-    }
-    if (!r->is_continues_humongous()) {
+    } else if (r->is_open_archive()) {
+      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
+      r->object_iterate(&verify_open_archive_oop);
+      return true;
+    } else if (!r->is_continues_humongous()) {
       bool failures = false;
       r->verify(_vo, &failures);
       if (failures) {

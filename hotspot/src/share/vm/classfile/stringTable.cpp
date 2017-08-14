@@ -90,7 +90,7 @@ class StableMemoryChecker : public StackObj {
 
 // --------------------------------------------------------------------------
 StringTable* StringTable::_the_table = NULL;
-bool StringTable::_ignore_shared_strings = false;
+bool StringTable::_shared_string_mapped = false;
 bool StringTable::_needs_rehashing = false;
 
 volatile int StringTable::_parallel_claimed_idx = 0;
@@ -678,13 +678,30 @@ int StringtableDCmd::num_arguments() {
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 // Sharing
+oop StringTable::create_archived_string(oop s, Thread* THREAD) {
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+
+  oop new_s = NULL;
+  typeArrayOop v = java_lang_String::value(s);
+  typeArrayOop new_v = (typeArrayOop)MetaspaceShared::archive_heap_object(v, THREAD);
+  if (new_v == NULL) {
+    return NULL;
+  }
+  new_s = MetaspaceShared::archive_heap_object(s, THREAD);
+  if (new_s == NULL) {
+    return NULL;
+  }
+
+  // adjust the pointer to the 'value' field in the new String oop
+  java_lang_String::set_value_raw(new_s, new_v);
+  return new_s;
+}
+
 bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
                                      CompactStringTableWriter* writer) {
-#if INCLUDE_CDS && INCLUDE_ALL_GCS && defined(_LP64) && !defined(_WINDOWS)
-  assert(UseG1GC, "Only support G1 GC");
-  assert(UseCompressedOops && UseCompressedClassPointers,
-         "Only support UseCompressedOops and UseCompressedClassPointers enabled");
+  assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
   Thread* THREAD = Thread::current();
   G1CollectedHeap::heap()->begin_archive_alloc_range();
@@ -697,94 +714,54 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
         continue;
       }
 
-      // allocate the new 'value' array first
-      typeArrayOop v = java_lang_String::value(s);
-      int v_len = v->size();
-      typeArrayOop new_v;
-      if (G1CollectedHeap::heap()->is_archive_alloc_too_large(v_len)) {
-        continue; // skip the current String. The 'value' array is too large to handle
-      } else {
-        new_v = (typeArrayOop)G1CollectedHeap::heap()->archive_mem_allocate(v_len);
-        if (new_v == NULL) {
-          return false; // allocation failed
-        }
-      }
-      // now allocate the new String object
-      int s_len = s->size();
-      oop new_s = (oop)G1CollectedHeap::heap()->archive_mem_allocate(s_len);
+      java_lang_String::set_hash(s, hash);
+      oop new_s = create_archived_string(s, THREAD);
       if (new_s == NULL) {
-        return false;
+        continue;
       }
 
-      s->identity_hash();
-      v->identity_hash();
-
-      // copy the objects' data
-      Copy::aligned_disjoint_words((HeapWord*)s, (HeapWord*)new_s, s_len);
-      Copy::aligned_disjoint_words((HeapWord*)v, (HeapWord*)new_v, v_len);
-
-      // adjust the pointer to the 'value' field in the new String oop. Also pre-compute and set the
-      // 'hash' field. That avoids "write" to the shared strings at runtime by the deduplication process.
-      java_lang_String::set_value_raw(new_s, new_v);
-      if (java_lang_String::hash(new_s) == 0) {
-        java_lang_String::set_hash(new_s, hash);
-      }
+      // set the archived string in bucket
+      bucket->set_literal(new_s);
 
       // add to the compact table
       writer->add(hash, new_s);
-
-      MetaspaceShared::relocate_klass_ptr(new_s);
-      MetaspaceShared::relocate_klass_ptr(new_v);
     }
   }
 
   G1CollectedHeap::heap()->end_archive_alloc_range(string_space, os::vm_allocation_granularity());
   assert(string_space->length() <= 2, "sanity");
-#endif
   return true;
 }
 
 void StringTable::write_to_archive(GrowableArray<MemRegion> *string_space) {
-#if INCLUDE_CDS
-  _shared_table.reset();
-  if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
-      log_info(cds)(
-        "Shared strings are excluded from the archive as UseG1GC, "
-        "UseCompressedOops and UseCompressedClassPointers are required."
-        "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-        BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-        BOOL_TO_STR(UseCompressedClassPointers));
-  } else {
-    int num_buckets = the_table()->number_of_entries() /
-                           SharedSymbolTableBucketSize;
-    // calculation of num_buckets can result in zero buckets, we need at least one
-    CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
-                                    &MetaspaceShared::stats()->string);
+  assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
-    // Copy the interned strings into the "string space" within the java heap
-    if (copy_shared_string(string_space, &writer)) {
-      writer.dump(&_shared_table);
-    }
+  _shared_table.reset();
+  int num_buckets = the_table()->number_of_entries() /
+                         SharedSymbolTableBucketSize;
+  // calculation of num_buckets can result in zero buckets, we need at least one
+  CompactStringTableWriter writer(num_buckets > 1 ? num_buckets : 1,
+                                  &MetaspaceShared::stats()->string);
+
+  // Copy the interned strings into the "string space" within the java heap
+  if (copy_shared_string(string_space, &writer)) {
+    writer.dump(&_shared_table);
   }
-#endif
 }
 
 void StringTable::serialize(SerializeClosure* soc) {
-#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
   _shared_table.set_type(CompactHashtable<oop, char>::_string_table);
   _shared_table.serialize(soc);
 
   if (soc->writing()) {
     _shared_table.reset(); // Sanity. Make sure we don't use the shared table at dump time
-  } else if (_ignore_shared_strings) {
+  } else if (!_shared_string_mapped) {
     _shared_table.reset();
   }
-#endif
 }
 
 void StringTable::shared_oops_do(OopClosure* f) {
-#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
   _shared_table.oops_do(f);
-#endif
 }
+#endif //INCLUDE_CDS_JAVA_HEAP
 

@@ -31,6 +31,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1Allocator.inline.hpp"
+#endif
 
 bool always_do_update_barrier = false;
 
@@ -138,3 +141,9 @@ bool oopDesc::has_klass_gap() {
   // Only has a klass gap when compressed class pointers are used.
   return UseCompressedClassPointers;
 }
+
+#if INCLUDE_CDS_JAVA_HEAP
+bool oopDesc::is_archive_object(oop p) {
+  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
+}
+#endif
