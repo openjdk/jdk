@@ -510,8 +510,13 @@ class Assembler : public AbstractAssembler {
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
+    MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
+    MFVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  115u << 1),
+    XXPERMDI_OPCODE= (60u << OPCODE_SHIFT |   10u << 3),
+    XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
+    XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
 
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
@@ -561,6 +566,7 @@ class Assembler : public AbstractAssembler {
     VADDUBM_OPCODE = (4u  << OPCODE_SHIFT |    0u     ),
     VADDUWM_OPCODE = (4u  << OPCODE_SHIFT |  128u     ),
     VADDUHM_OPCODE = (4u  << OPCODE_SHIFT |   64u     ),
+    VADDUDM_OPCODE = (4u  << OPCODE_SHIFT |  192u     ),
     VADDUBS_OPCODE = (4u  << OPCODE_SHIFT |  512u     ),
     VADDUWS_OPCODE = (4u  << OPCODE_SHIFT |  640u     ),
     VADDUHS_OPCODE = (4u  << OPCODE_SHIFT |  576u     ),
@@ -1099,16 +1105,19 @@ class Assembler : public AbstractAssembler {
   static int vrs(   VectorRegister r)  { return  vrs(r->encoding());}
   static int vrt(   VectorRegister r)  { return  vrt(r->encoding());}
 
+  // Only used on SHA sigma instructions (VX-form)
+  static int vst(      int         x)  { return  opp_u_field(x,             16, 16); }
+  static int vsix(     int         x)  { return  opp_u_field(x,             20, 17); }
+
   // Support Vector-Scalar (VSX) instructions.
-  static int vsra(      int         x)  { return  opp_u_field(x,            15, 11); }
-  static int vsrb(      int         x)  { return  opp_u_field(x,            20, 16); }
-  static int vsrc(      int         x)  { return  opp_u_field(x,            25, 21); }
-  static int vsrs(      int         x)  { return  opp_u_field(x,            10,  6); }
-  static int vsrt(      int         x)  { return  opp_u_field(x,            10,  6); }
+  static int vsra(      int         x)  { return  opp_u_field(x & 0x1F,     15, 11) | opp_u_field((x & 0x20) >> 5, 29, 29); }
+  static int vsrb(      int         x)  { return  opp_u_field(x & 0x1F,     20, 16) | opp_u_field((x & 0x20) >> 5, 30, 30); }
+  static int vsrs(      int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 31, 31); }
+  static int vsrt(      int         x)  { return  vsrs(x); }
+  static int vsdm(      int         x)  { return  opp_u_field(x,            23, 22); }
 
   static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
   static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
-  static int vsrc(   VectorSRegister r)  { return  vsrc(r->encoding());}
   static int vsrs(   VectorSRegister r)  { return  vsrs(r->encoding());}
   static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
 
@@ -2038,6 +2047,7 @@ class Assembler : public AbstractAssembler {
   inline void vaddubm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduwm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduhm(  VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vaddudm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vaddubs(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduws(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduhs(  VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2113,6 +2123,7 @@ class Assembler : public AbstractAssembler {
   inline void vandc(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vnor(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vor(      VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmr(      VectorRegister d, VectorRegister a);
   inline void vxor(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrld(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrlb(     VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2136,8 +2147,19 @@ class Assembler : public AbstractAssembler {
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+  inline void mtvrwz(   VectorRegister  d, Register a);
+  inline void mfvrwz(   Register        a, VectorRegister d);
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
+  inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
+  inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+
+  // VSX Extended Mnemonics
+  inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);
+  inline void xxmrghd(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxmrgld(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxswapd(  VectorSRegister d, VectorSRegister a);
 
   // Vector-Scalar (VSX) instructions.
   inline void mtfprd(   FloatRegister   d, Register a);
