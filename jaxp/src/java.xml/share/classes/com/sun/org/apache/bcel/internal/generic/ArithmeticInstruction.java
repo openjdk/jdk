@@ -21,53 +21,80 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
+
 /**
  * Super class for the family of arithmetic instructions.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ArithmeticInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public abstract class ArithmeticInstruction extends Instruction
-  implements TypedInstruction, StackProducer, StackConsumer {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  ArithmeticInstruction() {}
+public abstract class ArithmeticInstruction extends Instruction implements TypedInstruction,
+        StackProducer, StackConsumer {
 
-  /**
-   * @param opcode of instruction
-   */
-  protected ArithmeticInstruction(short opcode) {
-    super(opcode, (short)1);
-  }
-
-  /** @return type associated with the instruction
-   */
-  public Type getType(ConstantPoolGen cp) {
-    switch(opcode) {
-    case Constants.DADD: case Constants.DDIV: case Constants.DMUL:
-    case Constants.DNEG: case Constants.DREM: case Constants.DSUB:
-      return Type.DOUBLE;
-
-    case Constants.FADD: case Constants.FDIV: case Constants.FMUL:
-    case Constants.FNEG: case Constants.FREM: case Constants.FSUB:
-      return Type.FLOAT;
-
-    case Constants.IADD: case Constants.IAND: case Constants.IDIV:
-    case Constants.IMUL: case Constants.INEG: case Constants.IOR: case Constants.IREM:
-    case Constants.ISHL: case Constants.ISHR: case Constants.ISUB:
-    case Constants.IUSHR: case Constants.IXOR:
-      return Type.INT;
-
-    case Constants.LADD: case Constants.LAND: case Constants.LDIV:
-    case Constants.LMUL: case Constants.LNEG: case Constants.LOR: case Constants.LREM:
-    case Constants.LSHL: case Constants.LSHR: case Constants.LSUB:
-    case Constants.LUSHR: case Constants.LXOR:
-      return Type.LONG;
-
-    default: // Never reached
-      throw new ClassGenException("Unknown type " + opcode);
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    ArithmeticInstruction() {
     }
-  }
+
+
+    /**
+     * @param opcode of instruction
+     */
+    protected ArithmeticInstruction(final short opcode) {
+        super(opcode, (short) 1);
+    }
+
+
+    /** @return type associated with the instruction
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cp ) {
+        final short _opcode = super.getOpcode();
+        switch (_opcode) {
+            case Const.DADD:
+            case Const.DDIV:
+            case Const.DMUL:
+            case Const.DNEG:
+            case Const.DREM:
+            case Const.DSUB:
+                return Type.DOUBLE;
+            case Const.FADD:
+            case Const.FDIV:
+            case Const.FMUL:
+            case Const.FNEG:
+            case Const.FREM:
+            case Const.FSUB:
+                return Type.FLOAT;
+            case Const.IADD:
+            case Const.IAND:
+            case Const.IDIV:
+            case Const.IMUL:
+            case Const.INEG:
+            case Const.IOR:
+            case Const.IREM:
+            case Const.ISHL:
+            case Const.ISHR:
+            case Const.ISUB:
+            case Const.IUSHR:
+            case Const.IXOR:
+                return Type.INT;
+            case Const.LADD:
+            case Const.LAND:
+            case Const.LDIV:
+            case Const.LMUL:
+            case Const.LNEG:
+            case Const.LOR:
+            case Const.LREM:
+            case Const.LSHL:
+            case Const.LSHR:
+            case Const.LSUB:
+            case Const.LUSHR:
+            case Const.LXOR:
+                return Type.LONG;
+            default: // Never reached
+                throw new ClassGenException("Unknown type " + _opcode);
+        }
+    }
 }

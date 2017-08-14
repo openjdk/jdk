@@ -21,119 +21,151 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class represents the type of a local variable or item on stack
  * used in the StackMap entries.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: StackMapType.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see     StackMapEntry
  * @see     StackMap
- * @see     Constants
+ * @see     Const
  */
 public final class StackMapType implements Cloneable {
-  private byte         type;
-  private int          index = -1; // Index to CONSTANT_Class or offset
-  private ConstantPool constant_pool;
 
-  /**
-   * Construct object from file stream.
-   * @param file Input stream
-   * @throws IOException
-   */
-  StackMapType(DataInputStream file, ConstantPool constant_pool) throws IOException
-  {
-    this(file.readByte(), -1, constant_pool);
+    private byte type;
+    private int index = -1; // Index to CONSTANT_Class or offset
+    private ConstantPool constant_pool;
 
-    if(hasIndex())
-      setIndex(file.readShort());
 
-    setConstantPool(constant_pool);
-  }
+    /**
+     * Construct object from file stream.
+     * @param file Input stream
+     * @throws IOException
+     */
+    StackMapType(final DataInput file, final ConstantPool constant_pool) throws IOException {
+        this(file.readByte(), -1, constant_pool);
+        if (hasIndex()) {
+            this.index = file.readShort();
+        }
+        this.constant_pool = constant_pool;
+    }
 
-  /**
-   * @param type type tag as defined in the Constants interface
-   * @param index index to constant pool, or byte code offset
-   */
-  public StackMapType(byte type, int index, ConstantPool constant_pool) {
-    setType(type);
-    setIndex(index);
-    setConstantPool(constant_pool);
-  }
 
-  public void setType(byte t) {
-    if((t < Constants.ITEM_Bogus) || (t > Constants.ITEM_NewObject))
-      throw new RuntimeException("Illegal type for StackMapType: " + t);
-    type = t;
-  }
+    /**
+     * @param type type tag as defined in the Constants interface
+     * @param index index to constant pool, or byte code offset
+     */
+    public StackMapType(final byte type, final int index, final ConstantPool constant_pool) {
+        if ((type < Const.ITEM_Bogus) || (type > Const.ITEM_NewObject)) {
+            throw new RuntimeException("Illegal type for StackMapType: " + type);
+        }
+        this.type = type;
+        this.index = index;
+        this.constant_pool = constant_pool;
+    }
 
-  public byte getType()       { return type; }
-  public void setIndex(int t) { index = t; }
 
-  /** @return index to constant pool if type == ITEM_Object, or offset
-   * in byte code, if type == ITEM_NewObject, and -1 otherwise
-   */
-  public int  getIndex()      { return index; }
+    public void setType( final byte t ) {
+        if ((t < Const.ITEM_Bogus) || (t > Const.ITEM_NewObject)) {
+            throw new RuntimeException("Illegal type for StackMapType: " + t);
+        }
+        type = t;
+    }
 
-  /**
-   * Dump type entries to file.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(type);
-    if(hasIndex())
-      file.writeShort(getIndex());
-  }
 
-  /** @return true, if type is either ITEM_Object or ITEM_NewObject
-   */
-  public final boolean hasIndex() {
-    return ((type == Constants.ITEM_Object) ||
-            (type == Constants.ITEM_NewObject));
-  }
+    public byte getType() {
+        return type;
+    }
 
-  private String printIndex() {
-    if(type == Constants.ITEM_Object)
-      return ", class=" + constant_pool.constantToString(index, Constants.CONSTANT_Class);
-    else if(type == Constants.ITEM_NewObject)
-      return ", offset=" + index;
-    else
-      return "";
-  }
 
-  /**
-   * @return String representation
-   */
-  public final String toString() {
-    return "(type=" + Constants.ITEM_NAMES[type] + printIndex() + ")";
-  }
+    public void setIndex( final int t ) {
+        index = t;
+    }
 
-  /**
-   * @return deep copy of this object
-   */
-  public StackMapType copy() {
-    try {
-      return (StackMapType)clone();
-    } catch(CloneNotSupportedException e) {}
 
-    return null;
-  }
+    /** @return index to constant pool if type == ITEM_Object, or offset
+     * in byte code, if type == ITEM_NewObject, and -1 otherwise
+     */
+    public int getIndex() {
+        return index;
+    }
 
-  /**
-   * @return Constant pool used by this object.
-   */
-  public final ConstantPool getConstantPool() { return constant_pool; }
 
-  /**
-   * @param constant_pool Constant pool to be used for this object.
-   */
-  public final void setConstantPool(ConstantPool constant_pool) {
-    this.constant_pool = constant_pool;
-  }
+    /**
+     * Dump type entries to file.
+     *
+     * @param file Output file stream
+     * @throws IOException
+     */
+    public final void dump( final DataOutputStream file ) throws IOException {
+        file.writeByte(type);
+        if (hasIndex()) {
+            file.writeShort(getIndex());
+        }
+    }
+
+
+    /** @return true, if type is either ITEM_Object or ITEM_NewObject
+     */
+    public final boolean hasIndex() {
+        return type == Const.ITEM_Object || type == Const.ITEM_NewObject;
+    }
+
+
+    private String printIndex() {
+        if (type == Const.ITEM_Object) {
+            if (index < 0) {
+                return ", class=<unknown>";
+            }
+            return ", class=" + constant_pool.constantToString(index, Const.CONSTANT_Class);
+        } else if (type == Const.ITEM_NewObject) {
+            return ", offset=" + index;
+        } else {
+            return "";
+        }
+    }
+
+
+    /**
+     * @return String representation
+     */
+    @Override
+    public final String toString() {
+        return "(type=" + Const.getItemName(type) + printIndex() + ")";
+    }
+
+
+    /**
+     * @return deep copy of this object
+     */
+    public StackMapType copy() {
+        try {
+            return (StackMapType) clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
+
+
+    /**
+     * @return Constant pool used by this object.
+     */
+    public final ConstantPool getConstantPool() {
+        return constant_pool;
+    }
+
+
+    /**
+     * @param constant_pool Constant pool to be used for this object.
+     */
+    public final void setConstantPool( final ConstantPool constant_pool ) {
+        this.constant_pool = constant_pool;
+    }
 }

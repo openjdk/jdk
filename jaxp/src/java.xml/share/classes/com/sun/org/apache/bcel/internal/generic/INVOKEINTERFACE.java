@@ -21,110 +21,123 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.ExceptionConstants;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.ExceptionConst;
+import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * INVOKEINTERFACE - Invoke interface method
  * <PRE>Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: INVOKEINTERFACE.java 1747278 2016-06-07 17:28:43Z britter $
+ * @see
+ * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokeinterface">
+ * The invokeinterface instruction in The Java Virtual Machine Specification</a>
  */
 public final class INVOKEINTERFACE extends InvokeInstruction {
-  private int nargs; // Number of arguments on stack (number of stack slots), called "count" in vmspec2
 
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  INVOKEINTERFACE() {}
+    private int nargs; // Number of arguments on stack (number of stack slots), called "count" in vmspec2
 
-  public INVOKEINTERFACE(int index, int nargs) {
-    super(Constants.INVOKEINTERFACE, index);
-    length = 5;
 
-    if(nargs < 1)
-      throw new ClassGenException("Number of arguments must be > 0 " + nargs);
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    INVOKEINTERFACE() {
+    }
 
-    this.nargs = nargs;
-  }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    out.writeByte(opcode);
-    out.writeShort(index);
-    out.writeByte(nargs);
-    out.writeByte(0);
-  }
+    public INVOKEINTERFACE(final int index, final int nargs) {
+        super(Const.INVOKEINTERFACE, index);
+        super.setLength(5);
+        if (nargs < 1) {
+            throw new ClassGenException("Number of arguments must be > 0 " + nargs);
+        }
+        this.nargs = nargs;
+    }
 
-  /**
-   * The <B>count</B> argument according to the Java Language Specification,
-   * Second Edition.
-   */
-  public int getCount() { return nargs; }
 
-  /**
-   * Read needed data (i.e., index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide)
-       throws IOException
-  {
-    super.initFromFile(bytes, wide);
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        out.writeByte(super.getOpcode());
+        out.writeShort(super.getIndex());
+        out.writeByte(nargs);
+        out.writeByte(0);
+    }
 
-    length = 5;
-    nargs = bytes.readUnsignedByte();
-    bytes.readByte(); // Skip 0 byte
-  }
 
-  /**
-   * @return mnemonic for instruction with symbolic references resolved
-   */
-  public String toString(ConstantPool cp) {
-    return super.toString(cp) + " " + nargs;
-  }
+    /**
+     * The <B>count</B> argument according to the Java Language Specification,
+     * Second Edition.
+     */
+    public int getCount() {
+        return nargs;
+    }
 
-  public int consumeStack(ConstantPoolGen cpg) { // nargs is given in byte-code
-    return nargs;  // nargs includes this reference
-  }
 
-  public Class[] getExceptions() {
-    Class[] cs = new Class[4 + ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length];
+    /**
+     * Read needed data (i.e., index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.initFromFile(bytes, wide);
+        super.setLength(5);
+        nargs = bytes.readUnsignedByte();
+        bytes.readByte(); // Skip 0 byte
+    }
 
-    System.arraycopy(ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION, 0,
-                     cs, 0, ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length);
 
-    cs[ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length+3] = ExceptionConstants.INCOMPATIBLE_CLASS_CHANGE_ERROR;
-    cs[ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length+2] = ExceptionConstants.ILLEGAL_ACCESS_ERROR;
-    cs[ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length+1] = ExceptionConstants.ABSTRACT_METHOD_ERROR;
-    cs[ExceptionConstants.EXCS_INTERFACE_METHOD_RESOLUTION.length]   = ExceptionConstants.UNSATISFIED_LINK_ERROR;
+    /**
+     * @return mnemonic for instruction with symbolic references resolved
+     */
+    @Override
+    public String toString( final ConstantPool cp ) {
+        return super.toString(cp) + " " + nargs;
+    }
 
-    return cs;
-  }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitExceptionThrower(this);
-    v.visitTypedInstruction(this);
-    v.visitStackConsumer(this);
-    v.visitStackProducer(this);
-    v.visitLoadClass(this);
-    v.visitCPInstruction(this);
-    v.visitFieldOrMethod(this);
-    v.visitInvokeInstruction(this);
-    v.visitINVOKEINTERFACE(this);
-  }
+    @Override
+    public int consumeStack( final ConstantPoolGen cpg ) { // nargs is given in byte-code
+        return nargs; // nargs includes this reference
+    }
+
+
+    @Override
+    public Class<?>[] getExceptions() {
+        return ExceptionConst.createExceptions(ExceptionConst.EXCS.EXCS_INTERFACE_METHOD_RESOLUTION,
+            ExceptionConst.UNSATISFIED_LINK_ERROR,
+            ExceptionConst.ABSTRACT_METHOD_ERROR,
+            ExceptionConst.ILLEGAL_ACCESS_ERROR,
+            ExceptionConst.INCOMPATIBLE_CLASS_CHANGE_ERROR);
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitExceptionThrower(this);
+        v.visitTypedInstruction(this);
+        v.visitStackConsumer(this);
+        v.visitStackProducer(this);
+        v.visitLoadClass(this);
+        v.visitCPInstruction(this);
+        v.visitFieldOrMethod(this);
+        v.visitInvokeInstruction(this);
+        v.visitINVOKEINTERFACE(this);
+    }
 }

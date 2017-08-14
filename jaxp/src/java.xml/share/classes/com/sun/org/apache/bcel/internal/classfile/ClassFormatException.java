@@ -21,15 +21,30 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
-
 /**
  * Thrown when the BCEL attempts to read a class file and determines
  * that the file is malformed or otherwise cannot be interpreted as a
  * class file.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ClassFormatException.java 1748973 2016-06-18 12:14:42Z sebb $
  */
 public class ClassFormatException extends RuntimeException {
-  public ClassFormatException() { super(); }
-  public ClassFormatException(String s) { super(s); }
+
+    private static final long serialVersionUID = -3569097343160139969L;
+
+    public ClassFormatException() {
+        super();
+    }
+
+
+    public ClassFormatException(final String s) {
+        super(s);
+    }
+
+    /**
+     * @since 6.0
+     */
+    public ClassFormatException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
 }

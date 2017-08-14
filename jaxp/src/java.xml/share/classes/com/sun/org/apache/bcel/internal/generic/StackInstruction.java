@@ -21,29 +21,32 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Super class for stack operations like DUP and POP.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: StackInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public abstract class StackInstruction extends Instruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  StackInstruction() {}
 
-  /**
-   * @param opcode instruction opcode
-   */
-  protected StackInstruction(short opcode) {
-    super(opcode, (short)1);
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    StackInstruction() {
+    }
 
-  /** @return Type.UNKNOWN
-   */
-  public Type getType(ConstantPoolGen cp) {
-    return Type.UNKNOWN;
-  }
+
+    /**
+     * @param opcode instruction opcode
+     */
+    protected StackInstruction(final short opcode) {
+        super(opcode, (short) 1);
+    }
+
+
+    /** @return Type.UNKNOWN
+     */
+    public Type getType( final ConstantPoolGen cp ) {
+        return Type.UNKNOWN;
+    }
 }

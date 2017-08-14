@@ -21,93 +21,124 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.classfile.*;
 import java.util.StringTokenizer;
+
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.classfile.Constant;
+import com.sun.org.apache.bcel.internal.classfile.ConstantCP;
+import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
 
 /**
  * Super class for the INVOKExxx family of instructions.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: InvokeInstruction.java 1752106 2016-07-10 20:02:39Z britter $
  */
-public abstract class InvokeInstruction extends FieldOrMethod
-  implements ExceptionThrower, TypedInstruction, StackConsumer, StackProducer {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  InvokeInstruction() {}
+public abstract class InvokeInstruction extends FieldOrMethod implements ExceptionThrower,
+        StackConsumer, StackProducer {
 
-  /**
-   * @param index to constant pool
-   */
-  protected InvokeInstruction(short opcode, int index) {
-    super(opcode, index);
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    InvokeInstruction() {
+    }
 
-  /**
-   * @return mnemonic for instruction with symbolic references resolved
-   */
-  public String toString(ConstantPool cp) {
-    Constant        c   = cp.getConstant(index);
-    StringTokenizer tok = new StringTokenizer(cp.constantToString(c));
 
-    return Constants.OPCODE_NAMES[opcode] + " " +
-      tok.nextToken().replace('.', '/') + tok.nextToken();
-  }
+    /**
+     * @param index to constant pool
+     */
+    protected InvokeInstruction(final short opcode, final int index) {
+        super(opcode, index);
+    }
 
-  /**
-   * Also works for instructions whose stack effect depends on the
-   * constant pool entry they reference.
-   * @return Number of words consumed from stack by this instruction
-   */
-  public int consumeStack(ConstantPoolGen cpg) {
-      String signature = getSignature(cpg);
-      Type[] args      = Type.getArgumentTypes(signature);
-      int    sum;
 
-      if(opcode == Constants.INVOKESTATIC)
-        sum = 0;
-      else
-        sum = 1;  // this reference
+    /**
+     * @return mnemonic for instruction with symbolic references resolved
+     */
+    @Override
+    public String toString( final ConstantPool cp ) {
+        final Constant c = cp.getConstant(super.getIndex());
+        final StringTokenizer tok = new StringTokenizer(cp.constantToString(c));
+        return Const.getOpcodeName(super.getOpcode()) + " " + tok.nextToken().replace('.', '/')
+                + tok.nextToken();
+    }
 
-      int n = args.length;
-      for (int i = 0; i < n; i++)
-        sum += args[i].getSize();
 
-      return sum;
-   }
+    /**
+     * Also works for instructions whose stack effect depends on the
+     * constant pool entry they reference.
+     * @return Number of words consumed from stack by this instruction
+     */
+    @Override
+    public int consumeStack( final ConstantPoolGen cpg ) {
+        int sum;
+        if ((super.getOpcode() == Const.INVOKESTATIC) || (super.getOpcode() == Const.INVOKEDYNAMIC)) {
+            sum = 0;
+        } else {
+            sum = 1; // this reference
+        }
 
-  /**
-   * Also works for instructions whose stack effect depends on the
-   * constant pool entry they reference.
-   * @return Number of words produced onto stack by this instruction
-   */
-  public int produceStack(ConstantPoolGen cpg) {
-    return getReturnType(cpg).getSize();
-  }
+        final String signature = getSignature(cpg);
+        sum += Type.getArgumentTypesSize(signature);
+        return sum;
+    }
 
-  /** @return return type of referenced method.
-   */
-  public Type getType(ConstantPoolGen cpg) {
-    return getReturnType(cpg);
-  }
 
-  /** @return name of referenced method.
-   */
-  public String getMethodName(ConstantPoolGen cpg) {
-    return getName(cpg);
-  }
+    /**
+     * Also works for instructions whose stack effect depends on the
+     * constant pool entry they reference.
+     * @return Number of words produced onto stack by this instruction
+     */
+    @Override
+    public int produceStack( final ConstantPoolGen cpg ) {
+        final String signature = getSignature(cpg);
+        return Type.getReturnTypeSize(signature);
+    }
 
-  /** @return return type of referenced method.
-   */
-  public Type getReturnType(ConstantPoolGen cpg) {
-    return Type.getReturnType(getSignature(cpg));
-  }
+    /**
+     * This overrides the deprecated version as we know here that the referenced class
+     * may legally be an array.
+     *
+     * @deprecated in FieldOrMethod
+     *
+     * @return name of the referenced class/interface
+     * @throws IllegalArgumentException if the referenced class is an array (this should not happen)
+     */
+    @Override
+    @Deprecated
+    public String getClassName( final ConstantPoolGen cpg ) {
+        final ConstantPool cp = cpg.getConstantPool();
+        final ConstantCP cmr = (ConstantCP) cp.getConstant(super.getIndex());
+        final String className = cp.getConstantString(cmr.getClassIndex(), Const.CONSTANT_Class);
+        return className.replace('/', '.');
+    }
 
-  /** @return argument types of referenced method.
-   */
-  public Type[] getArgumentTypes(ConstantPoolGen cpg) {
-    return Type.getArgumentTypes(getSignature(cpg));
-  }
+    /** @return return type of referenced method.
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cpg ) {
+        return getReturnType(cpg);
+    }
+
+
+    /** @return name of referenced method.
+     */
+    public String getMethodName( final ConstantPoolGen cpg ) {
+        return getName(cpg);
+    }
+
+
+    /** @return return type of referenced method.
+     */
+    public Type getReturnType( final ConstantPoolGen cpg ) {
+        return Type.getReturnType(getSignature(cpg));
+    }
+
+
+    /** @return argument types of referenced method.
+     */
+    public Type[] getArgumentTypes( final ConstantPoolGen cpg ) {
+        return Type.getArgumentTypes(getSignature(cpg));
+    }
+
 }

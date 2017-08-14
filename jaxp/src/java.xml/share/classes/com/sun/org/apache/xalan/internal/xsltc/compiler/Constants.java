@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,13 +23,68 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
+import com.sun.org.apache.bcel.internal.generic.ArithmeticInstruction;
+import com.sun.org.apache.bcel.internal.generic.ArrayInstruction;
+import com.sun.org.apache.bcel.internal.generic.ConversionInstruction;
+import com.sun.org.apache.bcel.internal.generic.Instruction;
+import com.sun.org.apache.bcel.internal.generic.InstructionConst;
+import com.sun.org.apache.bcel.internal.generic.LocalVariableInstruction;
+import com.sun.org.apache.bcel.internal.generic.ReturnInstruction;
+import com.sun.org.apache.bcel.internal.generic.StackInstruction;
 
 /**
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  */
-public interface Constants extends InstructionConstants {
+public interface Constants {
+    public static final Instruction ACONST_NULL = InstructionConst.ACONST_NULL;
+    public static final Instruction ATHROW = InstructionConst.ATHROW;
+    public static final Instruction DCMPG = InstructionConst.DCMPG;
+    public static final Instruction DCONST_0 = InstructionConst.DCONST_0;
+    public static final Instruction ICONST_0 = InstructionConst.ICONST_0;
+    public static final Instruction ICONST_1 = InstructionConst.ICONST_1;
+    public static final Instruction NOP = InstructionConst.NOP;
+
+
+    public static final StackInstruction DUP = InstructionConst.DUP;
+    public static final StackInstruction DUP2 = InstructionConst.DUP2;
+    public static final StackInstruction DUP_X1 = InstructionConst.DUP_X1;
+    public static final StackInstruction DUP_X2 = InstructionConst.DUP_X2;
+    public static final StackInstruction POP = InstructionConst.POP;
+    public static final StackInstruction POP2 = InstructionConst.POP2;
+    public static final StackInstruction SWAP = InstructionConst.SWAP;
+
+    public static final LocalVariableInstruction ALOAD_0 = InstructionConst.ALOAD_0;
+    public static final LocalVariableInstruction ALOAD_1 = InstructionConst.ALOAD_1;
+    public static final LocalVariableInstruction ALOAD_2 = InstructionConst.ALOAD_2;
+    public static final LocalVariableInstruction ILOAD_1 = InstructionConst.ILOAD_1;
+    public static final LocalVariableInstruction ILOAD_2 = InstructionConst.ILOAD_2;
+
+    public static final ArithmeticInstruction DADD = InstructionConst.DADD;
+    public static final ArithmeticInstruction IXOR = InstructionConst.IXOR;
+
+    public static final ArrayInstruction AASTORE = InstructionConst.AASTORE;
+    public static final ArrayInstruction IASTORE = InstructionConst.IASTORE;
+
+    public static final ConversionInstruction D2F = InstructionConst.D2F;
+    public static final ConversionInstruction D2I = InstructionConst.D2I;
+    public static final ConversionInstruction D2L = InstructionConst.D2L;
+    public static final ConversionInstruction F2D = InstructionConst.F2D;
+    public static final ConversionInstruction I2B = InstructionConst.I2B;
+    public static final ConversionInstruction I2C = InstructionConst.I2C;
+    public static final ConversionInstruction I2D = InstructionConst.I2D;
+    public static final ConversionInstruction I2F = InstructionConst.I2F;
+    public static final ConversionInstruction I2L = InstructionConst.I2L;
+    public static final ConversionInstruction I2S = InstructionConst.I2S;
+    public static final ConversionInstruction L2D = InstructionConst.L2D;
+    public static final ConversionInstruction L2I = InstructionConst.L2I;
+
+
+    public static final ReturnInstruction ARETURN = InstructionConst.ARETURN;
+    public static final ReturnInstruction IRETURN = InstructionConst.IRETURN;
+    public static final ReturnInstruction RETURN = InstructionConst.RETURN;
+
+
 
     // Error categories used to report errors to Parser.reportError()
 
@@ -86,17 +141,17 @@ public interface Constants extends InstructionConstants {
         = "java.lang.String";
 
     public static final int ACC_PUBLIC
-        = com.sun.org.apache.bcel.internal.Constants.ACC_PUBLIC;
+        = com.sun.org.apache.bcel.internal.Const.ACC_PUBLIC;
     public static final int ACC_SUPER
-        = com.sun.org.apache.bcel.internal.Constants.ACC_SUPER;
+        = com.sun.org.apache.bcel.internal.Const.ACC_SUPER;
     public static final int ACC_FINAL
-        = com.sun.org.apache.bcel.internal.Constants.ACC_FINAL;
+        = com.sun.org.apache.bcel.internal.Const.ACC_FINAL;
     public static final int ACC_PRIVATE
-        = com.sun.org.apache.bcel.internal.Constants.ACC_PRIVATE;
+        = com.sun.org.apache.bcel.internal.Const.ACC_PRIVATE;
     public static final int ACC_PROTECTED
-        = com.sun.org.apache.bcel.internal.Constants.ACC_PROTECTED;
+        = com.sun.org.apache.bcel.internal.Const.ACC_PROTECTED;
     public static final int ACC_STATIC
-        = com.sun.org.apache.bcel.internal.Constants.ACC_STATIC;
+        = com.sun.org.apache.bcel.internal.Const.ACC_STATIC;
 
     public static final String MODULE_SIG
         = "Ljava/lang/Module;";
