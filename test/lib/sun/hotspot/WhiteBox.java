@@ -519,11 +519,12 @@ public class WhiteBox {
   // Safepoint Checking
   public native void assertMatchingSafepointCalls(boolean mutexSafepointValue, boolean attemptedNoSafepointValue);
 
-  // Sharing
+  // Sharing & archiving
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
   public native boolean isCDSIncludedInVmBuild();
+  public native Object  getResolvedReferences(Class<?> c);
 
   // Compiler Directive
   public native int addCompilerDirective(String compDirect);
