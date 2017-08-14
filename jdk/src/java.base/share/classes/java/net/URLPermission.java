@@ -72,22 +72,22 @@ import java.security.Permission;
  * separated by '/' characters. <i>path</i> may also be empty. The path is specified
  * in a similar way to the path in {@link java.io.FilePermission}. There are
  * three different ways as the following examples show:
- * <table class="plain">
+ * <table class="striped">
  * <caption>URL Examples</caption>
  * <thead>
- * <tr><th>Example url</th><th>Description</th></tr>
+ * <tr><th scope="col">Example url</th><th scope="col">Description</th></tr>
  * </thead>
- * <tbody>
- * <tr><td style="white-space:nowrap;">http://www.oracle.com/a/b/c.html</td>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row" style="white-space:nowrap;">http://www.oracle.com/a/b/c.html</th>
  *   <td>A url which identifies a specific (single) resource</td>
  * </tr>
- * <tr><td>http://www.oracle.com/a/b/*</td>
+ * <tr><th scope="row">http://www.oracle.com/a/b/*</th>
  *   <td>The '*' character refers to all resources in the same "directory" - in
  *       other words all resources with the same number of path components, and
  *       which only differ in the final path component, represented by the '*'.
  *   </td>
  * </tr>
- * <tr><td>http://www.oracle.com/a/b/-</td>
+ * <tr><th scope="row">http://www.oracle.com/a/b/-</th>
  *   <td>The '-' character refers to all resources recursively below the
  *       preceding path (eg. http://www.oracle.com/a/b/c/d/e.html matches this
  *       example).
@@ -114,11 +114,12 @@ import java.security.Permission;
  * methods and permitted request headers of the permission (respectively). The two lists
  * are separated by a colon ':' character and elements of each list are comma separated.
  * Some examples are:
- * <pre>
- *         "POST,GET,DELETE"
- *         "GET:X-Foo-Request,X-Bar-Request"
- *         "POST,GET:Header1,Header2"
- * </pre>
+ * <ul>
+ * <li>"POST,GET,DELETE"
+ * <li>"GET:X-Foo-Request,X-Bar-Request"
+ * <li>"POST,GET:Header1,Header2"
+ * </ul>
+ * <p>
  * The first example specifies the methods: POST, GET and DELETE, but no request headers.
  * The second example specifies one request method and two headers. The third
  * example specifies two request methods, and two headers.
@@ -253,16 +254,16 @@ public final class URLPermission extends Permission {
      * <table class="plain">
      * <caption>Examples of Path Matching</caption>
      * <thead>
-     * <tr><th>this's path</th><th>p's path</th><th>match</th></tr>
+     * <tr><th scope="col">this's path</th><th scope="col">p's path</th><th>match</th></tr>
      * </thead>
-     * <tbody>
-     * <tr><td>/a/b</td><td>/a/b</td><td>yes</td></tr>
-     * <tr><td>/a/b/*</td><td>/a/b/c</td><td>yes</td></tr>
-     * <tr><td>/a/b/*</td><td>/a/b/c/d</td><td>no</td></tr>
-     * <tr><td>/a/b/-</td><td>/a/b/c/d</td><td>yes</td></tr>
-     * <tr><td>/a/b/-</td><td>/a/b/c/d/e</td><td>yes</td></tr>
-     * <tr><td>/a/b/-</td><td>/a/b/c/*</td><td>yes</td></tr>
-     * <tr><td>/a/b/*</td><td>/a/b/c/-</td><td>no</td></tr>
+     * <tbody style="text-align:left">
+     * <tr><th scope="row">/a/b</th><th scope="row">/a/b</th><td>yes</td></tr>
+     * <tr><th scope="row" rowspan="3">/a/b/*</th><th scope="row">/a/b/c</th><td>yes</td></tr>
+     * <tr>  <th scope="row">/a/b/c/d</th><td>no</td></tr>
+     * <tr>  <th scope="row">/a/b/c/-</th><td>no</td></tr>
+     * <tr><th scope="row" rowspan="3">/a/b/-</th><th scope="row">/a/b/c/d</th><td>yes</td></tr>
+     * <tr>  <th scope="row">/a/b/c/d/e</th><td>yes</td></tr>
+     * <tr>  <th scope="row">/a/b/c/*</th><td>yes</td></tr>
      * </tbody>
      * </table>
      */
