@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,13 @@
  * questions.
  */
 
-/*
- @test
- @bug 8149456 8147834 8150230 8155740
- @requires os.family == "mac"
- @summary Tests key codes for all keys supported in Java for Mac OS X.
- @run main AllKeyCode
+/**
+ * @test
+ * @key headful
+ * @bug 8149456 8147834 8150230 8155740
+ * @requires os.family == "mac"
+ * @summary Tests key codes for all keys supported in Java for Mac OS X.
+ * @run main AllKeyCode
  */
 
 import java.awt.AWTException;

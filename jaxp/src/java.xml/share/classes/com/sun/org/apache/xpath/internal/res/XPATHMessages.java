@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,9 +20,9 @@
 
 package com.sun.org.apache.xpath.internal.res;
 
-import com.sun.org.apache.bcel.internal.util.SecuritySupport;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
-import java.util.ListResourceBundle;
+import java.util.ResourceBundle;
+import jdk.xml.internal.SecuritySupport;
 
 /**
  * A utility class for issuing XPath error messages.
@@ -35,7 +34,7 @@ public class XPATHMessages extends XMLMessages {
     /**
      * The language specific resource object for XPath messages.
      */
-    private static ListResourceBundle XPATHBundle = null;
+    private static ResourceBundle XPATHBundle = null;
     /**
      * The class name of the XPath error message string table.
      */
@@ -99,7 +98,7 @@ public class XPATHMessages extends XMLMessages {
      *
      * @return The formatted message string.
      */
-    public static final String createXPATHMsg(ListResourceBundle fResourceBundle,
+    private static final String createXPATHMsg(ResourceBundle fResourceBundle,
             String msgKey, Object args[]) //throws Exception
     {
 

@@ -91,6 +91,9 @@ class Eval {
 
     private static final Pattern IMPORT_PATTERN = Pattern.compile("import\\p{javaWhitespace}+(?<static>static\\p{javaWhitespace}+)?(?<fullname>[\\p{L}\\p{N}_\\$\\.]+\\.(?<name>[\\p{L}\\p{N}_\\$]+|\\*))");
 
+    // for uses that should not change state -- non-evaluations
+    private boolean preserveState = false;
+
     private int varNumber = 0;
 
     private final JShell state;
@@ -140,6 +143,23 @@ class Eval {
             }
         }
         return snippets;
+    }
+
+    /**
+     * Converts the user source of a snippet into a Snippet object (or list of
+     * objects in the case of: int x, y, z;).  Does not install the Snippets
+     * or execute them.  Does not change any state.
+     *
+     * @param userSource the source of the snippet
+     * @return usually a singleton list of Snippet, but may be empty or multiple
+     */
+    List<Snippet> toScratchSnippets(String userSource) {
+        try {
+            preserveState = true;
+            return sourceToSnippets(userSource);
+        } finally {
+            preserveState = false;
+        }
     }
 
     /**
@@ -316,11 +336,15 @@ class Eval {
                 subkind = SubKind.OTHER_EXPRESSION_SUBKIND;
             }
             if (shouldGenTempVar(subkind)) {
-                if (state.tempVariableNameGenerator != null) {
-                    name = state.tempVariableNameGenerator.get();
-                }
-                while (name == null || state.keyMap.doesVariableNameExist(name)) {
-                    name = "$" + ++varNumber;
+                if (preserveState) {
+                    name = "$$";
+                } else {
+                    if (state.tempVariableNameGenerator != null) {
+                        name = state.tempVariableNameGenerator.get();
+                    }
+                    while (name == null || state.keyMap.doesVariableNameExist(name)) {
+                        name = "$" + ++varNumber;
+                    }
                 }
                 guts = Wrap.tempVarWrap(compileSource, typeName, name);
                 Collection<String> declareReferences = null; //TODO

@@ -533,6 +533,16 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     @Override
+    public List<Snippet> sourceToSnippets(String input) {
+        proc.checkIfAlive();
+        List<Snippet> snl = proc.eval.toScratchSnippets(input);
+        for (Snippet sn : snl) {
+            sn.setId(Snippet.UNASSOCIATED_ID);
+        }
+        return snl;
+    }
+
+    @Override
     public Collection<Snippet> dependents(Snippet snippet) {
         return proc.maps.getDependents(snippet);
     }

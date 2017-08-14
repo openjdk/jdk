@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,13 @@
  * questions.
  */
 
- /* @test
-  * @bug 8041909
-  * @summary Test to check JComboBox does not lose its ability to invoke
-  * registerd ActionListener in case of exception in ActionListener
-  * @run main ActionListenerExceptionTest
+/**
+ * @test
+ * @key headful
+ * @bug 8041909
+ * @summary Test to check JComboBox does not lose its ability to invoke
+ * registerd ActionListener in case of exception in ActionListener
+ * @run main ActionListenerExceptionTest
  */
 
 import java.awt.AWTEvent;

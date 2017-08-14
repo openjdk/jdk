@@ -25,6 +25,7 @@
 
 package jdk.internal.misc;
 
+import java.io.ObjectInputFilter;
 import java.lang.module.ModuleDescriptor;
 import java.util.ResourceBundle;
 import java.util.jar.JarFile;
@@ -70,6 +71,7 @@ public class SharedSecrets {
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
+    private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
@@ -313,6 +315,17 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputStreamAccess(JavaObjectInputStreamAccess access) {
         javaObjectInputStreamAccess = access;
+    }
+
+    public static JavaObjectInputFilterAccess getJavaObjectInputFilterAccess() {
+        if (javaObjectInputFilterAccess == null) {
+            unsafe.ensureClassInitialized(ObjectInputFilter.Config.class);
+        }
+        return javaObjectInputFilterAccess;
+    }
+
+    public static void setJavaObjectInputFilterAccess(JavaObjectInputFilterAccess access) {
+        javaObjectInputFilterAccess = access;
     }
 
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {

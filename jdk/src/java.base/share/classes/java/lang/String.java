@@ -2208,29 +2208,29 @@ public final class String
      * <caption style="display:none">Split example showing regex, limit, and result</caption>
      * <thead>
      * <tr>
-     *     <th>Regex</th>
-     *     <th>Limit</th>
-     *     <th>Result</th>
+     *     <th scope="col">Regex</th>
+     *     <th scope="col">Limit</th>
+     *     <th scope="col">Result</th>
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">2</td>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">:</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">5</td>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">-2</td>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">5</td>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">o</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">-2</td>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">0</td>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table></blockquote>
@@ -2336,14 +2336,14 @@ public final class String
      * <caption style="display:none">Split examples showing regex and result</caption>
      * <thead>
      * <tr>
-     *  <th>Regex</th>
-     *  <th>Result</th>
+     *  <th scope="col">Regex</th>
+     *  <th scope="col">Result</th>
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><td style="text-align:center">:</td>
+     * <tr><th scope="row" style="text-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
+     * <tr><th scope="row" style="text-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table></blockquote>
@@ -2460,36 +2460,37 @@ public final class String
      * <caption style="display:none">Lowercase mapping examples showing language code of locale, upper case, lower case, and description</caption>
      * <thead>
      * <tr>
-     *   <th>Language Code of Locale</th>
-     *   <th>Upper Case</th>
-     *   <th>Lower Case</th>
-     *   <th>Description</th>
+     *   <th scope="col">Language Code of Locale</th>
+     *   <th scope="col">Upper Case</th>
+     *   <th scope="col">Lower Case</th>
+     *   <th scope="col">Description</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
      *   <td>tr (Turkish)</td>
-     *   <td>&#92;u0130</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">&#92;u0130</th>
      *   <td>&#92;u0069</td>
      *   <td>capital letter I with dot above -&gt; small letter i</td>
      * </tr>
      * <tr>
      *   <td>tr (Turkish)</td>
-     *   <td>&#92;u0049</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">&#92;u0049</th>
      *   <td>&#92;u0131</td>
      *   <td>capital letter I -&gt; small letter dotless i </td>
      * </tr>
      * <tr>
      *   <td>(all)</td>
-     *   <td>French Fries</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">French Fries</th>
      *   <td>french fries</td>
      *   <td>lowercased all chars in String</td>
      * </tr>
      * <tr>
      *   <td>(all)</td>
-     *   <td><img src="doc-files/capiota.gif" alt="capiota"><img src="doc-files/capchi.gif" alt="capchi">
+     *   <th scope="row" style="font-weight:normal; text-align:left">
+     *       <img src="doc-files/capiota.gif" alt="capiota"><img src="doc-files/capchi.gif" alt="capchi">
      *       <img src="doc-files/captheta.gif" alt="captheta"><img src="doc-files/capupsil.gif" alt="capupsil">
-     *       <img src="doc-files/capsigma.gif" alt="capsigma"></td>
+     *       <img src="doc-files/capsigma.gif" alt="capsigma"></th>
      *   <td><img src="doc-files/iota.gif" alt="iota"><img src="doc-files/chi.gif" alt="chi">
      *       <img src="doc-files/theta.gif" alt="theta"><img src="doc-files/upsilon.gif" alt="upsilon">
      *       <img src="doc-files/sigma1.gif" alt="sigma"></td>
@@ -2546,34 +2547,34 @@ public final class String
      * <caption style="display:none">Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.</caption>
      * <thead>
      * <tr>
-     *   <th>Language Code of Locale</th>
-     *   <th>Lower Case</th>
-     *   <th>Upper Case</th>
-     *   <th>Description</th>
+     *   <th scope="col">Language Code of Locale</th>
+     *   <th scope="col">Lower Case</th>
+     *   <th scope="col">Upper Case</th>
+     *   <th scope="col">Description</th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
      *   <td>tr (Turkish)</td>
-     *   <td>&#92;u0069</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">&#92;u0069</th>
      *   <td>&#92;u0130</td>
      *   <td>small letter i -&gt; capital letter I with dot above</td>
      * </tr>
      * <tr>
      *   <td>tr (Turkish)</td>
-     *   <td>&#92;u0131</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">&#92;u0131</th>
      *   <td>&#92;u0049</td>
      *   <td>small letter dotless i -&gt; capital letter I</td>
      * </tr>
      * <tr>
      *   <td>(all)</td>
-     *   <td>&#92;u00df</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">&#92;u00df</th>
      *   <td>&#92;u0053 &#92;u0053</td>
      *   <td>small letter sharp s -&gt; two letters: SS</td>
      * </tr>
      * <tr>
      *   <td>(all)</td>
-     *   <td>Fahrvergn&uuml;gen</td>
+     *   <th scope="row" style="font-weight:normal; text-align:left">Fahrvergn&uuml;gen</th>
      *   <td>FAHRVERGN&Uuml;GEN</td>
      *   <td></td>
      * </tr>

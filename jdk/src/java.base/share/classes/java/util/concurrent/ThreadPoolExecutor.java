@@ -576,7 +576,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private static final RuntimePermission shutdownPerm =
         new RuntimePermission("modifyThread");
 
-    /* The context to be used when executing the finalizer, or null. */
+    /** The context to be used when executing the finalizer, or null. */
     private final AccessControlContext acc;
 
     /**
@@ -1314,9 +1314,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             throw new IllegalArgumentException();
         if (workQueue == null || threadFactory == null || handler == null)
             throw new NullPointerException();
-        this.acc = System.getSecurityManager() == null ?
-                null :
-                AccessController.getContext();
+        this.acc = (System.getSecurityManager() == null)
+            ? null
+            : AccessController.getContext();
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;

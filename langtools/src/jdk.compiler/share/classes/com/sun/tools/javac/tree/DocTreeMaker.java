@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import com.sun.tools.javac.tree.DCTree.DCSerialData;
 import com.sun.tools.javac.tree.DCTree.DCSerialField;
 import com.sun.tools.javac.tree.DCTree.DCSince;
 import com.sun.tools.javac.tree.DCTree.DCStartElement;
+import com.sun.tools.javac.tree.DCTree.DCSummary;
 import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DCTree.DCThrows;
 import com.sun.tools.javac.tree.DCTree.DCUnknownBlockTag;
@@ -412,6 +413,13 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSummary newSummaryTree(List<? extends DocTree> text) {
+        DCSummary tree = new DCSummary(cast(text));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public DCText newTextTree(String text) {
         DCText tree = new DCText(text);
         tree.pos = pos;
@@ -497,6 +505,9 @@ public class DocTreeMaker implements DocTreeFactory {
                     continue;
                 }
                 switch (dt.getKind()) {
+                    case SUMMARY:
+                        foundFirstSentence = true;
+                        break;
                     case TEXT:
                         DCText tt = (DCText) dt;
                         String s = tt.getBody();

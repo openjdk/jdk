@@ -342,7 +342,7 @@ public class AtomicIntegerArrayTest extends JSR166TestCase {
     }
 
     /**
-     * a deserialized serialized array holds same values
+     * a deserialized/reserialized array holds same values in same order
      */
     public void testSerialization() throws Exception {
         AtomicIntegerArray x = new AtomicIntegerArray(SIZE);

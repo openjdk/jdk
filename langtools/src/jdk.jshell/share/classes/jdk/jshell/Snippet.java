@@ -552,6 +552,8 @@ public abstract class Snippet {
         }
     }
 
+    static final String UNASSOCIATED_ID = "*UNASSOCIATED*";
+
     private final Key key;
     private final String source;
     private final Wrap guts;

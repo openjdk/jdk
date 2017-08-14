@@ -522,7 +522,7 @@ public class PriorityQueueTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized queue has same elements
+     * A deserialized/reserialized queue has same elements
      */
     public void testSerialization() throws Exception {
         Queue x = populatedQueue(SIZE);

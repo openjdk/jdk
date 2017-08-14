@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,13 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8151303
  * @summary [macosx] [hidpi] JButton's low-res. icon is visible when clicking on it
  * @run main/othervm  PressedIconTest
  * @run main/othervm -Dsun.java2d.uiScale=2 PressedIconTest
  */
+
 public class PressedIconTest {
 
     private final static int IMAGE_SIZE = 300;

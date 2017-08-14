@@ -257,6 +257,19 @@ public interface DocTreeVisitor<R,P> {
     R visitStartElement(StartElementTree node, P p);
 
     /**
+     * Visits a SummaryTree node.
+     *
+     * @implSpec Visits a {@code SummaryTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 10
+     */
+    default R visitSummary(SummaryTree node, P p) { return visitOther(node, p);}
+
+    /**
      * Visits a TextTree node.
      * @param node the node being visited
      * @param p a parameter value

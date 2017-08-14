@@ -255,25 +255,25 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * </ul>
      *
-     * <table class="plain">
+     * <table class="striped">
      * <caption>Examples</caption>
      * <thead>
-     * <tr><th>Floating-point Value</th><th>Hexadecimal String</th>
+     * <tr><th scope="col">Floating-point Value</th><th scope="col">Hexadecimal String</th>
      * </thead>
-     * <tbody>
-     * <tr><td>{@code 1.0}</td> <td>{@code 0x1.0p0}</td>
-     * <tr><td>{@code -1.0}</td>        <td>{@code -0x1.0p0}</td>
-     * <tr><td>{@code 2.0}</td> <td>{@code 0x1.0p1}</td>
-     * <tr><td>{@code 3.0}</td> <td>{@code 0x1.8p1}</td>
-     * <tr><td>{@code 0.5}</td> <td>{@code 0x1.0p-1}</td>
-     * <tr><td>{@code 0.25}</td>        <td>{@code 0x1.0p-2}</td>
-     * <tr><td>{@code Double.MAX_VALUE}</td>
+     * <tbody style="text-align:right">
+     * <tr><th scope="row">{@code 1.0}</th> <td>{@code 0x1.0p0}</td>
+     * <tr><th scope="row">{@code -1.0}</th>        <td>{@code -0x1.0p0}</td>
+     * <tr><th scope="row">{@code 2.0}</th> <td>{@code 0x1.0p1}</td>
+     * <tr><th scope="row">{@code 3.0}</th> <td>{@code 0x1.8p1}</td>
+     * <tr><th scope="row">{@code 0.5}</th> <td>{@code 0x1.0p-1}</td>
+     * <tr><th scope="row">{@code 0.25}</th>        <td>{@code 0x1.0p-2}</td>
+     * <tr><th scope="row">{@code Double.MAX_VALUE}</th>
      *     <td>{@code 0x1.fffffffffffffp1023}</td>
-     * <tr><td>{@code Minimum Normal Value}</td>
+     * <tr><th scope="row">{@code Minimum Normal Value}</th>
      *     <td>{@code 0x1.0p-1022}</td>
-     * <tr><td>{@code Maximum Subnormal Value}</td>
+     * <tr><th scope="row">{@code Maximum Subnormal Value}</th>
      *     <td>{@code 0x0.fffffffffffffp-1022}</td>
-     * <tr><td>{@code Double.MIN_VALUE}</td>
+     * <tr><th scope="row">{@code Double.MIN_VALUE}</th>
      *     <td>{@code 0x0.0000000000001p-1022}</td>
      * </tbody>
      * </table>
