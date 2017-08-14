@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
- * {@link jdk.jshell.JShell#eval}.  It is associated only with the
+ * {@link jdk.jshell.JShell#eval(java.lang.String)}.  It is associated only with the
  * {@link jdk.jshell.JShell JShell} instance that created it.
  * An instance of Snippet (including its subclasses) is immutable: an access to
  * any of its methods will always return the same result.
@@ -52,7 +52,7 @@ public abstract class Snippet {
      * It is accessed with {@link jdk.jshell.Snippet#kind()}.
      * The {@code Kind} can be used to determine which
      * subclass of Snippet it is. For example,
-     * {@link jdk.jshell.JShell#eval eval("int three() { return 3; }")} will
+     * {@link jdk.jshell.JShell#eval(java.lang.String) eval("int three() { return 3; }")} will
      * return a snippet creation event.  The {@code Kind} of that Snippet
      * will be {@code METHOD}, from which you know that the subclass
      * of {@code Snippet} is {@code MethodSnippet} and it can be
@@ -178,7 +178,7 @@ public abstract class Snippet {
     /**
      * The detailed variety of a snippet.  This is a sub-classification of the
      * Kind.  The Kind of a SubKind is accessible with
-     * {@link jdk.jshell.Snippet.SubKind#kind}.
+     * {@link jdk.jshell.Snippet.SubKind#kind()}.
      */
     public enum SubKind {
 
@@ -460,7 +460,7 @@ public abstract class Snippet {
         /**
          * The snippet is inactive because it has been replaced by a new
          * snippet.  This occurs when the new snippet added with
-         * {@link jdk.jshell.JShell#eval} matches a previous snippet.
+         * {@link jdk.jshell.JShell#eval(java.lang.String) eval} matches a previous snippet.
          * A {@code TypeDeclSnippet} will match another
          * {@code TypeDeclSnippet} if the names match.
          * For example {@code class X { }} will overwrite

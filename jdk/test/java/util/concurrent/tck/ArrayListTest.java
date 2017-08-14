@@ -33,6 +33,7 @@
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.Test;
@@ -59,6 +60,29 @@ public class ArrayListTest extends JSR166TestCase {
                 // ArrayListTest.class,
                 CollectionTest.testSuite(new Implementation()),
                 CollectionTest.testSuite(new SubListImplementation()));
+    }
+
+    /**
+     * A cloned list equals original
+     */
+    public void testClone() throws Exception {
+        ArrayList<Integer> x = new ArrayList<>();
+        x.add(1);
+        x.add(2);
+        x.add(3);
+        ArrayList<Integer> y = (ArrayList<Integer>) x.clone();
+
+        assertNotSame(y, x);
+        assertEquals(x, y);
+        assertEquals(y, x);
+        assertEquals(x.size(), y.size());
+        assertEquals(x.toString(), y.toString());
+        assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+        while (!x.isEmpty()) {
+            assertFalse(y.isEmpty());
+            assertEquals(x.remove(0), y.remove(0));
+        }
+        assertTrue(y.isEmpty());
     }
 
 }

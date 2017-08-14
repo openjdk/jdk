@@ -728,22 +728,22 @@ public final class Class<T> implements java.io.Serializable,
      * one or more '{@code [}' characters representing the depth of the array
      * nesting.  The encoding of element type names is as follows:
      *
-     * <blockquote><table class="borderless">
+     * <blockquote><table class="striped">
      * <caption style="display:none">Element types and encodings</caption>
      * <thead>
-     * <tr><th style="padding-right:3em;"> Element Type <th> Encoding
+     * <tr><th scope="col"> Element Type <th scope="col"> Encoding
      * </thead>
-     * <tbody>
-     * <tr><td> boolean      <td style="text-align:center"> Z
-     * <tr><td> byte         <td style="text-align:center"> B
-     * <tr><td> char         <td style="text-align:center"> C
-     * <tr><td> class or interface
-     *                       <td style="text-align:center"> L<i>classname</i>;
-     * <tr><td> double       <td style="text-align:center"> D
-     * <tr><td> float        <td style="text-align:center"> F
-     * <tr><td> int          <td style="text-align:center"> I
-     * <tr><td> long         <td style="text-align:center"> J
-     * <tr><td> short        <td style="text-align:center"> S
+     * <tbody style="text-align:left">
+     * <tr><th scope="row"> boolean      <td style="text-align:center"> Z
+     * <tr><th scope="row"> byte         <td style="text-align:center"> B
+     * <tr><th scope="row"> char         <td style="text-align:center"> C
+     * <tr><th scope="row"> class or interface
+     *                                   <td style="text-align:center"> L<i>classname</i>;
+     * <tr><th scope="row"> double       <td style="text-align:center"> D
+     * <tr><th scope="row"> float        <td style="text-align:center"> F
+     * <tr><th scope="row"> int          <td style="text-align:center"> I
+     * <tr><th scope="row"> long         <td style="text-align:center"> J
+     * <tr><th scope="row"> short        <td style="text-align:center"> S
      * </tbody>
      * </table></blockquote>
      *

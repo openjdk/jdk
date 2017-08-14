@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1497,7 +1497,7 @@ public class Logger {
      * The {@code msg} string is localized using the given resource bundle.
      * If the resource bundle is {@code null}, then the {@code msg} string is not
      * localized.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
      * @param   bundle  Resource bundle to localize {@code msg};
      *                  can be {@code null}.
@@ -1614,7 +1614,7 @@ public class Logger {
      * processed specially by output {@code Formatter} objects and is not treated
      * as a formatting parameter to the {@code LogRecord} {@code message}
      * property.
-     * <p>
+     *
      * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
      * @param   bundle  Resource bundle to localize {@code msg};
      *                  can be {@code null}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,20 @@
  * questions.
  */
 
-/*
- @test
- @bug 4980592 8171363
- @summary   switching user in XP causes an NPE in
-            sun.awt.windows.WWindowPeer.displayChanged
- @requires (os.family == "windows")
- @modules java.desktop/java.awt.peer
- @modules java.desktop/sun.awt.windows:open
- @modules java.desktop/sun.awt
- @author son@sparc.spb.su: area=embedded
- @run main DisplayChangedTest
- */
 /**
- * DisplayChangedTest.java
- *
- * summary: switching user in XP causes an NPE in
- * sun.awt.windows.WWindowPeer.displayChanged
+ * @test
+ * @key headful
+ * @bug 4980592 8171363
+ * @summary   switching user in XP causes an NPE in
+ *            sun.awt.windows.WWindowPeer.displayChanged
+ * @requires (os.family == "windows")
+ * @modules java.desktop/java.awt.peer
+ * @modules java.desktop/sun.awt.windows:open
+ * @modules java.desktop/sun.awt
+ * @author son@sparc.spb.su: area=embedded
+ * @run main DisplayChangedTest
  */
+
 import java.awt.Frame;
 import java.awt.Dialog;
 import java.awt.TextArea;
