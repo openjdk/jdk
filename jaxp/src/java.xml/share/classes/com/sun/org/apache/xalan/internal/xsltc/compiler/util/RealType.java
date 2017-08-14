@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,7 +32,7 @@ import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.Instruction;
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
+import com.sun.org.apache.bcel.internal.generic.InstructionConst;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
@@ -296,27 +295,27 @@ public final class RealType extends NumberType {
     }
 
     public Instruction ADD() {
-        return InstructionConstants.DADD;
+        return InstructionConst.DADD;
     }
 
     public Instruction SUB() {
-        return InstructionConstants.DSUB;
+        return InstructionConst.DSUB;
     }
 
     public Instruction MUL() {
-        return InstructionConstants.DMUL;
+        return InstructionConst.DMUL;
     }
 
     public Instruction DIV() {
-        return InstructionConstants.DDIV;
+        return InstructionConst.DDIV;
     }
 
     public Instruction REM() {
-        return InstructionConstants.DREM;
+        return InstructionConst.DREM;
     }
 
     public Instruction NEG() {
-        return InstructionConstants.DNEG;
+        return InstructionConst.DNEG;
     }
 
     public Instruction LOAD(int slot) {
@@ -332,7 +331,7 @@ public final class RealType extends NumberType {
     }
 
     public Instruction CMP(boolean less) {
-        return less ? InstructionConstants.DCMPG : InstructionConstants.DCMPL;
+        return less ? InstructionConst.DCMPG : InstructionConst.DCMPL;
     }
 
     public Instruction DUP() {

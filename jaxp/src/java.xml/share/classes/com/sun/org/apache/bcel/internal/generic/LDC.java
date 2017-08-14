@@ -20,7 +20,10 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
@@ -28,111 +31,130 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., item</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: LDC.java 1749603 2016-06-21 20:50:19Z ggregory $
  */
-public class LDC extends CPInstruction
-  implements PushInstruction, ExceptionThrower, TypedInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  LDC() {}
+public class LDC extends CPInstruction implements PushInstruction, ExceptionThrower {
 
-  public LDC(int index) {
-    super(com.sun.org.apache.bcel.internal.Constants.LDC_W, index);
-    setSize();
-  }
-
-  // Adjust to proper size
-  protected final void setSize() {
-    if(index <= com.sun.org.apache.bcel.internal.Constants.MAX_BYTE) { // Fits in one byte?
-      opcode = com.sun.org.apache.bcel.internal.Constants.LDC;
-      length = 2;
-    } else {
-      opcode = com.sun.org.apache.bcel.internal.Constants.LDC_W;
-      length = 3;
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    LDC() {
     }
-  }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    out.writeByte(opcode);
 
-    if(length == 2)
-      out.writeByte(index);
-    else // Applies for LDC_W
-      out.writeShort(index);
-  }
-
-  /**
-   * Set the index to constant pool and adjust size.
-   */
-  public final void setIndex(int index) {
-    super.setIndex(index);
-    setSize();
-  }
-
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide)
-       throws IOException
-  {
-    length = 2;
-    index  = bytes.readUnsignedByte();
-  }
-
-  public Object getValue(ConstantPoolGen cpg) {
-    com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(index);
-
-    switch(c.getTag()) {
-      case com.sun.org.apache.bcel.internal.Constants.CONSTANT_String:
-        int i = ((com.sun.org.apache.bcel.internal.classfile.ConstantString)c).getStringIndex();
-        c = cpg.getConstantPool().getConstant(i);
-        return ((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8)c).getBytes();
-
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Float:
-        return Float.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantFloat)c).getBytes());
-
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Integer:
-        return Integer.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantInteger)c).getBytes());
-
-    default: // Never reached
-      throw new RuntimeException("Unknown or invalid constant type at " + index);
-      }
-  }
-
-  public Type getType(ConstantPoolGen cpg) {
-    switch(cpg.getConstantPool().getConstant(index).getTag()) {
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_String:  return Type.STRING;
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Float:   return Type.FLOAT;
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Integer: return Type.INT;
-    default: // Never reached
-      throw new RuntimeException("Unknown or invalid constant type at " + index);
+    public LDC(final int index) {
+        super(com.sun.org.apache.bcel.internal.Const.LDC_W, index);
+        setSize();
     }
-  }
 
-  public Class[] getExceptions() {
-    return com.sun.org.apache.bcel.internal.ExceptionConstants.EXCS_STRING_RESOLUTION;
-  }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitStackProducer(this);
-    v.visitPushInstruction(this);
-    v.visitExceptionThrower(this);
-    v.visitTypedInstruction(this);
-    v.visitCPInstruction(this);
-    v.visitLDC(this);
-  }
+    // Adjust to proper size
+    protected final void setSize() {
+        if (super.getIndex() <= com.sun.org.apache.bcel.internal.Const.MAX_BYTE) { // Fits in one byte?
+            super.setOpcode(com.sun.org.apache.bcel.internal.Const.LDC);
+            super.setLength(2);
+        } else {
+            super.setOpcode(com.sun.org.apache.bcel.internal.Const.LDC_W);
+            super.setLength(3);
+        }
+    }
+
+
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        out.writeByte(super.getOpcode());
+        if (super.getLength() == 2) { // TODO useless check?
+            out.writeByte(super.getIndex());
+        } else {
+            out.writeShort(super.getIndex());
+        }
+    }
+
+
+    /**
+     * Set the index to constant pool and adjust size.
+     */
+    @Override
+    public final void setIndex( final int index ) {
+        super.setIndex(index);
+        setSize();
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.setLength(2);
+        super.setIndex(bytes.readUnsignedByte());
+    }
+
+
+    public Object getValue( final ConstantPoolGen cpg ) {
+        com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(super.getIndex());
+        switch (c.getTag()) {
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_String:
+                final int i = ((com.sun.org.apache.bcel.internal.classfile.ConstantString) c).getStringIndex();
+                c = cpg.getConstantPool().getConstant(i);
+                return ((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes();
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Float:
+                return new Float(((com.sun.org.apache.bcel.internal.classfile.ConstantFloat) c).getBytes());
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Integer:
+                return Integer.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantInteger) c).getBytes());
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
+                final int nameIndex = ((com.sun.org.apache.bcel.internal.classfile.ConstantClass) c).getNameIndex();
+                c = cpg.getConstantPool().getConstant(nameIndex);
+                return new ObjectType(((com.sun.org.apache.bcel.internal.classfile.ConstantUtf8) c).getBytes());
+            default: // Never reached
+                throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
+        }
+    }
+
+
+    @Override
+    public Type getType( final ConstantPoolGen cpg ) {
+        switch (cpg.getConstantPool().getConstant(super.getIndex()).getTag()) {
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_String:
+                return Type.STRING;
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Float:
+                return Type.FLOAT;
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Integer:
+                return Type.INT;
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Class:
+                return Type.CLASS;
+            default: // Never reached
+                throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
+        }
+    }
+
+
+    @Override
+    public Class<?>[] getExceptions() {
+        return ExceptionConst.createExceptions(ExceptionConst.EXCS.EXCS_STRING_RESOLUTION);
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitStackProducer(this);
+        v.visitPushInstruction(this);
+        v.visitExceptionThrower(this);
+        v.visitTypedInstruction(this);
+        v.visitCPInstruction(this);
+        v.visitLDC(this);
+    }
 }

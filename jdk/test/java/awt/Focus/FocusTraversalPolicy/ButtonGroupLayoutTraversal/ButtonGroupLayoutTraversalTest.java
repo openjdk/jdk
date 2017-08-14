@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
- /*
-  @test
-  @bug 8154043 8172509
-  @summary Fields not reachable anymore by tab-key, because of new tabbing
-  behaviour of radio button groups.
-  @run main ButtonGroupLayoutTraversalTest
+/**
+ * @test
+ * @key headful
+ * @bug 8154043 8172509
+ * @summary Fields not reachable anymore by tab-key, because of new tabbing
+ * behaviour of radio button groups.
+ * @run main ButtonGroupLayoutTraversalTest
  */
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;

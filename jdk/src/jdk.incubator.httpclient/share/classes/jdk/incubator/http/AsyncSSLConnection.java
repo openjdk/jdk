@@ -35,14 +35,12 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLEngine;
 
 import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.ExceptionallyCloseable;
 import jdk.incubator.http.internal.common.Utils;
 
 /**
  * Asynchronous version of SSLConnection.
  */
-class AsyncSSLConnection extends HttpConnection
-                         implements AsyncConnection, ExceptionallyCloseable {
+class AsyncSSLConnection extends AbstractAsyncSSLConnection {
 
     final AsyncSSLDelegate sslDelegate;
     final PlainHttpConnection plainConnection;
@@ -61,15 +59,14 @@ class AsyncSSLConnection extends HttpConnection
         plainConnection.configureMode(mode);
     }
 
-    private CompletableFuture<Void> configureModeAsync(Void ignore) {
-        CompletableFuture<Void> cf = new CompletableFuture<>();
-        try {
-            configureMode(Mode.ASYNC);
-            cf.complete(null);
-        } catch (Throwable t) {
-            cf.completeExceptionally(t);
-        }
-        return cf;
+    @Override
+    PlainHttpConnection plainConnection() {
+        return plainConnection;
+    }
+
+    @Override
+    AsyncSSLDelegate sslDelegate() {
+        return sslDelegate;
     }
 
     @Override
@@ -89,11 +86,6 @@ class AsyncSSLConnection extends HttpConnection
     @Override
     boolean connected() {
         return plainConnection.connected() && sslDelegate.connected();
-    }
-
-    @Override
-    boolean isSecure() {
-        return true;
     }
 
     @Override
@@ -172,6 +164,7 @@ class AsyncSSLConnection extends HttpConnection
         plainConnection.channel().shutdownOutput();
     }
 
+    @Override
     SSLEngine getEngine() {
         return sslDelegate.getEngine();
     }
@@ -184,18 +177,6 @@ class AsyncSSLConnection extends HttpConnection
         plainConnection.setAsyncCallbacks(sslDelegate::asyncReceive, errorReceiver, sslDelegate::getNetBuffer);
     }
 
-    // Blocking read functions not used here
-
-    @Override
-    protected ByteBuffer readImpl() throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    CompletableFuture<Void> whenReceivingResponse() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
     @Override
     public void startReading() {
         plainConnection.startReading();
@@ -205,5 +186,10 @@ class AsyncSSLConnection extends HttpConnection
     @Override
     public void stopAsyncReading() {
         plainConnection.stopAsyncReading();
+    }
+
+    @Override
+    SSLConnection downgrade() {
+        return new SSLConnection(this);
     }
 }

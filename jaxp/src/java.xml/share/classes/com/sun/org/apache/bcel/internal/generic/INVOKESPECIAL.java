@@ -21,8 +21,11 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.ExceptionConstants;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 
 /**
  * INVOKESPECIAL - Invoke instance method; special handling for superclass, private
@@ -30,51 +33,64 @@ import com.sun.org.apache.bcel.internal.ExceptionConstants;
  *
  * <PRE>Stack: ..., objectref, [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: INVOKESPECIAL.java 1747278 2016-06-07 17:28:43Z britter $
+ * @see
+ * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokespecial">
+ * The invokespecial instruction in The Java Virtual Machine Specification</a>
  */
 public class INVOKESPECIAL extends InvokeInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  INVOKESPECIAL() {}
 
-  public INVOKESPECIAL(int index) {
-    super(Constants.INVOKESPECIAL, index);
-  }
-
-  public Class[] getExceptions() {
-    Class[] cs = new Class[4 + ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length];
-
-    System.arraycopy(ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION, 0,
-                     cs, 0, ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length);
-
-    cs[ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length+3] = ExceptionConstants.UNSATISFIED_LINK_ERROR;
-    cs[ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length+2] = ExceptionConstants.ABSTRACT_METHOD_ERROR;
-    cs[ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length+1] = ExceptionConstants.INCOMPATIBLE_CLASS_CHANGE_ERROR;
-    cs[ExceptionConstants.EXCS_FIELD_AND_METHOD_RESOLUTION.length]   = ExceptionConstants.NULL_POINTER_EXCEPTION;
-
-    return cs;
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    INVOKESPECIAL() {
+    }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitExceptionThrower(this);
-    v.visitTypedInstruction(this);
-    v.visitStackConsumer(this);
-    v.visitStackProducer(this);
-    v.visitLoadClass(this);
-    v.visitCPInstruction(this);
-    v.visitFieldOrMethod(this);
-    v.visitInvokeInstruction(this);
-    v.visitINVOKESPECIAL(this);
-  }
+    public INVOKESPECIAL(final int index) {
+        super(Const.INVOKESPECIAL, index);
+    }
+
+
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        out.writeByte(super.getOpcode());
+        out.writeShort(super.getIndex());
+    }
+
+    @Override
+    public Class<?>[] getExceptions() {
+        return ExceptionConst.createExceptions(ExceptionConst.EXCS.EXCS_FIELD_AND_METHOD_RESOLUTION,
+            ExceptionConst.NULL_POINTER_EXCEPTION,
+            ExceptionConst.INCOMPATIBLE_CLASS_CHANGE_ERROR,
+            ExceptionConst.ABSTRACT_METHOD_ERROR,
+            ExceptionConst.UNSATISFIED_LINK_ERROR);
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitExceptionThrower(this);
+        v.visitTypedInstruction(this);
+        v.visitStackConsumer(this);
+        v.visitStackProducer(this);
+        v.visitLoadClass(this);
+        v.visitCPInstruction(this);
+        v.visitFieldOrMethod(this);
+        v.visitInvokeInstruction(this);
+        v.visitINVOKESPECIAL(this);
+    }
 }

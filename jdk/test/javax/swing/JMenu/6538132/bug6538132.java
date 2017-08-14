@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6538132
-   @summary Regression: Pressing Escape key don't close the menu items from jdk7.0 b07 onwards
-   @author Alexander Potochkin
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @run main bug6538132
-*/
+
+/**
+ * @test
+ * @key headful
+ * @bug 6538132
+ * @summary Regression: Pressing Escape key don't close the menu items from jdk7.0 b07 onwards
+ * @author Alexander Potochkin
+ * @requires (os.family == "windows")
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug6538132
+ */
 
 import javax.swing.*;
 import java.awt.*;

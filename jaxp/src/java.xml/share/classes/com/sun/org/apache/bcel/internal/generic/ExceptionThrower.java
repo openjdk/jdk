@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Denote an instruction that may throw a run-time or a linking
  * exception (or both) during execution.  This is not quite the truth
@@ -39,8 +38,9 @@ package com.sun.org.apache.bcel.internal.generic;
  * "Throwable" object; so this term is equally used for "Exception"
  * and "Error" objects.
  *
- * @author  <A HREF="http://www.inf.fu-berlin.de/~ehaase">Enver Haase</A>
+ * @version $Id: ExceptionThrower.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface ExceptionThrower {
-  public java.lang.Class[] getExceptions();
+
+    java.lang.Class<?>[] getExceptions();
 }

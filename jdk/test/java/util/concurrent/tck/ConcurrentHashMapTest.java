@@ -811,7 +811,7 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized map equals original
+     * A deserialized/reserialized map equals original
      */
     public void testSerialization() throws Exception {
         Map x = map5();

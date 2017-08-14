@@ -27,14 +27,30 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 /**
  * Utility class implementing a (typesafe) stack of JavaClass objects.
  *
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ClassStack.java 1747278 2016-06-07 17:28:43Z britter $
  * @see Stack
-*/
-public class ClassStack implements java.io.Serializable {
-  private Stack stack = new Stack();
+ */
+public class ClassStack {
 
-  public void      push(JavaClass clazz) { stack.push(clazz); }
-  public JavaClass pop()                 { return (JavaClass)stack.pop(); }
-  public JavaClass top()                 { return (JavaClass)stack.peek(); }
-  public boolean   empty()               { return stack.empty(); }
+    private final Stack<JavaClass> stack = new Stack<>();
+
+
+    public void push( final JavaClass clazz ) {
+        stack.push(clazz);
+    }
+
+
+    public JavaClass pop() {
+        return stack.pop();
+    }
+
+
+    public JavaClass top() {
+        return stack.peek();
+    }
+
+
+    public boolean empty() {
+        return stack.empty();
+    }
 }

@@ -17,11 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.bcel.internal.generic;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import java.io.*;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
@@ -29,69 +29,80 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., value</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: BIPUSH.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class BIPUSH extends Instruction implements ConstantPushInstruction {
-  private byte b;
 
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  BIPUSH() {}
+    private byte b;
 
-  /** Push byte on stack
-   */
-  public BIPUSH(byte b) {
-    super(com.sun.org.apache.bcel.internal.Constants.BIPUSH, (short)2);
-    this.b = b;
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    BIPUSH() {
+    }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    super.dump(out);
-    out.writeByte(b);
-  }
+    /**
+     * Push byte on stack
+     */
+    public BIPUSH(final byte b) {
+        super(com.sun.org.apache.bcel.internal.Const.BIPUSH, (short) 2);
+        this.b = b;
+    }
 
-  /**
-   * @return mnemonic for instruction
-   */
-  public String toString(boolean verbose) {
-    return super.toString(verbose) + " " + b;
-  }
+    /**
+     * Dump instruction as byte code to stream out.
+     */
+    @Override
+    public void dump(final DataOutputStream out) throws IOException {
+        super.dump(out);
+        out.writeByte(b);
+    }
 
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    length = 2;
-    b      = bytes.readByte();
-  }
+    /**
+     * @return mnemonic for instruction
+     */
+    @Override
+    public String toString(final boolean verbose) {
+        return super.toString(verbose) + " " + b;
+    }
 
-  public Number getValue() { return Integer.valueOf(b); }
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
+        super.setLength(2);
+        b = bytes.readByte();
+    }
 
-  /** @return Type.BYTE
-   */
-  public Type getType(ConstantPoolGen cp) {
-    return Type.BYTE;
-  }
+    @Override
+    public Number getValue() {
+        return Integer.valueOf(b);
+    }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitPushInstruction(this);
-    v.visitStackProducer(this);
-    v.visitTypedInstruction(this);
-    v.visitConstantPushInstruction(this);
-    v.visitBIPUSH(this);
-  }
+    /**
+     * @return Type.BYTE
+     */
+    @Override
+    public Type getType(final ConstantPoolGen cp) {
+        return Type.BYTE;
+    }
+
+    /**
+     * Call corresponding visitor method(s). The order is: Call visitor methods
+     * of implemented interfaces first, then call methods according to the class
+     * hierarchy in descending order, i.e., the most specific visitXXX() call
+     * comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept(final Visitor v) {
+        v.visitPushInstruction(this);
+        v.visitStackProducer(this);
+        v.visitTypedInstruction(this);
+        v.visitConstantPushInstruction(this);
+        v.visitBIPUSH(this);
+    }
 }

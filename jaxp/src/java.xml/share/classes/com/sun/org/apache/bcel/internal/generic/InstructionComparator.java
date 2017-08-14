@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Equality of instructions isn't clearly to be defined. You might
  * wish, for example, to compare whether instructions have the same
@@ -32,45 +31,36 @@ package com.sun.org.apache.bcel.internal.generic;
  * instructions must have the same target.
  *
  * @see Instruction
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: InstructionComparator.java 1749597 2016-06-21 20:28:51Z ggregory $
  */
 public interface InstructionComparator {
-  public static final InstructionComparator DEFAULT =
-    new InstructionComparator() {
-        public boolean equals(Instruction i1, Instruction i2) {
-          if(i1.opcode == i2.opcode) {
-            if(i1 instanceof Select) {
-              InstructionHandle[] t1 = ((Select)i1).getTargets();
-              InstructionHandle[] t2 = ((Select)i2).getTargets();
 
-              if(t1.length == t2.length) {
-                for(int i = 0; i < t1.length; i++) {
-                  if(t1[i] != t2[i]) {
+    InstructionComparator DEFAULT = new InstructionComparator() {
+
+        @Override
+        public boolean equals( final Instruction i1, final Instruction i2 ) {
+            if (i1.getOpcode() == i2.getOpcode()) {
+                if (i1 instanceof BranchInstruction) {
+                 // BIs are never equal to make targeters work correctly (BCEL-195)
                     return false;
-                  }
+//                } else if (i1 == i2) { TODO consider adding this shortcut
+//                    return true; // this must be AFTER the BI test
+                } else if (i1 instanceof ConstantPushInstruction) {
+                    return ((ConstantPushInstruction) i1).getValue().equals(
+                            ((ConstantPushInstruction) i2).getValue());
+                } else if (i1 instanceof IndexedInstruction) {
+                    return ((IndexedInstruction) i1).getIndex() == ((IndexedInstruction) i2)
+                            .getIndex();
+                } else if (i1 instanceof NEWARRAY) {
+                    return ((NEWARRAY) i1).getTypecode() == ((NEWARRAY) i2).getTypecode();
+                } else {
+                    return true;
                 }
-
-                return true;
-              }
-            } else if(i1 instanceof BranchInstruction) {
-              return ((BranchInstruction)i1).target ==
-                ((BranchInstruction)i2).target;
-            } else if(i1 instanceof ConstantPushInstruction) {
-              return ((ConstantPushInstruction)i1).getValue().
-                equals(((ConstantPushInstruction)i2).getValue());
-            } else if(i1 instanceof IndexedInstruction) {
-              return ((IndexedInstruction)i1).getIndex() ==
-                ((IndexedInstruction)i2).getIndex();
-            } else if(i1 instanceof NEWARRAY) {
-              return ((NEWARRAY)i1).getTypecode() == ((NEWARRAY)i2).getTypecode();
-            } else {
-              return true;
             }
-          }
-
-          return false;
+            return false;
         }
-      };
+    };
 
-  public boolean equals(Instruction i1, Instruction i2);
+
+    boolean equals( Instruction i1, Instruction i2 );
 }

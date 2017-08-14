@@ -1027,7 +1027,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterSUB(final UnaryNode unaryNode) {
+            public boolean enterNEG(final UnaryNode unaryNode) {
                 loadSUB(unaryNode, resultBounds);
                 return false;
             }
@@ -1105,7 +1105,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterADD(final UnaryNode unaryNode) {
+            public boolean enterPOS(final UnaryNode unaryNode) {
                 loadADD(unaryNode, resultBounds);
                 return false;
             }

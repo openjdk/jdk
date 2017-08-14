@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 6921687 8079428
  * @summary Mnemonic disappears after repeated attempts to open menu items using
  *          mnemonics
@@ -33,6 +34,7 @@
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @run main bug6921687
  */
+
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import javax.swing.JFrame;
@@ -83,7 +85,7 @@ public class bug6921687 {
             checkMnemonics();
             System.out.println("ok");
         } finally {
-            frame.dispose();
+            if (frame != null) { frame.dispose(); }
         }
 
     }

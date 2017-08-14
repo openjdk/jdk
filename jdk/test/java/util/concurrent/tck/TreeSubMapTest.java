@@ -460,7 +460,7 @@ public class TreeSubMapTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized map equals original
+     * A deserialized/reserialized map equals original
      */
     public void testSerialization() throws Exception {
         NavigableMap x = map5();
@@ -987,7 +987,7 @@ public class TreeSubMapTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized map equals original
+     * A deserialized/reserialized map equals original
      */
     public void testDescendingSerialization() throws Exception {
         NavigableMap x = dmap5();

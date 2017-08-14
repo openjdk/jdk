@@ -403,7 +403,7 @@ public class CopyOnWriteArraySetTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized set is equal
+     * A deserialized/reserialized set equals original
      */
     public void testSerialization() throws Exception {
         Set x = populatedSet(SIZE);

@@ -21,55 +21,68 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
-import java.util.Objects;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Returnaddress, the type JSR or JSR_W instructions push upon the stack.
  *
  * see vmspec2 3.3.3
- * @author  <A HREF="http://www.inf.fu-berlin.de/~ehaase">Enver Haase</A>
+ * @version $Id: ReturnaddressType.java 1749603 2016-06-21 20:50:19Z ggregory $
  */
 public class ReturnaddressType extends Type {
 
-  public static final ReturnaddressType NO_TARGET = new ReturnaddressType();
-  private InstructionHandle returnTarget;
+    public static final ReturnaddressType NO_TARGET = new ReturnaddressType();
+    private InstructionHandle returnTarget;
 
-  /**
-   * A Returnaddress [that doesn't know where to return to].
-   */
-  private ReturnaddressType(){
-    super(Constants.T_ADDRESS, "<return address>");
-  }
 
-  /**
-   * Creates a ReturnaddressType object with a target.
-   */
-  public ReturnaddressType(InstructionHandle returnTarget) {
-    super(Constants.T_ADDRESS, "<return address targeting "+returnTarget+">");
+    /**
+     * A Returnaddress [that doesn't know where to return to].
+     */
+    private ReturnaddressType() {
+        super(Const.T_ADDRESS, "<return address>");
+    }
+
+
+    /**
+     * Creates a ReturnaddressType object with a target.
+     */
+    public ReturnaddressType(final InstructionHandle returnTarget) {
+        super(Const.T_ADDRESS, "<return address targeting " + returnTarget + ">");
         this.returnTarget = returnTarget;
-  }
+    }
 
-  @Override
-  public int hashCode() {
-      return Objects.hashCode(this.returnTarget);
-  }
 
-  /**
-   * Returns if the two Returnaddresses refer to the same target.
-   */
-  @Override
-  public boolean equals(Object rat){
-    if(!(rat instanceof ReturnaddressType))
-      return false;
+    /** @return a hash code value for the object.
+     */
+    @Override
+    public int hashCode() {
+        if (returnTarget == null) {
+            return 0;
+        }
+        return returnTarget.hashCode();
+    }
 
-    return ((ReturnaddressType)rat).returnTarget.equals(this.returnTarget);
-  }
 
-  /**
-   * @return the target of this ReturnaddressType
-   */
-  public InstructionHandle getTarget(){
-    return returnTarget;
-  }
+    /**
+     * Returns if the two Returnaddresses refer to the same target.
+     */
+    @Override
+    public boolean equals( final Object rat ) {
+        if (!(rat instanceof ReturnaddressType)) {
+            return false;
+        }
+        final ReturnaddressType that = (ReturnaddressType) rat;
+        if (this.returnTarget == null || that.returnTarget == null) {
+            return that.returnTarget == this.returnTarget;
+        }
+        return that.returnTarget.equals(this.returnTarget);
+    }
+
+
+    /**
+     * @return the target of this ReturnaddressType
+     */
+    public InstructionHandle getTarget() {
+        return returnTarget;
+    }
 }
