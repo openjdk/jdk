@@ -758,12 +758,23 @@ inline void Assembler::lvsl(  VectorRegister d, Register s1, Register s2) { emit
 inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit_int32( LVSR_OPCODE   | vrt(d) | ra0mem(s1) | rb(s2)); }
 
 // Vector-Scalar (VSX) instructions.
-inline void Assembler::lxvd2x (VectorSRegister d, Register s1) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
-inline void Assembler::lxvd2x (VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
-inline void Assembler::stxvd2x(VectorSRegister d, Register s1) { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
-inline void Assembler::stxvd2x(VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
-inline void Assembler::mtvrd(  VectorRegister  d, Register a)               { emit_int32( MTVSRD_OPCODE  | vrt(d)  | ra(a)  | 1u); } // 1u: d is treated as Vector (VMX/Altivec).
-inline void Assembler::mfvrd(  Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vrt(d)  | ra(a)  | 1u); } // 1u: d is treated as Vector (VMX/Altivec).
+inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::lxvd2x(  VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::stxvd2x( VectorSRegister d, Register s1)              { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra(0) | rb(s1)); }
+inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra0mem(s1) | rb(s2)); }
+inline void Assembler::mtvrd(   VectorRegister  d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
+inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
+inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
+inline void Assembler::mfvrwz(  Register        a, VectorRegister d)         { emit_int32( MFVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }
+inline void Assembler::xxpermdi(VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm) { emit_int32( XXPERMDI_OPCODE | vsrt(d) | vsra(a) | vsrb(b) | vsdm(dm)); }
+inline void Assembler::xxmrghw( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXMRGHW_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xxmrglw( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXMRGHW_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+
+// VSX Extended Mnemonics
+inline void Assembler::xxspltd( VectorSRegister d, VectorSRegister a, int x)             { xxpermdi(d, a, a, x ? 3 : 0); }
+inline void Assembler::xxmrghd( VectorSRegister d, VectorSRegister a, VectorSRegister b) { xxpermdi(d, a, b, 0); }
+inline void Assembler::xxmrgld( VectorSRegister d, VectorSRegister a, VectorSRegister b) { xxpermdi(d, a, b, 3); }
+inline void Assembler::xxswapd( VectorSRegister d, VectorSRegister a)                    { xxpermdi(d, a, a, 2); }
 
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::mtfprd(  FloatRegister   d, Register a)      { emit_int32( MTVSRD_OPCODE  | frt(d)  | ra(a)); }
@@ -811,6 +822,7 @@ inline void Assembler::vaddsws( VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vaddubm( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUBM_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vadduwm( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUWM_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vadduhm( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUHM_OPCODE | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vaddudm( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUDM_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vaddubs( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUBS_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vadduws( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUWS_OPCODE | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vadduhs( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VADDUHS_OPCODE | vrt(d) | vra(a) | vrb(b)); }
@@ -887,6 +899,7 @@ inline void Assembler::vand(    VectorRegister d, VectorRegister a, VectorRegist
 inline void Assembler::vandc(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VANDC_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vnor(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNOR_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vor(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VOR_OPCODE      | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vmr(     VectorRegister d, VectorRegister a)                   { emit_int32( VOR_OPCODE      | vrt(d) | vra(a) | vrb(a)); }
 inline void Assembler::vxor(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VXOR_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vrld(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VRLD_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vrlb(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VRLB_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
