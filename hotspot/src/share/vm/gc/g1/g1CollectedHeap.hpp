@@ -681,7 +681,7 @@ public:
   // VM thread at safepoints, without the heap lock held. They can be used
   // to create and archive a set of heap regions which can be mapped at the
   // same fixed addresses in a subsequent JVM invocation.
-  void begin_archive_alloc_range();
+  void begin_archive_alloc_range(bool open = false);
 
   // Check if the requested size would be too large for an archive allocation.
   bool is_archive_alloc_too_large(size_t word_size);
@@ -706,7 +706,7 @@ public:
   // Commit the appropriate G1 regions containing the specified MemRegions
   // and mark them as 'archive' regions. The regions in the array must be
   // non-overlapping and in order of ascending address.
-  bool alloc_archive_regions(MemRegion* range, size_t count);
+  bool alloc_archive_regions(MemRegion* range, size_t count, bool open);
 
   // Insert any required filler objects in the G1 regions around the specified
   // ranges to make the regions parseable. This must be called after

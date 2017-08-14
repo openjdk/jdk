@@ -55,37 +55,60 @@ inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
   }
 }
 
-// Create the _archive_region_map which is used to identify archive objects.
+// Create the maps which is used to identify archive objects.
 inline void G1ArchiveAllocator::enable_archive_object_check() {
-  assert(!_archive_check_enabled, "archive range check already enabled");
+  if (_archive_check_enabled) {
+    return;
+  }
+
   _archive_check_enabled = true;
   size_t length = Universe::heap()->max_capacity();
-  _archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
-                                 (HeapWord*)Universe::heap()->base() + length,
-                                 HeapRegion::GrainBytes);
+  _closed_archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
+                                        (HeapWord*)Universe::heap()->base() + length,
+                                        HeapRegion::GrainBytes);
+  _open_archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
+                                      (HeapWord*)Universe::heap()->base() + length,
+                                      HeapRegion::GrainBytes);
 }
 
-// Set the regions containing the specified address range as archive/non-archive.
-inline void G1ArchiveAllocator::set_range_archive(MemRegion range, bool is_archive) {
+// Set the regions containing the specified address range as archive.
+inline void G1ArchiveAllocator::set_range_archive(MemRegion range, bool open) {
   assert(_archive_check_enabled, "archive range check not enabled");
-  _archive_region_map.set_by_address(range, is_archive);
+  if (open) {
+    _open_archive_region_map.set_by_address(range, true);
+  } else {
+    _closed_archive_region_map.set_by_address(range, true);
+  }
 }
 
-// Check if an object is in an archive region using the _archive_region_map.
-inline bool G1ArchiveAllocator::in_archive_range(oop object) {
-  // This is the out-of-line part of is_archive_object test, done separately
+// Check if an object is in a closed archive region using the _archive_region_map.
+inline bool G1ArchiveAllocator::in_closed_archive_range(oop object) {
+  // This is the out-of-line part of is_closed_archive_object test, done separately
   // to avoid additional performance impact when the check is not enabled.
-  return _archive_region_map.get_by_address((HeapWord*)object);
+  return _closed_archive_region_map.get_by_address((HeapWord*)object);
 }
 
-// Check if archive object checking is enabled, to avoid calling in_archive_range
+inline bool G1ArchiveAllocator::in_open_archive_range(oop object) {
+  return _open_archive_region_map.get_by_address((HeapWord*)object);
+}
+
+// Check if archive object checking is enabled, to avoid calling in_open/closed_archive_range
 // unnecessarily.
 inline bool G1ArchiveAllocator::archive_check_enabled() {
   return _archive_check_enabled;
 }
 
+inline bool G1ArchiveAllocator::is_closed_archive_object(oop object) {
+  return (archive_check_enabled() && in_closed_archive_range(object));
+}
+
+inline bool G1ArchiveAllocator::is_open_archive_object(oop object) {
+  return (archive_check_enabled() && in_open_archive_range(object));
+}
+
 inline bool G1ArchiveAllocator::is_archive_object(oop object) {
-  return (archive_check_enabled() && in_archive_range(object));
+  return (archive_check_enabled() && (in_closed_archive_range(object) ||
+                                      in_open_archive_range(object)));
 }
 
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

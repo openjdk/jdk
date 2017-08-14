@@ -43,7 +43,7 @@ private:
 
   // Shared string table
   static CompactHashtable<oop, char> _shared_table;
-  static bool _ignore_shared_strings;
+  static bool _shared_string_mapped;
 
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static bool _needs_rehashing;
@@ -157,13 +157,14 @@ public:
   static int verify_and_compare_entries();
 
   // Sharing
-  static void ignore_shared_strings(bool v) { _ignore_shared_strings = v; }
-  static bool shared_string_ignored()       { return _ignore_shared_strings; }
-  static void shared_oops_do(OopClosure* f);
+  static void set_shared_string_mapped() { _shared_string_mapped = true; }
+  static bool shared_string_mapped()       { return _shared_string_mapped; }
+  static void shared_oops_do(OopClosure* f) NOT_CDS_JAVA_HEAP_RETURN;
   static bool copy_shared_string(GrowableArray<MemRegion> *string_space,
-                                 CompactStringTableWriter* ch_table);
-  static void write_to_archive(GrowableArray<MemRegion> *string_space);
-  static void serialize(SerializeClosure* soc);
+                                 CompactStringTableWriter* ch_table) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static oop  create_archived_string(oop s, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static void write_to_archive(GrowableArray<MemRegion> *string_space) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();

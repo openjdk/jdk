@@ -117,7 +117,8 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   HeapWord* addr = (HeapWord*) obj;
 
   assert(addr < top(), "must be");
-  assert(!is_archive(), "Archive regions should not have references into interesting regions.");
+  assert(!is_closed_archive(),
+         "Closed archive regions should not have references into other regions");
   assert(!is_humongous(), "Humongous objects not handled here");
   bool obj_is_dead = is_obj_dead(obj, prev_bitmap);
 
@@ -162,7 +163,9 @@ inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1
 
 inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-  return !obj_allocated_since_prev_marking(obj) && !prev_bitmap->is_marked((HeapWord*)obj);
+  return !obj_allocated_since_prev_marking(obj) &&
+         !prev_bitmap->is_marked((HeapWord*)obj) &&
+         !is_open_archive();
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {

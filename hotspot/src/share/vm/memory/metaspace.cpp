@@ -3347,9 +3347,9 @@ void Metaspace::global_initialize() {
         // If UseCompressedClassPointers is set then allocate the metaspace area
         // above the heap and above the CDS area (if it exists).
         allocate_metaspace_compressed_klass_ptrs(cds_end, cds_address);
-        // Map the shared string space after compressed pointers
-        // because it relies on compressed class pointers setting to work
-        mapinfo->map_string_regions();
+        // map_heap_regions() compares the current narrow oop and klass encodings
+        // with the archived ones, so it must be done after all encodings are determined.
+        mapinfo->map_heap_regions();
       }
 #endif // _LP64
     } else {

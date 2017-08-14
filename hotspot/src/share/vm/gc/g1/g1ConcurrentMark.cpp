@@ -1134,13 +1134,10 @@ public:
   const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
-    if (hr->is_archive()) {
-      return false;
-    }
     _g1->reset_gc_time_stamps(hr);
     hr->note_end_of_marking();
 
-    if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
+    if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
       if (hr->is_humongous()) {

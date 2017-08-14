@@ -536,4 +536,18 @@
     non_atomic_decl
 #endif
 
+#if INCLUDE_CDS && INCLUDE_ALL_GCS && defined(_LP64) && !defined(_WINDOWS)
+#define INCLUDE_CDS_JAVA_HEAP 1
+#define CDS_JAVA_HEAP_ONLY(x) x
+#define NOT_CDS_JAVA_HEAP(x)
+#define NOT_CDS_JAVA_HEAP_RETURN
+#define NOT_CDS_JAVA_HEAP_RETURN_(code)
+#else
+#define INCLUDE_CDS_JAVA_HEAP 0
+#define CDS_JAVA_HEAP_ONLY(x)
+#define NOT_CDS_JAVA_HEAP(x) x
+#define NOT_CDS_JAVA_HEAP_RETURN        {}
+#define NOT_CDS_JAVA_HEAP_RETURN_(code) { return code; }
+#endif
+
 #endif // SHARE_VM_UTILITIES_MACROS_HPP

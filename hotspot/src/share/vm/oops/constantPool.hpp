@@ -714,6 +714,7 @@ class ConstantPool : public Metadata {
   }
 
   // CDS support
+  void archive_resolved_references(Thread *THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
   bool resolve_class_constants(TRAPS);

@@ -331,12 +331,13 @@ void G1DefaultPLABAllocator::waste(size_t& wasted, size_t& undo_wasted) {
 }
 
 bool G1ArchiveAllocator::_archive_check_enabled = false;
-G1ArchiveRegionMap G1ArchiveAllocator::_archive_region_map;
+G1ArchiveRegionMap G1ArchiveAllocator::_closed_archive_region_map;
+G1ArchiveRegionMap G1ArchiveAllocator::_open_archive_region_map;
 
-G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h) {
+G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h, bool open) {
   // Create the archive allocator, and also enable archive object checking
   // in mark-sweep, since we will be creating archive regions.
-  G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h);
+  G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h, open);
   enable_archive_object_check();
   return result;
 }
@@ -350,7 +351,11 @@ bool G1ArchiveAllocator::alloc_new_region() {
     return false;
   }
   assert(hr->is_empty(), "expected empty region (index %u)", hr->hrm_index());
-  hr->set_archive();
+  if (_open) {
+    hr->set_open_archive();
+  } else {
+    hr->set_closed_archive();
+  }
   _g1h->old_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);
@@ -362,7 +367,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Tell mark-sweep that objects in this region are not to be marked.
-  set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), true);
+  set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), _open);
 
   // Since we've modified the old set, call update_sizes.
   _g1h->g1mm()->update_sizes();

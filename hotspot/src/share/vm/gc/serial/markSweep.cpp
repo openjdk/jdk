@@ -87,7 +87,7 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (!obj->mark()->is_marked() &&
-        !is_archive_object(obj)) {
+        !is_closed_archive_object(obj)) {
       mark_object(obj);
       _marking_stack.push(obj);
     }
@@ -184,7 +184,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   if (!oopDesc::is_null(heap_oop)) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (!obj->mark()->is_marked() &&
-        !is_archive_object(obj)) {
+        !is_closed_archive_object(obj)) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -268,7 +268,7 @@ void MarkSweep::restore_marks() {
 
 MarkSweep::IsAliveClosure   MarkSweep::is_alive;
 
-bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked() || is_archive_object(p); }
+bool MarkSweep::IsAliveClosure::do_object_b(oop p) { return p->is_gc_marked() || is_closed_archive_object(p); }
 
 MarkSweep::KeepAliveClosure MarkSweep::keep_alive;
 

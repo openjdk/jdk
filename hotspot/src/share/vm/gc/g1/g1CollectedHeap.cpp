@@ -614,10 +614,10 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
   return NULL;
 }
 
-void G1CollectedHeap::begin_archive_alloc_range() {
+void G1CollectedHeap::begin_archive_alloc_range(bool open) {
   assert_at_safepoint(true /* should_be_vm_thread */);
   if (_archive_allocator == NULL) {
-    _archive_allocator = G1ArchiveAllocator::create_allocator(this);
+    _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
   }
 }
 
@@ -661,7 +661,9 @@ bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
   return true;
 }
 
-bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
+bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
+                                            size_t count,
+                                            bool open) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
@@ -680,8 +682,8 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
   G1ArchiveAllocator::enable_archive_object_check();
 
   // For each specified MemRegion range, allocate the corresponding G1
-  // regions and mark them as archive regions. We expect the ranges in
-  // ascending starting address order, without overlap.
+  // regions and mark them as archive regions. We expect the ranges
+  // in ascending starting address order, without overlap.
   for (size_t i = 0; i < count; i++) {
     MemRegion curr_range = ranges[i];
     HeapWord* start_address = curr_range.start();
@@ -726,8 +728,8 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
 
     }
 
-    // Mark each G1 region touched by the range as archive, add it to the old set,
-    // and set the allocation context and top.
+    // Mark each G1 region touched by the range as archive, add it to
+    // the old set, and set the allocation context and top.
     HeapRegion* curr_region = _hrm.addr_to_region(start_address);
     HeapRegion* last_region = _hrm.addr_to_region(last_address);
     prev_last_region = last_region;
@@ -736,20 +738,30 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
       assert(curr_region->is_empty() && !curr_region->is_pinned(),
              "Region already in use (index %u)", curr_region->hrm_index());
       curr_region->set_allocation_context(AllocationContext::system());
-      curr_region->set_archive();
+      if (open) {
+        curr_region->set_open_archive();
+      } else {
+        curr_region->set_closed_archive();
+      }
       _hr_printer.alloc(curr_region);
       _old_set.add(curr_region);
+      HeapWord* top;
+      HeapRegion* next_region;
       if (curr_region != last_region) {
-        curr_region->set_top(curr_region->end());
-        curr_region = _hrm.next_region_in_heap(curr_region);
+        top = curr_region->end();
+        next_region = _hrm.next_region_in_heap(curr_region);
       } else {
-        curr_region->set_top(last_address + 1);
-        curr_region = NULL;
+        top = last_address + 1;
+        next_region = NULL;
       }
+      curr_region->set_top(top);
+      curr_region->set_first_dead(top);
+      curr_region->set_end_of_live(top);
+      curr_region = next_region;
     }
 
-    // Notify mark-sweep of the archive range.
-    G1ArchiveAllocator::set_range_archive(curr_range, true);
+    // Notify mark-sweep of the archive
+    G1ArchiveAllocator::set_range_archive(curr_range, open);
   }
   return true;
 }
@@ -5223,12 +5235,8 @@ public:
         // We ignore humongous regions. We left the humongous set unchanged.
       } else {
         assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
-        // We now consider all regions old, so register as such. Leave
-        // archive regions set that way, however, while still adding
-        // them to the old set.
-        if (!r->is_archive()) {
-          r->set_old();
-        }
+        // We now move all (non-humongous, non-old) regions to old gen, and register them as such.
+        r->move_to_old();
         _old_set->add(r);
       }
       _total_used += r->used();

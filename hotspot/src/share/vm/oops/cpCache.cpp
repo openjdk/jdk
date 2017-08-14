@@ -608,6 +608,18 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
   }
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
+oop ConstantPoolCache::archived_references() {
+  assert(UseSharedSpaces, "UseSharedSpaces expected.");
+  return oopDesc::decode_heap_oop(_archived_references);
+}
+
+void ConstantPoolCache::set_archived_references(oop o) {
+  assert(DumpSharedSpaces, "called only during runtime");
+  _archived_references = oopDesc::encode_heap_oop(o);
+}
+#endif
+
 #if INCLUDE_JVMTI
 // RedefineClasses() API support:
 // If any entry of this ConstantPoolCache points to any of

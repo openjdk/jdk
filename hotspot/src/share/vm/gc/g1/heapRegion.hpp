@@ -433,7 +433,9 @@ class HeapRegion: public G1ContiguousSpace {
   // An archive region is a pinned region, also tagged as old, which
   // should not be marked during mark/sweep. This allows the address
   // space to be shared by JVM instances.
-  bool is_archive() const { return _type.is_archive(); }
+  bool is_archive()        const { return _type.is_archive(); }
+  bool is_open_archive()   const { return _type.is_open_archive(); }
+  bool is_closed_archive() const { return _type.is_closed_archive(); }
 
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
@@ -618,9 +620,11 @@ class HeapRegion: public G1ContiguousSpace {
   void set_eden_pre_gc();
   void set_survivor();
 
+  void move_to_old();
   void set_old();
 
-  void set_archive();
+  void set_open_archive();
+  void set_closed_archive();
 
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object
