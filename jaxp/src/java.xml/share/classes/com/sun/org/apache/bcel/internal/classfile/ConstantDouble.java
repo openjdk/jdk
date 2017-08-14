@@ -20,89 +20,107 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class is derived from the abstract
- * <A HREF="com.sun.org.apache.bcel.internal.classfile.Constant.html">Constant</A> class
+ * This class is derived from the abstract  {@link Constant}
  * and represents a reference to a Double object.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ConstantDouble.java 1747278 2016-06-07 17:28:43Z britter $
  * @see     Constant
  */
 public final class ConstantDouble extends Constant implements ConstantObject {
-  private double bytes;
 
-  /**
-   * @param bytes Data
-   */
-  public ConstantDouble(double bytes) {
-    super(Constants.CONSTANT_Double);
-    this.bytes = bytes;
-  }
+    private double bytes;
 
-  /**
-   * Initialize from another object.
-   */
-  public ConstantDouble(ConstantDouble c) {
-    this(c.getBytes());
-  }
 
-  /**
-   * Initialize instance from file data.
-   *
-   * @param file Input stream
-   * @throws IOException
-   */
-  ConstantDouble(DataInputStream file) throws IOException
-  {
-    this(file.readDouble());
-  }
+    /**
+     * @param bytes Data
+     */
+    public ConstantDouble(final double bytes) {
+        super(Const.CONSTANT_Double);
+        this.bytes = bytes;
+    }
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitConstantDouble(this);
-  }
-  /**
-   * Dump constant double to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(tag);
-    file.writeDouble(bytes);
-  }
-  /**
-   * @return data, i.e., 8 bytes.
-   */
-  public final double getBytes() { return bytes; }
-  /**
-   * @param bytes.
-   */
-  public final void setBytes(double bytes) {
-    this.bytes = bytes;
-  }
-  /**
-   * @return String representation.
-   */
-  public final String toString()
-  {
-    return super.toString() + "(bytes = " + bytes + ")";
-  }
 
-  /** @return Double object
-   */
-  public Object getConstantValue(ConstantPool cp) {
-    return bytes;
-  }
+    /**
+     * Initialize from another object.
+     */
+    public ConstantDouble(final ConstantDouble c) {
+        this(c.getBytes());
+    }
+
+
+    /**
+     * Initialize instance from file data.
+     *
+     * @param file Input stream
+     * @throws IOException
+     */
+    ConstantDouble(final DataInput file) throws IOException {
+        this(file.readDouble());
+    }
+
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitely
+     * defined by the contents of a Java class. I.e., the hierarchy of methods,
+     * fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitConstantDouble(this);
+    }
+
+
+    /**
+     * Dump constant double to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException
+     */
+    @Override
+    public final void dump( final DataOutputStream file ) throws IOException {
+        file.writeByte(super.getTag());
+        file.writeDouble(bytes);
+    }
+
+
+    /**
+     * @return data, i.e., 8 bytes.
+     */
+    public final double getBytes() {
+        return bytes;
+    }
+
+
+    /**
+     * @param bytes the raw bytes that represent the double value
+     */
+    public final void setBytes( final double bytes ) {
+        this.bytes = bytes;
+    }
+
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public final String toString() {
+        return super.toString() + "(bytes = " + bytes + ")";
+    }
+
+
+    /** @return Double object
+     */
+    @Override
+    public Object getConstantValue( final ConstantPool cp ) {
+        return new Double(bytes);
+    }
 }

@@ -21,38 +21,40 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
- * FCMPG - Compare floats: value1 > value2
+ * FCMPG - Compare floats: value1 &gt; value2
  * <PRE>Stack: ..., value1, value2 -&gt; ..., result</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: FCMPG.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public class FCMPG extends Instruction
-  implements TypedInstruction, StackProducer, StackConsumer {
-  public FCMPG() {
-    super(com.sun.org.apache.bcel.internal.Constants.FCMPG, (short)1);
-  }
+public class FCMPG extends Instruction implements TypedInstruction, StackProducer, StackConsumer {
 
-  /** @return Type.FLOAT
-   */
-  public Type getType(ConstantPoolGen cp) {
-    return Type.FLOAT;
-  }
+    public FCMPG() {
+        super(com.sun.org.apache.bcel.internal.Const.FCMPG, (short) 1);
+    }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitTypedInstruction(this);
-    v.visitStackProducer(this);
-    v.visitStackConsumer(this);
-    v.visitFCMPG(this);
-  }
+    /** @return Type.FLOAT
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cp ) {
+        return Type.FLOAT;
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitTypedInstruction(this);
+        v.visitStackProducer(this);
+        v.visitStackConsumer(this);
+        v.visitFCMPG(this);
+    }
 }

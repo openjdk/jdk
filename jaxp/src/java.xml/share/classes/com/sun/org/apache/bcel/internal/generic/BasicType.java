@@ -18,57 +18,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * Denotes basic type such as int.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: BasicType.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public final class BasicType extends Type {
-  /**
-   * Constructor for basic types such as int, long, `void'
-   *
-   * @param type one of T_INT, T_BOOLEAN, ..., T_VOID
-   * @see com.sun.org.apache.bcel.internal.Constants
-   */
-  BasicType(byte type) {
-    super(type, Constants.SHORT_TYPE_NAMES[type]);
 
-    if((type < Constants.T_BOOLEAN) || (type > Constants.T_VOID))
-      throw new ClassGenException("Invalid type: " + type);
-  }
-
-  public static final BasicType getType(byte type) {
-    switch(type) {
-    case Constants.T_VOID:    return VOID;
-    case Constants.T_BOOLEAN: return BOOLEAN;
-    case Constants.T_BYTE:    return BYTE;
-    case Constants.T_SHORT:   return SHORT;
-    case Constants.T_CHAR:    return CHAR;
-    case Constants.T_INT:     return INT;
-    case Constants.T_LONG:    return LONG;
-    case Constants.T_DOUBLE:  return DOUBLE;
-    case Constants.T_FLOAT:   return FLOAT;
-
-    default:
-      throw new ClassGenException("Invalid type: " + type);
+    /**
+     * Constructor for basic types such as int, long, `void'
+     *
+     * @param type one of T_INT, T_BOOLEAN, ..., T_VOID
+     * @see Const
+     */
+    BasicType(final byte type) {
+        super(type, Const.getShortTypeName(type));
+        if ((type < Const.T_BOOLEAN) || (type > Const.T_VOID)) {
+            throw new ClassGenException("Invalid type: " + type);
+        }
     }
-  }
 
-  /** @return true if both type objects refer to the same type
-   */
-  @Override
-  public boolean equals(Object type) {
-    return (type instanceof BasicType)?
-      ((BasicType)type).type == this.type : false;
-  }
+    // @since 6.0 no longer final
+    public static BasicType getType(final byte type) {
+        switch (type) {
+            case Const.T_VOID:
+                return VOID;
+            case Const.T_BOOLEAN:
+                return BOOLEAN;
+            case Const.T_BYTE:
+                return BYTE;
+            case Const.T_SHORT:
+                return SHORT;
+            case Const.T_CHAR:
+                return CHAR;
+            case Const.T_INT:
+                return INT;
+            case Const.T_LONG:
+                return LONG;
+            case Const.T_DOUBLE:
+                return DOUBLE;
+            case Const.T_FLOAT:
+                return FLOAT;
+            default:
+                throw new ClassGenException("Invalid type: " + type);
+        }
+    }
 
-  @Override
-  public int hashCode() {
-      return type;
-  }
+    /**
+     * @return a hash code value for the object.
+     */
+    @Override
+    public int hashCode() {
+        return super.getType();
+    }
+
+    /**
+     * @return true if both type objects refer to the same type
+     */
+    @Override
+    public boolean equals(final Object _type) {
+        return (_type instanceof BasicType) ? ((BasicType) _type).getType() == this.getType() : false;
+    }
 }

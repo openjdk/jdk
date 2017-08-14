@@ -21,12 +21,12 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
-
 /**
  * Denote class to have an accept method();
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: Node.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface Node {
-  public void accept(Visitor obj);
+
+    void accept( Visitor obj );
 }

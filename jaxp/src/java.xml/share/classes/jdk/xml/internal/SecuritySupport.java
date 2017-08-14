@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -42,6 +43,8 @@ import java.util.ResourceBundle;
  * This class contains utility methods for reading resources in the JAXP packages
  */
 public class SecuritySupport {
+    public final static String NEWLINE = getSystemProperty("line.separator", "\n");
+
     /**
      * Cache for properties in java.home/conf/jaxp.properties
      */
@@ -71,7 +74,7 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads JAXP system property with privilege
+     * Reads a system property with privilege
      *
      * @param propName the name of the property
      * @return the value of the property
@@ -83,13 +86,51 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads a system property.
+     * Reads a system property with privilege
+     *
+     * @param propName the name of the property
+     * @return the value of the property
+     */
+    public static String getSystemProperty(final String propName, String defValue) {
+        String value = getSystemProperty(propName);
+        if (value == null) {
+            return defValue;
+        }
+        return value;
+    }
+
+    /**
+     * Reads a system property with specified type.
      *
      * @param <T> the type of the property value
      * @param type the type of the property value
      * @param propName the name of the property
      * @param defValue the default value
-     * @return the value of the property, or the default value of no system
+     * @return the value of the property, or the default value if no system
+     * property is found
+     */
+    public static <T> T getSystemProperty(Class<T> type, String propName, String defValue) {
+        String value = getSystemProperty(propName);
+        if (value == null) {
+            value = defValue;
+        }
+        if (Integer.class.isAssignableFrom(type)) {
+            return type.cast(Integer.parseInt(value));
+        } else if (Boolean.class.isAssignableFrom(type)) {
+            return type.cast(Boolean.parseBoolean(value));
+        }
+        return type.cast(value);
+    }
+
+    /**
+     * Reads JAXP system property in this order: system property,
+     * $java.home/conf/jaxp.properties if the system property is not specified
+     *
+     * @param <T> the type of the property value
+     * @param type the type of the property value
+     * @param propName the name of the property
+     * @param defValue the default value
+     * @return the value of the property, or the default value if no system
      * property is found
      */
     public static <T> T getJAXPSystemProperty(Class<T> type, String propName, String defValue) {
@@ -136,7 +177,7 @@ public class SecuritySupport {
                         String configFile = getSystemProperty("java.home") + File.separator
                                 + "conf" + File.separator + "jaxp.properties";
                         File f = new File(configFile);
-                        if (getFileExists(f)) {
+                        if (isFileExists(f)) {
                             is = getFileInputStream(f);
                             cacheProps.load(is);
                         }
@@ -158,13 +199,28 @@ public class SecuritySupport {
         return value;
     }
 
-//------------------- private methods ---------------------------
-    static boolean getFileExists(final File f) {
+    /**
+     * Tests whether the file denoted by this abstract pathname is a directory.
+     * @param f the file to be tested
+     * @return true if it is a directory, false otherwise
+     */
+    public static boolean isDirectory(final File f) {
         return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
-                -> f.exists() ? Boolean.TRUE : Boolean.FALSE));
+                -> f.isDirectory()));
     }
 
-    static FileInputStream getFileInputStream(final File file)
+    /**
+     * Tests whether the file exists.
+     *
+     * @param f the file to be tested
+     * @return true if the file exists, false otherwise
+     */
+    public static boolean isFileExists(final File f) {
+        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+                -> f.exists()));
+    }
+
+    public static FileInputStream getFileInputStream(final File file)
             throws FileNotFoundException {
         try {
             return AccessController.doPrivileged((PrivilegedExceptionAction<FileInputStream>) ()
@@ -172,5 +228,35 @@ public class SecuritySupport {
         } catch (PrivilegedActionException e) {
             throw (FileNotFoundException) e.getException();
         }
+    }
+
+    /**
+     * Gets a resource bundle using the specified base name, the default locale, and the caller's class loader.
+     * @param bundle the base name of the resource bundle, a fully qualified class name
+     * @return a resource bundle for the given base name and the default locale
+     */
+    public static ResourceBundle getResourceBundle(String bundle) {
+        return getResourceBundle(bundle, Locale.getDefault());
+    }
+
+    /**
+     * Gets a resource bundle using the specified base name and locale, and the caller's class loader.
+     * @param bundle the base name of the resource bundle, a fully qualified class name
+     * @param locale the locale for which a resource bundle is desired
+     * @return a resource bundle for the given base name and locale
+     */
+    public static ResourceBundle getResourceBundle(final String bundle, final Locale locale) {
+        return AccessController.doPrivileged((PrivilegedAction<ResourceBundle>) () -> {
+            try {
+                return ResourceBundle.getBundle(bundle, locale);
+            } catch (MissingResourceException e) {
+                try {
+                    return ResourceBundle.getBundle(bundle, new Locale("en", "US"));
+                } catch (MissingResourceException e2) {
+                    throw new MissingResourceException(
+                            "Could not load any resource bundle by " + bundle, bundle, "");
+                }
+            }
+        });
     }
 }

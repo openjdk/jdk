@@ -20,7 +20,9 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
@@ -28,67 +30,84 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  *
  * <PRE>Stack: ... -&gt; ..., value</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: SIPUSH.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class SIPUSH extends Instruction implements ConstantPushInstruction {
-  private short b;
 
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  SIPUSH() {}
+    private short b;
 
-  public SIPUSH(short b) {
-    super(com.sun.org.apache.bcel.internal.Constants.SIPUSH, (short)3);
-    this.b = b;
-  }
 
-  /**
-   * Dump instruction as short code to stream out.
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    super.dump(out);
-    out.writeShort(b);
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    SIPUSH() {
+    }
 
-  /**
-   * @return mnemonic for instruction
-   */
-  public String toString(boolean verbose) {
-    return super.toString(verbose) + " " + b;
-  }
 
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    length = 3;
-    b      = bytes.readShort();
-  }
+    public SIPUSH(final short b) {
+        super(com.sun.org.apache.bcel.internal.Const.SIPUSH, (short) 3);
+        this.b = b;
+    }
 
-  public Number getValue() { return Integer.valueOf(b); }
 
-  /** @return Type.SHORT
-   */
-  public Type getType(ConstantPoolGen cp) {
-    return Type.SHORT;
-  }
+    /**
+     * Dump instruction as short code to stream out.
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        super.dump(out);
+        out.writeShort(b);
+    }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitPushInstruction(this);
-    v.visitStackProducer(this);
-    v.visitTypedInstruction(this);
-    v.visitConstantPushInstruction(this);
-    v.visitSIPUSH(this);
-  }
+
+    /**
+     * @return mnemonic for instruction
+     */
+    @Override
+    public String toString( final boolean verbose ) {
+        return super.toString(verbose) + " " + b;
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.setLength(3);
+        b = bytes.readShort();
+    }
+
+
+    @Override
+    public Number getValue() {
+        return Integer.valueOf(b);
+    }
+
+
+    /** @return Type.SHORT
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cp ) {
+        return Type.SHORT;
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitPushInstruction(this);
+        v.visitStackProducer(this);
+        v.visitTypedInstruction(this);
+        v.visitConstantPushInstruction(this);
+        v.visitSIPUSH(this);
+    }
 }
