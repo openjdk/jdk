@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+
+/**
  * @test
+ * @key headful
  * @bug 8158325
  * @summary Memory leak in com.apple.laf.ScreenMenu: removed JMenuItems are still referenced
  * @requires (os.family == "mac")
  * @run main/timeout=300/othervm -Xmx16m ScreenMenuMemoryLeakTest
  */
+
 import java.awt.EventQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;

@@ -1923,30 +1923,33 @@ public final class Files {
      * <p> The following examples demonstrate possible values for the {@code
      * attributes} parameter:
      *
-     * <blockquote>
-     * <table class="borderless">
+     * <table class="striped" style="text-align: left; margin-left:2em">
      * <caption style="display:none">Possible values</caption>
+     * <thead>
+     * <tr>
+     *  <th scope="col">Example
+     *  <th scope="col">Description
+     * </thead>
      * <tbody>
      * <tr>
-     *   <td> {@code "*"} </td>
+     *   <th scope="row"> {@code "*"} </th>
      *   <td> Read all {@link BasicFileAttributes basic-file-attributes}. </td>
      * </tr>
      * <tr>
-     *   <td> {@code "size,lastModifiedTime,lastAccessTime"} </td>
+     *   <th scope="row"> {@code "size,lastModifiedTime,lastAccessTime"} </th>
      *   <td> Reads the file size, last modified time, and last access time
      *     attributes. </td>
      * </tr>
      * <tr>
-     *   <td> {@code "posix:*"} </td>
+     *   <th scope="row"> {@code "posix:*"} </th>
      *   <td> Read all {@link PosixFileAttributes POSIX-file-attributes}. </td>
      * </tr>
      * <tr>
-     *   <td> {@code "posix:permissions,owner,size"} </td>
+     *   <th scope="row"> {@code "posix:permissions,owner,size"} </th>
      *   <td> Reads the POSIX file permissions, owner, and file size. </td>
      * </tr>
      * </tbody>
      * </table>
-     * </blockquote>
      *
      * <p> The {@code options} array may be used to indicate how symbolic links
      * are handled for the case that the file is a symbolic link. By default,

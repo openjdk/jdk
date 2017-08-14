@@ -59,13 +59,16 @@ import com.sun.jdi.event.VMStartEvent;
  * Some {@link Connector} implementations may require slightly
  * different handling than presented below.
  *
- * <TABLE BORDER="1" style="width:75%">
+ * <TABLE class="striped">
  * <CAPTION style="display:none">Four scenarios for connecting a debugger to a virtual machine"</CAPTION>
+ * <THEAD>
  * <TR>
- * <TH scope=col>Scenario</TH>
- * <TH scope=col>Description</TH>
+ * <TH scope="col">Scenario</TH>
+ * <TH scope="col">Description</TH>
+ * </THEAD>
+ * <TBODY>
  * <TR>
- * <TD>Debugger launches target VM (simplest, most-common scenario)</TD>
+ * <TH scope="row">Debugger launches target VM (simplest, most-common scenario)</TH>
  *
  * <TD>Debugger calls the {@link LaunchingConnector#launch(java.util.Map)}
  * method of the default connector, obtained with {@link #defaultConnector}. The
@@ -86,7 +89,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </TD>
  * </TR>
  * <TR>
- * <TD>Debugger attaches to previously-running VM</TD>
+ * <TH scope="row">Debugger attaches to previously-running VM</TH>
  * <TD>
  * <UL>
  * <LI>
@@ -113,7 +116,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </TR>
  *
  * <TR>
- * <TD>Target VM attaches to previously-running debugger</TD>
+ * <TH scope="row">Target VM attaches to previously-running debugger</TH>
  * <TD>
  * <UL>
  * <LI>
@@ -146,7 +149,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </TR>
  *
  * <TR>
- * <TD>Target VM launches debugger (sometimes called "Just-In-Time" debugging)</TD>
+ * <TH scope="row">Target VM launches debugger (sometimes called "Just-In-Time" debugging)</TH>
  * <TD>
  * <UL>
  * <LI>

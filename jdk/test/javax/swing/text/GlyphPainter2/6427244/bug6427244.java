@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,16 @@
  *
  */
 
-/* @test
-   @bug 6427244 8144240 8166003 8169879
-   @summary Test that pressing HOME correctly moves caret in I18N document.
-   @author Sergey Groznyh
-   @library ../../../regtesthelpers
-   @build JRobot
-   @run main bug6427244
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 6427244 8144240 8166003 8169879
+ * @summary Test that pressing HOME correctly moves caret in I18N document.
+ * @author Sergey Groznyh
+ * @library ../../../regtesthelpers
+ * @build JRobot
+ * @run main bug6427244
+ */
 
 import java.awt.Container;
 import java.awt.Dimension;

@@ -103,19 +103,19 @@ import sun.util.logging.PlatformLogger;
  *
  * <p>
  * CLDR and LDML identify variants:
- * <table class="striped">
+ * <table class="striped" style="text-align:left">
  * <caption style="display:none">Variants of Hijrah Calendars</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left" >Chronology ID</th>
- * <th style="text-align:left" >Calendar Type</th>
- * <th style="text-align:left" >Locale extension, see {@link java.util.Locale}</th>
- * <th style="text-align:left" >Description</th>
+ * <th scope="col">Chronology ID</th>
+ * <th scope="col">Calendar Type</th>
+ * <th scope="col">Locale extension, see {@link java.util.Locale}</th>
+ * <th scope="col">Description</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>Hijrah-umalqura</td>
+ * <th scope="row">Hijrah-umalqura</th>
  * <td>islamic-umalqura</td>
  * <td>ca-islamic-umalqura</td>
  * <td>Islamic - Umm Al-Qura calendar of Saudi Arabia</td>
@@ -148,38 +148,38 @@ import sun.util.logging.PlatformLogger;
  * <p>
  * The Hijrah property resource is a set of properties that describe the calendar.
  * The syntax is defined by {@code java.util.Properties#load(Reader)}.
- * <table class="striped">
+ * <table class="striped" style="text-align:left">
  * <caption style="display:none">Configuration of Hijrah Calendar</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left" > Property Name</th>
- * <th style="text-align:left" > Property value</th>
- * <th style="text-align:left" > Description </th>
+ * <th scope="col">Property Name</th>
+ * <th scope="col">Property value</th>
+ * <th scope="col">Description</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>id</td>
+ * <th scope="row">id</th>
  * <td>Chronology Id, for example, "Hijrah-umalqura"</td>
  * <td>The Id of the calendar in common usage</td>
  * </tr>
  * <tr>
- * <td>type</td>
+ * <th scope="row">type</th>
  * <td>Calendar type, for example, "islamic-umalqura"</td>
  * <td>LDML defines the calendar types</td>
  * </tr>
  * <tr>
- * <td>version</td>
+ * <th scope="row">version</th>
  * <td>Version, for example: "1.8.0_1"</td>
  * <td>The version of the Hijrah variant data</td>
  * </tr>
  * <tr>
- * <td>iso-start</td>
+ * <th scope="row">iso-start</th>
  * <td>ISO start date, formatted as {@code yyyy-MM-dd}, for example: "1900-04-30"</td>
  * <td>The ISO date of the first day of the minimum Hijrah year.</td>
  * </tr>
  * <tr>
- * <td>yyyy - a numeric 4 digit year, for example "1434"</td>
+ * <th scope="row">yyyy - a numeric 4 digit year, for example "1434"</th>
  * <td>The value is a sequence of 12 month lengths,
  * for example: "29 30 29 30 29 30 30 30 29 30 29 29"</td>
  * <td>The lengths of the 12 months of the year separated by whitespace.
