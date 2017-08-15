@@ -1636,6 +1636,7 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
       }
 
       // Set the offset of the return from the call
+      assert(handler_bcis.find(-1) != -1, "must have default handler");
       _handler_table.add_subtable(call_return, &handler_bcis, NULL, &handler_pcos);
       continue;
     }
