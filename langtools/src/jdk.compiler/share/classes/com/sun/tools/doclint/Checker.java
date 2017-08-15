@@ -70,6 +70,7 @@ import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -107,6 +108,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     Map<Element, Set<String>> foundAnchors = new HashMap<>();
     boolean foundInheritDoc = false;
     boolean foundReturn = false;
+    boolean hasNonWhitespaceText = false;
 
     public enum Flag {
         TABLE_HAS_CAPTION,
@@ -189,6 +191,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         foundThrows.clear();
         foundInheritDoc = false;
         foundReturn = false;
+        hasNonWhitespaceText = false;
 
         scan(new DocTreePath(p, tree), null);
 
@@ -245,7 +248,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitText(TextTree tree, Void ignore) {
-        if (hasNonWhitespace(tree)) {
+        hasNonWhitespaceText = hasNonWhitespace(tree);
+        if (hasNonWhitespaceText) {
             checkAllowsText(tree);
             markEnclosingTag(Flag.HAS_TEXT);
         }
@@ -906,6 +910,17 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitSummary(SummaryTree node, Void aVoid) {
+        int idx = env.currDocComment.getFullBody().indexOf(node);
+        // Warn if the node is preceded by non-whitespace characters,
+        // or other non-text nodes.
+        if ((idx == 1 && hasNonWhitespaceText) || idx > 1) {
+            env.messages.warning(SYNTAX, node, "dc.invalid.summary", node.getTagName());
+        }
+        return super.visitSummary(node, aVoid);
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitThrows(ThrowsTree tree, Void ignore) {
         ReferenceTree exName = tree.getExceptionName();
         Element ex = env.trees.getElement(new DocTreePath(getCurrentPath(), exName));
@@ -1091,6 +1106,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     boolean hasNonWhitespace(TextTree tree) {
         String s = tree.getBody();
         for (int i = 0; i < s.length(); i++) {
+            Character c = s.charAt(i);
             if (!Character.isWhitespace(s.charAt(i)))
                 return true;
         }

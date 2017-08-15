@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -286,6 +287,19 @@ public interface DocTreeFactory {
      * @return a {@code StartElementTree} object
      */
     StartElementTree newStartElementTree(Name name, List<? extends DocTree> attrs, boolean selfClosing);
+
+    /**
+     * Create a new {@code SummaryTree} object, to represent a {@code @summary } tag.
+     *
+     * @implSpec This implementation throws {@code UnsupportedOperationException}.
+     *
+     * @param summary the content of the tag
+     * @return a {@code SummaryTree} object
+     * @since 10
+     */
+    default SummaryTree newSummaryTree(List<? extends DocTree> summary) {
+        throw new UnsupportedOperationException("not implemented");
+    }
 
     /**
      * Create a new {@code TextTree} object, to represent some plain text.
