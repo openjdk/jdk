@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,31 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8078389
- * @summary Make sure there is no interference between completionDeps and doclint
- * @compile --debug:completionDeps -Xdoclint DepsAndDocLint.java
- */
+package p1;
 
-public class DepsAndDocLint {
+public class A {
+    /**
+     * {@summary First sentence} Note no period after first sentence.
+     */
+    public void m() {}
+
+    /**
+     * <p> {@summary First sentence } Note the trailing whitespace.
+     */
+    public void m1() {}
+
+    /**
+     * {@summary Some html &lt;foo&gt; &nbsp; codes} Second sentence
+     */
+    public void m2() {}
+
+    /**
+     * {@summary First sentence } some text {@summary maybe second sentence}.
+     */
+    public void m3() {}
+
+    /**
+     * {@summary First sentence i.e. the first sentence} the second sentence.
+     */
+    public void m4() {}
 }

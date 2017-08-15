@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,12 @@ public interface DocTree {
          * representing the start of an HTML element.
          */
         START_ELEMENT,
+
+        /**
+         * Used for instances of {@link SummaryTree}
+         * representing the summary of a comment description.
+         */
+        SUMMARY("summary"),
 
         /**
          * Used for instances of {@link TextTree}
