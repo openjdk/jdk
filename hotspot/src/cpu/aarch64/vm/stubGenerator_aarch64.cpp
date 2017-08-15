@@ -3670,6 +3670,167 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(result, __ T16B, lo, t0);
   }
 
+  address generate_has_negatives(address &has_negatives_long) {
+    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+    const int large_loop_size = 64;
+    const uint64_t UPPER_BIT_MASK=0x8080808080808080;
+    int dcache_line = VM_Version::dcache_line_size();
+
+    Register ary1 = r1, len = r2, result = r0;
+
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+
+    __ enter();
+
+  Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16, DONE,
+        LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
+
+  __ cmp(len, 15);
+  __ br(Assembler::GT, LEN_OVER_15);
+  // The only case when execution falls into this code is when pointer is near
+  // the end of memory page and we have to avoid reading next page
+  __ add(ary1, ary1, len);
+  __ subs(len, len, 8);
+  __ br(Assembler::GT, LEN_OVER_8);
+  __ ldr(rscratch2, Address(ary1, -8));
+  __ sub(rscratch1, zr, len, __ LSL, 3);  // LSL 3 is to get bits from bytes.
+  __ lsrv(rscratch2, rscratch2, rscratch1);
+  __ tst(rscratch2, UPPER_BIT_MASK);
+  __ cset(result, Assembler::NE);
+  __ leave();
+  __ ret(lr);
+  __ bind(LEN_OVER_8);
+  __ ldp(rscratch1, rscratch2, Address(ary1, -16));
+  __ sub(len, len, 8); // no data dep., then sub can be executed while loading
+  __ tst(rscratch2, UPPER_BIT_MASK);
+  __ br(Assembler::NE, RET_TRUE_NO_POP);
+  __ sub(rscratch2, zr, len, __ LSL, 3); // LSL 3 is to get bits from bytes
+  __ lsrv(rscratch1, rscratch1, rscratch2);
+  __ tst(rscratch1, UPPER_BIT_MASK);
+  __ cset(result, Assembler::NE);
+  __ leave();
+  __ ret(lr);
+
+  Register tmp1 = r3, tmp2 = r4, tmp3 = r5, tmp4 = r6, tmp5 = r7, tmp6 = r10;
+  const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
+
+  has_negatives_long = __ pc(); // 2nd entry point
+
+  __ enter();
+
+  __ bind(LEN_OVER_15);
+    __ push(spilled_regs, sp);
+    __ andr(rscratch2, ary1, 15); // check pointer for 16-byte alignment
+    __ cbz(rscratch2, ALIGNED);
+    __ ldp(tmp6, tmp1, Address(ary1));
+    __ mov(tmp5, 16);
+    __ sub(rscratch1, tmp5, rscratch2); // amount of bytes until aligned address
+    __ add(ary1, ary1, rscratch1);
+    __ sub(len, len, rscratch1);
+    __ orr(tmp6, tmp6, tmp1);
+    __ tst(tmp6, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+
+  __ bind(ALIGNED);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::LT, CHECK_16);
+    // Perform 16-byte load as early return in pre-loop to handle situation
+    // when initially aligned large array has negative values at starting bytes,
+    // so LARGE_LOOP would do 4 reads instead of 1 (in worst case), which is
+    // slower. Cases with negative bytes further ahead won't be affected that
+    // much. In fact, it'll be faster due to early loads, less instructions and
+    // less branches in LARGE_LOOP.
+    __ ldp(tmp6, tmp1, Address(__ post(ary1, 16)));
+    __ sub(len, len, 16);
+    __ orr(tmp6, tmp6, tmp1);
+    __ tst(tmp6, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::LT, CHECK_16);
+
+    if (SoftwarePrefetchHintDistance >= 0
+        && SoftwarePrefetchHintDistance >= dcache_line) {
+      // initial prefetch
+      __ prfm(Address(ary1, SoftwarePrefetchHintDistance - dcache_line));
+    }
+  __ bind(LARGE_LOOP);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ prfm(Address(ary1, SoftwarePrefetchHintDistance));
+    }
+    // Issue load instructions first, since it can save few CPU/MEM cycles, also
+    // instead of 4 triples of "orr(...), addr(...);cbnz(...);" (for each ldp)
+    // better generate 7 * orr(...) + 1 andr(...) + 1 cbnz(...) which saves 3
+    // instructions per cycle and have less branches, but this approach disables
+    // early return, thus, all 64 bytes are loaded and checked every time.
+    __ ldp(tmp2, tmp3, Address(ary1));
+    __ ldp(tmp4, tmp5, Address(ary1, 16));
+    __ ldp(rscratch1, rscratch2, Address(ary1, 32));
+    __ ldp(tmp6, tmp1, Address(ary1, 48));
+    __ add(ary1, ary1, large_loop_size);
+    __ sub(len, len, large_loop_size);
+    __ orr(tmp2, tmp2, tmp3);
+    __ orr(tmp4, tmp4, tmp5);
+    __ orr(rscratch1, rscratch1, rscratch2);
+    __ orr(tmp6, tmp6, tmp1);
+    __ orr(tmp2, tmp2, tmp4);
+    __ orr(rscratch1, rscratch1, tmp6);
+    __ orr(tmp2, tmp2, rscratch1);
+    __ tst(tmp2, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::GE, LARGE_LOOP);
+
+  __ bind(CHECK_16); // small 16-byte load pre-loop
+    __ cmp(len, 16);
+    __ br(Assembler::LT, POST_LOOP16);
+
+  __ bind(LOOP16); // small 16-byte load loop
+    __ ldp(tmp2, tmp3, Address(__ post(ary1, 16)));
+    __ sub(len, len, 16);
+    __ orr(tmp2, tmp2, tmp3);
+    __ tst(tmp2, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, 16);
+    __ br(Assembler::GE, LOOP16); // 16-byte load loop end
+
+  __ bind(POST_LOOP16); // 16-byte aligned, so we can read unconditionally
+    __ cmp(len, 8);
+    __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
+    __ ldr(tmp3, Address(__ post(ary1, 8)));
+    __ sub(len, len, 8);
+    __ tst(tmp3, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+
+  __ bind(POST_LOOP16_LOAD_TAIL);
+    __ cbz(len, RET_FALSE); // Can't shift left by 64 when len==0
+    __ ldr(tmp1, Address(ary1));
+    __ mov(tmp2, 64);
+    __ sub(tmp4, tmp2, len, __ LSL, 3);
+    __ lslv(tmp1, tmp1, tmp4);
+    __ tst(tmp1, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    // Fallthrough
+
+  __ bind(RET_FALSE);
+    __ pop(spilled_regs, sp);
+    __ leave();
+    __ mov(result, zr);
+    __ ret(lr);
+
+  __ bind(RET_TRUE);
+    __ pop(spilled_regs, sp);
+  __ bind(RET_TRUE_NO_POP);
+    __ leave();
+    __ mov(result, 1);
+    __ ret(lr);
+
+  __ bind(DONE);
+    __ pop(spilled_regs, sp);
+    __ leave();
+    __ ret(lr);
+    return entry;
+  }
   /**
    *  Arguments:
    *
@@ -4686,6 +4847,7 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
+
   // Initialization
   void generate_initial() {
     // Generate initial stubs and initializes the entry points
@@ -4743,6 +4905,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // has negatives stub for large arrays.
+    StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
