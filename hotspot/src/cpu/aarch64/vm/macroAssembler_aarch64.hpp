@@ -1210,6 +1210,8 @@ public:
                       Register tmp1,
                       FloatRegister vtmp, FloatRegister vtmpZ, int ae);
 
+  void has_negatives(Register ary1, Register len, Register result);
+
   void arrays_equals(Register a1, Register a2,
                      Register result, Register cnt1,
                      int elem_size, bool is_string);

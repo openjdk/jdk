@@ -4462,6 +4462,16 @@ jint Arguments::apply_ergo() {
 
   set_shared_spaces_flags();
 
+#if defined(SPARC)
+  // BIS instructions require 'membar' instruction regardless of the number
+  // of CPUs because in virtualized/container environments which might use only 1
+  // CPU, BIS instructions may produce incorrect results.
+
+  if (FLAG_IS_DEFAULT(AssumeMP)) {
+    FLAG_SET_DEFAULT(AssumeMP, true);
+  }
+#endif
+
   // Check the GC selections again.
   if (!check_gc_consistency()) {
     return JNI_EINVAL;
