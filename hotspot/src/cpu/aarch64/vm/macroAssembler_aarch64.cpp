@@ -4829,6 +4829,62 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   BLOCK_COMMENT("} string_compare");
 }
 
+// This method checks if provided byte array contains byte with highest bit set.
+void MacroAssembler::has_negatives(Register ary1, Register len, Register result) {
+    // Simple and most common case of aligned small array which is not at the
+    // end of memory page is placed here. All other cases are in stub.
+    Label LOOP, END, STUB, STUB_LONG, SET_RESULT, DONE;
+    const uint64_t UPPER_BIT_MASK=0x8080808080808080;
+    assert_different_registers(ary1, len, result);
+
+    cmpw(len, 0);
+    br(LE, SET_RESULT);
+    cmpw(len, 4 * wordSize);
+    br(GE, STUB_LONG); // size > 32 then go to stub
+
+    int shift = 64 - exact_log2(os::vm_page_size());
+    lsl(rscratch1, ary1, shift);
+    mov(rscratch2, (size_t)(4 * wordSize) << shift);
+    adds(rscratch2, rscratch1, rscratch2);  // At end of page?
+    br(CS, STUB); // at the end of page then go to stub
+    subs(len, len, wordSize);
+    br(LT, END);
+
+  BIND(LOOP);
+    ldr(rscratch1, Address(post(ary1, wordSize)));
+    tst(rscratch1, UPPER_BIT_MASK);
+    br(NE, SET_RESULT);
+    subs(len, len, wordSize);
+    br(GE, LOOP);
+    cmpw(len, -wordSize);
+    br(EQ, SET_RESULT);
+
+  BIND(END);
+    ldr(result, Address(ary1));
+    sub(len, zr, len, LSL, 3); // LSL 3 is to get bits from bytes
+    lslv(result, result, len);
+    tst(result, UPPER_BIT_MASK);
+    b(SET_RESULT);
+
+  BIND(STUB);
+    RuntimeAddress has_neg =  RuntimeAddress(StubRoutines::aarch64::has_negatives());
+    assert(has_neg.target() != NULL, "has_negatives stub has not been generated");
+    trampoline_call(has_neg);
+    b(DONE);
+
+  BIND(STUB_LONG);
+    RuntimeAddress has_neg_long =  RuntimeAddress(
+            StubRoutines::aarch64::has_negatives_long());
+    assert(has_neg_long.target() != NULL, "has_negatives stub has not been generated");
+    trampoline_call(has_neg_long);
+    b(DONE);
+
+  BIND(SET_RESULT);
+    cset(result, NE); // set true or false
+
+  BIND(DONE);
+}
+
 // Compare Strings or char/byte arrays.
 
 // is_string is true iff this is a string comparison.
