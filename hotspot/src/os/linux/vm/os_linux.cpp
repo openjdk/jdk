@@ -2201,6 +2201,8 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
+#elif defined(M68K)
+const char* search_string = "CPU";
 #elif defined(PPC64)
 const char* search_string = "cpu";
 #elif defined(S390)
