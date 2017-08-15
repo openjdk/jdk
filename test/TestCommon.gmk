@@ -124,13 +124,6 @@ ifndef PRODUCT_HOME
   PRODUCT_HOME := $(PRODUCT_HOME)
 endif
 
-# Expect JPRT to set JAVA_ARGS (e.g. -server etc.)
-ifdef JAVA_ARGS
-  JAVA_OPTIONS := $(JAVA_ARGS)
-else
-  JAVA_OPTIONS :=
-endif
-
 # Expect JPRT to set JPRT_PRODUCT_ARGS (e.g. -server etc.)
 #   Should be passed into 'java' only.
 #   Could include: -d64 -server -client OR any java option
@@ -374,7 +367,7 @@ ifneq ($(VS120COMNTOOLS), )
   JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS=$(shell $(GETMIXEDPATH) "$(VS120COMNTOOLS)")
 endif
 # Set other vm and test options
-JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_OPTIONS:%=-vmoption:%) $(JAVA_VM_ARGS:%=-vmoption:%)
+JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 ifneq ($(JIB_JAR), )
   JTREG_BASIC_OPTIONS += -cpa:$(shell $(GETMIXEDPATH) "$(JIB_JAR)")
 endif
