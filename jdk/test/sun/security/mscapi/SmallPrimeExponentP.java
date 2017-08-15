@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ public class SmallPrimeExponentP {
         CertAndKeyGen ckg = new CertAndKeyGen("RSA", "SHA1withRSA");
         ckg.setRandom(new MySecureRandom(seed));
 
+        String alias = "anything";
+        int count = 0;
+
         boolean see63 = false;
         boolean see65 = false;
         while (!see63 || !see65) {
@@ -78,12 +81,19 @@ public class SmallPrimeExponentP {
                         see65 = true;
                     }
                 }
-                ks.setKeyEntry("anything", k, null, new X509Certificate[]{
+                ks.setKeyEntry(alias, k, null, new X509Certificate[]{
                     ckg.getSelfCertificate(new X500Name("CN=Me"), 1000)
                 });
+                count++;
             }
         }
-        ks.store(null, null);
+
+        // Because of JDK-8185844, it has to reload the key store after
+        // deleting an entry.
+        for (int i = 0; i < count; i++) {
+            ks.deleteEntry(alias);
+            ks.load(null, null);
+        }
     }
 
     static class MySecureRandom extends SecureRandom {
