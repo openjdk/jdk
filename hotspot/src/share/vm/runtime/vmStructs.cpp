@@ -971,18 +971,6 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   unchecked_c1_static_field(Runtime1,          _blobs,                                 sizeof(Runtime1::_blobs)) /* NOTE: no type */ \
                                                                                                                                      \
   /**************/                                                                                                                   \
-  /* allocation */                                                                                                                   \
-  /**************/                                                                                                                   \
-                                                                                                                                     \
-  nonstatic_field(Chunk,                       _next,                                         Chunk*)                                \
-  nonstatic_field(Chunk,                       _len,                                          const size_t)                          \
-                                                                                                                                     \
-  nonstatic_field(Arena,                       _first,                                        Chunk*)                                \
-  nonstatic_field(Arena,                       _chunk,                                        Chunk*)                                \
-  nonstatic_field(Arena,                       _hwm,                                          char*)                                 \
-  nonstatic_field(Arena,                       _max,                                          char*)                                 \
-                                                                                                                                     \
-  /************/                                                                                                                     \
   /* CI */                                                                                                                           \
   /************/                                                                                                                     \
                                                                                                                                      \
@@ -1560,7 +1548,6 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_toplevel_type(GrowableArray<int>)                               \
   declare_toplevel_type(Arena)                                            \
     declare_type(ResourceArea, Arena)                                     \
-  declare_toplevel_type(Chunk)                                            \
                                                                           \
   declare_toplevel_type(SymbolCompactHashTable)                           \
                                                                           \

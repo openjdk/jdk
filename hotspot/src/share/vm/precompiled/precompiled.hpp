@@ -131,6 +131,7 @@
 # include "logging/log.hpp"
 # include "memory/allocation.hpp"
 # include "memory/allocation.inline.hpp"
+# include "memory/arena.hpp"
 # include "memory/heap.hpp"
 # include "memory/iterator.hpp"
 # include "memory/memRegion.hpp"
