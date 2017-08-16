@@ -102,7 +102,6 @@ public final class XSLTC {
     private ArrayList<StringBuilder> m_characterData;
 
     // These define the various methods for outputting the translet
-    public static final int FILE_OUTPUT        = 0;
     public static final int JAR_OUTPUT         = 1;
     public static final int BYTEARRAY_OUTPUT   = 2;
     public static final int CLASSLOADER_OUTPUT = 3;
@@ -116,7 +115,7 @@ public final class XSLTC {
     private String  _className = null;   // -o <class-name>
     private String  _packageName = "die.verwandlung"; // override with -p <package-name>
     private File    _destDir = null;     // -d <directory-name>
-    private int     _outputType = FILE_OUTPUT; // by default
+    private int     _outputType = BYTEARRAY_OUTPUT; // by default
 
     private ArrayList<ByteArrayOutputStream>  _classes;
     private ArrayList<JavaClass>  _bcelClasses;
@@ -897,8 +896,7 @@ public final class XSLTC {
 
     public void dumpClass(JavaClass clazz) {
 
-        if (_outputType == FILE_OUTPUT ||
-            _outputType == BYTEARRAY_AND_FILE_OUTPUT)
+        if (_outputType == BYTEARRAY_AND_FILE_OUTPUT)
         {
             File outFile = getOutputFile(clazz.getClassName());
             String parentDir = outFile.getParent();
@@ -911,12 +909,6 @@ public final class XSLTC {
 
         try {
             switch (_outputType) {
-            case FILE_OUTPUT:
-                clazz.dump(
-                    new BufferedOutputStream(
-                        new FileOutputStream(
-                            getOutputFile(clazz.getClassName()))));
-                break;
             case JAR_OUTPUT:
                 _bcelClasses.add(clazz);
                 break;
@@ -929,8 +921,7 @@ public final class XSLTC {
                 _classes.add(out);
 
                 if (_outputType == BYTEARRAY_AND_FILE_OUTPUT)
-                  clazz.dump(new BufferedOutputStream(
-                        new FileOutputStream(getOutputFile(clazz.getClassName()))));
+                  clazz.dump(getOutputFile(clazz.getClassName()));
                 else if (_outputType == BYTEARRAY_AND_JAR_OUTPUT)
                   _bcelClasses.add(clazz);
 
