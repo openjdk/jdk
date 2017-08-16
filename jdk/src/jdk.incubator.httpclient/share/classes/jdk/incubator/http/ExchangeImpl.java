@@ -82,9 +82,9 @@ abstract class ExchangeImpl<T> {
                 c = c2.getConnectionFor(request);
             } catch (Http2Connection.ALPNException e) {
                 // failed to negotiate "h2"
-                AsyncSSLConnection as = e.getConnection();
+                AbstractAsyncSSLConnection as = e.getConnection();
                 as.stopAsyncReading();
-                SSLConnection sslc = new SSLConnection(as);
+                HttpConnection sslc = as.downgrade();
                 ExchangeImpl<U> ex = new Http1Exchange<>(exchange, sslc);
                 return ex;
             }
