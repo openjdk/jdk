@@ -863,20 +863,31 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  int status = pthread_attr_setstacksize(&attr, stack_size);
-  assert_status(status == 0, status, "pthread_attr_setstacksize");
+
+  // On Aix, pthread_attr_setstacksize fails with huge values and leaves the
+  // thread size in attr unchanged. If this is the minimal stack size as set
+  // by pthread_attr_init this leads to crashes after thread creation. E.g. the
+  // guard pages might not fit on the tiny stack created.
+  int ret = pthread_attr_setstacksize(&attr, stack_size);
+  if (ret != 0) {
+    log_warning(os, thread)("The thread stack size specified is invalid: " SIZE_FORMAT "k",
+                            stack_size / K);
+  }
 
   // Configure libc guard page.
-  pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
+  ret = pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
 
-  pthread_t tid;
-  int ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-
-  char buf[64];
+  pthread_t tid = 0;
   if (ret == 0) {
+    ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
+  }
+
+  if (ret == 0) {
+    char buf[64];
     log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
       (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   } else {
+    char buf[64];
     log_warning(os, thread)("Failed to start thread - pthread_create failed (%d=%s) for attributes: %s.",
       ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   }
