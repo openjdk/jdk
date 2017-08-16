@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,26 +57,31 @@ class FileReadBuffer implements ReadBuffer {
         file.read(buf);
     }
 
+    @Override
     public synchronized char getChar(long pos) throws IOException {
         seek(pos);
         return file.readChar();
     }
 
+    @Override
     public synchronized byte getByte(long pos) throws IOException {
         seek(pos);
         return (byte) file.read();
     }
 
+    @Override
     public synchronized short getShort(long pos) throws IOException {
         seek(pos);
         return file.readShort();
     }
 
+    @Override
     public synchronized int getInt(long pos) throws IOException {
         seek(pos);
         return file.readInt();
     }
 
+    @Override
     public synchronized long getLong(long pos) throws IOException {
         seek(pos);
         return file.readLong();
