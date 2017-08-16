@@ -76,7 +76,7 @@ import static org.graalvm.compiler.bytecode.Bytecodes.LSTORE_3;
 import static org.graalvm.compiler.bytecode.Bytecodes.RET;
 
 import org.graalvm.compiler.bytecode.BytecodeStream;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 
 /**
@@ -86,9 +86,9 @@ import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 public abstract class LocalLiveness {
     protected final BciBlock[] blocks;
 
-    public static LocalLiveness compute(BytecodeStream stream, BciBlock[] blocks, int maxLocals, int loopCount) {
+    public static LocalLiveness compute(DebugContext debug, BytecodeStream stream, BciBlock[] blocks, int maxLocals, int loopCount) {
         LocalLiveness liveness = maxLocals <= 64 ? new SmallLocalLiveness(blocks, maxLocals, loopCount) : new LargeLocalLiveness(blocks, maxLocals, loopCount);
-        liveness.computeLiveness(stream);
+        liveness.computeLiveness(debug, stream);
         return liveness;
     }
 
@@ -96,7 +96,7 @@ public abstract class LocalLiveness {
         this.blocks = blocks;
     }
 
-    void computeLiveness(BytecodeStream stream) {
+    void computeLiveness(DebugContext debug, BytecodeStream stream) {
         for (BciBlock block : blocks) {
             computeLocalLiveness(stream, block);
         }
@@ -104,18 +104,18 @@ public abstract class LocalLiveness {
         boolean changed;
         int iteration = 0;
         do {
-            assert traceIteration(iteration);
+            assert traceIteration(debug, iteration);
             changed = false;
             for (int i = blocks.length - 1; i >= 0; i--) {
                 BciBlock block = blocks[i];
                 int blockID = block.getId();
-                assert traceStart(block, blockID);
+                assert traceStart(debug, block, blockID);
 
                 boolean blockChanged = (iteration == 0);
                 if (block.getSuccessorCount() > 0) {
                     int oldCardinality = liveOutCardinality(blockID);
                     for (BciBlock sux : block.getSuccessors()) {
-                        assert traceSuccessor(sux);
+                        assert traceSuccessor(debug, sux);
                         propagateLiveness(blockID, sux.getId());
                     }
                     blockChanged |= (oldCardinality != liveOutCardinality(blockID));
@@ -123,7 +123,7 @@ public abstract class LocalLiveness {
 
                 if (blockChanged) {
                     updateLiveness(blockID);
-                    assert traceEnd(block, blockID);
+                    assert traceEnd(debug, block, blockID);
                 }
                 changed |= blockChanged;
             }
@@ -131,29 +131,29 @@ public abstract class LocalLiveness {
         } while (changed);
     }
 
-    private static boolean traceIteration(int iteration) {
-        Debug.log("Iteration %d", iteration);
+    private static boolean traceIteration(DebugContext debug, int iteration) {
+        debug.log("Iteration %d", iteration);
         return true;
     }
 
-    private boolean traceEnd(BciBlock block, int blockID) {
-        if (Debug.isLogEnabled()) {
-            Debug.logv("  end   B%d  [%d, %d]  in: %s  out: %s  gen: %s  kill: %s", block.getId(), block.startBci, block.endBci, debugLiveIn(blockID), debugLiveOut(blockID), debugLiveGen(blockID),
+    private boolean traceEnd(DebugContext debug, BciBlock block, int blockID) {
+        if (debug.isLogEnabled()) {
+            debug.logv("  end   B%d  [%d, %d]  in: %s  out: %s  gen: %s  kill: %s", block.getId(), block.startBci, block.endBci, debugLiveIn(blockID), debugLiveOut(blockID), debugLiveGen(blockID),
                             debugLiveKill(blockID));
         }
         return true;
     }
 
-    private boolean traceSuccessor(BciBlock sux) {
-        if (Debug.isLogEnabled()) {
-            Debug.log("    Successor B%d: %s", sux.getId(), debugLiveIn(sux.getId()));
+    private boolean traceSuccessor(DebugContext debug, BciBlock sux) {
+        if (debug.isLogEnabled()) {
+            debug.log("    Successor B%d: %s", sux.getId(), debugLiveIn(sux.getId()));
         }
         return true;
     }
 
-    private boolean traceStart(BciBlock block, int blockID) {
-        if (Debug.isLogEnabled()) {
-            Debug.logv("  start B%d  [%d, %d]  in: %s  out: %s  gen: %s  kill: %s", block.getId(), block.startBci, block.endBci, debugLiveIn(blockID), debugLiveOut(blockID), debugLiveGen(blockID),
+    private boolean traceStart(DebugContext debug, BciBlock block, int blockID) {
+        if (debug.isLogEnabled()) {
+            debug.logv("  start B%d  [%d, %d]  in: %s  out: %s  gen: %s  kill: %s", block.getId(), block.startBci, block.endBci, debugLiveIn(blockID), debugLiveOut(blockID), debugLiveGen(blockID),
                             debugLiveKill(blockID));
         }
         return true;

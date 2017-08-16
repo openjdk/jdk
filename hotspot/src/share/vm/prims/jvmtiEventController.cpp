@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,6 +471,8 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
     // no events allowed when dead
     now_enabled = 0;
     break;
+  default:
+    break;
   }
 
   // if anything changed do update
@@ -503,8 +505,8 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     return (jlong)0;
   }
 
-  jlong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
-  jlong any_env_enabled = 0;
+  julong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
+  julong any_env_enabled = 0;
 
   {
     // This iteration will include JvmtiEnvThreadStates whoses environments
@@ -561,10 +563,10 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
 
   // event enabled for any thread in any environment
-  jlong was_any_env_thread_enabled = JvmtiEventController::_universal_global_event_enabled.get_bits();
-  jlong any_env_thread_enabled = 0;
+  julong was_any_env_thread_enabled = JvmtiEventController::_universal_global_event_enabled.get_bits();
+  julong any_env_thread_enabled = 0;
 
-  EC_TRACE(("[-] # recompute enabled - before " UINT64_FORMAT_X, was_any_env_thread_enabled));
+  EC_TRACE(("[-] # recompute enabled - before " JULONG_FORMAT_X, was_any_env_thread_enabled));
 
   // compute non-thread-filters events.
   // This must be done separately from thread-filtered events, since some
@@ -644,7 +646,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
   }
 
-  EC_TRACE(("[-] # recompute enabled - after " UINT64_FORMAT_X, any_env_thread_enabled));
+  EC_TRACE(("[-] # recompute enabled - after " JULONG_FORMAT_X, any_env_thread_enabled));
 }
 
 

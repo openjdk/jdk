@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,10 +90,32 @@ class InterfaceSupport: AllStatic {
 # endif
 
  public:
-  // OS dependent stuff
+  static void serialize_thread_state_with_handler(JavaThread* thread) {
+    serialize_thread_state_internal(thread, true);
+  }
 
-#include OS_HEADER(interfaceSupport)
+  // Should only call this if we know that we have a proper SEH set up.
+  static void serialize_thread_state(JavaThread* thread) {
+    serialize_thread_state_internal(thread, false);
+  }
 
+ private:
+  static void serialize_thread_state_internal(JavaThread* thread, bool needs_exception_handler) {
+    // Make sure new state is seen by VM thread
+    if (os::is_MP()) {
+      if (UseMembar) {
+        // Force a fence between the write above and read below
+        OrderAccess::fence();
+      } else {
+        // store to serialize page so VM thread can do pseudo remote membar
+        if (needs_exception_handler) {
+          os::write_memory_serialize_page_with_handler(thread);
+        } else {
+          os::write_memory_serialize_page(thread);
+        }
+      }
+    }
+  }
 };
 
 
@@ -115,19 +137,10 @@ class ThreadStateTransition : public StackObj {
     assert(from != _thread_in_native, "use transition_from_native");
     assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == from, "coming from wrong thread state");
-    // Change to transition state (assumes total store ordering!  -Urs)
+    // Change to transition state
     thread->set_thread_state((JavaThreadState)(from + 1));
 
-    // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // store to serialize page so VM thread can do pseudo remote membar
-        os::write_memory_serialize_page(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state(thread);
 
     if (SafepointSynchronize::do_call_back()) {
       SafepointSynchronize::block(thread);
@@ -146,19 +159,10 @@ class ThreadStateTransition : public StackObj {
   static inline void transition_and_fence(JavaThread *thread, JavaThreadState from, JavaThreadState to) {
     assert(thread->thread_state() == from, "coming from wrong thread state");
     assert((from & 1) == 0 && (to & 1) == 0, "odd numbers are transitions states");
-    // Change to transition state (assumes total store ordering!  -Urs)
+    // Change to transition state
     thread->set_thread_state((JavaThreadState)(from + 1));
 
-    // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // Must use this rather than serialization page in particular on Windows
-        InterfaceSupport::serialize_memory(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
 
     if (SafepointSynchronize::do_call_back()) {
       SafepointSynchronize::block(thread);
@@ -179,19 +183,10 @@ class ThreadStateTransition : public StackObj {
   static inline void transition_from_native(JavaThread *thread, JavaThreadState to) {
     assert((to & 1) == 0, "odd numbers are transitions states");
     assert(thread->thread_state() == _thread_in_native, "coming from wrong thread state");
-    // Change to transition state (assumes total store ordering!  -Urs)
+    // Change to transition state
     thread->set_thread_state(_thread_in_native_trans);
 
-    // Make sure new state is seen by GC thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
-      } else {
-        // Must use this rather than serialization page in particular on Windows
-        InterfaceSupport::serialize_memory(thread);
-      }
-    }
+    InterfaceSupport::serialize_thread_state_with_handler(thread);
 
     // We never install asynchronous exceptions when coming (back) in
     // to the runtime from native code because the runtime is not set

@@ -136,7 +136,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  long _stack_traversal_mark;
+  volatile jlong _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -396,8 +396,8 @@ public:
  public:
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  jlong  stack_traversal_mark()                    { return OrderAccess::load_acquire(&_stack_traversal_mark); }
+  void  set_stack_traversal_mark(jlong l)          { OrderAccess::release_store(&_stack_traversal_mark, l); }
 
   // implicit exceptions support
   address continuation_for_implicit_exception(address pc);

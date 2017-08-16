@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   InCSetState       _dest[InCSetState::Num];
   // Local tenuring threshold.
   uint              _tenuring_threshold;
-  G1ParScanClosure  _scanner;
+  G1ScanEvacuatedObjClosure  _scanner;
 
   int  _hash_seed;
   uint _worker_id;
@@ -100,9 +100,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   template <class T> void push_on_queue(T* ref);
 
   template <class T> void update_rs(HeapRegion* from, T* p, oop o) {
-    // If the new value of the field points to the same region or
-    // is the to-space, we don't need to include it in the Rset updates.
-    if (!HeapRegion::is_in_same_region(p, o) && !from->is_young()) {
+    assert(!HeapRegion::is_in_same_region(p, o), "Caller should have filtered out cross-region references already.");
+    // If the field originates from the to-space, we don't need to include it
+    // in the remembered set updates.
+    if (!from->is_young()) {
       size_t card_index = ctbs()->index_for(p);
       // If the card hasn't been added to the buffer, do it.
       if (ctbs()->mark_card_deferred(card_index)) {
@@ -198,8 +199,6 @@ class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
-  size_t* _cards_scanned;
-  size_t _total_cards_scanned;
   size_t _young_cset_length;
   uint _n_workers;
   bool _flushed;
@@ -209,8 +208,6 @@ class G1ParScanThreadStateSet : public StackObj {
       _g1h(g1h),
       _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, n_workers, mtGC)),
       _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
-      _cards_scanned(NEW_C_HEAP_ARRAY(size_t, n_workers, mtGC)),
-      _total_cards_scanned(0),
       _young_cset_length(young_cset_length),
       _n_workers(n_workers),
       _flushed(false) {
@@ -218,22 +215,18 @@ class G1ParScanThreadStateSet : public StackObj {
       _states[i] = NULL;
     }
     memset(_surviving_young_words_total, 0, young_cset_length * sizeof(size_t));
-    memset(_cards_scanned, 0, n_workers * sizeof(size_t));
   }
 
   ~G1ParScanThreadStateSet() {
     assert(_flushed, "thread local state from the per thread states should have been flushed");
     FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
     FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
-    FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
   }
 
   void flush();
 
   G1ParScanThreadState* state_for_worker(uint worker_id);
 
-  void add_cards_scanned(uint worker_id, size_t cards_scanned);
-  size_t total_cards_scanned() const;
   const size_t* surviving_young_words() const;
 
  private:

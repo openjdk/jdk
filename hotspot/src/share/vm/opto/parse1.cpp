@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,7 +657,7 @@ void Parse::do_all_blocks() {
       NOT_PRODUCT(blocks_parsed++);
 
       progress = true;
-      if (block->is_loop_head() || block->is_handler() || has_irreducible && !block->is_ready()) {
+      if (block->is_loop_head() || block->is_handler() || (has_irreducible && !block->is_ready())) {
         // Not all preds have been parsed.  We must build phis everywhere.
         // (Note that dead locals do not get phis built, ever.)
         ensure_phis_everywhere();
@@ -745,6 +745,8 @@ static Node* mask_int_value(Node* v, BasicType bt, PhaseGVN* gvn) {
     break;
   case T_BOOLEAN:
     v = gvn->transform(new AndINode(v, gvn->intcon(0x1)));
+    break;
+  default:
     break;
   }
   return v;

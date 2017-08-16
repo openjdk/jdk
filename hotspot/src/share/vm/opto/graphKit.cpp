@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,6 +584,8 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
         ex_obj = env()->ClassCastException_instance();
       }
       break;
+    default:
+      break;
     }
     if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != NULL) {
@@ -821,7 +823,7 @@ static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarr
   if (cur_method != NULL && cur_bci != InvocationEntryBci) {
     Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
     return Interpreter::bytecode_should_reexecute(code) ||
-           is_anewarray && code == Bytecodes::_multianewarray;
+           (is_anewarray && code == Bytecodes::_multianewarray);
     // Reexecute _multianewarray bytecode which was replaced with
     // sequence of [a]newarray. See Parse::do_multianewarray().
     //
@@ -1106,6 +1108,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_aload_0:   assert(inputs == 0 && outputs == 1, ""); break;
   case Bytecodes::_return:    assert(inputs == 0 && outputs == 0, ""); break;
   case Bytecodes::_drem:      assert(inputs == 4 && outputs == 2, ""); break;
+  default:                    break;
   }
 #endif //ASSERT
 
@@ -1294,7 +1297,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   float ok_prob = PROB_MAX;  // a priori estimate:  nulls never happen
   Deoptimization::DeoptReason reason;
   if (assert_null) {
-    reason = Deoptimization::Reason_null_assert;
+    reason = Deoptimization::reason_null_assert(speculative);
   } else if (type == T_OBJECT) {
     reason = Deoptimization::reason_null_check(speculative);
   } else {
@@ -1390,6 +1393,30 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   return cast;                  // Return casted value
 }
 
+// Sometimes in intrinsics, we implicitly know an object is not null
+// (there's no actual null check) so we can cast it to not null. In
+// the course of optimizations, the input to the cast can become null.
+// In that case that data path will die and we need the control path
+// to become dead as well to keep the graph consistent. So we have to
+// add a check for null for which one branch can't be taken. It uses
+// an Opaque4 node that will cause the check to be removed after loop
+// opts so the test goes away and the compiled code doesn't execute a
+// useless check.
+Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
+  Node* chk = _gvn.transform(new CmpPNode(value, null()));
+  Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+  Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
+  IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
+  _gvn.set_type(iff, iff->Value(&_gvn));
+  Node *if_f = _gvn.transform(new IfFalseNode(iff));
+  Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+  Node *halt = _gvn.transform(new HaltNode(if_f, frame));
+  C->root()->add_req(halt);
+  Node *if_t = _gvn.transform(new IfTrueNode(iff));
+  set_control(if_t);
+  return cast_not_null(value, do_replace_in_map);
+}
+
 
 //--------------------------replace_in_map-------------------------------------
 void GraphKit::replace_in_map(Node* old, Node* neww) {
@@ -1476,7 +1503,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched);
   }
   ld = _gvn.transform(ld);
-  if ((bt == T_OBJECT) && C->do_escape_analysis() || C->eliminate_boxing()) {
+  if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
     record_for_igvn(ld);
   }
@@ -2000,14 +2027,14 @@ void GraphKit::uncommon_trap(int trap_request,
   case Deoptimization::Action_make_not_entrant:
     C->set_trap_can_recompile(true);
     break;
-#ifdef ASSERT
   case Deoptimization::Action_none:
   case Deoptimization::Action_make_not_compilable:
     break;
   default:
+#ifdef ASSERT
     fatal("unknown action %d: %s", action, Deoptimization::trap_action_name(action));
-    break;
 #endif
+    break;
   }
 
   if (TraceOptoParse) {
@@ -2109,7 +2136,7 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
  *
  * @return           node with improved type
  */
-Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool maybe_null) {
+Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, ProfilePtrKind ptr_kind) {
   const Type* current_type = _gvn.type(n);
   assert(UseTypeSpeculation, "type speculation must be on");
 
@@ -2121,19 +2148,24 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
-    const TypePtr* ptr = (maybe_null && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
+    assert(ptr_kind != ProfileAlwaysNull, "impossible here");
+    const TypePtr* ptr = (ptr_kind == ProfileMaybeNull && current_type->speculative_maybe_null()) ? TypePtr::BOTTOM : TypePtr::NOTNULL;
     // record the new speculative type's depth
     speculative = xtype->cast_to_ptr_type(ptr->ptr())->is_ptr();
     speculative = speculative->with_inline_depth(jvms()->depth());
-  } else if (current_type->would_improve_ptr(maybe_null)) {
+  } else if (current_type->would_improve_ptr(ptr_kind)) {
     // Profiling report that null was never seen so we can change the
     // speculative type to non null ptr.
-    assert(!maybe_null, "nothing to improve");
-    if (speculative == NULL) {
-      speculative = TypePtr::NOTNULL;
+    if (ptr_kind == ProfileAlwaysNull) {
+      speculative = TypePtr::NULL_PTR;
     } else {
+      assert(ptr_kind == ProfileNeverNull, "nothing else is an improvement");
       const TypePtr* ptr = TypePtr::NOTNULL;
-      speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+      if (speculative != NULL) {
+        speculative = speculative->cast_to_ptr_type(ptr->ptr())->is_ptr();
+      } else {
+        speculative = ptr;
+      }
     }
   }
 
@@ -2167,14 +2199,30 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
     return n;
   }
   ciKlass* exact_kls = profile_has_unique_klass();
-  bool maybe_null = true;
-  if (java_bc() == Bytecodes::_checkcast ||
-      java_bc() == Bytecodes::_instanceof ||
-      java_bc() == Bytecodes::_aastore) {
+  ProfilePtrKind ptr_kind = ProfileMaybeNull;
+  if ((java_bc() == Bytecodes::_checkcast ||
+       java_bc() == Bytecodes::_instanceof ||
+       java_bc() == Bytecodes::_aastore) &&
+      method()->method_data()->is_mature()) {
     ciProfileData* data = method()->method_data()->bci_to_data(bci());
-    maybe_null = data == NULL ? true : data->as_BitData()->null_seen();
+    if (data != NULL) {
+      if (!data->as_BitData()->null_seen()) {
+        ptr_kind = ProfileNeverNull;
+      } else {
+        assert(data->is_ReceiverTypeData(), "bad profile data type");
+        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+        uint i = 0;
+        for (; i < call->row_limit(); i++) {
+          ciKlass* receiver = call->receiver(i);
+          if (receiver != NULL) {
+            break;
+          }
+        }
+        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
+      }
+    }
   }
-  return record_profile_for_speculation(n, exact_kls, maybe_null);
+  return record_profile_for_speculation(n, exact_kls, ptr_kind);
 }
 
 /**
@@ -2194,10 +2242,10 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
   for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
     const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
-      bool maybe_null = true;
+      ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = NULL;
-      if (method()->argument_profiled_type(bci(), i, better_type, maybe_null)) {
-        record_profile_for_speculation(argument(j), better_type, maybe_null);
+      if (method()->argument_profiled_type(bci(), i, better_type, ptr_kind)) {
+        record_profile_for_speculation(argument(j), better_type, ptr_kind);
       }
       i++;
     }
@@ -2214,10 +2262,10 @@ void GraphKit::record_profiled_parameters_for_speculation() {
   }
   for (int i = 0, j = 0; i < method()->arg_size() ; i++) {
     if (_gvn.type(local(i))->isa_oopptr()) {
-      bool maybe_null = true;
+      ProfilePtrKind ptr_kind = ProfileMaybeNull;
       ciKlass* better_type = NULL;
-      if (method()->parameter_profiled_type(j, better_type, maybe_null)) {
-        record_profile_for_speculation(local(i), better_type, maybe_null);
+      if (method()->parameter_profiled_type(j, better_type, ptr_kind)) {
+        record_profile_for_speculation(local(i), better_type, ptr_kind);
       }
       j++;
     }
@@ -2232,13 +2280,13 @@ void GraphKit::record_profiled_return_for_speculation() {
   if (!UseTypeSpeculation) {
     return;
   }
-  bool maybe_null = true;
+  ProfilePtrKind ptr_kind = ProfileMaybeNull;
   ciKlass* better_type = NULL;
-  if (method()->return_profiled_type(bci(), better_type, maybe_null)) {
+  if (method()->return_profiled_type(bci(), better_type, ptr_kind)) {
     // If profiling reports a single type for the return value,
     // feed it to the type system so it can propagate it as a
     // speculative type
-    record_profile_for_speculation(stack(sp()-1), better_type, maybe_null);
+    record_profile_for_speculation(stack(sp()-1), better_type, ptr_kind);
   }
 }
 
@@ -2914,12 +2962,7 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
     }
   }
 
-  if (known_statically && UseTypeSpeculation) {
-    // If we know the type check always succeeds then we don't use the
-    // profiling data at this bytecode. Don't lose it, feed it to the
-    // type system as a speculative type.
-    not_null_obj = record_profiled_receiver_for_speculation(not_null_obj);
-  } else {
+  if (!known_statically) {
     const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
     // We may not have profiling here or it may not help us. If we
     // have a speculative type use it to perform an exact cast.
@@ -2953,6 +2996,15 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
+
+  // If we know the type check always succeeds then we don't use the
+  // profiling data at this bytecode. Don't lose it, feed it to the
+  // type system as a speculative type.
+  if (safe_for_replace) {
+    Node* casted_obj = record_profiled_receiver_for_speculation(obj);
+    replace_in_map(obj, casted_obj);
+  }
+
   return _gvn.transform(phi);
 }
 
@@ -3093,7 +3145,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   // Return final merged results
   set_control( _gvn.transform(region) );
   record_for_igvn(region);
-  return res;
+
+  return record_profiled_receiver_for_speculation(res);
 }
 
 //------------------------------next_monitor-----------------------------------
@@ -3512,8 +3565,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   // --- Size Computation ---
   // array_size = round_to_heap(array_header + (length << elem_shift));
-  // where round_to_heap(x) == round_to(x, MinObjAlignmentInBytes)
-  // and round_to(x, y) == ((x + y-1) & ~(y-1))
+  // where round_to_heap(x) == align_to(x, MinObjAlignmentInBytes)
+  // and align_to(x, y) == ((x + y-1) & ~(y-1))
   // The rounding mask is strength-reduced, if possible.
   int round_mask = MinObjAlignmentInBytes - 1;
   Node* header_size = NULL;

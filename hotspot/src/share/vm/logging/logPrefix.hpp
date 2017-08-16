@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, metaspace)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, mmu)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, ref)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, task)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, plab)) \

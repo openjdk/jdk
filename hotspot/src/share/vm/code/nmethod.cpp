@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,22 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
-#include "logging/log.hpp"
 #ifdef SHARK
 #include "shark/sharkCompiler.hpp"
 #endif
@@ -367,7 +369,7 @@ void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
 // sizeof(PcDesc) (assumes that if sizeof(PcDesc) is not a multiple
 // of oopSize, then 2*sizeof(PcDesc) is)
 static int adjust_pcs_size(int pcs_size) {
-  int nsize = round_to(pcs_size,   oopSize);
+  int nsize = align_up(pcs_size,   oopSize);
   if ((nsize % sizeof(PcDesc)) != 0) {
     nsize = pcs_size + sizeof(PcDesc);
   }
@@ -486,10 +488,10 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     int nmethod_size =
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
-      + round_to(dependencies->size_in_bytes() , oopSize)
-      + round_to(handler_table->size_in_bytes(), oopSize)
-      + round_to(nul_chk_table->size_in_bytes(), oopSize)
-      + round_to(debug_info->data_size()       , oopSize);
+      + align_up((int)dependencies->size_in_bytes(), oopSize)
+      + align_up(handler_table->size_in_bytes()    , oopSize)
+      + align_up(nul_chk_table->size_in_bytes()    , oopSize)
+      + align_up(debug_info->data_size()           , oopSize);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,
@@ -574,8 +576,8 @@ nmethod::nmethod(
     _consts_offset           = data_offset();
     _stub_offset             = data_offset();
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset         + round_to(code_buffer->total_oop_size(), oopSize);
-    scopes_data_offset       = _metadata_offset     + round_to(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset         + align_up(code_buffer->total_oop_size(), oopSize);
+    scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -729,14 +731,14 @@ nmethod::nmethod(
     }
 
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
-    int scopes_data_offset   = _metadata_offset      + round_to(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
+    int scopes_data_offset   = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
 
-    _scopes_pcs_offset       = scopes_data_offset    + round_to(debug_info->data_size       (), oopSize);
+    _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _handler_table_offset    = _dependencies_offset  + round_to(dependencies->size_in_bytes (), oopSize);
-    _nul_chk_table_offset    = _handler_table_offset + round_to(handler_table->size_in_bytes(), oopSize);
-    _nmethod_end_offset      = _nul_chk_table_offset + round_to(nul_chk_table->size_in_bytes(), oopSize);
+    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes (), oopSize);
+    _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
+    _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
     _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
     _osr_entry_point         = code_begin()          + offsets->value(CodeOffsets::OSR_Entry);
@@ -986,6 +988,8 @@ void nmethod::verify_clean_inline_caches() {
         }
         break;
       }
+      default:
+        break;
     }
   }
 }
@@ -1035,14 +1039,15 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   flush_dependencies(is_alive);
 
   // Break cycle between nmethod & method
-  if (log_is_enabled(Trace, class, unload)) {
-    outputStream* log = Log(class, unload)::trace_stream();
-    log->print_cr("making nmethod " INTPTR_FORMAT
+  LogTarget(Trace, class, unload) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("making nmethod " INTPTR_FORMAT
                   " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
                   p2i(this), p2i(_method), p2i(cause));
     if (!Universe::heap()->is_gc_active())
-      cause->klass()->print_on(log);
+      cause->klass()->print_on(&ls);
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
@@ -1134,8 +1139,11 @@ void nmethod::log_state_change() const {
       xtty->end_elem();
     }
   }
+
+  const char *state_msg = _state == zombie ? "made zombie" : "made not entrant";
+  CompileTask::print_ul(this, state_msg);
   if (PrintCompilation && _state != unloaded) {
-    print_on(tty, _state == zombie ? "made zombie" : "made not entrant");
+    print_on(tty, state_msg);
   }
 }
 
@@ -1456,14 +1464,8 @@ void nmethod::post_compiled_method_unload() {
     JvmtiDeferredEvent event =
       JvmtiDeferredEvent::compiled_method_unload_event(this,
           _jmethod_id, insts_begin());
-    if (SafepointSynchronize::is_at_safepoint()) {
-      // Don't want to take the queueing lock. Add it as pending and
-      // it will get enqueued later.
-      JvmtiDeferredEventQueue::add_pending_event(event);
-    } else {
-      MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
-      JvmtiDeferredEventQueue::enqueue(event);
-    }
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    JvmtiDeferredEventQueue::enqueue(event);
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
@@ -2189,11 +2191,14 @@ void nmethod::verify_scopes() {
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
-      case relocInfo::runtime_call_w_cp_type:
+      case relocInfo::runtime_call_w_cp_type: {
         address destination = iter.reloc()->value();
         // Right now there is no way to find out which entries support
         // an interrupt point.  It would be nice if we had this
         // information in a table.
+        break;
+      }
+      default:
         break;
     }
     assert(stub == NULL || stub_contains(stub), "static call stub outside stub section");
@@ -2360,26 +2365,6 @@ void nmethod::print_relocations() {
   tty->print_cr("relocations:");
   RelocIterator iter(this);
   iter.print();
-  if (UseRelocIndex) {
-    jint* index_end   = (jint*)relocation_end() - 1;
-    jint  index_size  = *index_end;
-    jint* index_start = (jint*)( (address)index_end - index_size );
-    tty->print_cr("    index @" INTPTR_FORMAT ": index_size=%d", p2i(index_start), index_size);
-    if (index_size > 0) {
-      jint* ip;
-      for (ip = index_start; ip+2 <= index_end; ip += 2)
-        tty->print_cr("  (%d %d) addr=" INTPTR_FORMAT " @" INTPTR_FORMAT,
-                      ip[0],
-                      ip[1],
-                      p2i(header_end()+ip[0]),
-                      p2i(relocation_begin()-1+ip[1]));
-      for (; ip < index_end; ip++)
-        tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", p2i(ip), *ip);
-      ip++;
-      tty->print_cr("reloc_end @" INTPTR_FORMAT ":", p2i(ip));
-    }
-  }
 }
 
 
@@ -2511,6 +2496,9 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
         case relocInfo::type_mask:             return "type_bit_mask";
+
+        default:
+          break;
     }
   }
   return have_one ? "other" : NULL;
@@ -2696,6 +2684,8 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
             else
               st->print("<UNKNOWN>");
           }
+        default:
+          break;
         }
       }
       st->print(" {reexecute=%d rethrow=%d return_oop=%d}", sd->should_reexecute(), sd->rethrow_exception(), sd->return_oop());
@@ -2864,6 +2854,8 @@ void nmethod::print_calls(outputStream* st) {
       st->print_cr("Static call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
       CompiledDirectStaticCall::at(iter.reloc())->print();
       break;
+    default:
+      break;
     }
   }
 }
@@ -3003,4 +2995,3 @@ char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   return buf;
 }
 #endif
-

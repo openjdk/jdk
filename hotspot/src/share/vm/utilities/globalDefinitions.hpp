@@ -25,58 +25,85 @@
 #ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
+#include "utilities/compilerWarnings.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
-#ifdef TARGET_COMPILER_gcc
-# include "utilities/globalDefinitions_gcc.hpp"
-#endif
-#ifdef TARGET_COMPILER_visCPP
-# include "utilities/globalDefinitions_visCPP.hpp"
-#endif
-#ifdef TARGET_COMPILER_sparcWorks
-# include "utilities/globalDefinitions_sparcWorks.hpp"
-#endif
-#ifdef TARGET_COMPILER_xlc
-# include "utilities/globalDefinitions_xlc.hpp"
-#endif
+#include COMPILER_HEADER(utilities/globalDefinitions)
 
+// Defaults for macros that might be defined per compiler.
 #ifndef NOINLINE
 #define NOINLINE
 #endif
 #ifndef ALWAYSINLINE
 #define ALWAYSINLINE inline
 #endif
-#ifndef PRAGMA_DIAG_PUSH
-#define PRAGMA_DIAG_PUSH
-#endif
-#ifndef PRAGMA_DIAG_POP
-#define PRAGMA_DIAG_POP
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED
-#endif
-#ifndef PRAGMA_FORMAT_IGNORED
-#define PRAGMA_FORMAT_IGNORED
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-#endif
-#ifndef PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-#endif
-#ifndef ATTRIBUTE_PRINTF
-#define ATTRIBUTE_PRINTF(fmt, vargs)
-#endif
-#ifndef ATTRIBUTE_SCANF
-#define ATTRIBUTE_SCANF(fmt, vargs)
-#endif
-
-#include "utilities/macros.hpp"
 
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
+
+//----------------------------------------------------------------------------------------------------
+// Printf-style formatters for fixed- and variable-width types as pointers and
+// integers.  These are derived from the definitions in inttypes.h.  If the platform
+// doesn't provide appropriate definitions, they should be provided in
+// the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
+
+#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
+
+// Format 32-bit quantities.
+#define INT32_FORMAT           "%" PRId32
+#define UINT32_FORMAT          "%" PRIu32
+#define INT32_FORMAT_W(width)  "%" #width PRId32
+#define UINT32_FORMAT_W(width) "%" #width PRIu32
+
+#define PTR32_FORMAT           "0x%08" PRIx32
+#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
+
+// Format 64-bit quantities.
+#define INT64_FORMAT           "%" PRId64
+#define UINT64_FORMAT          "%" PRIu64
+#define UINT64_FORMAT_X        "%" PRIx64
+#define INT64_FORMAT_W(width)  "%" #width PRId64
+#define UINT64_FORMAT_W(width) "%" #width PRIu64
+
+#define PTR64_FORMAT           "0x%016" PRIx64
+
+// Format jlong, if necessary
+#ifndef JLONG_FORMAT
+#define JLONG_FORMAT           INT64_FORMAT
+#endif
+#ifndef JULONG_FORMAT
+#define JULONG_FORMAT          UINT64_FORMAT
+#endif
+#ifndef JULONG_FORMAT_X
+#define JULONG_FORMAT_X        UINT64_FORMAT_X
+#endif
+
+// Format pointers which change size between 32- and 64-bit.
+#ifdef  _LP64
+#define INTPTR_FORMAT "0x%016" PRIxPTR
+#define PTR_FORMAT    "0x%016" PRIxPTR
+#else   // !_LP64
+#define INTPTR_FORMAT "0x%08"  PRIxPTR
+#define PTR_FORMAT    "0x%08"  PRIxPTR
+#endif  // _LP64
+
+// Format pointers without leading zeros
+#define INTPTRNZ_FORMAT "0x%"  PRIxPTR
+
+#define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
+
+#define SSIZE_FORMAT             "%"   PRIdPTR
+#define SIZE_FORMAT              "%"   PRIuPTR
+#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
+#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
+#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
+#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
+
+#define INTX_FORMAT           "%" PRIdPTR
+#define UINTX_FORMAT          "%" PRIuPTR
+#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
+#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
 
 //----------------------------------------------------------------------------------------------------
 // Constants
@@ -175,17 +202,6 @@ const int LogHeapWordSize     = 2;
 #endif
 const int HeapWordsPerLong    = BytesPerLong / HeapWordSize;
 const int LogHeapWordsPerLong = LogBytesPerLong - LogHeapWordSize;
-
-// The larger HeapWordSize for 64bit requires larger heaps
-// for the same application running in 64bit.  See bug 4967770.
-// The minimum alignment to a heap word size is done.  Other
-// parts of the memory system may require additional alignment
-// and are responsible for those alignments.
-#ifdef _LP64
-#define ScaleForWordSize(x) align_size_down_((x) * 13 / 10, HeapWordSize)
-#else
-#define ScaleForWordSize(x) (x)
-#endif
 
 // The minimum number of native machine words necessary to contain "byte_size"
 // bytes.
@@ -401,10 +417,6 @@ const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == 
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
-// Default ProtectionDomainCacheSize values
-
-const int defaultProtectionDomainCacheSize = NOT_LP64(137) LP64_ONLY(2017);
-
 //----------------------------------------------------------------------------------------------------
 // Default and minimum StringTableSize values
 
@@ -471,97 +483,6 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = true;
 #else
 const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 #endif
-
-// The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
-// Note: this value must be a power of 2
-
-#define ARENA_AMALLOC_ALIGNMENT (2*BytesPerWord)
-
-// Signed variants of alignment helpers.  There are two versions of each, a macro
-// for use in places like enum definitions that require compile-time constant
-// expressions and a function for all other places so as to get type checking.
-
-#define align_size_up_(size, alignment) (((size) + ((alignment) - 1)) & ~((alignment) - 1))
-
-inline bool is_size_aligned(size_t size, size_t alignment) {
-  return align_size_up_(size, alignment) == size;
-}
-
-inline bool is_ptr_aligned(void* ptr, size_t alignment) {
-  return align_size_up_((intptr_t)ptr, (intptr_t)alignment) == (intptr_t)ptr;
-}
-
-inline intptr_t align_size_up(intptr_t size, intptr_t alignment) {
-  return align_size_up_(size, alignment);
-}
-
-#define align_size_down_(size, alignment) ((size) & ~((alignment) - 1))
-
-inline intptr_t align_size_down(intptr_t size, intptr_t alignment) {
-  return align_size_down_(size, alignment);
-}
-
-#define is_size_aligned_(size, alignment) ((size) == (align_size_up_(size, alignment)))
-
-inline void* align_ptr_up(const void* ptr, size_t alignment) {
-  return (void*)align_size_up((intptr_t)ptr, (intptr_t)alignment);
-}
-
-inline void* align_ptr_down(void* ptr, size_t alignment) {
-  return (void*)align_size_down((intptr_t)ptr, (intptr_t)alignment);
-}
-
-inline volatile void* align_ptr_down(volatile void* ptr, size_t alignment) {
-  return (volatile void*)align_size_down((intptr_t)ptr, (intptr_t)alignment);
-}
-
-// Align metaspace objects by rounding up to natural word boundary
-
-inline intptr_t align_metadata_size(intptr_t size) {
-  return align_size_up(size, 1);
-}
-
-// Align objects in the Java Heap by rounding up their size, in HeapWord units.
-// Since the size is given in words this is somewhat of a nop, but
-// distinguishes it from align_object_size.
-inline intptr_t align_object_size(intptr_t size) {
-  return align_size_up(size, MinObjAlignment);
-}
-
-inline bool is_object_aligned(intptr_t addr) {
-  return addr == align_object_size(addr);
-}
-
-// Pad out certain offsets to jlong alignment, in HeapWord units.
-
-inline intptr_t align_object_offset(intptr_t offset) {
-  return align_size_up(offset, HeapWordsPerLong);
-}
-
-// Align down with a lower bound. If the aligning results in 0, return 'alignment'.
-
-inline size_t align_size_down_bounded(size_t size, size_t alignment) {
-  size_t aligned_size = align_size_down_(size, alignment);
-  return aligned_size > 0 ? aligned_size : alignment;
-}
-
-// Clamp an address to be within a specific page
-// 1. If addr is on the page it is returned as is
-// 2. If addr is above the page_address the start of the *next* page will be returned
-// 3. Otherwise, if addr is below the page_address the start of the page will be returned
-inline address clamp_address_in_page(address addr, address page_address, intptr_t page_size) {
-  if (align_size_down(intptr_t(addr), page_size) == align_size_down(intptr_t(page_address), page_size)) {
-    // address is in the specified page, just return it as is
-    return addr;
-  } else if (addr > page_address) {
-    // address is above specified page, return start of next page
-    return (address)align_size_down(intptr_t(page_address), page_size) + page_size;
-  } else {
-    // address is below specified page, return start of page
-    return (address)align_size_down(intptr_t(page_address), page_size);
-  }
-}
-
 
 // The expected size in bytes of a cache line, used to pad data structures.
 #ifndef DEFAULT_CACHE_LINE_SIZE
@@ -859,8 +780,8 @@ inline TosState as_TosState(BasicType type) {
     case T_VOID   : return vtos;
     case T_ARRAY  : // fall through
     case T_OBJECT : return atos;
+    default       : return ilgl;
   }
-  return ilgl;
 }
 
 inline BasicType as_BasicType(TosState state) {
@@ -875,8 +796,8 @@ inline BasicType as_BasicType(TosState state) {
     case dtos : return T_DOUBLE;
     case atos : return T_OBJECT;
     case vtos : return T_VOID;
+    default   : return T_ILLEGAL;
   }
-  return T_ILLEGAL;
 }
 
 
@@ -954,8 +875,6 @@ class RFrame;
 class  CompiledRFrame;
 class  InterpretedRFrame;
 
-class frame;
-
 class vframe;
 class   javaVFrame;
 class     interpretedVFrame;
@@ -1016,10 +935,8 @@ class JavaValue;
 class methodHandle;
 class JavaCallArguments;
 
-// Basic support for errors (general debug facilities not defined at this point fo the include phase)
-
+// Basic support for errors.
 extern void basic_fatal(const char* msg);
-
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
@@ -1028,6 +945,7 @@ const jint     badInt           = -3;                       // generic "bad int"
 const long     badAddressVal    = -2;                       // generic "bad address" value
 const long     badOopVal        = -1;                       // generic "bad oop" value
 const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
+const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
 const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area
 const int      badResourceValue = 0xAB;                     // value used to zap resource area
 const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
@@ -1156,39 +1074,15 @@ inline int log2_long(jlong x) {
 
 //* the argument must be exactly a power of 2
 inline int exact_log2(intptr_t x) {
-  #ifdef ASSERT
-    if (!is_power_of_2(x)) basic_fatal("x must be a power of 2");
-  #endif
+  assert(is_power_of_2(x), "x must be a power of 2: " INTPTR_FORMAT, x);
   return log2_intptr(x);
 }
 
 //* the argument must be exactly a power of 2
 inline int exact_log2_long(jlong x) {
-  #ifdef ASSERT
-    if (!is_power_of_2_long(x)) basic_fatal("x must be a power of 2");
-  #endif
+  assert(is_power_of_2_long(x), "x must be a power of 2: " JLONG_FORMAT, x);
   return log2_long(x);
 }
-
-
-// returns integer round-up to the nearest multiple of s (s must be a power of two)
-inline intptr_t round_to(intptr_t x, uintx s) {
-  #ifdef ASSERT
-    if (!is_power_of_2(s)) basic_fatal("s must be a power of 2");
-  #endif
-  const uintx m = s - 1;
-  return mask_bits(x + m, ~m);
-}
-
-// returns integer round-down to the nearest multiple of s (s must be a power of two)
-inline intptr_t round_down(intptr_t x, uintx s) {
-  #ifdef ASSERT
-    if (!is_power_of_2(s)) basic_fatal("s must be a power of 2");
-  #endif
-  const uintx m = s - 1;
-  return mask_bits(x, ~m);
-}
-
 
 inline bool is_odd (intx x) { return x & 1;      }
 inline bool is_even(intx x) { return !is_odd(x); }
@@ -1335,66 +1229,6 @@ template<class T> static void swap(T& a, T& b) {
   a = b;
   b = tmp;
 }
-
-// Printf-style formatters for fixed- and variable-width types as pointers and
-// integers.  These are derived from the definitions in inttypes.h.  If the platform
-// doesn't provide appropriate definitions, they should be provided in
-// the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
-
-#define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
-
-// Format 32-bit quantities.
-#define INT32_FORMAT           "%" PRId32
-#define UINT32_FORMAT          "%" PRIu32
-#define INT32_FORMAT_W(width)  "%" #width PRId32
-#define UINT32_FORMAT_W(width) "%" #width PRIu32
-
-#define PTR32_FORMAT           "0x%08" PRIx32
-#define PTR32_FORMAT_W(width)  "0x%" #width PRIx32
-
-// Format 64-bit quantities.
-#define INT64_FORMAT           "%" PRId64
-#define UINT64_FORMAT          "%" PRIu64
-#define UINT64_FORMAT_X        "%" PRIx64
-#define INT64_FORMAT_W(width)  "%" #width PRId64
-#define UINT64_FORMAT_W(width) "%" #width PRIu64
-
-#define PTR64_FORMAT           "0x%016" PRIx64
-
-// Format jlong, if necessary
-#ifndef JLONG_FORMAT
-#define JLONG_FORMAT           INT64_FORMAT
-#endif
-#ifndef JULONG_FORMAT
-#define JULONG_FORMAT          UINT64_FORMAT
-#endif
-#ifndef JULONG_FORMAT_X
-#define JULONG_FORMAT_X        UINT64_FORMAT_X
-#endif
-
-// Format pointers which change size between 32- and 64-bit.
-#ifdef  _LP64
-#define INTPTR_FORMAT "0x%016" PRIxPTR
-#define PTR_FORMAT    "0x%016" PRIxPTR
-#else   // !_LP64
-#define INTPTR_FORMAT "0x%08"  PRIxPTR
-#define PTR_FORMAT    "0x%08"  PRIxPTR
-#endif  // _LP64
-
-#define INTPTR_FORMAT_W(width)   "%" #width PRIxPTR
-
-#define SSIZE_FORMAT             "%"   PRIdPTR
-#define SIZE_FORMAT              "%"   PRIuPTR
-#define SIZE_FORMAT_HEX          "0x%" PRIxPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-#define SIZE_FORMAT_HEX_W(width) "0x%" #width PRIxPTR
-
-#define INTX_FORMAT           "%" PRIdPTR
-#define UINTX_FORMAT          "%" PRIuPTR
-#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
-#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
-
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 

@@ -36,6 +36,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -123,7 +124,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   assert(!save_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
 
-  int frame_size_in_bytes = round_to(additional_frame_words*wordSize +
+  int frame_size_in_bytes = align_up(additional_frame_words*wordSize +
                                      reg_save_size*BytesPerInt, 16);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
@@ -190,7 +191,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
   __ ldr(r0, Address(sp, r0_offset_in_bytes()));
 
   // Pop all of the register save are off the stack
-  __ add(sp, sp, round_to(return_offset_in_bytes(), 16));
+  __ add(sp, sp, align_up(return_offset_in_bytes(), 16));
 }
 
 // Is vector's size (in bytes) bigger than a size saved by default?
@@ -317,7 +318,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return round_to(stk_args, 2);
+  return align_up(stk_args, 2);
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
@@ -375,7 +376,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ mov(r13, sp);
 
   // stack is aligned, keep it that way
-  extraspace = round_to(extraspace, 2*wordSize);
+  extraspace = align_up(extraspace, 2*wordSize);
 
   if (extraspace)
     __ sub(sp, sp, extraspace);
@@ -547,7 +548,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   }
 
   // Cut-out for having no stack args.
-  int comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+  int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
   if (comp_args_on_stack) {
     __ sub(rscratch1, sp, comp_words_on_stack * wordSize);
     __ andr(sp, rscratch1, -16);
@@ -1206,7 +1207,7 @@ static void rt_call(MacroAssembler* masm, address dest, int gpargs, int fpargs, 
 }
 
 static void verify_oop_args(MacroAssembler* masm,
-                            methodHandle method,
+                            const methodHandle& method,
                             const BasicType* sig_bt,
                             const VMRegPair* regs) {
   Register temp_reg = r19;  // not part of any compiled calling seq
@@ -1228,7 +1229,7 @@ static void verify_oop_args(MacroAssembler* masm,
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
-                                 methodHandle method,
+                                 const methodHandle& method,
                                  const BasicType* sig_bt,
                                  const VMRegPair* regs) {
   verify_oop_args(masm, method, sig_bt, regs);
@@ -1486,7 +1487,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     total_save_slots = double_slots * 2 + single_slots;
     // align the save area
     if (double_slots != 0) {
-      stack_slots = round_to(stack_slots, 2);
+      stack_slots = align_up(stack_slots, 2);
     }
   }
 
@@ -1543,7 +1544,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
-  stack_slots = round_to(stack_slots, StackAlignmentInSlots);
+  stack_slots = align_up(stack_slots, StackAlignmentInSlots);
 
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -1842,7 +1843,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     // Load (object->mark() | 1) into swap_reg %r0
-    __ ldr(rscratch1, Address(obj_reg, 0));
+    __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ orr(swap_reg, rscratch1, 1);
 
     // Save (object->mark() | 1) into BasicLock's displaced header
@@ -1850,7 +1851,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // src -> dest iff dest == r0 else r0 <- dest
     { Label here;
-      __ cmpxchgptr(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
     }
 
     // Hmm should this move to the slow path code area???
@@ -2029,7 +2030,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Atomic swap old header if oop still contains the stack lock
     Label succeed;
-    __ cmpxchgptr(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
+    __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
     __ bind(succeed);
 
     // slow path re-enters here
@@ -2293,7 +2294,7 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
     return 0;                   // No adjustment for negative locals
   int diff = (callee_locals - callee_parameters) * Interpreter::stackElementWords;
   // diff is counted in stack words
-  return round_to(diff, 2);
+  return align_up(diff, 2);
 }
 
 

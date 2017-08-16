@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,18 +164,6 @@ public class Universe {
     return newOop(systemThreadGroupField.getValue());
   }
 
-  // iterate through the single dimensional primitive array klasses
-  // refer to basic_type_classes_do(void f(Klass*)) in universe.cpp
-  public void basicTypeClassesDo(SystemDictionary.ClassVisitor visitor) {
-    visitor.visit(new TypeArrayKlass(boolArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(byteArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(charArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(intArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(shortArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(longArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(singleArrayKlassField.getValue()));
-    visitor.visit(new TypeArrayKlass(doubleArrayKlassField.getValue()));
-  }
 
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {

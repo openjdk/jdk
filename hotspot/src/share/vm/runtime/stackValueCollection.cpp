@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,10 +138,10 @@ void StackValueCollection::print() {
     if( at(index  )->type() == T_INT &&
         index+1 < size() &&
         at(index+1)->type() == T_INT ) {
-      tty->print("  " INT64_FORMAT " (long)", long_at(index));
+      tty->print("  " INT64_FORMAT " (long)", (int64_t)long_at(index));
       tty->cr();
       tty->print("\t     %.15e (double)", double_at(index));
-      tty->print("  " PTR64_FORMAT " (longhex)", long_at(index));
+      tty->print("  " PTR64_FORMAT " (longhex)", (int64_t)long_at(index));
     }
     tty->cr();
   }

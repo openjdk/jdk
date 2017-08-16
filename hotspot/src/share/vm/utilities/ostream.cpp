@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 extern "C" void jio_print(const char* s); // Declarationtion of jvm method
@@ -595,7 +597,7 @@ bool defaultStream::has_log_file() {
   // if +LogVMOutput is used, because the flags haven't been parsed yet)
   // For safer printing during fatal error handling, do not init logfile
   // if a VM error has been reported.
-  if (!_inited && !is_error_reported())  init();
+  if (!_inited && !VMError::is_error_reported())  init();
   return _log_file != NULL;
 }
 
@@ -787,7 +789,7 @@ intx defaultStream::hold(intx writer_id) {
       !SerializeVMOutput ||
 
       // VM already unhealthy
-      is_error_reported() ||
+      VMError::is_error_reported() ||
 
       // safepoint == global lock (for VM only)
       (SafepointSynchronize::is_synchronizing() &&

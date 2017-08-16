@@ -22,15 +22,16 @@
  */
 package org.graalvm.compiler.api.directives.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.IfNode;
+import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ProbabilityDirectiveTest extends GraalCompilerTest {
 
@@ -55,9 +56,21 @@ public class ProbabilityDirectiveTest extends GraalCompilerTest {
         Assert.assertEquals("IfNode count", 1, ifNodes.count());
 
         IfNode ifNode = ifNodes.first();
-        AbstractBeginNode trueSuccessor = ifNode.trueSuccessor();
-        Assert.assertEquals("branch probability of " + ifNode, 0.125, ifNode.probability(trueSuccessor), 0);
+        AbstractBeginNode oneSuccessor;
+        if (returnValue(ifNode.trueSuccessor()) == 1) {
+            oneSuccessor = ifNode.trueSuccessor();
+        } else {
+            assert returnValue(ifNode.falseSuccessor()) == 1;
+            oneSuccessor = ifNode.falseSuccessor();
+        }
+        Assert.assertEquals("branch probability of " + ifNode, 0.125, ifNode.probability(oneSuccessor), 0);
 
         return true;
+    }
+
+    private static int returnValue(AbstractBeginNode b) {
+        ControlFlowAnchorNode anchor = (ControlFlowAnchorNode) b.next();
+        ReturnNode returnNode = (ReturnNode) anchor.next();
+        return returnNode.result().asJavaConstant().asInt();
     }
 }

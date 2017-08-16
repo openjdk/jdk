@@ -80,7 +80,7 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   // Returns ConcurrentG1Refine instance if succeeded to create/initialize ConcurrentG1Refine and ConcurrentG1RefineThread.
   // Otherwise, returns NULL with error code.
-  static ConcurrentG1Refine* create(CardTableEntryClosure* refine_closure, jint* ecode);
+  static ConcurrentG1Refine* create(jint* ecode);
 
   void stop();
 

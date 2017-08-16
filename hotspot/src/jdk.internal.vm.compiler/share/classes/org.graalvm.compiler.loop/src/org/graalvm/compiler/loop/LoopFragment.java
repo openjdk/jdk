@@ -22,10 +22,7 @@
  */
 package org.graalvm.compiler.loop;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-
+import jdk.vm.ci.meta.TriState;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -36,6 +33,7 @@ import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.GuardPhiNode;
 import org.graalvm.compiler.nodes.GuardProxyNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -53,6 +51,12 @@ import org.graalvm.compiler.nodes.java.MonitorEnterNode;
 import org.graalvm.compiler.nodes.spi.NodeWithState;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.util.EconomicMap;
+
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
 
 public abstract class LoopFragment {
 
@@ -60,7 +64,7 @@ public abstract class LoopFragment {
     private final LoopFragment original;
     protected NodeBitMap nodes;
     protected boolean nodesReady;
-    private Map<Node, Node> duplicationMap;
+    private EconomicMap<Node, Node> duplicationMap;
 
     public LoopFragment(LoopEx loop) {
         this(loop, null);
@@ -73,7 +77,10 @@ public abstract class LoopFragment {
         this.nodesReady = false;
     }
 
-    public LoopEx loop() {
+    /**
+     * Return the original LoopEx for this fragment. For duplicated fragments this returns null.
+     */
+    protected LoopEx loop() {
         return loop;
     }
 
@@ -130,6 +137,8 @@ public abstract class LoopFragment {
 
     protected abstract DuplicationReplacement getDuplicationReplacement();
 
+    protected abstract void beforeDuplication();
+
     protected abstract void finishDuplication();
 
     protected void patchNodes(final DuplicationReplacement dataFix) {
@@ -161,9 +170,12 @@ public abstract class LoopFragment {
             } else {
                 dr = null;
             }
+            beforeDuplication();
             NodeIterable<Node> nodesIterable = original().nodes();
             duplicationMap = graph().addDuplicates(nodesIterable, graph(), nodesIterable.count(), dr);
             finishDuplication();
+            nodes = new NodeBitMap(graph());
+            nodes.markAll(duplicationMap.getValues());
             nodesReady = true;
         } else {
             // TODO (gd) apply fix ?
@@ -174,13 +186,13 @@ public abstract class LoopFragment {
         return computeNodes(graph, blocks, Collections.emptyList());
     }
 
-    protected static NodeBitMap computeNodes(Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<LoopExitNode> earlyExits) {
+    protected static NodeBitMap computeNodes(Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<AbstractBeginNode> earlyExits) {
         final NodeBitMap nodes = graph.createNodeBitMap();
         computeNodes(nodes, graph, blocks, earlyExits);
         return nodes;
     }
 
-    protected static void computeNodes(NodeBitMap nodes, Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<LoopExitNode> earlyExits) {
+    protected static void computeNodes(NodeBitMap nodes, Graph graph, Iterable<AbstractBeginNode> blocks, Iterable<AbstractBeginNode> earlyExits) {
         for (AbstractBeginNode b : blocks) {
             if (b.isDeleted()) {
                 continue;
@@ -197,22 +209,27 @@ public abstract class LoopFragment {
                 nodes.mark(n);
             }
         }
-        for (LoopExitNode earlyExit : earlyExits) {
+        for (AbstractBeginNode earlyExit : earlyExits) {
             if (earlyExit.isDeleted()) {
                 continue;
             }
 
-            FrameState stateAfter = earlyExit.stateAfter();
-            if (stateAfter != null) {
-                stateAfter.applyToVirtual(node -> nodes.mark(node));
-            }
             nodes.mark(earlyExit);
-            for (ProxyNode proxy : earlyExit.proxies()) {
-                nodes.mark(proxy);
+
+            if (earlyExit instanceof LoopExitNode) {
+                LoopExitNode loopExit = (LoopExitNode) earlyExit;
+                FrameState stateAfter = loopExit.stateAfter();
+                if (stateAfter != null) {
+                    stateAfter.applyToVirtual(node -> nodes.mark(node));
+                }
+                for (ProxyNode proxy : loopExit.proxies()) {
+                    nodes.mark(proxy);
+                }
             }
         }
 
-        final NodeBitMap notloopNodes = graph.createNodeBitMap();
+        final NodeBitMap nonLoopNodes = graph.createNodeBitMap();
+        Deque<WorkListEntry> worklist = new ArrayDeque<>();
         for (AbstractBeginNode b : blocks) {
             if (b.isDeleted()) {
                 continue;
@@ -221,51 +238,98 @@ public abstract class LoopFragment {
             for (Node n : b.getBlockNodes()) {
                 if (n instanceof CommitAllocationNode) {
                     for (VirtualObjectNode obj : ((CommitAllocationNode) n).getVirtualObjects()) {
-                        markFloating(obj, nodes, notloopNodes);
+                        markFloating(worklist, obj, nodes, nonLoopNodes);
                     }
                 }
                 if (n instanceof MonitorEnterNode) {
-                    markFloating(((MonitorEnterNode) n).getMonitorId(), nodes, notloopNodes);
+                    markFloating(worklist, ((MonitorEnterNode) n).getMonitorId(), nodes, nonLoopNodes);
                 }
                 for (Node usage : n.usages()) {
-                    markFloating(usage, nodes, notloopNodes);
+                    markFloating(worklist, usage, nodes, nonLoopNodes);
                 }
             }
         }
     }
 
-    private static boolean markFloating(Node n, NodeBitMap loopNodes, NodeBitMap notloopNodes) {
-        if (loopNodes.isMarked(n)) {
-            return true;
+    static class WorkListEntry {
+        final Iterator<Node> usages;
+        final Node n;
+        boolean isLoopNode;
+
+        WorkListEntry(Node n, NodeBitMap loopNodes) {
+            this.n = n;
+            this.usages = n.usages().iterator();
+            this.isLoopNode = loopNodes.isMarked(n);
         }
-        if (notloopNodes.isMarked(n)) {
-            return false;
+    }
+
+    static TriState isLoopNode(Node n, NodeBitMap loopNodes, NodeBitMap nonLoopNodes) {
+        if (loopNodes.isMarked(n)) {
+            return TriState.TRUE;
+        }
+        if (nonLoopNodes.isMarked(n)) {
+            return TriState.FALSE;
         }
         if (n instanceof FixedNode) {
-            return false;
+            return TriState.FALSE;
         }
         boolean mark = false;
         if (n instanceof PhiNode) {
             PhiNode phi = (PhiNode) n;
             mark = loopNodes.isMarked(phi.merge());
             if (mark) {
+                /*
+                 * This Phi is a loop node but the inputs might not be so they must be processed by
+                 * the caller.
+                 */
                 loopNodes.mark(n);
             } else {
-                notloopNodes.mark(n);
-                return false;
+                nonLoopNodes.mark(n);
+                return TriState.FALSE;
             }
         }
-        for (Node usage : n.usages()) {
-            if (markFloating(usage, loopNodes, notloopNodes)) {
-                mark = true;
+        return TriState.UNKNOWN;
+    }
+
+    private static void markFloating(Deque<WorkListEntry> workList, Node start, NodeBitMap loopNodes, NodeBitMap nonLoopNodes) {
+        if (isLoopNode(start, loopNodes, nonLoopNodes).isKnown()) {
+            return;
+        }
+        workList.push(new WorkListEntry(start, loopNodes));
+        while (!workList.isEmpty()) {
+            WorkListEntry currentEntry = workList.peek();
+            if (currentEntry.usages.hasNext()) {
+                Node current = currentEntry.usages.next();
+                TriState result = isLoopNode(current, loopNodes, nonLoopNodes);
+                if (result.isKnown()) {
+                    if (result.toBoolean()) {
+                        currentEntry.isLoopNode = true;
+                    }
+                } else {
+                    workList.push(new WorkListEntry(current, loopNodes));
+                }
+            } else {
+                workList.pop();
+                boolean isLoopNode = currentEntry.isLoopNode;
+                Node current = currentEntry.n;
+                if (!isLoopNode && current instanceof GuardNode) {
+                    /*
+                     * (gd) this is only OK if we are not going to make loop transforms based on
+                     * this
+                     */
+                    assert !((GuardNode) current).graph().hasValueProxies();
+                    isLoopNode = true;
+                }
+                if (isLoopNode) {
+                    loopNodes.mark(current);
+                    for (WorkListEntry e : workList) {
+                        e.isLoopNode = true;
+                    }
+                } else {
+                    nonLoopNodes.mark(current);
+                }
             }
         }
-        if (mark) {
-            loopNodes.mark(n);
-            return true;
-        }
-        notloopNodes.mark(n);
-        return false;
     }
 
     public static NodeIterable<AbstractBeginNode> toHirBlocks(final Iterable<Block> blocks) {
@@ -296,22 +360,30 @@ public abstract class LoopFragment {
         };
     }
 
-    public static NodeIterable<LoopExitNode> toHirExits(final Iterable<Block> blocks) {
-        return new NodeIterable<LoopExitNode>() {
+    public static NodeIterable<AbstractBeginNode> toHirExits(final Iterable<Block> blocks) {
+        return new NodeIterable<AbstractBeginNode>() {
 
             @Override
-            public Iterator<LoopExitNode> iterator() {
+            public Iterator<AbstractBeginNode> iterator() {
                 final Iterator<Block> it = blocks.iterator();
-                return new Iterator<LoopExitNode>() {
+                return new Iterator<AbstractBeginNode>() {
 
                     @Override
                     public void remove() {
                         throw new UnsupportedOperationException();
                     }
 
+                    /**
+                     * Return the true LoopExitNode for this loop or the BeginNode for the block.
+                     */
                     @Override
-                    public LoopExitNode next() {
-                        return (LoopExitNode) it.next().getBeginNode();
+                    public AbstractBeginNode next() {
+                        Block next = it.next();
+                        LoopExitNode exit = next.getLoopExit();
+                        if (exit != null) {
+                            return exit;
+                        }
+                        return next.getBeginNode();
                     }
 
                     @Override

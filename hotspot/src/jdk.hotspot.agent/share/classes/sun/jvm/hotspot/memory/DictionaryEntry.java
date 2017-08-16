@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,28 +43,6 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
 
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("DictionaryEntry");
-    pdSetField = type.getAddressField("_pd_set");
-    loaderDataField = type.getAddressField("_loader_data");
-  }
-
-  // Fields
-  private static AddressField pdSetField;
-  private static AddressField loaderDataField;
-
-  // Accessors
-
-  public ProtectionDomainEntry pdSet() {
-    Address tmp = pdSetField.getValue(addr);
-    return (ProtectionDomainEntry) VMObjectFactory.newObject(
-                          ProtectionDomainEntry.class, tmp);
-  }
-
-  public Oop loader() {
-    return loaderData().getClassLoader();
-  }
-
-  public ClassLoaderData loaderData() {
-    return ClassLoaderData.instantiateWrapperFor(loaderDataField.getValue(addr));
   }
 
   public Klass klass() {
@@ -75,38 +53,9 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
     super(addr);
   }
 
-  public boolean equals(Symbol className, Oop classLoader) {
+  public boolean equals(Symbol className) {
     InstanceKlass ik = (InstanceKlass) klass();
-    Oop loader = loader();
-    if (! ik.getName().equals(className)) {
-      return false;
-    } else {
-      return (loader == null)? (classLoader == null) :
-                               (loader.equals(classLoader));
-    }
-  }
-
-  public boolean isValidProtectionDomain(Oop protectionDomain) {
-    if (protectionDomain == null) {
-      return true;
-    } else {
-      return containsProtectionDomain(protectionDomain);
-    }
-  }
-
-  public boolean containsProtectionDomain(Oop protectionDomain) {
-    InstanceKlass ik = (InstanceKlass) klass();
-    // Currently unimplemented and not used.
-    // if (protectionDomain.equals(ik.getJavaMirror().getProtectionDomain())) {
-    //   return true; // Succeeds trivially
-    // }
-    for (ProtectionDomainEntry current = pdSet(); current != null;
-                                       current = current.next()) {
-      if (protectionDomain.equals(current.protectionDomain())) {
-        return true;
-      }
-    }
-    return false;
+    return ik.getName().equals(className);
   }
 
   /* covariant return type :-(
