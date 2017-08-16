@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,13 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1_globals.hpp"
 #endif
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
+
 
 class CommandLineFlagConstraint_bool : public CommandLineFlagConstraint {
   CommandLineFlagConstraintFunc_bool _constraint;
