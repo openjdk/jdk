@@ -153,33 +153,33 @@ public interface X509Extension {
      * by periods.
      *
      * <p>For example:<br>
-     * <table class="plain">
+     * <table class="striped">
      * <caption style="display:none">Examples of OIDs and extension names</caption>
      * <thead>
      * <tr>
-     * <th>OID <em>(Object Identifier)</em></th>
-     * <th>Extension Name</th></tr>
+     * <th scope="col">OID <em>(Object Identifier)</em></th>
+     * <th scope="col">Extension Name</th></tr>
      * </thead>
-     * <tbody>
-     * <tr><td>2.5.29.14</td>
+     * <tbody style="text-align:left">
+     * <tr><th scope="row">2.5.29.14</th>
      * <td>SubjectKeyIdentifier</td></tr>
-     * <tr><td>2.5.29.15</td>
+     * <tr><th scope="row">2.5.29.15</th>
      * <td>KeyUsage</td></tr>
-     * <tr><td>2.5.29.16</td>
+     * <tr><th scope="row">2.5.29.16</th>
      * <td>PrivateKeyUsage</td></tr>
-     * <tr><td>2.5.29.17</td>
+     * <tr><th scope="row">2.5.29.17</th>
      * <td>SubjectAlternativeName</td></tr>
-     * <tr><td>2.5.29.18</td>
+     * <tr><th scope="row">2.5.29.18</th>
      * <td>IssuerAlternativeName</td></tr>
-     * <tr><td>2.5.29.19</td>
+     * <tr><th scope="row">2.5.29.19</th>
      * <td>BasicConstraints</td></tr>
-     * <tr><td>2.5.29.30</td>
+     * <tr><th scope="row">2.5.29.30</th>
      * <td>NameConstraints</td></tr>
-     * <tr><td>2.5.29.33</td>
+     * <tr><th scope="row">2.5.29.33</th>
      * <td>PolicyMappings</td></tr>
-     * <tr><td>2.5.29.35</td>
+     * <tr><th scope="row">2.5.29.35</th>
      * <td>AuthorityKeyIdentifier</td></tr>
-     * <tr><td>2.5.29.36</td>
+     * <tr><th scope="row">2.5.29.36</th>
      * <td>PolicyConstraints</td></tr>
      * </tbody>
      * </table>

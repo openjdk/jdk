@@ -646,7 +646,7 @@ public class SSLParameters {
      * requested by the peer, the underlying protocol will determine what
      * action to take.  (For example, ALPN will send a
      * {@code "no_application_protocol"} alert and terminate the connection.)
-     * <p>
+     *
      * @implSpec
      * This method will make a copy of the {@code protocols} array.
      *
