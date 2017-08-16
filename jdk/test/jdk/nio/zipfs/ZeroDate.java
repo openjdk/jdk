@@ -44,7 +44,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /* @test
- * @bug 8184940
+ * @bug 8184940 8186227
  * @summary JDK 9 rejects zip files where the modified day or month is 0
  * @author Liam Miller-Cushon
  */
@@ -85,7 +85,7 @@ public class ZeroDate {
         try (OutputStream os = Files.newOutputStream(path)) {
             os.write(data);
         }
-        URI uri = URI.create("jar:file://" + path.toAbsolutePath());
+        URI uri = URI.create("jar:" + path.toUri());
         try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
             Path entry = fs.getPath("x");
             Instant actualInstant =
