@@ -53,22 +53,23 @@ import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import jdk.testlibrary.SimpleSSLContext;
+import java.util.concurrent.*;
 
 /**
  * @test
- * @bug 8185852 8181422
- * @summary Verifies that passing a proxy with an unresolved address does
- *          not cause java.nio.channels.UnresolvedAddressException.
- *          Verifies that downgrading from HTTP/2 to HTTP/1.1 works through
- *          an SSL Tunnel connection when the client is HTTP/2 and the server
- *          and proxy are HTTP/1.1
+ * @bug 8181422
+ * @summary  Verifies that you can access an HTTP/2 server over HTTPS by
+ *           tunnelling through an HTTP/1.1 proxy.
  * @modules jdk.incubator.httpclient
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext ProxyTest
- * @run main/othervm ProxyTest
+ * @library /lib/testlibrary server
+ * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
+ *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ * @build jdk.testlibrary.SimpleSSLContext ProxyTest2
+ * @run main/othervm ProxyTest2
  * @author danielfuchs
  */
-public class ProxyTest {
+public class ProxyTest2 {
 
     static {
         try {
@@ -86,78 +87,51 @@ public class ProxyTest {
     static final String RESPONSE = "<html><body><p>Hello World!</body></html>";
     static final String PATH = "/foo/";
 
-    static HttpServer createHttpsServer() throws IOException, NoSuchAlgorithmException {
-        HttpsServer server = com.sun.net.httpserver.HttpsServer.create();
-        HttpContext context = server.createContext(PATH);
-        context.setHandler(new HttpHandler() {
+    static Http2TestServer createHttpsServer(ExecutorService exec) throws Exception {
+        Http2TestServer server = new Http2TestServer(true, 0, exec, SSLContext.getDefault());
+        server.addHandler(new Http2Handler() {
             @Override
-            public void handle(HttpExchange he) throws IOException {
-                he.getResponseHeaders().add("encoding", "UTF-8");
+            public void handle(Http2TestExchange he) throws IOException {
+                he.getResponseHeaders().addHeader("encoding", "UTF-8");
                 he.sendResponseHeaders(200, RESPONSE.length());
                 he.getResponseBody().write(RESPONSE.getBytes(StandardCharsets.UTF_8));
                 he.close();
             }
-        });
+        }, PATH);
 
-        server.setHttpsConfigurator(new Configurator(SSLContext.getDefault()));
-        server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         return server;
     }
 
     public static void main(String[] args)
-            throws IOException,
-            URISyntaxException,
-            NoSuchAlgorithmException,
-            InterruptedException
+            throws Exception
     {
-        HttpServer server = createHttpsServer();
+        ExecutorService exec = Executors.newCachedThreadPool();
+        Http2TestServer server = createHttpsServer(exec);
         server.start();
         try {
-            test(server, HttpClient.Version.HTTP_1_1);
+            // Http2TestServer over HTTPS does not support HTTP/1.1
+            // => only test with a HTTP/2 client
             test(server, HttpClient.Version.HTTP_2);
         } finally {
-            server.stop(0);
+            server.stop();
+            exec.shutdown();
             System.out.println("Server stopped");
         }
     }
 
-    public static void test(HttpServer server, HttpClient.Version version)
-            throws IOException,
-            URISyntaxException,
-            NoSuchAlgorithmException,
-            InterruptedException
+    public static void test(Http2TestServer server, HttpClient.Version version)
+            throws Exception
     {
         System.out.println("Server is: " + server.getAddress().toString());
-        System.out.println("Verifying communication with server");
-        URI uri = new URI("https:/" + server.getAddress().toString() + PATH + "x");
-        try (InputStream is = uri.toURL().openConnection().getInputStream()) {
-            String resp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            System.out.println(resp);
-            if (!RESPONSE.equals(resp)) {
-                throw new AssertionError("Unexpected response from server");
-            }
-        }
-        System.out.println("Communication with server OK");
-
+        URI uri = new URI("https://localhost:" + server.getAddress().getPort() + PATH + "x");
         TunnelingProxy proxy = new TunnelingProxy(server);
         proxy.start();
         try {
             System.out.println("Proxy started");
             Proxy p = new Proxy(Proxy.Type.HTTP,
                     InetSocketAddress.createUnresolved("localhost", proxy.getAddress().getPort()));
-            System.out.println("Verifying communication with proxy");
-            HttpURLConnection conn = (HttpURLConnection)uri.toURL().openConnection(p);
-            try (InputStream is = conn.getInputStream()) {
-                String resp = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                System.out.println(resp);
-                if (!RESPONSE.equals(resp)) {
-                    throw new AssertionError("Unexpected response from proxy");
-                }
-            }
-            System.out.println("Communication with proxy OK");
-            System.out.println("\nReal test begins here.");
             System.out.println("Setting up request with HttpClient for version: "
-                    + version.name());
+                    + version.name() + "URI=" + uri);
             ProxySelector ps = ProxySelector.of(
                     InetSocketAddress.createUnresolved("localhost", proxy.getAddress().getPort()));
             HttpClient client = HttpClient.newBuilder()
@@ -189,8 +163,8 @@ public class ProxyTest {
         final Thread accept;
         final ServerSocket ss;
         final boolean DEBUG = false;
-        final HttpServer serverImpl;
-        TunnelingProxy(HttpServer serverImpl) throws IOException {
+        final Http2TestServer serverImpl;
+        TunnelingProxy(Http2TestServer serverImpl) throws IOException {
             this.serverImpl = serverImpl;
             ss = new ServerSocket();
             accept = new Thread(this::accept);
@@ -315,8 +289,8 @@ public class ProxyTest {
                     // We have only 1 client... wait until it has finished before
                     // accepting a new connection request.
                     // System.out.println("Tunnel: Waiting for pipes to close");
-                    // t1.join();
-                    // t2.join();
+                    t1.join();
+                    t2.join();
                     System.out.println("Tunnel: Done - waiting for next client");
                 }
             } catch (Throwable ex) {

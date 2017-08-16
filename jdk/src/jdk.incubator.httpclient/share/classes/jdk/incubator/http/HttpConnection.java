@@ -34,7 +34,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 
 import jdk.incubator.http.internal.common.ByteBufferReference;
-import jdk.incubator.http.internal.common.Utils;
 
 /**
  * Wraps socket channel layer and takes care of SSL also.
@@ -136,7 +135,11 @@ abstract class HttpConnection implements Closeable {
             String[] alpn, boolean isHttp2, HttpClientImpl client)
     {
         if (proxy != null) {
-            return new SSLTunnelConnection(addr, client, proxy);
+            if (!isHttp2) {
+                return new SSLTunnelConnection(addr, client, proxy);
+            } else {
+                return new AsyncSSLTunnelConnection(addr, client, alpn, proxy);
+            }
         } else if (!isHttp2) {
             return new SSLConnection(addr, client, alpn);
         } else {
