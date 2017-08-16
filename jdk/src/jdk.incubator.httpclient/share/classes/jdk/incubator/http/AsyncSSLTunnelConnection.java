@@ -33,41 +33,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLEngine;
-
+import javax.net.ssl.SSLParameters;
 import jdk.incubator.http.internal.common.ByteBufferReference;
 import jdk.incubator.http.internal.common.Utils;
 
 /**
- * Asynchronous version of SSLConnection.
+ * An SSL tunnel built on a Plain (CONNECT) TCP tunnel.
  */
-class AsyncSSLConnection extends AbstractAsyncSSLConnection {
+class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
 
+    final PlainTunnelingConnection plainConnection;
     final AsyncSSLDelegate sslDelegate;
-    final PlainHttpConnection plainConnection;
     final String serverName;
-
-    AsyncSSLConnection(InetSocketAddress addr, HttpClientImpl client, String[] ap) {
-        super(addr, client);
-        plainConnection = new PlainHttpConnection(addr, client);
-        serverName = Utils.getServerName(addr);
-        sslDelegate = new AsyncSSLDelegate(plainConnection, client, ap, serverName);
-    }
-
-    @Override
-    synchronized void configureMode(Mode mode) throws IOException {
-        super.configureMode(mode);
-        plainConnection.configureMode(mode);
-    }
-
-    @Override
-    PlainHttpConnection plainConnection() {
-        return plainConnection;
-    }
-
-    @Override
-    AsyncSSLDelegate sslDelegate() {
-        return sslDelegate;
-    }
 
     @Override
     public void connect() throws IOException, InterruptedException {
@@ -78,40 +55,60 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    public CompletableFuture<Void> connectAsync() {
-        // not used currently
-        throw new InternalError();
-    }
-
-    @Override
     boolean connected() {
         return plainConnection.connected() && sslDelegate.connected();
     }
 
     @Override
-    boolean isProxied() {
-        return false;
+    public CompletableFuture<Void> connectAsync() {
+        throw new InternalError();
+    }
+
+    AsyncSSLTunnelConnection(InetSocketAddress addr,
+                        HttpClientImpl client,
+                        String[] alpn,
+                        InetSocketAddress proxy)
+    {
+        super(addr, client);
+        this.serverName = Utils.getServerName(addr);
+        this.plainConnection = new PlainTunnelingConnection(addr, proxy, client);
+        this.sslDelegate = new AsyncSSLDelegate(plainConnection, client, alpn, serverName);
     }
 
     @Override
-    SocketChannel channel() {
-        return plainConnection.channel();
+    synchronized void configureMode(Mode mode) throws IOException {
+        super.configureMode(mode);
+        plainConnection.configureMode(mode);
     }
 
     @Override
-    public void enableCallback() {
-        sslDelegate.enableCallback();
+    SSLParameters sslParameters() {
+        return sslDelegate.getSSLParameters();
+    }
+
+    @Override
+    public String toString() {
+        return "AsyncSSLTunnelConnection: " + super.toString();
+    }
+
+    @Override
+    PlainTunnelingConnection plainConnection() {
+        return plainConnection;
+    }
+
+    @Override
+    AsyncSSLDelegate sslDelegate() {
+        return sslDelegate;
     }
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return ConnectionPool.cacheKey(address, null);
+        return ConnectionPool.cacheKey(address, plainConnection.proxyAddr);
     }
 
     @Override
-    long write(ByteBuffer[] buffers, int start, int number)
-        throws IOException
-    {
+    long write(ByteBuffer[] buffers, int start, int number) throws IOException {
+        //debugPrint("Send", buffers, start, number);
         ByteBuffer[] bufs = Utils.reduce(buffers, start, number);
         long n = Utils.remaining(bufs);
         sslDelegate.writeAsync(ByteBufferReference.toReferences(bufs));
@@ -121,6 +118,7 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
 
     @Override
     long write(ByteBuffer buffer) throws IOException {
+        //debugPrint("Send", buffer);
         long n = buffer.remaining();
         sslDelegate.writeAsync(ByteBufferReference.toReferences(buffer));
         sslDelegate.flushAsync();
@@ -128,25 +126,18 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    public void writeAsyncUnordered(ByteBufferReference[] buffers) throws IOException {
-        assert getMode() == Mode.ASYNC;
-        sslDelegate.writeAsyncUnordered(buffers);
+    public void writeAsync(ByteBufferReference[] buffers) throws IOException {
+        sslDelegate.writeAsync(buffers);
     }
 
     @Override
-    public void writeAsync(ByteBufferReference[] buffers) throws IOException {
-        assert getMode() == Mode.ASYNC;
-        sslDelegate.writeAsync(buffers);
+    public void writeAsyncUnordered(ByteBufferReference[] buffers) throws IOException {
+        sslDelegate.writeAsyncUnordered(buffers);
     }
 
     @Override
     public void flushAsync() throws IOException {
         sslDelegate.flushAsync();
-    }
-
-    @Override
-    public void closeExceptionally(Throwable cause) {
-        Utils.close(cause, sslDelegate, plainConnection.channel());
     }
 
     @Override
@@ -165,8 +156,13 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    SSLEngine getEngine() {
-        return sslDelegate.getEngine();
+    SocketChannel channel() {
+        return plainConnection.channel();
+    }
+
+    @Override
+    boolean isProxied() {
+        return true;
     }
 
     @Override
@@ -189,7 +185,22 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    SSLConnection downgrade() {
-        return new SSLConnection(this);
+    public void enableCallback() {
+        sslDelegate.enableCallback();
+    }
+
+    @Override
+    public void closeExceptionally(Throwable cause) throws IOException {
+        Utils.close(cause, sslDelegate, plainConnection.channel());
+    }
+
+    @Override
+    SSLEngine getEngine() {
+        return sslDelegate.getEngine();
+    }
+
+    @Override
+    SSLTunnelConnection downgrade() {
+        return new SSLTunnelConnection(this);
     }
 }
