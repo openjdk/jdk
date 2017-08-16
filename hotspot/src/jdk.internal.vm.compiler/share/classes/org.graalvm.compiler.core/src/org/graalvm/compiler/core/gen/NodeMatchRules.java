@@ -56,6 +56,8 @@ import org.graalvm.compiler.nodes.calc.SubNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
+import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
+import org.graalvm.compiler.nodes.java.ValueCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FloatingReadNode;
 import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
@@ -87,6 +89,8 @@ import org.graalvm.compiler.nodes.memory.WriteNode;
 @MatchableNode(nodeClass = OrNode.class, inputs = {"x", "y"}, commutative = true)
 @MatchableNode(nodeClass = XorNode.class, inputs = {"x", "y"}, commutative = true)
 @MatchableNode(nodeClass = PiNode.class, inputs = {"object"})
+@MatchableNode(nodeClass = LogicCompareAndSwapNode.class, inputs = {"address", "expectedValue", "newValue"})
+@MatchableNode(nodeClass = ValueCompareAndSwapNode.class, inputs = {"address", "expectedValue", "newValue"})
 public abstract class NodeMatchRules {
 
     NodeLIRBuilder lirBuilder;

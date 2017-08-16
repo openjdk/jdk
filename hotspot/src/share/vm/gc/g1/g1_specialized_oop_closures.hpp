@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,20 @@
 
 // Forward declarations.
 
-class G1ParScanClosure;
-class G1ParPushHeapRSClosure;
+class G1ScanEvacuatedObjClosure;
 
-class FilterOutOfRegionClosure;
+class G1ScanObjsDuringUpdateRSClosure;
+class G1ScanObjsDuringScanRSClosure;
+class G1ConcurrentRefineOopClosure;
+
 class G1CMOopClosure;
 class G1RootRegionScanClosure;
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
-      f(G1ParScanClosure,_nv)                      \
-      f(G1ParPushHeapRSClosure,_nv)                \
-      f(FilterOutOfRegionClosure,_nv)              \
+      f(G1ScanEvacuatedObjClosure,_nv)             \
+      f(G1ScanObjsDuringUpdateRSClosure,_nv)       \
+      f(G1ScanObjsDuringScanRSClosure,_nv)         \
+      f(G1ConcurrentRefineOopClosure,_nv)          \
       f(G1CMOopClosure,_nv)                        \
       f(G1RootRegionScanClosure,_nv)
 

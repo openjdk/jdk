@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,25 +47,24 @@ inline void OrderAccess::ordered_store(volatile FieldType* p, FieldType v) {
 }
 
 template <typename FieldType, ScopedFenceType FenceType>
-inline FieldType OrderAccess::ordered_load(volatile FieldType* p) {
+inline FieldType OrderAccess::ordered_load(const volatile FieldType* p) {
   ScopedFence<FenceType> f((void*)p);
   return load(p);
 }
 
-inline jbyte    OrderAccess::load_acquire(volatile jbyte*   p) { return specialized_load_acquire(p); }
-inline jshort   OrderAccess::load_acquire(volatile jshort*  p) { return specialized_load_acquire(p); }
-inline jint     OrderAccess::load_acquire(volatile jint*    p) { return specialized_load_acquire(p); }
-inline jlong    OrderAccess::load_acquire(volatile jlong*   p) { return specialized_load_acquire(p); }
-inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p) { return specialized_load_acquire(p); }
-inline jdouble  OrderAccess::load_acquire(volatile jdouble* p) { return specialized_load_acquire(p); }
-inline jubyte   OrderAccess::load_acquire(volatile jubyte*  p) { return (jubyte) specialized_load_acquire((volatile jbyte*)p);  }
-inline jushort  OrderAccess::load_acquire(volatile jushort* p) { return (jushort)specialized_load_acquire((volatile jshort*)p); }
-inline juint    OrderAccess::load_acquire(volatile juint*   p) { return (juint)  specialized_load_acquire((volatile jint*)p);   }
-inline julong   OrderAccess::load_acquire(volatile julong*  p) { return (julong) specialized_load_acquire((volatile jlong*)p);  }
+inline jbyte    OrderAccess::load_acquire(const volatile jbyte*   p) { return specialized_load_acquire(p); }
+inline jshort   OrderAccess::load_acquire(const volatile jshort*  p) { return specialized_load_acquire(p); }
+inline jint     OrderAccess::load_acquire(const volatile jint*    p) { return specialized_load_acquire(p); }
+inline jlong    OrderAccess::load_acquire(const volatile jlong*   p) { return specialized_load_acquire(p); }
+inline jfloat   OrderAccess::load_acquire(const volatile jfloat*  p) { return specialized_load_acquire(p); }
+inline jdouble  OrderAccess::load_acquire(const volatile jdouble* p) { return specialized_load_acquire(p); }
+inline jubyte   OrderAccess::load_acquire(const volatile jubyte*  p) { return (jubyte) specialized_load_acquire((const volatile jbyte*)p);  }
+inline jushort  OrderAccess::load_acquire(const volatile jushort* p) { return (jushort)specialized_load_acquire((const volatile jshort*)p); }
+inline juint    OrderAccess::load_acquire(const volatile juint*   p) { return (juint)  specialized_load_acquire((const volatile jint*)p);   }
+inline julong   OrderAccess::load_acquire(const volatile julong*  p) { return (julong) specialized_load_acquire((const volatile jlong*)p);  }
 
-inline intptr_t OrderAccess::load_ptr_acquire(volatile intptr_t*   p) { return (intptr_t)specialized_load_acquire(p); }
-inline void*    OrderAccess::load_ptr_acquire(volatile void*       p) { return (void*)specialized_load_acquire((volatile intptr_t*)p); }
-inline void*    OrderAccess::load_ptr_acquire(const volatile void* p) { return (void*)specialized_load_acquire((volatile intptr_t*)p); }
+inline intptr_t OrderAccess::load_ptr_acquire(const volatile intptr_t*   p) { return (intptr_t)specialized_load_acquire(p); }
+inline void*    OrderAccess::load_ptr_acquire(const volatile void*       p) { return (void*)specialized_load_acquire((const volatile intptr_t*)p); }
 
 inline void     OrderAccess::release_store(volatile jbyte*   p, jbyte   v) { specialized_release_store(p, v); }
 inline void     OrderAccess::release_store(volatile jshort*  p, jshort  v) { specialized_release_store(p, v); }
@@ -98,7 +97,7 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
 // The following methods can be specialized using simple template specialization
 // in the platform specific files for optimization purposes. Otherwise the
 // generalized variant is used.
-template<typename T> inline T    OrderAccess::specialized_load_acquire       (volatile T* p)       { return ordered_load<T, X_ACQUIRE>(p);    }
+template<typename T> inline T    OrderAccess::specialized_load_acquire       (const volatile T* p)       { return ordered_load<T, X_ACQUIRE>(p);    }
 template<typename T> inline void OrderAccess::specialized_release_store      (volatile T* p, T v)  { ordered_store<T, RELEASE_X>(p, v);       }
 template<typename T> inline void OrderAccess::specialized_release_store_fence(volatile T* p, T v)  { ordered_store<T, RELEASE_X_FENCE>(p, v); }
 
@@ -111,12 +110,12 @@ inline void OrderAccess::store(volatile jlong*   p, jlong   v) { Atomic::store(v
 inline void OrderAccess::store(volatile jdouble* p, jdouble v) { Atomic::store(jlong_cast(v), (volatile jlong*)p); }
 inline void OrderAccess::store(volatile jfloat*  p, jfloat  v) { *p = v; }
 
-inline jbyte   OrderAccess::load(volatile jbyte*   p) { return *p; }
-inline jshort  OrderAccess::load(volatile jshort*  p) { return *p; }
-inline jint    OrderAccess::load(volatile jint*    p) { return *p; }
-inline jlong   OrderAccess::load(volatile jlong*   p) { return Atomic::load(p); }
-inline jdouble OrderAccess::load(volatile jdouble* p) { return jdouble_cast(Atomic::load((volatile jlong*)p)); }
-inline jfloat  OrderAccess::load(volatile jfloat*  p) { return *p; }
+inline jbyte   OrderAccess::load(const volatile jbyte*   p) { return *p; }
+inline jshort  OrderAccess::load(const volatile jshort*  p) { return *p; }
+inline jint    OrderAccess::load(const volatile jint*    p) { return *p; }
+inline jlong   OrderAccess::load(const volatile jlong*   p) { return Atomic::load(p); }
+inline jdouble OrderAccess::load(const volatile jdouble* p) { return jdouble_cast(Atomic::load((const volatile jlong*)p)); }
+inline jfloat  OrderAccess::load(const volatile jfloat*  p) { return *p; }
 
 #endif // VM_HAS_GENERALIZED_ORDER_ACCESS
 

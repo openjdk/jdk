@@ -52,6 +52,7 @@ class JSON : public ResourceObj {
 
   typedef union {
     int64_t int_value;
+    uint64_t uint_value;
     double double_value;
 
     struct {

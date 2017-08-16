@@ -28,6 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -42,13 +43,8 @@ import compiler.testlibrary.rtm.AbortProvoker;
 import compiler.testlibrary.rtm.AbortType;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -62,14 +58,9 @@ import java.util.List;
  * is used. For more information abort that issue see
  * {@link TestUseRTMAfterLockInflation}.
  */
-public class TestUseRTMForStackLocks extends CommandLineOptionTest {
+public class TestUseRTMForStackLocks {
     private static final boolean INFLATE_MONITOR = false;
 
-    private TestUseRTMForStackLocks() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         AbortProvoker provoker = AbortType.XABORT.provoker();
         RTMLockingStatistics lock;
@@ -100,6 +91,6 @@ public class TestUseRTMForStackLocks extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMForStackLocks().test();
+        new TestUseRTMForStackLocks().runTestCases();
     }
 }

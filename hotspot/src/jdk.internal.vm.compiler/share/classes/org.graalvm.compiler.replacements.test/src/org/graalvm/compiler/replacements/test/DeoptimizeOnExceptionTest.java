@@ -29,11 +29,11 @@ import org.graalvm.compiler.phases.common.AbstractInliningPhase;
 import org.graalvm.compiler.test.ExportingClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
@@ -42,7 +42,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class DeoptimizeOnExceptionTest extends GraalCompilerTest {
 
     public DeoptimizeOnExceptionTest() {
-        getSuites().getHighTier().findPhase(AbstractInliningPhase.class).remove();
+        createSuites(getInitialOptions()).getHighTier().findPhase(AbstractInliningPhase.class).remove();
     }
 
     private static void raiseException(String m1, String m2, String m3, String m4, String m5) {

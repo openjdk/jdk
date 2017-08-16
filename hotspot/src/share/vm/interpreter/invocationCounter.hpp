@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class InvocationCounter VALUE_OBJ_CLASS_SPEC {
   static int InterpreterBackwardBranchLimit;    // A separate threshold for on stack replacement
   static int InterpreterProfileLimit;           // Profiling threshold scaled for interpreter use
 
-  typedef address (*Action)(methodHandle method, TRAPS);
+  typedef address (*Action)(const methodHandle& method, TRAPS);
 
   enum PublicConstants {
     count_increment      = count_grain,          // use this value to increment the 32bit _counter word

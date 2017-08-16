@@ -22,19 +22,24 @@
  */
 package org.graalvm.compiler.hotspot;
 
+import static jdk.vm.ci.code.CodeUtil.K;
 import static jdk.vm.ci.code.CodeUtil.getCallingConvention;
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import java.util.Collections;
+
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotLoweringProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
-import org.graalvm.compiler.hotspot.stubs.DeoptimizationStub;
 import org.graalvm.compiler.hotspot.stubs.Stub;
-import org.graalvm.compiler.hotspot.stubs.UncommonTrapStub;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.framemap.ReferenceMapBuilder;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.common.InitTimer;
@@ -49,16 +54,12 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 public abstract class HotSpotHostBackend extends HotSpotBackend {
 
     /**
-     * Descriptor for {@code SharedRuntime::deopt_blob()->unpack()} or
-     * {@link DeoptimizationStub#deoptimizationHandler} depending on
-     * {@link HotSpotBackend.Options#PreferGraalStubs}.
+     * Descriptor for {@code SharedRuntime::deopt_blob()->unpack()}.
      */
     public static final ForeignCallDescriptor DEOPTIMIZATION_HANDLER = new ForeignCallDescriptor("deoptHandler", void.class);
 
     /**
-     * Descriptor for {@code SharedRuntime::deopt_blob()->uncommon_trap()} or
-     * {@link UncommonTrapStub#uncommonTrapHandler} depending on
-     * {@link HotSpotBackend.Options#PreferGraalStubs}.
+     * Descriptor for {@code SharedRuntime::deopt_blob()->uncommon_trap()}.
      */
     public static final ForeignCallDescriptor UNCOMMON_TRAP_HANDLER = new ForeignCallDescriptor("uncommonTrapHandler", void.class);
 
@@ -71,16 +72,17 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
 
     @Override
     @SuppressWarnings("try")
-    public void completeInitialization(HotSpotJVMCIRuntime jvmciRuntime) {
+    public void completeInitialization(HotSpotJVMCIRuntime jvmciRuntime, OptionValues options) {
         final HotSpotProviders providers = getProviders();
         HotSpotHostForeignCallsProvider foreignCalls = (HotSpotHostForeignCallsProvider) providers.getForeignCalls();
         final HotSpotLoweringProvider lowerer = (HotSpotLoweringProvider) providers.getLowerer();
 
         try (InitTimer st = timer("foreignCalls.initialize")) {
-            foreignCalls.initialize(providers);
+            foreignCalls.initialize(providers, options);
         }
         try (InitTimer st = timer("lowerer.initialize")) {
-            lowerer.initialize(providers, config);
+            Iterable<DebugHandlersFactory> factories = Collections.singletonList(new GraalDebugHandlersFactory(providers.getSnippetReflection()));
+            lowerer.initialize(options, factories, providers, config);
         }
     }
 
@@ -114,7 +116,7 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
             // is greater than a page.
 
             int pageSize = config.vmPageSize;
-            int bangEnd = config.stackShadowPages * pageSize;
+            int bangEnd = NumUtil.roundUp(config.stackShadowPages * 4 * K, pageSize);
 
             // This is how far the previous frame's stack banging extended.
             int bangEndSafe = bangEnd;

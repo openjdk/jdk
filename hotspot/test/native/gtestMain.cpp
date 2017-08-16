@@ -29,10 +29,22 @@
 #  include <dlfcn.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #include "prims/jni.h"
 #include "unittest.hpp"
 
-extern "C" {
+// Default value for -new-thread option: true on AIX because we run into
+// problems when attempting to initialize the JVM on the primordial thread.
+#ifdef _AIX
+const static bool DEFAULT_SPAWN_IN_NEW_THREAD = true;
+#else
+const static bool DEFAULT_SPAWN_IN_NEW_THREAD = false;
+#endif
 
 static bool is_prefix(const char* prefix, const char* str) {
   return strncmp(str, prefix, strlen(prefix)) == 0;
@@ -120,6 +132,27 @@ static char* get_java_home_arg(int argc, char** argv) {
   return NULL;
 }
 
+static bool get_spawn_new_main_thread_arg(int argc, char** argv) {
+  // -new-thread[=(true|false)]
+  for (int i = 0; i < argc; i++) {
+    if (is_prefix("-new-thread", argv[i])) {
+      const char* v = argv[i] + strlen("-new-thread");
+      if (strlen(v) == 0) {
+        return true;
+      } else {
+        if (strcmp(v, "=true") == 0) {
+          return true;
+        } else if (strcmp(v, "=false") == 0) {
+          return false;
+        } else {
+          fprintf(stderr, "Invalid value for -new-thread (%s)", v);
+        }
+      }
+    }
+  }
+  return DEFAULT_SPAWN_IN_NEW_THREAD;
+}
+
 static int num_args_to_skip(char* arg) {
   if (strcmp(arg, "-jdk") == 0) {
     return 2; // skip the argument after -jdk as well
@@ -128,6 +161,9 @@ static int num_args_to_skip(char* arg) {
     return 1;
   }
   if (is_prefix("-jdk:", arg)) {
+    return 1;
+  }
+  if (is_prefix("-new-thread", arg)) {
     return 1;
   }
   return 0;
@@ -154,7 +190,7 @@ static char** remove_test_runner_arguments(int* argcp, char **argv) {
   return new_argv;
 }
 
-JNIEXPORT void JNICALL runUnitTests(int argc, char** argv) {
+static void runUnitTestsInner(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
 
@@ -217,4 +253,70 @@ JNIEXPORT void JNICALL runUnitTests(int argc, char** argv) {
   }
 }
 
-} // extern "C"
+// Thread support for -new-thread option
+
+struct args_t {
+  int argc; char** argv;
+};
+
+#define STACK_SIZE 0x200000
+
+#ifdef _WIN32
+
+static DWORD WINAPI thread_wrapper(void* p) {
+  const args_t* const p_args = (const args_t*) p;
+  runUnitTestsInner(p_args->argc, p_args->argv);
+  return 0;
+}
+
+static void run_in_new_thread(const args_t* args) {
+  HANDLE hdl;
+  hdl = CreateThread(NULL, STACK_SIZE, thread_wrapper, (void*)args, 0, NULL);
+  if (hdl == NULL) {
+    fprintf(stderr, "Failed to create main thread\n");
+    exit(2);
+  }
+  WaitForSingleObject(hdl, INFINITE);
+}
+
+#else
+
+extern "C" void* thread_wrapper(void* p) {
+  const args_t* const p_args = (const args_t*) p;
+  runUnitTestsInner(p_args->argc, p_args->argv);
+  return 0;
+}
+
+static void run_in_new_thread(const args_t* args) {
+  pthread_t tid;
+  pthread_attr_t attr;
+
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, STACK_SIZE);
+
+  if (pthread_create(&tid, &attr, thread_wrapper, (void*)args) != 0) {
+    fprintf(stderr, "Failed to create main thread\n");
+    exit(2);
+  }
+
+  if (pthread_join(tid, NULL) != 0) {
+    fprintf(stderr, "Failed to join main thread\n");
+    exit(2);
+  }
+}
+
+#endif
+
+extern "C"
+JNIEXPORT void JNICALL runUnitTests(int argc, char** argv) {
+  const bool spawn_new_main_thread = get_spawn_new_main_thread_arg(argc, argv);
+  if (spawn_new_main_thread) {
+    args_t args;
+    args.argc = argc;
+    args.argv = argv;
+    run_in_new_thread(&args);
+  } else {
+    runUnitTestsInner(argc, argv);
+  }
+}
+

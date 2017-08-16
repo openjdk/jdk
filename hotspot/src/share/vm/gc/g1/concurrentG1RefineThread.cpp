@@ -26,6 +26,7 @@
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -34,11 +35,9 @@
 
 ConcurrentG1RefineThread::
 ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
-                         CardTableEntryClosure* refine_closure,
                          uint worker_id_offset, uint worker_id,
                          size_t activate, size_t deactivate) :
   ConcurrentGCThread(),
-  _refine_closure(refine_closure),
   _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),
   _active(false),
@@ -145,10 +144,7 @@ void ConcurrentG1RefineThread::run_service() {
         }
 
         // Process the next buffer, if there are enough left.
-        if (!dcqs.apply_closure_to_completed_buffer(_refine_closure,
-                                                    _worker_id + _worker_id_offset,
-                                                    _deactivation_threshold,
-                                                    false /* during_pause */)) {
+        if (!dcqs.refine_completed_buffer_concurrently(_worker_id + _worker_id_offset, _deactivation_threshold)) {
           break; // Deactivate, number of buffers fell below threshold.
         }
         ++buffers_processed;

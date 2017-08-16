@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 
 void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same
@@ -43,7 +44,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   assert(bytes_to_reserve > 0, "Sanity");
 
   bytes_to_reserve =
-    align_size_up(bytes_to_reserve, os::vm_allocation_granularity());
+    align_up(bytes_to_reserve, os::vm_allocation_granularity());
 
   // Do not use large-pages for the backing store. The one large page region
   // will be used for the heap proper.
@@ -89,7 +90,7 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
 
   // Only commit memory in page sized chunks
   requested_blocks_size_in_bytes =
-    align_size_up(requested_blocks_size_in_bytes, os::vm_page_size());
+    align_up(requested_blocks_size_in_bytes, os::vm_page_size());
 
   _covered_region = mr;
 

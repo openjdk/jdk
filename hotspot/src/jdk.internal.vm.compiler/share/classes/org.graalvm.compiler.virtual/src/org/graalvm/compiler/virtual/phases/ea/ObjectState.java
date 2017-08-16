@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Arrays;
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.virtual.EscapeObjectState;
@@ -35,6 +35,8 @@ import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 import org.graalvm.compiler.virtual.nodes.MaterializedObjectState;
 import org.graalvm.compiler.virtual.nodes.VirtualObjectState;
 
+import jdk.vm.ci.meta.JavaConstant;
+
 /**
  * This class describes the state of a virtual object while iterating over the graph. It describes
  * the fields or array elements (called "entries") and the lock count if the object is still
@@ -42,8 +44,8 @@ import org.graalvm.compiler.virtual.nodes.VirtualObjectState;
  */
 public class ObjectState {
 
-    public static final DebugCounter CREATE_ESCAPED_OBJECT_STATE = Debug.counter("CreateEscapeObjectState");
-    public static final DebugCounter GET_ESCAPED_OBJECT_STATE = Debug.counter("GetEscapeObjectState");
+    public static final CounterKey CREATE_ESCAPED_OBJECT_STATE = DebugContext.counter("CreateEscapeObjectState");
+    public static final CounterKey GET_ESCAPED_OBJECT_STATE = DebugContext.counter("GetEscapeObjectState");
 
     private ValueNode[] entries;
     private ValueNode materializedValue;
@@ -52,6 +54,10 @@ public class ObjectState {
 
     private EscapeObjectState cachedState;
 
+    /**
+     * ObjectStates are duplicated lazily, if this field is true then the state needs to be copied
+     * before it is modified.
+     */
     boolean copyOnWrite;
 
     public ObjectState(ValueNode[] entries, List<MonitorIdNode> locks, boolean ensureVirtualized) {
@@ -86,11 +92,27 @@ public class ObjectState {
         return new ObjectState(this);
     }
 
-    public EscapeObjectState createEscapeObjectState(VirtualObjectNode virtual) {
-        GET_ESCAPED_OBJECT_STATE.increment();
+    public EscapeObjectState createEscapeObjectState(DebugContext debug, VirtualObjectNode virtual) {
+        GET_ESCAPED_OBJECT_STATE.increment(debug);
         if (cachedState == null) {
-            CREATE_ESCAPED_OBJECT_STATE.increment();
-            cachedState = isVirtual() ? new VirtualObjectState(virtual, entries) : new MaterializedObjectState(virtual, materializedValue);
+            CREATE_ESCAPED_OBJECT_STATE.increment(debug);
+            if (isVirtual()) {
+                /*
+                 * Clear out entries that are default values anyway.
+                 *
+                 * TODO: this should be propagated into ObjectState.entries, but that will take some
+                 * more refactoring.
+                 */
+                ValueNode[] newEntries = entries.clone();
+                for (int i = 0; i < newEntries.length; i++) {
+                    if (newEntries[i].asJavaConstant() == JavaConstant.defaultForKind(virtual.entryKind(i).getStackKind())) {
+                        newEntries[i] = null;
+                    }
+                }
+                cachedState = new VirtualObjectState(virtual, newEntries);
+            } else {
+                cachedState = new MaterializedObjectState(virtual, materializedValue);
+            }
         }
         return cachedState;
 

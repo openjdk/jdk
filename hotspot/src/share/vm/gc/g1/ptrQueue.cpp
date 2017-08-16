@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,13 @@
 #include <new>
 
 PtrQueue::PtrQueue(PtrQueueSet* qset, bool permanent, bool active) :
-  _qset(qset), _buf(NULL), _index(0), _sz(0), _active(active),
-  _permanent(permanent), _lock(NULL)
+  _qset(qset),
+  _active(active),
+  _permanent(permanent),
+  _index(0),
+  _capacity_in_bytes(0),
+  _buf(NULL),
+  _lock(NULL)
 {}
 
 PtrQueue::~PtrQueue() {
@@ -42,8 +47,8 @@ PtrQueue::~PtrQueue() {
 }
 
 void PtrQueue::flush_impl() {
-  if (!_permanent && _buf != NULL) {
-    BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+  if (_buf != NULL) {
+    BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
     if (is_empty()) {
       // No work to do.
       qset()->deallocate_buffer(node);
@@ -51,44 +56,31 @@ void PtrQueue::flush_impl() {
       qset()->enqueue_complete_buffer(node);
     }
     _buf = NULL;
-    _index = 0;
+    set_index(0);
   }
 }
 
 
 void PtrQueue::enqueue_known_active(void* ptr) {
-  assert(_index <= _sz, "Invariant.");
-  assert(_index == 0 || _buf != NULL, "invariant");
-
   while (_index == 0) {
     handle_zero_index();
   }
 
-  assert(_index > 0, "postcondition");
-  _index -= sizeof(void*);
-  _buf[byte_index_to_index(_index)] = ptr;
-  assert(_index <= _sz, "Invariant.");
+  assert(_buf != NULL, "postcondition");
+  assert(index() > 0, "postcondition");
+  assert(index() <= capacity(), "invariant");
+  _index -= _element_size;
+  _buf[index()] = ptr;
 }
 
 void PtrQueue::locking_enqueue_completed_buffer(BufferNode* node) {
   assert(_lock->owned_by_self(), "Required.");
-
-  // We have to unlock _lock (which may be Shared_DirtyCardQ_lock) before
-  // we acquire DirtyCardQ_CBL_mon inside enqueue_complete_buffer as they
-  // have the same rank and we may get the "possible deadlock" message
-  _lock->unlock();
-
   qset()->enqueue_complete_buffer(node);
-  // We must relock only because the caller will unlock, for the normal
-  // case.
-  _lock->lock_without_safepoint_check();
 }
 
 
-BufferNode* BufferNode::allocate(size_t byte_size) {
-  assert(byte_size > 0, "precondition");
-  assert(is_size_aligned(byte_size, sizeof(void**)),
-         "Invalid buffer size " SIZE_FORMAT, byte_size);
+BufferNode* BufferNode::allocate(size_t size) {
+  size_t byte_size = size * sizeof(void*);
   void* data = NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
   return new (data) BufferNode;
 }
@@ -99,10 +91,10 @@ void BufferNode::deallocate(BufferNode* node) {
 }
 
 PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
+  _buffer_size(0),
   _max_completed_queue(0),
   _cbl_mon(NULL), _fl_lock(NULL),
   _notify_when_complete(notify_when_complete),
-  _sz(0),
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
   _n_completed_buffers(0),
@@ -133,7 +125,6 @@ void PtrQueueSet::initialize(Monitor* cbl_mon,
 }
 
 void** PtrQueueSet::allocate_buffer() {
-  assert(_sz > 0, "Didn't set a buffer size.");
   BufferNode* node = NULL;
   {
     MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
@@ -144,7 +135,7 @@ void** PtrQueueSet::allocate_buffer() {
     }
   }
   if (node == NULL) {
-    node = BufferNode::allocate(_sz);
+    node = BufferNode::allocate(buffer_size());
   } else {
     // Reinitialize buffer obtained from free list.
     node->set_index(0);
@@ -154,7 +145,6 @@ void** PtrQueueSet::allocate_buffer() {
 }
 
 void PtrQueueSet::deallocate_buffer(BufferNode* node) {
-  assert(_sz > 0, "Didn't set a buffer size.");
   MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
   node->set_next(_fl_owner->_buf_free_list);
   _fl_owner->_buf_free_list = node;
@@ -177,69 +167,48 @@ void PtrQueueSet::reduce_free_list() {
 }
 
 void PtrQueue::handle_zero_index() {
-  assert(_index == 0, "Precondition.");
+  assert(index() == 0, "precondition");
 
   // This thread records the full buffer and allocates a new one (while
   // holding the lock if there is one).
   if (_buf != NULL) {
     if (!should_enqueue_buffer()) {
-      assert(_index > 0, "the buffer can only be re-used if it's not full");
+      assert(index() > 0, "the buffer can only be re-used if it's not full");
       return;
     }
 
     if (_lock) {
       assert(_lock->owned_by_self(), "Required.");
 
-      // The current PtrQ may be the shared dirty card queue and
-      // may be being manipulated by more than one worker thread
-      // during a pause. Since the enqueueing of the completed
-      // buffer unlocks the Shared_DirtyCardQ_lock more than one
-      // worker thread can 'race' on reading the shared queue attributes
-      // (_buf and _index) and multiple threads can call into this
-      // routine for the same buffer. This will cause the completed
-      // buffer to be added to the CBL multiple times.
-
-      // We "claim" the current buffer by caching value of _buf in
-      // a local and clearing the field while holding _lock. When
-      // _lock is released (while enqueueing the completed buffer)
-      // the thread that acquires _lock will skip this code,
-      // preventing the subsequent the multiple enqueue, and
-      // install a newly allocated buffer below.
-
-      BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+      BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
       _buf = NULL;         // clear shared _buf field
 
       locking_enqueue_completed_buffer(node); // enqueue completed buffer
-
-      // While the current thread was enqueueing the buffer another thread
-      // may have a allocated a new buffer and inserted it into this pointer
-      // queue. If that happens then we just return so that the current
-      // thread doesn't overwrite the buffer allocated by the other thread
-      // and potentially losing some dirtied cards.
-
-      if (_buf != NULL) return;
+      assert(_buf == NULL, "multiple enqueuers appear to be racing");
     } else {
-      BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+      BufferNode* node = BufferNode::make_node_from_buffer(_buf, index());
       if (qset()->process_or_enqueue_complete_buffer(node)) {
         // Recycle the buffer. No allocation.
         assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
-        assert(_sz == qset()->buffer_size(), "invariant");
-        _index = _sz;
+        assert(capacity() == qset()->buffer_size(), "invariant");
+        reset();
         return;
       }
     }
   }
-  // Reallocate the buffer
+  // Set capacity in case this is the first allocation.
+  set_capacity(qset()->buffer_size());
+  // Allocate a new buffer.
   _buf = qset()->allocate_buffer();
-  _sz = qset()->buffer_size();
-  _index = _sz;
+  reset();
 }
 
 bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
   if (Thread::current()->is_Java_thread()) {
     // We don't lock. It is fine to be epsilon-precise here.
-    if (_max_completed_queue == 0 || _max_completed_queue > 0 &&
-        _n_completed_buffers >= _max_completed_queue + _completed_queue_padding) {
+    if (_max_completed_queue == 0 ||
+        (_max_completed_queue > 0 &&
+          _n_completed_buffers >= _max_completed_queue + _completed_queue_padding)) {
       bool b = mut_process_buffer(node);
       if (b) {
         // True here means that the buffer hasn't been deallocated and the caller may reuse it.
@@ -296,8 +265,8 @@ void PtrQueueSet::assert_completed_buffer_list_len_correct_locked() {
 }
 
 void PtrQueueSet::set_buffer_size(size_t sz) {
-  assert(_sz == 0 && sz > 0, "Should be called only once.");
-  _sz = sz * sizeof(void*);
+  assert(_buffer_size == 0 && sz > 0, "Should be called only once.");
+  _buffer_size = sz;
 }
 
 // Merge lists of buffers. Notify the processing threads.

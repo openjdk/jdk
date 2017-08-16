@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class PatchModuleTestJarDir {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager1",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager1", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager1", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.naming".
@@ -72,7 +72,7 @@ public class PatchModuleTestJarDir {
                  "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager1",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager1", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager1", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Create a second class file in the module java.naming. This class file
@@ -85,7 +85,7 @@ public class PatchModuleTestJarDir {
                  "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager2",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager2", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager2", source, "--patch-module=java.naming"),
              (System.getProperty("test.classes") + "/mods/java.naming"));
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
+#include "oops/array.hpp"
 #include "runtime/orderAccess.hpp"
-#include "utilities/array.hpp"
+#include "utilities/align.hpp"
 
 class PSPromotionManager;
 
@@ -217,11 +218,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_field(                                // sets entry to resolved field state
     Bytecodes::Code get_code,                    // the bytecode used for reading the field
     Bytecodes::Code put_code,                    // the bytecode used for writing the field
-    KlassHandle     field_holder,                // the object/klass holding the field
+    Klass*          field_holder,                // the object/klass holding the field
     int             orig_field_index,            // the original field index in the field holder
     int             field_offset,                // the field offset in words in the field holder
     TosState        field_type,                  // the (machine) field type
-    bool            is_final,                     // the field is final
+    bool            is_final,                    // the field is final
     bool            is_volatile,                 // the field is volatile
     Klass*          root_klass                   // needed by the GC to dirty the klass
   );
@@ -229,7 +230,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
  private:
   void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // the method/prototype if any (NULL, otherwise)
+    const methodHandle& method,                  // the method/prototype if any (NULL, otherwise)
     int             vtable_index,                // the vtable index if any, else negative
     bool            sender_is_interface
   );
@@ -237,13 +238,13 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
  public:
   void set_direct_call(                          // sets entry to exact concrete method entry
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // the method to call
+    const methodHandle& method,                  // the method to call
     bool            sender_is_interface
   );
 
   void set_vtable_call(                          // sets entry to vtable index
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    methodHandle    method,                      // resolved method which declares the vtable index
+    const methodHandle& method,                  // resolved method which declares the vtable index
     int             vtable_index                 // the vtable index
   );
 
@@ -362,7 +363,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   // Code generation support
   static WordSize size()                         {
-    return in_WordSize(align_size_up(sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
+    return in_WordSize(align_up((int)sizeof(ConstantPoolCacheEntry), wordSize) / wordSize);
   }
   static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }
@@ -403,8 +404,20 @@ class ConstantPoolCache: public MetaspaceObj {
   friend class VMStructs;
   friend class MetadataFactory;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
   ConstantPool*   _constant_pool;          // the corresponding constant pool
+
+  // The following fields need to be modified at runtime, so they cannot be
+  // stored in the ConstantPool, which is read-only.
+  // Array of resolved objects from the constant pool and map from resolved
+  // object index to original constant pool index
+  jobject              _resolved_references;
+  Array<u2>*           _reference_map;
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_references;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -416,6 +429,7 @@ class ConstantPoolCache: public MetaspaceObj {
                     const intStack& invokedynamic_references_map) :
                           _length(length),
                           _constant_pool(NULL) {
+    CDS_JAVA_HEAP_ONLY(_archived_references = 0;)
     initialize(inverse_index_map, invokedynamic_inverse_index_map,
                invokedynamic_references_map);
     for (int i = 0; i < length; i++) {
@@ -434,7 +448,21 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& invokedynamic_references_map, TRAPS);
   bool is_constantPoolCache() const { return true; }
 
-  int length() const                             { return _length; }
+  int length() const                      { return _length; }
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
+
+  oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
+
+  jobject resolved_references()           { return _resolved_references; }
+  void set_resolved_references(jobject s) { _resolved_references = s; }
+  Array<u2>* reference_map() const        { return _reference_map; }
+  void set_reference_map(Array<u2>* o)    { _reference_map = o; }
+
+  // Assembly code support
+  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
+
  private:
   void set_length(int length)                    { _length = length; }
 

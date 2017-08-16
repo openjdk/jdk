@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,7 +708,7 @@ private:
 
   static void do_module(ModuleEntry* entry) {
     assert_locked_or_safepoint(Module_lock);
-    jobject module = entry->module();
+    jobject module = entry->module_handle();
     guarantee(module != NULL, "module object is NULL");
     _tbl->push(module);
   }

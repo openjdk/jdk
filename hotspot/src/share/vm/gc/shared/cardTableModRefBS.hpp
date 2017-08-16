@@ -27,6 +27,7 @@
 
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
@@ -168,7 +169,7 @@ public:
   // in, um, words.
   inline size_t cards_required(size_t covered_words) {
     // Add one for a guard card, used to detect errors.
-    const size_t words = align_size_up(covered_words, card_size_in_words);
+    const size_t words = align_up(covered_words, card_size_in_words);
     return words / card_size_in_words + 1;
   }
 
@@ -290,7 +291,9 @@ public:
   // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const jbyte* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
-           "out of bounds access to card marking array");
+           "out of bounds access to card marking array. p: " PTR_FORMAT
+           " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
+           p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
     size_t delta = pointer_delta(p, byte_map_base, sizeof(jbyte));
     HeapWord* result = (HeapWord*) (delta << card_shift);
     assert(_whole_heap.contains(result),

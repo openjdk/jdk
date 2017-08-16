@@ -25,6 +25,7 @@ package org.graalvm.compiler.replacements.aarch64;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.NodeClass;
@@ -38,6 +39,8 @@ import org.graalvm.compiler.nodes.calc.SignedRemNode;
 import org.graalvm.compiler.nodes.calc.UnsignedDivNode;
 import org.graalvm.compiler.nodes.calc.UnsignedRemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
@@ -66,8 +69,9 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
     private final SnippetTemplate.SnippetInfo uirem;
     private final SnippetTemplate.SnippetInfo ulrem;
 
-    public AArch64IntegerArithmeticSnippets(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-        super(providers, snippetReflection, target);
+    public AArch64IntegerArithmeticSnippets(OptionValues options, Iterable<DebugHandlersFactory> factories, Providers providers, SnippetReflectionProvider snippetReflection,
+                    TargetDescription target) {
+        super(options, factories, providers, snippetReflection, target);
         idiv = snippet(AArch64IntegerArithmeticSnippets.class, "idivSnippet");
         ldiv = snippet(AArch64IntegerArithmeticSnippets.class, "ldivSnippet");
         irem = snippet(AArch64IntegerArithmeticSnippets.class, "iremSnippet");
@@ -101,7 +105,7 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
         args.add("x", node.getX());
         args.add("y", node.getY());
-        template(args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, args);
+        template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, args);
     }
 
     @Snippet
@@ -204,6 +208,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         protected SafeSignedDivNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
         }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitDiv(gen.operand(getX()), gen.operand(getY()), null));
+        }
     }
 
     @NodeInfo
@@ -212,6 +223,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
 
         protected SafeSignedRemNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
+        }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitRem(gen.operand(getX()), gen.operand(getY()), null));
         }
     }
 
@@ -222,6 +240,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         protected SafeUnsignedDivNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
         }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitUDiv(gen.operand(getX()), gen.operand(getY()), null));
+        }
     }
 
     @NodeInfo
@@ -230,6 +255,13 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
 
         protected SafeUnsignedRemNode(ValueNode x, ValueNode y) {
             super(TYPE, x, y);
+        }
+
+        @Override
+        public void generate(NodeLIRBuilderTool gen) {
+            // override to ensure we always pass a null frame state
+            // the parent method expects to create one from a non null before state
+            gen.setResult(this, gen.getLIRGeneratorTool().getArithmetic().emitURem(gen.operand(getX()), gen.operand(getY()), null));
         }
     }
 

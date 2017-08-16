@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.alloc.trace.ShadowedRegisterValue;
 import org.graalvm.compiler.lir.alloc.trace.TraceGlobalMoveResolutionPhase;
+import org.graalvm.util.Pair;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
@@ -52,65 +53,11 @@ public class TraceGlobalMoveResolutionMappingTest {
 
     private static final class MoveResolverMock extends TraceGlobalMoveResolutionPhase.MoveResolver {
 
-        private static final class Pair {
-
-            @Override
-            public int hashCode() {
-                final int prime = 31;
-                int result = 1;
-                result = prime * result + ((dst == null) ? 0 : dst.hashCode());
-                result = prime * result + ((src == null) ? 0 : src.hashCode());
-                return result;
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                Pair other = (Pair) obj;
-                if (dst == null) {
-                    if (other.dst != null) {
-                        return false;
-                    }
-                } else if (!dst.equals(other.dst)) {
-                    return false;
-                }
-                if (src == null) {
-                    if (other.src != null) {
-                        return false;
-                    }
-                } else if (!src.equals(other.src)) {
-                    return false;
-                }
-                return true;
-            }
-
-            private final Value src;
-            private final AllocatableValue dst;
-
-            Pair(Value src, AllocatableValue dst) {
-                this.src = src;
-                this.dst = dst;
-            }
-
-            @Override
-            public String toString() {
-                return dst.toString() + " <- " + src;
-            }
-        }
-
-        private final HashSet<Pair> mapping = new HashSet<>();
+        private final HashSet<Pair<Value, AllocatableValue>> mapping = new HashSet<>();
 
         @Override
         public void addMapping(Value src, AllocatableValue dst, Value srcStack) {
-            mapping.add(new Pair(src, dst));
+            mapping.add(Pair.create(src, dst));
         }
 
         public int size() {
@@ -118,7 +65,7 @@ public class TraceGlobalMoveResolutionMappingTest {
         }
 
         public boolean contains(Value src, AllocatableValue dst) {
-            return mapping.contains(new Pair(src, dst));
+            return mapping.contains(Pair.create(src, dst));
         }
 
         @Override

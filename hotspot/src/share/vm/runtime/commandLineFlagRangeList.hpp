@@ -52,6 +52,7 @@ public:
   CommandLineFlagRange(const char* name) { _name=name; }
   ~CommandLineFlagRange() {}
   const char* name() { return _name; }
+  virtual Flag::Error check(bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; }
   virtual Flag::Error check_int(int value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; }
   virtual Flag::Error check_intx(intx value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; }
   virtual Flag::Error check_uint(uint value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; }

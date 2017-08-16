@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,6 @@ typedef unsigned long long julong;
 
 
 #ifdef SOLARIS
-//----------------------------------------------------------------------------------------------------
 // ANSI C++ fixes
 // NOTE:In the ANSI committee's continuing attempt to make each version
 // of C++ incompatible with the previous version, you can no longer cast
@@ -209,14 +208,6 @@ extern "C" {
    typedef int (*int_fnP_cond_tP)(cond_t *cv);
 };
 #endif
-
-//----------------------------------------------------------------------------------------------------
-// Debugging
-
-#define DEBUG_EXCEPTION ::abort();
-
-extern "C" void breakpoint();
-#define BREAKPOINT ::breakpoint()
 
 // checking for nanness
 #ifdef SOLARIS

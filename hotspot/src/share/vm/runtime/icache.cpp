@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/icache.hpp"
+#include "utilities/align.hpp"
 
 // The flush stub function address
 AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = NULL;
@@ -99,7 +100,7 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
     start -= line_offset;
     nbytes += line_offset;
   }
-  call_flush_stub(start, round_to(nbytes, ICache::line_size) >>
+  call_flush_stub(start, align_up(nbytes, (int)ICache::line_size) >>
                          ICache::log2_line_size);
 }
 

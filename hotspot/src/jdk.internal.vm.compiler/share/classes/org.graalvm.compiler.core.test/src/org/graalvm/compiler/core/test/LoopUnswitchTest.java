@@ -22,10 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopUnswitchingPhase;
@@ -33,6 +30,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Test;
 
 public class LoopUnswitchTest extends GraalCompilerTest {
 
@@ -124,6 +122,7 @@ public class LoopUnswitchTest extends GraalCompilerTest {
 
     @SuppressWarnings("try")
     private void test(String snippet, String referenceSnippet) {
+        DebugContext debug = getDebugContext();
         final StructuredGraph graph = parseEager(snippet, AllowAssumptions.NO);
         final StructuredGraph referenceGraph = parseEager(referenceSnippet, AllowAssumptions.NO);
 
@@ -135,10 +134,10 @@ public class LoopUnswitchTest extends GraalCompilerTest {
 
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new CanonicalizerPhase().apply(referenceGraph, new PhaseContext(getProviders()));
-        try (Scope s = Debug.scope("Test", new DebugDumpScope("Test:" + snippet))) {
+        try (DebugContext.Scope s = debug.scope("Test", new DebugDumpScope("Test:" + snippet))) {
             assertEquals(referenceGraph, graph);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 }
