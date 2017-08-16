@@ -21,17 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @key headful
- * @bug 6193279
- * @summary REGRESSION: AppletViewer throws IOException when path is encoded URL
- * @author Dmitry Cherepanov: area=appletviewer
- * @run compile IOExceptionIfEncodedURLTest.java
- * @run main IOExceptionIfEncodedURLTest
- * @run shell IOExceptionIfEncodedURLTest.sh
- */
-
 import java.applet.Applet;
 import sun.net.www.ParseUtil;
 import java.io.File;
