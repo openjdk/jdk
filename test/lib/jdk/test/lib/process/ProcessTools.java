@@ -64,7 +64,7 @@ public final class ProcessTools {
     /**
      * Pumps stdout and stderr from running the process into a String.
      *
-     * @param processHandler ProcessHandler to run.
+     * @param processBuilder ProcessBuilder to run.
      * @return Output from process.
      * @throws IOException If an I/O error occurs.
      */
