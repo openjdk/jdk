@@ -279,7 +279,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @param file Output stream
      * @throws IOException
      */
-    public void dump(final DataOutputStream file) throws IOException {
+    private void dump(final DataOutputStream file) throws IOException {
         file.writeInt(Const.JVM_CLASSFILE_MAGIC);
         file.writeShort(minor);
         file.writeShort(major);
