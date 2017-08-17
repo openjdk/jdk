@@ -32,8 +32,8 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
- * @build MergedTabShiftTabExpressionTest
- * @run testng/timeout=300 MergedTabShiftTabExpressionTest
+ * @build ToolTabSnippetTest
+ * @run testng/timeout=300 ToolTabSnippetTest
  */
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 import org.testng.annotations.Test;
 
 @Test
-public class MergedTabShiftTabExpressionTest extends UITesting {
+public class ToolTabSnippetTest extends UITesting {
 
     public void testExpression() throws Exception {
         Path classes = prepareZip();

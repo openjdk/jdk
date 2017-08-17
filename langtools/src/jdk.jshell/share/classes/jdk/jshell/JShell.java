@@ -862,7 +862,7 @@ public class JShell implements AutoCloseable {
      * Check if this JShell has been closed
      * @throws IllegalStateException if it is closed
      */
-    private void checkIfAlive()  throws IllegalStateException {
+    void checkIfAlive()  throws IllegalStateException {
         if (closed) {
             throw new IllegalStateException(messageFormat("jshell.exc.closed", this));
         }
@@ -879,8 +879,8 @@ public class JShell implements AutoCloseable {
         if (sn == null) {
             throw new NullPointerException(messageFormat("jshell.exc.null"));
         } else {
-            if (sn.key().state() != this) {
-                throw new IllegalArgumentException(messageFormat("jshell.exc.alien"));
+            if (sn.key().state() != this || sn.id() == Snippet.UNASSOCIATED_ID) {
+                throw new IllegalArgumentException(messageFormat("jshell.exc.alien", sn.toString()));
             }
             return sn;
         }
