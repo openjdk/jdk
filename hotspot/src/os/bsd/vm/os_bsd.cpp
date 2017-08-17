@@ -1172,13 +1172,6 @@ int os::current_process_id() {
 
 // DLL functions
 
-#define JNI_LIB_PREFIX "lib"
-#ifdef __APPLE__
-  #define JNI_LIB_SUFFIX ".dylib"
-#else
-  #define JNI_LIB_SUFFIX ".so"
-#endif
-
 const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
 
 // This must be hard coded because it's the system's temporary
@@ -1200,62 +1193,6 @@ const char* os::get_temp_directory() {
 #else // __APPLE__
 const char* os::get_temp_directory() { return "/tmp"; }
 #endif // __APPLE__
-
-static bool file_exists(const char* filename) {
-  struct stat statbuf;
-  if (filename == NULL || strlen(filename) == 0) {
-    return false;
-  }
-  return os::stat(filename, &statbuf) == 0;
-}
-
-bool os::dll_build_name(char* buffer, size_t buflen,
-                        const char* pname, const char* fname) {
-  bool retval = false;
-  // Copied from libhpi
-  const size_t pnamelen = pname ? strlen(pname) : 0;
-
-  // Return error on buffer overflow.
-  if (pnamelen + strlen(fname) + strlen(JNI_LIB_PREFIX) + strlen(JNI_LIB_SUFFIX) + 2 > buflen) {
-    return retval;
-  }
-
-  if (pnamelen == 0) {
-    snprintf(buffer, buflen, JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX, fname);
-    retval = true;
-  } else if (strchr(pname, *os::path_separator()) != NULL) {
-    int n;
-    char** pelements = split_path(pname, &n);
-    if (pelements == NULL) {
-      return false;
-    }
-    for (int i = 0; i < n; i++) {
-      // Really shouldn't be NULL, but check can't hurt
-      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
-        continue; // skip the empty path values
-      }
-      snprintf(buffer, buflen, "%s/" JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX,
-               pelements[i], fname);
-      if (file_exists(buffer)) {
-        retval = true;
-        break;
-      }
-    }
-    // release the storage
-    for (int i = 0; i < n; i++) {
-      if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
-      }
-    }
-    if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
-    }
-  } else {
-    snprintf(buffer, buflen, "%s/" JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX, pname, fname);
-    retval = true;
-  }
-  return retval;
-}
 
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {

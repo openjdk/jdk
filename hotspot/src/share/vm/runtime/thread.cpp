@@ -3925,13 +3925,12 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
       }
     } else {
       // Try to load the agent from the standard dll directory
-      if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+      if (os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                              name)) {
         library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
-      if (library == NULL) { // Try the local directory
-        char ns[1] = {0};
-        if (os::dll_build_name(buffer, sizeof(buffer), ns, name)) {
+      if (library == NULL) { // Try the library path directory.
+        if (os::dll_build_name(buffer, sizeof(buffer), name)) {
           library = os::dll_load(buffer, ebuf, sizeof ebuf);
         }
         if (library == NULL) {
