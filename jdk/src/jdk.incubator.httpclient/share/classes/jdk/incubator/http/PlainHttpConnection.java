@@ -231,7 +231,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
         assert false;
     }
 
-    void asyncOutput(ByteBufferReference[] refs, AsyncWriteQueue delayCallback) {
+    boolean asyncOutput(ByteBufferReference[] refs, AsyncWriteQueue delayCallback) {
         try {
             ByteBuffer[] bufs = ByteBufferReference.toBuffers(refs);
             while (Utils.remaining(bufs) > 0) {
@@ -239,13 +239,14 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
                 if (n == 0) {
                     delayCallback.setDelayed(refs);
                     client.registerEvent(new WriteEvent());
-                    return;
+                    return false;
                 }
             }
             ByteBufferReference.clear(refs);
         } catch (IOException e) {
             shutdown();
         }
+        return true;
     }
 
     @Override
