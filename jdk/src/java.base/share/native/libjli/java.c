@@ -206,7 +206,7 @@ static jlong initialHeapSize    = 0;  /* inital heap size */
  * A minimum -Xss stack size suitable for all platforms.
  */
 #ifndef STACK_SIZE_MINIMUM
-#define STACK_SIZE_MINIMUM (32 * KB)
+#define STACK_SIZE_MINIMUM (64 * KB)
 #endif
 
 /*
