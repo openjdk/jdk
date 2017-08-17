@@ -130,7 +130,7 @@ public final class Module implements AnnotatedElement {
 
         // define module to VM
 
-        boolean isOpen = descriptor.isOpen();
+        boolean isOpen = descriptor.isOpen() || descriptor.isAutomatic();
         Version version = descriptor.version().orElse(null);
         String vs = Objects.toString(version, null);
         String loc = Objects.toString(uri, null);
@@ -1156,18 +1156,14 @@ public final class Module implements AnnotatedElement {
                 m.implAddReads(ALL_UNNAMED_MODULE, true);
             }
 
-            // exports and opens
-            if (descriptor.isOpen() || descriptor.isAutomatic()) {
-                // The VM doesn't special case open or automatic modules yet
-                // so need to export all packages
-                for (String source : descriptor.packages()) {
-                    addExportsToAll0(m, source);
+            // exports and opens, skipped for open and automatic
+            if (!descriptor.isOpen() && !descriptor.isAutomatic()) {
+                if (isBootLayer && descriptor.opens().isEmpty()) {
+                    // no open packages, no qualified exports to modules in parent layers
+                    initExports(m, nameToModule);
+                } else {
+                    initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
                 }
-            } else if (isBootLayer && descriptor.opens().isEmpty()) {
-                // no open packages, no qualified exports to modules in parent layers
-                initExports(m, nameToModule);
-            } else {
-                initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
             }
         }
 
