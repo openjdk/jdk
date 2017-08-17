@@ -133,6 +133,34 @@ public abstract class SourceCodeAnalysis {
     public abstract List<SnippetWrapper> wrappers(String input);
 
     /**
+     * Converts the source code of a snippet into a {@link Snippet} object (or
+     * list of {@code Snippet} objects in the case of some var declarations,
+     * e.g.: int x, y, z;).
+     * Does not install the snippets: declarations are not
+     * accessible by other snippets; imports are not added.
+     * Does not execute the snippets.
+     * <p>
+     * Queries may be done on the {@code Snippet} object. The {@link Snippet#id()}
+     * will be {@code "*UNASSOCIATED*"}.
+     * The returned snippets are not associated with the
+     * {@link JShell} instance, so attempts to pass them to {@code JShell}
+     * methods will throw an {@code IllegalArgumentException}.
+     * They will not appear in queries for snippets --
+     * for example, {@link JShell#snippets() }.
+     * <p>
+     * Restrictions on the input are as in {@link JShell#eval}.
+     * <p>
+     * Only preliminary compilation is performed, sufficient to build the
+     * {@code Snippet}.  Snippets known to be erroneous, are returned as
+     * {@link ErroneousSnippet}, other snippets may or may not be in error.
+     * <p>
+     * @param input The input String to convert
+     * @return usually a singleton list of Snippet, but may be empty or multiple
+     * @throws IllegalStateException if the {@code JShell} instance is closed.
+     */
+    public abstract List<Snippet> sourceToSnippets(String input);
+
+    /**
      * Returns a collection of {@code Snippet}s which might need updating if the
      * given {@code Snippet} is updated. The returned collection is designed to
      * be inclusive and may include many false positives.
