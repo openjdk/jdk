@@ -1183,6 +1183,9 @@ public class EventQueue {
                             AWTAccessor.getInvocationEventAccessor()
                                     .dispose((InvocationEvent)entry.event);
                         }
+                        if (entry.event instanceof SunDropTargetEvent) {
+                            ((SunDropTargetEvent)entry.event).dispose();
+                        }
                         if (prev == null) {
                             queues[i].head = entry.next;
                         } else {
