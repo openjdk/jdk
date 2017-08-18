@@ -290,8 +290,6 @@ static int (*main_fptr)(int argc, char **argv) = NULL;
  */
 static void *apple_main (void *arg)
 {
-    objc_registerThreadWithCollector();
-
     if (main_fptr == NULL) {
 #ifdef STATIC_BUILD
         extern int main(int argc, char **argv);
@@ -732,6 +730,7 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     if (stack_size > 0) {
       pthread_attr_setstacksize(&attr, stack_size);
     }
+    pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
     if (pthread_create(&tid, &attr, (void *(*)(void*))continuation, (void*)args) == 0) {
       void * tmp;
@@ -771,7 +770,7 @@ JLI_GetJavaVMInstance()
 void
 RegisterThread()
 {
-    objc_registerThreadWithCollector();
+    // stubbed out for windows and *nixes.
 }
 
 static void

@@ -421,21 +421,11 @@ public class LockSupport {
 
     // Hotspot implementation via intrinsics API
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long PARKBLOCKER;
-    private static final long SECONDARY;
-    private static final long TID;
-    static {
-        try {
-            PARKBLOCKER = U.objectFieldOffset
-                (Thread.class.getDeclaredField("parkBlocker"));
-            SECONDARY = U.objectFieldOffset
-                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
-            TID = U.objectFieldOffset
-                (Thread.class.getDeclaredField("tid"));
-
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final long PARKBLOCKER = U.objectFieldOffset
+            (Thread.class, "parkBlocker");
+    private static final long SECONDARY = U.objectFieldOffset
+            (Thread.class, "threadLocalRandomSecondarySeed");
+    private static final long TID = U.objectFieldOffset
+            (Thread.class, "tid");
 
 }

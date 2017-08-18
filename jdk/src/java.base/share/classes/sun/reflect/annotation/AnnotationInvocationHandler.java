@@ -614,20 +614,13 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     }
 
     private static class UnsafeAccessor {
-        private static final jdk.internal.misc.Unsafe unsafe;
-        private static final long typeOffset;
-        private static final long memberValuesOffset;
-        static {
-            try {
-                unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-                typeOffset = unsafe.objectFieldOffset
-                        (AnnotationInvocationHandler.class.getDeclaredField("type"));
-                memberValuesOffset = unsafe.objectFieldOffset
-                        (AnnotationInvocationHandler.class.getDeclaredField("memberValues"));
-            } catch (Exception ex) {
-                throw new ExceptionInInitializerError(ex);
-            }
-        }
+        private static final jdk.internal.misc.Unsafe unsafe
+                = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final long typeOffset = unsafe.objectFieldOffset
+                (AnnotationInvocationHandler.class, "type");
+        private static final long memberValuesOffset = unsafe.objectFieldOffset
+                (AnnotationInvocationHandler.class, "memberValues");
+
         static void setType(AnnotationInvocationHandler o,
                             Class<? extends Annotation> type) {
             unsafe.putObject(o, typeOffset, type);
