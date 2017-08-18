@@ -21,125 +21,144 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * This class is derived from <em>Attribute</em> and represents a constant
  * value, i.e., a default value for initializing a class field.
  * This class is instantiated by the <em>Attribute.readAttribute()</em> method.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ConstantValue.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see     Attribute
  */
 public final class ConstantValue extends Attribute {
-  private int constantvalue_index;
 
-  /**
-   * Initialize from another object. Note that both objects use the same
-   * references (shallow copy). Use clone() for a physical copy.
-   */
-  public ConstantValue(ConstantValue c) {
-    this(c.getNameIndex(), c.getLength(), c.getConstantValueIndex(),
-         c.getConstantPool());
-  }
+    private int constantvalue_index;
 
-  /**
-   * Construct object from file stream.
-   * @param name_index Name index in constant pool
-   * @param length Content length in bytes
-   * @param file Input stream
-   * @param constant_pool Array of constants
-   * @throw IOException
-   */
-  ConstantValue(int name_index, int length, DataInputStream file,
-                ConstantPool constant_pool) throws IOException
-  {
-    this(name_index, length, (int)file.readUnsignedShort(), constant_pool);
-  }
 
-  /**
-   * @param name_index Name index in constant pool
-   * @param length Content length in bytes
-   * @param constantvalue_index Index in constant pool
-   * @param constant_pool Array of constants
-   */
-  public ConstantValue(int name_index, int length,
-                       int constantvalue_index,
-                       ConstantPool constant_pool)
-  {
-    super(Constants.ATTR_CONSTANT_VALUE, name_index, length, constant_pool);
-    this.constantvalue_index = constantvalue_index;
-  }
-
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitConstantValue(this);
-  }
-  /**
-   * Dump constant value attribute to file stream on binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    super.dump(file);
-    file.writeShort(constantvalue_index);
-  }
-  /**
-   * @return Index in constant pool of constant value.
-   */
-  public final int getConstantValueIndex() { return constantvalue_index; }
-
-  /**
-   * @param constantvalue_index.
-   */
-  public final void setConstantValueIndex(int constantvalue_index) {
-    this.constantvalue_index = constantvalue_index;
-  }
-
-  /**
-   * @return String representation of constant value.
-   */
-  public final String toString() {
-    Constant c = constant_pool.getConstant(constantvalue_index);
-
-    String   buf;
-    int    i;
-
-    // Print constant to string depending on its type
-    switch(c.getTag()) {
-    case Constants.CONSTANT_Long:    buf = "" + ((ConstantLong)c).getBytes();    break;
-    case Constants.CONSTANT_Float:   buf = "" + ((ConstantFloat)c).getBytes();   break;
-    case Constants.CONSTANT_Double:  buf = "" + ((ConstantDouble)c).getBytes();  break;
-    case Constants.CONSTANT_Integer: buf = "" + ((ConstantInteger)c).getBytes(); break;
-    case Constants.CONSTANT_String:
-      i   = ((ConstantString)c).getStringIndex();
-      c   = constant_pool.getConstant(i, Constants.CONSTANT_Utf8);
-      buf = "\"" + Utility.convertString(((ConstantUtf8)c).getBytes()) + "\"";
-      break;
-
-    default:
-      throw new IllegalStateException("Type of ConstValue invalid: " + c);
+    /**
+     * Initialize from another object. Note that both objects use the same
+     * references (shallow copy). Use clone() for a physical copy.
+     */
+    public ConstantValue(final ConstantValue c) {
+        this(c.getNameIndex(), c.getLength(), c.getConstantValueIndex(), c.getConstantPool());
     }
 
-    return buf;
-  }
 
-  /**
-   * @return deep copy of this attribute
-   */
-  public Attribute copy(ConstantPool constant_pool) {
-    ConstantValue c = (ConstantValue)clone();
-    c.constant_pool = constant_pool;
-    return c;
-  }
+    /**
+     * Construct object from input stream.
+     * @param name_index Name index in constant pool
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constant_pool Array of constants
+     * @throws IOException
+     */
+    ConstantValue(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool)
+            throws IOException {
+        this(name_index, length, input.readUnsignedShort(), constant_pool);
+    }
+
+
+    /**
+     * @param name_index Name index in constant pool
+     * @param length Content length in bytes
+     * @param constantvalue_index Index in constant pool
+     * @param constant_pool Array of constants
+     */
+    public ConstantValue(final int name_index, final int length, final int constantvalue_index,
+            final ConstantPool constant_pool) {
+        super(Const.ATTR_CONSTANT_VALUE, name_index, length, constant_pool);
+        this.constantvalue_index = constantvalue_index;
+    }
+
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitely
+     * defined by the contents of a Java class. I.e., the hierarchy of methods,
+     * fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitConstantValue(this);
+    }
+
+
+    /**
+     * Dump constant value attribute to file stream on binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException
+     */
+    @Override
+    public final void dump( final DataOutputStream file ) throws IOException {
+        super.dump(file);
+        file.writeShort(constantvalue_index);
+    }
+
+
+    /**
+     * @return Index in constant pool of constant value.
+     */
+    public final int getConstantValueIndex() {
+        return constantvalue_index;
+    }
+
+
+    /**
+     * @param constantvalue_index the index info the constant pool of this constant value
+     */
+    public final void setConstantValueIndex( final int constantvalue_index ) {
+        this.constantvalue_index = constantvalue_index;
+    }
+
+
+    /**
+     * @return String representation of constant value.
+     */
+    @Override
+    public final String toString() {
+        Constant c = super.getConstantPool().getConstant(constantvalue_index);
+        String buf;
+        int i;
+        // Print constant to string depending on its type
+        switch (c.getTag()) {
+            case Const.CONSTANT_Long:
+                buf = String.valueOf(((ConstantLong) c).getBytes());
+                break;
+            case Const.CONSTANT_Float:
+                buf = String.valueOf(((ConstantFloat) c).getBytes());
+                break;
+            case Const.CONSTANT_Double:
+                buf = String.valueOf(((ConstantDouble) c).getBytes());
+                break;
+            case Const.CONSTANT_Integer:
+                buf = String.valueOf(((ConstantInteger) c).getBytes());
+                break;
+            case Const.CONSTANT_String:
+                i = ((ConstantString) c).getStringIndex();
+                c = super.getConstantPool().getConstant(i, Const.CONSTANT_Utf8);
+                buf = "\"" + Utility.convertString(((ConstantUtf8) c).getBytes()) + "\"";
+                break;
+            default:
+                throw new IllegalStateException("Type of ConstValue invalid: " + c);
+        }
+        return buf;
+    }
+
+
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy( final ConstantPool _constant_pool ) {
+        final ConstantValue c = (ConstantValue) clone();
+        c.setConstantPool(_constant_pool);
+        return c;
+    }
 }

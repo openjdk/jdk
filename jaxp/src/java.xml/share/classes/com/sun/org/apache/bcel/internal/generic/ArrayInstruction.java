@@ -21,53 +21,70 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 
 /**
  * Super class for instructions dealing with array access such as IALOAD.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ArrayInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public abstract class ArrayInstruction extends Instruction
-  implements ExceptionThrower, TypedInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  ArrayInstruction() {}
+public abstract class ArrayInstruction extends Instruction implements ExceptionThrower,
+        TypedInstruction {
 
-  /**
-   * @param opcode of instruction
-   */
-  protected ArrayInstruction(short opcode) {
-    super(opcode, (short)1);
-  }
-
-  public Class[] getExceptions() {
-    return com.sun.org.apache.bcel.internal.ExceptionConstants.EXCS_ARRAY_EXCEPTION;
-  }
-
-  /** @return type associated with the instruction
-   */
-  public Type getType(ConstantPoolGen cp) {
-    switch(opcode) {
-    case com.sun.org.apache.bcel.internal.Constants.IALOAD: case com.sun.org.apache.bcel.internal.Constants.IASTORE:
-      return Type.INT;
-    case com.sun.org.apache.bcel.internal.Constants.CALOAD: case com.sun.org.apache.bcel.internal.Constants.CASTORE:
-      return Type.CHAR;
-    case com.sun.org.apache.bcel.internal.Constants.BALOAD: case com.sun.org.apache.bcel.internal.Constants.BASTORE:
-      return Type.BYTE;
-    case com.sun.org.apache.bcel.internal.Constants.SALOAD: case com.sun.org.apache.bcel.internal.Constants.SASTORE:
-      return Type.SHORT;
-    case com.sun.org.apache.bcel.internal.Constants.LALOAD: case com.sun.org.apache.bcel.internal.Constants.LASTORE:
-      return Type.LONG;
-    case com.sun.org.apache.bcel.internal.Constants.DALOAD: case com.sun.org.apache.bcel.internal.Constants.DASTORE:
-      return Type.DOUBLE;
-    case com.sun.org.apache.bcel.internal.Constants.FALOAD: case com.sun.org.apache.bcel.internal.Constants.FASTORE:
-      return Type.FLOAT;
-    case com.sun.org.apache.bcel.internal.Constants.AALOAD: case com.sun.org.apache.bcel.internal.Constants.AASTORE:
-      return Type.OBJECT;
-
-    default: throw new ClassGenException("Oops: unknown case in switch" + opcode);
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    ArrayInstruction() {
     }
-  }
+
+
+    /**
+     * @param opcode of instruction
+     */
+    protected ArrayInstruction(final short opcode) {
+        super(opcode, (short) 1);
+    }
+
+
+    @Override
+    public Class<?>[] getExceptions() {
+        return ExceptionConst.createExceptions(ExceptionConst.EXCS.EXCS_ARRAY_EXCEPTION);
+    }
+
+
+    /** @return type associated with the instruction
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cp ) {
+        final short _opcode = super.getOpcode();
+        switch (_opcode) {
+            case com.sun.org.apache.bcel.internal.Const.IALOAD:
+            case com.sun.org.apache.bcel.internal.Const.IASTORE:
+                return Type.INT;
+            case com.sun.org.apache.bcel.internal.Const.CALOAD:
+            case com.sun.org.apache.bcel.internal.Const.CASTORE:
+                return Type.CHAR;
+            case com.sun.org.apache.bcel.internal.Const.BALOAD:
+            case com.sun.org.apache.bcel.internal.Const.BASTORE:
+                return Type.BYTE;
+            case com.sun.org.apache.bcel.internal.Const.SALOAD:
+            case com.sun.org.apache.bcel.internal.Const.SASTORE:
+                return Type.SHORT;
+            case com.sun.org.apache.bcel.internal.Const.LALOAD:
+            case com.sun.org.apache.bcel.internal.Const.LASTORE:
+                return Type.LONG;
+            case com.sun.org.apache.bcel.internal.Const.DALOAD:
+            case com.sun.org.apache.bcel.internal.Const.DASTORE:
+                return Type.DOUBLE;
+            case com.sun.org.apache.bcel.internal.Const.FALOAD:
+            case com.sun.org.apache.bcel.internal.Const.FASTORE:
+                return Type.FLOAT;
+            case com.sun.org.apache.bcel.internal.Const.AALOAD:
+            case com.sun.org.apache.bcel.internal.Const.AASTORE:
+                return Type.OBJECT;
+            default:
+                throw new ClassGenException("Oops: unknown case in switch" + _opcode);
+        }
+    }
 }

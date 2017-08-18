@@ -21,80 +21,89 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * LOOKUPSWITCH - Switch with unordered set of values
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: LOOKUPSWITCH.java 1747278 2016-06-07 17:28:43Z britter $
  * @see SWITCH
  */
 public class LOOKUPSWITCH extends Select {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  LOOKUPSWITCH() {}
 
-  public LOOKUPSWITCH(int[] match, InstructionHandle[] targets,
-                      InstructionHandle target) {
-    super(com.sun.org.apache.bcel.internal.Constants.LOOKUPSWITCH, match, targets, target);
-
-    length = (short)(9 + match_length * 8); /* alignment remainder assumed
-                                             * 0 here, until dump time. */
-    fixed_length = length;
-  }
-
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    super.dump(out);
-    out.writeInt(match_length);       // npairs
-
-    for(int i=0; i < match_length; i++) {
-      out.writeInt(match[i]);         // match-offset pairs
-      out.writeInt(indices[i] = getTargetOffset(targets[i]));
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    LOOKUPSWITCH() {
     }
-  }
 
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    super.initFromFile(bytes, wide); // reads padding
 
-    match_length = bytes.readInt();
-    fixed_length = (short)(9 + match_length * 8);
-    length       = (short)(fixed_length + padding);
-
-    match   = new int[match_length];
-    indices = new int[match_length];
-    targets = new InstructionHandle[match_length];
-
-    for(int i=0; i < match_length; i++) {
-      match[i]   = bytes.readInt();
-      indices[i] = bytes.readInt();
+    public LOOKUPSWITCH(final int[] match, final InstructionHandle[] targets,
+            final InstructionHandle defaultTarget) {
+        super(com.sun.org.apache.bcel.internal.Const.LOOKUPSWITCH, match, targets, defaultTarget);
+        /* alignment remainder assumed 0 here, until dump time. */
+        final short _length = (short) (9 + getMatch_length() * 8);
+        super.setLength(_length);
+        setFixed_length(_length);
     }
-  }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitVariableLengthInstruction(this);
-    v.visitStackProducer(this);
-    v.visitBranchInstruction(this);
-    v.visitSelect(this);
-    v.visitLOOKUPSWITCH(this);
-  }
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        super.dump(out);
+        final int _match_length = getMatch_length();
+        out.writeInt(_match_length); // npairs
+        for (int i = 0; i < _match_length; i++) {
+            out.writeInt(super.getMatch(i)); // match-offset pairs
+            out.writeInt(setIndices(i, getTargetOffset(super.getTarget(i))));
+        }
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.initFromFile(bytes, wide); // reads padding
+        final int _match_length = bytes.readInt();
+        setMatch_length(_match_length);
+        final short _fixed_length = (short) (9 + _match_length * 8);
+        setFixed_length(_fixed_length);
+        final short _length = (short) (_match_length + super.getPadding());
+        super.setLength(_length);
+        super.setMatches(new int[_match_length]);
+        super.setIndices(new int[_match_length]);
+        super.setTargets(new InstructionHandle[_match_length]);
+        for (int i = 0; i < _match_length; i++) {
+            super.setMatch(i, bytes.readInt());
+            super.setIndices(i, bytes.readInt());
+        }
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitVariableLengthInstruction(this);
+        v.visitStackConsumer(this);
+        v.visitBranchInstruction(this);
+        v.visitSelect(this);
+        v.visitLOOKUPSWITCH(this);
+    }
 }

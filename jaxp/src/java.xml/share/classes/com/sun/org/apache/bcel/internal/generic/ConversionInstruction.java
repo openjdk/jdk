@@ -21,48 +21,62 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
+
 /**
  * Super class for the x2y family of instructions.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ConversionInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public abstract class ConversionInstruction extends Instruction
-  implements TypedInstruction, StackProducer, StackConsumer {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  ConversionInstruction() {}
+public abstract class ConversionInstruction extends Instruction implements TypedInstruction,
+        StackProducer, StackConsumer {
 
-  /**
-   * @param opcode opcode of instruction
-   */
-  protected ConversionInstruction(short opcode) {
-    super(opcode, (short)1);
-  }
-
-  /** @return type associated with the instruction
-   */
-  public Type getType(ConstantPoolGen cp) {
-    switch(opcode) {
-    case Constants.D2I: case Constants.F2I: case Constants.L2I:
-      return Type.INT;
-    case Constants.D2F: case Constants.I2F: case Constants.L2F:
-      return Type.FLOAT;
-    case Constants.D2L: case Constants.F2L: case Constants.I2L:
-      return Type.LONG;
-    case Constants.F2D:  case Constants.I2D: case Constants.L2D:
-        return Type.DOUBLE;
-    case Constants.I2B:
-      return Type.BYTE;
-    case Constants.I2C:
-      return Type.CHAR;
-    case Constants.I2S:
-      return Type.SHORT;
-
-    default: // Never reached
-      throw new ClassGenException("Unknown type " + opcode);
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    ConversionInstruction() {
     }
-  }
+
+
+    /**
+     * @param opcode opcode of instruction
+     */
+    protected ConversionInstruction(final short opcode) {
+        super(opcode, (short) 1);
+    }
+
+
+    /** @return type associated with the instruction
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cp ) {
+        final short _opcode = super.getOpcode();
+        switch (_opcode) {
+            case Const.D2I:
+            case Const.F2I:
+            case Const.L2I:
+                return Type.INT;
+            case Const.D2F:
+            case Const.I2F:
+            case Const.L2F:
+                return Type.FLOAT;
+            case Const.D2L:
+            case Const.F2L:
+            case Const.I2L:
+                return Type.LONG;
+            case Const.F2D:
+            case Const.I2D:
+            case Const.L2D:
+                return Type.DOUBLE;
+            case Const.I2B:
+                return Type.BYTE;
+            case Const.I2C:
+                return Type.CHAR;
+            case Const.I2S:
+                return Type.SHORT;
+            default: // Never reached
+                throw new ClassGenException("Unknown type " + _opcode);
+        }
+    }
 }

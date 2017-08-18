@@ -64,6 +64,11 @@ import jdk.internal.jline.internal.NonBlockingInputStream;
 import jdk.internal.jshell.tool.StopDetectingInputStream.State;
 import jdk.internal.misc.Signal;
 import jdk.internal.misc.Signal.Handler;
+import jdk.jshell.ExpressionSnippet;
+import jdk.jshell.Snippet;
+import jdk.jshell.Snippet.SubKind;
+import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
+import jdk.jshell.VarSnippet;
 
 class ConsoleIOContext extends IOContext {
 
@@ -909,6 +914,111 @@ class ConsoleIOContext extends IOContext {
                                 repl.processCompleteSource("import " + type + ";");
                                 in.println("Imported: " + type);
                                 performToVar(in, stype);
+                            }
+                        });
+                    }
+                }
+                return new FixResult(fixes, null);
+            }
+        },
+        new FixComputer('m', false) { //compute "Introduce method" Fix:
+            private void performToMethod(ConsoleReader in, String type, String code) throws IOException {
+                in.redrawLine();
+                if (!code.trim().endsWith(";")) {
+                    in.putString(";");
+                }
+                in.putString(" }");
+                in.setCursorPosition(0);
+                String afterCursor = type.equals("void")
+                        ? "() { "
+                        : "() { return ";
+                in.putString(type + " " + afterCursor);
+                // position the cursor where the method name should be entered (before parens)
+                in.setCursorPosition(in.getCursorBuffer().cursor - afterCursor.length());
+                in.flush();
+            }
+
+            private FixResult reject(JShellTool repl, String messageKey) {
+                return new FixResult(Collections.emptyList(), repl.messageFormat(messageKey));
+            }
+
+            @Override
+            public FixResult compute(JShellTool repl, String code, int cursor) {
+                final String codeToCursor = code.substring(0, cursor);
+                final String type;
+                final CompletionInfo ci = repl.analysis.analyzeCompletion(codeToCursor);
+                if (!ci.remaining().isEmpty()) {
+                    return reject(repl, "jshell.console.exprstmt");
+                }
+                switch (ci.completeness()) {
+                    case COMPLETE:
+                    case COMPLETE_WITH_SEMI:
+                    case CONSIDERED_INCOMPLETE:
+                        break;
+                    case EMPTY:
+                        return reject(repl, "jshell.console.empty");
+                    case DEFINITELY_INCOMPLETE:
+                    case UNKNOWN:
+                    default:
+                        return reject(repl, "jshell.console.erroneous");
+                }
+                List<Snippet> snl = repl.analysis.sourceToSnippets(ci.source());
+                if (snl.size() != 1) {
+                    return reject(repl, "jshell.console.erroneous");
+                }
+                Snippet sn = snl.get(0);
+                switch (sn.kind()) {
+                    case EXPRESSION:
+                        type = ((ExpressionSnippet) sn).typeName();
+                        break;
+                    case STATEMENT:
+                        type = "void";
+                        break;
+                    case VAR:
+                        if (sn.subKind() != SubKind.TEMP_VAR_EXPRESSION_SUBKIND) {
+                            // only valid var is an expression turned into a temp var
+                            return reject(repl, "jshell.console.exprstmt");
+                        }
+                        type = ((VarSnippet) sn).typeName();
+                        break;
+                    case IMPORT:
+                    case METHOD:
+                    case TYPE_DECL:
+                        return reject(repl, "jshell.console.exprstmt");
+                    case ERRONEOUS:
+                    default:
+                        return reject(repl, "jshell.console.erroneous");
+                }
+                List<Fix> fixes = new ArrayList<>();
+                fixes.add(new Fix() {
+                    @Override
+                    public String displayName() {
+                        return repl.messageFormat("jshell.console.create.method");
+                    }
+
+                    @Override
+                    public void perform(ConsoleReader in) throws IOException {
+                        performToMethod(in, type, codeToCursor);
+                    }
+                });
+                int idx = type.lastIndexOf(".");
+                if (idx > 0) {
+                    String stype = type.substring(idx + 1);
+                    QualifiedNames res = repl.analysis.listQualifiedNames(stype, stype.length());
+                    if (res.isUpToDate() && res.getNames().contains(type)
+                            && !res.isResolvable()) {
+                        fixes.add(new Fix() {
+                            @Override
+                            public String displayName() {
+                                return "import: " + type + ". " +
+                                        repl.messageFormat("jshell.console.create.method");
+                            }
+
+                            @Override
+                            public void perform(ConsoleReader in) throws IOException {
+                                repl.processCompleteSource("import " + type + ";");
+                                in.println("Imported: " + type);
+                                performToMethod(in, stype, codeToCursor);
                             }
                         });
                     }

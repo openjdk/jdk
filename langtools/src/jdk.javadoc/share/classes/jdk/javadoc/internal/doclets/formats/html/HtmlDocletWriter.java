@@ -60,6 +60,7 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 
@@ -1977,6 +1978,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         dt.accept(this, null);
                     }
                     result.addContent(new RawHtml(node.isSelfClosing() ? "/>" : ">"));
+                    return false;
+                }
+
+                @Override
+                public Boolean visitSummary(SummaryTree node, Content c) {
+                    Content output = TagletWriter.getInlineTagOutput(element,
+                            configuration.tagletManager, holderTag, tag,
+                            getTagletWriterInstance(isFirstSentence));
+                    result.addContent(output);
                     return false;
                 }
 

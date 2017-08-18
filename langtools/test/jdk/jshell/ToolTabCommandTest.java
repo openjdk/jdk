@@ -32,8 +32,8 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
- * @build MergedTabShiftTabCommandTest
- * @run testng MergedTabShiftTabCommandTest
+ * @build ToolTabCommandTest
+ * @run testng ToolTabCommandTest
  */
 
 import java.util.regex.Pattern;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 import org.testng.annotations.Test;
 
 @Test
-public class MergedTabShiftTabCommandTest extends UITesting {
+public class ToolTabCommandTest extends UITesting {
 
     public void testCommand() throws Exception {
         // set terminal height so that help output won't hit page breaks

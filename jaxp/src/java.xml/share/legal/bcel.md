@@ -1,12 +1,12 @@
-## Apache Byte Code Engineering Library (BCEL) v5.2
+## Apache Commons Byte Code Engineering Library (BCEL) Version 6.0 
 
-### Apache BCEL Notice
+### Apache Commons BCEL Notice
 <pre>
 
     =========================================================================
     ==  NOTICE file corresponding to the section 4 d of                    ==
     ==  the Apache License, Version 2.0,                                   ==
-    ==  in this case for the Apache Jakarta-BCEL distribution.             ==
+    ==  in this case for the Apache Commons BCEL distribution.             ==
     =========================================================================
 
    This product includes software developed by

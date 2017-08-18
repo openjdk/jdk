@@ -21,26 +21,29 @@
 
 package com.sun.org.apache.bcel.internal.util;
 
-import java.util.ArrayList;
-import com.sun.org.apache.bcel.internal.classfile.JavaClass;
-
 /**
- * Utility class implementing a (typesafe) collection of JavaClass
- * objects. Contains the most important methods of a Vector.
+ * Used for BCEL comparison strategy
  *
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see ClassQueue
-*/
-public class ClassVector implements java.io.Serializable {
-  protected ArrayList vec = new ArrayList();
+ * @version $Id: BCELComparator.java 1747278 2016-06-07 17:28:43Z britter $
+ * @since 5.2
+ */
+public interface BCELComparator {
 
-  public void      addElement(JavaClass clazz) { vec.add(clazz); }
-  public JavaClass elementAt(int index)        { return (JavaClass)vec.get(index); }
-  public void      removeElementAt(int index)  { vec.remove(index); }
+    /**
+     * Compare two objects and return what THIS.equals(THAT) should return
+     *
+     * @param THIS
+     * @param THAT
+     * @return true if and only if THIS equals THAT
+     */
+    boolean equals( Object THIS, Object THAT );
 
-  public JavaClass[] toArray() {
-    JavaClass[] classes = new JavaClass[vec.size()];
-    vec.toArray(classes);
-    return classes;
-  }
+
+    /**
+     * Return hashcode for THIS.hashCode()
+     *
+     * @param THIS
+     * @return hashcode for THIS.hashCode()
+     */
+    int hashCode( Object THIS );
 }

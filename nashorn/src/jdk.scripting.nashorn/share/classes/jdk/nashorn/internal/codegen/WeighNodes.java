@@ -317,7 +317,7 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveADD(final UnaryNode unaryNode) {
+    public Node leavePOS(final UnaryNode unaryNode) {
         return unaryNodeWeight(unaryNode);
     }
 
@@ -348,7 +348,7 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveSUB(final UnaryNode unaryNode) {
+    public Node leaveNEG(final UnaryNode unaryNode) {
         return unaryNodeWeight(unaryNode);
     }
 

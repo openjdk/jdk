@@ -196,7 +196,7 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
      * This same method is called to try and resume output after a blocking
      * handshaking operation has completed.
      */
-    private void upperWrite(ByteBufferReference[] refs, AsyncWriteQueue delayCallback) {
+    private boolean upperWrite(ByteBufferReference[] refs, AsyncWriteQueue delayCallback) {
         // currently delayCallback is not used. Use it when it's needed to execute handshake in another thread.
         try {
             ByteBuffer[] buffers = ByteBufferReference.toBuffers(refs);
@@ -230,6 +230,9 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
             closeExceptionally(t);
             errorHandler.accept(t);
         }
+        // We always return true: either all the data was sent, or
+        // an exception happened and we have closed the queue.
+        return true;
     }
 
     // Connecting at this level means the initial handshake has completed.
