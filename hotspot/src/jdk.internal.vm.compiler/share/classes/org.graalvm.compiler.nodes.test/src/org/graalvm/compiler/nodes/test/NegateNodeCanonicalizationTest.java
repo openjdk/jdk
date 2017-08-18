@@ -22,17 +22,20 @@
  */
 package org.graalvm.compiler.nodes.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
+import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 import static org.junit.Assert.assertEquals;
-import jdk.vm.ci.meta.JavaConstant;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
+import org.junit.Before;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.JavaConstant;
 
 /**
  * This class tests that the canonicalization for constant negate nodes cover all cases.
@@ -43,7 +46,9 @@ public class NegateNodeCanonicalizationTest {
 
     @Before
     public void before() {
-        graph = new StructuredGraph(AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        OptionValues options = getInitialOptions();
+        DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER);
+        graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
     }
 
     @Test

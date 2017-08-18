@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER2
 #include "opto/matcher.hpp"
 #endif
@@ -51,7 +52,7 @@ VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 void* VtableStub::operator new(size_t size, int code_size) throw() {
   assert(size == sizeof(VtableStub), "mismatched size");
   // compute real VtableStub size (rounded to nearest word)
-  const int real_size = round_to(code_size + sizeof(VtableStub), wordSize);
+  const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
   const int chunk_factor = 32;
   if (_chunk == NULL || _chunk + real_size > _chunk_end) {
@@ -218,11 +219,11 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
   HandleMark hm;
   Klass* klass = receiver->klass();
   InstanceKlass* ik = InstanceKlass::cast(klass);
-  klassVtable* vt = ik->vtable();
+  klassVtable vt = ik->vtable();
   ik->print();
   fatal("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
         "index %d (vtable length %d)",
-        p2i(receiver), index, vt->length());
+        p2i(receiver), index, vt.length());
 }
 
 #endif // PRODUCT

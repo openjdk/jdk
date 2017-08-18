@@ -43,8 +43,8 @@ public class BasicInductionVariable extends InductionVariable {
 
     private final ValuePhiNode phi;
     private final ValueNode init;
-    private final ValueNode rawStride;
-    private final BinaryArithmeticNode<?> op;
+    private ValueNode rawStride;
+    private BinaryArithmeticNode<?> op;
 
     public BasicInductionVariable(LoopEx loop, ValuePhiNode phi, ValueNode init, ValueNode rawStride, BinaryArithmeticNode<?> op) {
         super(loop);
@@ -61,6 +61,11 @@ public class BasicInductionVariable extends InductionVariable {
 
     public BinaryArithmeticNode<?> getOp() {
         return op;
+    }
+
+    public void setOP(BinaryArithmeticNode<?> newOp) {
+        rawStride = newOp.getY();
+        op = newOp;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvm.h"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -256,7 +257,9 @@ void VM_Version::initialize() {
     }
   }
 
-  AllocatePrefetchDistance = 128;
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, 128);
+  }
 
 #ifdef COMPILER2
   FLAG_SET_DEFAULT(UseFPUForSpilling, true);

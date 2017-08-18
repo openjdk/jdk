@@ -22,41 +22,43 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
-import static org.graalvm.compiler.debug.GraalDebugConfig.areScopedGlobalMetricsEnabled;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.DebugValueSummary;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Dump;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Log;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.MethodFilter;
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.Verify;
 import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
+import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
-import org.graalvm.compiler.api.collections.CollectionsProvider;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
+import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugEnvironment;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Description;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
+import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
+import org.graalvm.compiler.debug.GlobalMetrics;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
-import org.graalvm.compiler.debug.internal.DebugValuesPrinter;
-import org.graalvm.compiler.debug.internal.method.MethodMetricsPrinter;
-import org.graalvm.compiler.graph.DefaultNodeCollectionsProvider;
-import org.graalvm.compiler.graph.NodeCollectionsProvider;
+import org.graalvm.compiler.hotspot.CompilationStatistics.Options;
 import org.graalvm.compiler.hotspot.CompilerConfigurationFactory.BackendMap;
 import org.graalvm.compiler.hotspot.debug.BenchmarkCounters;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.nodes.spi.StampProvider;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.replacements.SnippetCounter;
+import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.runtime.RuntimeProvider;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.stack.StackIntrospection;
@@ -64,6 +66,7 @@ import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
 //JaCoCo Exclude
@@ -86,29 +89,42 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     private final HotSpotBackend hostBackend;
-    private DebugValuesPrinter debugValuesPrinter;
+    private final GlobalMetrics metricValues = new GlobalMetrics();
+    private final List<SnippetCounter.Group> snippetCounterGroups;
 
-    private final Map<Class<? extends Architecture>, HotSpotBackend> backends = new HashMap<>();
+    private final EconomicMap<Class<? extends Architecture>, HotSpotBackend> backends = EconomicMap.create(Equivalence.IDENTITY);
 
     private final GraalHotSpotVMConfig config;
 
+    private final OptionValues options;
+    private final DiagnosticsOutputDirectory outputDirectory;
+    private final Map<ExceptionAction, Integer> compilationProblemsPerAction;
+    private final HotSpotGraalMBean mBean;
+
     /**
      * @param compilerConfigurationFactory factory for the compiler configuration
-     *            {@link CompilerConfigurationFactory#selectFactory(String)}
+     *            {@link CompilerConfigurationFactory#selectFactory(String, OptionValues)}
      */
     @SuppressWarnings("try")
-    HotSpotGraalRuntime(HotSpotJVMCIRuntime jvmciRuntime, CompilerConfigurationFactory compilerConfigurationFactory) {
-
+    HotSpotGraalRuntime(HotSpotJVMCIRuntime jvmciRuntime, CompilerConfigurationFactory compilerConfigurationFactory, OptionValues initialOptions) {
         HotSpotVMConfigStore store = jvmciRuntime.getConfigStore();
-        config = GeneratePIC.getValue() ? new AOTGraalHotSpotVMConfig(store) : new GraalHotSpotVMConfig(store);
-        CompileTheWorldOptions.overrideWithNativeOptions(config);
+        config = GeneratePIC.getValue(initialOptions) ? new AOTGraalHotSpotVMConfig(store) : new GraalHotSpotVMConfig(store);
 
         // Only set HotSpotPrintInlining if it still has its default value (false).
-        if (GraalOptions.HotSpotPrintInlining.getValue() == false) {
-            GraalOptions.HotSpotPrintInlining.setValue(config.printInlining);
+        if (GraalOptions.HotSpotPrintInlining.getValue(initialOptions) == false && config.printInlining) {
+            options = new OptionValues(initialOptions, HotSpotPrintInlining, true);
+        } else {
+            options = initialOptions;
         }
 
+        outputDirectory = new DiagnosticsOutputDirectory(options);
+        compilationProblemsPerAction = new EnumMap<>(ExceptionAction.class);
+        snippetCounterGroups = GraalOptions.SnippetCounters.getValue(options) ? new ArrayList<>() : null;
         CompilerConfiguration compilerConfiguration = compilerConfigurationFactory.createCompilerConfiguration();
+
+        HotSpotGraalCompiler compiler = new HotSpotGraalCompiler(jvmciRuntime, this, initialOptions);
+        this.mBean = createHotSpotGraalMBean(compiler);
+
         BackendMap backendMap = compilerConfigurationFactory.createBackendMap();
 
         JVMCIBackend hostJvmciBackend = jvmciRuntime.getHostJVMCIBackend();
@@ -136,74 +152,32 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             }
         }
 
-        if (Log.getValue() == null && !areScopedGlobalMetricsEnabled() && Dump.getValue() == null && Verify.getValue() == null) {
-            if (MethodFilter.getValue() != null && !Debug.isEnabled()) {
-                TTY.println("WARNING: Ignoring MethodFilter option since Log, Meter, Time, TrackMemUse, Dump and Verify options are all null");
-            }
-        }
-
-        if (Debug.isEnabled()) {
-            DebugEnvironment.initialize(TTY.out, hostBackend.getProviders().getSnippetReflection());
-
-            String summary = DebugValueSummary.getValue();
-            if (summary != null) {
-                switch (summary) {
-                    case "Name":
-                    case "Partial":
-                    case "Complete":
-                    case "Thread":
-                        break;
-                    default:
-                        throw new GraalError("Unsupported value for DebugSummaryValue: %s", summary);
-                }
-            }
-        }
-
-        if (Debug.areUnconditionalCountersEnabled() || Debug.areUnconditionalTimersEnabled() || Debug.areUnconditionalMethodMetricsEnabled() ||
-                        (Debug.isEnabled() && areScopedGlobalMetricsEnabled()) || (Debug.isEnabled() && Debug.isMethodFilteringEnabled())) {
-            // This must be created here to avoid loading the DebugValuesPrinter class
-            // during shutdown() which in turn can cause a deadlock
-            int mmPrinterType = 0;
-            mmPrinterType |= MethodMetricsPrinter.Options.MethodMeterPrintAscii.getValue() ? 1 : 0;
-            mmPrinterType |= MethodMetricsPrinter.Options.MethodMeterFile.getValue() != null ? 2 : 0;
-            switch (mmPrinterType) {
-                case 0:
-                    debugValuesPrinter = new DebugValuesPrinter();
-                    break;
-                case 1:
-                    debugValuesPrinter = new DebugValuesPrinter(new MethodMetricsPrinter.MethodMetricsASCIIPrinter(TTY.out));
-                    break;
-                case 2:
-                    debugValuesPrinter = new DebugValuesPrinter(new MethodMetricsPrinter.MethodMetricsCSVFilePrinter());
-                    break;
-                case 3:
-                    debugValuesPrinter = new DebugValuesPrinter(
-                                    new MethodMetricsPrinter.MethodMetricsCompositePrinter(new MethodMetricsPrinter.MethodMetricsCSVFilePrinter(),
-                                                    new MethodMetricsPrinter.MethodMetricsASCIIPrinter(TTY.out)));
-                    break;
-                default:
-                    break;
-            }
-        }
-
         // Complete initialization of backends
         try (InitTimer st = timer(hostBackend.getTarget().arch.getName(), ".completeInitialization")) {
-            hostBackend.completeInitialization(jvmciRuntime);
+            hostBackend.completeInitialization(jvmciRuntime, options);
         }
-        for (HotSpotBackend backend : backends.values()) {
+        for (HotSpotBackend backend : backends.getValues()) {
             if (backend != hostBackend) {
                 try (InitTimer st = timer(backend.getTarget().arch.getName(), ".completeInitialization")) {
-                    backend.completeInitialization(jvmciRuntime);
+                    backend.completeInitialization(jvmciRuntime, options);
                 }
             }
         }
 
-        BenchmarkCounters.initialize(jvmciRuntime);
+        BenchmarkCounters.initialize(jvmciRuntime, options);
 
         assert checkArrayIndexScaleInvariants();
 
         runtimeStartTime = System.nanoTime();
         bootstrapJVMCI = config.getFlag("BootstrapJVMCI", Boolean.class);
+    }
+
+    private static HotSpotGraalMBean createHotSpotGraalMBean(HotSpotGraalCompiler compiler) {
+        try {
+            return HotSpotGraalMBean.create(compiler);
+        } catch (LinkageError ex) {
+            return null;
+        }
     }
 
     private HotSpotBackend registerBackend(HotSpotBackend backend) {
@@ -224,19 +198,43 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     @Override
+    public DebugContext openDebugContext(OptionValues compilationOptions, CompilationIdentifier compilationId, Object compilable, Iterable<DebugHandlersFactory> factories) {
+        Description description = new Description(compilable, compilationId.toString(CompilationIdentifier.Verbosity.ID));
+        return DebugContext.create(compilationOptions, description, metricValues, DEFAULT_LOG_STREAM, factories);
+    }
+
+    @Override
+    public OptionValues getOptions() {
+        return mBean == null ? options : mBean.optionsFor(options, null);
+    }
+
+    @Override
+    public OptionValues getOptions(ResolvedJavaMethod forMethod) {
+        return mBean == null ? options : mBean.optionsFor(options, forMethod);
+    }
+
+    @Override
+    public Group createSnippetCounterGroup(String name) {
+        if (snippetCounterGroups != null) {
+            Group group = new Group(name);
+            snippetCounterGroups.add(group);
+            return group;
+        }
+        return null;
+    }
+
+    @Override
     public String getName() {
         return getClass().getSimpleName();
     }
-
-    private final NodeCollectionsProvider nodeCollectionsProvider = new DefaultNodeCollectionsProvider();
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getCapability(Class<T> clazz) {
         if (clazz == RuntimeProvider.class) {
             return (T) this;
-        } else if (clazz == CollectionsProvider.class || clazz == NodeCollectionsProvider.class) {
-            return (T) nodeCollectionsProvider;
+        } else if (clazz == OptionValues.class) {
+            return (T) options;
         } else if (clazz == StackIntrospection.class) {
             return (T) this;
         } else if (clazz == SnippetReflectionProvider.class) {
@@ -258,35 +256,38 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         return backends.get(arch);
     }
 
-    public Map<Class<? extends Architecture>, HotSpotBackend> getBackends() {
-        return Collections.unmodifiableMap(backends);
-    }
-
     private long runtimeStartTime;
+    private boolean shutdown;
 
     /**
      * Take action related to entering a new execution phase.
      *
      * @param phase the execution phase being entered
      */
-    static void phaseTransition(String phase) {
-        CompilationStatistics.clear(phase);
+    void phaseTransition(String phase) {
+        if (Options.UseCompilationStatistics.getValue(options)) {
+            CompilationStatistics.clear(phase);
+        }
     }
 
     void shutdown() {
-        if (debugValuesPrinter != null) {
-            debugValuesPrinter.printDebugValues();
-        }
+        shutdown = true;
+        metricValues.print(options);
+
         phaseTransition("final");
 
-        SnippetCounter.printGroups(TTY.out().out());
-        BenchmarkCounters.shutdown(runtime(), runtimeStartTime);
+        if (snippetCounterGroups != null) {
+            for (Group group : snippetCounterGroups) {
+                TTY.out().out().println(group);
+            }
+        }
+        BenchmarkCounters.shutdown(runtime(), options, runtimeStartTime);
+
+        outputDirectory.close();
     }
 
-    void clearMeters() {
-        if (debugValuesPrinter != null) {
-            debugValuesPrinter.clearDebugValues();
-        }
+    void clearMetrics() {
+        metricValues.clear();
     }
 
     private final boolean bootstrapJVMCI;
@@ -299,5 +300,20 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     @Override
     public boolean isBootstrapping() {
         return bootstrapJVMCI && !bootstrapFinished;
+    }
+
+    @Override
+    public boolean isShutdown() {
+        return shutdown;
+    }
+
+    @Override
+    public DiagnosticsOutputDirectory getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    @Override
+    public Map<ExceptionAction, Integer> getCompilationProblemsPerAction() {
+        return compilationProblemsPerAction;
     }
 }

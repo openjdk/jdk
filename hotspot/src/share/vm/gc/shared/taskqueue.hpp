@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,11 +554,10 @@ private:
 #pragma warning(pop)
 #endif
 
-typedef OverflowTaskQueue<StarTask, mtClass>           OopStarTaskQueue;
-typedef GenericTaskQueueSet<OopStarTaskQueue, mtClass> OopStarTaskQueueSet;
+typedef OverflowTaskQueue<StarTask, mtGC>           OopStarTaskQueue;
+typedef GenericTaskQueueSet<OopStarTaskQueue, mtGC> OopStarTaskQueueSet;
 
-typedef OverflowTaskQueue<size_t, mtInternal>             RegionTaskQueue;
-typedef GenericTaskQueueSet<RegionTaskQueue, mtClass>     RegionTaskQueueSet;
-
+typedef OverflowTaskQueue<size_t, mtGC>             RegionTaskQueue;
+typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>  RegionTaskQueueSet;
 
 #endif // SHARE_VM_GC_SHARED_TASKQUEUE_HPP

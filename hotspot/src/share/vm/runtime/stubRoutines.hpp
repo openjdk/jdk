@@ -248,7 +248,7 @@ class StubRoutines: AllStatic {
   static jint    verify_oop_count()                        { return _verify_oop_count; }
   static jint*   verify_oop_count_addr()                   { return &_verify_oop_count; }
   // a subroutine for debugging the GC
-  static address verify_oop_subroutine_entry_address()    { return (address)&_verify_oop_subroutine_entry; }
+  static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
 
   static address catch_exception_entry()                   { return _catch_exception_entry; }
 
@@ -335,8 +335,8 @@ class StubRoutines: AllStatic {
   static address checkcast_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _checkcast_arraycopy_uninit : _checkcast_arraycopy;
   }
-  static address unsafe_arraycopy()        { return _unsafe_arraycopy; }
-  static address generic_arraycopy()       { return _generic_arraycopy; }
+  static address unsafe_arraycopy()    { return _unsafe_arraycopy; }
+  static address generic_arraycopy()   { return _generic_arraycopy; }
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }
@@ -349,8 +349,8 @@ class StubRoutines: AllStatic {
   static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
   static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
-  static address counterMode_AESCrypt() { return _counterMode_AESCrypt; }
-  static address ghash_processBlocks() { return _ghash_processBlocks; }
+  static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
+  static address ghash_processBlocks()   { return _ghash_processBlocks; }
 
   static address sha1_implCompress()     { return _sha1_implCompress; }
   static address sha1_implCompressMB()   { return _sha1_implCompressMB; }
@@ -366,9 +366,9 @@ class StubRoutines: AllStatic {
   static address updateBytesCRC32C()   { return _updateBytesCRC32C; }
   static address updateBytesAdler32()  { return _updateBytesAdler32; }
 
-  static address multiplyToLen()       {return _multiplyToLen; }
-  static address squareToLen()         {return _squareToLen; }
-  static address mulAdd()              {return _mulAdd; }
+  static address multiplyToLen()       { return _multiplyToLen; }
+  static address squareToLen()         { return _squareToLen; }
+  static address mulAdd()              { return _mulAdd; }
   static address montgomeryMultiply()  { return _montgomeryMultiply; }
   static address montgomerySquare()    { return _montgomerySquare; }
 
@@ -376,7 +376,7 @@ class StubRoutines: AllStatic {
 
   static address dexp()                { return _dexp; }
   static address dlog()                { return _dlog; }
-  static address dlog10()                { return _dlog10; }
+  static address dlog10()              { return _dlog10; }
   static address dpow()                { return _dpow; }
   static address dsin()                { return _dsin; }
   static address dcos()                { return _dcos; }
@@ -387,7 +387,7 @@ class StubRoutines: AllStatic {
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
-  static address zero_aligned_words()   { return _zero_aligned_words; }
+  static address zero_aligned_words()  { return _zero_aligned_words; }
 
   static double  intrinsic_log10(double d) {
     assert(_intrinsic_log10 != NULL, "must be defined");

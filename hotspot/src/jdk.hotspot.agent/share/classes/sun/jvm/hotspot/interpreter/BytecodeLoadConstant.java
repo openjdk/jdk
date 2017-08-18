@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,14 +121,7 @@ public class BytecodeLoadConstant extends Bytecode {
     // decide based on the oop type.
     ConstantPool cpool = method().getConstants();
     int cpIndex = poolIndex();
-    ConstantPool.CPSlot oop = cpool.getSlotAt(cpIndex);
-    if (oop.isResolved()) {
-      return oop.getKlass();
-    } else if (oop.isUnresolved()) {
-      return oop.getSymbol();
-    } else {
-       throw new RuntimeException("should not reach here");
-    }
+    return cpool.getKlassNameAt(cpIndex);
   }
 
   public static BytecodeLoadConstant at(Method method, int bci) {
@@ -171,12 +164,12 @@ public class BytecodeLoadConstant extends Bytecode {
        // tag change from 'unresolved' to 'klass' does not happen atomically.
        // We just look at the object at the corresponding index and
        // decide based on the oop type.
-       ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
-       if (obj.isResolved()) {
-         Klass k = obj.getKlass();
+       ConstantTag tag = cpool.getTagAt(cpIndex);
+       if (tag.isKlass()) {
+         Klass k = cpool.getKlassAt(cpIndex);
          return "<Class " + k.getName().asString() + "@" + k.getAddress() + ">";
-       } else if (obj.isUnresolved()) {
-         Symbol sym = obj.getSymbol();
+       } else if (tag.isUnresolvedKlass()) {
+         Symbol sym = cpool.getKlassNameAt(cpIndex);
          return "<Class " + sym.asString() + ">";
        } else {
           throw new RuntimeException("should not reach here");

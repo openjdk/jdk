@@ -28,7 +28,6 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -37,6 +36,7 @@ import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.memory.MemoryPhiNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
@@ -106,8 +106,8 @@ public abstract class AbstractMergeNode extends BeginStateSplitNode implements I
             }
             ValueNode removedValue = phi.valueAt(predIndex);
             phi.removeInput(predIndex);
-            if (removedValue != null && removedValue.isAlive() && removedValue.hasNoUsages() && GraphUtil.isFloatingNode(removedValue)) {
-                GraphUtil.killWithUnusedFloatingInputs(removedValue);
+            if (removedValue != null) {
+                GraphUtil.tryKillUnused(removedValue);
             }
         }
     }
@@ -141,7 +141,11 @@ public abstract class AbstractMergeNode extends BeginStateSplitNode implements I
     }
 
     public NodeIterable<ValuePhiNode> valuePhis() {
-        return this.usages().filter(ValuePhiNode.class).filter(this::isPhiAtMerge);
+        return this.usages().filter(ValuePhiNode.class);
+    }
+
+    public NodeIterable<MemoryPhiNode> memoryPhis() {
+        return this.usages().filter(MemoryPhiNode.class);
     }
 
     @Override
@@ -178,7 +182,7 @@ public abstract class AbstractMergeNode extends BeginStateSplitNode implements I
                     }
                 }
             }
-            Debug.log("Split %s into ends for %s.", this, merge);
+            getDebug().log("Split %s into ends for %s.", this, merge);
             int numEnds = this.forwardEndCount();
             for (int i = 0; i < numEnds - 1; i++) {
                 AbstractEndNode end = forwardEndAt(numEnds - 1 - i);

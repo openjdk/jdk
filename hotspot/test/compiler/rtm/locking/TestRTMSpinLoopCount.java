@@ -29,6 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -43,13 +44,9 @@ import compiler.testlibrary.rtm.BusyLock;
 import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -57,7 +54,7 @@ import java.util.List;
  * Test verifies that RTMSpinLoopCount increase time spent between retries
  * by comparing amount of retries done with different RTMSpinLoopCount's values.
  */
-public class TestRTMSpinLoopCount extends CommandLineOptionTest {
+public class TestRTMSpinLoopCount {
     private static final int LOCKING_TIME = 1000;
     private static final int RTM_RETRY_COUNT = 1000;
     private static final boolean INFLATE_MONITOR = true;
@@ -65,11 +62,6 @@ public class TestRTMSpinLoopCount extends CommandLineOptionTest {
     private static final int[] SPIN_LOOP_COUNTS
             = new int[] { 0, 100, 1_000, 1_000_000, 10_000_000 };
 
-    private TestRTMSpinLoopCount() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
-
-    @Override
     protected void runTestCases() throws Throwable {
         long[] aborts = new long[TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length];
         for (int i = 0; i < TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length; i++) {
@@ -121,6 +113,6 @@ public class TestRTMSpinLoopCount extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMSpinLoopCount().test();
+        new TestRTMSpinLoopCount().runTestCases();
     }
 }

@@ -32,7 +32,7 @@ import org.graalvm.compiler.microbenchmarks.graal.util.MethodSpec;
 import org.graalvm.compiler.nodes.StructuredGraph;
 
 /**
- * Benchmarks the performance of {@link Graph#copy()}.
+ * Benchmarks the performance of {@link Graph#copy(org.graalvm.compiler.debug.DebugContext)}.
  */
 public class GraphCopyBenchmark extends GraalBenchmark {
 
@@ -75,8 +75,8 @@ public class GraphCopyBenchmark extends GraalBenchmark {
 
     @Benchmark
     @Warmup(iterations = 20)
-    public StructuredGraph nullness(Nullness s, @SuppressWarnings("unused") GraalState g) {
-        return (StructuredGraph) s.graph.copy();
+    public StructuredGraph nullness(Nullness s, GraalState g) {
+        return (StructuredGraph) s.graph.copy(g.debug);
     }
 
     @MethodSpec(declaringClass = GraphCopyBenchmark.class, name = "searchSnippet")
@@ -127,7 +127,7 @@ public class GraphCopyBenchmark extends GraalBenchmark {
 
     @Benchmark
     @Warmup(iterations = 20)
-    public StructuredGraph search(Search s, @SuppressWarnings("unused") GraalState g) {
-        return (StructuredGraph) s.graph.copy();
+    public StructuredGraph search(Search s, GraalState g) {
+        return (StructuredGraph) s.graph.copy(g.debug);
     }
 }

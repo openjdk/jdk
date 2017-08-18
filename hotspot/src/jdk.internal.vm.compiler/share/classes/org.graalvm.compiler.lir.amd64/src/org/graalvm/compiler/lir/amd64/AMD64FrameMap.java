@@ -24,7 +24,7 @@ package org.graalvm.compiler.lir.amd64;
 
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 

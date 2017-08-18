@@ -32,12 +32,10 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic.Kind;
 
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.InjectedNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
-import org.graalvm.compiler.replacements.verifier.InjectedDependencies.WellKnownDependency;
 
 /**
  * Create graph builder plugins for {@link NodeIntrinsic} methods.
@@ -124,10 +122,6 @@ public abstract class GeneratedNodeIntrinsicPlugin extends GeneratedPlugin {
             }
             out.printf(");\n");
 
-            if (intrinsicMethod.getAnnotation(NodeIntrinsic.class).setStampFromReturnType()) {
-                out.printf("            node.setStamp(%s);\n", deps.use(WellKnownDependency.RETURN_STAMP));
-            }
-
             if (intrinsicMethod.getReturnType().getKind() == TypeKind.VOID) {
                 out.printf("            b.add(node);\n");
             } else {
@@ -164,10 +158,6 @@ public abstract class GeneratedNodeIntrinsicPlugin extends GeneratedPlugin {
                 out.printf(", arg%d", i);
             }
             out.printf(");\n");
-
-            if (intrinsicMethod.getAnnotation(NodeIntrinsic.class).setStampFromReturnType()) {
-                env.getMessager().printMessage(Kind.WARNING, "Ignoring setStampFromReturnType because a custom 'intrinsify' method is used.", intrinsicMethod);
-            }
         }
     }
 }

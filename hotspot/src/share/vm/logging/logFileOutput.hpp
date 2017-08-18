@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ class LogDecorations;
 // The log file output, with support for file rotation based on a target size.
 class LogFileOutput : public LogFileStreamOutput {
  private:
-  static const char*  FileOpenMode;
-  static const char*  FileCountOptionKey;
-  static const char*  FileSizeOptionKey;
-  static const char*  PidFilenamePlaceholder;
-  static const char*  TimestampFilenamePlaceholder;
-  static const char*  TimestampFormat;
+  static const char* const FileOpenMode;
+  static const char* const FileCountOptionKey;
+  static const char* const FileSizeOptionKey;
+  static const char* const PidFilenamePlaceholder;
+  static const char* const TimestampFilenamePlaceholder;
+  static const char* const TimestampFormat;
   static const size_t DefaultFileCount = 5;
   static const size_t DefaultFileSize = 20 * M;
   static const size_t StartTimeBufferSize = 20;
@@ -91,7 +91,7 @@ class LogFileOutput : public LogFileStreamOutput {
     return _name;
   }
 
-  static const char* Prefix;
+  static const char* const Prefix;
   static void set_file_name_parameters(jlong start_time);
 };
 

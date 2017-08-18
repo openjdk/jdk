@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,8 +529,7 @@ bool MemoryService::set_verbose(bool verbose) {
 }
 
 Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
-  Klass* k = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
-  instanceKlassHandle ik(THREAD, k);
+  InstanceKlass* ik = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
 
   instanceHandle obj = ik->allocate_instance_handle(CHECK_NH);
 

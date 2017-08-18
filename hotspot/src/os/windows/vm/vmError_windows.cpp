@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ void VMError::reset_signal_handlers() {
 // Write a hint to the stream in case siginfo relates to a segv/bus error
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
+#if INCLUDE_CDS
   if (siginfo && UseSharedSpaces) {
     const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
     if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
@@ -61,8 +62,16 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
         if (mapinfo->is_in_shared_space(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");
+        }
       }
     }
-    }
   }
+#endif
 }
+
+// Error reporting cancellation: there is no easy way to implement this on Windows, because we do
+// not have an easy way to send signals to threads (aka to cause a win32 Exception in another
+// thread). We would need something like "RaiseException(HANDLE thread)"...
+void VMError::reporting_started() {}
+void VMError::interrupt_reporting_thread() {}
+

@@ -22,22 +22,39 @@
  */
 package org.graalvm.compiler.replacements;
 
-//JaCoCo Exclude
-
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.graalvm.compiler.core.common.GraalOptions;
+
 /**
- * A counter that can be safely {@linkplain #inc() incremented} from within a snippet for gathering
+ * A counter that can (only) be {@linkplain #inc() incremented} from within a snippet for gathering
  * snippet specific metrics.
  */
-public class SnippetCounter implements Comparable<SnippetCounter> {
+public final class SnippetCounter implements Comparable<SnippetCounter> {
     /**
      * A group of related counters.
      */
     public static class Group {
+
+        public interface Factory {
+            /**
+             * If snippet counters are {@linkplain GraalOptions#SnippetCounters enabled}, creates
+             * and registers a {@link Group} with the given name. Otherwise, returns null.
+             *
+             * @param name name of the counter group
+             */
+            Group createSnippetCounterGroup(String name);
+        }
+
+        public static final Factory NullFactory = new Factory() {
+
+            @Override
+            public Group createSnippetCounterGroup(String name) {
+                return null;
+            }
+        };
 
         final String name;
         final List<SnippetCounter> counters;
@@ -84,10 +101,7 @@ public class SnippetCounter implements Comparable<SnippetCounter> {
         return 0;
     }
 
-    private static final List<Group> groups = new ArrayList<>();
-
     private final Group group;
-    private final int index;
     private final String name;
     private final String description;
     private long value;
@@ -106,14 +120,12 @@ public class SnippetCounter implements Comparable<SnippetCounter> {
         this.description = description;
         if (group != null) {
             List<SnippetCounter> counters = group.counters;
-            this.index = counters.size();
             counters.add(this);
-            if (index == 0) {
-                groups.add(group);
-            }
-        } else {
-            this.index = -1;
         }
+    }
+
+    public Group getGroup() {
+        return group;
     }
 
     /**
@@ -149,14 +161,5 @@ public class SnippetCounter implements Comparable<SnippetCounter> {
             return "SnippetCounter-" + group.name + ":" + name;
         }
         return super.toString();
-    }
-
-    /**
-     * Prints all the counter groups to a given stream.
-     */
-    public static void printGroups(PrintStream out) {
-        for (Group group : groups) {
-            out.println(group);
-        }
     }
 }

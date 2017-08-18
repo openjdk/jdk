@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@
 #include "runtime/sweeper.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/align.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compilation.hpp"
@@ -282,8 +284,8 @@ void CodeCache::initialize_heaps() {
 
   // Align CodeHeaps
   size_t alignment = heap_alignment();
-  non_nmethod_size = align_size_up(non_nmethod_size, alignment);
-  profiled_size   = align_size_down(profiled_size, alignment);
+  non_nmethod_size = align_up(non_nmethod_size, alignment);
+  profiled_size   = align_down(profiled_size, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -323,7 +325,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
           os::vm_page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t r_align = MAX2(page_size, granularity);
-  const size_t r_size = align_size_up(size, r_align);
+  const size_t r_size = align_up(size, r_align);
   const size_t rs_align = page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_size, granularity);
 
@@ -411,13 +413,22 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
 
   // Reserve Space
   size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
-  size_initial = round_to(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, os::vm_page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization("Could not reserve enough space for code cache");
   }
 
   // Register the CodeHeap
   MemoryService::add_code_heap_memory_pool(heap, name);
+}
+
+CodeHeap* CodeCache::get_code_heap_containing(void* start) {
+  FOR_ALL_HEAPS(heap) {
+    if ((*heap)->contains(start)) {
+      return *heap;
+    }
+  }
+  return NULL;
 }
 
 CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
@@ -599,7 +610,7 @@ bool CodeCache::contains(nmethod *nm) {
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   // We could potentially look up non_entrant methods
-  guarantee(result == NULL || !result->is_zombie() || result->is_locked_by_vm() || is_error_reported(), "unsafe access to zombie method");
+  guarantee(result == NULL || !result->is_zombie() || result->is_locked_by_vm() || VMError::is_error_reported(), "unsafe access to zombie method");
   return result;
 }
 
@@ -607,12 +618,10 @@ CodeBlob* CodeCache::find_blob(void* start) {
 // what you are doing)
 CodeBlob* CodeCache::find_blob_unsafe(void* start) {
   // NMT can walk the stack before code cache is created
-  if (_heaps != NULL && !_heaps->is_empty()) {
-    FOR_ALL_HEAPS(heap) {
-      CodeBlob* result = (*heap)->find_blob_unsafe(start);
-      if (result != NULL) {
-        return result;
-      }
+  if (_heaps != NULL) {
+    CodeHeap* heap = get_code_heap_containing(start);
+    if (heap != NULL) {
+      return heap->find_blob_unsafe(start);
     }
   }
   return NULL;
@@ -1046,7 +1055,7 @@ void CodeCache::initialize() {
   // This was originally just a check of the alignment, causing failure, instead, round
   // the code cache to the page size.  In particular, Solaris is moving to a larger
   // default page size.
-  CodeCacheExpansionSize = round_to(CodeCacheExpansionSize, os::vm_page_size());
+  CodeCacheExpansionSize = align_up(CodeCacheExpansionSize, os::vm_page_size());
 
   if (SegmentedCodeCache) {
     // Use multiple code heaps
@@ -1147,7 +1156,7 @@ bool CodeCache::is_far_target(address target) {
 }
 
 #ifdef HOTSWAP
-int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
+int CodeCache::mark_for_evol_deoptimization(InstanceKlass* dependee) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   int number_of_marked_CodeBlobs = 0;
 
@@ -1168,7 +1177,7 @@ int CodeCache::mark_for_evol_deoptimization(instanceKlassHandle dependee) {
     CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization()) {
       // ...Already marked in the previous pass; don't count it again.
-    } else if (nm->is_evol_dependent_on(dependee())) {
+    } else if (nm->is_evol_dependent_on(dependee)) {
       ResourceMark rm;
       nm->mark_for_deoptimization();
       number_of_marked_CodeBlobs++;
@@ -1224,7 +1233,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
 }
 
 // Flushes compiled methods dependent on dependee.
-void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
+void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (number_of_nmethods_with_dependencies() == 0) return;
@@ -1245,7 +1254,7 @@ void CodeCache::flush_dependents_on(instanceKlassHandle dependee) {
 
 #ifdef HOTSWAP
 // Flushes compiled methods dependent on dependee in the evolutionary sense
-void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
+void CodeCache::flush_evol_dependents_on(InstanceKlass* ev_k) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
   if (number_of_nmethods_with_dependencies() == 0 && !UseAOT) return;
@@ -1255,7 +1264,7 @@ void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
   // holding the CodeCache_lock.
 
   // Compute the dependent nmethods
-  if (mark_for_evol_deoptimization(ev_k_h) > 0) {
+  if (mark_for_evol_deoptimization(ev_k) > 0) {
     // At least one nmethod has been marked for deoptimization
 
     // All this already happens inside a VM_Operation, so we'll do all the work here.
@@ -1276,7 +1285,7 @@ void CodeCache::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
 
 
 // Flushes compiled methods dependent on dependee
-void CodeCache::flush_dependents_on_method(methodHandle m_h) {
+void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
@@ -1316,6 +1325,8 @@ void CodeCache::verify() {
 }
 
 // A CodeHeap is full. Print out warning and report event.
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
 void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
   CodeHeap* heap = get_code_heap(code_blob_type);
@@ -1324,11 +1335,27 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   if ((heap->full_count() == 0) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
-      warning("%s is full. Compiler has been disabled.", get_code_heap_name(code_blob_type));
-      warning("Try increasing the code heap size using -XX:%s=", get_code_heap_flag_name(code_blob_type));
+      ResourceMark rm;
+      stringStream msg1_stream, msg2_stream;
+      msg1_stream.print("%s is full. Compiler has been disabled.",
+                        get_code_heap_name(code_blob_type));
+      msg2_stream.print("Try increasing the code heap size using -XX:%s=",
+                 get_code_heap_flag_name(code_blob_type));
+      const char *msg1 = msg1_stream.as_string();
+      const char *msg2 = msg2_stream.as_string();
+
+      log_warning(codecache)(msg1);
+      log_warning(codecache)(msg2);
+      warning(msg1);
+      warning(msg2);
     } else {
-      warning("CodeCache is full. Compiler has been disabled.");
-      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
+      const char *msg1 = "CodeCache is full. Compiler has been disabled.";
+      const char *msg2 = "Try increasing the code cache size using -XX:ReservedCodeCacheSize=";
+
+      log_warning(codecache)(msg1);
+      log_warning(codecache)(msg2);
+      warning(msg1);
+      warning(msg2);
     }
     ResourceMark rm;
     stringStream s;
@@ -1357,6 +1384,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     event.commit();
   }
 }
+PRAGMA_DIAG_POP
 
 void CodeCache::print_memory_overhead() {
   size_t wasted_bytes = 0;
@@ -1588,14 +1616,15 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 void CodeCache::print_codelist(outputStream* st) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  NMethodIterator iter;
-  while(iter.next_alive()) {
-    nmethod* nm = iter.method();
+  CompiledMethodIterator iter;
+  while (iter.next_alive()) {
+    CompiledMethod* cm = iter.method();
     ResourceMark rm;
-    char *method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
-                 nm->compile_id(), nm->comp_level(), method_name, (intptr_t)nm->header_begin(),
-                 (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
+    char* method_name = cm->method()->name_and_sig_as_C_string();
+    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+                 cm->compile_id(), cm->comp_level(), cm->get_state(),
+                 method_name,
+                 (intptr_t)cm->header_begin(), (intptr_t)cm->code_begin(), (intptr_t)cm->code_end());
   }
 }
 

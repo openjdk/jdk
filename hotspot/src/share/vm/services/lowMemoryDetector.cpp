@@ -293,8 +293,7 @@ void SensorInfo::process_pending_requests(TRAPS) {
 void SensorInfo::trigger(int count, TRAPS) {
   assert(count <= _pending_trigger_count, "just checking");
   if (_sensor_obj != NULL) {
-    Klass* k = Management::sun_management_Sensor_klass(CHECK);
-    instanceKlassHandle sensorKlass (THREAD, k);
+    InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
     Handle sensor_h(THREAD, _sensor_obj);
 
     Symbol* trigger_method_signature;
@@ -359,8 +358,7 @@ void SensorInfo::clear(int count, TRAPS) {
   }
 
   if (_sensor_obj != NULL) {
-    Klass* k = Management::sun_management_Sensor_klass(CHECK);
-    instanceKlassHandle sensorKlass (THREAD, k);
+    InstanceKlass* sensorKlass = Management::sun_management_Sensor_klass(CHECK);
     Handle sensor(THREAD, _sensor_obj);
 
     JavaValue result(T_VOID);

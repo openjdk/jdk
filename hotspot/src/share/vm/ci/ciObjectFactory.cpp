@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ ciObject* ciObjectFactory::get(oop key) {
 
   // The ciObject does not yet exist.  Create it and insert it
   // into the cache.
-  Handle keyHandle(key);
+  Handle keyHandle(Thread::current(), key);
   ciObject* new_object = create_new_object(keyHandle());
   assert(keyHandle() == new_object->get_oop(), "must be properly recorded");
   init_ident_of(new_object);
@@ -377,14 +377,13 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   }
 
   if (o->is_klass()) {
-    KlassHandle h_k(THREAD, (Klass*)o);
     Klass* k = (Klass*)o;
     if (k->is_instance_klass()) {
-      return new (arena()) ciInstanceKlass(h_k);
+      return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(h_k);
+      return new (arena()) ciObjArrayKlass(k);
     } else if (k->is_typeArray_klass()) {
-      return new (arena()) ciTypeArrayKlass(h_k);
+      return new (arena()) ciTypeArrayKlass(k);
     }
   } else if (o->is_method()) {
     methodHandle h_m(THREAD, (Method*)o);

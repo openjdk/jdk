@@ -404,7 +404,7 @@
     interfaces are more appropriate than <jvmti/> for many tools.
     For more information on the Java Platform Debugger Architecture,
     see the
-    <externallink id="docs/technotes/guides/jpda/architecture.html">Java
+    <externallink id="jpda/architecture.html">Java
       Platform Debugger Architecture website</externallink>.
   </intro>
 
@@ -10927,7 +10927,7 @@ myInit() {
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>
 	  In the live phase the <paramlink id="segment"/> may be used to specify any platform-dependent
-	  path to a <externallink id="docs/technotes/guides/jar/jar.html">
+	  path to a <externallink id="jar/jar.html">
 	  JAR file</externallink>. The agent should take care that the JAR file does not
           contain any classes or resources other than those to be defined by the bootstrap
           class loader for the purposes of instrumentation.
@@ -10975,7 +10975,7 @@ myInit() {
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>
 	  In the live phase the <paramlink id="segment"/> is a platform-dependent path to a
-	  <externallink id="docs/technotes/guides/jar/jar.html">JAR file</externallink> to be
+	  <externallink id="jar/jar.html">JAR file</externallink> to be
 	  searched after the system class loader unsuccessfully searches for a class. The agent should
           take care that the JAR file does not contain any classes or resources other than those to be
           defined by the system class loader for the purposes of instrumentation.

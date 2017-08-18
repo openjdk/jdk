@@ -28,8 +28,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.EnumSet;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
 
@@ -50,11 +48,8 @@ public abstract class CompositeValue extends Value {
         OperandFlag[] value() default OperandFlag.REG;
     }
 
-    private static final DebugCounter COMPOSITE_VALUE_COUNT = Debug.counter("CompositeValues");
-
     public CompositeValue(ValueKind<?> kind) {
         super(kind);
-        COMPOSITE_VALUE_COUNT.increment();
         assert CompositeValueClass.get(getClass()) != null;
     }
 

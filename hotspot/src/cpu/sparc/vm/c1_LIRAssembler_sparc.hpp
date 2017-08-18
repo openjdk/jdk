@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,7 @@
                        ciMethodData*& md, ciProfileData*& data, int& mdo_offset_bias);
 
   enum {
-#ifdef _LP64
     _call_stub_size = 68,
-#else
-    _call_stub_size = 20,
-#endif // _LP64
     _call_aot_stub_size = 0,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
     _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)

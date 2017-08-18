@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.amd64;
 
-import static org.graalvm.compiler.asm.NumUtil.isInt;
+import static org.graalvm.compiler.core.common.NumUtil.isInt;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static jdk.vm.ci.amd64.AMD64.rax;
@@ -63,7 +63,7 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
         super(TYPE);
         this.state = state;
         this.config = config;
-        if (isPollingPageFar(config) || ImmutableCode.getValue()) {
+        if (isPollingPageFar(config) || ImmutableCode.getValue(tool.getOptions())) {
             temp = tool.getLIRGeneratorTool().newVariable(LIRKind.value(tool.getLIRGeneratorTool().target().arch.getWordKind()));
         } else {
             // Don't waste a register if it's unneeded
@@ -87,13 +87,13 @@ public final class AMD64HotSpotSafepointOp extends AMD64LIRInstruction {
 
     public static void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler asm, GraalHotSpotVMConfig config, boolean atReturn, LIRFrameState state, Register scratch) {
         assert !atReturn || state == null : "state is unneeded at return";
-        if (ImmutableCode.getValue()) {
+        if (ImmutableCode.getValue(crb.getOptions())) {
             JavaKind hostWordKind = JavaKind.Long;
             int alignment = hostWordKind.getBitCount() / Byte.SIZE;
             JavaConstant pollingPageAddress = JavaConstant.forIntegerKind(hostWordKind, config.safepointPollingAddress);
             // This move will be patched to load the safepoint page from a data segment
             // co-located with the immutable code.
-            if (GeneratePIC.getValue()) {
+            if (GeneratePIC.getValue(crb.getOptions())) {
                 asm.movq(scratch, asm.getPlaceholder(-1));
             } else {
                 asm.movq(scratch, (AMD64Address) crb.recordDataReferenceInCode(pollingPageAddress, alignment));
