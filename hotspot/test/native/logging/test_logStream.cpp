@@ -63,21 +63,40 @@ TEST_VM_F(LogStreamTest, handle) {
 
 TEST_VM_F(LogStreamTest, no_rm) {
   ResourceMark rm;
-  outputStream* stream = LogTarget(Debug, gc)::stream();
-
-  verify_stream(stream);
+  LogStream ls(Log(gc)::debug());
+  verify_stream(&ls);
 }
 
-TEST_VM_F(LogStreamTest, c_heap_stream) {
-  Log(gc) log;
-  LogStreamCHeap stream(log.debug());
-
-  verify_stream(&stream);
+TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
+  const int max_line_len = 1024;
+  char* const test_string = (char*) os::malloc(max_line_len, mtLogging);
+  memset(test_string, 'A', max_line_len);
+  for (int interval = 1; interval < max_line_len; interval++) {
+    LogStream ls(Log(logging)::info());
+    int written = 0;
+    while (written < max_line_len) {
+      const int to_write = MIN2(interval, max_line_len - written);
+      ls.write(test_string, interval);
+      written += interval;
+      const char* const line_buffer = ls._current_line.buffer();
+      for (int i = 0; i < written; i++) {
+        ASSERT_TRUE(line_buffer[i] == 'A');
+      }
+      ASSERT_TRUE(line_buffer[written] == '\0');
+    }
+    ls.cr(); // I do not expect printout, nor do I care. Just call cr() to flush and avoid assert in ~LogStream().
+  }
 }
 
-TEST_VM_F(LogStreamTest, c_heap_stream_target) {
-  LogTarget(Debug, gc) log;
-  LogStreamCHeap stream(log);
-
-  verify_stream(&stream);
+// Test, in release build, that the internal line buffer of a LogStream
+// object caps out at 1M.
+TEST_VM_F(LogStreamTest, TestLineBufferAllocationCap) {
+  LogStream ls(Log(logging)::info());
+  for (size_t i = 0; i < (1*M + 512); i ++) {
+    ls.print_raw("A");
+  }
+  const char* const line_buffer = ls._current_line.buffer();
+  ASSERT_TRUE(strlen(line_buffer) == 1*M - 1);
+  // reset to prevent assert for unflushed content
+  ls._current_line.reset();
 }

@@ -26,12 +26,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.constopt.ConstantTree.Flags;
 import org.graalvm.compiler.lir.constopt.ConstantTree.NodeCost;
@@ -44,13 +42,13 @@ public final class ConstantTreeAnalyzer {
     private final BitSet visited;
 
     @SuppressWarnings("try")
-    public static NodeCost analyze(ConstantTree tree, AbstractBlockBase<?> startBlock) {
-        try (Scope s = Debug.scope("ConstantTreeAnalyzer")) {
+    public static NodeCost analyze(DebugContext debug, ConstantTree tree, AbstractBlockBase<?> startBlock) {
+        try (DebugContext.Scope s = debug.scope("ConstantTreeAnalyzer")) {
             ConstantTreeAnalyzer analyzer = new ConstantTreeAnalyzer(tree);
-            analyzer.analyzeBlocks(startBlock);
+            analyzer.analyzeBlocks(debug, startBlock);
             return tree.getCost(startBlock);
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 
@@ -68,30 +66,33 @@ public final class ConstantTreeAnalyzer {
      * @param startBlock The start block of the dominator subtree.
      */
     @SuppressWarnings("try")
-    private void analyzeBlocks(AbstractBlockBase<?> startBlock) {
+    private void analyzeBlocks(DebugContext debug, AbstractBlockBase<?> startBlock) {
         Deque<AbstractBlockBase<?>> worklist = new ArrayDeque<>();
         worklist.offerLast(startBlock);
         while (!worklist.isEmpty()) {
             AbstractBlockBase<?> block = worklist.pollLast();
-            try (Indent i = Debug.logAndIndent(Debug.VERBOSE_LOG_LEVEL, "analyze: %s", block)) {
+            try (Indent i = debug.logAndIndent(DebugContext.VERBOSE_LEVEL, "analyze: %s", block)) {
                 assert block != null : "worklist is empty!";
                 assert isMarked(block) : "Block not part of the dominator tree: " + block;
 
                 if (isLeafBlock(block)) {
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "leaf block");
+                    debug.log(DebugContext.VERBOSE_LEVEL, "leaf block");
                     leafCost(block);
                     continue;
                 }
 
                 if (!visited.get(block.getId())) {
                     // if not yet visited (and not a leaf block) process all children first!
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "not marked");
+                    debug.log(DebugContext.VERBOSE_LEVEL, "not marked");
                     worklist.offerLast(block);
-                    List<? extends AbstractBlockBase<?>> children = block.getDominated();
-                    children.forEach(child -> filteredPush(worklist, child));
+                    AbstractBlockBase<?> dominated = block.getFirstDominated();
+                    while (dominated != null) {
+                        filteredPush(debug, worklist, dominated);
+                        dominated = dominated.getDominatedSibling();
+                    }
                     visited.set(block.getId());
                 } else {
-                    Debug.log(Debug.VERBOSE_LOG_LEVEL, "marked");
+                    debug.log(DebugContext.VERBOSE_LEVEL, "marked");
                     // otherwise, process block
                     process(block);
                 }
@@ -109,11 +110,10 @@ public final class ConstantTreeAnalyzer {
         List<UseEntry> usages = new ArrayList<>();
         double bestCost = 0;
         int numMat = 0;
-        List<? extends AbstractBlockBase<?>> children = block.getDominated();
-        assert children.stream().anyMatch(this::isMarked) : "no children? should have called leafCost(): " + block;
 
         // collect children costs
-        for (AbstractBlockBase<?> child : children) {
+        AbstractBlockBase<?> child = block.getFirstDominated();
+        while (child != null) {
             if (isMarked(child)) {
                 NodeCost childCost = tree.getCost(child);
                 assert childCost != null : "Child with null cost? block: " + child;
@@ -121,6 +121,7 @@ public final class ConstantTreeAnalyzer {
                 numMat += childCost.getNumMaterializations();
                 bestCost += childCost.getBestCost();
             }
+            child = child.getDominatedSibling();
         }
         assert numMat > 0 : "No materialization? " + numMat;
 
@@ -138,7 +139,6 @@ public final class ConstantTreeAnalyzer {
             // stick with the current solution
         }
 
-        assert (new HashSet<>(usages)).size() == usages.size() : "doulbe entries? " + usages;
         NodeCost nodeCost = new NodeCost(bestCost, usages, numMat);
         tree.setCost(block, nodeCost);
     }
@@ -159,9 +159,9 @@ public final class ConstantTreeAnalyzer {
         return probabilityBlock * Math.pow(0.9, numMat - 1) < probabilityChildren;
     }
 
-    private void filteredPush(Deque<AbstractBlockBase<?>> worklist, AbstractBlockBase<?> block) {
+    private void filteredPush(DebugContext debug, Deque<AbstractBlockBase<?>> worklist, AbstractBlockBase<?> block) {
         if (isMarked(block)) {
-            Debug.log(Debug.VERBOSE_LOG_LEVEL, "adding %s to the worklist", block);
+            debug.log(DebugContext.VERBOSE_LEVEL, "adding %s to the worklist", block);
             worklist.offerLast(block);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,21 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
-#include "gc/g1/workerDataArray.inline.hpp"
+#include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
+#include "utilities/macros.hpp"
 
 static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
-G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
+G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _max_gc_threads(max_gc_threads),
   _gc_start_counter(0),
-  _gc_pause_time_ms(0.0)
+  _gc_pause_time_ms(0.0),
+  _ref_phase_times((GCTimer*)gc_timer, max_gc_threads)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
@@ -78,8 +81,19 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms):");
   _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms):");
 
+  _scan_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_scanned_cards, ScanRSScannedCards);
+  _scan_rs_claimed_cards = new WorkerDataArray<size_t>(max_gc_threads, "Claimed Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_claimed_cards, ScanRSClaimedCards);
+  _scan_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+  _gc_par_phases[ScanRS]->link_thread_work_items(_scan_rs_skipped_cards, ScanRSSkippedCards);
+
   _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
-  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers);
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers, UpdateRSProcessedBuffers);
+  _update_rs_scanned_cards = new WorkerDataArray<size_t>(max_gc_threads, "Scanned Cards:");
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_scanned_cards, UpdateRSScannedCards);
+  _update_rs_skipped_cards = new WorkerDataArray<size_t>(max_gc_threads, "Skipped Cards:");
+  _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_skipped_cards, ScanRSSkippedCards);
 
   _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
   _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
@@ -109,9 +123,11 @@ void G1GCPhaseTimes::reset() {
   _cur_collection_code_root_fixup_time_ms = 0.0;
   _cur_strong_code_root_purge_time_ms = 0.0;
   _cur_evac_fail_recalc_used = 0.0;
-  _cur_evac_fail_restore_remsets = 0.0;
   _cur_evac_fail_remove_self_forwards = 0.0;
   _cur_string_dedup_fixup_time_ms = 0.0;
+  _cur_prepare_tlab_time_ms = 0.0;
+  _cur_resize_tlab_time_ms = 0.0;
+  _cur_derived_pointer_table_update_time_ms = 0.0;
   _cur_clear_ct_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
@@ -125,6 +141,7 @@ void G1GCPhaseTimes::reset() {
   _recorded_redirty_logged_cards_time_ms = 0.0;
   _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_merge_pss_time_ms = 0.0;
+  _recorded_start_new_cset_time_ms = 0.0;
   _recorded_total_free_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _cur_fast_reclaim_humongous_time_ms = 0.0;
@@ -140,6 +157,8 @@ void G1GCPhaseTimes::reset() {
       _gc_par_phases[i]->reset();
     }
   }
+
+  _ref_phase_times.reset();
 }
 
 void G1GCPhaseTimes::note_gc_start() {
@@ -206,8 +225,8 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs
   _gc_par_phases[phase]->add(worker_i, secs);
 }
 
-void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count) {
-  _gc_par_phases[phase]->set_thread_work_item(worker_i, count);
+void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
+  _gc_par_phases[phase]->set_thread_work_item(worker_i, count, index);
 }
 
 // return the average time for a phase in milliseconds
@@ -215,18 +234,18 @@ double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
   return _gc_par_phases[phase]->average() * 1000.0;
 }
 
-size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->sum();
+size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
+  assert(_gc_par_phases[phase]->thread_work_items(index) != NULL, "No sub count");
+  return _gc_par_phases[phase]->thread_work_items(index)->sum();
 }
 
 template <class T>
 void G1GCPhaseTimes::details(T* phase, const char* indent) const {
-  Log(gc, phases, task) log;
-  if (log.is_level(LogLevel::Trace)) {
-    outputStream* trace_out = log.trace_stream();
-    trace_out->print("%s", indent);
-    phase->print_details_on(trace_out);
+  LogTarget(Trace, gc, phases, task) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("%s", indent);
+    phase->print_details_on(&ls);
   }
 }
 
@@ -235,27 +254,30 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
   phase->print_summary_on(out, print_sum);
   details(phase, Indents[indent]);
 
-  WorkerDataArray<size_t>* work_items = phase->thread_work_items();
-  if (work_items != NULL) {
-    out->print("%s", Indents[indent + 1]);
-    work_items->print_summary_on(out, true);
-    details(work_items, Indents[indent + 1]);
+  for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
+    WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
+    if (work_items != NULL) {
+      out->print("%s", Indents[indent + 1]);
+      work_items->print_summary_on(out, true);
+      details(work_items, Indents[indent + 1]);
+    }
   }
 }
 
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) const {
-  Log(gc, phases) log;
-  if (log.is_level(LogLevel::Debug)) {
+  LogTarget(Debug, gc, phases) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    log_phase(phase, 2, log.debug_stream(), true);
+    LogStream ls(lt);
+    log_phase(phase, 2, &ls, true);
   }
 }
 
 void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) const {
-  Log(gc, phases) log;
-  if (log.is_level(LogLevel::Trace)) {
-    ResourceMark rm;
-    log_phase(phase, 3, log.trace_stream(), print_sum);
+  LogTarget(Trace, gc, phases) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    log_phase(phase, 3, &ls, print_sum);
   }
 }
 
@@ -267,6 +289,19 @@ void G1GCPhaseTimes::info_time(const char* name, double value) const {
 
 void G1GCPhaseTimes::debug_time(const char* name, double value) const {
   log_debug(gc, phases)("%s%s: " TIME_FORMAT, Indents[2], name, value);
+}
+
+void G1GCPhaseTimes::debug_time_for_reference(const char* name, double value) const {
+  LogTarget(Debug, gc, phases) lt;
+  LogTarget(Debug, gc, phases, ref) lt2;
+
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s%s: " TIME_FORMAT, Indents[2], name, value);
+  } else if (lt2.is_enabled()) {
+    LogStream ls(lt2);
+    ls.print_cr("%s%s: " TIME_FORMAT, Indents[2], name, value);
+  }
 }
 
 void G1GCPhaseTimes::trace_time(const char* name, double value) const {
@@ -281,13 +316,15 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double sum_ms = _root_region_scan_wait_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
-                        _cur_fast_reclaim_humongous_register_time_ms;
+                        _cur_fast_reclaim_humongous_register_time_ms +
+                        _recorded_clear_claimed_marks_time_ms;
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
   if (_root_region_scan_wait_time_ms > 0.0) {
     debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
+  debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   if (G1EagerReclaimHumongousObjects) {
     debug_time("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
@@ -295,6 +332,9 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
     trace_count("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
   }
 
+  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
+    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
+  }
   return sum_ms;
 }
 
@@ -328,8 +368,7 @@ double G1GCPhaseTimes::print_evacuate_collection_set() const {
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   const double evac_fail_handling = _cur_evac_fail_recalc_used +
-                                    _cur_evac_fail_remove_self_forwards +
-                                    _cur_evac_fail_restore_remsets;
+                                    _cur_evac_fail_remove_self_forwards;
   const double sum_ms = evac_fail_handling +
                         _cur_collection_code_root_fixup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
@@ -339,7 +378,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_merge_pss_time_ms +
                         _cur_strong_code_root_purge_time_ms +
                         _recorded_redirty_logged_cards_time_ms +
-                        _recorded_clear_claimed_marks_time_ms +
                         _recorded_total_free_cset_time_ms +
                         _cur_fast_reclaim_humongous_time_ms +
                         _cur_expand_heap_time_ms +
@@ -352,7 +390,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_time("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
   trace_phase(_gc_par_phases[PreserveCMReferents]);
 
-  debug_time("Reference Processing", _cur_ref_proc_time_ms);
+  debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
+  _ref_phase_times.print_all_references(2, false);
 
   if (G1StringDedup::is_enabled()) {
     debug_time("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
@@ -366,20 +405,19 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     debug_time("Evacuation Failure", evac_fail_handling);
     trace_time("Recalculate Used", _cur_evac_fail_recalc_used);
     trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
-    trace_time("Restore RemSet", _cur_evac_fail_restore_remsets);
   }
 
-  debug_time("Reference Enqueuing", _cur_ref_enq_time_ms);
+  debug_time_for_reference("Reference Enqueuing", _cur_ref_enq_time_ms);
+  _ref_phase_times.print_enqueue_phase(2, false);
 
   debug_time("Merge Per-Thread State", _recorded_merge_pss_time_ms);
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
 
   debug_time("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
-  if (_recorded_clear_claimed_marks_time_ms > 0.0) {
-    debug_time("Clear Claimed Marks", _recorded_clear_claimed_marks_time_ms);
-  }
-
   trace_phase(_gc_par_phases[RedirtyCards]);
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  debug_time("DerivedPointerTable Update", _cur_derived_pointer_table_update_time_ms);
+#endif
 
   debug_time("Free Collection Set", _recorded_total_free_cset_time_ms);
   trace_time("Free Collection Set Serial", _recorded_serial_free_cset_time_ms);
@@ -389,6 +427,10 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   if (G1EagerReclaimHumongousObjects) {
     debug_time("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
     trace_count("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
+  }
+  debug_time("Start New Collection Set", _recorded_start_new_cset_time_ms);
+  if (UseTLAB && ResizeTLAB) {
+    debug_time("Resize TLABs", _cur_resize_tlab_time_ms);
   }
   debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
 

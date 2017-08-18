@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class DefaultFormat implements Format {
     protected String threadInfoPattern() {
         return "^\"(.*)\"\\s(#\\d+\\s|)(daemon\\s|)prio=(.+)\\s(os_prio=(.+)\\s|)tid=(.+)\\snid=(.+)\\s("
                 + Consts.UNKNOWN
-                + "|runnable|waiting\\son\\scondition|in\\sObject\\.wait\\(\\)|waiting\\sfor\\smonitor\\sentry)((.*))$";
+                + "|runnable|sleeping|waiting\\son\\scondition|in\\sObject\\.wait\\(\\)|waiting\\sfor\\smonitor\\sentry)((.*))$";
     }
 
     protected String methodInfoPattern() {

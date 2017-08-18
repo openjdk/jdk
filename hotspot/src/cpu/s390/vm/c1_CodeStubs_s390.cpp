@@ -31,6 +31,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "nativeInst_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
 #if INCLUDE_ALL_GCS
@@ -284,7 +285,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
   masm->block_comment(bc);
 #endif
 
-  masm->align(round_to(NativeGeneralJump::instruction_size, wordSize));
+  masm->align(align_up((int)NativeGeneralJump::instruction_size, wordSize));
 }
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
@@ -131,7 +132,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
   }
 
   static TypedMethodOptionMatcher* parse_method_pattern(char*& line, const char*& error_msg);
-  TypedMethodOptionMatcher* match(methodHandle method, const char* opt, OptionType type);
+  TypedMethodOptionMatcher* match(const methodHandle& method, const char* opt, OptionType type);
 
   void init(const char* opt, OptionType type, TypedMethodOptionMatcher* next) {
     _next = next;
@@ -260,7 +261,7 @@ TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& 
   return tom;
 }
 
-TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(methodHandle method, const char* opt, OptionType type) {
+TypedMethodOptionMatcher* TypedMethodOptionMatcher::match(const methodHandle& method, const char* opt, OptionType type) {
   TypedMethodOptionMatcher* current = this;
   while (current != NULL) {
     // Fastest compare first.
@@ -288,7 +289,7 @@ static void add_option_string(TypedMethodOptionMatcher* matcher,
   return;
 }
 
-static bool check_predicate(OracleCommand command, methodHandle method) {
+static bool check_predicate(OracleCommand command, const methodHandle& method) {
   return ((lists[command] != NULL) &&
           !method.is_null() &&
           lists[command]->match(method));

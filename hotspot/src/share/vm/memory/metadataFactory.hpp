@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_MEMORY_METADATAFACTORY_HPP
 
 #include "classfile/classLoaderData.hpp"
-#include "utilities/array.hpp"
+#include "oops/array.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,7 +36,7 @@ class MetadataFactory : AllStatic {
   static Array<T>* new_array(ClassLoaderData* loader_data, int length, TRAPS) {
     // The "true" argument is because all metadata arrays are read only when
     // dumped to the shared archive
-    return new (loader_data, length, /*read_only*/true, THREAD) Array<T>(length);
+    return new (loader_data, length, THREAD) Array<T>(length);
   }
 
   template <typename T>
@@ -49,47 +49,22 @@ class MetadataFactory : AllStatic {
   }
 
   template <typename T>
-  static Array<T>* new_writeable_array(ClassLoaderData* loader_data, int length, TRAPS) {
-    return new (loader_data, length, /*read_only*/false, THREAD) Array<T>(length);
-  }
-
-  template <typename T>
-  static Array<T>* new_writeable_array(ClassLoaderData* loader_data, int length, T value, TRAPS) {
-    Array<T>* array = new_writeable_array<T>(loader_data, length, CHECK_NULL);
-    for (int i = 0; i < length; i++) {
-      array->at_put(i, value);
-    }
-    return array;
-  }
-
-  template <typename T>
   static void free_array(ClassLoaderData* loader_data, Array<T>* data) {
     if (data != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
       assert(!data->is_shared(), "cannot deallocate array in shared spaces");
       int size = data->size();
-      if (DumpSharedSpaces) {
-        loader_data->ro_metaspace()->deallocate((MetaWord*)data, size, false);
-      } else {
-        loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size, false);
-      }
+      loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size, false);
     }
   }
 
   // Deallocation method for metadata
   template <class T>
   static void free_metadata(ClassLoaderData* loader_data, T md) {
-    if (DumpSharedSpaces) {
-      // FIXME: the freeing code is buggy, especially when PrintSharedSpaces is enabled.
-      // Disable for now -- this means if you specify bad classes in your classlist you
-      // may have wasted space inside the archive.
-      return;
-    }
     if (md != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
       int size = md->size();
       // Call metadata's deallocate function which will call deallocate fields
-      assert(!DumpSharedSpaces, "cannot deallocate metadata when dumping CDS archive");
       assert(!md->on_stack(), "can't deallocate things on stack");
       assert(!md->is_shared(), "cannot deallocate if in shared spaces");
       md->deallocate_contents(loader_data);

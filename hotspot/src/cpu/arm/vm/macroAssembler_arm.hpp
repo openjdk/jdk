@@ -206,16 +206,15 @@ protected:
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
   virtual void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions);
+public:
+
+  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
   // The implementation is only non-empty for the InterpreterMacroAssembler,
   // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
   virtual void check_and_handle_popframe() {}
   virtual void check_and_handle_earlyret() {}
-
-public:
-
-  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   // By default, we do not need relocation information for non
   // patchable absolute addresses. However, when needed by some

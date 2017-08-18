@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ class klassVtable;
 class ArrayKlass: public Klass {
   friend class VMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ArrayKlass::metaspace_pointers_do().
   int      _dimension;         // This is n'th-dimensional array.
   Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
@@ -102,6 +104,8 @@ class ArrayKlass: public Klass {
   // Sizing
   static int static_size(int header_size);
 
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+
 #if INCLUDE_SERVICES
   virtual void collect_statistics(KlassSizeStats *sz) const {
     Klass::collect_statistics(sz);
@@ -115,7 +119,7 @@ class ArrayKlass: public Klass {
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   // Return a handle.
-  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, ModuleEntry* module, TRAPS);
+  static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
 
 
   // jvm support

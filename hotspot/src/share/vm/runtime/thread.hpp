@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/unhandledOops.hpp"
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
+#include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
@@ -201,7 +202,9 @@ class Thread: public ThreadShadow {
     _deopt_suspend          = 0x10000000U, // thread needs to self suspend for deopt
 
     _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _critical_native_unlock = 0x00000002U  // Must call back to unlock JNI critical lock
+    _critical_native_unlock = 0x00000002U, // Must call back to unlock JNI critical lock
+
+    _trace_flag             = 0x00000004U  // call tracing backend
   };
 
   // various suspension related flags - atomically updated
@@ -381,6 +384,9 @@ class Thread: public ThreadShadow {
   inline void set_critical_native_unlock();
   inline void clear_critical_native_unlock();
 
+  inline void set_trace_flag();
+  inline void clear_trace_flag();
+
   // Support for Unhandled Oop detection
   // Add the field for both, fastdebug and debug, builds to keep
   // Thread's fields layout the same.
@@ -449,6 +455,7 @@ class Thread: public ThreadShadow {
 
   TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET;
   TRACE_DATA* trace_data() const        { return &_trace_data; }
+  bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
 
   const ThreadExt& ext() const          { return _ext; }
   ThreadExt& ext()                      { return _ext; }
@@ -567,6 +574,7 @@ protected:
   virtual void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
+  void print_value_on(outputStream* st) const;
 
   // Debug-only code
 #ifdef ASSERT
@@ -667,12 +675,18 @@ inline Thread* Thread::current_or_null() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
   return _thr_current;
 #else
-  return ThreadLocalStorage::thread();
+  if (ThreadLocalStorage::is_initialized()) {
+    return ThreadLocalStorage::thread();
+  }
+  return NULL;
 #endif
 }
 
 inline Thread* Thread::current_or_null_safe() {
-  return ThreadLocalStorage::thread();
+  if (ThreadLocalStorage::is_initialized()) {
+    return ThreadLocalStorage::thread();
+  }
+  return NULL;
 }
 
 // Name support for threads.  non-JavaThread subclasses with multiple
@@ -733,8 +747,6 @@ class WatcherThread: public Thread {
   static bool _startable;
   // volatile due to at least one lock-free read
   volatile static bool _should_terminate;
-
-  os::WatcherThreadCrashProtection* _crash_protection;
  public:
   enum SomeConstants {
     delay_interval = 10                          // interrupt delay in milliseconds
@@ -765,15 +777,6 @@ class WatcherThread: public Thread {
   // Only allow start once the VM is sufficiently initialized
   // Otherwise the first task to enroll will trigger the start
   static void make_startable();
-
-  void set_crash_protection(os::WatcherThreadCrashProtection* crash_protection) {
-    assert(Thread::current()->is_Watcher_thread(), "Can only be set by WatcherThread");
-    _crash_protection = crash_protection;
-  }
-
-  bool has_crash_protection() const { return _crash_protection != NULL; }
-  os::WatcherThreadCrashProtection* crash_protection() const { return _crash_protection; }
-
  private:
   int sleep() const;
 };
@@ -1260,8 +1263,7 @@ class JavaThread: public Thread {
   // Return true if JavaThread has an asynchronous condition or
   // if external suspension is requested.
   bool has_special_runtime_exit_condition() {
-    // We call is_external_suspend() last since external suspend should
-    // be less common. Because we don't use is_external_suspend_with_lock
+    // Because we don't use is_external_suspend_with_lock
     // it is possible that we won't see an asynchronous external suspend
     // request that has just gotten started, i.e., SR_lock grabbed but
     // _external_suspend field change either not made yet or not visible
@@ -1271,7 +1273,7 @@ class JavaThread: public Thread {
     // we have checked is_external_suspend(), we will recheck its value
     // under SR_lock in java_suspend_self().
     return (_special_runtime_exit_condition != _no_async_condition) ||
-            is_external_suspend() || is_deopt_suspend();
+            is_external_suspend() || is_deopt_suspend() || is_trace_suspend();
   }
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
@@ -1412,7 +1414,7 @@ class JavaThread: public Thread {
     return _stack_red_zone_size;
   }
   static void set_stack_red_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the red zone size is not page aligned.");
     assert(_stack_red_zone_size == 0, "This should be called only once.");
     _stack_red_zone_size = s;
@@ -1429,7 +1431,7 @@ class JavaThread: public Thread {
     return _stack_yellow_zone_size;
   }
   static void set_stack_yellow_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the yellow zone size is not page aligned.");
     assert(_stack_yellow_zone_size == 0, "This should be called only once.");
     _stack_yellow_zone_size = s;
@@ -1440,7 +1442,7 @@ class JavaThread: public Thread {
     return _stack_reserved_zone_size;
   }
   static void set_stack_reserved_zone_size(size_t s) {
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "We can not protect if the reserved zone size is not page aligned.");
     assert(_stack_reserved_zone_size == 0, "This should be called only once.");
     _stack_reserved_zone_size = s;
@@ -1480,7 +1482,7 @@ class JavaThread: public Thread {
     // the page size is a multiple of 4K, banging in 4K steps
     // suffices to touch all pages. (Some pages are banged
     // several times, though.)
-    assert(is_size_aligned(s, os::vm_page_size()),
+    assert(is_aligned(s, os::vm_page_size()),
            "Stack bang assumes multiple of page size.");
     assert(_stack_shadow_zone_size == 0, "This should be called only once.");
     _stack_shadow_zone_size = s;
@@ -2068,6 +2070,7 @@ class Threads: AllStatic {
   static bool includes(JavaThread* p);
   static JavaThread* first()                     { return _thread_list; }
   static void threads_do(ThreadClosure* tc);
+  static void parallel_java_threads_do(ThreadClosure* tc);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);

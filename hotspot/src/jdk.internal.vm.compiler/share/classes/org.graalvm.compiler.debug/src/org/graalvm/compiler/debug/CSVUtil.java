@@ -84,7 +84,11 @@ public final class CSVUtil {
             return out;
         }
 
-        private static Object[] escapeArgs(char separator, char quote, char escape, Object... args) {
+        public static Object[] escapeArgs(Object... args) {
+            return escapeArgs(SEPARATOR, QUOTE, ESCAPE, args);
+        }
+
+        public static Object[] escapeArgs(char separator, char quote, char escape, Object... args) {
             String separatorStr = String.valueOf(separator);
             for (int i = 0; i < args.length; i++) {
                 Object obj = args[i];

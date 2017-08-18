@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 
 public final class TraceBuilderResult {
@@ -39,9 +39,9 @@ public final class TraceBuilderResult {
     private final ArrayList<Trace> traces;
     private final Trace[] blockToTrace;
 
-    static TraceBuilderResult create(AbstractBlockBase<?>[] blocks, ArrayList<Trace> traces, Trace[] blockToTrace, TrivialTracePredicate pred) {
+    static TraceBuilderResult create(DebugContext debug, AbstractBlockBase<?>[] blocks, ArrayList<Trace> traces, Trace[] blockToTrace, TrivialTracePredicate pred) {
         connect(traces, blockToTrace);
-        ArrayList<Trace> newTraces = reorderTraces(traces, pred);
+        ArrayList<Trace> newTraces = reorderTraces(debug, traces, pred);
         TraceBuilderResult traceBuilderResult = new TraceBuilderResult(newTraces, blockToTrace);
         traceBuilderResult.numberTraces();
         assert verify(traceBuilderResult, blocks.length);
@@ -157,11 +157,11 @@ public final class TraceBuilderResult {
     }
 
     @SuppressWarnings("try")
-    private static ArrayList<Trace> reorderTraces(ArrayList<Trace> oldTraces, TrivialTracePredicate pred) {
+    private static ArrayList<Trace> reorderTraces(DebugContext debug, ArrayList<Trace> oldTraces, TrivialTracePredicate pred) {
         if (pred == null) {
             return oldTraces;
         }
-        try (Indent indent = Debug.logAndIndent("ReorderTrace")) {
+        try (Indent indent = debug.logAndIndent("ReorderTrace")) {
             ArrayList<Trace> newTraces = new ArrayList<>(oldTraces.size());
             for (int oldTraceIdx = 0; oldTraceIdx < oldTraces.size(); oldTraceIdx++) {
                 Trace currentTrace = oldTraces.get(oldTraceIdx);
@@ -171,7 +171,7 @@ public final class TraceBuilderResult {
                     addTrace(newTraces, currentTrace);
                     for (Trace succTrace : currentTrace.getSuccessors()) {
                         if (pred.isTrivialTrace(succTrace) && !alreadyProcessed(newTraces, succTrace)) {
-                            Debug.log("Moving trivial trace from %d to %d", succTrace.getId(), newTraces.size());
+                            debug.log("Moving trivial trace from %d to %d", succTrace.getId(), newTraces.size());
                             // add trivial successor trace
                             addTrace(newTraces, succTrace);
                         }

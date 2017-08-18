@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,13 +312,28 @@ public:
   virtual void waste(size_t& wasted, size_t& undo_wasted);
 };
 
-// G1ArchiveAllocator is used to allocate memory in archive
-// regions. Such regions are not modifiable by GC, being neither
-// scavenged nor compacted, or even marked in the object header.
-// They can contain no pointers to non-archive heap regions,
-class G1ArchiveAllocator : public CHeapObj<mtGC> {
-
+// G1ArchiveRegionMap is a boolean array used to mark G1 regions as
+// archive regions.  This allows a quick check for whether an object
+// should not be marked because it is in an archive region.
+class G1ArchiveRegionMap : public G1BiasedMappedArray<bool> {
 protected:
+  bool default_value() const { return false; }
+};
+
+// G1ArchiveAllocator is used to allocate memory in archive
+// regions. Such regions are not scavenged nor compacted by GC.
+// There are two types of archive regions, which are
+// differ in the kind of references allowed for the contained objects:
+//
+// - 'Closed' archive region contain no references outside of other
+//   closed archive regions. The region is immutable by GC. GC does
+//   not mark object header in 'closed' archive region.
+// - An 'open' archive region allow references to any other regions,
+//   including closed archive, open archive and other java heap regions.
+//   GC can adjust pointers and mark object header in 'open' archive region.
+class G1ArchiveAllocator : public CHeapObj<mtGC> {
+protected:
+  bool _open; // Indicate if the region is 'open' archive.
   G1CollectedHeap* _g1h;
 
   // The current allocation region
@@ -340,7 +355,7 @@ protected:
   bool alloc_new_region();
 
 public:
-  G1ArchiveAllocator(G1CollectedHeap* g1h) :
+  G1ArchiveAllocator(G1CollectedHeap* g1h, bool open) :
     _g1h(g1h),
     _allocation_region(NULL),
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
@@ -349,13 +364,14 @@ public:
     _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),
-    _max(NULL) { }
+    _max(NULL),
+    _open(open) { }
 
   virtual ~G1ArchiveAllocator() {
     assert(_allocation_region == NULL, "_allocation_region not NULL");
   }
 
-  static G1ArchiveAllocator* create_allocator(G1CollectedHeap* g1h);
+  static G1ArchiveAllocator* create_allocator(G1CollectedHeap* g1h, bool open);
 
   // Allocate memory for an individual object.
   HeapWord* archive_mem_allocate(size_t word_size);
@@ -378,6 +394,32 @@ public:
     _summary_bytes_used = 0;
   }
 
+  // Create the _archive_region_map which is used to identify archive objects.
+  static inline void enable_archive_object_check();
+
+  // Set the regions containing the specified address range as archive/non-archive.
+  static inline void set_range_archive(MemRegion range, bool open);
+
+  // Check if the object is in closed archive
+  static inline bool is_closed_archive_object(oop object);
+  // Check if the object is in open archive
+  static inline bool is_open_archive_object(oop object);
+  // Check if the object is either in closed archive or open archive
+  static inline bool is_archive_object(oop object);
+
+private:
+  static bool _archive_check_enabled;
+  static G1ArchiveRegionMap  _closed_archive_region_map;
+  static G1ArchiveRegionMap  _open_archive_region_map;
+
+  // Check if an object is in a closed archive region using the _closed_archive_region_map.
+  static inline bool in_closed_archive_range(oop object);
+  // Check if an object is in open archive region using the _open_archive_region_map.
+  static inline bool in_open_archive_range(oop object);
+
+  // Check if archive object checking is enabled, to avoid calling in_open/closed_archive_range
+  // unnecessarily.
+  static inline bool archive_check_enabled();
 };
 
 #endif // SHARE_VM_GC_G1_G1ALLOCATOR_HPP

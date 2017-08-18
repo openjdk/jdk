@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@ package compiler.aot.cli.jaotc;
 import java.io.File;
 import java.io.IOException;
 import jdk.test.lib.process.ExitCode;
+import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class JaotcTestHelper {
-    public static final String DEFAULT_LIB_PATH = "./unnamed.so";
+    public static final String DEFAULT_LIB_PATH = "./unnamed." + Platform.sharedLibraryExt();
     public static final String DEFAULT_LIBRARY_LOAD_MESSAGE = "loaded    " + DEFAULT_LIB_PATH
             + "  aot library";
     private static final String ENABLE_AOT = "-XX:+UseAOT";
@@ -72,7 +73,7 @@ public class JaotcTestHelper {
     }
 
     public static String getClassAotCompilationFilename(Class<?> classToCompile) {
-        return classToCompile.getName().replaceAll("\\.", File.separator) + ".class";
+        return classToCompile.getName().replaceAll("\\.","/") + ".class";
     }
 
     public static String getClassAotCompilationName(Class<?> classToCompile) {

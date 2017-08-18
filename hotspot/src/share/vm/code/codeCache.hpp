@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ class CodeCache : AllStatic {
   static void check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set);
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, int code_blob_type);
+  static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or NULL
   static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
@@ -266,7 +267,7 @@ class CodeCache : AllStatic {
  private:
   static int  mark_for_deoptimization(KlassDepChange& changes);
 #ifdef HOTSWAP
-  static int  mark_for_evol_deoptimization(instanceKlassHandle dependee);
+  static int  mark_for_evol_deoptimization(InstanceKlass* dependee);
 #endif // HOTSWAP
 
  public:
@@ -275,13 +276,13 @@ class CodeCache : AllStatic {
   static void make_marked_nmethods_not_entrant();
 
   // Flushing and deoptimization
-  static void flush_dependents_on(instanceKlassHandle dependee);
+  static void flush_dependents_on(InstanceKlass* dependee);
 #ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
-  static void flush_evol_dependents_on(instanceKlassHandle dependee);
+  static void flush_evol_dependents_on(InstanceKlass* dependee);
 #endif // HOTSWAP
   // Support for fullspeed debugging
-  static void flush_dependents_on_method(methodHandle dependee);
+  static void flush_dependents_on_method(const methodHandle& dependee);
 
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
