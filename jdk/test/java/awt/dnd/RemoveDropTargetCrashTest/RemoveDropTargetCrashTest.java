@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,54 +21,56 @@
  * questions.
  */
 
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridLayout;
-import java.awt.Point;
-import java.awt.Dimension;
-import java.awt.Button;
-import java.awt.Robot;
 import java.awt.Panel;
-import java.awt.Component;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
-import java.awt.dnd.DragSourceListener;
 import java.awt.dnd.DragSourceDragEvent;
 import java.awt.dnd.DragSourceDropEvent;
-import java.awt.dnd.DragGestureEvent;
-import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragSourceEvent;
+import java.awt.dnd.DragSourceListener;
 import java.awt.dnd.DropTarget;
-import java.awt.dnd.DropTargetListener;
+import java.awt.dnd.DropTargetContext;
+import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
-import java.awt.dnd.DropTargetDragEvent;
-import java.awt.dnd.DropTargetContext;
-import java.awt.event.KeyEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.InputEvent;
-import java.io.IOException;
-import java.io.Serializable;
+import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.BufferedReader;
+import java.io.Serializable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @test
  * @key headful
- * @bug 8136999
- * @summary tests that removal of the drop target during drop processing doesn't
- * cause crash
+ * @bug 4393148 8136999 8186263
+ * @summary tests that removal of the drop target or disposal of frame during
+ *          drop processing doesn't cause crash
  * @run main RemoveDropTargetCrashTest RUN_PROCESS
  */
 public class RemoveDropTargetCrashTest {
 
     private static final String RUN_PROCESS = "RUN_PROCESS";
     private static final String RUN_TEST = "RUN_TEST";
-    private static boolean exception = false;
+    private static boolean exception;
+    private static volatile CountDownLatch go;
 
     public static void main(String[] args) throws Exception {
         String command = args.length < 1 ? RUN_TEST : args[0];
@@ -78,18 +80,25 @@ public class RemoveDropTargetCrashTest {
                 runProcess();
                 break;
             case RUN_TEST:
-                runTest();
+                for (int i = 0; i < 10; ++i) {
+                    runTest(i * 10);
+                    runTest(-1);
+                }
                 break;
             default:
                 throw new RuntimeException("Unknown command: " + command);
         }
     }
 
-    private static void runTest() throws Exception {
+    private static void runTest(int delay) throws Exception {
 
+        Robot robot = new Robot();
+        robot.setAutoDelay(10);
         Frame frame = null;
         try {
             DragSourceButton dragSourceButton = new DragSourceButton();
+            dragSourceButton.addActionListener(e -> go.countDown());
+
             DropTargetPanel dropTargetPanel = new DropTargetPanel();
 
             frame = new Frame();
@@ -102,32 +111,63 @@ public class RemoveDropTargetCrashTest {
             frame.pack();
             frame.setVisible(true);
 
-            Thread.sleep(100);
+            robot.waitForIdle();
+            robot.delay(200);
 
             Point dragPoint = dragSourceButton.getLocationOnScreen();
             Dimension size = dragSourceButton.getSize();
             dragPoint.translate(size.width / 2, size.height / 2);
 
+            pressOnButton(robot, dragPoint);
+
             Point dropPoint = dropTargetPanel.getLocationOnScreen();
             size = dropTargetPanel.getSize();
             dropPoint.translate(size.width / 2, size.height / 2);
 
-            Robot robot = new Robot();
             robot.mouseMove(dragPoint.x, dragPoint.y);
             robot.keyPress(KeyEvent.VK_CONTROL);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            for (; !dragPoint.equals(dropPoint);
-                    dragPoint.translate(sign(dropPoint.x - dragPoint.x),
-                            sign(dropPoint.y - dragPoint.y))) {
-                robot.mouseMove(dragPoint.x, dragPoint.y);
-                Thread.sleep(10);
+
+            Point tmpPoint = new Point(dragPoint);
+            for (; !tmpPoint.equals(dropPoint);
+                 tmpPoint.translate(sign(dropPoint.x - tmpPoint.x),
+                            sign(dropPoint.y - tmpPoint.y))) {
+                robot.mouseMove(tmpPoint.x, tmpPoint.y);
             }
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            // This delay() is important part of the test, because we need to
+            // test a different delays before frame.dispose().
+            if (delay >= 0) {
+                robot.delay(delay);
+            } else {
+                robot.waitForIdle();
+                robot.delay(1000);
+
+                Point clickPoint = dragSourceButton.getLocationOnScreen();
+                size = dragSourceButton.getSize();
+                clickPoint.translate(size.width / 2, size.height / 2);
+
+                if (clickPoint.equals(dragPoint)) {
+                    throw new RuntimeException("Button was not moved");
+                }
+                pressOnButton(robot, clickPoint);
+            }
         } finally {
             if (frame != null) {
                 frame.dispose();
             }
+        }
+    }
+
+    private static void pressOnButton(Robot robot, Point clickPoint)
+            throws InterruptedException {
+        go = new CountDownLatch(1);
+        robot.mouseMove(clickPoint.x, clickPoint.y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        if (!go.await(10, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Button was not pressed");
         }
     }
 
@@ -238,22 +278,20 @@ public class RemoveDropTargetCrashTest {
             }
 
             DataFlavor[] dfs = dtde.getCurrentDataFlavors();
-            Component comp = null;
 
             if (dfs != null && dfs.length >= 1) {
                 Transferable transfer = dtde.getTransferable();
-
+                Component comp;
                 try {
                     comp = (Component) transfer.getTransferData(dfs[0]);
                 } catch (Throwable e) {
                     dtc.dropComplete(false);
                     throw new RuntimeException(e);
                 }
+                add(comp);
+                validate();
             }
             dtc.dropComplete(true);
-
-            add(comp);
-            validate();
         }
     }
 
@@ -263,16 +301,17 @@ public class RemoveDropTargetCrashTest {
                 + " " + RemoveDropTargetCrashTest.class.getName() + " " + RUN_TEST;
 
         Process process = Runtime.getRuntime().exec(command);
-        boolean processExit = process.waitFor(20, TimeUnit.SECONDS);
+        boolean processExit = process.waitFor(100, TimeUnit.SECONDS);
 
         StringBuilder inStream = new StringBuilder();
         StringBuilder errStream = new StringBuilder();
         checkErrors(process.getErrorStream(), errStream);
         checkErrors(process.getInputStream(), inStream);
 
+        System.out.println(inStream);
+        System.err.println(errStream);
+
         if (exception) {
-            System.out.println(inStream);
-            System.err.println(errStream);
             throw new RuntimeException("Exception in the output!");
         }
 

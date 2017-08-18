@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 package sun.awt.dnd;
 
 import java.awt.Component;
-import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.event.MouseEvent;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class SunDropTargetEvent extends MouseEvent {
+public final class SunDropTargetEvent extends MouseEvent {
 
     public static final int MOUSE_DROPPED = MouseEvent.MOUSE_RELEASED;
 
@@ -48,7 +47,7 @@ public class SunDropTargetEvent extends MouseEvent {
         try {
             dispatcher.dispatchEvent(this);
         } finally {
-            dispatcher.unregisterEvent(this);
+            dispose();
         }
     }
 
@@ -56,8 +55,12 @@ public class SunDropTargetEvent extends MouseEvent {
         boolean was_consumed = isConsumed();
         super.consume();
         if (!was_consumed && isConsumed()) {
-            dispatcher.unregisterEvent(this);
+            dispose();
         }
+    }
+
+    public void dispose() {
+        dispatcher.unregisterEvent(this);
     }
 
     public SunDropTargetContextPeer.EventDispatcher getDispatcher() {
