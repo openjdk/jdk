@@ -282,7 +282,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                 if (code >= HI_SURROGATE_START &&
                     code <= HI_SURROGATE_END && m < missed - 1)
                 {
-                    char low = indicies[m + 1];
+                    char low = unmappedChars[m + 1];
                     if (low >= LO_SURROGATE_START && low <= LO_SURROGATE_END) {
                         code = (code - HI_SURROGATE_START) * 0x400 +
                             low - LO_SURROGATE_START + 0x10000;
