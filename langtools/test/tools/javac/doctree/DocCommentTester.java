@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,6 +582,17 @@ public class DocCommentTester {
                 indent();
                 out.println("name:" + node.getName());
                 print("attributes", node.getAttributes());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
+            @Override
+            public Void visitSummary(SummaryTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("summary", node.getSummary());
                 indent(-1);
                 indent();
                 out.println("]");

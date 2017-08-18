@@ -21,39 +21,46 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 
 /**
  * ARRAYLENGTH -  Get length of array
  * <PRE>Stack: ..., arrayref -&gt; ..., length</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ARRAYLENGTH.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class ARRAYLENGTH extends Instruction
-  implements ExceptionThrower, StackProducer {
-  /** Get length of array
-   */
-  public ARRAYLENGTH() {
-    super(com.sun.org.apache.bcel.internal.Constants.ARRAYLENGTH, (short)1);
-  }
+    implements ExceptionThrower, StackProducer, StackConsumer /* since 6.0 */ {
 
-  /** @return exceptions this instruction may cause
-   */
-  public Class[] getExceptions() {
-    return new Class[] { com.sun.org.apache.bcel.internal.ExceptionConstants.NULL_POINTER_EXCEPTION };
-  }
+    /** Get length of array
+     */
+    public ARRAYLENGTH() {
+        super(com.sun.org.apache.bcel.internal.Const.ARRAYLENGTH, (short) 1);
+    }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitExceptionThrower(this);
-    v.visitStackProducer(this);
-    v.visitARRAYLENGTH(this);
-  }
+    /** @return exceptions this instruction may cause
+     */
+    @Override
+    public Class<?>[] getExceptions() {
+        return new Class[] {
+            ExceptionConst.NULL_POINTER_EXCEPTION
+        };
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitExceptionThrower(this);
+        v.visitStackProducer(this);
+        v.visitARRAYLENGTH(this);
+    }
 }

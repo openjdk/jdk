@@ -27,7 +27,7 @@
 #define NET_UTILS_MD_H
 
 #include <netdb.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <sys/socket.h>
 
 /************************************************************************

@@ -153,6 +153,7 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java    8174734 generic-all
+sun/management/jdp/JdpOffTest.java                              8175542 generic-all
 
 ############################################################################
 
@@ -299,6 +300,14 @@ sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 com/sun/tools/attach/StartManagementAgent.java                  8179700 generic-all
+
+sun/tools/jhsdb/AlternateHashingTest.java                       8184042 macosx-all
+
+sun/tools/jhsdb/BasicLauncherTest.java                          8184042 macosx-all
+
+sun/tools/jhsdb/HeapDumpTest.java                               8184042 macosx-all
+
+sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java              8184042 macosx-all
 
 ############################################################################
 

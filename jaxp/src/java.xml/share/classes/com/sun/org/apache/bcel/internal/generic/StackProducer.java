@@ -21,15 +21,15 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Denote an instruction that may produce a value on top of the stack
  * (this excludes DUP_X1, e.g.)
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: StackProducer.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface StackProducer {
-  /** @return how many words are produced on stack
-   */
-  public int produceStack(ConstantPoolGen cpg);
+
+    /** @return how many words are produced on stack
+     */
+    int produceStack( ConstantPoolGen cpg );
 }

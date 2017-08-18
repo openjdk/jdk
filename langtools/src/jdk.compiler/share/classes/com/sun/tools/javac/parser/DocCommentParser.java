@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1257,6 +1257,14 @@ public class DocCommentParser {
                 public DCTree parse(int pos) {
                     List<DCTree> description = blockContent();
                     return m.at(pos).newSinceTree(description);
+                }
+            },
+
+            // @summary summary-text
+            new TagParser(Kind.INLINE, DCTree.Kind.SUMMARY) {
+                public DCTree parse(int pos) throws ParseException {
+                    List<DCTree> summary = inlineContent();
+                    return m.at(pos).newSummaryTree(summary);
                 }
             },
 

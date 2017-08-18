@@ -21,8 +21,10 @@
 
 package com.sun.org.apache.bcel.internal.util;
 
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 
 /**
@@ -30,34 +32,43 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
  * Since JavaClass has no equals() method, the name of the class is
  * used for comparison.
  *
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ClassSet.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see ClassStack
-*/
-public class ClassSet implements java.io.Serializable {
-  private HashMap _map = new HashMap();
+ */
+public class ClassSet {
 
-  public boolean add(JavaClass clazz) {
-    boolean result = false;
+    private final Map<String, JavaClass> map = new HashMap<>();
 
-    if(!_map.containsKey(clazz.getClassName())) {
-      result = true;
-      _map.put(clazz.getClassName(), clazz);
+
+    public boolean add( final JavaClass clazz ) {
+        boolean result = false;
+        if (!map.containsKey(clazz.getClassName())) {
+            result = true;
+            map.put(clazz.getClassName(), clazz);
+        }
+        return result;
     }
 
-    return result;
-  }
 
-  public void      remove(JavaClass clazz) { _map.remove(clazz.getClassName()); }
-  public boolean   empty()                 { return _map.isEmpty(); }
+    public void remove( final JavaClass clazz ) {
+        map.remove(clazz.getClassName());
+    }
 
-  public JavaClass[] toArray() {
-    Collection values = _map.values();
-    JavaClass[] classes = new JavaClass[values.size()];
-    values.toArray(classes);
-    return classes;
-  }
 
-  public String[] getClassNames() {
-    return (String[])_map.keySet().toArray(new String[_map.keySet().size()]);
-  }
+    public boolean empty() {
+        return map.isEmpty();
+    }
+
+
+    public JavaClass[] toArray() {
+        final Collection<JavaClass> values = map.values();
+        final JavaClass[] classes = new JavaClass[values.size()];
+        values.toArray(classes);
+        return classes;
+    }
+
+
+    public String[] getClassNames() {
+        return map.keySet().toArray(new String[map.size()]);
+    }
 }
