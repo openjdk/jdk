@@ -82,13 +82,13 @@ import sun.security.util.Debug;
  *
  * <pre>
  *      grant CodeBase "foo.com", Signedby "foo",
- *            Principal com.sun.security.auth.SolarisPrincipal "duke" {
+ *            Principal com.sun.security.auth.UnixPrincipal "duke" {
  *          permission java.io.FilePermission "/home/duke", "read, write";
  *      };
  * </pre>
  *
  * This <b><i>grant</i></b> entry specifies that code from "foo.com",
- * signed by "foo', and running as a {@code SolarisPrincipal} with the
+ * signed by "foo', and running as a {@code UnixPrincipal} with the
  * name, duke, has one {@code Permission}.  This {@code Permission}
  * permits the executing code to read and write files in the directory,
  * "/home/duke".
@@ -107,8 +107,8 @@ import sun.security.util.Debug;
  * for that {@code Subject} to be granted the specified Permissions.
  *
  * <pre>
- *      grant Principal com.sun.security.auth.SolarisPrincipal "duke",
- *            Principal com.sun.security.auth.SolarisNumericUserPrincipal "0" {
+ *      grant Principal com.sun.security.auth.UnixPrincipal "duke",
+ *            Principal com.sun.security.auth.UnixNumericUserPrincipal "0" {
  *          permission java.io.FilePermission "/home/duke", "read, write";
  *          permission java.net.SocketPermission "duke.com", "connect";
  *      };
