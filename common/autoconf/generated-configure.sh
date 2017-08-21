@@ -5155,7 +5155,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1503074369
+DATE_WHEN_GENERATED=1503320123
 
 ###############################################################################
 #
@@ -62621,7 +62621,7 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
             if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
 
   POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
-  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib/x86_64-linux-gnu"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib/$OPENJDK_TARGET_CPU-linux-gnu"
   METHOD="well-known location"
 
   # Let's start with an optimistic view of the world :-)
