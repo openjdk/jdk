@@ -42,6 +42,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
+    alpha*)
+      VAR_CPU=alpha
+      VAR_CPU_ARCH=alpha
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
@@ -51,6 +57,36 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
     aarch64)
       VAR_CPU=aarch64
       VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    m68k)
+      VAR_CPU=m68k
+      VAR_CPU_ARCH=m68k
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips)
+      VAR_CPU=mips
+      VAR_CPU_ARCH=mips
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mipsel)
+      VAR_CPU=mipsel
+      VAR_CPU_ARCH=mipsel
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    mips64)
+      VAR_CPU=mips64
+      VAR_CPU_ARCH=mips64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips64el)
+      VAR_CPU=mips64el
+      VAR_CPU_ARCH=mips64el
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -83,6 +119,18 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_ARCH=s390
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
+      ;;
+    sh*eb)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    sh*)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
       ;;
     sparc)
       VAR_CPU=sparc
