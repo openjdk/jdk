@@ -4213,8 +4213,6 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
-    elf)
-      PKGHANDLER_COMMAND="sudo apt-get install libelf-dev" ;;
   esac
 }
 
@@ -4234,8 +4232,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    elf)
-      PKGHANDLER_COMMAND="sudo yum install elfutils-libelf-devel" ;;
   esac
 }
 
@@ -5155,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1503074369
+DATE_WHEN_GENERATED=1503331667
 
 ###############################################################################
 #
@@ -65605,7 +65601,7 @@ $as_echo "no, not found at $STLPORT_LIB" >&6; }
 
 
 
-# Hotspot setup depends on lib checks (AOT needs libelf).
+# Hotspot setup depends on lib checks.
 
 
   # The user can in some cases supply additional jvm features. For the custom
