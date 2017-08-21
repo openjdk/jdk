@@ -5151,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1503331667
+DATE_WHEN_GENERATED=1503331668
 
 ###############################################################################
 #
@@ -51563,7 +51563,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Set some additional per-CPU defines.
   if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xwindows-x86; then
     JVM_CFLAGS="$JVM_CFLAGS -arch:IA32"
-  elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+  elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xsolaris-sparcv9; then
     JVM_CFLAGS="$JVM_CFLAGS -xarch=sparc"
   elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -52442,7 +52442,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Set some additional per-CPU defines.
   if test "x$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" = xwindows-x86; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -arch:IA32"
-  elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+  elif test "x$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" = xsolaris-sparcv9; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -xarch=sparc"
   elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
     if test "x$OPENJDK_BUILD_OS" = xlinux; then
