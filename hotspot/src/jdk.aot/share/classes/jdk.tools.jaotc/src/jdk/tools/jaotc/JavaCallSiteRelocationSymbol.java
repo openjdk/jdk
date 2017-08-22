@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package jdk.tools.jaotc;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.Symbol;
-import jdk.tools.jaotc.CompiledMethodInfo.StubInformation;
+import jdk.tools.jaotc.StubInformation;
 
 import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -40,7 +40,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
     // -1 represents Universe::non_oop_word() value
     private static final byte[] minusOneSlot = {-1, -1, -1, -1, -1, -1, -1, -1};
 
-    public JavaCallSiteRelocationSymbol(CompiledMethodInfo mi, Call call, CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
+    JavaCallSiteRelocationSymbol(CompiledMethodInfo mi, Call call, CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
         super(createPltEntrySymbol(binaryContainer, mi, call, callSiteRelocation));
         StubInformation stub = getStub(mi, call);
         addRelocations(mi, stub, binaryContainer, call, callSiteRelocation);
@@ -61,7 +61,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
 
     private static StubInformation getStub(CompiledMethodInfo mi, Call call) {
         HotSpotResolvedJavaMethod callTarget = (HotSpotResolvedJavaMethod) call.target;
-        String callTargetSymbol = MiscUtils.uniqueMethodName(callTarget) + ".at." + call.pcOffset;
+        String callTargetSymbol = JavaMethodInfo.uniqueMethodName(callTarget) + ".at." + call.pcOffset;
         return mi.getStubFor(callTargetSymbol);
     }
 
@@ -69,7 +69,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
      * Add all the required relocations.
      */
     private static void addRelocations(CompiledMethodInfo mi, StubInformation stub, BinaryContainer binaryContainer, Call call, CallSiteRelocationInfo callSiteRelocation) {
-        final boolean isVirtualCall = MiscUtils.isVirtualCall(mi, call);
+        final boolean isVirtualCall = CallInfo.isVirtualCall(mi, call);
 
         final int gotStartOffset = binaryContainer.appendExtLinkageGotBytes(zeroSlot, 0, zeroSlot.length);
         if (isVirtualCall) {
@@ -82,7 +82,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
         // Add relocation to GOT cell for call resolution jump.
         // This GOT cell will be initialized during JVM startup with address
         // of JVM runtime call resolution function.
-        String gotSymbolName = "got." + getResolveSymbolName(binaryContainer, mi, call);
+        String gotSymbolName = "got." + getResolveSymbolName(mi, call);
         Symbol gotSymbol = binaryContainer.getGotSymbol(gotSymbolName);
         addExternalPltToGotRelocation(binaryContainer, gotSymbol, stub.getResolveJumpOffset());
 
@@ -121,16 +121,16 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
     /**
      * Returns the name of the resolve method for this particular call.
      */
-    private static String getResolveSymbolName(BinaryContainer binaryContainer, CompiledMethodInfo mi, Call call) {
+    private static String getResolveSymbolName(CompiledMethodInfo mi, Call call) {
         String resolveSymbolName;
-        if (MiscUtils.isStaticCall(call)) {
-            resolveSymbolName = binaryContainer.getResolveStaticEntrySymbolName();
-        } else if (MiscUtils.isSpecialCall(call)) {
-            resolveSymbolName = binaryContainer.getResolveOptVirtualEntrySymbolName();
-        } else if (MiscUtils.isOptVirtualCall(mi, call)) {
-            resolveSymbolName = binaryContainer.getResolveOptVirtualEntrySymbolName();
-        } else if (MiscUtils.isVirtualCall(mi, call)) {
-            resolveSymbolName = binaryContainer.getResolveVirtualEntrySymbolName();
+        if (CallInfo.isStaticCall(call)) {
+            resolveSymbolName = BinaryContainer.getResolveStaticEntrySymbolName();
+        } else if (CallInfo.isSpecialCall(call)) {
+            resolveSymbolName = BinaryContainer.getResolveOptVirtualEntrySymbolName();
+        } else if (CallInfo.isOptVirtualCall(mi, call)) {
+            resolveSymbolName = BinaryContainer.getResolveOptVirtualEntrySymbolName();
+        } else if (CallInfo.isVirtualCall(mi, call)) {
+            resolveSymbolName = BinaryContainer.getResolveVirtualEntrySymbolName();
         } else {
             throw new InternalError("Unknown call type in " + mi.asTag() + " @ " + call.pcOffset + " for call" + call.target);
         }
