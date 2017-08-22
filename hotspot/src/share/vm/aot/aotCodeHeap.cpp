@@ -51,7 +51,7 @@ address AOTLib::load_symbol(const char *name) {
 
 Klass* AOTCodeHeap::get_klass_from_got(const char* klass_name, int klass_len, const Method* method) {
   AOTKlassData* klass_data = (AOTKlassData*)_lib->load_symbol(klass_name);
-  Klass* k = (Klass*)_metaspace_got[klass_data->_got_index];
+  Klass* k = (Klass*)_klasses_got[klass_data->_got_index];
   if (k == NULL) {
     Thread* thread = Thread::current();
     k = lookup_klass(klass_name, klass_len, method, thread);
@@ -60,7 +60,7 @@ Klass* AOTCodeHeap::get_klass_from_got(const char* klass_name, int klass_len, co
       fatal("Shared file %s error: klass %s should be resolved already", _lib->name(), klass_name);
       vm_exit(1);
     }
-    _metaspace_got[klass_data->_got_index] = k;
+    _klasses_got[klass_data->_got_index] = k;
   }
   return k;
 }
@@ -202,8 +202,8 @@ AOTLib::AOTLib(void* handle, const char* name, int dso_id) : _valid(true), _dl_h
   _name = (const char*) strdup(name);
 
   // Verify that VM runs with the same parameters as AOT tool.
-  _config = (AOTConfiguration*) load_symbol("JVM.config");
-  _header = (AOTHeader*) load_symbol("JVM.header");
+  _config = (AOTConfiguration*) load_symbol("A.config");
+  _header = (AOTHeader*) load_symbol("A.header");
 
   verify_config();
 
@@ -224,31 +224,31 @@ AOTCodeHeap::AOTCodeHeap(AOTLib* lib) :
   _method_count = _lib->header()->_method_count;
 
   // Collect metaspace info: names -> address in .got section
-  _metaspace_names = (const char*) _lib->load_symbol("JVM.meta.names");
-  _method_metadata =     (address) _lib->load_symbol("JVM.meth.metadata");
-  _methods_offsets =     (address) _lib->load_symbol("JVM.methods.offsets");
-  _klasses_offsets =     (address) _lib->load_symbol("JVM.kls.offsets");
-  _dependencies    =     (address) _lib->load_symbol("JVM.kls.dependencies");
-  _code_space      =     (address) _lib->load_symbol("JVM.text");
+  _metaspace_names = (const char*) _lib->load_symbol("A.meta.names");
+  _method_metadata =     (address) _lib->load_symbol("A.meth.metadata");
+  _methods_offsets =     (address) _lib->load_symbol("A.meth.offsets");
+  _klasses_offsets =     (address) _lib->load_symbol("A.kls.offsets");
+  _dependencies    =     (address) _lib->load_symbol("A.kls.dependencies");
+  _code_space      =     (address) _lib->load_symbol("A.text");
 
   // First cell is number of elements.
-  _metaspace_got      = (Metadata**) _lib->load_symbol("JVM.meta.got");
-  _metaspace_got_size = _lib->header()->_metaspace_got_size;
+  _klasses_got      = (Metadata**) _lib->load_symbol("A.kls.got");
+  _klasses_got_size = _lib->header()->_klasses_got_size;
 
-  _metadata_got      = (Metadata**) _lib->load_symbol("JVM.metadata.got");
+  _metadata_got      = (Metadata**) _lib->load_symbol("A.meta.got");
   _metadata_got_size = _lib->header()->_metadata_got_size;
 
-  _oop_got      = (oop*) _lib->load_symbol("JVM.oop.got");
+  _oop_got      = (oop*) _lib->load_symbol("A.oop.got");
   _oop_got_size = _lib->header()->_oop_got_size;
 
   // Collect stubs info
-  _stubs_offsets = (int*) _lib->load_symbol("JVM.stubs.offsets");
+  _stubs_offsets = (int*) _lib->load_symbol("A.stubs.offsets");
 
   // code segments table
-  _code_segments = (address) _lib->load_symbol("JVM.code.segments");
+  _code_segments = (address) _lib->load_symbol("A.code.segments");
 
   // method state
-  _method_state = (jlong*) _lib->load_symbol("JVM.meth.state");
+  _method_state = (jlong*) _lib->load_symbol("A.meth.state");
 
   // Create a table for mapping classes
   _classes = NEW_C_HEAP_ARRAY(AOTClass, _class_count, mtCode);
@@ -342,8 +342,8 @@ void AOTCodeHeap::link_primitive_array_klasses() {
       if (klass_data != NULL) {
         // Set both GOT cells, resolved and initialized klass pointers.
         // _got_index points to second cell - resolved klass pointer.
-        _metaspace_got[klass_data->_got_index-1] = (Metadata*)arr_klass; // Initialized
-        _metaspace_got[klass_data->_got_index  ] = (Metadata*)arr_klass; // Resolved
+        _klasses_got[klass_data->_got_index-1] = (Metadata*)arr_klass; // Initialized
+        _klasses_got[klass_data->_got_index  ] = (Metadata*)arr_klass; // Resolved
         if (PrintAOT) {
           tty->print_cr("[Found  %s  in  %s]", arr_klass->internal_name(), _lib->name());
         }
@@ -680,16 +680,16 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
   if (!ik->has_passed_fingerprint_check()) {
     NOT_PRODUCT( aot_klasses_fp_miss++; )
     log_trace(aot, class, fingerprint)("class  %s%s  has bad fingerprint in  %s tid=" INTPTR_FORMAT,
-                                   ik->internal_name(), ik->is_shared() ? " (shared)" : "",
-                                   _lib->name(), p2i(thread));
+                                       ik->internal_name(), ik->is_shared() ? " (shared)" : "",
+                                       _lib->name(), p2i(thread));
     sweep_dependent_methods(klass_data);
     return false;
   }
 
   if (ik->has_been_redefined()) {
     log_trace(aot, class, load)("class  %s%s in %s  has been redefined tid=" INTPTR_FORMAT,
-                                   ik->internal_name(), ik->is_shared() ? " (shared)" : "",
-                                   _lib->name(), p2i(thread));
+                                ik->internal_name(), ik->is_shared() ? " (shared)" : "",
+                                _lib->name(), p2i(thread));
     sweep_dependent_methods(klass_data);
     return false;
   }
@@ -698,7 +698,7 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
   AOTClass* aot_class = &_classes[klass_data->_class_id];
   if (aot_class->_classloader != NULL && aot_class->_classloader != ik->class_loader_data()) {
     log_trace(aot, class, load)("class  %s  in  %s already loaded for classloader %p vs %p tid=" INTPTR_FORMAT,
-                             ik->internal_name(), _lib->name(), aot_class->_classloader, ik->class_loader_data(), p2i(thread));
+                                ik->internal_name(), _lib->name(), aot_class->_classloader, ik->class_loader_data(), p2i(thread));
     NOT_PRODUCT( aot_klasses_cl_miss++; )
     return false;
   }
@@ -715,7 +715,7 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
 
   aot_class->_classloader = ik->class_loader_data();
   // Set klass's Resolve (second) got cell.
-  _metaspace_got[klass_data->_got_index] = ik;
+  _klasses_got[klass_data->_got_index] = ik;
 
   // Initialize global symbols of the DSO to the corresponding VM symbol values.
   link_global_lib_symbols();
@@ -823,12 +823,12 @@ void AOTCodeHeap::oops_do(OopClosure* f) {
   }
 }
 
-// Scan only metaspace_got cells which should have only Klass*,
+// Scan only klasses_got cells which should have only Klass*,
 // metadata_got cells are scanned only for alive AOT methods
 // by AOTCompiledMethod::metadata_do().
 void AOTCodeHeap::got_metadata_do(void f(Metadata*)) {
-  for (int i = 1; i < _metaspace_got_size; i++) {
-    Metadata** p = &_metaspace_got[i];
+  for (int i = 1; i < _klasses_got_size; i++) {
+    Metadata** p = &_klasses_got[i];
     Metadata* md = *p;
     if (md == NULL)  continue;  // skip non-oops
     if (Metaspace::contains(md)) {

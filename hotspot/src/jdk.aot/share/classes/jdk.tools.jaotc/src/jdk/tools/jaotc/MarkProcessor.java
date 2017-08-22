@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import jdk.tools.jaotc.binformat.Symbol;
 
 import jdk.vm.ci.code.site.Mark;
 
-class MarkProcessor {
+final class MarkProcessor {
 
     private final BinaryContainer binaryContainer;
 
@@ -65,31 +65,31 @@ class MarkProcessor {
                 switch (markId) {
                     case POLL_FAR:
                     case POLL_RETURN_FAR:
-                        vmSymbolName = binaryContainer.getPollingPageSymbolName();
+                        vmSymbolName = BinaryContainer.getPollingPageSymbolName();
                         break;
                     case CARD_TABLE_ADDRESS:
-                        vmSymbolName = binaryContainer.getCardTableAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getCardTableAddressSymbolName();
                         break;
                     case HEAP_TOP_ADDRESS:
-                        vmSymbolName = binaryContainer.getHeapTopAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getHeapTopAddressSymbolName();
                         break;
                     case HEAP_END_ADDRESS:
-                        vmSymbolName = binaryContainer.getHeapEndAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getHeapEndAddressSymbolName();
                         break;
                     case NARROW_KLASS_BASE_ADDRESS:
-                        vmSymbolName = binaryContainer.getNarrowKlassBaseAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getNarrowKlassBaseAddressSymbolName();
                         break;
                     case NARROW_OOP_BASE_ADDRESS:
-                        vmSymbolName = binaryContainer.getNarrowOopBaseAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getNarrowOopBaseAddressSymbolName();
                         break;
                     case CRC_TABLE_ADDRESS:
-                        vmSymbolName = binaryContainer.getCrcTableAddressSymbolName();
+                        vmSymbolName = BinaryContainer.getCrcTableAddressSymbolName();
                         break;
                     case LOG_OF_HEAP_REGION_GRAIN_BYTES:
-                        vmSymbolName = binaryContainer.getLogOfHeapRegionGrainBytesSymbolName();
+                        vmSymbolName = BinaryContainer.getLogOfHeapRegionGrainBytesSymbolName();
                         break;
                     case INLINE_CONTIGUOUS_ALLOCATION_SUPPORTED:
-                        vmSymbolName = binaryContainer.getInlineContiguousAllocationSupportedSymbolName();
+                        vmSymbolName = BinaryContainer.getInlineContiguousAllocationSupportedSymbolName();
                         break;
                     default:
                         throw new InternalError("Unhandled mark: " + mark);

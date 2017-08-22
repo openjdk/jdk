@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.util.List;
 
 import jdk.vm.ci.code.site.Mark;
 
-public final class CodeOffsets {
+final class CodeOffsets {
     private final int entry;
     private final int verifiedEntry;
     private final int exceptionHandler;
@@ -40,7 +40,7 @@ public final class CodeOffsets {
         this.deoptHandler = deoptHandler;
     }
 
-    public static CodeOffsets buildFrom(List<Mark> marks) {
+    static CodeOffsets buildFrom(List<Mark> marks) {
         int entry = 0;
         int verifiedEntry = 0;
         int exceptionHandler = -1;
@@ -73,19 +73,19 @@ public final class CodeOffsets {
         return new CodeOffsets(entry, verifiedEntry, exceptionHandler, deoptHandler);
     }
 
-    public int entry() {
+    int entry() {
         return entry;
     }
 
-    public int verifiedEntry() {
+    int verifiedEntry() {
         return verifiedEntry;
     }
 
-    public int exceptionHandler() {
+    int exceptionHandler() {
         return exceptionHandler;
     }
 
-    public int deoptHandler() {
+    int deoptHandler() {
         return deoptHandler;
     }
 }

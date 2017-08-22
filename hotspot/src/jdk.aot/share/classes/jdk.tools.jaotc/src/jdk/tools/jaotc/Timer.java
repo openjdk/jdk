@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,22 @@
  * questions.
  */
 
-package jdk.tools.jaotc.utils;
+package jdk.tools.jaotc;
 
-import jdk.tools.jaotc.Main;
-
-public class Timer implements AutoCloseable {
+final class Timer implements AutoCloseable {
 
     private final Main main;
     private final long start;
 
-    public Timer(Main main, String message) {
+    Timer(Main main, String message) {
         this.main = main;
         start = System.currentTimeMillis();
-        main.printInfo(message);
+        main.printer.printInfo(message);
     }
 
     public void close() {
         final long end = System.currentTimeMillis();
-        main.printlnInfo(" (" + (end - start) + " ms)");
+        main.printer.printlnInfo(" (" + (end - start) + " ms)");
     }
 
 }

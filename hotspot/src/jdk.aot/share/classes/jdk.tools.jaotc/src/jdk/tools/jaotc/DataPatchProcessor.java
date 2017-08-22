@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import jdk.tools.jaotc.binformat.Relocation.RelocType;
 import jdk.tools.jaotc.binformat.Symbol;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
-import jdk.tools.jaotc.AOTCompiledClass.AOTKlassData;
 import org.graalvm.compiler.code.DataSection;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 
@@ -47,7 +46,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.hotspot.HotSpotSentinelConstant;
 import jdk.vm.ci.meta.VMConstant;
 
-class DataPatchProcessor {
+final class DataPatchProcessor {
 
     private final TargetDescription target;
 
@@ -89,9 +88,9 @@ class DataPatchProcessor {
                 gotName = ((action == HotSpotConstantLoadAction.INITIALIZE) ? "got.init." : "got.") + targetSymbol;
                 methodInfo.addDependentKlassData(binaryContainer, type);
             } else if (metaspaceConstant.asResolvedJavaMethod() != null && action == HotSpotConstantLoadAction.LOAD_COUNTERS) {
-                targetSymbol = "counters." + MiscUtils.uniqueMethodName(metaspaceConstant.asResolvedJavaMethod());
+                targetSymbol = "counters." + JavaMethodInfo.uniqueMethodName(metaspaceConstant.asResolvedJavaMethod());
                 gotName = "got." + targetSymbol;
-                binaryContainer.addMetaspaceSymbol(targetSymbol);
+                binaryContainer.addCountersSymbol(targetSymbol);
             }
         } else if (constant instanceof HotSpotObjectConstant) {
             // String constant.
