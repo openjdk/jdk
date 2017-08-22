@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import static java.nio.file.FileVisitResult.CONTINUE;
 /**
  * {@link FileVisitor} implementation to find class files recursively.
  */
-public class FileSystemFinder extends SimpleFileVisitor<Path> implements Iterable<Path> {
+public final class FileSystemFinder extends SimpleFileVisitor<Path> implements Iterable<Path> {
     private final ArrayList<Path> fileNames = new ArrayList<>();
     private final PathMatcher filter;
 
@@ -67,7 +68,6 @@ public class FileSystemFinder extends SimpleFileVisitor<Path> implements Iterabl
         find(dir);
         return CONTINUE;
     }
-
 
     @Override
     public Iterator<Path> iterator() {

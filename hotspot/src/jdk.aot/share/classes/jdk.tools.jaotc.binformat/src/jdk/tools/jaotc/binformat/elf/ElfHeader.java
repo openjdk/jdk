@@ -24,55 +24,52 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.elf.Elf;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
 import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
 import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
-public class ElfHeader {
-    ByteBuffer header;
+final class ElfHeader {
+    private final ByteBuffer header;
 
-    public ElfHeader() {
+    ElfHeader() {
         header = ElfByteBuffer.allocate(Elf64_Ehdr.totalsize);
 
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_MAG0, Elf64_Ehdr.ELFMAG0);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_MAG1, Elf64_Ehdr.ELFMAG1);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_MAG2, Elf64_Ehdr.ELFMAG2);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_MAG3, Elf64_Ehdr.ELFMAG3);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_CLASS, Elf64_Ehdr.ELFCLASS64);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_DATA, Elf64_Ehdr.ELFDATA2LSB);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_VERSION, Elf64_Ehdr.EV_CURRENT);
-        header.put(Elf64_Ehdr.e_ident.off+Elf64_Ehdr.EI_OSABI, Elf64_Ehdr.ELFOSABI_NONE);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_MAG0, Elf64_Ehdr.ELFMAG0);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_MAG1, Elf64_Ehdr.ELFMAG1);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_MAG2, Elf64_Ehdr.ELFMAG2);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_MAG3, Elf64_Ehdr.ELFMAG3);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_CLASS, Elf64_Ehdr.ELFCLASS64);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_DATA, Elf64_Ehdr.ELFDATA2LSB);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_VERSION, Elf64_Ehdr.EV_CURRENT);
+        header.put(Elf64_Ehdr.e_ident.off + Elf64_Ehdr.EI_OSABI, Elf64_Ehdr.ELFOSABI_NONE);
 
         header.putChar(Elf64_Ehdr.e_type.off, Elf64_Ehdr.ET_REL);
         header.putChar(Elf64_Ehdr.e_machine.off, ElfTargetInfo.getElfArch());
         header.putInt(Elf64_Ehdr.e_version.off, Elf64_Ehdr.EV_CURRENT);
-        header.putChar(Elf64_Ehdr.e_ehsize.off, (char)Elf64_Ehdr.totalsize);
-        header.putChar(Elf64_Ehdr.e_shentsize.off, (char)Elf64_Shdr.totalsize);
+        header.putChar(Elf64_Ehdr.e_ehsize.off, (char) Elf64_Ehdr.totalsize);
+        header.putChar(Elf64_Ehdr.e_shentsize.off, (char) Elf64_Shdr.totalsize);
 
     }
 
     // Update header with file offset of first section
-    public void setSectionOff(int offset) {
+    void setSectionOff(int offset) {
         header.putLong(Elf64_Ehdr.e_shoff.off, offset);
     }
 
     // Update header with the number of total sections
-    public void setSectionNum(int count) {
-        header.putChar(Elf64_Ehdr.e_shnum.off, (char)count);
+    void setSectionNum(int count) {
+        header.putChar(Elf64_Ehdr.e_shnum.off, (char) count);
     }
 
     // Update header with the section index containing the
     // string table for section names
-    public void setSectionStrNdx(int index) {
-        header.putChar(Elf64_Ehdr.e_shstrndx.off, (char)index);
+    void setSectionStrNdx(int index) {
+        header.putChar(Elf64_Ehdr.e_shstrndx.off, (char) index);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return header.array();
     }
 }
-

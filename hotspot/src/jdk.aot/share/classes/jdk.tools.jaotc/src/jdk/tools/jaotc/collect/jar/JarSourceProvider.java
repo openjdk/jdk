@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.jar;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -33,7 +34,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.ProviderNotFoundException;
 
-public class JarSourceProvider implements SourceProvider {
+public final class JarSourceProvider implements SourceProvider {
     private final FileSystem fileSystem;
     private final FileSupport fileSupport;
     public final static String TYPE = "jar";
