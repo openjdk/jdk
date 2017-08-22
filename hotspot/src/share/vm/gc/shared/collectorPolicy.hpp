@@ -151,6 +151,8 @@ class ClearedAllSoftRefs : public StackObj {
       _collector_policy->cleared_all_soft_refs();
     }
   }
+
+  bool should_clear() { return _clear_all_soft_refs; }
 };
 
 class GenCollectorPolicy : public CollectorPolicy {
