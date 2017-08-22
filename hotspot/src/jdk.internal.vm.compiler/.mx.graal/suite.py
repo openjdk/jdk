@@ -1106,34 +1106,12 @@ suite = {
     "jdk.tools.jaotc.binformat" : {
       "subDir" : "../jdk.aot/share/classes",
       "sourceDirs" : ["src"],
-      "dependencies" : [
-        "jdk.tools.jaotc.jnilibelf",
-      ],
       "generatedDependencies" : [
         "org.graalvm.compiler.hotspot",
       ],
       "checkstyle" : "jdk.tools.jaotc",
       "javaCompliance" : "1.8",
     },
-
-    "jdk.tools.jaotc.jnilibelf" : {
-      "subDir" : "../jdk.aot/share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : [],
-      "checkstyle" : "jdk.tools.jaotc",
-      "javaCompliance" : "1.8",
-    },
-
-    "jdk.tools.jaotc.jnilibelf.test" : {
-      "subDir" : "../../test/compiler/aot",
-      "sourceDirs" : ["src"],
-      "dependencies" : [
-        "jdk.tools.jaotc.jnilibelf",
-      ],
-      "checkstyle" : "jdk.tools.jaotc",
-      "javaCompliance" : "1.8",
-    },
-
   },
 
   "distributions" : {
