@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt.windows;
 
-import java.awt.*;
-import java.awt.peer.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.SystemColor;
+import java.awt.peer.PanelPeer;
 
 import sun.awt.SunGraphicsCallback;
 
@@ -81,13 +87,13 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
 
         Color c = ((Component)target).getBackground();
         if (c == null) {
-            c = WColor.getDefaultColor(WColor.WINDOW_BKGND);
+            c = SystemColor.window;
             ((Component)target).setBackground(c);
             setBackground(c);
         }
         c = ((Component)target).getForeground();
         if (c == null) {
-            c = WColor.getDefaultColor(WColor.WINDOW_TEXT);
+            c = SystemColor.windowText;
             ((Component)target).setForeground(c);
             setForeground(c);
         }
