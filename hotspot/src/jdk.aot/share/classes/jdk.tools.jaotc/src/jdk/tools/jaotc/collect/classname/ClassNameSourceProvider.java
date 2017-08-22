@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.classname;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -30,7 +31,7 @@ import jdk.tools.jaotc.collect.SourceProvider;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class ClassNameSourceProvider implements SourceProvider {
+public final class ClassNameSourceProvider implements SourceProvider {
     public final static String TYPE = "class";
     private final ClassLoader classLoader;
 
@@ -46,7 +47,8 @@ public class ClassNameSourceProvider implements SourceProvider {
     }
 
     @Override
-    public ClassSource findSource(String name, SearchPath searchPath) {
+    public ClassSource findSource(String name0, SearchPath searchPath) {
+        String name = name0;
         Path path = Paths.get(name);
         if (ClassSource.pathIsClassFile(path)) {
             name = ClassSource.makeClassName(path);

@@ -20,9 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect;
 
-public class SearchFor {
+public final class SearchFor {
     private final String name;
     private final String type;
 
@@ -35,15 +36,15 @@ public class SearchFor {
         this.type = type;
     }
 
-    public boolean isUnknown() {
+    boolean isUnknown() {
         return "".equals(type);
     }
 
-    public String getType() {
+    String getType() {
         return this.type;
     }
 
-    public String getName() {
+    String getName() {
         return this.name;
     }
 

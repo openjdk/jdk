@@ -24,17 +24,15 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import jdk.tools.jaotc.binformat.NativeSymbol;
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.nlist_64;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachOSymbol extends NativeSymbol {
-    ByteBuffer sym;
+final class MachOSymbol extends NativeSymbol {
+    private final ByteBuffer sym;
 
-    public MachOSymbol(int symbolindex, int strindex, byte type, byte sectindex, long offset) {
+    MachOSymbol(int symbolindex, int strindex, byte type, byte sectindex, long offset) {
         super(symbolindex);
         sym = MachOByteBuffer.allocate(nlist_64.totalsize);
 
@@ -42,13 +40,12 @@ public class MachOSymbol extends NativeSymbol {
         sym.put(nlist_64.n_type.off, type);
         // Section indexes start at 1 but we manage the index internally
         // as 0 relative
-        sym.put(nlist_64.n_sect.off, (byte)(sectindex+1));
-        sym.putChar(nlist_64.n_desc.off, (char )0);
+        sym.put(nlist_64.n_sect.off, (byte) (sectindex + 1));
+        sym.putChar(nlist_64.n_desc.off, (char) 0);
         sym.putLong(nlist_64.n_value.off, offset);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return sym.array();
     }
 }
-
