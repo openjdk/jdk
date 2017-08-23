@@ -533,41 +533,6 @@ bool oopDesc::has_bias_pattern() const {
   return mark()->has_bias_pattern();
 }
 
-// used only for asserts
-bool oopDesc::is_oop(bool ignore_mark_word) const {
-  oop obj = (oop) this;
-  if (!check_obj_alignment(obj)) return false;
-  if (!Universe::heap()->is_in_reserved(obj)) return false;
-  // obj is aligned and accessible in heap
-  if (Universe::heap()->is_in_reserved(obj->klass_or_null())) return false;
-
-  // Header verification: the mark is typically non-NULL. If we're
-  // at a safepoint, it must not be null.
-  // Outside of a safepoint, the header could be changing (for example,
-  // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
-    return true;
-  }
-  if (mark() != NULL) {
-    return true;
-  }
-  return !SafepointSynchronize::is_at_safepoint();
-}
-
-
-// used only for asserts
-bool oopDesc::is_oop_or_null(bool ignore_mark_word) const {
-  return this == NULL ? true : is_oop(ignore_mark_word);
-}
-
-#ifndef PRODUCT
-// used only for asserts
-bool oopDesc::is_unlocked_oop() const {
-  if (!Universe::heap()->is_in_reserved(this)) return false;
-  return mark()->is_unlocked();
-}
-#endif // PRODUCT
-
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark()->is_marked();

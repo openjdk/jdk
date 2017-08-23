@@ -713,12 +713,12 @@ void Klass::verify_on(outputStream* st) {
   }
 
   if (java_mirror() != NULL) {
-    guarantee(java_mirror()->is_oop(), "should be instance");
+    guarantee(oopDesc::is_oop(java_mirror()), "should be instance");
   }
 }
 
 void Klass::oop_verify_on(oop obj, outputStream* st) {
-  guarantee(obj->is_oop(),  "should be oop");
+  guarantee(oopDesc::is_oop(obj),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
