@@ -56,7 +56,7 @@
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = 230*K;
+int TemplateInterpreter::InterpreterCodeSize = 256*K;
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
