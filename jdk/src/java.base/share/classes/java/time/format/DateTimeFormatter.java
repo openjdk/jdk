@@ -223,7 +223,7 @@ import java.util.Set;
  * <tr>
  * <th scope="row"> {@link #ISO_OFFSET_DATE_TIME}</th>
  * <td> Date Time with Offset
- * </td><td>2011-12-03T10:15:30+01:00'</td>
+ * </td><td>'2011-12-03T10:15:30+01:00'</td>
  * </tr>
  * <tr>
  * <th scope="row"> {@link #ISO_ZONED_DATE_TIME}</th>
@@ -243,7 +243,7 @@ import java.util.Set;
  * <tr>
  * <th scope="row"> {@link #ISO_WEEK_DATE}</th>
  * <td> Year and Week </td>
- * <td>2012-W48-6'</td></tr>
+ * <td>'2012-W48-6'</td></tr>
  * <tr>
  * <th scope="row"> {@link #ISO_INSTANT}</th>
  * <td> Date and Time of an Instant </td>
