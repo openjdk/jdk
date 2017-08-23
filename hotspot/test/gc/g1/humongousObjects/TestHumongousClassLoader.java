@@ -40,6 +40,8 @@ import java.nio.file.Paths;
  * @requires vm.gc.G1
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.opt.ClassUnloading  != false
+ * @requires vm.opt.ClassUnloadingWithConcurrentMark  != false
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

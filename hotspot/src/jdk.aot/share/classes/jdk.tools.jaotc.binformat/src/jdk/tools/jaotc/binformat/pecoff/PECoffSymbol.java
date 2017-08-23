@@ -24,18 +24,15 @@
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import jdk.tools.jaotc.binformat.NativeSymbol;
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SYMBOL;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffSymbol extends NativeSymbol {
-    ByteBuffer sym;
+final class PECoffSymbol extends NativeSymbol {
+    private final ByteBuffer sym;
 
-    public PECoffSymbol(int symbolindex, int strindex, byte type, byte storageclass,
-                        byte sectindex, long offset, long size) {
+    PECoffSymbol(int symbolindex, int strindex, byte type, byte storageclass, byte sectindex, long offset) {
         super(symbolindex);
         sym = PECoffByteBuffer.allocate(IMAGE_SYMBOL.totalsize);
 
@@ -43,19 +40,18 @@ public class PECoffSymbol extends NativeSymbol {
         sym.putInt(IMAGE_SYMBOL.Short.off, 0);
 
         sym.putInt(IMAGE_SYMBOL.Long.off, strindex);
-        sym.putInt(IMAGE_SYMBOL.Value.off, (int)offset);
+        sym.putInt(IMAGE_SYMBOL.Value.off, (int) offset);
 
         // Section indexes start at 1 but we manage the index internally
         // as 0 relative except in this structure
-        sym.putChar(IMAGE_SYMBOL.SectionNumber.off, (char)(sectindex+1));
+        sym.putChar(IMAGE_SYMBOL.SectionNumber.off, (char) (sectindex + 1));
 
-        sym.putChar(IMAGE_SYMBOL.Type.off, (char)type);
+        sym.putChar(IMAGE_SYMBOL.Type.off, (char) type);
         sym.put(IMAGE_SYMBOL.StorageClass.off, storageclass);
-        sym.put(IMAGE_SYMBOL.NumberOfAuxSymbols.off, (byte)0);
+        sym.put(IMAGE_SYMBOL.NumberOfAuxSymbols.off, (byte) 0);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return sym.array();
     }
 }
-
