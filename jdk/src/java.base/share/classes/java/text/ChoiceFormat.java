@@ -202,26 +202,26 @@ public class ChoiceFormat extends NumberFormat {
                 segments[part].append(ch);
             } else if (ch == '<' || ch == '#' || ch == '\u2264') {
                 if (segments[0].length() == 0) {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("Each interval must"
+                            + " contain a number before a format");
                 }
-                try {
-                    String tempBuffer = segments[0].toString();
-                    if (tempBuffer.equals("\u221E")) {
-                        startValue = Double.POSITIVE_INFINITY;
-                    } else if (tempBuffer.equals("-\u221E")) {
-                        startValue = Double.NEGATIVE_INFINITY;
-                    } else {
-                        startValue = Double.valueOf(segments[0].toString()).doubleValue();
-                    }
-                } catch (Exception e) {
-                    throw new IllegalArgumentException();
+
+                String tempBuffer = segments[0].toString();
+                if (tempBuffer.equals("\u221E")) {
+                    startValue = Double.POSITIVE_INFINITY;
+                } else if (tempBuffer.equals("-\u221E")) {
+                    startValue = Double.NEGATIVE_INFINITY;
+                } else {
+                    startValue = Double.valueOf(tempBuffer);
                 }
+
                 if (ch == '<' && startValue != Double.POSITIVE_INFINITY &&
                         startValue != Double.NEGATIVE_INFINITY) {
                     startValue = nextDouble(startValue);
                 }
                 if (startValue <= oldStartValue) {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("Incorrect order of"
+                            + " intervals, must be in ascending order");
                 }
                 segments[0].setLength(0);
                 part = 1;

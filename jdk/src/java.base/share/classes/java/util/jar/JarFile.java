@@ -25,20 +25,35 @@
 
 package java.util.jar;
 
-import java.io.*;
-import java.lang.ref.SoftReference;
-import java.net.URL;
-import java.util.*;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.zip.*;
-import java.security.CodeSigner;
-import java.security.cert.Certificate;
-import java.security.CodeSource;
 import jdk.internal.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
+
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.SoftReference;
+import java.net.URL;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
 /**
  * The {@code JarFile} class is used to read the contents of a jar file
@@ -848,7 +863,7 @@ class JarFile extends ZipFile {
     private static final byte[] MULTIRELEASE_OPTOSFT;
 
     static {
-        CLASSPATH_LASTOCC = new byte[64];
+        CLASSPATH_LASTOCC = new byte[65];
         CLASSPATH_OPTOSFT = new byte[12];
         CLASSPATH_LASTOCC[(int)'C' - 32] = 1;
         CLASSPATH_LASTOCC[(int)'L' - 32] = 2;
@@ -865,7 +880,7 @@ class JarFile extends ZipFile {
         }
         CLASSPATH_OPTOSFT[11] = 1;
 
-        MULTIRELEASE_LASTOCC = new byte[64];
+        MULTIRELEASE_LASTOCC = new byte[65];
         MULTIRELEASE_OPTOSFT = new byte[19];
         MULTIRELEASE_LASTOCC[(int)'M' - 32] = 1;
         MULTIRELEASE_LASTOCC[(int)'I' - 32] = 5;
