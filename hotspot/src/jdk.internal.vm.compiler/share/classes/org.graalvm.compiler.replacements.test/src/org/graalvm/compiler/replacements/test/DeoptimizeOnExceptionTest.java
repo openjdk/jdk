@@ -24,16 +24,25 @@ package org.graalvm.compiler.replacements.test;
 
 import java.util.Random;
 
+import org.graalvm.compiler.api.directives.GraalDirectives;
+import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
+import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.AbstractInliningPhase;
 import org.graalvm.compiler.test.ExportingClassLoader;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
@@ -88,6 +97,61 @@ public class DeoptimizeOnExceptionTest extends GraalCompilerTest {
             Assert.fail();
         }
         return "SUCCESS";
+    }
+
+    @Test
+    public void test3() {
+        Assume.assumeTrue("Only works on jdk8 right now", Java8OrEarlier);
+        ResolvedJavaMethod method = getResolvedJavaMethod("test3Snippet");
+
+        for (int i = 0; i < 2; i++) {
+            Result actual;
+            boolean expectedCompiledCode = (method.getProfilingInfo().getDeoptimizationCount(DeoptimizationReason.NotCompiledExceptionHandler) != 0);
+            InstalledCode code = getCode(method, null, false, true, new OptionValues(getInitialOptions(), HighTier.Options.Inline, false));
+            assertTrue(code.isValid());
+
+            try {
+                actual = new Result(code.executeVarargs(false), null);
+            } catch (Exception e) {
+                actual = new Result(null, e);
+            }
+
+            assertTrue(i > 0 == expectedCompiledCode, "expect compiled code to stay around after the first iteration");
+            assertEquals(new Result(expectedCompiledCode, null), actual);
+            assertTrue(expectedCompiledCode == code.isValid());
+        }
+    }
+
+    @Override
+    protected InlineInvokePlugin.InlineInfo bytecodeParserShouldInlineInvoke(GraphBuilderContext b, ResolvedJavaMethod method, ValueNode[] args) {
+        if (method.getName().equals("throwException")) {
+            if (b.getMethod().getProfilingInfo().getDeoptimizationCount(DeoptimizationReason.NotCompiledExceptionHandler) != 0) {
+                return InlineInvokePlugin.InlineInfo.DO_NOT_INLINE_WITH_EXCEPTION;
+            } else {
+                return InlineInvokePlugin.InlineInfo.DO_NOT_INLINE_NO_EXCEPTION;
+            }
+        }
+        return super.bytecodeParserShouldInlineInvoke(b, method, args);
+    }
+
+    private static void throwException() throws Exception {
+        throw new Exception();
+    }
+
+    static int footprint;
+
+    public static boolean test3Snippet(boolean rethrowException) throws Exception {
+        try {
+            footprint = 1;
+            throwException();
+        } catch (Exception e) {
+            footprint = 2;
+            if (rethrowException) {
+                throw e;
+            }
+        }
+
+        return GraalDirectives.inCompiledCode();
     }
 
     public static class MyClassLoader extends ExportingClassLoader {

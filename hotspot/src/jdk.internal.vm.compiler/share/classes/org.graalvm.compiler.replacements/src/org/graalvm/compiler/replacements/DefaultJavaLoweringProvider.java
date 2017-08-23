@@ -59,8 +59,10 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.AddNode;
+import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerBelowNode;
 import org.graalvm.compiler.nodes.calc.IntegerConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.LeftShiftNode;
 import org.graalvm.compiler.nodes.calc.NarrowNode;
@@ -577,7 +579,7 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         } else {
             memoryRead.setGuard(guard);
         }
-        ValueNode readValue = implicitLoadConvert(graph, readKind, memoryRead, compressible);
+        ValueNode readValue = performBooleanCoercionIfNecessary(implicitLoadConvert(graph, readKind, memoryRead, compressible), readKind);
         load.replaceAtUsages(readValue);
         return memoryRead;
     }
@@ -592,9 +594,18 @@ public abstract class DefaultJavaLoweringProvider implements LoweringProvider {
         // An unsafe read must not float otherwise it may float above
         // a test guaranteeing the read is safe.
         memoryRead.setForceFixed(true);
-        ValueNode readValue = implicitLoadConvert(graph, readKind, memoryRead, false);
+        ValueNode readValue = performBooleanCoercionIfNecessary(implicitLoadConvert(graph, readKind, memoryRead, false), readKind);
         load.replaceAtUsages(readValue);
         graph.replaceFixedWithFixed(load, memoryRead);
+    }
+
+    private static ValueNode performBooleanCoercionIfNecessary(ValueNode readValue, JavaKind readKind) {
+        if (readKind == JavaKind.Boolean) {
+            StructuredGraph graph = readValue.graph();
+            IntegerEqualsNode eq = graph.addOrUnique(new IntegerEqualsNode(readValue, ConstantNode.forInt(0, graph)));
+            return graph.addOrUnique(new ConditionalNode(eq, ConstantNode.forBoolean(false, graph), ConstantNode.forBoolean(true, graph)));
+        }
+        return readValue;
     }
 
     protected void lowerUnsafeStoreNode(RawStoreNode store) {

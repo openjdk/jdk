@@ -24,15 +24,12 @@ package org.graalvm.compiler.options;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.graalvm.compiler.options.EnumOptionKey.ValueHelp;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 import org.graalvm.util.UnmodifiableEconomicMap;
@@ -165,10 +162,9 @@ public class OptionValues {
      * @return {@code text} broken into lines
      */
     private static List<String> wrap(String text, int width) {
-        List<String> lines = Collections.singletonList(text);
+        List<String> lines = new ArrayList<>();
         if (text.length() > width) {
             String[] chunks = text.split("\\s+");
-            lines = new ArrayList<>();
             StringBuilder line = new StringBuilder();
             for (String chunk : chunks) {
                 if (line.length() + chunk.length() > width) {
@@ -178,22 +174,13 @@ public class OptionValues {
                 if (line.length() != 0) {
                     line.append(' ');
                 }
-                String[] embeddedLines = chunk.split("%n", -2);
-                if (embeddedLines.length == 1) {
-                    line.append(chunk);
-                } else {
-                    for (int i = 0; i < embeddedLines.length; i++) {
-                        line.append(embeddedLines[i]);
-                        if (i < embeddedLines.length - 1) {
-                            lines.add(line.toString());
-                            line.setLength(0);
-                        }
-                    }
-                }
+                line.append(chunk);
             }
             if (line.length() != 0) {
                 lines.add(line.toString());
             }
+        } else {
+            lines.add(text);
         }
         return lines;
     }
@@ -222,24 +209,7 @@ public class OptionValues {
             if (value instanceof String) {
                 value = '"' + String.valueOf(value) + '"';
             }
-            String help = desc.getHelp();
-            if (desc.getOptionKey() instanceof EnumOptionKey) {
-                EnumOptionKey<?> eoption = (EnumOptionKey<?>) desc.getOptionKey();
-                EnumSet<?> evalues = eoption.getAllValues();
-                String evaluesString = evalues.toString();
-                ValueHelp<?> valueHelp = eoption.getValueHelp();
-                if (help.length() > 0 && !help.endsWith(".")) {
-                    help += ".";
-                }
-                if (valueHelp == null) {
-                    help += " Valid values are: " + evaluesString.substring(1, evaluesString.length() - 1);
-                } else {
-                    for (Object o : evalues) {
-                        String vhelp = valueHelp.getHelp(o);
-                        help += "%n" + (vhelp == null ? o : vhelp);
-                    }
-                }
-            }
+
             String name = namePrefix + e.getKey();
             String assign = containsKey(desc.optionKey) ? ":=" : "=";
             String typeName = desc.getOptionKey() instanceof EnumOptionKey ? "String" : desc.getType().getSimpleName();
@@ -252,11 +222,16 @@ public class OptionValues {
                 out.printf("%s[%s]%n", linePrefix, typeName);
             }
 
+            List<String> helpLines;
+            String help = desc.getHelp();
             if (help.length() != 0) {
-                List<String> helpLines = wrap(help, PROPERTY_LINE_WIDTH - PROPERTY_HELP_INDENT);
-                for (int i = 0; i < helpLines.size(); i++) {
-                    out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", helpLines.get(i));
-                }
+                helpLines = wrap(help, PROPERTY_LINE_WIDTH - PROPERTY_HELP_INDENT);
+                helpLines.addAll(desc.getExtraHelp());
+            } else {
+                helpLines = desc.getExtraHelp();
+            }
+            for (String line : helpLines) {
+                out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", line);
             }
         }
     }

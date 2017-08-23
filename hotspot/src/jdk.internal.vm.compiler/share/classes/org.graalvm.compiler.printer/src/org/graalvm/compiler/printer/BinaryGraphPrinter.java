@@ -366,7 +366,7 @@ public class BinaryGraphPrinter implements
             return ((Class<?>) obj).getName();
         }
         if (obj instanceof ResolvedJavaType) {
-            return ((ResolvedJavaType) obj).getName();
+            return ((ResolvedJavaType) obj).toJavaName();
         }
         return null;
     }
@@ -403,7 +403,7 @@ public class BinaryGraphPrinter implements
 
     @Override
     public String fieldTypeName(ResolvedJavaField field) {
-        return field.getType().getName();
+        return field.getType().toJavaName();
     }
 
     @Override

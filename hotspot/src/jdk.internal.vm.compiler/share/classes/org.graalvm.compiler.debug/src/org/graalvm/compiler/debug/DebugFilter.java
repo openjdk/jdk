@@ -28,8 +28,11 @@ import java.util.regex.Pattern;
 import org.graalvm.compiler.debug.DebugContext.Scope;
 
 /**
- * Implements the filter specified by the {@link DebugOptions#Dump}, {@link DebugOptions#Log},
- * {@link DebugOptions#Count} and {@link DebugOptions#Time} options.
+ * Implements the filter specified by options such as {@link DebugOptions#Dump},
+ * {@link DebugOptions#Log}, {@link DebugOptions#Count} and {@link DebugOptions#Time}.
+ *
+ * See <a href="DumpHelp.txt">here</a> for a description of the filter syntax.
+ *
  * <p>
  * These options enable the associated debug facility if their filter matches the
  * {@linkplain Scope#getQualifiedName() name} of the current scope. For the
@@ -37,47 +40,7 @@ import org.graalvm.compiler.debug.DebugContext.Scope;
  * {@link DebugOptions#Count} and {@link DebugOptions#Time} options don't have a level, for them
  * {@code level = 0} means disabled and a {@code level > 0} means enabled.
  * <p>
- * A filter is a list of comma-separated terms of the form {@code <pattern>[:<level>]}. {@code
- * <pattern>} is interpreted as a glob pattern if it contains a "*" or "?" character. Otherwise, it
- * is interpreted as a substring. If {@code <pattern>} is empty, it matches every scope. If {@code :
- * <level>} is omitted, it defaults to {@link DebugContext#BASIC_LEVEL}. The term {@code ~<pattern>}
- * is a shorthand for {@code <pattern>:0} to disable a debug facility for a pattern.
- * <p>
- * The resulting log level of a scope is determined by the <em>last</em> matching term. If no term
- * matches, the log level is 0 (disabled). A filter with no terms matches every scope with a log
- * level of {@link DebugContext#BASIC_LEVEL}.
- *
- * <h2>Examples of filters</h2>
- *
- * <ul>
- * <li>(empty string)<br>
- * Matches any scope with log level {@link DebugContext#BASIC_LEVEL}.
- *
- * <li>{@code :1}<br>
- * Matches any scope with log level 1.
- *
- * <li>{@code *}<br>
- * Matches any scope with log level {@link DebugContext#BASIC_LEVEL}.
- *
- * <li>{@code CodeGen,CodeInstall}<br>
- * Matches scopes containing "CodeGen" or "CodeInstall", both with log level
- * {@link DebugContext#BASIC_LEVEL}.
- *
- * <li>{@code CodeGen:2,CodeInstall:1}<br>
- * Matches scopes containing "CodeGen" with log level 2, or "CodeInstall" with log level 1.
- *
- * <li>{@code :1,Dead:2}<br>
- * Matches scopes containing "Dead" with log level 2, and all other scopes with log level 1.
- *
- * <li>{@code :1,Dead:0}<br>
- * Matches all scopes with log level 1, except those containing "Dead".
- *
- * <li>{@code Code*}<br>
- * Matches scopes starting with "Code" with log level {@link DebugContext#BASIC_LEVEL}.
- *
- * <li>{@code Code,~Dead}<br>
- * Matches scopes containing "Code" but not "Dead", with log level {@link DebugContext#BASIC_LEVEL}.
- * </ul>
+ * The syntax for a filter is explained <a href="file:doc-files/DumpHelp.txt">here</a>.
  */
 final class DebugFilter {
 
@@ -148,13 +111,16 @@ final class DebugFilter {
         if (terms == null) {
             return DebugContext.BASIC_LEVEL;
         } else {
-            int level = 0;
+            int defaultLevel = 0;
+            int level = -1;
             for (Term t : terms) {
-                if (t.matches(input)) {
+                if (t.isMatchAny()) {
+                    defaultLevel = t.level;
+                } else if (t.matches(input)) {
                     level = t.level;
                 }
             }
-            return level;
+            return level == -1 ? defaultLevel : level;
         }
     }
 
@@ -176,7 +142,7 @@ final class DebugFilter {
 
         Term(String filter, int level) {
             this.level = level;
-            if (filter.isEmpty()) {
+            if (filter.isEmpty() || filter.equals("*")) {
                 this.pattern = null;
             } else if (filter.contains("*") || filter.contains("?")) {
                 this.pattern = Pattern.compile(MethodFilter.createGlobString(filter));
@@ -190,6 +156,10 @@ final class DebugFilter {
          */
         public boolean matches(String input) {
             return pattern == null || pattern.matcher(input).matches();
+        }
+
+        public boolean isMatchAny() {
+            return pattern == null;
         }
 
         @Override

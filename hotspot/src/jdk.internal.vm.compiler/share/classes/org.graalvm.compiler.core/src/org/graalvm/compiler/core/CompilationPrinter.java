@@ -58,6 +58,11 @@ public final class CompilationPrinter {
      */
     public static CompilationPrinter begin(OptionValues options, CompilationIdentifier id, JavaMethod method, int entryBCI) {
         if (PrintCompilation.getValue(options) && !TTY.isSuppressed()) {
+            try {
+                Class.forName("java.lang.management.ManagementFactory");
+            } catch (ClassNotFoundException ex) {
+                throw new IllegalArgumentException("PrintCompilation option requires java.management module");
+            }
             return new CompilationPrinter(id, method, entryBCI);
         }
         return DISABLED;
