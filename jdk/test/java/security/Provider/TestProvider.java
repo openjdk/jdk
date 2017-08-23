@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2015, 2016, 2017 Oracle and/or its affiliates. All rights
+ * reserved. DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -20,26 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package provider;
+package p;
 
 import java.security.Provider;
 
 /**
  * Custom Security provider for modular test.
  */
-public final class TestSecurityProvider extends Provider {
+public final class TestProvider extends Provider {
 
-    public TestSecurityProvider() {
-        super("TEST", "1.0", "Test Security provider");
+    public TestProvider() {
+        super("TestProvider", "1.0", "Test Security provider");
         System.out.println(String.format("TEST Security provider loaded"
                 + " successfully : %s", this.toString()));
     }
 
     @Override
     public String toString() {
-        return "TestSecurityProvider [getName()=" + getName()
+        return "TestProvider [getName()=" + getName()
                 + ", getVersion()=" + getVersionStr() + ", getInfo()="
                 + getInfo() + ", toString()=" + super.toString() + "]";
     }
-
 }
