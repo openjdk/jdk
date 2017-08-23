@@ -40,6 +40,14 @@ class G1FromCardCache : public AllStatic {
   static int** _cache;
   static uint _max_regions;
   static size_t _static_mem_size;
+#ifdef ASSERT
+  static uint _max_workers;
+
+  static void check_bounds(uint worker_id, uint region_idx) {
+    assert(worker_id < _max_workers, "Worker_id %u is larger than maximum %u", worker_id, _max_workers);
+    assert(region_idx < _max_regions, "Region_idx %u is larger than maximum %u", region_idx, _max_regions);
+  }
+#endif
 
  public:
   enum {
@@ -61,10 +69,12 @@ class G1FromCardCache : public AllStatic {
   }
 
   static int at(uint worker_id, uint region_idx) {
+    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
     return _cache[region_idx][worker_id];
   }
 
   static void set(uint worker_id, uint region_idx, int val) {
+    DEBUG_ONLY(check_bounds(worker_id, region_idx);)
     _cache[region_idx][worker_id] = val;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test SharedStringsAuto
+ * @requires vm.cds
  * @summary Test -Xshare:auto with shared strings.
  * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
@@ -34,35 +35,15 @@
  * @run main SharedStringsRunAuto
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 
 public class SharedStringsRunAuto {
     public static void main(String[] args) throws Exception {
-        // Dump
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./SharedStringsRunAuto.jsa",
-            "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-            "-XX:+PrintSharedSpaces",
-            "-Xshare:dump");
-
-        new OutputAnalyzer(pb.start())
-            .shouldContain("Loading classes to share")
-            .shouldContain("Shared string table stats")
-            .shouldHaveExitValue(0);
-
-        // Run with -Xshare:auto
-        pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./SharedStringsRunAuto.jsa",
-           "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-           "-Xshare:auto",
-           "-version");
-
-        new OutputAnalyzer(pb.start())
-            .shouldMatch("(java|openjdk) version")
-            .shouldHaveExitValue(0);
+        OutputAnalyzer out =
+            CDSTestUtils.createArchive("-XX:+UseCompressedOops", "-XX:+UseG1GC");
+        CDSTestUtils.checkDump(out, "Shared string table stats");
+        CDSTestUtils.runWithArchiveAndCheck("-XX:+UseCompressedOops", "-XX:+UseG1GC");
     }
 }

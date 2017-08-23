@@ -213,6 +213,7 @@ public:
 
   // iterate over symbols
   static void symbols_do(SymbolClosure *cl);
+  static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Symbol creation
   static Symbol* new_symbol(const char* utf8_buffer, int length, TRAPS) {
@@ -255,6 +256,7 @@ public:
   static void read(const char* filename, TRAPS);
 
   // Sharing
+  static void write_to_archive();
   static void serialize(SerializeClosure* soc);
   static u4 encode_shared(Symbol* sym);
   static Symbol* decode_shared(u4 offset);

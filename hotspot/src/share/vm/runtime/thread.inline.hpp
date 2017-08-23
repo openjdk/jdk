@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,12 @@ inline void Thread::set_critical_native_unlock() {
 }
 inline void Thread::clear_critical_native_unlock() {
   clear_suspend_flag(_critical_native_unlock);
+}
+inline void Thread::set_trace_flag() {
+  set_suspend_flag(_trace_flag);
+}
+inline void Thread::clear_trace_flag() {
+  clear_suspend_flag(_trace_flag);
 }
 
 inline jlong Thread::cooked_allocated_bytes() {

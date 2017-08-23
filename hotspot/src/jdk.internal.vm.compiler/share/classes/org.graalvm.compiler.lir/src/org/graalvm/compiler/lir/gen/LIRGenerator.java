@@ -22,16 +22,14 @@
  */
 package org.graalvm.compiler.lir.gen;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.asJavaConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
-import static org.graalvm.compiler.lir.LIRValueUtil.isJavaConstant;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
-import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 import static jdk.vm.ci.code.ValueUtil.asAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.isLegal;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
+import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVariable;
+import static org.graalvm.compiler.lir.LIRValueUtil.isVirtualStackSlot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +47,7 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.lir.ConstantValue;
+import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRVerifier;
@@ -60,8 +59,9 @@ import org.graalvm.compiler.lir.StandardOp.SaveRegistersOp;
 import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -86,9 +86,9 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     public static class Options {
         // @formatter:off
         @Option(help = "Print HIR along side LIR as the latter is generated", type = OptionType.Debug)
-        public static final OptionValue<Boolean> PrintIRWithLIR = new OptionValue<>(false);
+        public static final OptionKey<Boolean> PrintIRWithLIR = new OptionKey<>(false);
         @Option(help = "The trace level for the LIR generator", type = OptionType.Debug)
-        public static final OptionValue<Integer> TraceLIRGeneratorLevel = new OptionValue<>(0);
+        public static final OptionKey<Integer> TraceLIRGeneratorLevel = new OptionKey<>(0);
         // @formatter:on
     }
 
@@ -103,11 +103,17 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
     protected final ArithmeticLIRGenerator arithmeticLIRGen;
     private final MoveFactory moveFactory;
 
+    private final boolean printIrWithLir;
+    private final int traceLIRGeneratorLevel;
+
     public LIRGenerator(LIRKindTool lirKindTool, ArithmeticLIRGenerator arithmeticLIRGen, MoveFactory moveFactory, CodeGenProviders providers, LIRGenerationResult res) {
         this.lirKindTool = lirKindTool;
         this.arithmeticLIRGen = arithmeticLIRGen;
         this.res = res;
         this.providers = providers;
+        OptionValues options = res.getLIR().getOptions();
+        this.printIrWithLir = !TTY.isSuppressed() && Options.PrintIRWithLIR.getValue(options);
+        this.traceLIRGeneratorLevel = TTY.isSuppressed() ? 0 : Options.TraceLIRGeneratorLevel.getValue(options);
 
         assert arithmeticLIRGen.lirGen == null;
         arithmeticLIRGen.lirGen = this;
@@ -219,7 +225,7 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public Value emitConstant(LIRKind kind, Constant constant) {
-        if (constant instanceof JavaConstant && moveFactory.canInlineConstant((JavaConstant) constant)) {
+        if (moveFactory.canInlineConstant(constant)) {
             return new ConstantValue(toRegisterKind(kind), constant);
         } else {
             return emitLoadConstant(kind, constant);
@@ -259,7 +265,7 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public Value loadNonConst(Value value) {
-        if (isJavaConstant(value) && !moveFactory.canInlineConstant(asJavaConstant(value))) {
+        if (isConstantValue(value) && !moveFactory.canInlineConstant(asConstant(value))) {
             return emitMove(value);
         }
         return value;
@@ -297,12 +303,13 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public <I extends LIRInstruction> I append(I op) {
-        if (Options.PrintIRWithLIR.getValue() && !TTY.isSuppressed()) {
+        LIR lir = res.getLIR();
+        if (printIrWithLir) {
             TTY.println(op.toStringWithIdPrefix());
             TTY.println();
         }
         assert LIRVerifier.verify(op);
-        List<LIRInstruction> lirForBlock = res.getLIR().getLIRforBlock(getCurrentBlock());
+        ArrayList<LIRInstruction> lirForBlock = lir.getLIRforBlock(getCurrentBlock());
         op.setPosition(currentPosition);
         lirForBlock.add(op);
         return op;
@@ -310,7 +317,7 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
     @Override
     public boolean hasBlockEnd(AbstractBlockBase<?> block) {
-        List<LIRInstruction> ops = getResult().getLIR().getLIRforBlock(block);
+        ArrayList<LIRInstruction> ops = getResult().getLIR().getLIRforBlock(block);
         if (ops.size() == 0) {
             return false;
         }
@@ -324,7 +331,7 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
         }
 
         private void doBlockStart() {
-            if (Options.PrintIRWithLIR.getValue()) {
+            if (printIrWithLir) {
                 TTY.print(currentBlock.toString());
             }
 
@@ -334,17 +341,17 @@ public abstract class LIRGenerator implements LIRGeneratorTool {
 
             append(new LabelOp(new Label(currentBlock.getId()), currentBlock.isAligned()));
 
-            if (Options.TraceLIRGeneratorLevel.getValue() >= 1) {
+            if (traceLIRGeneratorLevel >= 1) {
                 TTY.println("BEGIN Generating LIR for block B" + currentBlock.getId());
             }
         }
 
         private void doBlockEnd() {
-            if (Options.TraceLIRGeneratorLevel.getValue() >= 1) {
+            if (traceLIRGeneratorLevel >= 1) {
                 TTY.println("END Generating LIR for block B" + currentBlock.getId());
             }
 
-            if (Options.PrintIRWithLIR.getValue()) {
+            if (printIrWithLir) {
                 TTY.println();
             }
             currentBlock = null;

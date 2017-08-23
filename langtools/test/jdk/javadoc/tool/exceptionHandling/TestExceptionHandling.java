@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,27 +31,30 @@
  *      jdk.javadoc/jdk.javadoc.internal.tool
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- * @build toolbox.ToolBox toolbox.TestRunner
+ * @build toolbox.ToolBox toolbox.TestRunner toolbox.JavadocTask toolbox.Task
  * @run main TestExceptionHandling
  */
 
-import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import toolbox.*;
+import toolbox.JavadocTask;
+import toolbox.Task;
+import toolbox.TestRunner;
+import toolbox.ToolBox;
 
 /**
  * This class tests if stack traces printed when
  * --dump-on-error. The standard doclet is used,
  * to test the doclet as well as the tool.
  */
-public class TestExceptionHandling  extends TestRunner {
+public class TestExceptionHandling extends TestRunner {
 
     final ToolBox tb;
-    final File testSrcFile;
+    final Path testSrcFile;
     final PrintStream ostream;
     final JavadocTask cmdTask;
     final JavadocTask apiTask;
@@ -61,11 +64,12 @@ public class TestExceptionHandling  extends TestRunner {
         tester.runTests();
     }
 
-    TestExceptionHandling() {
+    TestExceptionHandling() throws IOException {
         super(System.err);
         tb = new ToolBox();
         ostream = System.err;
-        testSrcFile = new File(System.getProperty("test.src"), "TestExceptionHandling.java");
+        testSrcFile = Paths.get("A.java").toAbsolutePath();
+        tb.writeFile(testSrcFile, "public class A { }");
         cmdTask = new JavadocTask(tb, Task.Mode.CMDLINE);
         apiTask = new JavadocTask(tb, Task.Mode.API);
     }
@@ -77,7 +81,7 @@ public class TestExceptionHandling  extends TestRunner {
         out.toFile().createNewFile();
         cmdTask.outdir(out);
         cmdTask.options("--dump-on-error");
-        cmdTask.files(testSrcFile.getAbsolutePath());
+        cmdTask.files(testSrcFile);
         Task.Result tr = cmdTask.run(Task.Expect.FAIL);
 
         String errString = "Destination directory is not a directory: " + out.toString();
@@ -94,7 +98,7 @@ public class TestExceptionHandling  extends TestRunner {
         Path out = Paths.get("out.dir");
         cmdTask.options("--dump-on-error", "-doclet", "NonExistentDoclet");
         cmdTask.outdir(out);
-        cmdTask.files(testSrcFile.getAbsolutePath());
+        cmdTask.files(testSrcFile);
         Task.Result tr = cmdTask.run(Task.Expect.FAIL);
 
         // check the regular message

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ class OopMapCacheEntry: private InterpreterOopMap {
 
  protected:
   // Initialization
-  void fill(methodHandle method, int bci);
+  void fill(const methodHandle& method, int bci);
   // fills the bit mask for native calls
-  void fill_for_native(methodHandle method);
+  void fill_for_native(const methodHandle& method);
   void set_mask(CellTypeState* vars, CellTypeState* stack, int stack_top);
 
   // Deallocate bit masks and initialize fields
@@ -80,7 +80,7 @@ class OopMapForCacheEntry: public GenerateOopMap {
   virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars);
 
  public:
-  OopMapForCacheEntry(methodHandle method, int bci, OopMapCacheEntry *entry);
+  OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry *entry);
 
   // Computes stack map for (method,bci) and initialize entry
   void compute_map(TRAPS);
@@ -88,7 +88,7 @@ class OopMapForCacheEntry: public GenerateOopMap {
 };
 
 
-OopMapForCacheEntry::OopMapForCacheEntry(methodHandle method, int bci, OopMapCacheEntry* entry) : GenerateOopMap(method) {
+OopMapForCacheEntry::OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry* entry) : GenerateOopMap(method) {
   _bci       = bci;
   _entry     = entry;
   _stack_top = -1;
@@ -242,7 +242,7 @@ class MaskFillerForNative: public NativeSignatureIterator {
   void pass_double()                             { /* ignore */ }
   void pass_object()                             { set_one(offset()); }
 
-  MaskFillerForNative(methodHandle method, uintptr_t* mask, int size) : NativeSignatureIterator(method) {
+  MaskFillerForNative(const methodHandle& method, uintptr_t* mask, int size) : NativeSignatureIterator(method) {
     _mask   = mask;
     _size   = size;
     // initialize with 0
@@ -301,7 +301,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
 }
 
 
-void OopMapCacheEntry::fill_for_native(methodHandle mh) {
+void OopMapCacheEntry::fill_for_native(const methodHandle& mh) {
   assert(mh->is_native(), "method must be native method");
   set_mask_size(mh->size_of_parameters() * bits_per_entry);
   allocate_bit_mask();
@@ -311,7 +311,7 @@ void OopMapCacheEntry::fill_for_native(methodHandle mh) {
 }
 
 
-void OopMapCacheEntry::fill(methodHandle method, int bci) {
+void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   HandleMark hm;
   // Flush entry to deallocate an existing entry
   flush();

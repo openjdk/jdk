@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,22 +87,24 @@ const char* InvocationCounter::state_as_string(State state) {
   switch (state) {
     case wait_for_nothing            : return "wait_for_nothing";
     case wait_for_compile            : return "wait_for_compile";
+    default:
+      ShouldNotReachHere();
+      return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 const char* InvocationCounter::state_as_short_string(State state) {
   switch (state) {
     case wait_for_nothing            : return "not comp.";
     case wait_for_compile            : return "compileable";
+    default:
+      ShouldNotReachHere();
+      return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 
-static address do_nothing(methodHandle method, TRAPS) {
+static address do_nothing(const methodHandle& method, TRAPS) {
   // dummy action for inactive invocation counters
   MethodCounters* mcs = method->method_counters();
   assert(mcs != NULL, "");
@@ -112,7 +114,7 @@ static address do_nothing(methodHandle method, TRAPS) {
 }
 
 
-static address do_decay(methodHandle method, TRAPS) {
+static address do_decay(const methodHandle& method, TRAPS) {
   // decay invocation counters so compilation gets delayed
   MethodCounters* mcs = method->method_counters();
   assert(mcs != NULL, "");
@@ -128,7 +130,7 @@ void InvocationCounter::def(State state, int init, Action action) {
   _action[state] = action;
 }
 
-address dummy_invocation_counter_overflow(methodHandle m, TRAPS) {
+address dummy_invocation_counter_overflow(const methodHandle& m, TRAPS) {
   ShouldNotReachHere();
   return NULL;
 }

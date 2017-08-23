@@ -38,10 +38,10 @@ public class SafepointCleanupTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[safepoint,cleanup]");
+        output.shouldContain("safepoint cleanup tasks");
         output.shouldContain("deflating idle monitors");
         output.shouldContain("updating inline caches");
         output.shouldContain("compilation policy safepoint handler");
-        output.shouldContain("mark nmethods");
         output.shouldContain("purging class loader data graph");
         output.shouldHaveExitValue(0);
     }

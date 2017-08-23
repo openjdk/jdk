@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #include "precompiled.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "prims/jvm.h"
+#include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
 
@@ -46,8 +48,6 @@ CompactHashtableWriter::CompactHashtableWriter(int num_buckets,
     _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, true, mtSymbol);
   }
 
-  stats->bucket_count = _num_buckets;
-  stats->bucket_bytes = (_num_buckets + 1) * (sizeof(u4));
   _stats = stats;
   _compact_buckets = NULL;
   _compact_entries = NULL;
@@ -89,13 +89,13 @@ void CompactHashtableWriter::allocate_table() {
                                   "Too many entries.");
   }
 
-  Thread* THREAD = VMThread::vm_thread();
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  _compact_buckets = MetadataFactory::new_array<u4>(loader_data, _num_buckets + 1, THREAD);
-  _compact_entries = MetadataFactory::new_array<u4>(loader_data, entries_space, THREAD);
+  _compact_buckets = MetaspaceShared::new_ro_array<u4>(_num_buckets + 1);
+  _compact_entries = MetaspaceShared::new_ro_array<u4>(entries_space);
 
+  _stats->bucket_count    = _num_buckets;
+  _stats->bucket_bytes    = _compact_buckets->size() * BytesPerWord;
   _stats->hashentry_count = _num_entries;
-  _stats->hashentry_bytes = entries_space * sizeof(u4);
+  _stats->hashentry_bytes = _compact_entries->size() * BytesPerWord;
 }
 
 // Write the compact table's buckets
@@ -146,22 +146,27 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  if (PrintSharedSpaces) {
+  if (log_is_enabled(Info, cds, hashtables)) {
+    ResourceMark rm;
+    LogMessage(cds, hashtables) msg;
+    stringStream info_stream;
+
     double avg_cost = 0.0;
     if (_num_entries > 0) {
       avg_cost = double(table_bytes)/double(_num_entries);
     }
-    tty->print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
-                  table_name, (intptr_t)base_address);
-    tty->print_cr("Number of entries       : %9d", _num_entries);
-    tty->print_cr("Total bytes used        : %9d", table_bytes);
-    tty->print_cr("Average bytes per entry : %9.3f", avg_cost);
-    tty->print_cr("Average bucket size     : %9.3f", summary.avg());
-    tty->print_cr("Variance of bucket size : %9.3f", summary.variance());
-    tty->print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
-    tty->print_cr("Empty buckets           : %9d", _num_empty_buckets);
-    tty->print_cr("Value_Only buckets      : %9d", _num_value_only_buckets);
-    tty->print_cr("Other buckets           : %9d", _num_other_buckets);
+    info_stream.print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
+                         table_name, (intptr_t)base_address);
+    info_stream.print_cr("Number of entries       : %9d", _num_entries);
+    info_stream.print_cr("Total bytes used        : %9d", table_bytes);
+    info_stream.print_cr("Average bytes per entry : %9.3f", avg_cost);
+    info_stream.print_cr("Average bucket size     : %9.3f", summary.avg());
+    info_stream.print_cr("Variance of bucket size : %9.3f", summary.variance());
+    info_stream.print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
+    info_stream.print_cr("Empty buckets           : %9d", _num_empty_buckets);
+    info_stream.print_cr("Value_Only buckets      : %9d", _num_value_only_buckets);
+    info_stream.print_cr("Other buckets           : %9d", _num_other_buckets);
+    msg.info("%s", info_stream.as_string());
   }
 }
 
@@ -170,12 +175,11 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
 // Customization for dumping Symbol and String tables
 
 void CompactSymbolTableWriter::add(unsigned int hash, Symbol *symbol) {
-  address base_address = address(MetaspaceShared::shared_rs()->base());
-
-  uintx deltax = address(symbol) - base_address;
-  // The symbols are in RO space, which is smaler than MAX_SHARED_DELTA.
-  // The assert below is just to be extra cautious.
-  assert(deltax <= MAX_SHARED_DELTA, "the delta is too large to encode");
+  uintx deltax = MetaspaceShared::object_delta(symbol);
+  // When the symbols are stored into the archive, we already check that
+  // they won't be more than MAX_SHARED_DELTA from the base address, or
+  // else the dumping would have been aborted.
+  assert(deltax <= MAX_SHARED_DELTA, "must not be");
   u4 delta = u4(deltax);
 
   CompactHashtableWriter::add(hash, delta);
@@ -236,7 +240,6 @@ bool SimpleCompactHashtable::exists(u4 value) {
 
 template <class I>
 inline void SimpleCompactHashtable::iterate(const I& iterator) {
-  assert(!DumpSharedSpaces, "run-time only");
   for (u4 i = 0; i < _bucket_count; i++) {
     u4 bucket_info = _buckets[i];
     u4 bucket_offset = BUCKET_OFFSET(bucket_info);

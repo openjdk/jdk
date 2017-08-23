@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,12 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
-#include "c1/c1_FpuStackSim.hpp"
-#include "c1/c1_FrameMap.hpp"
-#include "utilities/array.hpp"
-#include "utilities/ostream.hpp"
 
 //--------------------------------------------------------
 //               FpuStackSim

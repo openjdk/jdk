@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -54,7 +55,7 @@ import jdk.vm.ci.meta.JavaConstant;
  * control flow would have reached the guarded node (without taking exceptions into account).
  */
 @NodeInfo(nameTemplate = "Guard(!={p#negated}) {p#reason/s}", allowedUsageTypes = {Guard}, size = SIZE_2, cycles = CYCLES_2)
-public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, GuardingNode, DeoptimizingGuard {
+public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, GuardingNode, DeoptimizingGuard, IterableNodeType {
 
     public static final NodeClass<GuardNode> TYPE = NodeClass.create(GuardNode.class);
     @Input(Condition) protected LogicNode condition;

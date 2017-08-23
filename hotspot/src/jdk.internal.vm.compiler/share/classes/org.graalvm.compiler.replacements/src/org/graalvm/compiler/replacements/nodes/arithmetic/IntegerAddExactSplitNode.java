@@ -22,11 +22,14 @@
  */
 package org.graalvm.compiler.replacements.nodes.arithmetic;
 
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.graph.spi.SimplifierTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.AddNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.meta.Value;
@@ -42,5 +45,16 @@ public final class IntegerAddExactSplitNode extends IntegerExactArithmeticSplitN
     @Override
     protected Value generateArithmetic(NodeLIRBuilderTool gen) {
         return gen.getLIRGeneratorTool().getArithmetic().emitAdd(gen.operand(getX()), gen.operand(getY()), true);
+    }
+
+    @Override
+    public void simplify(SimplifierTool tool) {
+        if (!IntegerStamp.addCanOverflow((IntegerStamp) x.stamp(), (IntegerStamp) y.stamp())) {
+            tool.deleteBranch(overflowSuccessor);
+            tool.addToWorkList(next);
+            AddNode replacement = graph().unique(new AddNode(x, y));
+            graph().replaceSplitWithFloating(this, replacement, next);
+            tool.addToWorkList(replacement);
+        }
     }
 }

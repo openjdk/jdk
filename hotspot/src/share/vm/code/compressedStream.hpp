@@ -66,7 +66,40 @@ class CompressedReadStream : public CompressedStream {
  private:
   inline u_char read()                 { return _buffer[_position++]; }
 
-  jint     read_int_mb(jint b0);  // UNSIGNED5 coding, 2-5 byte cases
+  // This encoding, called UNSIGNED5, is taken from J2SE Pack200.
+  // It assumes that most values have lots of leading zeroes.
+  // Very small values, in the range [0..191], code in one byte.
+  // Any 32-bit value (including negatives) can be coded, in
+  // up to five bytes.  The grammar is:
+  //    low_byte  = [0..191]
+  //    high_byte = [192..255]
+  //    any_byte  = low_byte | high_byte
+  //    coding = low_byte
+  //           | high_byte low_byte
+  //           | high_byte high_byte low_byte
+  //           | high_byte high_byte high_byte low_byte
+  //           | high_byte high_byte high_byte high_byte any_byte
+  // Each high_byte contributes six bits of payload.
+  // The encoding is one-to-one (except for integer overflow)
+  // and easy to parse and unparse.
+
+  jint read_int_mb(jint b0) {
+    int     pos = position() - 1;
+    u_char* buf = buffer() + pos;
+    assert(buf[0] == b0 && b0 >= L, "correctly called");
+    jint    sum = b0;
+    // must collect more bytes:  b[1]...b[4]
+    int lg_H_i = lg_H;
+    for (int i = 0; ; ) {
+      jint b_i = buf[++i]; // b_i = read(); ++i;
+      sum += b_i << lg_H_i;  // sum += b[i]*(64**i)
+      if (b_i < L || i == MAX_i) {
+        set_position(pos+i+1);
+        return sum;
+      }
+      lg_H_i += lg_H;
+    }
+  }
 
  public:
   CompressedReadStream(u_char* buffer, int position = 0)

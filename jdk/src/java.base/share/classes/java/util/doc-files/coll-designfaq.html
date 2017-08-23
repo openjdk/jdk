@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
+<!DOCTYPE html>
 <!--
  Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,16 +23,15 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-
-<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xml:lang=
-"en-US">
+<html lang="en-US">
 <head>
 <title>Java Collections API Design FAQ</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 </head>
 <body>
 <h2>Java Collections API Design FAQ</h2>
 <!-- Body text begins here -->
-<hr />
+<hr>
 This document answers frequently asked questions concerning the
 design of the Java collections framework. It is derived from the
 large volume of traffic on the collections-comments alias. It
@@ -105,10 +101,10 @@ aliasing.</b></a></li>
 collections that send out Events when they're
 modified?</b></a></li>
 </ol>
-<hr size="3" noshade="noshade" />
+<hr>
 <h3>Core Interfaces - General Questions</h3>
 <ol>
-<li><a name="a1" id="a1"><b>Why don't you support immutability
+<li><a id="a1"><b>Why don't you support immutability
 directly in the core collection interfaces so that you can do away
 with <em>optional operations</em> (and
 UnsupportedOperationException)?</b></a>
@@ -168,7 +164,7 @@ engineering compromise to sidestep the whole issue by providing a
 very small set of core interfaces that can throw a runtime
 exception.</p>
 </li>
-<li><a name="a2" id="a2"><b>Won't programmers have to surround any
+<li><a id="a2"><b>Won't programmers have to surround any
 code that calls optional operations with a try-catch clause in case
 they throw an UnsupportedOperationException?</b></a>
 <p>It was never our intention that programs should catch these
@@ -176,7 +172,7 @@ exceptions: that's why they're unchecked (runtime) exceptions. They
 should only arise as a result of programming errors, in which case,
 your program will halt due to the uncaught exception.</p>
 </li>
-<li><a name="a3" id="a3"><b>Why isn't there a core interface for
+<li><a id="a3"><b>Why isn't there a core interface for
 "bags" (AKA multisets)?</b></a>
 <p>The Collection interface provides this functionality. We are not
 providing any public implementations of this interface, as we think
@@ -185,7 +181,7 @@ occasionally return such Collections, which are implemented easily
 atop AbstractCollection (for example, the Collection returned by
 Map.values).</p>
 </li>
-<li><a name="a28" id="a28"><b>Why didn't you use "Beans-style
+<li><a id="a28"><b>Why didn't you use "Beans-style
 names" for consistency?</b></a>
 <p>While the names of the new collections methods do not adhere to
 the "Beans naming conventions", we believe that they are
@@ -207,10 +203,10 @@ a long expression. If we named the methods "getIterator",
 case. Thus, we adopted the "traditional" JDK style rather than the
 Beans style.</li>
 </ol>
-<hr />
+<hr>
 <h3>Collection Interface</h3>
 <ol>
-<li><a name="a5" id="a5"><b>Why doesn't Collection extend Cloneable
+<li><a id="a5"><b>Why doesn't Collection extend Cloneable
 and Serializable?</b></a>
 <p>Many Collection implementations (including all of the ones
 provided by the JDK) will have a public clone method, but it would
@@ -224,7 +220,7 @@ what type of Collection is desired, create an empty Collection of
 this type, and use the addAll method to copy the elements of the
 original collection into the new one.</p>
 </li>
-<li><a name="a6" id="a6"><b>Why don't you provide an "apply" method
+<li><a id="a6"><b>Why don't you provide an "apply" method
 in Collection to apply a given method ("upcall") to all the
 elements of the Collection?</b></a>
 <p>This is what is referred to as an "Internal Iterator" in the
@@ -235,7 +231,7 @@ for external iterators (with Enumerations). The "throw weight" of
 this functionality is increased by the fact that it requires a
 public interface to describe upcalls.</p>
 </li>
-<li><a name="a7" id="a7"><b>Why didn't you provide a "Predicate"
+<li><a id="a7"><b>Why didn't you provide a "Predicate"
 interface, and related methods (e.g., a method to find the first
 element in the Collection satisfying the predicate)?</b></a>
 <p>It's easy to implement this functionality atop Iterators, and
@@ -244,14 +240,14 @@ the predicate. Thus, it's not clear whether this facility pulls its
 weight. It could be added to the Collections class at a later date
 (implemented atop Iterator), if it's deemed useful.</p>
 </li>
-<li><a name="a8" id="a8"><b>Why don't you provide a form of the
+<li><a id="a8"><b>Why don't you provide a form of the
 addAll method that takes an Enumeration (or an Iterator)?</b></a>
 <p>Because we don't believe in using Enumerations (or Iterators) as
 "poor man's collections." This was occasionally done in prior
 releases, but now that we have the Collection interface, it is the
 preferred way to pass around abstract collections of objects.</p>
 </li>
-<li><a name="a9" id="a9"><b>Why don't the concrete implementations
+<li><a id="a9"><b>Why don't the concrete implementations
 in the JDK have Enumeration (or Iterator) constructors?</b></a>
 <p>Again, this is an instance of an Enumeration serving as a "poor
 man's collection" and we're trying to discourage that. Note
@@ -259,7 +255,7 @@ however, that we strongly suggest that all concrete implementations
 should have constructors that take a Collection (and create a new
 Collection with the same elements).</p>
 </li>
-<li><a name="a10" id="a10"><b>Why don't you provide an Iterator.add
+<li><a id="a10"><b>Why don't you provide an Iterator.add
 method?</b></a>
 <p>The semantics are unclear, given that the contract for Iterator
 makes no guarantees about the order of iteration. Note, however,
@@ -267,10 +263,10 @@ that ListIterator does provide an add operation, as it does
 guarantee the order of the iteration.</p>
 </li>
 </ol>
-<hr />
+<hr>
 <h3>List Interface</h3>
 <ol>
-<li><a name="a11" id="a11"><b>Why don't you rename the List
+<li><a id="a11"><b>Why don't you rename the List
 interface to Sequence; doesn't "list" generally suggest "linked
 list"? Also, doesn't it conflict with java.awt.List?</b></a>
 <p>People were evenly divided as to whether List suggests linked
@@ -285,16 +281,16 @@ naming conflict can be dealt with by the following incantation:</p>
     import java.awt.*;
     import java.util.List;   // Dictates interpretation of "List"
 </pre></li>
-<li><a name="a12" id="a12"><b>Why don't you rename List's set
+<li><a id="a12"><b>Why don't you rename List's set
 method to replace, to avoid confusion with Set.</b></a>
 <p>It was decided that the "set/get" naming convention was strongly
 enough enshrined in the language that we'd stick with it.</p>
 </li>
 </ol>
-<hr />
+<hr>
 <h3>Map Interface</h3>
 <ol>
-<li><a name="a14" id="a14"><b>Why doesn't Map extend
+<li><a id="a14"><b>Why doesn't Map extend
 Collection?</b></a>
 <p>This was by design. We feel that mappings are not collections
 and collections are not mappings. Thus, it makes little sense for
@@ -317,10 +313,10 @@ deleted element. That's why we don't have a map view operation on
 Lists.</p>
 </li>
 </ol>
-<hr />
+<hr>
 <h3>Iterator Interface</h3>
 <ol>
-<li><a name="a18" id="a18"><b>Why doesn't Iterator extend
+<li><a id="a18"><b>Why doesn't Iterator extend
 Enumeration?</b></a>
 <p>We view the method names for Enumeration as unfortunate. They're
 very long, and very frequently used. Given that we were adding a
@@ -329,7 +325,7 @@ foolish not to take advantage of the opportunity to improve the
 names. Of course we could support the new and old names in
 Iterator, but it doesn't seem worthwhile.</p>
 </li>
-<li><a name="a19" id="a19"><b>Why don't you provide an
+<li><a id="a19"><b>Why don't you provide an
 Iterator.peek method that allows you to look at the next element in
 an iteration without advancing the iterator?</b></a>
 <p>It can be implemented atop the current Iterators (a similar
@@ -338,10 +334,10 @@ would be rare enough that it isn't worth including in the interface
 that everyone has to implement.</p>
 </li>
 </ol>
-<hr />
+<hr>
 <h3>Miscellaneous</h3>
 <ol>
-<li><a name="a23" id="a23"><b>Why did you write a new collections
+<li><a id="a23"><b>Why did you write a new collections
 framework instead of adopting JGL (a preexisting collections
 package from ObjectSpace, Inc.) into the JDK?</b></a>
 <p>If you examine the goals for our Collections framework (in the
@@ -363,7 +359,7 @@ libraries mature, they inevitably grow, but we are trying as hard
 as we can to keep them small and manageable, so that Java continues
 to be an easy, fun language to learn and to use.</p>
 </li>
-<li><a name="a26" id="a26"><b>Why don't you eliminate all of the
+<li><a id="a26"><b>Why don't you eliminate all of the
 methods and classes that return "views" (Collections backed by
 other collection-like objects). This would greatly reduce
 aliasing.</b></a>
@@ -380,7 +376,7 @@ The existence of this method means that people who write methods
 taking List on input do not have to write secondary forms taking an
 offset and a length (as they do for arrays).</p>
 </li>
-<li><a name="a27" id="a27"><b>Why don't you provide for
+<li><a id="a27"><b>Why don't you provide for
 "observable" collections that send out Events when they're
 modified?</b></a>
 <p>Primarily, resource constraints. If we're going to commit to
@@ -390,9 +386,9 @@ some day. In the meantime, it's not difficult to implement such a
 facility on top of the public APIs.</p>
 </li>
 </ol>
-<hr />
+<hr>
 <p style="font-size:smaller">
-Copyright &copy; 1998, 2017, Oracle and/or its affiliates. 500 Oracle Parkway<br />
+Copyright &copy; 1998, 2017, Oracle and/or its affiliates. 500 Oracle Parkway<br>
     Redwood Shores, CA 94065 USA. All rights reserved.</p>
 <!-- Body text ends here -->
 </body>

@@ -35,7 +35,7 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MIOp;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64MOp;
@@ -667,6 +667,28 @@ public class AMD64Move {
             default:
                 throw GraalError.shouldNotReachHere();
         }
+    }
+
+    public static boolean canMoveConst2Stack(JavaConstant input) {
+        switch (input.getJavaKind().getStackKind()) {
+            case Int:
+                break;
+            case Long:
+                break;
+            case Float:
+                break;
+            case Double:
+                break;
+            case Object:
+                if (input.isNull()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                return false;
+        }
+        return true;
     }
 
     public static void const2stack(CompilationResultBuilder crb, AMD64MacroAssembler masm, Value result, JavaConstant input) {

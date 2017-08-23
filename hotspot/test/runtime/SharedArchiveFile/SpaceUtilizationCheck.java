@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,79 +21,90 @@
  * questions.
  */
 
-/*
+/**
  * @test SpaceUtilizationCheck
+ * @requires vm.cds
  * @summary Check if the space utilization for shared spaces is adequate
+ * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main SpaceUtilizationCheck
+ * @build sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SpaceUtilizationCheck
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import sun.hotspot.WhiteBox;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.lang.Integer;
 
 public class SpaceUtilizationCheck {
-    // Minimum allowed utilization value (percent)
-    // The goal is to have this number to be 50% for RO and RW regions
-    // Once that feature is implemented, increase the MIN_UTILIZATION to 50
-    private static final int MIN_UTILIZATION = 30;
-
-    // Only RO and RW regions are considered for this check, since they
-    // currently account for the bulk of the shared space
-    private static final int NUMBER_OF_CHECKED_SHARED_REGIONS = 2;
+    // [1] Each region must have strictly less than
+    //     WhiteBox.metaspaceReserveAlignment() bytes of unused space.
+    // [2] There must be no gap between two consecutive regions.
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-           "-XX:+UnlockDiagnosticVMOptions",
-           "-XX:SharedArchiveFile=./SpaceUtilizationCheck.jsa",
-           "-Xshare:dump");
+        // (1) Default VM arguments
+        test();
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        String stdout = output.getStdout();
-        ArrayList<String> utilization = findUtilization(stdout);
-
-        if (utilization.size() != NUMBER_OF_CHECKED_SHARED_REGIONS )
-            throw new RuntimeException("The output format of sharing summary has changed");
-
-        for(String str : utilization) {
-            int value = Integer.parseInt(str);
-            if (value < MIN_UTILIZATION) {
-                System.out.println(stdout);
-                throw new RuntimeException("Utilization for one of the regions" +
-                    "is below a threshold of " + MIN_UTILIZATION + "%");
-            }
-        }
+        // (2) Use the now deprecated VM arguments. They should have no effect.
+        test("-XX:SharedReadWriteSize=128M",
+             "-XX:SharedReadOnlySize=128M",
+             "-XX:SharedMiscDataSize=128M",
+             "-XX:SharedMiscCodeSize=128M");
     }
 
-    public static ArrayList<String> findUtilization(String input) {
-        ArrayList<String> regions = filterRegionsOfInterest(input.split("\n"));
-        return filterByPattern(filterByPattern(regions, "bytes \\[.*% used\\]"), "\\d+");
-    }
+    static void test(String... extra_options) throws Exception {
+        OutputAnalyzer output = CDSTestUtils.createArchive(extra_options);
+        CDSTestUtils.checkDump(output);
+        Pattern pattern = Pattern.compile("^(..) space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        long reserve_alignment = wb.metaspaceReserveAlignment();
+        System.out.println("Metaspace::reserve_alignment() = " + reserve_alignment);
 
-    private static ArrayList<String> filterByPattern(Iterable<String> input, String pattern) {
-        ArrayList<String> result = new ArrayList<String>();
-        for (String str : input) {
-            Matcher matcher = Pattern.compile(pattern).matcher(str);
-            if (matcher.find()) {
-                result.add(matcher.group());
+        long last_region = -1;
+        Hashtable<String,String> checked = new Hashtable<>();
+        for (String line : output.getStdout().split("\n")) {
+            if (line.contains(" space:") && !line.contains("st space:")) {
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.find()) {
+                    String name = matcher.group(1);
+                    if (name.equals("s0") || name.equals("s1")) {
+                      // String regions are listed at the end and they may not be fully occupied.
+                      break;
+                    } else {
+                      System.out.println("Checking " + name + " in : " + line);
+                      checked.put(name, name);
+                    }
+                    long used = Long.parseLong(matcher.group(2));
+                    long capacity = Long.parseLong(matcher.group(3));
+                    long address = Long.parseLong(matcher.group(4), 16);
+                    long unused = capacity - used;
+                    if (unused < 0) {
+                        throw new RuntimeException("Unused space (" + unused + ") less than 0");
+                    }
+                    if (unused > reserve_alignment) {
+                        // [1] Check for unused space
+                        throw new RuntimeException("Unused space (" + unused + ") must be smaller than Metaspace::reserve_alignment() (" +
+                                                   reserve_alignment + ")");
+                    }
+                    if (last_region >= 0 && address != last_region) {
+                        // [2] Check for no-gap
+                        throw new RuntimeException("Region 0x" + address + " should have started at 0x" + Long.toString(last_region, 16));
+                    }
+                    last_region = address + capacity;
+                }
             }
         }
-        return result;
-    }
-
-    private static ArrayList<String> filterRegionsOfInterest(String[] inputLines) {
-        ArrayList<String> result = new ArrayList<String>();
-        for (String str : inputLines) {
-            if (str.contains("ro space:") || str.contains("rw space:")) {
-                result.add(str);
-            }
+        if (checked.size() != 5) {
+          throw new RuntimeException("Must have 5 consecutive, fully utilized regions");
         }
-        return result;
     }
 }

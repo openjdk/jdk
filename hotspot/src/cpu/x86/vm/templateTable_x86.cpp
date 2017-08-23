@@ -2622,6 +2622,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   switch (code) {
   case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
   case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
@@ -3287,6 +3288,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     case Bytecodes::_fast_dputfield: __ pop(dtos); break;
     case Bytecodes::_fast_fputfield: __ pop(ftos); break;
     case Bytecodes::_fast_lputfield: __ pop_l(rax); break;
+    default: break;
     }
     __ bind(L2);
   }
@@ -3846,7 +3848,7 @@ void TemplateTable::_new() {
   __ jcc(Assembler::notEqual, slow_case_no_pop);
 
   // get InstanceKlass
-  __ movptr(rcx, Address(rcx, rdx, Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rdx, rcx);
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized & doesn't have finalizer
@@ -4061,8 +4063,7 @@ void TemplateTable::checkcast() {
   // Get superklass in rax and subklass in rbx
   __ bind(quicked);
   __ mov(rdx, rax); // Save object in rdx; rax needed for subtype check
-  __ movptr(rax, Address(rcx, rbx,
-                       Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rbx, rax);
 
   __ bind(resolved);
   __ load_klass(rbx, rdx);
@@ -4128,8 +4129,7 @@ void TemplateTable::instanceof() {
   // Get superklass in rax and subklass in rdx
   __ bind(quicked);
   __ load_klass(rdx, rax);
-  __ movptr(rax, Address(rcx, rbx,
-                         Address::times_ptr, sizeof(ConstantPool)));
+  __ load_resolved_klass_at_index(rcx, rbx, rax);
 
   __ bind(resolved);
 

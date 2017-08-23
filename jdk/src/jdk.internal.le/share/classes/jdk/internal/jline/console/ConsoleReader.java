@@ -29,6 +29,7 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -2338,8 +2339,6 @@ public class ConsoleReader
                 out.flush();
             }
 
-            Stack<Character> pushBackChar = new Stack<Character>();
-
             if (terminal.isAnsiSupported() && System.console() != null) {
                 //detect the prompt length by reading the cursor position from the terminal
                 //the real prompt length could differ from the simple prompt length due to
@@ -2357,9 +2356,11 @@ public class ConsoleReader
                     if (m.matches()) {
                         promptLen = Integer.parseInt(m.group("column")) - 1;
                         String prefix = m.group("prefix");
+                        List<Character> chars = new ArrayList<>();
                         for (int i = prefix.length() - 1; i >= 0; i--) {
-                            pushBackChar.push(prefix.charAt(i));
+                            chars.add(prefix.charAt(i));
                         }
+                        pushBackChar.addAll(0, chars);
                         break;
                     }
                 }
@@ -3224,6 +3225,7 @@ public class ConsoleReader
     //where:
         private Pattern CURSOR_COLUMN_PATTERN =
                 Pattern.compile("(?<prefix>.*)\033\\[[0-9]+;(?<column>[0-9]+)R", Pattern.DOTALL);
+        private Stack<Character> pushBackChar = new Stack<Character>();
 
     /**
      * Read a line for unsupported terminals.

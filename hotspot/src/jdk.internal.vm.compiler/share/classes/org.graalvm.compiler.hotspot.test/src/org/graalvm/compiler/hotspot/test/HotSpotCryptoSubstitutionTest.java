@@ -37,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import org.graalvm.compiler.code.CompilationResult;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.meta.HotSpotGraphBuilderPlugins;
 
 import jdk.vm.ci.code.InstalledCode;
@@ -48,8 +49,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class HotSpotCryptoSubstitutionTest extends HotSpotGraalCompilerTest {
 
     @Override
-    protected InstalledCode addMethod(ResolvedJavaMethod method, CompilationResult compResult) {
-        return getBackend().createDefaultInstalledCode(method, compResult);
+    protected InstalledCode addMethod(DebugContext debug, ResolvedJavaMethod method, CompilationResult compResult) {
+        return getBackend().createDefaultInstalledCode(debug, method, compResult);
     }
 
     SecretKey aesKey;

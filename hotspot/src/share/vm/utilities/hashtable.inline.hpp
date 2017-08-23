@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,6 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, 
   _first_free_entry = NULL;
   _end_block = NULL;
   _number_of_entries = number_of_entries;
-#ifdef ASSERT
-  _lookup_warning = false;
-  _lookup_count = 0;
-  _lookup_length = 0;
-#endif
 }
 
 

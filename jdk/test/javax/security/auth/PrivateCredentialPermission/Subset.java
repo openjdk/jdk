@@ -34,7 +34,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import com.sun.security.auth.SolarisPrincipal;
+import com.sun.security.auth.UnixPrincipal;
 import javax.security.auth.Subject;
 
 /*
@@ -46,7 +46,7 @@ import javax.security.auth.Subject;
  *    permission javax.security.auth.AuthPermission \
  *              "modifyPrivateCredentials";
  *    permission javax.security.auth.PrivateCredentialPermission \
- * "java.lang.String com.sun.security.auth.SolarisPrincipal \"user"", "read";
+ * "java.lang.String com.sun.security.auth.UnixPrincipal \"user"", "read";
  * };
 
  * The test verifies the following:
@@ -71,7 +71,7 @@ public class Subset {
         HashSet creds = new HashSet();
         Subject emptys =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds);
         /* Test principals */
@@ -104,7 +104,7 @@ public class Subset {
         creds.add(Boolean.TRUE);
         Subject sremove =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds);
         Set p2 = sremove.getPrivateCredentials();
@@ -184,7 +184,7 @@ public class Subset {
         creds1.add(new String("Exists"));
         Subject scontain =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds1);
         p2 = scontain.getPrivateCredentials();
@@ -237,7 +237,7 @@ public class Subset {
         creds2.add("ghi");
         Subject sstring =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds2);
         p2 = sstring.getPrivateCredentials();
@@ -262,7 +262,7 @@ public class Subset {
         creds4.add("Exists");
         Subject scontain1 =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds4);
         Set p3 = scontain1.getPrivateCredentials();
@@ -462,7 +462,7 @@ public class Subset {
         creds.add(new Integer(1));
         Subject s =
             new Subject(false,  //readOnly
-                        Collections.singleton(new SolarisPrincipal("user")),
+                        Collections.singleton(new UnixPrincipal("user")),
                         Collections.EMPTY_SET,
                         creds);
         try {

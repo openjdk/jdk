@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 
 define_pd_global(bool, BackgroundCompilation,        true);
 define_pd_global(bool, CICompileOSR,                 true);
-define_pd_global(bool, InlineIntrinsics,             false);
+define_pd_global(bool, InlineIntrinsics,             true);
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
@@ -65,7 +65,6 @@ define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
 define_pd_global(bool, IdealizeClearArrayNode,       true);
 
-#ifdef _LP64
 // We need to make sure that all generated code is within
 // 2 gigs of the libjvm.so runtime routines so we can use
 // the faster "call" instruction rather than the expensive
@@ -81,17 +80,6 @@ define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    128ULL*G);
-#else
-// InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(intx, InitialCodeCacheSize,         1536*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, ReservedCodeCacheSize,        32*M);
-define_pd_global(intx, NonProfiledCodeHeapSize,      13*M);
-define_pd_global(intx, ProfiledCodeHeapSize,         14*M);
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
-define_pd_global(intx, CodeCacheExpansionSize,       32*K);
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
-#endif
 define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 

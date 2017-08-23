@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,10 +376,12 @@ class Assembler : public AbstractAssembler {
     STWX_OPCODE  = (31u << OPCODE_SHIFT | 151u << 1),
     STWU_OPCODE  = (37u << OPCODE_SHIFT),
     STWUX_OPCODE = (31u << OPCODE_SHIFT | 183u << 1),
+    STWBRX_OPCODE = (31u << OPCODE_SHIFT | 662u << 1),
 
     STH_OPCODE   = (44u << OPCODE_SHIFT),
     STHX_OPCODE  = (31u << OPCODE_SHIFT | 407u << 1),
     STHU_OPCODE  = (45u << OPCODE_SHIFT),
+    STHBRX_OPCODE = (31u << OPCODE_SHIFT | 918u << 1),
 
     STB_OPCODE   = (38u << OPCODE_SHIFT),
     STBX_OPCODE  = (31u << OPCODE_SHIFT | 215u << 1),
@@ -401,11 +403,13 @@ class Assembler : public AbstractAssembler {
     LD_OPCODE     = (58u << OPCODE_SHIFT |   0u << XO_30_31_SHIFT), // DS-FORM
     LDU_OPCODE    = (58u << OPCODE_SHIFT |   1u << XO_30_31_SHIFT), // DS-FORM
     LDX_OPCODE    = (31u << OPCODE_SHIFT |  21u << XO_21_30_SHIFT), // X-FORM
+    LDBRX_OPCODE  = (31u << OPCODE_SHIFT | 532u << 1),              // X-FORM
 
     STD_OPCODE    = (62u << OPCODE_SHIFT |   0u << XO_30_31_SHIFT), // DS-FORM
     STDU_OPCODE   = (62u << OPCODE_SHIFT |   1u << XO_30_31_SHIFT), // DS-FORM
-    STDUX_OPCODE  = (31u << OPCODE_SHIFT | 181u << 1),                  // X-FORM
+    STDUX_OPCODE  = (31u << OPCODE_SHIFT | 181u << 1),              // X-FORM
     STDX_OPCODE   = (31u << OPCODE_SHIFT | 149u << XO_21_30_SHIFT), // X-FORM
+    STDBRX_OPCODE = (31u << OPCODE_SHIFT | 660u << 1),              // X-FORM
 
     RLDICR_OPCODE = (30u << OPCODE_SHIFT |   1u << XO_27_29_SHIFT), // MD-FORM
     RLDICL_OPCODE = (30u << OPCODE_SHIFT |   0u << XO_27_29_SHIFT), // MD-FORM
@@ -506,7 +510,13 @@ class Assembler : public AbstractAssembler {
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
+    MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
+    MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
+    MFVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  115u << 1),
+    XXPERMDI_OPCODE= (60u << OPCODE_SHIFT |   10u << 3),
+    XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
+    XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
 
     // Vector Permute and Formatting
     VPKPX_OPCODE   = (4u  << OPCODE_SHIFT |  782u     ),
@@ -556,6 +566,7 @@ class Assembler : public AbstractAssembler {
     VADDUBM_OPCODE = (4u  << OPCODE_SHIFT |    0u     ),
     VADDUWM_OPCODE = (4u  << OPCODE_SHIFT |  128u     ),
     VADDUHM_OPCODE = (4u  << OPCODE_SHIFT |   64u     ),
+    VADDUDM_OPCODE = (4u  << OPCODE_SHIFT |  192u     ),
     VADDUBS_OPCODE = (4u  << OPCODE_SHIFT |  512u     ),
     VADDUWS_OPCODE = (4u  << OPCODE_SHIFT |  640u     ),
     VADDUHS_OPCODE = (4u  << OPCODE_SHIFT |  576u     ),
@@ -1094,16 +1105,19 @@ class Assembler : public AbstractAssembler {
   static int vrs(   VectorRegister r)  { return  vrs(r->encoding());}
   static int vrt(   VectorRegister r)  { return  vrt(r->encoding());}
 
+  // Only used on SHA sigma instructions (VX-form)
+  static int vst(      int         x)  { return  opp_u_field(x,             16, 16); }
+  static int vsix(     int         x)  { return  opp_u_field(x,             20, 17); }
+
   // Support Vector-Scalar (VSX) instructions.
-  static int vsra(      int         x)  { return  opp_u_field(x,            15, 11); }
-  static int vsrb(      int         x)  { return  opp_u_field(x,            20, 16); }
-  static int vsrc(      int         x)  { return  opp_u_field(x,            25, 21); }
-  static int vsrs(      int         x)  { return  opp_u_field(x,            10,  6); }
-  static int vsrt(      int         x)  { return  opp_u_field(x,            10,  6); }
+  static int vsra(      int         x)  { return  opp_u_field(x & 0x1F,     15, 11) | opp_u_field((x & 0x20) >> 5, 29, 29); }
+  static int vsrb(      int         x)  { return  opp_u_field(x & 0x1F,     20, 16) | opp_u_field((x & 0x20) >> 5, 30, 30); }
+  static int vsrs(      int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 31, 31); }
+  static int vsrt(      int         x)  { return  vsrs(x); }
+  static int vsdm(      int         x)  { return  opp_u_field(x,            23, 22); }
 
   static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
   static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
-  static int vsrc(   VectorSRegister r)  { return  vsrc(r->encoding());}
   static int vsrs(   VectorSRegister r)  { return  vsrs(r->encoding());}
   static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
 
@@ -1552,6 +1566,9 @@ class Assembler : public AbstractAssembler {
   inline void ld(   Register d, int si16,    Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
+  // 8 bytes reversed
+  inline void ldbrx( Register d, Register s1, Register s2);
+
   // For convenience. Load pointer into d from b+s1.
   inline void ld_ptr(Register d, int b, Register s1);
   DEBUG_ONLY(inline void ld_ptr(Register d, ByteSize b, Register s1);)
@@ -1560,10 +1577,12 @@ class Assembler : public AbstractAssembler {
   inline void stwx( Register d, Register s1, Register s2);
   inline void stw(  Register d, int si16,    Register s1);
   inline void stwu( Register d, int si16,    Register s1);
+  inline void stwbrx( Register d, Register s1, Register s2);
 
   inline void sthx( Register d, Register s1, Register s2);
   inline void sth(  Register d, int si16,    Register s1);
   inline void sthu( Register d, int si16,    Register s1);
+  inline void sthbrx( Register d, Register s1, Register s2);
 
   inline void stbx( Register d, Register s1, Register s2);
   inline void stb(  Register d, int si16,    Register s1);
@@ -1573,6 +1592,7 @@ class Assembler : public AbstractAssembler {
   inline void std(  Register d, int si16,    Register s1);
   inline void stdu( Register d, int si16,    Register s1);
   inline void stdux(Register s, Register a,  Register b);
+  inline void stdbrx( Register d, Register s1, Register s2);
 
   inline void st_ptr(Register d, int si16,    Register s1);
   DEBUG_ONLY(inline void st_ptr(Register d, ByteSize b, Register s1);)
@@ -2016,7 +2036,7 @@ class Assembler : public AbstractAssembler {
   inline void vperm(    VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vsel(     VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
   inline void vsl(      VectorRegister d, VectorRegister a, VectorRegister b);
-  inline void vsldoi(   VectorRegister d, VectorRegister a, VectorRegister b, int si4);
+  inline void vsldoi(   VectorRegister d, VectorRegister a, VectorRegister b, int ui4);
   inline void vslo(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsr(      VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsro(     VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2027,6 +2047,7 @@ class Assembler : public AbstractAssembler {
   inline void vaddubm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduwm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduhm(  VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vaddudm(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vaddubs(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduws(  VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vadduhs(  VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2102,6 +2123,7 @@ class Assembler : public AbstractAssembler {
   inline void vandc(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vnor(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vor(      VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmr(      VectorRegister d, VectorRegister a);
   inline void vxor(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrld(     VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vrlb(     VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2125,8 +2147,24 @@ class Assembler : public AbstractAssembler {
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+  inline void mtvrwz(   VectorRegister  d, Register a);
+  inline void mfvrwz(   Register        a, VectorRegister d);
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
+  inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
+  inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+
+  // VSX Extended Mnemonics
+  inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);
+  inline void xxmrghd(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxmrgld(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxswapd(  VectorSRegister d, VectorSRegister a);
+
+  // Vector-Scalar (VSX) instructions.
+  inline void mtfprd(   FloatRegister   d, Register a);
+  inline void mtfprwa(  FloatRegister   d, Register a);
+  inline void mffprd(   Register        a, FloatRegister d);
 
   // AES (introduced with Power 8)
   inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);
@@ -2182,14 +2220,18 @@ class Assembler : public AbstractAssembler {
   inline void lbz(  Register d, int si16);
   inline void ldx(  Register d, Register s2);
   inline void ld(   Register d, int si16);
+  inline void ldbrx(Register d, Register s2);
   inline void stwx( Register d, Register s2);
   inline void stw(  Register d, int si16);
+  inline void stwbrx( Register d, Register s2);
   inline void sthx( Register d, Register s2);
   inline void sth(  Register d, int si16);
+  inline void sthbrx( Register d, Register s2);
   inline void stbx( Register d, Register s2);
   inline void stb(  Register d, int si16);
   inline void stdx( Register d, Register s2);
   inline void std(  Register d, int si16);
+  inline void stdbrx( Register d, Register s2);
 
   // PPC 2, section 3.2.1 Instruction Cache Instructions
   inline void icbi(    Register s2);
