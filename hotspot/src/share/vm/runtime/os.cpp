@@ -755,9 +755,9 @@ int os::random() {
   // Make updating the random seed thread safe.
   while (true) {
     unsigned int seed = _rand_seed;
-    int rand = random_helper(seed);
+    unsigned int rand = random_helper(seed);
     if (Atomic::cmpxchg(rand, &_rand_seed, seed) == seed) {
-      return rand;
+      return static_cast<int>(rand);
     }
   }
 }
