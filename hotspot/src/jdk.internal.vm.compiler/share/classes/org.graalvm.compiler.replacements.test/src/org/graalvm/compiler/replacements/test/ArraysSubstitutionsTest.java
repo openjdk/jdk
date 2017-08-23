@@ -232,68 +232,6 @@ public class ArraysSubstitutionsTest extends MethodSubstitutionTest {
     }
 
     @Test
-    public void testEqualsFloat() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new float[i];
-            args2[n] = new float[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            float[] a2 = new float[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new float[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{float[].class, float[].class};
-        testSubstitution("arraysEqualsFloat", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsFloat(float[] a, float[] b) {
-        return Arrays.equals(a, b);
-    }
-
-    @Test
-    public void testEqualsDouble() {
-        Object[] args1 = new Object[N];
-        Object[] args2 = new Object[N];
-        int n = 0;
-
-        // equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            args1[n] = new double[i];
-            args2[n] = new double[i];
-        }
-
-        // non-equal arrays
-        for (int i = 0; i < N / 2; i++, n++) {
-            double[] a2 = new double[i];
-            if (i > 0) {
-                a2[i - 1] = 1;
-            }
-            args1[n] = new double[i];
-            args2[n] = a2;
-        }
-
-        Class<?>[] parameterTypes = new Class<?>[]{double[].class, double[].class};
-        testSubstitution("arraysEqualsDouble", ArrayEqualsNode.class, Arrays.class, "equals", parameterTypes, false, args1, args2);
-    }
-
-    @SuppressWarnings("all")
-    public static boolean arraysEqualsDouble(double[] a, double[] b) {
-        return Arrays.equals(a, b);
-    }
-
-    @Test
     public void testEqualsNodeGVN() {
         test("testEqualsNodeGVNSnippet", true);
     }
