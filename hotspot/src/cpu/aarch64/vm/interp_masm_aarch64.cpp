@@ -272,8 +272,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // load pointer for resolved_references[] objArray
   ldr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ldr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  // JNIHandles::resolve(obj);
-  ldr(result, Address(result, 0));
+  resolve_oop_handle(result);
   // Add in the index
   add(result, result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
