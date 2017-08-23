@@ -65,7 +65,7 @@ public class GetConstantPoolTest {
 
     public static void testClass(Class cls) {
         HotSpotResolvedObjectType type = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(cls),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(cls),
                         GetConstantPoolTest.class, /* resolve = */ true);
         test(type);
     }
