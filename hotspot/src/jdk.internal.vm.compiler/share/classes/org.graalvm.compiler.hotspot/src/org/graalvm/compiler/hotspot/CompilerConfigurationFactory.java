@@ -157,8 +157,8 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
     /**
      * Selects and instantiates a {@link CompilerConfigurationFactory}. The selection algorithm is
      * as follows: if {@code name} is non-null, then select the factory with the same name else if
-     * {@link Options#CompilerConfiguration}{@code .getValue()} is non-null then select the factory
-     * whose name matches the value else select the factory with the highest
+     * {@code Options.CompilerConfiguration.getValue()} is non-null then select the factory whose
+     * name matches the value else select the factory with the highest
      * {@link #autoSelectionPriority} value.
      *
      * @param name the name of the compiler configuration to select (optional)

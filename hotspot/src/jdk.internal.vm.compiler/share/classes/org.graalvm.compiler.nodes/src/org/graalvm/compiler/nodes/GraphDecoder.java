@@ -466,6 +466,28 @@ public class GraphDecoder {
             AbstractMergeNode merge = (AbstractMergeNode) node;
             EndNode singleEnd = merge.forwardEndAt(0);
 
+            /*
+             * In some corner cases, the MergeNode already has PhiNodes. Since there is a single
+             * EndNode, each PhiNode can only have one input, and we can replace the PhiNode with
+             * this single input.
+             */
+            for (PhiNode phi : merge.phis()) {
+                assert phi.inputs().count() == 1 : "input count must match end count";
+                Node singlePhiInput = phi.inputs().first();
+
+                /*
+                 * We do not have the orderID of the PhiNode anymore, so we need to search through
+                 * the complete list of nodes to find a match.
+                 */
+                for (int i = 0; i < loopScope.createdNodes.length; i++) {
+                    if (loopScope.createdNodes[i] == phi) {
+                        loopScope.createdNodes[i] = singlePhiInput;
+                    }
+                }
+
+                phi.replaceAndDelete(singlePhiInput);
+            }
+
             /* Nodes that would use this merge as the guard need to use the previous block. */
             registerNode(loopScope, nodeOrderId, AbstractBeginNode.prevBegin(singleEnd), true, false);
 

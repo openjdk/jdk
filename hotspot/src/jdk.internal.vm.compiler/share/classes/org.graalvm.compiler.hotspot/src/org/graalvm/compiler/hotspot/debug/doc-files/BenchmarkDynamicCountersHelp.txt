@@ -1,0 +1,24 @@
+Turn on the benchmark counters, and listen for specific patterns on System.out/System.err.
+The format of this option is:
+
+  (err|out),start pattern,end pattern
+  
+You can use "~" to match 1 or more digits.
+Examples:
+
+  err, starting =====, PASSED in
+  out,Iteration ~ (~s) begins:,Iteration ~ (~s) ends:
+  
+The first pattern matches DaCapo output and the second matches SPECjvm2008 output.
+
+As a more detailed example, here are the options to use for getting statistics
+about allocations within the DaCapo pmd benchmark:
+
+  -XX:JVMCICounterSize=<value> -XX:-JVMCICountersExcludeCompiler \
+  -Dgraal.BenchmarkDynamicCounters="err, starting ====, PASSED in " \
+  -Dgraal.ProfileAllocations=true
+  
+The JVMCICounterSize value depends on the granularity of the profiling -
+10000 should be sufficient. Omit JVMCICountersExcludeCompiler to exclude
+counting allocations on the compiler threads.
+The counters can be further configured by the ProfileAllocationsContext option.

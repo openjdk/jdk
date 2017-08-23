@@ -64,24 +64,28 @@ public class DebugOptions {
                    "An empty value enables all memory usage trackers unconditionally.", type = OptionType.Debug)
     public static final OptionKey<String> MemUseTrackers = new OptionKey<>(null);
 
-    @Option(help = "Pattern for scope(s) in which counting is enabled (see DebugFilter and Debug.counter). " +
+    @Option(help = "Pattern for specifying scopes in which counters are enabled. " +
+                   "See the Dump option for the pattern syntax. " +
                    "An empty value enables all counters unconditionally.", type = OptionType.Debug)
     public static final OptionKey<String> Count = new OptionKey<>(null);
-    @Option(help = "Pattern for scope(s) in which memory use tracking is enabled (see DebugFilter and Debug.counter). " +
+    @Option(help = "Pattern for specifying scopes in which memory use tracking is enabled. " +
+                   "See the Dump option for the pattern syntax. " +
                    "An empty value enables all memory use trackers unconditionally.", type = OptionType.Debug)
     public static final OptionKey<String> TrackMemUse = new OptionKey<>(null);
-    @Option(help = "Pattern for scope(s) in which timing is enabled (see DebugFilter and Debug.timer). " +
+    @Option(help = "Pattern for specifying scopes in which timing is enabled. " +
+                   "See the Dump option for the pattern syntax. " +
                    "An empty value enables all timers unconditionally.", type = OptionType.Debug)
     public static final OptionKey<String> Time = new OptionKey<>(null);
 
-    @Option(help = "Pattern for scope(s) in which verification is enabled (see DebugFilter and Debug.verify).", type = OptionType.Debug)
+    @Option(help = "Pattern for specifying scopes in which logging is enabled. " +
+                   "See the Dump option for the pattern syntax.", type = OptionType.Debug)
     public static final OptionKey<String> Verify = new OptionKey<>(null);
-    @Option(help = "Pattern for scope(s) in which dumping is enabled (see DebugFilter and Debug.dump)", type = OptionType.Debug)
+    @Option(help = "file:doc-files/DumpHelp.txt", type = OptionType.Debug)
     public static final OptionKey<String> Dump = new OptionKey<>(null);
-    @Option(help = "Pattern for scope(s) in which logging is enabled (see DebugFilter and Debug.log)", type = OptionType.Debug)
+    @Option(help = "Pattern for specifying scopes in which logging is enabled. " +
+                   "See the Dump option for the pattern syntax.", type = OptionType.Debug)
     public static final OptionKey<String> Log = new OptionKey<>(null);
-
-    @Option(help = "Pattern for filtering debug scope output based on method context (see MethodFilter)", type = OptionType.Debug)
+    @Option(help = "file:doc-files/MethodFilterHelp.txt")
     public static final OptionKey<String> MethodFilter = new OptionKey<>(null);
     @Option(help = "Only check MethodFilter against the root method in the context if true, otherwise check all methods", type = OptionType.Debug)
     public static final OptionKey<Boolean> MethodFilterRootOnly = new OptionKey<>(false);
@@ -89,13 +93,11 @@ public class DebugOptions {
                    "The argument is substring matched against the simple name of the phase class", type = OptionType.Debug)
     public static final OptionKey<String> DumpOnPhaseChange = new OptionKey<>(null);
 
-    @Option(help = "Listst the console at VM shutdown the metric names available to the Timers, Counters and MemUseTrackers option. " +
+    @Option(help = "Lists on the console at VM shutdown the metric names available to the Timers, Counters and MemUseTrackers options. " +
                    "Note that this only lists the metrics that were initialized during the VM execution and so " +
                    "will not include metrics for compiler code that is not executed.", type = OptionType.Debug)
     public static final OptionKey<Boolean> ListMetrics = new OptionKey<>(false);
-    @Option(help = "File to which metrics are dumped per compilation. A CSV format is used if the file ends with .csv " +
-                    "otherwise a more human readable format is used. The fields in the CSV format are: " +
-                    "compilable, compilable_identity, compilation_nr, compilation_id, metric_name, metric_value", type = OptionType.Debug)
+    @Option(help = "file:doc-files/MetricsFileHelp.txt", type = OptionType.Debug)
      public static final OptionKey<String> MetricsFile = new OptionKey<>(null);
     @Option(help = "File to which aggregated metrics are dumped at shutdown. A CSV format is used if the file ends with .csv " +
                     "otherwise a more human readable format is used. If not specified, metrics are dumped to the console.", type = OptionType.Debug)
@@ -149,7 +151,7 @@ public class DebugOptions {
     @Option(help = "Enable dumping canonical text from for graphs.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintCanonicalGraphStrings = new OptionKey<>(false);
     @Option(help = "Choose format used when dumping canonical text for graphs: " +
-            "0 gives a scheduled graph (better for spotting changes involving the schedule)" +
+            "0 gives a scheduled graph (better for spotting changes involving the schedule) " +
             "while 1 gives a CFG containing expressions rooted at fixed nodes (better for spotting small structure differences)", type = OptionType.Debug)
     public static final OptionKey<Integer> PrintCanonicalGraphStringFlavor = new OptionKey<>(0);
     @Option(help = "Exclude virtual nodes when dumping canonical text for graphs.", type = OptionType.Debug)
