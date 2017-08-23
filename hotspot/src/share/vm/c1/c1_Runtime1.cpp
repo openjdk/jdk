@@ -491,7 +491,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   }
 #ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
-  assert(exception->is_oop(), "just checking");
   // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
   if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     if (ExitVMOnVerifyError) vm_exit(-1);
@@ -676,7 +675,6 @@ JRT_ENTRY_NO_ASYNC(void, Runtime1::monitorenter(JavaThread* thread, oopDesc* obj
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(thread, obj);
-  assert(h_obj()->is_oop(), "must be NULL or an object");
   if (UseBiasedLocking) {
     // Retry fast entry if bias is revoked to avoid unnecessary inflation
     ObjectSynchronizer::fast_enter(h_obj, lock->lock(), true, CHECK);
@@ -701,7 +699,7 @@ JRT_LEAF(void, Runtime1::monitorexit(JavaThread* thread, BasicObjectLock* lock))
   EXCEPTION_MARK;
 
   oop obj = lock->obj();
-  assert(obj->is_oop(), "must be NULL or an object");
+  assert(oopDesc::is_oop(obj), "must be NULL or an object");
   if (UseFastLocking) {
     // When using fast locking, the compiled code has already tried the fast case
     ObjectSynchronizer::slow_exit(obj, lock->lock(), THREAD);

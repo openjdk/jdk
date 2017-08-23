@@ -3187,7 +3187,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
     oop obj = oopDesc::load_decode_heap_oop(p);
     if (obj == NULL) return;
     tty->print(INTPTR_FORMAT ": ", p2i(p));
-    if (obj->is_oop_or_null()) {
+    if (oopDesc::is_oop_or_null(obj)) {
       if (obj->is_objArray()) {
         tty->print_cr("valid objArray: " INTPTR_FORMAT, p2i(obj));
       } else {
