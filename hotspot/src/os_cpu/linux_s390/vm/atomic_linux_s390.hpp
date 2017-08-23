@@ -478,8 +478,18 @@ inline void *Atomic::xchg_ptr(void *exchange_value, volatile void *dest) {
 // function is performed before the operand is fetched and again after the
 // operation is completed."
 
-jint Atomic::cmpxchg(jint xchg_val, volatile jint* dest, jint cmp_val, cmpxchg_memory_order unused) {
-  unsigned long old;
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
+                                                T volatile* dest,
+                                                T cmp_val,
+                                                cmpxchg_memory_order unused) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   CS       %[old],%[upd],%[mem]    \n\t" // Try to xchg upd with mem.
@@ -493,11 +503,17 @@ jint Atomic::cmpxchg(jint xchg_val, volatile jint* dest, jint cmp_val, cmpxchg_m
     : "cc", "memory"
   );
 
-  return (jint)old;
+  return old;
 }
 
-jlong Atomic::cmpxchg(jlong xchg_val, volatile jlong* dest, jlong cmp_val, cmpxchg_memory_order unused) {
-  unsigned long old;
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
+                                                T volatile* dest,
+                                                T cmp_val,
+                                                cmpxchg_memory_order unused) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   CSG      %[old],%[upd],%[mem]    \n\t" // Try to xchg upd with mem.
@@ -511,15 +527,7 @@ jlong Atomic::cmpxchg(jlong xchg_val, volatile jlong* dest, jlong cmp_val, cmpxc
     : "cc", "memory"
   );
 
-  return (jlong)old;
-}
-
-void* Atomic::cmpxchg_ptr(void *xchg_val, volatile void* dest, void* cmp_val, cmpxchg_memory_order unused) {
-  return (void*)cmpxchg((jlong)xchg_val, (volatile jlong*)dest, (jlong)cmp_val, unused);
-}
-
-intptr_t Atomic::cmpxchg_ptr(intptr_t xchg_val, volatile intptr_t* dest, intptr_t cmp_val, cmpxchg_memory_order unused) {
-  return (intptr_t)cmpxchg((jlong)xchg_val, (volatile jlong*)dest, (jlong)cmp_val, unused);
+  return old;
 }
 
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }
