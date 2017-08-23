@@ -57,9 +57,9 @@ static inline int __m68k_cmpxchg(int oldval, int newval, volatile int *ptr) {
 /* Perform an atomic compare and swap: if the current value of `*PTR'
    is OLDVAL, then write NEWVAL into `*PTR'.  Return the contents of
    `*PTR' before the operation.*/
-static inline int m68k_compare_and_swap(volatile int *ptr,
-                                        int oldval,
-                                        int newval) {
+static inline int m68k_compare_and_swap(int newval,
+                                        volatile int *ptr,
+                                        int oldval) {
   for (;;) {
       int prev = *ptr;
       if (prev != oldval)
@@ -118,9 +118,9 @@ typedef int (__kernel_cmpxchg_t)(int oldval, int newval, volatile int *ptr);
 /* Perform an atomic compare and swap: if the current value of `*PTR'
    is OLDVAL, then write NEWVAL into `*PTR'.  Return the contents of
    `*PTR' before the operation.*/
-static inline int arm_compare_and_swap(volatile int *ptr,
-                                       int oldval,
-                                       int newval) {
+static inline int arm_compare_and_swap(int newval,
+                                       volatile int *ptr,
+                                       int oldval) {
   for (;;) {
       int prev = *ptr;
       if (prev != oldval)
@@ -261,53 +261,36 @@ inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
                            (volatile intptr_t*) dest);
 }
 
-inline jint Atomic::cmpxchg(jint exchange_value,
-                            volatile jint* dest,
-                            jint compare_value,
-                            cmpxchg_memory_order order) {
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef ARM
-  return arm_compare_and_swap(dest, compare_value, exchange_value);
+  return cmpxchg_using_helper<int>(arm_compare_and_swap, exchange_value, dest, compare_value);
 #else
 #ifdef M68K
-  return m68k_compare_and_swap(dest, compare_value, exchange_value);
+  return cmpxchg_using_helper<int>(m68k_compare_and_swap, exchange_value, dest, compare_value);
 #else
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
 #endif // M68K
 #endif // ARM
 }
 
-inline jlong Atomic::cmpxchg(jlong exchange_value,
-                             volatile jlong* dest,
-                             jlong compare_value,
-                             cmpxchg_memory_order order) {
-
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
   return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value,
-                                    volatile intptr_t* dest,
-                                    intptr_t compare_value,
-                                    cmpxchg_memory_order order) {
-#ifdef ARM
-  return arm_compare_and_swap(dest, compare_value, exchange_value);
-#else
-#ifdef M68K
-  return m68k_compare_and_swap(dest, compare_value, exchange_value);
-#else
-  return __sync_val_compare_and_swap(dest, compare_value, exchange_value);
-#endif // M68K
-#endif // ARM
-}
-
-inline void* Atomic::cmpxchg_ptr(void* exchange_value,
-                                 volatile void* dest,
-                                 void* compare_value,
-                                 cmpxchg_memory_order order) {
-
-  return (void *) cmpxchg_ptr((intptr_t) exchange_value,
-                              (volatile intptr_t*) dest,
-                              (intptr_t) compare_value,
-                              order);
 }
 
 inline jlong Atomic::load(const volatile jlong* src) {
