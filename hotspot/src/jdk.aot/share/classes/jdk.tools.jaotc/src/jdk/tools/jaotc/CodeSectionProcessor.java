@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.CodeContainer;
 import jdk.tools.jaotc.binformat.Symbol;
-import jdk.tools.jaotc.CompiledMethodInfo.StubInformation;
+import jdk.tools.jaotc.StubInformation;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 
@@ -38,7 +38,7 @@ import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.InfopointReason;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-class CodeSectionProcessor {
+final class CodeSectionProcessor {
 
     private final TargetDescription target;
 
@@ -89,11 +89,11 @@ class CodeSectionProcessor {
 
             // Align and pad method entry
             CodeContainer codeSection = binaryContainer.getCodeContainer();
-            int codeIdOffset = binaryContainer.alignUp(codeSection, binaryContainer.getCodeSegmentSize());
+            int codeIdOffset = BinaryContainer.alignUp(codeSection, binaryContainer.getCodeSegmentSize());
             // Store CodeId into code. It will be use by find_aot() using code.segments
             methodInfo.setCodeId();
             binaryContainer.appendIntToCode(methodInfo.getCodeId());
-            int textBaseOffset = binaryContainer.alignUp(codeSection, binaryContainer.getCodeEntryAlignment());
+            int textBaseOffset = BinaryContainer.alignUp(codeSection, binaryContainer.getCodeEntryAlignment());
 
             codeSection.createSymbol(textBaseOffset, Symbol.Kind.JAVA_FUNCTION, Symbol.Binding.LOCAL, targetCodeSize, entry);
 
@@ -102,7 +102,7 @@ class CodeSectionProcessor {
 
             // Write code bytes of the current method into byte stream
             binaryContainer.appendCodeBytes(targetCode, 0, targetCodeSize);
-            int currentStubOffset = binaryContainer.alignUp(codeSection, 8);
+            int currentStubOffset = BinaryContainer.alignUp(codeSection, 8);
             // Set the offset at which stubs of this method would be laid out
             methodInfo.setStubsOffset(currentStubOffset - textBaseOffset);
             // step through all calls, for every call, add a stub
@@ -111,10 +111,10 @@ class CodeSectionProcessor {
                     final Call callInfopoint = (Call) infopoint;
                     if (callInfopoint.target instanceof ResolvedJavaMethod) {
                         ResolvedJavaMethod call = (ResolvedJavaMethod) callInfopoint.target;
-                        StubInformation stub = addCallStub(MiscUtils.isVirtualCall(methodInfo, callInfopoint));
+                        StubInformation stub = addCallStub(CallInfo.isVirtualCall(methodInfo, callInfopoint));
                         // Get the targetSymbol. A symbol for this will be created later during plt
                         // creation
-                        String targetSymbol = MiscUtils.uniqueMethodName(call) + ".at." + infopoint.pcOffset;
+                        String targetSymbol = JavaMethodInfo.uniqueMethodName(call) + ".at." + infopoint.pcOffset;
                         methodInfo.addStubCode(targetSymbol, stub);
                         currentStubOffset += stub.getSize();
                     }

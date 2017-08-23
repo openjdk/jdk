@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect;
 
 import java.nio.file.Path;
@@ -32,17 +33,17 @@ public interface ClassSource {
     }
 
     static String stripRoot(Path path) {
-      if (path.getRoot() != null) {
-        String root = path.getRoot().toString();
-        String filename = path.toString().substring(root.length());
-        String separator = path.getFileSystem().getSeparator();
-        while (filename.startsWith(separator)) {
-          filename = filename.substring(separator.length());
+        if (path.getRoot() != null) {
+            String root = path.getRoot().toString();
+            String filename = path.toString().substring(root.length());
+            String separator = path.getFileSystem().getSeparator();
+            while (filename.startsWith(separator)) {
+                filename = filename.substring(separator.length());
+            }
+            return filename;
         }
-        return filename;
-      }
 
-      return path.toString();
+        return path.toString();
     }
 
     static String makeClassName(Path path) {

@@ -105,7 +105,7 @@ inline jint Atomic::add(jint inc, volatile jint*dest) {
       //---<  inputs  >---
       : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r0", "r2", "r3"
+      : "cc", "r0", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -120,7 +120,7 @@ inline jint Atomic::add(jint inc, volatile jint*dest) {
       //---<  inputs  >---
       : [inc] "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 
@@ -151,7 +151,7 @@ inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
       //---<  inputs  >---
       : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r0", "r2", "r3"
+      : "cc", "r0", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -166,7 +166,7 @@ inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
       //---<  inputs  >---
       : [inc] "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 
@@ -214,7 +214,7 @@ inline void Atomic::inc(volatile jint* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -229,7 +229,7 @@ inline void Atomic::inc(volatile jint* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -258,7 +258,7 @@ inline void Atomic::inc_ptr(volatile intptr_t* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -273,7 +273,7 @@ inline void Atomic::inc_ptr(volatile intptr_t* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -317,7 +317,7 @@ inline void Atomic::dec(volatile jint* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -335,7 +335,7 @@ inline void Atomic::dec(volatile jint* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -364,7 +364,7 @@ inline void Atomic::dec_ptr(volatile intptr_t* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -382,7 +382,7 @@ inline void Atomic::dec_ptr(volatile intptr_t* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -420,7 +420,7 @@ inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
     //---<  inputs  >---
     : [upd] "d"   (xchg_val) // read-only, value to be written to memory
     //---<  clobbered  >---
-    : "cc"
+    : "cc", "memory"
   );
 
   return (jint)old;
@@ -439,7 +439,7 @@ inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
     //---<  inputs  >---
     : [upd] "d"   (xchg_val) // read-only, value to be written to memory
     //---<  clobbered  >---
-    : "cc"
+    : "cc", "memory"
   );
 
   return (intptr_t)old;
@@ -490,7 +490,7 @@ jint Atomic::cmpxchg(jint xchg_val, volatile jint* dest, jint cmp_val, cmpxchg_m
     : [upd] "d"   (xchg_val)
     ,       "0"   (cmp_val)  // Read-only, initial value for [old] (operand #0).
     // clobbered
-    : "cc"
+    : "cc", "memory"
   );
 
   return (jint)old;
@@ -508,7 +508,7 @@ jlong Atomic::cmpxchg(jlong xchg_val, volatile jlong* dest, jlong cmp_val, cmpxc
     : [upd] "d"   (xchg_val)
     ,       "0"   (cmp_val)  // Read-only, initial value for [old] (operand #0).
     // clobbered
-    : "cc"
+    : "cc", "memory"
   );
 
   return (jlong)old;

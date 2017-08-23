@@ -23,9 +23,14 @@
 
 package compiler.aot;
 
+import jdk.test.lib.Platform;
+import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +40,7 @@ import java.util.Arrays;
 import java.util.List;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * A simple class calling AOT compiler over requested items
@@ -102,6 +108,11 @@ public class AotCompiler {
         }
         args.add("--class-name");
         args.add(item);
+        String linker = resolveLinker();
+        if (linker != null) {
+            args.add("--linker-path");
+            args.add(linker);
+        }
         return launchJaotc(args, extraopts);
     }
 
@@ -119,8 +130,8 @@ public class AotCompiler {
             launcher.addToolArg(arg);
         }
         try {
-            return new OutputAnalyzer(new ProcessBuilder(launcher.getCommand()).inheritIO().start());
-        } catch (IOException e) {
+            return ProcessTools.executeCommand(new ProcessBuilder(launcher.getCommand()).redirectErrorStream(true));
+        } catch (Throwable e) {
             throw new Error("Can't start test process: " + e, e);
         }
     }
@@ -129,5 +140,143 @@ public class AotCompiler {
         System.err.println("Usage: " + AotCompiler.class.getName()
                 + " -class <class> -libname <.so name>"
                 + " [-compile <compileItems>]* [-extraopt <java option>]*");
+    }
+
+    public static String resolveLinker() {
+        Path linker = null;
+        // 1st, check if PATH has ld
+        for (String path : System.getenv("PATH").split(File.pathSeparator)) {
+            if (Files.exists(Paths.get(path).resolve("ld"))) {
+                // there is ld in PATH, jaotc is supposed to find it by its own
+                return null;
+            }
+        }
+        // there is no ld in PATH, will use ld from devkit
+        // artifacts are got from common/conf/jib-profiles.js
+        try {
+            if (Platform.isWindows()) {
+                if (Platform.isX64()) {
+                    @Artifact(organization = "jpg.infra.builddeps",
+                            name = "devkit-windows_x64",
+                            revision = "VS2013SP4+1.0",
+                            extension = "tar.gz")
+                    class DevkitWindowsX64 { }
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-windows_x64-"
+                            + "VS2013SP4+1.0";
+                    Path devkit = ArtifactResolver.resolve(DevkitWindowsX64.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("VC")
+                                   .resolve("bin")
+                                   .resolve("amd64")
+                                   .resolve("link.exe");
+                }
+            } else if (Platform.isOSX()) {
+                @Artifact(organization =  "jpg.infra.builddeps",
+                        name = "devkit-macosx_x64",
+                        revision = "Xcode6.3-MacOSX10.9+1.0",
+                        extension = "tar.gz")
+                class DevkitMacosx { }
+                String artifactName = "jpg.infra.builddeps."
+                        + "devkit-macosx_x64-"
+                        + "Xcode6.3-MacOSX10.9+1.0";
+                Path devkit = ArtifactResolver.resolve(DevkitMacosx.class)
+                                              .get(artifactName);
+                linker = devkit.resolve("Xcode.app")
+                               .resolve("Contents")
+                               .resolve("Developer")
+                               .resolve("Toolchains")
+                               .resolve("XcodeDefault.xctoolchain")
+                               .resolve("usr")
+                               .resolve("bin")
+                               .resolve("ld");
+            } else if (Platform.isSolaris()) {
+                if (Platform.isSparc()) {
+                    @Artifact(organization =  "jpg.infra.builddeps",
+                            name = "devkit-solaris_sparcv9",
+                            revision = "SS12u4-Solaris11u1+1.0",
+                            extension = "tar.gz")
+                    class DevkitSolarisSparc { }
+
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-solaris_sparcv9-"
+                            + "SS12u4-Solaris11u1+1.0";
+                    Path devkit = ArtifactResolver.resolve(DevkitSolarisSparc.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("SS12u4-Solaris11u1")
+                                   .resolve("gnu")
+                                   .resolve("bin")
+                                   .resolve("ld");
+                } else if (Platform.isX64()) {
+                    @Artifact(organization =  "jpg.infra.builddeps",
+                            name = "devkit-solaris_x64",
+                            revision = "SS12u4-Solaris11u1+1.0",
+                            extension = "tar.gz")
+                    class DevkitSolarisX64 { }
+
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-solaris_x64-"
+                            + "SS12u4-Solaris11u1+1.0";
+                    Path devkit = ArtifactResolver.resolve(DevkitSolarisX64.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("SS12u4-Solaris11u1")
+                                   .resolve("bin")
+                                   .resolve("amd64")
+                                   .resolve("ld");
+                }
+            } else if (Platform.isLinux()) {
+                if (Platform.isAArch64()) {
+                    @Artifact(organization = "jpg.infra.builddeps",
+                            name = "devkit-linux_aarch64",
+                            revision = "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0",
+                            extension = "tar.gz")
+                    class DevkitLinuxAArch64 { }
+
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-linux_aarch64-"
+                            + "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0";
+                    Path devkit = ArtifactResolver.resolve(DevkitLinuxAArch64.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("aarch64-linux-gnu")
+                                   .resolve("bin")
+                                   .resolve("ld");
+                } else if (Platform.isARM()) {
+                    @Artifact(organization = "jpg.infra.builddeps",
+                            name = "devkit-linux_arm",
+                            revision = "gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux+1.0",
+                            extension = "tar.gz")
+                    class DevkitLinuxARM { }
+
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-linux_arm-"
+                            + "gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux+1.0";
+                    Path devkit = ArtifactResolver.resolve(DevkitLinuxARM.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("arm-linux-gnueabihf")
+                                   .resolve("bin")
+                                   .resolve("ld");
+                } else if (Platform.isX64()) {
+                    @Artifact(organization = "jpg.infra.builddeps",
+                            name = "devkit-linux_x64",
+                            revision = "gcc4.9.2-OEL6.4+1.1",
+                            extension = "tar.gz")
+                    class DevkitLinuxX64 { }
+
+                    String artifactName = "jpg.infra.builddeps."
+                            + "devkit-linux_x64-"
+                            + "gcc4.9.2-OEL6.4+1.1";
+                    Path devkit = ArtifactResolver.resolve(DevkitLinuxX64.class)
+                                                  .get(artifactName);
+                    linker = devkit.resolve("bin")
+                                   .resolve("ld");
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new Error("artifact resolution error: " + e, e);
+        }
+        if (linker != null) {
+            return linker.toAbsolutePath().toString();
+        }
+        return null;
     }
 }

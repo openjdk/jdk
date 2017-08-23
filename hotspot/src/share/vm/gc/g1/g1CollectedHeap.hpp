@@ -34,6 +34,7 @@
 #include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
+#include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
@@ -86,6 +87,7 @@ class Ticks;
 class WorkGang;
 class G1Allocator;
 class G1ArchiveAllocator;
+class G1FullGCScope;
 class G1HeapVerifier;
 class G1HeapSizingPolicy;
 class G1HeapSummary;
@@ -513,6 +515,17 @@ protected:
                                       AllocationContext_t context,
                                       bool* succeeded);
 private:
+  // Internal helpers used during full GC to split it up to
+  // increase readability.
+  void do_full_collection_inner(G1FullGCScope* scope);
+  void abort_concurrent_cycle();
+  void verify_before_full_collection(bool explicit_gc);
+  void prepare_heap_for_full_collection();
+  void prepare_heap_for_mutators();
+  void abort_refinement();
+  void verify_after_full_collection();
+  void print_heap_after_full_collection(G1HeapTransition* heap_transition);
+
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              AllocationContext_t context,
