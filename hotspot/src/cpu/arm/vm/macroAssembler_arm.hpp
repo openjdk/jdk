@@ -687,6 +687,7 @@ public:
     AbstractAssembler::emit_address((address)L.data());
   }
 
+  void resolve_oop_handle(Register result);
   void load_mirror(Register mirror, Register method, Register tmp);
 
   // Porting layer between 32-bit ARM and AArch64
