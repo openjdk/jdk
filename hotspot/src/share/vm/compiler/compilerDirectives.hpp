@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipe
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
-    cflags(VectorizeDebug,         uintx, 0, VectorizeDebug) \
+    cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
     cflags(IGVPrintLevel,           intx, PrintIdealGraphLevel, IGVPrintLevel) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
@@ -84,7 +84,7 @@ private:
   static void pop_inner(); // no lock version of pop
 public:
   static void init();
-  static DirectiveSet* getMatchingDirective(methodHandle mh, AbstractCompiler* comp);
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
@@ -109,11 +109,11 @@ public:
   bool should_inline(ciMethod* inlinee);
   bool should_not_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
-  DirectiveSet* compilecommand_compatibility_init(methodHandle method);
+  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
   bool is_exclusive_copy() { return _directive == NULL; }
-  bool matches_inline(methodHandle method, int inline_action);
+  bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
-  bool is_intrinsic_disabled(methodHandle method);
+  bool is_intrinsic_disabled(const methodHandle& method);
   static ccstrlist canonicalize_disableintrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
 
@@ -170,7 +170,7 @@ public:
   CompilerDirectives* next();
   void set_next(CompilerDirectives* next) {_next = next; }
 
-  bool match(methodHandle method);
+  bool match(const methodHandle& method);
   BasicMatcher* match() { return _match; }
   bool add_match(char* str, const char*& error_msg);
   DirectiveSet* get_for(AbstractCompiler *comp);

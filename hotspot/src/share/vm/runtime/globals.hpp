@@ -25,10 +25,22 @@
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
-#include "utilities/debug.hpp"
+#include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <float.h> // for DBL_MAX
+
+// The larger HeapWordSize for 64bit requires larger heaps
+// for the same application running in 64bit.  See bug 4967770.
+// The minimum alignment to a heap word size is done.  Other
+// parts of the memory system may require additional alignment
+// and are responsible for those alignments.
+#ifdef _LP64
+#define ScaleForWordSize(x) align_down_((x) * 13 / 10, HeapWordSize)
+#else
+#define ScaleForWordSize(x) (x)
+#endif
 
 // use this for flags that are true per default in the tiered build
 // but false in non-tiered builds, and vice versa
@@ -186,6 +198,7 @@ struct Flag {
   void* _addr;
   NOT_PRODUCT(const char* _doc;)
   Flags _flags;
+  size_t _name_len;
 
   // points to all Flags static array
   static Flag* flags;
@@ -247,6 +260,8 @@ struct Flag {
   Flags get_origin();
   void set_origin(Flags origin);
 
+  size_t get_name_length();
+
   bool is_default();
   bool is_ergonomic();
   bool is_command_line();
@@ -273,7 +288,7 @@ struct Flag {
   bool is_writeable_ext() const;
   bool is_external_ext() const;
 
-  void unlock_diagnostic();
+  void clear_diagnostic();
 
   Flag::MsgType get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
@@ -925,14 +940,17 @@ public:
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
-          "in debug.cpp.")                                                  \
+          "in vmError.cpp.")                                                \
                                                                             \
   notproduct(uintx, TestCrashInErrorHandler, 0,                             \
           "If > 0, provokes an error inside VM error handler (a secondary " \
-          "crash). see test_error_handler() in debug.cpp.")                 \
+          "crash). see test_error_handler() in vmError.cpp")                \
                                                                             \
   notproduct(bool, TestSafeFetchInErrorHandler, false,                      \
           "If true, tests SafeFetch inside error handler.")                 \
+                                                                            \
+  notproduct(bool, TestUnresponsiveErrorHandler, false,                     \
+          "If true, simulates an unresponsive error handler.")              \
                                                                             \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
@@ -1178,14 +1196,18 @@ public:
                                                                             \
   product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
+  experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
+                "Percentage of used monitors before triggering cleanup "    \
+                "safepoint which deflates monitors (0 is off). "            \
+                "The check is performed on GuaranteedSafepointInterval.")   \
+                range(0, 100)                                               \
+                                                                            \
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
                                                                             \
   experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
   diagnostic(bool, InlineNotify, true, "intrinsify subset of notify")       \
-                                                                            \
-  experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
                                                                             \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
@@ -1294,7 +1316,7 @@ public:
   product(bool, UseBiasedLocking, true,                                     \
           "Enable biased locking in JVM")                                   \
                                                                             \
-  product(intx, BiasedLockingStartupDelay, 4000,                            \
+  product(intx, BiasedLockingStartupDelay, 0,                               \
           "Number of milliseconds to wait before enabling biased locking")  \
           range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
           constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
@@ -2495,9 +2517,6 @@ public:
   diagnostic(bool, StressCodeAging, false,                                  \
           "Start with counters compiled in")                                \
                                                                             \
-  develop(bool, UseRelocIndex, false,                                       \
-          "Use an index to speed random access to relocations")             \
-                                                                            \
   develop(bool, StressCodeBuffers, false,                                   \
           "Exercise code buffer expansion and other rare state changes")    \
                                                                             \
@@ -3288,7 +3307,7 @@ public:
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
-          range(0, (max_intx-os::vm_page_size())/(1 * K))                   \
+          range(0, 1 * M)                                                   \
                                                                             \
   product_pd(intx, VMThreadStackSize,                                       \
           "Non-Java Thread Stack Size (in Kbytes)")                         \
@@ -3379,6 +3398,9 @@ public:
                                                                             \
   diagnostic(bool, UseAOTStrictLoading, false,                              \
           "Exit the VM if any of the AOT libraries has invalid config")     \
+                                                                            \
+  product(bool, CalculateClassFingerprint, false,                           \
+          "Calculate class fingerprint")                                    \
                                                                             \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
@@ -3808,12 +3830,6 @@ public:
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
                                                                             \
-  develop(bool, PerfTraceDataCreation, false,                               \
-          "Trace creation of Performance Data Entries")                     \
-                                                                            \
-  develop(bool, PerfTraceMemOps, false,                                     \
-          "Trace PerfMemory create/attach/detach calls")                    \
-                                                                            \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
@@ -3877,9 +3893,6 @@ public:
           "shared spaces, and dumps the shared spaces to a file to be "     \
           "used in future JVM runs")                                        \
                                                                             \
-  product(bool, PrintSharedSpaces, false,                                   \
-          "Print usage of shared spaces")                                   \
-                                                                            \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
                                                                             \
@@ -3887,25 +3900,17 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize, DEFAULT_SHARED_READ_WRITE_SIZE,      \
-          "Size of read-write space for metadata (in bytes)")               \
-          range(MIN_SHARED_READ_WRITE_SIZE, MAX_SHARED_READ_WRITE_SIZE)     \
-          constraint(SharedReadWriteSizeConstraintFunc,AfterErgo)           \
+  product(size_t, SharedReadWriteSize, 0,                                   \
+          "Deprecated")                                                     \
                                                                             \
-  product(size_t, SharedReadOnlySize, DEFAULT_SHARED_READ_ONLY_SIZE,        \
-          "Size of read-only space for metadata (in bytes)")                \
-          range(MIN_SHARED_READ_ONLY_SIZE, MAX_SHARED_READ_ONLY_SIZE)       \
-          constraint(SharedReadOnlySizeConstraintFunc,AfterErgo)            \
+  product(size_t, SharedReadOnlySize, 0,                                    \
+          "Deprecated")                                                     \
                                                                             \
-  product(size_t, SharedMiscDataSize, DEFAULT_SHARED_MISC_DATA_SIZE,        \
-          "Size of the shared miscellaneous data area (in bytes)")          \
-          range(MIN_SHARED_MISC_DATA_SIZE, MAX_SHARED_MISC_DATA_SIZE)       \
-          constraint(SharedMiscDataSizeConstraintFunc,AfterErgo)            \
+  product(size_t, SharedMiscDataSize,  0,                                   \
+          "Deprecated")                                                     \
                                                                             \
-  product(size_t, SharedMiscCodeSize, DEFAULT_SHARED_MISC_CODE_SIZE,        \
-          "Size of the shared miscellaneous code area (in bytes)")          \
-          range(MIN_SHARED_MISC_CODE_SIZE, MAX_SHARED_MISC_CODE_SIZE)       \
-          constraint(SharedMiscCodeSizeConstraintFunc,AfterErgo)            \
+  product(size_t, SharedMiscCodeSize,  0,                                   \
+          "Deprecated")                                                     \
                                                                             \
   product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \

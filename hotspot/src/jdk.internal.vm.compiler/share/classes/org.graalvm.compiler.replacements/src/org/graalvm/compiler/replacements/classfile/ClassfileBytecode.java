@@ -25,9 +25,9 @@ package org.graalvm.compiler.replacements.classfile;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.lang.instrument.Instrumentation;
 
 import org.graalvm.compiler.bytecode.Bytecode;
+import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.replacements.classfile.ClassfileConstant.Utf8;
 
@@ -44,7 +44,8 @@ import jdk.vm.ci.meta.TriState;
 
 /**
  * The bytecode properties of a method as parsed directly from a class file without any
- * {@linkplain Instrumentation instrumentation} or other rewriting performed on the bytecode.
+ * {@linkplain java.lang.instrument.Instrumentation instrumentation} or other rewriting performed on
+ * the bytecode.
  */
 public class ClassfileBytecode implements Bytecode {
 
@@ -76,6 +77,11 @@ public class ClassfileBytecode implements Bytecode {
         exceptionTableBytes = new byte[exceptionTableLength * EXCEPTION_HANDLER_TABLE_SIZE_IN_BYTES];
         stream.readFully(exceptionTableBytes);
         readCodeAttributes(stream);
+    }
+
+    @Override
+    public BytecodeProvider getOrigin() {
+        return constantPool.context;
     }
 
     private void readCodeAttributes(DataInputStream stream) throws IOException {

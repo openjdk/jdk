@@ -66,6 +66,18 @@ public final class AMD64Address extends AbstractAddress {
     }
 
     /**
+     * Creates an {@link AMD64Address} with given base and index registers, scaling and 0
+     * displacement.
+     *
+     * @param base the base register
+     * @param index the index register
+     * @param scale the scaling factor
+     */
+    public AMD64Address(Register base, Register index, Scale scale) {
+        this(base, index, scale, 0, -1);
+    }
+
+    /**
      * Creates an {@link AMD64Address} with given base and index registers, scaling and
      * displacement. This is the most general constructor.
      *

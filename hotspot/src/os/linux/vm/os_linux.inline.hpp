@@ -31,7 +31,7 @@
 
 #include <unistd.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <netdb.h>
 
 // File names are case-sensitive on windows only

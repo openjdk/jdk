@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,8 +173,8 @@ class ValueStack: public CompilationResourceObj {
       case doubleTag : dpush(t); return;
       case objectTag : apush(t); return;
       case addressTag: rpush(t); return;
+      default        : ShouldNotReachHere(); return;
     }
-    ShouldNotReachHere();
   }
 
   Value ipop()                                   { return check(intTag    , _stack.pop()); }
@@ -192,9 +192,8 @@ class ValueStack: public CompilationResourceObj {
       case doubleTag : return dpop();
       case objectTag : return apop();
       case addressTag: return rpop();
+      default        : ShouldNotReachHere(); return NULL;
     }
-    ShouldNotReachHere();
-    return NULL;
   }
 
   Values* pop_arguments(int argument_size);

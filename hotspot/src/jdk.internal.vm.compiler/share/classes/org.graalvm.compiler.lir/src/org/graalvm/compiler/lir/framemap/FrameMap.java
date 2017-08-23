@@ -26,8 +26,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import org.graalvm.compiler.asm.NumUtil;
-import org.graalvm.compiler.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.LIRKind;
 
 import jdk.vm.ci.code.Architecture;

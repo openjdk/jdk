@@ -138,7 +138,7 @@ public class UITesting {
             while (true) {
                 Matcher m = expectedPattern.matcher(out);
                 if (m.find()) {
-                    out.delete(0, m.end() + 1);
+                    out.delete(0, m.end());
                     return ;
                 }
                 long e =  System.currentTimeMillis();

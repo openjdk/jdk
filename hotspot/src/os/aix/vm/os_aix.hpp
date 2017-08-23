@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,6 @@ class Aix {
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
-  static sigset_t* allowdebug_blocked_signals();
 
   // For signal-chaining
   static struct sigaction *get_chained_signal_action(int sig);
@@ -221,60 +220,6 @@ class Aix {
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
 
-};
-
-
-class PlatformEvent : public CHeapObj<mtInternal> {
-  private:
-    double CachePad [4];   // increase odds that _mutex is sole occupant of cache line
-    volatile int _Event;
-    volatile int _nParked;
-    pthread_mutex_t _mutex  [1];
-    pthread_cond_t  _cond   [1];
-    double PostPad  [2];
-    Thread * _Assoc;
-
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee (0, "invariant"); }
-
-  public:
-    PlatformEvent() {
-      int status;
-      status = pthread_cond_init (_cond, NULL);
-      assert_status(status == 0, status, "cond_init");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-      _Event   = 0;
-      _nParked = 0;
-      _Assoc   = NULL;
-    }
-
-    // Use caution with reset() and fired() -- they may require MEMBARs
-    void reset() { _Event = 0; }
-    int  fired() { return _Event; }
-    void park ();
-    void unpark ();
-    int  TryPark ();
-    int  park (jlong millis);
-    void SetAssociation (Thread * a) { _Assoc = a; }
-};
-
-class PlatformParker : public CHeapObj<mtInternal> {
-  protected:
-    pthread_mutex_t _mutex [1];
-    pthread_cond_t  _cond  [1];
-
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformParker() { guarantee (0, "invariant"); }
-
-  public:
-    PlatformParker() {
-      int status;
-      status = pthread_cond_init (_cond, NULL);
-      assert_status(status == 0, status, "cond_init");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-    }
 };
 
 #endif // OS_AIX_VM_OS_AIX_HPP

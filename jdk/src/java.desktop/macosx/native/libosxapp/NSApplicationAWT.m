@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,7 +332,15 @@ AWT_ASSERT_APPKIT_THREAD;
 
 #define DRAGMASK (NSMouseMovedMask | NSLeftMouseDraggedMask | NSRightMouseDownMask | NSRightMouseDraggedMask | NSLeftMouseUpMask | NSRightMouseUpMask | NSFlagsChangedMask | NSKeyDownMask)
 
-- (NSEvent *)nextEventMatchingMask:(NSUInteger)mask untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
+#if defined(MAC_OS_X_VERSION_10_12) && \
+   MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_12 && \
+   __LP64__
+   // 10.12 changed `mask` to NSEventMask (unsigned long long) for x86_64 builds.
+- (NSEvent *)nextEventMatchingMask:(NSEventMask)mask
+#else
+- (NSEvent *)nextEventMatchingMask:(NSUInteger)mask
+#endif
+untilDate:(NSDate *)expiration inMode:(NSString *)mode dequeue:(BOOL)deqFlag {
     if (mask == DRAGMASK && [((NSString *)kCFRunLoopDefaultMode) isEqual:mode]) {
         postEventDuringEventSynthesis = YES;
     }
@@ -449,4 +457,3 @@ AWT_ASSERT_APPKIT_THREAD;
         }
     }
 }
-

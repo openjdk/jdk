@@ -24,17 +24,15 @@ package org.graalvm.compiler.microbenchmarks.graal.util;
 
 import static org.graalvm.compiler.microbenchmarks.graal.util.GraalUtil.getGraph;
 import static org.graalvm.compiler.microbenchmarks.graal.util.GraalUtil.getMethodFromMethodSpec;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugEnvironment;
-import org.graalvm.compiler.debug.internal.DebugScope;
-import org.graalvm.compiler.nodes.StructuredGraph;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * State providing a new copy of a graph for each invocation of a benchmark. Subclasses of this
@@ -46,18 +44,14 @@ public abstract class GraphState {
 
     @SuppressWarnings("try")
     public GraphState() {
-        // Ensure a debug configuration for this thread is initialized
-        if (Debug.isEnabled() && DebugScope.getConfig() == null) {
-            DebugEnvironment.initialize(System.out);
-        }
-
         GraalState graal = new GraalState();
+        DebugContext debug = graal.debug;
         ResolvedJavaMethod method = graal.metaAccess.lookupJavaMethod(getMethodFromMethodSpec(getClass()));
         StructuredGraph structuredGraph = null;
-        try (Debug.Scope s = Debug.scope("GraphState", method)) {
+        try (DebugContext.Scope s = debug.scope("GraphState", method)) {
             structuredGraph = preprocessOriginal(getGraph(graal, method));
         } catch (Throwable t) {
-            Debug.handle(t);
+            debug.handle(t);
         }
         this.originalGraph = structuredGraph;
     }
@@ -78,6 +72,6 @@ public abstract class GraphState {
 
     @Setup(Level.Invocation)
     public void beforeInvocation() {
-        graph = (StructuredGraph) originalGraph.copy();
+        graph = (StructuredGraph) originalGraph.copy(originalGraph.getDebug());
     }
 }

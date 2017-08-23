@@ -23,7 +23,6 @@
 package org.graalvm.compiler.phases.common;
 
 import java.util.List;
-import java.util.Map;
 
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -41,6 +40,9 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
+import org.graalvm.util.EconomicMap;
+
+import jdk.vm.ci.code.BytecodeFrame;
 
 /**
  * This phase transfers {@link FrameState} nodes from {@link StateSplit} nodes to
@@ -71,7 +73,11 @@ public class FrameStateAssignmentPhase extends Phase {
                 StateSplit stateSplit = (StateSplit) node;
                 FrameState stateAfter = stateSplit.stateAfter();
                 if (stateAfter != null) {
-                    currentState = stateAfter;
+                    if (stateAfter.bci == BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+                        currentState = null;
+                    } else {
+                        currentState = stateAfter;
+                    }
                     stateSplit.setStateAfter(null);
                 }
             }
@@ -107,7 +113,7 @@ public class FrameStateAssignmentPhase extends Phase {
         }
 
         @Override
-        protected Map<LoopExitNode, FrameState> processLoop(LoopBeginNode loop, FrameState initialState) {
+        protected EconomicMap<LoopExitNode, FrameState> processLoop(LoopBeginNode loop, FrameState initialState) {
             return ReentrantNodeIterator.processLoop(this, loop, initialState).exitStates;
         }
     }
@@ -141,7 +147,10 @@ public class FrameStateAssignmentPhase extends Phase {
                 return null;
             }
         }
-        return singleState;
+        if (singleState != null && singleState.bci != BytecodeFrame.INVALID_FRAMESTATE_BCI) {
+            return singleState;
+        }
+        return null;
     }
 
     @Override

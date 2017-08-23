@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,16 +41,15 @@ JRT_ENTRY(int, SharkRuntime::find_exception_handler(JavaThread* thread,
                                                     int*        indexes,
                                                     int         num_indexes))
   constantPoolHandle pool(thread, method(thread)->constants());
-  KlassHandle exc_klass(thread, ((oop) tos_at(thread, 0))->klass());
+  Klass* exc_klass = ((oop) tos_at(thread, 0))->klass();
 
   for (int i = 0; i < num_indexes; i++) {
     Klass* tmp = pool->klass_at(indexes[i], CHECK_0);
-    KlassHandle chk_klass(thread, tmp);
 
-    if (exc_klass() == chk_klass())
+    if (exc_klass() == tmp)
       return i;
 
-    if (exc_klass()->is_subtype_of(chk_klass()))
+    if (exc_klass()->is_subtype_of(tmp))
       return i;
   }
 
@@ -85,7 +84,7 @@ JRT_END
 
 JRT_ENTRY(void, SharkRuntime::new_instance(JavaThread* thread, int index))
   Klass* k_oop = method(thread)->constants()->klass_at(index, CHECK);
-  instanceKlassHandle klass(THREAD, k_oop);
+  InstanceKlass* klass = InstanceKlass::cast(k);
 
   // Make sure we are not instantiating an abstract klass
   klass->check_valid_for_instantiation(true, CHECK);

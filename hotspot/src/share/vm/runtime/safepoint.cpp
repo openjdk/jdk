@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,11 @@
 #include "code/scopeDesc.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -226,9 +229,11 @@ void SafepointSynchronize::begin() {
             //   steps = MIN(steps, 2000-100)
             //   if (iterations != 0) steps -= NNN
           }
-          if (log_is_enabled(Trace, safepoint)) {
+          LogTarget(Trace, safepoint) lt;
+          if (lt.is_enabled()) {
             ResourceMark rm;
-            cur_state->print_on(Log(safepoint)::trace_stream());
+            LogStream ls(lt);
+            cur_state->print_on(&ls);
           }
         }
       }
@@ -363,8 +368,8 @@ void SafepointSynchronize::begin() {
       if (safepoint_limit_time < current_time) {
         tty->print_cr("# SafepointSynchronize: Finished after "
                       INT64_FORMAT_W(6) " ms",
-                      ((current_time - safepoint_limit_time) / MICROUNITS +
-                       (jlong)SafepointTimeoutDelay));
+                      (int64_t)((current_time - safepoint_limit_time) / MICROUNITS +
+                                (jlong)SafepointTimeoutDelay));
       }
     }
 #endif
@@ -396,9 +401,7 @@ void SafepointSynchronize::begin() {
   GCLocker::set_jni_lock_count(_current_jni_active_count);
 
   if (log_is_enabled(Debug, safepoint)) {
-    VM_Operation *op = VMThread::vm_operation();
-    log_debug(safepoint)("Entering safepoint region: %s",
-                         (op != NULL) ? op->name() : "no vm operation");
+    log_debug(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
   }
 
   RuntimeService::record_safepoint_synchronized();
@@ -527,6 +530,8 @@ void SafepointSynchronize::end() {
 }
 
 bool SafepointSynchronize::is_cleanup_needed() {
+  // Need a safepoint if there are many monitors to deflate.
+  if (ObjectSynchronizer::is_cleanup_needed()) return true;
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
   return false;
@@ -540,64 +545,128 @@ static void event_safepoint_cleanup_task_commit(EventSafepointCleanupTask& event
   }
 }
 
-// Various cleaning tasks that should be done periodically at safepoints
+class ParallelSPCleanupThreadClosure : public ThreadClosure {
+private:
+  CodeBlobClosure* _nmethod_cl;
+  DeflateMonitorCounters* _counters;
+
+public:
+  ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
+    _counters(counters),
+    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()) {}
+
+  void do_thread(Thread* thread) {
+    ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
+    if (_nmethod_cl != NULL && thread->is_Java_thread() &&
+        ! thread->is_Code_cache_sweeper_thread()) {
+      JavaThread* jt = (JavaThread*) thread;
+      jt->nmethods_do(_nmethod_cl);
+    }
+  }
+};
+
+class ParallelSPCleanupTask : public AbstractGangTask {
+private:
+  SubTasksDone _subtasks;
+  ParallelSPCleanupThreadClosure _cleanup_threads_cl;
+  uint _num_workers;
+  DeflateMonitorCounters* _counters;
+public:
+  ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
+    AbstractGangTask("Parallel Safepoint Cleanup"),
+    _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
+    _num_workers(num_workers),
+    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
+    _counters(counters) {}
+
+  void work(uint worker_id) {
+    // All threads deflate monitors and mark nmethods (if necessary).
+    Threads::parallel_java_threads_do(&_cleanup_threads_cl);
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
+      const char* name = "deflating idle monitors";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      ObjectSynchronizer::deflate_idle_monitors(_counters);
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
+      const char* name = "updating inline caches";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      InlineCacheBuffer::update_inline_caches();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
+      const char* name = "compilation policy safepoint handler";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      CompilationPolicy::policy()->do_safepoint_work();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
+      if (SymbolTable::needs_rehashing()) {
+        const char* name = "rehashing symbol table";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        SymbolTable::rehash_table();
+        event_safepoint_cleanup_task_commit(event, name);
+      }
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
+      if (StringTable::needs_rehashing()) {
+        const char* name = "rehashing string table";
+        EventSafepointCleanupTask event;
+        TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+        StringTable::rehash_table();
+        event_safepoint_cleanup_task_commit(event, name);
+      }
+    }
+
+    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
+      // CMS delays purging the CLDG until the beginning of the next safepoint and to
+      // make sure concurrent sweep is done
+      const char* name = "purging class loader data graph";
+      EventSafepointCleanupTask event;
+      TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+      ClassLoaderDataGraph::purge_if_needed();
+      event_safepoint_cleanup_task_commit(event, name);
+    }
+    _subtasks.all_tasks_completed(_num_workers);
+  }
+};
+
+// Various cleaning tasks that should be done periodically at safepoints.
 void SafepointSynchronize::do_cleanup_tasks() {
-  {
-    const char* name = "deflating idle monitors";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ObjectSynchronizer::deflate_idle_monitors();
-    event_safepoint_cleanup_task_commit(event, name);
+
+  TraceTime timer("safepoint cleanup tasks", TRACETIME_LOG(Info, safepoint, cleanup));
+
+  // Prepare for monitor deflation.
+  DeflateMonitorCounters deflate_counters;
+  ObjectSynchronizer::prepare_deflate_idle_monitors(&deflate_counters);
+
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "heap not initialized yet?");
+  WorkGang* cleanup_workers = heap->get_safepoint_workers();
+  if (cleanup_workers != NULL) {
+    // Parallel cleanup using GC provided thread pool.
+    uint num_cleanup_workers = cleanup_workers->active_workers();
+    ParallelSPCleanupTask cleanup(num_cleanup_workers, &deflate_counters);
+    StrongRootsScope srs(num_cleanup_workers);
+    cleanup_workers->run_task(&cleanup);
+  } else {
+    // Serial cleanup using VMThread.
+    ParallelSPCleanupTask cleanup(1, &deflate_counters);
+    StrongRootsScope srs(1);
+    cleanup.work(0);
   }
 
-  {
-    const char* name = "updating inline caches";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    InlineCacheBuffer::update_inline_caches();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-  {
-    const char* name = "compilation policy safepoint handler";
-    EventSafepointCleanupTask event;
-    TraceTime timer("compilation policy safepoint handler", TRACETIME_LOG(Info, safepoint, cleanup));
-    CompilationPolicy::policy()->do_safepoint_work();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  {
-    const char* name = "mark nmethods";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    NMethodSweeper::mark_active_nmethods();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  if (SymbolTable::needs_rehashing()) {
-    const char* name = "rehashing symbol table";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    SymbolTable::rehash_table();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  if (StringTable::needs_rehashing()) {
-    const char* name = "rehashing string table";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    StringTable::rehash_table();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
-
-  {
-    // CMS delays purging the CLDG until the beginning of the next safepoint and to
-    // make sure concurrent sweep is done
-    const char* name = "purging class loader data graph";
-    EventSafepointCleanupTask event;
-    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
-    ClassLoaderDataGraph::purge_if_needed();
-    event_safepoint_cleanup_task_commit(event, name);
-  }
+  // Finish monitor deflation.
+  ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
 }
 
 
@@ -845,10 +914,8 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   // To debug the long safepoint, specify both DieOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (DieOnSafepointTimeout) {
-    VM_Operation *op = VMThread::vm_operation();
     fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
-          SafepointTimeoutDelay,
-          op != NULL ? op->name() : "no vm operation");
+          SafepointTimeoutDelay, VMThread::vm_safepoint_description());
   }
 }
 
@@ -1108,9 +1175,12 @@ static bool   init_done = false;
 
 // Helper method to print the header.
 static void print_header() {
-  tty->print("         vmop                    "
-             "[threads: total initially_running wait_to_block]    ");
-  tty->print("[time: spin block sync cleanup vmop] ");
+  // The number of spaces is significant here, and should match the format
+  // specifiers in print_statistics().
+
+  tty->print("          vmop                            "
+             "[ threads:    total initially_running wait_to_block ]"
+             "[ time:    spin   block    sync cleanup    vmop ] ");
 
   // no page armed status printed out if it is always armed.
   if (need_to_track_page_armed_status) {
@@ -1249,37 +1319,34 @@ void SafepointSynchronize::end_statistics(jlong vmop_end_time) {
 }
 
 void SafepointSynchronize::print_statistics() {
-  SafepointStats* sstats = _safepoint_stats;
-
   for (int index = 0; index <= _cur_stat_index; index++) {
     if (index % 30 == 0) {
       print_header();
     }
-    sstats = &_safepoint_stats[index];
-    tty->print("%.3f: ", sstats->_time_stamp);
-    tty->print("%-26s       ["
-               INT32_FORMAT_W(8) INT32_FORMAT_W(11) INT32_FORMAT_W(15)
-               "    ]    ",
-               sstats->_vmop_type == -1 ? "no vm operation" :
-               VM_Operation::name(sstats->_vmop_type),
+    SafepointStats* sstats = &_safepoint_stats[index];
+    tty->print("%8.3f: ", sstats->_time_stamp);
+    tty->print("%-30s  [          "
+               INT32_FORMAT_W(8) " " INT32_FORMAT_W(17) " " INT32_FORMAT_W(13) " "
+               "]",
+               (sstats->_vmop_type == -1 ? "no vm operation" : VM_Operation::name(sstats->_vmop_type)),
                sstats->_nof_total_threads,
                sstats->_nof_initial_running_threads,
                sstats->_nof_threads_wait_to_block);
     // "/ MICROUNITS " is to convert the unit from nanos to millis.
-    tty->print("  ["
-               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6) INT64_FORMAT_W(6)
-               INT64_FORMAT_W(6) "    ]  ",
-               sstats->_time_to_spin / MICROUNITS,
-               sstats->_time_to_wait_to_block / MICROUNITS,
-               sstats->_time_to_sync / MICROUNITS,
-               sstats->_time_to_do_cleanups / MICROUNITS,
-               sstats->_time_to_exec_vmop / MICROUNITS);
+    tty->print("[       "
+               INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
+               INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
+               INT64_FORMAT_W(7) " ] ",
+               (int64_t)(sstats->_time_to_spin / MICROUNITS),
+               (int64_t)(sstats->_time_to_wait_to_block / MICROUNITS),
+               (int64_t)(sstats->_time_to_sync / MICROUNITS),
+               (int64_t)(sstats->_time_to_do_cleanups / MICROUNITS),
+               (int64_t)(sstats->_time_to_exec_vmop / MICROUNITS));
 
     if (need_to_track_page_armed_status) {
-      tty->print(INT32_FORMAT "         ", sstats->_page_armed);
+      tty->print(INT32_FORMAT_W(10) " ", sstats->_page_armed);
     }
-    tty->print_cr(INT32_FORMAT "   ", sstats->_nof_threads_hit_page_trap);
+    tty->print_cr(INT32_FORMAT_W(15) " ", sstats->_nof_threads_hit_page_trap);
   }
 }
 
@@ -1322,10 +1389,10 @@ void SafepointSynchronize::print_stat_on_exit() {
   tty->print_cr(UINT64_FORMAT_W(5) " VM operations coalesced during safepoint",
                 _coalesced_vmop_count);
   tty->print_cr("Maximum sync time  " INT64_FORMAT_W(5) " ms",
-                _max_sync_time / MICROUNITS);
+                (int64_t)(_max_sync_time / MICROUNITS));
   tty->print_cr("Maximum vm operation time (except for Exit VM operation)  "
                 INT64_FORMAT_W(5) " ms",
-                _max_vmop_time / MICROUNITS);
+                (int64_t)(_max_vmop_time / MICROUNITS));
 }
 
 // ------------------------------------------------------------------------------------------------
