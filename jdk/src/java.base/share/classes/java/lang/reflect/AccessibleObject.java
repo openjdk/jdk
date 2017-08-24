@@ -304,7 +304,7 @@ public class AccessibleObject implements AnnotatedElement {
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
-                logIfExportedByBackdoor(caller, declaringClass);
+                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
 
@@ -312,14 +312,14 @@ public class AccessibleObject implements AnnotatedElement {
             if (Modifier.isProtected(modifiers)
                 && Modifier.isStatic(modifiers)
                 && isSubclassOf(caller, declaringClass)) {
-                logIfExportedByBackdoor(caller, declaringClass);
+                logIfExportedForIllegalAccess(caller, declaringClass);
                 return true;
             }
         }
 
         // package is open to caller
         if (declaringModule.isOpen(pn, callerModule)) {
-            logIfOpenedByBackdoor(caller, declaringClass);
+            logIfOpenedForIllegalAccess(caller, declaringClass);
             return true;
         }
 
@@ -353,26 +353,26 @@ public class AccessibleObject implements AnnotatedElement {
         return false;
     }
 
-    private void logIfOpenedByBackdoor(Class<?> caller, Class<?> declaringClass) {
+    private void logIfOpenedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
         Module callerModule = caller.getModule();
         Module targetModule = declaringClass.getModule();
         // callerModule is null during early startup
         if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
             IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
             if (logger != null) {
-                logger.logIfOpenedByBackdoor(caller, declaringClass, this::toShortString);
+                logger.logIfOpenedForIllegalAccess(caller, declaringClass, this::toShortString);
             }
         }
     }
 
-    private void logIfExportedByBackdoor(Class<?> caller, Class<?> declaringClass) {
+    private void logIfExportedForIllegalAccess(Class<?> caller, Class<?> declaringClass) {
         Module callerModule = caller.getModule();
         Module targetModule = declaringClass.getModule();
         // callerModule is null during early startup
         if (callerModule != null && !callerModule.isNamed() && targetModule.isNamed()) {
             IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
             if (logger != null) {
-                logger.logIfExportedByBackdoor(caller, declaringClass, this::toShortString);
+                logger.logIfExportedForIllegalAccess(caller, declaringClass, this::toShortString);
             }
         }
     }
@@ -634,7 +634,7 @@ public class AccessibleObject implements AnnotatedElement {
         }
 
         // access okay
-        logIfExportedByBackdoor(caller, memberClass);
+        logIfExportedForIllegalAccess(caller, memberClass);
 
         // Success: Update the cache.
         Object cache = (targetClass != null

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,25 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.*;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassType;
+import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.InvocationException;
+import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 final public class ClassTypeImpl extends InvokableTypeImpl
-    implements ClassType
+                                 implements ClassType
 {
     private static class IResult implements InvocationResult {
         final private JDWP.ClassType.InvokeMethod rslt;
@@ -52,15 +65,14 @@ final public class ClassTypeImpl extends InvokableTypeImpl
 
     private boolean cachedSuperclass = false;
     private ClassType superclass = null;
-    private int lastLine = -1;
     private List<InterfaceType> interfaces = null;
 
-    protected ClassTypeImpl(VirtualMachine aVm,long aRef) {
+    protected ClassTypeImpl(VirtualMachine aVm, long aRef) {
         super(aVm, aRef);
     }
 
     public ClassType superclass() {
-        if(!cachedSuperclass)  {
+        if (!cachedSuperclass)  {
             ClassTypeImpl sup = null;
             try {
                 sup = JDWP.ClassType.Superclass.
@@ -97,7 +109,7 @@ final public class ClassTypeImpl extends InvokableTypeImpl
     }
 
     public List<ClassType> subclasses() {
-        List<ClassType> subs = new ArrayList<ClassType>();
+        List<ClassType> subs = new ArrayList<>();
         for (ReferenceType refType : vm.allClasses()) {
             if (refType instanceof ClassType) {
                 ClassType clazz = (ClassType)refType;
@@ -162,9 +174,9 @@ final public class ClassTypeImpl extends InvokableTypeImpl
     }
 
     PacketStream sendNewInstanceCommand(final ThreadReferenceImpl thread,
-                                   final MethodImpl method,
-                                   final ValueImpl[] args,
-                                   final int options) {
+                                        final MethodImpl method,
+                                        final ValueImpl[] args,
+                                        final int options) {
         CommandSender sender =
             new CommandSender() {
                 public PacketStream send() {
@@ -232,18 +244,18 @@ final public class ClassTypeImpl extends InvokableTypeImpl
     }
 
     public Method concreteMethodByName(String name, String signature)  {
-       Method method = null;
-       for (Method candidate : visibleMethods()) {
-           if (candidate.name().equals(name) &&
-               candidate.signature().equals(signature) &&
-               !candidate.isAbstract()) {
+        Method method = null;
+        for (Method candidate : visibleMethods()) {
+            if (candidate.name().equals(name) &&
+                candidate.signature().equals(signature) &&
+                !candidate.isAbstract()) {
 
-               method = candidate;
-               break;
-           }
-       }
-       return method;
-   }
+                method = candidate;
+                break;
+            }
+        }
+        return method;
+    }
 
     void validateConstructorInvocation(Method method)
                                    throws InvalidTypeException,
@@ -263,7 +275,6 @@ final public class ClassTypeImpl extends InvokableTypeImpl
             throw new IllegalArgumentException("Cannot create instance with non-constructor");
         }
     }
-
 
     public String toString() {
        return "class " + name() + " (" + loaderString() + ")";

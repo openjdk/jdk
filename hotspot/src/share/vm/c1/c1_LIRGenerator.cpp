@@ -545,11 +545,11 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
 
     case Bytecodes::_imul:
       {
-        bool    did_strength_reduce = false;
+        bool did_strength_reduce = false;
 
         if (right->is_constant()) {
-          int c = right->as_jint();
-          if (is_power_of_2(c)) {
+          jint c = right->as_jint();
+          if (c > 0 && is_power_of_2(c)) {
             // do not need tmp here
             __ shift_left(left_op, exact_log2(c), result_op);
             did_strength_reduce = true;

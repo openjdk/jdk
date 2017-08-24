@@ -190,10 +190,12 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     }
 
     /**
-     * Atomically updates the element at index {@code i} with the results
-     * of applying the given function, returning the previous value. The
-     * function should be side-effect-free, since it may be re-applied
-     * when attempted updates fail due to contention among threads.
+     * Atomically updates (with memory effects as specified by {@link
+     * VarHandle#compareAndSet}) the element at index {@code i} with
+     * the results of applying the given function, returning the
+     * previous value. The function should be side-effect-free, since
+     * it may be re-applied when attempted updates fail due to
+     * contention among threads.
      *
      * @param i the index
      * @param updateFunction a side-effect-free function
@@ -212,10 +214,12 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     }
 
     /**
-     * Atomically updates the element at index {@code i} with the results
-     * of applying the given function, returning the updated value. The
-     * function should be side-effect-free, since it may be re-applied
-     * when attempted updates fail due to contention among threads.
+     * Atomically updates (with memory effects as specified by {@link
+     * VarHandle#compareAndSet}) the element at index {@code i} with
+     * the results of applying the given function, returning the
+     * updated value. The function should be side-effect-free, since it
+     * may be re-applied when attempted updates fail due to contention
+     * among threads.
      *
      * @param i the index
      * @param updateFunction a side-effect-free function
@@ -234,10 +238,11 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     }
 
     /**
-     * Atomically updates the element at index {@code i} with the
-     * results of applying the given function to the current and given
-     * values, returning the previous value. The function should be
-     * side-effect-free, since it may be re-applied when attempted
+     * Atomically updates (with memory effects as specified by {@link
+     * VarHandle#compareAndSet}) the element at index {@code i} with
+     * the results of applying the given function to the current and
+     * given values, returning the previous value. The function should
+     * be side-effect-free, since it may be re-applied when attempted
      * updates fail due to contention among threads.  The function is
      * applied with the current value of the element at index {@code i}
      * as its first argument, and the given update as the second
@@ -262,10 +267,11 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     }
 
     /**
-     * Atomically updates the element at index {@code i} with the
-     * results of applying the given function to the current and given
-     * values, returning the updated value. The function should be
-     * side-effect-free, since it may be re-applied when attempted
+     * Atomically updates (with memory effects as specified by {@link
+     * VarHandle#compareAndSet}) the element at index {@code i} with
+     * the results of applying the given function to the current and
+     * given values, returning the updated value. The function should
+     * be side-effect-free, since it may be re-applied when attempted
      * updates fail due to contention among threads.  The function is
      * applied with the current value of the element at index {@code i}
      * as its first argument, and the given update as the second

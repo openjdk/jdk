@@ -813,8 +813,15 @@ public final class Unsafe {
     /**
      * Tells the VM to define a class, without security checks.  By default, the
      * class loader and protection domain come from the caller's class.
+     *
+     * @deprecated Use {@link java.lang.invoke.MethodHandles.Lookup#defineClass MethodHandles.Lookup#defineClass}
+     * to define a class to the same class loader and in the same runtime package
+     * and {@linkplain java.security.ProtectionDomain protection domain} of a
+     * given {@code Lookup}'s {@linkplain java.lang.invoke.MethodHandles.Lookup#lookupClass() lookup class}.
+     *
      * @see java.lang.invoke.MethodHandles.Lookup#defineClass(byte[])
      */
+    @Deprecated(since="9", forRemoval=true)
     @ForceInline
     public Class<?> defineClass(String name, byte[] b, int off, int len,
                                 ClassLoader loader,

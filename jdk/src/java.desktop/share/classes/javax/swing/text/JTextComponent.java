@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,11 +157,15 @@ import sun.swing.SwingAccessor;
  * Keyboard event and input method events are handled in the following stages,
  * with each stage capable of consuming the event:
  *
- * <table border=1 summary="Stages of keyboard and input method event handling">
+ * <table class="striped">
+ * <caption>Stages of keyboard and input method event handling</caption>
+ * <thead>
  * <tr>
- * <th id="stage"><p style="text-align:left">Stage</p></th>
- * <th id="ke"><p style="text-align:left">KeyEvent</p></th>
- * <th id="ime"><p style="text-align:left">InputMethodEvent</p></th></tr>
+ * <th id="stage">Stage</th>
+ * <th id="ke">KeyEvent</th>
+ * <th id="ime">InputMethodEvent</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td headers="stage">1.   </td>
  *     <td headers="ke">input methods </td>
  *     <td headers="ime">(generated here)</td></tr>
@@ -181,6 +185,7 @@ import sun.swing.SwingAccessor;
  *     <td headers="stage">5.   </td><td headers="ke ime" colspan=2>keymap handling using the current keymap</td></tr>
  * <tr><td headers="stage">6.   </td><td headers="ke">keyboard handling in JComponent (e.g. accelerators, component navigation, etc.)</td>
  *     <td headers="ime"></td></tr>
+ * </tbody>
  * </table>
  *
  * <p>

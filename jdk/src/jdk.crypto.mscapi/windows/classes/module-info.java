@@ -24,8 +24,9 @@
  */
 
 /**
- * The SunMSCAPI security provider.
+ * Provides the implementation of the SunMSCAPI security provider.
  *
+ * @provides java.security.Provider
  * @moduleGraph
  * @since 9
  */

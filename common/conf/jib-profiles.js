@@ -893,6 +893,16 @@ var getJibProfilesProfiles = function (input, common, data) {
             }
         });
 
+    // The windows ri profile needs to add the freetype license file
+    profilesRiFreetype = {
+        "windows-x86-ri": {
+            configure_args: "--with-freetype-license="
+                + input.get("freetype", "install_path")
+                + "/freetype-2.7.1-v120-x86/freetype.md"
+        }
+    };
+    profiles = concatObjects(profiles, profilesRiFreetype);
+
     // Generate the missing platform attributes
     profiles = generatePlatformAttributes(profiles);
     profiles = generateDefaultMakeTargetsConfigureArg(common, profiles);
