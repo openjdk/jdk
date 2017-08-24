@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,21 @@ package MyPackage;
 
 /**
  * @test
- * @summary Verifies the JVMTI GetNamedModule API
+ * @summary Verifies the JVMTI IsModifiableModule API
  * @modules jdk.jdi
- * @compile GetNamedModuleTest.java
- * @run main/othervm/native -agentlib:GetNamedModuleTest MyPackage.GetNamedModuleTest
+ * @compile IsModifiableModuleTest.java
+ * @run main/othervm/native -agentlib:IsModifiableModuleTest MyPackage.IsModifiableModuleTest
  */
 
 import java.io.PrintStream;
 
-public class GetNamedModuleTest {
+public class IsModifiableModuleTest {
 
     static {
         try {
-            System.loadLibrary("GetNamedModuleTest");
+            System.loadLibrary("IsModifiableModuleTest");
         } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load GetNamedModuleTest library");
+            System.err.println("Could not load IsModifiableModuleTest library");
             System.err.println("java.library.path: "
                 + System.getProperty("java.library.path"));
             throw ule;

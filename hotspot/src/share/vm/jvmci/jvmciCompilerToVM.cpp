@@ -1687,6 +1687,13 @@ C2V_VMENTRY(jlong, getFingerprint, (JNIEnv*, jobject, jlong metaspace_klass))
   }
 C2V_END
 
+C2V_VMENTRY(jobject, getHostClass, (JNIEnv*, jobject, jobject jvmci_type))
+  InstanceKlass* k = InstanceKlass::cast(CompilerToVM::asKlass(jvmci_type));
+  InstanceKlass* host = k->host_klass();
+  oop result = CompilerToVM::get_jvmci_type(host, CHECK_NULL);
+  return JNIHandles::make_local(THREAD, result);
+C2V_END
+
 C2V_VMENTRY(int, interpreterFrameSize, (JNIEnv*, jobject, jobject bytecode_frame_handle))
   if (bytecode_frame_handle == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
@@ -1817,6 +1824,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
   {CC "getFingerprint",                               CC "(J)J",                                                                            FN_PTR(getFingerprint)},
+  {CC "getHostClass",                                 CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_KLASS,                                       FN_PTR(getHostClass)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECT ")V",                                                                   FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},
