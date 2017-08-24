@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,17 +61,21 @@ import java.util.function.Function;
  * security framework. Services of this type cannot be added, removed,
  * or modified by applications.
  * The following attributes are automatically placed in each Provider object:
- * <table cellspacing=4>
+ * <table class="plain">
  * <caption><b>Attributes Automatically Placed in a Provider Object</b></caption>
+ * <thead>
  * <tr><th>Name</th><th>Value</th>
+ * </thead>
+ * <tbody>
  * <tr><td>{@code Provider.id name}</td>
-  *    <td>{@code String.valueOf(provider.getName())}</td>
+ *     <td>{@code String.valueOf(provider.getName())}</td>
  * <tr><td>{@code Provider.id version}</td>
  *     <td>{@code String.valueOf(provider.getVersionStr())}</td>
  * <tr><td>{@code Provider.id info}</td>
-       <td>{@code String.valueOf(provider.getInfo())}</td>
+ *     <td>{@code String.valueOf(provider.getInfo())}</td>
  * <tr><td>{@code Provider.id className}</td>
  *     <td>{@code provider.getClass().getName()}</td>
+ * </tbody>
  * </table>
  *
  * <p>Each provider has a name and a version string. A provider normally
@@ -90,14 +94,15 @@ import java.util.function.Function;
  * The JDK implementation supports static registration of the security
  * providers via the {@code conf/security/java.security} file in the Java
  * installation directory. These providers are automatically installed by
- * the JDK runtime, see <a href =
- * "../../../technotes/guides/security/crypto/CryptoSpec.html#Provider">The Provider Class</a>
- * in the "Java Cryptography Architecture API Specification &amp; Reference"
+ * the JDK runtime, see {@extLink security_guide_jca_provider
+ * The Provider Class}
+ * in the Java Cryptography Architecture (JCA) Reference Guide
  * for information about how a particular type of provider, the cryptographic
  * service provider, works and is installed.
  *
  * @author Benjamin Renaud
  * @author Andreas Sterbenz
+ * @since 1.1
  */
 public abstract class Provider extends Properties {
 
@@ -1305,8 +1310,8 @@ public abstract class Provider extends Properties {
      * it is replaced by the new service.
      * This method also places information about this service
      * in the provider's Hashtable values in the format described in the
-     * <a href="../../../technotes/guides/security/crypto/CryptoSpec.html">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>.
+     * {@extLink security_guide_jca
+     * Java Cryptography Architecture (JCA) Reference Guide}.
      *
      * <p>Also, if there is a security manager, its
      * {@code checkSecurityAccess} method is called with the string
@@ -1588,8 +1593,8 @@ public abstract class Provider extends Properties {
      * suitable services and instantiates them. The valid arguments to those
      * methods depend on the type of service. For the service types defined
      * within Java SE, see the
-     * <a href="../../../technotes/guides/security/crypto/CryptoSpec.html">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * {@extLink security_guide_jca
+     * Java Cryptography Architecture (JCA) Reference Guide}
      * for the valid values.
      * Note that components outside of Java SE can define additional types of
      * services and their behavior.
@@ -1764,9 +1769,8 @@ public abstract class Provider extends Properties {
          * instantiation in a different way.
          * For details and the values of constructorParameter that are
          * valid for the various types of services see the
-         * <a href="../../../technotes/guides/security/crypto/CryptoSpec.html">
-         * Java Cryptography Architecture API Specification &amp;
-         * Reference</a>.
+         * {@extLink security_guide_jca
+         * Java Cryptography Architecture (JCA) Reference Guide}.
          *
          * @param constructorParameter the value to pass to the constructor,
          * or null if this type of service does not use a constructorParameter.
@@ -1873,9 +1877,8 @@ public abstract class Provider extends Properties {
          *
          * <p>For details and the values of parameter that are valid for the
          * various types of services see the top of this class and the
-         * <a href="../../../technotes/guides/security/crypto/CryptoSpec.html">
-         * Java Cryptography Architecture API Specification &amp;
-         * Reference</a>.
+         * {@extLink security_guide_jca
+         * Java Cryptography Architecture (JCA) Reference Guide}.
          * Security providers can override it to implement their own test.
          *
          * @param parameter the parameter to test

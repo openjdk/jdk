@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,12 @@ import java.util.NoSuchElementException;
 import java.util.NavigableSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.testng.Assert;
+import org.testng.Assert.ThrowingRunnable;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import static org.testng.Assert.fail;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -67,26 +69,31 @@ public class EmptyNavigableSet {
             ((null != message) ? message : "") + " Not empty. ");
     }
 
-    public interface Thrower<T extends Throwable> {
-
-        public void run() throws T;
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable) {
-        assertThrows(thrower, throwable, null);
-    }
-
-    public static <T extends Throwable> void assertThrows(Thrower<T> thrower, Class<T> throwable, String message) {
-        Throwable result;
+    private <T extends Throwable> void assertThrows(Class<T> throwableClass,
+                                                    ThrowingRunnable runnable,
+                                                    String message) {
         try {
-            thrower.run();
-            fail(((null != message) ? message : "") + "Failed to throw " + throwable.getCanonicalName() + ". ");
-            return;
-        } catch (Throwable caught) {
-            result = caught;
+            Assert.assertThrows(throwableClass, runnable);
+        } catch (AssertionError e) {
+            throw new AssertionError(String.format("%s%n%s",
+                    ((null != message) ? message : ""), e.getMessage()), e);
         }
+    }
 
-        assertInstance(result, throwable, ((null != message) ? message : "") + "Failed to throw " + throwable.getCanonicalName() + ". ");
+    private void assertThrowsCCE(ThrowingRunnable r, String s) {
+        assertThrows(ClassCastException.class, r, s);
+    }
+
+    private void assertThrowsNPE(ThrowingRunnable r, String s) {
+        assertThrows(NullPointerException.class, r, s);
+    }
+
+    private void assertThrowsIAE(ThrowingRunnable r, String s) {
+        assertThrows(IllegalArgumentException.class, r, s);
+    }
+
+    private void assertThrowsNSEE(ThrowingRunnable r, String s) {
+        assertThrows(NoSuchElementException.class, r, s);
     }
 
     public static final boolean isDescending(SortedSet<?> set) {
@@ -123,10 +130,9 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testContainsRequiresComparable(String description, NavigableSet<?> navigableSet) {
-        assertThrows(() -> {
+        assertThrowsCCE(() -> {
             navigableSet.contains(new Object());
         },
-            ClassCastException.class,
             description + ": Compareable should be required");
     }
 
@@ -176,9 +182,9 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testFirst(String description, NavigableSet<?> navigableSet) {
-        assertThrows(() -> {
+        assertThrowsNSEE(() -> {
             navigableSet.first();
-        }, NoSuchElementException.class, description);
+        }, description);
     }
 
     /**
@@ -186,14 +192,12 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testHeadSet(String description, NavigableSet navigableSet) {
-        assertThrows(
+        assertThrowsNPE(
             () -> { NavigableSet ns = navigableSet.headSet(null, false); },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> { NavigableSet ns = navigableSet.headSet(new Object(), true); },
-            ClassCastException.class,
             description + ": Must throw ClassCastException for non-Comparable element");
 
         NavigableSet ns = navigableSet.headSet("1", false);
@@ -206,9 +210,9 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testLast(String description, NavigableSet<?> navigableSet) {
-        assertThrows(() -> {
+        assertThrowsNSEE(() -> {
             navigableSet.last();
-        }, NoSuchElementException.class, description);
+        }, description);
     }
 
     /**
@@ -224,50 +228,44 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testSubSet(String description, NavigableSet navigableSet) {
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedSet ss = navigableSet.subSet(null, BigInteger.TEN);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedSet ss = navigableSet.subSet(BigInteger.ZERO, null);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(
+        assertThrowsNPE(
             () -> {
                 SortedSet ss = navigableSet.subSet(null, null);
             },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
         Object obj1 = new Object();
         Object obj2 = new Object();
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedSet ss = navigableSet.subSet(obj1, BigInteger.TEN);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedSet ss = navigableSet.subSet(BigInteger.ZERO, obj2);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
-        assertThrows(
+        assertThrowsCCE(
             () -> {
                 SortedSet ss = navigableSet.subSet(obj1, obj2);
             },
-            ClassCastException.class, description
-            + ": Must throw ClassCastException for parameter which is not Comparable.");
+            description + ": Must throw ClassCastException for parameter which is not Comparable.");
 
         // minimal range
         navigableSet.subSet(BigInteger.ZERO, false, BigInteger.ZERO, false);
@@ -278,11 +276,11 @@ public class EmptyNavigableSet {
         Object first = isDescending(navigableSet) ? BigInteger.TEN : BigInteger.ZERO;
         Object last = (BigInteger.ZERO == first) ? BigInteger.TEN : BigInteger.ZERO;
 
-            assertThrows(
+            assertThrowsIAE(
                 () -> {
                     navigableSet.subSet(last, true, first, false);
                 },
-                IllegalArgumentException.class, description
+                description
                 + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
 
         navigableSet.subSet(first, true, last, false);
@@ -301,10 +299,9 @@ public class EmptyNavigableSet {
         // slightly smaller
         NavigableSet ns = subSet.subSet(first, false, last, false);
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.subSet(first, true, last, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -322,10 +319,9 @@ public class EmptyNavigableSet {
         NavigableSet ns = subSet.headSet(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.headSet(BigInteger.ONE, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -343,10 +339,9 @@ public class EmptyNavigableSet {
         NavigableSet ns = subSet.tailSet(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrows(() -> {
+        assertThrowsIAE(() -> {
             ns.tailSet(BigInteger.ONE, true);
         },
-            IllegalArgumentException.class,
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -358,15 +353,14 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testTailSet(String description, NavigableSet navigableSet) {
-        assertThrows(() -> {
+        assertThrowsNPE(() -> {
             navigableSet.tailSet(null);
         },
-            NullPointerException.class,
             description + ": Must throw NullPointerException for null element");
 
-        assertThrows(() -> {
+        assertThrowsCCE(() -> {
             navigableSet.tailSet(new Object());
-        }, ClassCastException.class);
+        }, description);
 
         NavigableSet ss = navigableSet.tailSet("1", true);
 

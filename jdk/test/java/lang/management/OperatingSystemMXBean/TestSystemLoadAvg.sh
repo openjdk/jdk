@@ -23,11 +23,10 @@
 
 #
 # @test
+# @bug      6336608 6367473 6511738
 # @summary  Tests OperatingSystemMXBean.getSystemLoadAverage() api.
 # @author   Mandy Chung
-# @bug      6336608 6367473 6511738
 #
-# @modules java.management
 # @run build GetSystemLoadAverage
 # @run shell/timeout=300 TestSystemLoadAvg.sh
 #

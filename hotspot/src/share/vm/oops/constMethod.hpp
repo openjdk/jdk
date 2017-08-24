@@ -359,7 +359,9 @@ public:
   }
 
   // Sizing
-  static int header_size() { return sizeof(ConstMethod)/wordSize; }
+  static int header_size() {
+    return align_size_up(sizeof(ConstMethod), wordSize) / wordSize;
+  }
 
   // Size needed
   static int size(int code_size, InlineTableSizes* sizes);

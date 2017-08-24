@@ -27,7 +27,7 @@
  * @summary Test that annotations in Standard MBean interfaces
  * correctly produce Descriptor entries
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean AnnotationTest
  * @run build AnnotationTest
  * @run main AnnotationTest

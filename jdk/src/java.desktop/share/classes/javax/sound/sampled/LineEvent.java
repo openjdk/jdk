@@ -220,7 +220,7 @@ public class LineEvent extends EventObject {
          * @see #CLOSE
          * @see Line#open
          */
-        public static final Type OPEN   = new Type("Open");
+        public static final Type OPEN = new Type("Open");
 
         /**
          * A type of event that is sent when a line closes, freeing the system
@@ -229,7 +229,7 @@ public class LineEvent extends EventObject {
          * @see #OPEN
          * @see Line#close
          */
-        public static final Type CLOSE  = new Type("Close");
+        public static final Type CLOSE = new Type("Close");
 
         /**
          * A type of event that is sent when a line begins to engage in active
@@ -239,7 +239,7 @@ public class LineEvent extends EventObject {
          * @see #STOP
          * @see DataLine#start
          */
-        public static final Type START  = new Type("Start");
+        public static final Type START = new Type("Start");
 
         /**
          * A type of event that is sent when a line ceases active input or
@@ -249,7 +249,7 @@ public class LineEvent extends EventObject {
          * @see #START
          * @see DataLine#stop
          */
-        public static final Type STOP   = new Type("Stop");
+        public static final Type STOP = new Type("Stop");
 
         /**
          * A type of event that is sent when a line ceases to engage in active
