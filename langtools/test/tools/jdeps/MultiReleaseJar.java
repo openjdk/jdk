@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153654
+ * @bug 8153654 8176333
  * @summary Tests for jdeps tool with multi-release jar files
  * @modules jdk.jdeps/com.sun.tools.jdeps
  * @library mrjar mrjar/base mrjar/9 mrjar/10 mrjar/v9 mrjar/v10
@@ -67,7 +67,7 @@ public class MultiReleaseJar {
         checkResult(r, false, "Warning: Path does not exist: missing.jar");
 
         r = run("jdeps -v Version.jar");
-        checkResult(r, false, "the --multi-release option is not set");
+        checkResult(r, false, "--multi-release option is not set");
 
         r = run("jdeps --multi-release base  -v Version.jar");
         checkResult(r, true,
@@ -105,7 +105,7 @@ public class MultiReleaseJar {
         checkResult(r, false, "Error: invalid argument for option: 9.1");
 
         r = run("jdeps -v -R -cp Version.jar test/Main.class");
-        checkResult(r, false, "the --multi-release option is not set");
+        checkResult(r, false, "--multi-release option is not set");
 
         r = run("jdeps -v -R -cp Version.jar -multi-release 9 test/Main.class");
         checkResult(r, false,

@@ -59,7 +59,7 @@ public class MetaMessage extends MidiMessage {
      *
      * @see MidiMessage#getStatus
      */
-    public static final int META                                                = 0xFF; // 255
+    public static final int META = 0xFF; // 255
 
     /**
      * The length of the actual message in the data array. This is used to

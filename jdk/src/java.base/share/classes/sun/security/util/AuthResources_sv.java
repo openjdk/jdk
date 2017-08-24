@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
         // provided.null.name is the NullPointerException message when a
         // developer incorrectly passes a null name to the constructor of
         // subclasses of java.security.Principal
-        {"provided.null.name", "angav null-namn"}
+        {"provided.null.name", "null-namn angavs"}
 
     };
 

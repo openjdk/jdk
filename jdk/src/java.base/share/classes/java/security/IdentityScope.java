@@ -55,6 +55,7 @@ import java.util.Properties;
  * @see Key
  *
  * @author Benjamin Renaud
+ * @since 1.1
  *
  * @deprecated This class is no longer used. Its functionality has been
  * replaced by {@code java.security.KeyStore}, the
