@@ -26,7 +26,7 @@
  * @bug 4883712 4869006 4894856 5016685
  * @summary Test that DescriptorSupport correctly validates fields
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DescriptorSupportTest
  * @run build DescriptorSupportTest
  * @run main DescriptorSupportTest
