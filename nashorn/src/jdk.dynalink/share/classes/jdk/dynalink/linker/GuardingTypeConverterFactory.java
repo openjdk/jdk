@@ -108,8 +108,8 @@ public interface GuardingTypeConverterFactory {
      * language's objects to Java interfaces and classes by generating adapters
      * for them.
      * <p>
-     * The type of the invocation is <tt>(sourceType)&rarr;targetType</tt>, while the
-     * type of the guard is <tt>(sourceType)&rarr;boolean</tt>. You are allowed to
+     * The type of the invocation is <code>(sourceType)&rarr;targetType</code>, while the
+     * type of the guard is <code>(sourceType)&rarr;boolean</code>. You are allowed to
      * return unconditional invocations (with no guard) if the source type is
      * specific to your runtime and your runtime only.
      * <p>Note that this method will never be invoked for

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public class FaultElement1_1Impl extends FaultElementImpl {
               NameImpl.createFaultElement1_1Name(localName, prefix));
     }
 
+    @Override
     protected boolean isStandardFaultElement() {
         String localName = elementQName.getLocalPart();
         if (localName.equalsIgnoreCase("faultcode") ||
@@ -69,6 +70,7 @@ public class FaultElement1_1Impl extends FaultElementImpl {
         return false;
     }
 
+    @Override
     public SOAPElement setElementQName(QName newName) throws SOAPException {
         if (!isStandardFaultElement()) {
             FaultElement1_1Impl copy =

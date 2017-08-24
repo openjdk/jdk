@@ -110,7 +110,7 @@ import java.io.Serializable;
  * Implementations may optionally handle the self-referential scenario, however
  * most current implementations do not do so.
  *
- * <h2><a name="immutable">Immutable Map Static Factory Methods</a></h2>
+ * <h2><a id="immutable">Immutable Map Static Factory Methods</a></h2>
  * <p>The {@link Map#of() Map.of()} and
  * {@link Map#ofEntries(Map.Entry...) Map.ofEntries()}
  * static factory methods provide a convenient way to create immutable maps.
@@ -140,7 +140,7 @@ import java.io.Serializable;
  * </ul>
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <K> the type of keys maintained by this map

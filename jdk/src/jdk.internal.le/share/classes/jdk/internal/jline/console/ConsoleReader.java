@@ -306,6 +306,7 @@ public class ConsoleReader
      * Shuts down the ConsoleReader if the JVM attempts to clean it up.
      */
     @Override
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable {
         try {
             shutdown();

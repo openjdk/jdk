@@ -135,7 +135,8 @@ class GroupEntry extends BaseEntry {
     /**
      * Constructs a GroupEntry
      *
-     * @param type The type of the entry
+     * @param type the type of the entry
+     * @param parent the parent Catalog
      */
     public GroupEntry(CatalogEntryType type, CatalogImpl parent) {
         super(type);
@@ -165,13 +166,22 @@ class GroupEntry extends BaseEntry {
     }
     /**
      * Constructs a group entry.
-     * @param catalog The catalog this GroupEntry belongs
-     * @param base The baseURI attribute
-     * @param attributes The attributes
+     * @param catalog the catalog this GroupEntry belongs to
+     * @param base the baseURI attribute
+     * @param attributes the attributes
      */
     public GroupEntry(CatalogImpl catalog, String base, String... attributes) {
         super(CatalogEntryType.GROUP, base);
         setPrefer(attributes[ATTRIBUTE_PREFER]);
+        this.catalog = catalog;
+    }
+
+    /**
+     * Sets the catalog for this GroupEntry.
+     *
+     * @param catalog the catalog this GroupEntry belongs to
+     */
+    void setCatalog(CatalogImpl catalog) {
         this.catalog = catalog;
     }
 
@@ -382,10 +392,9 @@ class GroupEntry extends BaseEntry {
     /**
      * Matches delegatePublic or delegateSystem against the specified id
      *
-     * @param isSystem The flag to indicate whether the delegate is system or
-     * public
-     * @param id The system or public id to be matched
-     * @return The URI string if a mapping is found, or null otherwise.
+     * @param type the type of the Catalog entry
+     * @param id the system or public id to be matched
+     * @return the URI string if a mapping is found, or null otherwise.
      */
     private String matchDelegate(CatalogEntryType type, String id) {
         String match = null;
@@ -412,7 +421,7 @@ class GroupEntry extends BaseEntry {
 
         //Check delegate Catalogs
         if (catalogId != null) {
-            Catalog delegateCatalog = loadCatalog(catalogId);
+            Catalog delegateCatalog = loadDelegateCatalog(catalog, catalogId);
 
             if (delegateCatalog != null) {
                 if (type == CatalogEntryType.DELEGATESYSTEM) {
@@ -430,30 +439,34 @@ class GroupEntry extends BaseEntry {
 
     /**
      * Loads all delegate catalogs.
+     *
+     * @param parent the parent catalog of the delegate catalogs
      */
-    void loadDelegateCatalogs() {
+    void loadDelegateCatalogs(CatalogImpl parent) {
         entries.stream()
                 .filter((entry) -> (entry.type == CatalogEntryType.DELEGATESYSTEM ||
                         entry.type == CatalogEntryType.DELEGATEPUBLIC ||
                         entry.type == CatalogEntryType.DELEGATEURI))
                 .map((entry) -> (AltCatalog)entry)
                 .forEach((altCatalog) -> {
-                        loadCatalog(altCatalog.getCatalogURI());
+                        loadDelegateCatalog(parent, altCatalog.getCatalogURI());
         });
     }
 
     /**
      * Loads a delegate catalog by the catalogId specified.
-     * @param catalogId the catalog Id
+     *
+     * @param parent the parent catalog of the delegate catalog
+     * @param catalogURI the URI to the catalog
      */
-    Catalog loadCatalog(URI catalogURI) {
+    Catalog loadDelegateCatalog(CatalogImpl parent, URI catalogURI) {
         CatalogImpl delegateCatalog = null;
         if (catalogURI != null) {
             String catalogId = catalogURI.toASCIIString();
-            delegateCatalog = getLoadedCatalog(catalogId);
-            if (delegateCatalog == null) {
-                if (verifyCatalogFile(catalogURI)) {
-                    delegateCatalog = new CatalogImpl(catalog, features, catalogURI);
+            if (verifyCatalogFile(parent, catalogURI)) {
+                delegateCatalog = getLoadedCatalog(catalogId);
+                if (delegateCatalog == null) {
+                    delegateCatalog = new CatalogImpl(parent, features, catalogURI);
                     delegateCatalog.load();
                     delegateCatalogs.put(catalogId, delegateCatalog);
                 }
@@ -473,7 +486,7 @@ class GroupEntry extends BaseEntry {
     CatalogImpl getLoadedCatalog(String catalogId) {
         CatalogImpl c = null;
 
-        //checl delegate Catalogs
+        //check delegate Catalogs
         c = delegateCatalogs.get(catalogId);
         if (c == null) {
             //check other loaded Catalogs
@@ -492,11 +505,12 @@ class GroupEntry extends BaseEntry {
      * Verifies that the catalog represented by the catalogId has not been
      * searched or is not circularly referenced.
      *
-     * @param catalogId The URI to a catalog
+     * @param parent the parent of the catalog to be loaded
+     * @param catalogURI the URI to the catalog
      * @throws CatalogException if circular reference is found.
      * @return true if the catalogId passed verification, false otherwise
      */
-    final boolean verifyCatalogFile(URI catalogURI) {
+    final boolean verifyCatalogFile(CatalogImpl parent, URI catalogURI) {
         if (catalogURI == null) {
             return false;
         }
@@ -508,7 +522,7 @@ class GroupEntry extends BaseEntry {
         }
 
         String catalogId = catalogURI.toASCIIString();
-        if (catalogsSearched.contains(catalogId) || isCircular(catalogId)) {
+        if (catalogsSearched.contains(catalogId) || isCircular(parent, catalogId)) {
             CatalogMessages.reportRunTimeError(CatalogMessages.ERR_CIRCULAR_REFERENCE,
                     new Object[]{CatalogMessages.sanitize(catalogId)});
         }
@@ -518,10 +532,13 @@ class GroupEntry extends BaseEntry {
 
     /**
      * Checks whether the catalog is circularly referenced
+     *
+     * @param parent the parent of the catalog to be loaded
      * @param systemId the system identifier of the catalog to be loaded
      * @return true if is circular, false otherwise
      */
-    boolean isCircular(String systemId) {
+    boolean isCircular(CatalogImpl parent, String systemId) {
+        // first, check the parent of the catalog to be loaded
         if (parent == null) {
             return false;
         }
@@ -530,6 +547,7 @@ class GroupEntry extends BaseEntry {
             return true;
         }
 
-        return parent.isCircular(systemId);
+       // next, check parent's parent
+        return parent.isCircular(parent.parent, systemId);
     }
 }

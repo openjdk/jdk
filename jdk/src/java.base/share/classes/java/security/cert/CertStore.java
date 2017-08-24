@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ import sun.security.jca.GetInstance.Instance;
  * <li>{@code Collection}</li>
  * </ul>
  * This type is described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
+ * "{@docRoot}/../specs/security/standard-names.html#certstore-types">
  * CertStore section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other types are supported.
  *
@@ -212,8 +212,8 @@ public class CertStore {
      *
      * @param type the name of the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certstore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard types.
      *
      * @param params the initialization parameters (may be {@code null}).
@@ -276,8 +276,8 @@ public class CertStore {
      *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certstore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard types.
      *
      * @param params the initialization parameters (may be {@code null}).
@@ -337,8 +337,8 @@ public class CertStore {
      *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#certstore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard types.
      *
      * @param params the initialization parameters (may be {@code null}).
