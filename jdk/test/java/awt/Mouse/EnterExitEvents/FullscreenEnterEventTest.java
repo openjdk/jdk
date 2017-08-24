@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8013468
  * @summary Cursor does not update properly when in fullscreen mode on Mac
  *    The core reason of the issue was the lack of a mouse entered event in fullscreen
@@ -45,6 +46,7 @@ import java.lang.reflect.Proxy;
  * @author Petr Pchelko area=awt.event
  * @run main FullscreenEnterEventTest
  */
+
 public class FullscreenEnterEventTest {
 
     private static String OS = System.getProperty("os.name").toLowerCase();

@@ -21,7 +21,7 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug      7123767
  *
@@ -34,8 +34,7 @@
  *
  * @author   Vladislav Karnaukhov
  *
- * @key      headful
- * @key      randomness
+ * @key      headful randomness
  *
  * @modules  java.desktop/sun.awt
  * @library  /test/lib

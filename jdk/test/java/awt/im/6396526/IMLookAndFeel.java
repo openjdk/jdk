@@ -21,12 +21,13 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug  6396526
- * @summary  Verify below-the-spot IM in the swing L&F JFrame.
- *           Although the swing component is decorated with L&F
- *           the IM window should have no decoration.
+ * @key headful
+ * @bug 6396526
+ * @summary Verify below-the-spot IM in the swing L&F JFrame.
+ *          Although the swing component is decorated with L&F
+ *          the IM window should have no decoration.
  * @author yuriko.yamasaki
  */
 

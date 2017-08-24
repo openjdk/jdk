@@ -58,8 +58,8 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     private static final List<TokenType> CAN_OVERFLOW =
             Collections.unmodifiableList(
                 Arrays.asList(new TokenType[] {
-                    TokenType.ADD,
-                    TokenType.SUB, //negate
+                    TokenType.POS,
+                    TokenType.NEG, //negate
                     TokenType.DECPREFIX,
                     TokenType.DECPOSTFIX,
                     TokenType.INCPREFIX,
@@ -125,7 +125,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
     @Override
     public Type getWidestOperationType() {
         switch (tokenType()) {
-        case ADD:
+        case POS:
             final Type operandType = getExpression().getType();
             if(operandType == Type.BOOLEAN) {
                 return Type.INT;
@@ -134,7 +134,7 @@ public final class UnaryNode extends Expression implements Assignment<Expression
             }
             assert operandType.isNumeric();
             return operandType;
-        case SUB:
+        case NEG:
             // This might seems overly conservative until you consider that -0 can only be represented as a double.
             return Type.NUMBER;
         case NOT:
@@ -182,8 +182,8 @@ public final class UnaryNode extends Expression implements Assignment<Expression
         switch (tokenType()) {
         case NEW:
             return false;
-        case ADD:
-        case SUB:
+        case POS:
+        case NEG:
         case NOT:
         case BIT_NOT:
             return expression.isLocal() && expression.getType().isJSPrimitive();

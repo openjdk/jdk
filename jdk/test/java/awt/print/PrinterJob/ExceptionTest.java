@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key printer
  * @bug 6467557
  * @summary No exception should be thrown.
  * @run main ExceptionTest

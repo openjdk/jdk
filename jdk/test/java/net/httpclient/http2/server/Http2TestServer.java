@@ -201,7 +201,17 @@ public class Http2TestServer implements AutoCloseable {
                     InetSocketAddress addr = (InetSocketAddress) socket.getRemoteSocketAddress();
                     Http2TestServerConnection c = new Http2TestServerConnection(this, socket);
                     connections.put(addr, c);
-                    c.run();
+                    try {
+                        c.run();
+                    } catch(Throwable e) {
+                        // we should not reach here, but if we do
+                        // the connection might not have been closed
+                        // and if so then the client might wait
+                        // forever.
+                        connections.remove(addr, c);
+                        c.close();
+                        throw e;
+                    }
                 }
             } catch (Throwable e) {
                 if (!stopping) {

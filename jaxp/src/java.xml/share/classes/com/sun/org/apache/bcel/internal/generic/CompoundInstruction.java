@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Wrapper class for `compound' operations, virtual instructions that
  * don't exist as byte code, but give a useful meaning. For example,
@@ -33,10 +32,11 @@ package com.sun.org.apache.bcel.internal.generic;
  * The interface provides the possibilty for the user to write
  * `templates' or `macros' for such reuseable code patterns.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: CompoundInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  * @see PUSH
  * @see SWITCH
  */
 public interface CompoundInstruction {
-  public InstructionList getInstructionList();
+
+    InstructionList getInstructionList();
 }

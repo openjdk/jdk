@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key printer
  * @bug 8163889
  * @summary Printing crashes on OSX.
  * @run main PrintCrashTest

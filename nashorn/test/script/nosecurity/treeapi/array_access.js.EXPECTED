@@ -73,7 +73,7 @@
         "startPosition": "121"
       },
       "endPosition": "122",
-      "kind": "MINUS",
+      "kind": "UNARY_MINUS",
       "startPosition": "120"
     },
     "startPosition": "114"

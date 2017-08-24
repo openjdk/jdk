@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,25 @@
  * Defines charsets, decoders, and encoders, for translating between
  * bytes and Unicode characters.
  *
- * <blockquote><table class="borderless">
+ * <table class="striped" style="margin-left:2em; text-align:left">
  *     <caption style="display:none">Summary of charsets, decoders, and encoders in this package</caption>
- *  <tr><th style="text-align:left">Class name</th>
- *      <th style="text-align:left"><th>DescriptiPath
- *   <tr><td style="vertical-align:top">{@link java.nio.charset.Charset}</td>
- *       <td>A named mapping between characters<br>and bytes</td></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.charset.CharsetDecoder}</td>
+ *  <thead>
+ *  <tr><th scope="col">Class name</th>
+ *      <th scope="col">Description
+ *  </thead>
+ *  <tbody>
+ *   <tr><th scope="row">{@link java.nio.charset.Charset}</th>
+ *       <td>A named mapping between characters and bytes</td></tr>
+ *   <tr><th scope="row">{@link java.nio.charset.CharsetDecoder}</th>
  *       <td>Decodes bytes into characters</td></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.charset.CharsetEncoder}</td>
+ *   <tr><th scope="row">{@link java.nio.charset.CharsetEncoder}</th>
  *       <td>Encodes characters into bytes</td></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.charset.CoderResult}</td>
+ *   <tr><th scope="row">{@link java.nio.charset.CoderResult}</th>
  *       <td>Describes coder results</td></tr>
- *   <tr><td style="vertical-align:top">{@link java.nio.charset.CodingErrorAction}</td>
- *       <td>Describes actions to take when<br>coding errors are detected</td></tr>
- *
- * </table></blockquote>
+ *   <tr><th scope="row">{@link java.nio.charset.CodingErrorAction}</th>
+ *       <td>Describes actions to take when coding errors are detected</td></tr>
+ * </tbody>
+ * </table>
  *
  * <p> A <i>charset</i> is named mapping between sequences of
  * sixteen-bit Unicode characters and sequences of bytes, in the sense

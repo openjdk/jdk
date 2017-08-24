@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,13 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8158566 8160879 8160977 8158566
  * @summary Provide a Swing property which modifies MenuItemUI behaviour
  */
+
 public class CloseOnMouseClickPropertyTest {
 
     private static final String CHECK_BOX_PROP = "CheckBoxMenuItem."
@@ -220,3 +222,4 @@ public class CloseOnMouseClickPropertyTest {
         }
     }
 }
+

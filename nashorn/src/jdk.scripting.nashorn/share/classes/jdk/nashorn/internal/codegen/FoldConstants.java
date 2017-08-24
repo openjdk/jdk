@@ -231,7 +231,7 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
             LiteralNode<?> literalNode;
 
             switch (parent.tokenType()) {
-            case ADD:
+            case POS:
                 if (rhsInteger) {
                     literalNode = LiteralNode.newInstance(token, finish, rhs.getInt32());
                 } else if (rhsType.isLong()) {
@@ -240,7 +240,7 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
                     literalNode = LiteralNode.newInstance(token, finish, rhs.getNumber());
                 }
                 break;
-            case SUB:
+            case NEG:
                 if (rhsInteger && rhs.getInt32() != 0) { // @see test/script/basic/minuszero.js
                     literalNode = LiteralNode.newInstance(token, finish, -rhs.getInt32());
                 } else if (rhsType.isLong() && rhs.getLong() != 0L) {

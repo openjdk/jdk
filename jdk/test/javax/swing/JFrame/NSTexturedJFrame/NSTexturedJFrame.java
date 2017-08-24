@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.testlibrary.OSInfo;
 
 /**
  * @test
+ * @key headful
  * @bug 7124513
  * @summary We should support NSTexturedBackgroundWindowMask style on OSX.
  * @author Sergey Bylokhov
@@ -38,6 +39,7 @@ import jdk.testlibrary.OSInfo;
  * @build ExtendedRobot jdk.testlibrary.OSInfo
  * @run main NSTexturedJFrame
  */
+
 public final class NSTexturedJFrame {
 
     private static final String BRUSH = "apple.awt.brushMetalLook";
