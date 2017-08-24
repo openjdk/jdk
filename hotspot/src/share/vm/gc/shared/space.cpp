@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,7 +491,7 @@ bool Space::obj_is_alive(const HeapWord* p) const {
     HeapWord* obj_addr = mr.start();                                        \
     HeapWord* t = mr.end();                                                 \
     while (obj_addr < t) {                                                  \
-      assert(oop(obj_addr)->is_oop(), "Should be an oop");                  \
+      assert(oopDesc::is_oop(oop(obj_addr)), "Should be an oop");           \
       obj_addr += oop(obj_addr)->oop_iterate_size(blk);                     \
     }                                                                       \
   }
@@ -584,7 +584,7 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
       last = cur;
       cur += oop(cur)->size();
     }
-    assert(oop(last)->is_oop(), PTR_FORMAT " should be an object start", p2i(last));
+    assert(oopDesc::is_oop(oop(last)), PTR_FORMAT " should be an object start", p2i(last));
     return last;
   }
 }
@@ -597,10 +597,10 @@ size_t ContiguousSpace::block_size(const HeapWord* p) const {
   assert(p <= current_top,
          "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
          p2i(p), p2i(current_top));
-  assert(p == current_top || oop(p)->is_oop(),
+  assert(p == current_top || oopDesc::is_oop(oop(p)),
          "p (" PTR_FORMAT ") is not a block start - "
          "current_top: " PTR_FORMAT ", is_oop: %s",
-         p2i(p), p2i(current_top), BOOL_TO_STR(oop(p)->is_oop()));
+         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(oop(p))));
   if (p < current_top) {
     return oop(p)->size();
   } else {

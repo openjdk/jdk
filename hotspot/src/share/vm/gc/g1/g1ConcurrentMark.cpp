@@ -1918,7 +1918,7 @@ public:
       guarantee(_g1h->is_in_reserved(task_entry.slice()), "Slice " PTR_FORMAT " must be in heap.", p2i(task_entry.slice()));
       return;
     }
-    guarantee(task_entry.obj()->is_oop(),
+    guarantee(oopDesc::is_oop(task_entry.obj()),
               "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
               p2i(task_entry.obj()), _phase, _info);
     guarantee(!_g1h->is_in_cset(task_entry.obj()),
@@ -2313,7 +2313,7 @@ bool G1CMTask::get_entries_from_global_stack() {
     if (task_entry.is_null()) {
       break;
     }
-    assert(task_entry.is_array_slice() || task_entry.obj()->is_oop(), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.obj()));
+    assert(task_entry.is_array_slice() || oopDesc::is_oop(task_entry.obj()), "Element " PTR_FORMAT " must be an array slice or oop", p2i(task_entry.obj()));
     bool success = _task_queue->push(task_entry);
     // We only call this when the local queue is empty or under a
     // given target limit. So, we do not expect this push to fail.
