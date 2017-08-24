@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,6 +50,12 @@ public class StandardCharsets extends CharsetProvider {
     private final Map<String,Charset> cache;
 
     private static final String packagePrefix = "sun.nio.cs";
+
+    public static final String US_ASCII = "US-ASCII";
+
+    public static final String ISO_8859_1 = "ISO-8859-1";
+
+    public static final String UTF_8 = "UTF-8";
 
     public StandardCharsets() {
         this.aliasMap = new Aliases();
@@ -103,13 +109,13 @@ public class StandardCharsets extends CharsetProvider {
 
         // As all charset class names added to classMap are string literals we
         // can check identity here as an optimization
-        if (cln == "US_ASCII") {
+        if (cln == US_ASCII) {
             return cache(csn, new US_ASCII());
         }
-        if (cln == "ISO_8859_1") {
+        if (cln == ISO_8859_1) {
             return cache(csn, new ISO_8859_1());
         }
-        if (cln == "UTF_8") {
+        if (cln == UTF_8) {
             return cache(csn, new UTF_8());
         }
 

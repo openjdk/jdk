@@ -699,6 +699,9 @@ else
 
   jdk.jdeps-gendata: java rmic
 
+  # The ct.sym generation uses all the moduleinfos as input
+  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
   # When creating a BUILDJDK, we don't need to add hashes to java.base, thus

@@ -139,21 +139,21 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * <table class="striped">
      * <caption style="display:none">Access mode permitted values and meanings</caption>
      * <thead>
-     * <tr><th style="text-align:left">Value</th><th style="text-align:left">Meaning</th></tr>
+     * <tr><th scope="col" style="text-align:left">Value</th><th scope="col" style="text-align:left">Meaning</th></tr>
      * </thead>
      * <tbody>
-     * <tr><td style="vertical-align:top">{@code "r"}</td>
+     * <tr><th scope="row" style="vertical-align:top">{@code "r"}</th>
      *     <td> Open for reading only. Invoking any of the {@code write}
      *     methods of the resulting object will cause an
      *     {@link java.io.IOException} to be thrown.</td></tr>
-     * <tr><td style="vertical-align:top">{@code "rw"}</td>
+     * <tr><th scope="row" style="vertical-align:top">{@code "rw"}</th>
      *     <td> Open for reading and writing.  If the file does not already
      *     exist then an attempt will be made to create it.</td></tr>
-     * <tr><td style="vertical-align:top">{@code "rws"}</td>
+     * <tr><th scope="row" style="vertical-align:top">{@code "rws"}</th>
      *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content or metadata be
      *     written synchronously to the underlying storage device.</td></tr>
-     * <tr><td style="vertical-align:top">{@code "rwd"}</td>
+     * <tr><th scope="row" style="vertical-align:top">{@code "rwd"}</th>
      *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content be written
      *     synchronously to the underlying storage device.</td></tr>

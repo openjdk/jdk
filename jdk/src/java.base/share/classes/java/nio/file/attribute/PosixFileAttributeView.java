@@ -78,17 +78,17 @@ import java.io.IOException;
  * <caption style="display:none">Supported attributes</caption>
  * <thead>
  *   <tr>
- *     <th> Name </th>
- *     <th> Type </th>
+ *     <th scope="col"> Name </th>
+ *     <th scope="col"> Type </th>
  *   </tr>
  * </thead>
  * <tbody>
  *  <tr>
- *     <td> "permissions" </td>
+ *     <th scope="row"> "permissions" </th>
  *     <td> {@link Set}&lt;{@link PosixFilePermission}&gt; </td>
  *   </tr>
  *   <tr>
- *     <td> "group" </td>
+ *     <th scope="row"> "group" </th>
  *     <td> {@link GroupPrincipal} </td>
  *   </tr>
  * </tbody>
