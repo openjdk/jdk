@@ -43,6 +43,7 @@ final class WTextFieldPeer extends WTextComponentPeer implements TextFieldPeer {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean handleJavaKeyEvent(KeyEvent e) {
         switch (e.getID()) {
            case KeyEvent.KEY_TYPED:

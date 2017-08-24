@@ -24,6 +24,7 @@
 /* @test
  * @bug 6227608
  * @summary Test proper handling of flush()
+ * @modules jdk.charsets
  * @author Martin Buchholz
  */
 

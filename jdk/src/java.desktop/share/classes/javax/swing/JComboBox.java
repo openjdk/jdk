@@ -1235,6 +1235,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @see EventListenerList
      */
+    @SuppressWarnings("deprecation")
     protected void fireActionEvent() {
         if (!firingActionEvent) {
             // Set flag to ensure that an infinite loop is not created

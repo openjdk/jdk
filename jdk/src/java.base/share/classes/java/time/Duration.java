@@ -1370,6 +1370,7 @@ public final class Duration
      * @return a {@code Duration} based on this duration with the time truncated, not null
      * @throws DateTimeException if the unit is invalid for truncation
      * @throws UnsupportedTemporalTypeException if the unit is not supported
+     * @since 9
      */
     public Duration truncatedTo(TemporalUnit unit) {
         Objects.requireNonNull(unit, "unit");

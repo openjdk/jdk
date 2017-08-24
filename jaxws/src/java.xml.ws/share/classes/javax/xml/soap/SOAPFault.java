@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *
      * @since 1.6, SAAJ 1.3
      */
-    public Iterator getFaultSubcodes();
+    public Iterator<QName> getFaultSubcodes();
 
     /**
      * Removes any Subcodes that may be contained by this
@@ -381,7 +381,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *
      * @since 1.6, SAAJ 1.3
      */
-    public Iterator getFaultReasonLocales() throws SOAPException;
+    public Iterator<Locale> getFaultReasonLocales() throws SOAPException;
 
     /**
      * Returns an {@code Iterator} over a sequence of
@@ -397,7 +397,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *
      * @since 1.6, SAAJ 1.3
      */
-    public Iterator getFaultReasonTexts() throws SOAPException;
+    public Iterator<String> getFaultReasonTexts() throws SOAPException;
 
     /**
      * Returns the Reason Text associated with the given {@code Locale}.
@@ -467,6 +467,8 @@ public interface SOAPFault extends SOAPBodyElement {
      * Creates or replaces any existing Node element value for
      * this {@code SOAPFault} object. The Node element
      * is optional in SOAP 1.2.
+     *
+     * @param uri - the URI of the Node
      *
      * @exception SOAPException  if there was an error in setting the
      *            Node for this  {@code SOAPFault} object.

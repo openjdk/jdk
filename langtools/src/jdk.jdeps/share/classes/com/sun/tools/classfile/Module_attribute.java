@@ -38,8 +38,8 @@ import com.sun.tools.classfile.ConstantPool.CONSTANT_Module_info;
  *  deletion without notice.</b>
  */
 public class Module_attribute extends Attribute {
-    public static final int ACC_TRANSITIVE      =   0x10;
-    public static final int ACC_STATIC_PHASE    =   0x20;
+    public static final int ACC_TRANSITIVE      =   0x20;
+    public static final int ACC_STATIC_PHASE    =   0x40;
     public static final int ACC_OPEN            =   0x20;
     public static final int ACC_SYNTHETIC       = 0x1000;
     public static final int ACC_MANDATED        = 0x8000;

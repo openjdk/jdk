@@ -26,7 +26,6 @@
  * @bug 5011189 8004928
  * @summary Unit test for java.lang.management.CompilationMXBean
  *
- * @modules java.management
  * @run main/othervm -Xcomp -Xbatch Basic
  */
 import java.lang.management.*;
