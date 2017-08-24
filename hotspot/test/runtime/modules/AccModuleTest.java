@@ -28,8 +28,6 @@
  * @run main AccModuleTest
  */
 
-import java.io.File;
-
 public class AccModuleTest {
 
     public static void main(String args[]) throws Throwable {

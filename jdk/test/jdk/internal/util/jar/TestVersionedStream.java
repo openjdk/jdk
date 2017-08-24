@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -168,23 +167,23 @@ public class TestVersionedStream {
 
             // verify the contents
             Map<String,String> contents = new HashMap<>();
-            contents.put("p/Bar.class", "base/p/Bar.class\n");
-            contents.put("p/Main.class", "base/p/Main.class\n");
+            contents.put("p/Bar.class", "base/p/Bar.class");
+            contents.put("p/Main.class", "base/p/Main.class");
             switch (version.major()) {
                 case 8:
-                    contents.put("p/Foo.class", "base/p/Foo.class\n");
+                    contents.put("p/Foo.class", "base/p/Foo.class");
                     break;
                 case 9:
-                    contents.put("p/Foo.class", "v9/p/Foo.class\n");
+                    contents.put("p/Foo.class", "v9/p/Foo.class");
                     break;
                 case 10:
-                    contents.put("p/Foo.class", "v10/p/Foo.class\n");
-                    contents.put("q/Bar.class", "v10/q/Bar.class\n");
+                    contents.put("p/Foo.class", "v10/p/Foo.class");
+                    contents.put("q/Bar.class", "v10/q/Bar.class");
                     break;
                 case 11:
-                    contents.put("p/Bar.class", "v11/p/Bar.class\n");
-                    contents.put("p/Foo.class", "v11/p/Foo.class\n");
-                    contents.put("q/Bar.class", "v10/q/Bar.class\n");
+                    contents.put("p/Bar.class", "v11/p/Bar.class");
+                    contents.put("p/Foo.class", "v11/p/Foo.class");
+                    contents.put("q/Bar.class", "v10/q/Bar.class");
                     break;
                 default:
                     Assert.fail("Test out of date, please add more cases");
@@ -196,7 +195,7 @@ public class TestVersionedStream {
                 Assert.assertTrue(i != -1, name + " not in enames");
                 JarEntry je = versionedEntries.get(i);
                 try (InputStream is = jf.getInputStream(je)) {
-                    String s = new String(is.readAllBytes());
+                    String s = new String(is.readAllBytes()).replaceAll(System.lineSeparator(), "");
                     Assert.assertTrue(s.endsWith(e.getValue()), s);
                 } catch (IOException x) {
                     throw new UncheckedIOException(x);
@@ -208,16 +207,13 @@ public class TestVersionedStream {
     private void createFiles(String... files) {
         ArrayList<String> list = new ArrayList();
         Arrays.stream(files)
-                .map(f -> "file:///" + userdir + "/" + f)
-                .map(f -> URI.create(f))
-                .filter(u -> u != null)
-                .map(u -> Paths.get(u))
+                .map(f -> Paths.get(userdir.toAbsolutePath().toString(), f))
                 .forEach(p -> {
                     try {
                         Files.createDirectories(p.getParent());
                         Files.createFile(p);
                         list.clear();
-                        list.add(p.toString());
+                        list.add(p.toString().replace(File.separatorChar, '/'));
                         Files.write(p, list);
                     } catch (IOException x) {
                         throw new UncheckedIOException(x);

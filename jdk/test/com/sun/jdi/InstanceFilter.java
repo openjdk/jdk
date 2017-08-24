@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4312961
- *  @summary Verify that an instance filter on a MethodEntryRequest works
- *   properly.
+ * @test
+ * @bug 4312961
+ * @summary Verify that an instance filter on a MethodEntryRequest works
+ *  properly.
+ * @author Robert Field/Jim Holmlund
  *
- *  @author Robert Field/Jim Holmlund
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetAdapter TargetListener
- *  @run compile -g InstanceFilter.java
- *  @run driver InstanceFilter
+ * @run build TestScaffold VMConnection TargetAdapter TargetListener
+ * @run compile -g InstanceFilter.java
+ * @run driver InstanceFilter
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -32,7 +32,7 @@
  *          java.management
  *          jdk.attach
  *
- * @run main/othervm compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
+ * @run main/othervm -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */
 
 package compiler.jsr292;
