@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -1531,6 +1531,7 @@ public class PKCS11 {
      *
      * @exception Throwable If finalization fails.
      */
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable {
         disconnect();
     }

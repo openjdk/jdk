@@ -63,7 +63,7 @@ public class RemovedJDKInternals {
         Path sunMiscSrc = Paths.get(TEST_SRC, "patches", JDK_UNSUPPORTED);
         Path patchDir = PATCHES_DIR.resolve(JDK_UNSUPPORTED);
         assertTrue(CompilerUtils.compile(sunMiscSrc, patchDir,
-                                         "-Xmodule:" + JDK_UNSUPPORTED));
+                                         "--patch-module", JDK_UNSUPPORTED + "=" + sunMiscSrc.toString()));
 
         // compile com.sun.image.codec.jpeg types
         Path codecSrc = Paths.get(TEST_SRC, "patches", "java.desktop");

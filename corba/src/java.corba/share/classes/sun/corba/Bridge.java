@@ -59,10 +59,10 @@ import sun.reflect.ReflectionFactory;
  * </ul>
  * The code that calls Bridge.get() must have the following Permissions:
  * <ul>
- * <li>RuntimePermission "reflectionFactoryAccess"</li>
  * <li>BridgePermission "getBridge"</li>
  * <li>ReflectPermission "suppressAccessChecks"</li>
- * <li>StackFramePermission "retainClassReference"</li>
+ * <li>RuntimePermission "getStackWalkerWithClassReference"</li>
+ * <li>RuntimePermission "reflectionFactoryAccess"</li>
  * </ul>
  * <p>
  * All of these permissions are required to obtain and correctly initialize
@@ -105,10 +105,10 @@ public final class Bridge
     /** Fetch the Bridge singleton.  This requires the following
      * permissions:
      * <ul>
-     * <li>RuntimePermission "reflectionFactoryAccess"</li>
      * <li>BridgePermission "getBridge"</li>
      * <li>ReflectPermission "suppressAccessChecks"</li>
-     * <li>StackFramePermission "retainClassReference"</li>
+     * <li>RuntimePermission "getStackWalkerWithClassReference"</li>
+     * <li>RuntimePermission "reflectionFactoryAccess"</li>
      * </ul>
      * @return The singleton instance of the Bridge class
      * @throws SecurityException if the caller does not have the

@@ -55,7 +55,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
 
     private static final int kContentTester = 100; // For getting region insets
 
-    static final RecyclableSingleton<AquaInternalFrameBorder> documentWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
+    private static final RecyclableSingleton<AquaInternalFrameBorder> documentWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
         protected AquaInternalFrameBorder getInstance() {
             return new AquaInternalFrameBorder(WindowType.DOCUMENT);
         }
@@ -64,7 +64,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         return documentWindowFrame.get();
     }
 
-    static final RecyclableSingleton<AquaInternalFrameBorder> utilityWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
+    private static final RecyclableSingleton<AquaInternalFrameBorder> utilityWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
         protected AquaInternalFrameBorder getInstance() {
             return new AquaInternalFrameBorder(WindowType.UTILITY);
         }
@@ -73,7 +73,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         return utilityWindowFrame.get();
     }
 
-    static final RecyclableSingleton<AquaInternalFrameBorder> dialogWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
+    private static final RecyclableSingleton<AquaInternalFrameBorder> dialogWindowFrame = new RecyclableSingleton<AquaInternalFrameBorder>() {
         protected AquaInternalFrameBorder getInstance() {
             return new AquaInternalFrameBorder(WindowType.DOCUMENT);
         }

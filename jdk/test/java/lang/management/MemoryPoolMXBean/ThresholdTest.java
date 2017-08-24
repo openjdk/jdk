@@ -28,7 +28,6 @@
  *          MemoryPoolMXBean.isCollectionThresholdExceeded().
  * @author  Mandy Chung
  *
- * @modules java.management
  * @run main/othervm ThresholdTest
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class MessageFactoryImpl extends MessageFactory {
         return oldListener;
     }
 
+    @Override
     public SOAPMessage createMessage() throws SOAPException {
         throw new UnsupportedOperationException();
     }
@@ -105,6 +106,7 @@ public class MessageFactoryImpl extends MessageFactory {
                 "Unable to parse content type: " + e.getMessage());
         }
     }
+    @Override
     public SOAPMessage createMessage(MimeHeaders headers, InputStream in)
         throws SOAPException, IOException {
         String contentTypeString = MessageImpl.getContentType(headers);

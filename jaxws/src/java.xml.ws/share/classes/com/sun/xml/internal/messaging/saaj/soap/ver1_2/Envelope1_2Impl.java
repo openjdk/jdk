@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.EnvelopeImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
+import org.w3c.dom.Element;
 
 public class Envelope1_2Impl extends EnvelopeImpl {
 
@@ -48,6 +49,10 @@ public class Envelope1_2Impl extends EnvelopeImpl {
 
     public Envelope1_2Impl(SOAPDocumentImpl ownerDoc, String prefix) {
         super(ownerDoc, NameImpl.createEnvelope1_2Name(prefix));
+    }
+
+    public Envelope1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     public Envelope1_2Impl(
@@ -63,10 +68,12 @@ public class Envelope1_2Impl extends EnvelopeImpl {
             createBody);
     }
 
+    @Override
     protected NameImpl getBodyName(String prefix) {
         return NameImpl.createBody1_2Name(prefix);
     }
 
+    @Override
     protected NameImpl getHeaderName(String prefix) {
         return NameImpl.createHeader1_2Name(prefix);
     }
@@ -75,6 +82,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
      * Override setEncodingStyle of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Envelope (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public void setEncodingStyle(String encodingStyle) throws SOAPException {
         log.severe("SAAJ0404.ver1_2.no.encodingStyle.in.envelope");
         throw new SOAPExceptionImpl("encodingStyle attribute cannot appear on Envelope");
@@ -84,6 +92,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
      * Override addAttribute of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Envelope (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public SOAPElement addAttribute(Name name, String value)
         throws SOAPException {
         if (name.getLocalName().equals("encodingStyle")
@@ -93,6 +102,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     public SOAPElement addAttribute(QName name, String value)
         throws SOAPException {
         if (name.getLocalPart().equals("encodingStyle")
@@ -107,6 +117,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
      * Override addChildElement method to ensure that no element
      * is added after body in SOAP 1.2.
      */
+    @Override
     public SOAPElement addChildElement(Name name) throws SOAPException {
         // check if body already exists
         if (getBody() != null) {
@@ -117,6 +128,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
         return super.addChildElement(name);
     }
 
+    @Override
     public SOAPElement addChildElement(QName name) throws SOAPException {
         // check if body already exists
         if (getBody() != null) {
@@ -137,6 +149,7 @@ public class Envelope1_2Impl extends EnvelopeImpl {
      *
      */
 
+    @Override
     public SOAPElement addTextNode(String text) throws SOAPException {
         log.log(
             Level.SEVERE,

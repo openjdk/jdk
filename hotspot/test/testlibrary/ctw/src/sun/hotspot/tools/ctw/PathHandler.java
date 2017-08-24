@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,9 @@ public abstract class PathHandler {
         if (id >= Utils.COMPILE_THE_WORLD_START_AT) {
             try {
                 Class<?> aClass = loader.loadClass(name);
-                if (name != "sun.reflect.misc.Trampoline"
-                        && name != "sun.tools.jconsole.OutputViewer") { // workaround for JDK-8159155
+                if (!"sun.reflect.misc.Trampoline".equals(name)
+                        // workaround for JDK-8159155
+                        && !"sun.tools.jconsole.OutputViewer".equals(name)) {
                     UNSAFE.ensureClassInitialized(aClass);
                 }
                 CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
