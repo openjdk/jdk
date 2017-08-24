@@ -30,6 +30,8 @@
 #error "Atomic currently only impleneted for PPC64"
 #endif
 
+#include "utilities/debug.hpp"
+
 // Implementation of class atomic
 
 inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
@@ -312,7 +314,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
-  STATIC_CAST(1 == sizeof(T));
+  STATIC_ASSERT(1 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
@@ -382,7 +384,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
-  STATIC_CAST(4 == sizeof(T));
+  STATIC_ASSERT(4 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
@@ -432,7 +434,7 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
-  STATIC_CAST(8 == sizeof(T));
+  STATIC_ASSERT(8 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
