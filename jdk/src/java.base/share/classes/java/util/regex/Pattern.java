@@ -667,11 +667,11 @@ import java.util.stream.StreamSupport;
  * <tr><td>{@code \p{Alpha}}</td>
  *     <td>An alphabetic character:{@code \p{IsAlphabetic}}</td></tr>
  * <tr><td>{@code \p{Digit}}</td>
- *     <td>A decimal digit character:{@code p{IsDigit}}</td></tr>
+ *     <td>A decimal digit character:{@code \p{IsDigit}}</td></tr>
  * <tr><td>{@code \p{Alnum}}</td>
  *     <td>An alphanumeric character:{@code [\p{IsAlphabetic}\p{IsDigit}]}</td></tr>
  * <tr><td>{@code \p{Punct}}</td>
- *     <td>A punctuation character:{@code p{IsPunctuation}}</td></tr>
+ *     <td>A punctuation character:{@code \p{IsPunctuation}}</td></tr>
  * <tr><td>{@code \p{Graph}}</td>
  *     <td>A visible character: {@code [^\p{IsWhite_Space}\p{gc=Cc}\p{gc=Cs}\p{gc=Cn}]}</td></tr>
  * <tr><td>{@code \p{Print}}</td>

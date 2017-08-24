@@ -881,9 +881,9 @@ class LambdaFormEditor {
         System.arraycopy(lambdaForm.names, skip + outArgs, names2, skip + inTypes, bodyLength);
         int arity2 = names2.length - bodyLength;
         int result2 = lambdaForm.result;
-        if (result2 >= 0) {
+        if (result2 >= skip) {
             if (result2 < skip + outArgs) {
-                result2 = reorder[result2 - skip];
+                result2 = reorder[result2 - skip] + skip;
             } else {
                 result2 = result2 - outArgs + inTypes;
             }
