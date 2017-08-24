@@ -137,6 +137,7 @@ public final class AquaInternalFrameDockIconUI extends DesktopIconUI
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void mouseEntered(final MouseEvent e) {
         if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) return;
         String title = fFrame.getTitle();
@@ -146,6 +147,7 @@ public final class AquaInternalFrameDockIconUI extends DesktopIconUI
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void mouseExited(final MouseEvent e) {
         if (fDockLabel != null && (e.getModifiers() & InputEvent.BUTTON1_MASK) == 0) fDockLabel.hide();
     }

@@ -31,6 +31,7 @@ package javax.security.auth.callback;
  * method of a {@code CallbackHandler} to display information messages,
  * warning messages and error messages.
  *
+ * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
 public class TextOutputCallback implements Callback, java.io.Serializable {

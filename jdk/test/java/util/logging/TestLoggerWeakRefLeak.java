@@ -41,8 +41,8 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * @modules jdk.attach/sun.tools.attach
  *          java.logging
  * @build jdk.testlibrary.ProcessTools
- * @run main/othervm TestLoggerWeakRefLeak Logger
- * @run main/othervm TestLoggerWeakRefLeak AnonymousLogger
+ * @run main/othervm -Djdk.attach.allowAttachSelf TestLoggerWeakRefLeak Logger
+ * @run main/othervm -Djdk.attach.allowAttachSelf TestLoggerWeakRefLeak AnonymousLogger
  */
 public class TestLoggerWeakRefLeak {
 

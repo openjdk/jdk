@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,49 +27,45 @@ package java.awt.datatransfer;
 
 import java.util.Map;
 
-
 /**
- * A two-way Map between "natives" (Strings), which correspond to platform-
- * specific data formats, and "flavors" (DataFlavors), which correspond to
- * platform-independent MIME types. FlavorMaps need not be symmetric, but
+ * A two-way Map between "natives" (Strings), which correspond to
+ * platform-specific data formats, and "flavors" (DataFlavors), which correspond
+ * to platform-independent MIME types. FlavorMaps need not be symmetric, but
  * typically are.
- *
  *
  * @since 1.2
  */
 public interface FlavorMap {
 
     /**
-     * Returns a <code>Map</code> of the specified <code>DataFlavor</code>s to
-     * their corresponding <code>String</code> native. The returned
-     * <code>Map</code> is a modifiable copy of this <code>FlavorMap</code>'s
-     * internal data. Client code is free to modify the <code>Map</code>
-     * without affecting this object.
+     * Returns a {@code Map} of the specified {@code DataFlavor}s to their
+     * corresponding {@code String} native. The returned {@code Map} is a
+     * modifiable copy of this {@code FlavorMap}'s internal data. Client code is
+     * free to modify the {@code Map} without affecting this object.
      *
-     * @param flavors an array of <code>DataFlavor</code>s which will be the
-     *        key set of the returned <code>Map</code>. If <code>null</code> is
-     *        specified, a mapping of all <code>DataFlavor</code>s currently
-     *        known to this <code>FlavorMap</code> to their corresponding
-     *        <code>String</code> natives will be returned.
-     * @return a <code>java.util.Map</code> of <code>DataFlavor</code>s to
-     *         <code>String</code> natives
+     * @param  flavors an array of {@code DataFlavor}s which will be the key set
+     *         of the returned {@code Map}. If {@code null} is specified, a
+     *         mapping of all {@code DataFlavor}s currently known to this
+     *         {@code FlavorMap} to their corresponding {@code String} natives
+     *         will be returned.
+     * @return a {@code java.util.Map} of {@code DataFlavor}s to {@code String}
+     *         natives
      */
-    Map<DataFlavor,String> getNativesForFlavors(DataFlavor[] flavors);
+    Map<DataFlavor, String> getNativesForFlavors(DataFlavor[] flavors);
 
     /**
-     * Returns a <code>Map</code> of the specified <code>String</code> natives
-     * to their corresponding <code>DataFlavor</code>. The returned
-     * <code>Map</code> is a modifiable copy of this <code>FlavorMap</code>'s
-     * internal data. Client code is free to modify the <code>Map</code>
-     * without affecting this object.
+     * Returns a {@code Map} of the specified {@code String} natives to their
+     * corresponding {@code DataFlavor}. The returned {@code Map} is a
+     * modifiable copy of this {@code FlavorMap}'s internal data. Client code is
+     * free to modify the {@code Map} without affecting this object.
      *
-     * @param natives an array of <code>String</code>s which will be the
-     *        key set of the returned <code>Map</code>. If <code>null</code> is
-     *        specified, a mapping of all <code>String</code> natives currently
-     *        known to this <code>FlavorMap</code> to their corresponding
-     *        <code>DataFlavor</code>s will be returned.
-     * @return a <code>java.util.Map</code> of <code>String</code> natives to
-     *         <code>DataFlavor</code>s
+     * @param  natives an array of {@code String}s which will be the key set of
+     *         the returned {@code Map}. If {@code null} is specified, a mapping
+     *         of all {@code String} natives currently known to this
+     *         {@code FlavorMap} to their corresponding {@code DataFlavor}s will
+     *         be returned.
+     * @return a {@code java.util.Map} of {@code String} natives to
+     *         {@code DataFlavor}s
      */
-    Map<String,DataFlavor> getFlavorsForNatives(String[] natives);
+    Map<String, DataFlavor> getFlavorsForNatives(String[] natives);
 }

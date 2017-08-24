@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,6 +241,7 @@ final class P11KeyStore extends KeyStoreSpi {
             pc.setPassword(password);  // this clones the password if not null
         }
 
+        @SuppressWarnings("deprecation")
         protected void finalize() throws Throwable {
             if (password != null) {
                 Arrays.fill(password, ' ');
@@ -1022,7 +1023,7 @@ final class P11KeyStore extends KeyStoreSpi {
                                     ("trusted certificates may only be set by " +
                                     "token initialization application"));
             }
-            Module module = token.provider.nssModule;
+            Secmod.Module module = token.provider.nssModule;
             if ((module.type != ModuleType.KEYSTORE) && (module.type != ModuleType.FIPS)) {
                 // XXX allow TRUSTANCHOR module
                 throw new KeyStoreException("Trusted certificates can only be "

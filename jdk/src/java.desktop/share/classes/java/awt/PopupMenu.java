@@ -154,6 +154,7 @@ public class PopupMenu extends Menu {
      *                parent's hierarchy
      * @exception RuntimeException if the parent is not showing on screen
      */
+    @SuppressWarnings("deprecation")
     public void show(Component origin, int x, int y) {
         // Use localParent for thread safety.
         MenuContainer localParent = parent;

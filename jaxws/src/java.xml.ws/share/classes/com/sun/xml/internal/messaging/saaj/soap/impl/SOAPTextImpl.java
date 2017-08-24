@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,62 +25,55 @@
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
-import java.util.logging.Logger;
-
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
-import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Text;
 
-public class SOAPTextImpl
-    extends com.sun.org.apache.xerces.internal.dom.TextImpl
-    implements javax.xml.soap.Text, org.w3c.dom.Text {
-
-    protected static final Logger log =
-        Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
-                         "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
+public class SOAPTextImpl extends TextImpl<Text> implements Text {
 
     public SOAPTextImpl(SOAPDocumentImpl ownerDoc, String text) {
         super(ownerDoc, text);
     }
 
-    public String getValue() {
-        String nodeValue = getNodeValue();
-        return (nodeValue.equals("") ? null : nodeValue);
+    public SOAPTextImpl(SOAPDocumentImpl ownerDoc, CharacterData data) {
+        super(ownerDoc, data);
     }
 
-    public void setValue(String text) {
-        setNodeValue(text);
+    @Override
+    protected Text createN(SOAPDocumentImpl ownerDoc, String text) {
+        Text t = ownerDoc.getDomDocument().createTextNode(text);
+//        ownerDoc.register(this);
+        return t;
     }
 
-    public void setParentElement(SOAPElement parent) throws SOAPException {
-        if (parent == null) {
-            log.severe("SAAJ0126.impl.cannot.locate.ns");
-            throw new SOAPException("Cannot pass NULL to setParentElement");
-        }
-        ((ElementImpl) parent).addNode(this);
+    @Override
+    protected Text createN(SOAPDocumentImpl ownerDoc, CharacterData data) {
+        Text t = (Text) data;
+        return t;
     }
 
-    public SOAPElement getParentElement() {
-        return (SOAPElement) getParentNode();
+    @Override
+    public Text splitText(int offset) throws DOMException {
+        return getDomElement().splitText(offset);
     }
 
-
-    public void detachNode() {
-        org.w3c.dom.Node parent = getParentNode();
-        if (parent != null) {
-            parent.removeChild(this);
-        }
+    @Override
+    public boolean isElementContentWhitespace() {
+        return getDomElement().isElementContentWhitespace();
     }
 
-    public void recycleNode() {
-        detachNode();
-        // TBD
-        //  - add this to the factory so subsequent
-        //    creations can reuse this object.
+    @Override
+    public String getWholeText() {
+        return getDomElement().getWholeText();
     }
 
+    @Override
+    public Text replaceWholeText(String content) throws DOMException {
+        return getDomElement().replaceWholeText(content);
+    }
+
+    @Override
     public boolean isComment() {
         String txt = getNodeValue();
         if (txt == null) {
@@ -88,4 +81,5 @@ public class SOAPTextImpl
         }
         return txt.startsWith("<!--") && txt.endsWith("-->");
     }
+
 }

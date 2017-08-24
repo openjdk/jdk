@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 
 package javax.xml.bind;
 
@@ -975,7 +977,6 @@ public interface Unmarshaller {
      * {@link #isValidating()} API as well as access to the Schema object.
      * To determine if the Unmarshaller has validation enabled, simply
      * test the return type for null:
-     * <p>
      * <pre>{@code
      *   boolean isValidating = u.getSchema()!=null;
      * }</pre>
