@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.HeaderImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import org.w3c.dom.Element;
 
 
 public class Header1_2Impl extends HeaderImpl {
@@ -52,6 +53,10 @@ public class Header1_2Impl extends HeaderImpl {
 
     public Header1_2Impl(SOAPDocumentImpl ownerDocument, String prefix) {
         super(ownerDocument, NameImpl.createHeader1_2Name(prefix));
+    }
+
+    public Header1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     protected NameImpl getNotUnderstoodName() {
