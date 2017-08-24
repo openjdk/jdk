@@ -81,7 +81,6 @@ endif
 
 LEGAL_NOTICES := \
     $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
-    $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)) \
     $(call FindModuleLegalDirs, $(MODULE)) \
     #
 
@@ -106,10 +105,10 @@ ifeq ($(MODULE), java.base)
       DEPS += $(patsubst %, $(JMODS_DIR)/%.jmod, \
           $(filter-out java.base $(ALL_UPGRADEABLE_MODULES), $(call FindAllModules)))
 
-      EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(ALL_UPGRADEABLE_MODULES))))
+      EXCLUDE_PATTERN := $(strip $(subst $(SPACE),$$|,$(strip $(ALL_UPGRADEABLE_MODULES))))
 
       JMOD_FLAGS += --module-path $(JMODS_DIR) \
-          --hash-modules '^(?!$(EXCLUDE_PATTERN))'
+          --hash-modules '^(?!$(EXCLUDE_PATTERN)$$)'
     endif
   endif
 endif

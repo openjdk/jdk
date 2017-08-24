@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1039,12 +1039,16 @@ public abstract class KeyboardFocusManager
      * recommendations for Windows and Unix are listed below. These
      * recommendations are used in the Sun AWT implementations.
      *
-     * <table border=1 summary="Recommended default values for focus traversal keys">
+     * <table class="striped">
+     * <caption>Recommended default values for focus traversal keys</caption>
+     * <thead>
      * <tr>
      *    <th>Identifier</th>
      *    <th>Meaning</th>
      *    <th>Default</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *    <td>{@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS}</td>
      *    <td>Normal forward keyboard traversal</td>
@@ -1067,6 +1071,7 @@ public abstract class KeyboardFocusManager
      *    <td>Go down one focus traversal cycle</td>
      *    <td>none</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * To disable a traversal key, use an empty {@code Set};

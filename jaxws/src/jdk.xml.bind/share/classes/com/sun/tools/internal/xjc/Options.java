@@ -77,37 +77,53 @@ import org.xml.sax.InputSource;
  * The configuration in this class should be abstract enough so that
  * it could be parsed from both command-line or Ant.
  */
-public class Options
-{
-    /** If "-debug" is specified. */
+public class Options {
+    /**
+     * If "-debug" is specified.
+     */
     public boolean debugMode;
 
-    /** If the "-verbose" option is specified. */
+    /**
+     * If the "-verbose" option is specified.
+     */
     public boolean verbose;
 
-    /** If the "-quiet" option is specified. */
+    /**
+     * If the "-quiet" option is specified.
+     */
     public boolean quiet;
 
-    /** If the -readOnly option is specified. */
+    /**
+     * If the -readOnly option is specified.
+     */
     public boolean readOnly;
 
-    /** No file header comment (to be more friendly with diff.) */
+    /**
+     * No file header comment (to be more friendly with diff.)
+     */
     public boolean noFileHeader;
 
-    /** When on, fixes getter/setter generation to match the Bean Introspection API */
+    /**
+     * When on, fixes getter/setter generation to match the Bean Introspection API
+     */
     public boolean enableIntrospection;
 
-    /** When on, generates content property for types with multiple xs:any derived elements (which is supposed to be correct behaviour) */
+    /**
+     * When on, generates content property for types with multiple xs:any derived elements (which is supposed to be correct behaviour)
+     */
     public boolean contentForWildcard;
 
-    /** Encoding to be used by generated java sources, null for platform default. */
+    /**
+     * Encoding to be used by generated java sources, null for platform default.
+     */
     public String encoding;
 
     /**
      * If true XML security features when parsing XML documents will be disabled.
      * The default value is false.
-     *
+     * <p>
      * Boolean
+     *
      * @since 2.2.6
      */
     public boolean disableXmlSecurity;
@@ -116,7 +132,7 @@ public class Options
      * Check the source schemas with extra scrutiny.
      * The exact meaning depends on the schema language.
      */
-    public boolean strictCheck =true;
+    public boolean strictCheck = true;
 
     /**
      * If -explicit-annotation option is specified.
@@ -149,7 +165,7 @@ public class Options
     public int compatibilityMode = STRICT;
 
     public boolean isExtensionMode() {
-        return compatibilityMode==EXTENSION;
+        return compatibilityMode == EXTENSION;
     }
 
     private static final Logger logger = com.sun.xml.internal.bind.Util.getClassLogger();
@@ -277,30 +293,26 @@ public class Options
 
     /**
      * Sets the {@link FieldRendererFactory}.
-     *
+     * <p>
      * <p>
      * This method is for plugins to call to set a custom {@link FieldRendererFactory}.
      *
-     * @param frf
-     *      The {@link FieldRendererFactory} to be installed. Must not be null.
-     * @param owner
-     *      Identifies the plugin that owns this {@link FieldRendererFactory}.
-     *      When two {@link Plugin}s try to call this method, this allows XJC
-     *      to report it as a user-friendly error message.
-     *
-     * @throws BadCommandLineException
-     *      If a conflit happens, this exception carries a user-friendly error
-     *      message, indicating a conflict.
+     * @param frf   The {@link FieldRendererFactory} to be installed. Must not be null.
+     * @param owner Identifies the plugin that owns this {@link FieldRendererFactory}.
+     *              When two {@link Plugin}s try to call this method, this allows XJC
+     *              to report it as a user-friendly error message.
+     * @throws BadCommandLineException If a conflit happens, this exception carries a user-friendly error
+     *                                 message, indicating a conflict.
      */
     public void setFieldRendererFactory(FieldRendererFactory frf, Plugin owner) throws BadCommandLineException {
         // since this method is for plugins, make it bit more fool-proof than usual
-        if(frf==null)
+        if (frf == null)
             throw new IllegalArgumentException();
-        if(fieldRendererFactoryOwner!=null) {
+        if (fieldRendererFactoryOwner != null) {
             throw new BadCommandLineException(
                 Messages.format(Messages.FIELD_RENDERER_CONFLICT,
                     fieldRendererFactoryOwner.getOptionName(),
-                    owner.getOptionName() ));
+                    owner.getOptionName()));
         }
         this.fieldRendererFactoryOwner = owner;
         this.fieldRendererFactory = frf;
@@ -318,30 +330,26 @@ public class Options
 
     /**
      * Sets the {@link NameConverter}.
-     *
+     * <p>
      * <p>
      * This method is for plugins to call to set a custom {@link NameConverter}.
      *
-     * @param nc
-     *      The {@link NameConverter} to be installed. Must not be null.
-     * @param owner
-     *      Identifies the plugin that owns this {@link NameConverter}.
-     *      When two {@link Plugin}s try to call this method, this allows XJC
-     *      to report it as a user-friendly error message.
-     *
-     * @throws BadCommandLineException
-     *      If a conflit happens, this exception carries a user-friendly error
-     *      message, indicating a conflict.
+     * @param nc    The {@link NameConverter} to be installed. Must not be null.
+     * @param owner Identifies the plugin that owns this {@link NameConverter}.
+     *              When two {@link Plugin}s try to call this method, this allows XJC
+     *              to report it as a user-friendly error message.
+     * @throws BadCommandLineException If a conflit happens, this exception carries a user-friendly error
+     *                                 message, indicating a conflict.
      */
     public void setNameConverter(NameConverter nc, Plugin owner) throws BadCommandLineException {
         // since this method is for plugins, make it bit more fool-proof than usual
-        if(nc==null)
+        if (nc == null)
             throw new IllegalArgumentException();
-        if(nameConverter!=null) {
+        if (nameConverter != null) {
             throw new BadCommandLineException(
                 Messages.format(Messages.NAME_CONVERTER_CONFLICT,
                     nameConverterOwner.getOptionName(),
-                    owner.getOptionName() ));
+                    owner.getOptionName()));
         }
         this.nameConverterOwner = owner;
         this.nameConverter = nc;
@@ -349,15 +357,16 @@ public class Options
 
     /**
      * Gets all the {@link Plugin}s discovered so far.
-     *
+     * <p>
      * <p>
      * A plugins are enumerated when this method is called for the first time,
      * by taking {@link #classpaths} into account. That means
      * "-cp plugin.jar" has to come before you specify options to enable it.
+     *
      * @return
      */
     public List<Plugin> getAllPlugins() {
-        if(allPlugins==null) {
+        if (allPlugins == null) {
             allPlugins = findServices(Plugin.class);
         }
 
@@ -365,29 +374,34 @@ public class Options
     }
 
     public Language getSchemaLanguage() {
-        if( schemaLanguage==null)
+        if (schemaLanguage == null)
             schemaLanguage = guessSchemaLanguage();
         return schemaLanguage;
     }
+
     public void setSchemaLanguage(Language _schemaLanguage) {
         this.schemaLanguage = _schemaLanguage;
     }
 
-    /** Input schema files.
-     * @return  */
+    /**
+     * Input schema files.
+     *
+     * @return
+     */
     public InputSource[] getGrammars() {
         return grammars.toArray(new InputSource[grammars.size()]);
     }
 
     /**
      * Adds a new input schema.
+     *
      * @param is
      */
-    public void addGrammar( InputSource is ) {
+    public void addGrammar(InputSource is) {
         grammars.add(absolutize(is));
     }
 
-    private InputSource fileToInputSource( File source ) {
+    private InputSource fileToInputSource(File source) {
         try {
             String url = source.toURL().toExternalForm();
             return new InputSource(Util.escapeSpace(url));
@@ -396,27 +410,27 @@ public class Options
         }
     }
 
-    public void addGrammar( File source ) {
+    public void addGrammar(File source) {
         addGrammar(fileToInputSource(source));
     }
 
     /**
      * Recursively scan directories and add all XSD files in it.
+     *
      * @param dir
      */
-    public void addGrammarRecursive( File dir ) {
-        addRecursive(dir,".xsd",grammars);
+    public void addGrammarRecursive(File dir) {
+        addRecursive(dir, ".xsd", grammars);
     }
 
-    private  void addRecursive( File dir, String suffix, List<InputSource> result ) {
+    private void addRecursive(File dir, String suffix, List<InputSource> result) {
         File[] files = dir.listFiles();
-        if(files==null)     return; // work defensively
+        if (files == null) return; // work defensively
 
-        for( File f : files ) {
-            if(f.isDirectory())
-                addRecursive(f,suffix,result);
-            else
-            if(f.getPath().endsWith(suffix))
+        for (File f : files) {
+            if (f.isDirectory())
+                addRecursive(f, suffix, result);
+            else if (f.getPath().endsWith(suffix))
                 result.add(absolutize(fileToInputSource(f)));
         }
     }
@@ -426,59 +440,68 @@ public class Options
         // absolutize all the system IDs in the input, so that we can map system IDs to DOM trees.
         try {
             URL baseURL = new File(".").getCanonicalFile().toURL();
-            is.setSystemId( new URL(baseURL,is.getSystemId()).toExternalForm() );
-        } catch( IOException e ) {
+            is.setSystemId(new URL(baseURL, is.getSystemId()).toExternalForm());
+        } catch (IOException e) {
             logger.log(Level.FINE, "{0}, {1}", new Object[]{is.getSystemId(), e.getLocalizedMessage()});
         }
         return is;
     }
 
-    /** Input external binding files.
-     * @return  */
+    /**
+     * Input external binding files.
+     *
+     * @return
+     */
     public InputSource[] getBindFiles() {
         return bindFiles.toArray(new InputSource[bindFiles.size()]);
     }
 
     /**
      * Adds a new binding file.
+     *
      * @param is
      */
-    public void addBindFile( InputSource is ) {
+    public void addBindFile(InputSource is) {
         bindFiles.add(absolutize(is));
     }
 
     /**
      * Adds a new binding file.
+     *
      * @param bindFile
      */
-    public void addBindFile( File bindFile ) {
+    public void addBindFile(File bindFile) {
         bindFiles.add(fileToInputSource(bindFile));
     }
 
     /**
      * Recursively scan directories and add all ".xjb" files in it.
+     *
      * @param dir
      */
-    public void addBindFileRecursive( File dir ) {
-        addRecursive(dir,".xjb",bindFiles);
+    public void addBindFileRecursive(File dir) {
+        addRecursive(dir, ".xjb", bindFiles);
     }
 
     public final List<URL> classpaths = new ArrayList<>();
+
     /**
      * Gets a classLoader that can load classes specified via the
      * -classpath option.
+     *
      * @param parent
      * @return
      */
-    public ClassLoader getUserClassLoader( ClassLoader parent ) {
+    public ClassLoader getUserClassLoader(ClassLoader parent) {
         if (classpaths.isEmpty())
             return parent;
         return new URLClassLoader(
-                classpaths.toArray(new URL[classpaths.size()]),parent);
+            classpaths.toArray(new URL[classpaths.size()]), parent);
     }
 
     /**
      * Gets Java module name option.
+     *
      * @return Java module name option or {@code null} if this option was not set.
      */
     public String getModuleName() {
@@ -491,13 +514,11 @@ public class Options
      *
      * @param args
      * @param i
-     * @return
-     *      0 if the argument is not understood. Returning 0
-     *      will let the caller report an error.
-     * @exception BadCommandLineException
-     *      If the callee wants to provide a custom message for an error.
+     * @return 0 if the argument is not understood. Returning 0
+     * will let the caller report an error.
+     * @throws BadCommandLineException If the callee wants to provide a custom message for an error.
      */
-    public int parseArgument( String[] args, int i ) throws BadCommandLineException {
+    public int parseArgument(String[] args, int i) throws BadCommandLineException {
         if (args[i].equals("-classpath") || args[i].equals("-cp")) {
             String a = requireArgument(args[i], args, ++i);
             for (String p : a.split(File.pathSeparator)) {
@@ -506,16 +527,16 @@ public class Options
                     classpaths.add(file.toURL());
                 } catch (MalformedURLException e) {
                     throw new BadCommandLineException(
-                        Messages.format(Messages.NOT_A_VALID_FILENAME,file),e);
+                        Messages.format(Messages.NOT_A_VALID_FILENAME, file), e);
                 }
             }
             return 2;
         }
         if (args[i].equals("-d")) {
-            targetDir = new File(requireArgument("-d",args,++i));
-            if( !targetDir.exists() )
+            targetDir = new File(requireArgument("-d", args, ++i));
+            if (!targetDir.exists())
                 throw new BadCommandLineException(
-                    Messages.format(Messages.NON_EXISTENT_DIR,targetDir));
+                    Messages.format(Messages.NON_EXISTENT_DIR, targetDir));
             return 2;
         }
         if (args[i].equals("-readOnly")) {
@@ -523,8 +544,8 @@ public class Options
             return 1;
         }
         if (args[i].equals("-p")) {
-            defaultPackage = requireArgument("-p",args,++i);
-            if(defaultPackage.length()==0) { // user specified default package
+            defaultPackage = requireArgument("-p", args, ++i);
+            if (defaultPackage.length() == 0) { // user specified default package
                 // there won't be any package to annotate, so disable them
                 // automatically as a usability feature
                 packageLevelAnnotations = false;
@@ -544,11 +565,11 @@ public class Options
             strictCheck = false;
             return 1;
         }
-        if( args[i].equals("-npa")) {
+        if (args[i].equals("-npa")) {
             packageLevelAnnotations = false;
             return 1;
         }
-        if( args[i].equals("-no-header")) {
+        if (args[i].equals("-no-header")) {
             noFileHeader = true;
             return 1;
         }
@@ -581,7 +602,7 @@ public class Options
             return 1;
         }
         if (args[i].equals("-b")) {
-            addFile(requireArgument("-b",args,++i),bindFiles,".xjb");
+            addFile(requireArgument("-b", args, ++i), bindFiles, ".xjb");
             return 2;
         }
         if (args[i].equals("-dtd")) {
@@ -601,10 +622,10 @@ public class Options
             return 1;
         }
         if (args[i].equals("-target")) {
-            String token = requireArgument("-target",args,++i);
+            String token = requireArgument("-target", args, ++i);
             target = SpecVersion.parse(token);
-            if(target==null)
-                throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_TARGET_VERSION,token));
+            if (target == null)
+                throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_TARGET_VERSION, token));
             return 2;
         }
         if (args[i].equals("-httpproxyfile")) {
@@ -614,16 +635,16 @@ public class Options
             }
 
             File file = new File(args[++i]);
-            if(!file.exists()) {
+            if (!file.exists()) {
                 throw new BadCommandLineException(
-                    Messages.format(Messages.NO_SUCH_FILE,file));
+                    Messages.format(Messages.NO_SUCH_FILE, file));
             }
 
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),"UTF-8"))) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
                 parseProxy(in.readLine());
             } catch (IOException e) {
                 throw new BadCommandLineException(
-                    Messages.format(Messages.FAILED_TO_PARSE,file,e.getMessage()),e);
+                    Messages.format(Messages.FAILED_TO_PARSE, file, e.getMessage()), e);
             }
 
             return 2;
@@ -638,33 +659,33 @@ public class Options
             return 2;
         }
         if (args[i].equals("-host")) {
-            proxyHost = requireArgument("-host",args,++i);
+            proxyHost = requireArgument("-host", args, ++i);
             return 2;
         }
         if (args[i].equals("-port")) {
-            proxyPort = requireArgument("-port",args,++i);
+            proxyPort = requireArgument("-port", args, ++i);
             return 2;
         }
-        if( args[i].equals("-catalog") ) {
+        if (args[i].equals("-catalog")) {
             // use Sun's "XML Entity and URI Resolvers" by Norman Walsh
             // to resolve external entities.
             // https://xerces.apache.org/xml-commons/components/resolver/resolver-article.html
 
-            File catalogFile = new File(requireArgument("-catalog",args,++i));
+            File catalogFile = new File(requireArgument("-catalog", args, ++i));
             try {
                 addCatalog(catalogFile);
             } catch (IOException e) {
                 throw new BadCommandLineException(
-                    Messages.format(Messages.FAILED_TO_PARSE,catalogFile,e.getMessage()),e);
+                    Messages.format(Messages.FAILED_TO_PARSE, catalogFile, e.getMessage()), e);
             }
             return 2;
         }
-        if( args[i].equals("-Xtest-class-name-allocator") ) {
+        if (args[i].equals("-Xtest-class-name-allocator")) {
             classNameAllocator = new ClassNameAllocator() {
                 @Override
                 public String assignClassName(String packageName, String className) {
-                    System.out.printf("assignClassName(%s,%s)\n",packageName,className);
-                    return className+"_Type";
+                    System.out.printf("assignClassName(%s,%s)\n", packageName, className);
+                    return className + "_Type";
                 }
             };
             return 1;
@@ -685,9 +706,9 @@ public class Options
         }
 
         // see if this is one of the extensions
-        for( Plugin plugin : getAllPlugins() ) {
+        for (Plugin plugin : getAllPlugins()) {
             try {
-                if( ('-'+plugin.getOptionName()).equals(args[i]) ) {
+                if (('-' + plugin.getOptionName()).equals(args[i])) {
                     activePlugins.add(plugin);
                     plugin.onActivated(this);
                     pluginURIs.addAll(plugin.getCustomizationURIs());
@@ -696,17 +717,17 @@ public class Options
                     // this is new in 2.1, and due to the backward compatibility reason,
                     // if plugin didn't understand it, we still return 1 to indicate
                     // that this option is consumed.
-                    int r = plugin.parseArgument(this,args,i);
-                    if(r!=0)
+                    int r = plugin.parseArgument(this, args, i);
+                    if (r != 0)
                         return r;
                     else
                         return 1;
                 }
 
-                int r = plugin.parseArgument(this,args,i);
-                if(r!=0)    return r;
+                int r = plugin.parseArgument(this, args, i);
+                if (r != 0) return r;
             } catch (IOException e) {
-                throw new BadCommandLineException(e.getMessage(),e);
+                throw new BadCommandLineException(e.getMessage(), e);
             }
         }
 
@@ -740,12 +761,13 @@ public class Options
         try {
             Integer.valueOf(proxyPort);
         } catch (NumberFormatException e) {
-            throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_PROXY,text));
+            throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_PROXY, text));
         }
     }
 
     /**
      * Obtains an operand and reports an error if it's not there.
+     *
      * @param optionName
      * @param args
      * @param i
@@ -755,7 +777,7 @@ public class Options
     public String requireArgument(String optionName, String[] args, int i) throws BadCommandLineException {
         if (i == args.length || args[i].startsWith("-")) {
             throw new BadCommandLineException(
-                Messages.format(Messages.MISSING_OPERAND,optionName));
+                Messages.format(Messages.MISSING_OPERAND, optionName));
         }
         return args[i];
     }
@@ -764,9 +786,8 @@ public class Options
      * Parses a token to a file (or a set of files)
      * and add them as {@link InputSource} to the specified list.
      *
-     * @param suffix
-     *      If the given token is a directory name, we do a recursive search
-     *      and find all files that have the given suffix.
+     * @param suffix If the given token is a directory name, we do a recursive search
+     *               and find all files that have the given suffix.
      */
     private void addFile(String name, List<InputSource> target, String suffix) throws BadCommandLineException {
         Object src;
@@ -774,14 +795,14 @@ public class Options
             src = Util.getFileOrURL(name);
         } catch (IOException e) {
             throw new BadCommandLineException(
-                Messages.format(Messages.NOT_A_FILE_NOR_URL,name));
+                Messages.format(Messages.NOT_A_FILE_NOR_URL, name));
         }
-        if(src instanceof URL) {
-            target.add(absolutize(new InputSource(Util.escapeSpace(((URL)src).toExternalForm()))));
+        if (src instanceof URL) {
+            target.add(absolutize(new InputSource(Util.escapeSpace(((URL) src).toExternalForm()))));
         } else {
-            File fsrc = (File)src;
-            if(fsrc.isDirectory()) {
-                addRecursive(fsrc,suffix,target);
+            File fsrc = (File) src;
+            if (fsrc.isDirectory()) {
+                addRecursive(fsrc, suffix, target);
             } else {
                 target.add(absolutize(fileToInputSource(fsrc)));
             }
@@ -794,6 +815,7 @@ public class Options
 
     /**
      * Adds a new catalog file.Use created or existed resolver to parse new catalog file.
+     *
      * @param catalogFile
      * @throws java.io.IOException
      */
@@ -809,25 +831,24 @@ public class Options
      * Parses arguments and fill fields of this object.
      *
      * @param args
-     * @exception BadCommandLineException
-     *      thrown when there's a problem in the command-line arguments
+     * @throws BadCommandLineException thrown when there's a problem in the command-line arguments
      */
-    public void parseArguments( String[] args ) throws BadCommandLineException {
+    public void parseArguments(String[] args) throws BadCommandLineException {
 
         for (int i = 0; i < args.length; i++) {
-            if(args[i].length()==0)
+            if (args[i].length() == 0)
                 throw new BadCommandLineException();
             if (args[i].charAt(0) == '-') {
-                int j = parseArgument(args,i);
-                if(j==0)
+                int j = parseArgument(args, i);
+                if (j == 0)
                     throw new BadCommandLineException(
                         Messages.format(Messages.UNRECOGNIZED_PARAMETER, args[i]));
-                i += (j-1);
+                i += (j - 1);
             } else {
-                if(args[i].endsWith(".jar"))
+                if (args[i].endsWith(".jar"))
                     scanEpisodeFile(new File(args[i]));
                 else
-                    addFile(args[i],grammars,".xsd");
+                    addFile(args[i], grammars, ".xsd");
             }
         }
 
@@ -854,7 +875,7 @@ public class Options
             throw new BadCommandLineException(
                 Messages.format(Messages.MISSING_GRAMMAR));
 
-        if( schemaLanguage==null )
+        if (schemaLanguage == null)
             schemaLanguage = guessSchemaLanguage();
 
 //        if(target==SpecVersion.V2_2 && !isExtensionMode())
@@ -862,13 +883,14 @@ public class Options
 //                "Currently 2.2 is still not finalized yet, so using it requires the -extension switch." +
 //                "NOTE THAT 2.2 SPEC MAY CHANGE BEFORE IT BECOMES FINAL.");
 
-        if(pluginLoadFailure!=null)
+        if (pluginLoadFailure != null)
             throw new BadCommandLineException(
-                Messages.format(Messages.PLUGIN_LOAD_FAILURE,pluginLoadFailure));
+                Messages.format(Messages.PLUGIN_LOAD_FAILURE, pluginLoadFailure));
     }
 
     /**
      * Finds the {@code META-INF/sun-jaxb.episode} file to add as a binding customization.
+     *
      * @param jar
      * @throws com.sun.tools.internal.xjc.BadCommandLineException
      */
@@ -882,13 +904,14 @@ public class Options
             }
         } catch (IOException e) {
             throw new BadCommandLineException(
-                    Messages.format(Messages.FAILED_TO_LOAD,jar,e.getMessage()), e);
+                Messages.format(Messages.FAILED_TO_LOAD, jar, e.getMessage()), e);
         }
     }
 
 
     /**
      * Guesses the schema language.
+     *
      * @return
      */
     public Language guessSchemaLanguage() {
@@ -910,27 +933,30 @@ public class Options
 
     /**
      * Creates a configured CodeWriter that produces files into the specified directory.
+     *
      * @return
      * @throws java.io.IOException
      */
     public CodeWriter createCodeWriter() throws IOException {
-        return createCodeWriter(new FileCodeWriter( targetDir, readOnly, encoding ));
+        return createCodeWriter(new FileCodeWriter(targetDir, readOnly, encoding));
     }
 
     /**
      * Creates a configured CodeWriter that produces files into the specified directory.
+     *
      * @param core
      * @return
      */
-    public CodeWriter createCodeWriter( CodeWriter core ) {
-        if(noFileHeader)
+    public CodeWriter createCodeWriter(CodeWriter core) {
+        if (noFileHeader)
             return core;
 
-        return new PrologCodeWriter( core,getPrologComment() );
+        return new PrologCodeWriter(core, getPrologComment());
     }
 
     /**
      * Gets the string suitable to be used as the prolog comment baked into artifacts.This is the string like "This file was generated by the JAXB RI on YYYY/mm/dd..."
+     *
      * @return
      */
     public String getPrologComment() {
@@ -957,7 +983,7 @@ public class Options
      * Looks for all "META-INF/services/[className]" files and
      * create one instance for each class name found inside this file.
      */
-    private <T> List<T> findServices( Class<T> clazz) {
+    private <T> List<T> findServices(Class<T> clazz) {
         final List<T> result = new ArrayList<>();
         final boolean debug = getDebugPropertyValue();
         try {
@@ -967,12 +993,12 @@ public class Options
             final ServiceLoader<T> sl = ServiceLoader.load(clazz, tccl);
             for (T t : sl)
                 result.add(t);
-        } catch( Throwable e ) {
+        } catch (Throwable e) {
             // ignore any error
             StringWriter w = new StringWriter();
             e.printStackTrace(new PrintWriter(w));
             pluginLoadFailure = w.toString();
-            if(debug)
+            if (debug)
                 System.out.println(pluginLoadFailure);
         }
         return result;

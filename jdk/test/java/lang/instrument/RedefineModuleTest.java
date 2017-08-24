@@ -29,7 +29,7 @@
  *        java.base/jdk.internal.test.TestProviderImpl1
  *        java.base/jdk.internal.test.TestProviderImpl2
  * @run shell MakeJAR3.sh RedefineModuleAgent
- * @run testng/othervm -javaagent:RedefineModuleAgent.jar RedefineModuleTest
+ * @run testng/othervm --illegal-access=deny -javaagent:RedefineModuleAgent.jar RedefineModuleTest
  */
 
 import java.lang.TestProvider;
