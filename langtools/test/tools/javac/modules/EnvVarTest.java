@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8156962
- * @summary Tests use of _JAVAC_OPTIONS env variable
+ * @summary Tests use of JDK_JAVAC_OPTIONS env variable
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -71,7 +71,7 @@ public class EnvVarTest extends ModuleTestBase {
 
         tb.out.println("test that addExports can be provided with env variable");
         new JavacTask(tb, Mode.EXEC)
-                .envVar("_JAVAC_OPTIONS", "--add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
+                .envVar("JDK_JAVAC_OPTIONS", "--add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Expect.SUCCESS)
@@ -83,7 +83,7 @@ public class EnvVarTest extends ModuleTestBase {
                 "--add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED");
 
         new JavacTask(tb, Mode.EXEC)
-                .envVar("_JAVAC_OPTIONS", "@" + atFile)
+                .envVar("JDK_JAVAC_OPTIONS", "@" + atFile)
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run(Expect.SUCCESS)

@@ -27,8 +27,6 @@ import static org.testng.Assert.assertSame;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -52,7 +50,7 @@ import org.testng.annotations.Test;
  * @summary test customized provider wraps the built-in system-default implementation of JAXP factories
  */
 public class DefaultFactoryWrapperTest {
-    private static final Module XML_MODULE = Layer.boot().findModule("java.xml").get();
+    private static final Module XML_MODULE = ModuleLayer.boot().findModule("java.xml").get();
 
     private static final String PROVIDER_PACKAGE = "xwp";
 
