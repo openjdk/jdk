@@ -24,11 +24,15 @@
 /* @test
    @bug 4889870 4890033
    @summary java -Xcheck:jni failing in net code on Solaris / [Datagram]Socket.getLocalAddress() failure
+   @library /lib/testlibrary
+   @build jdk.testlibrary.NetworkConfiguration
    @run main/othervm -Xcheck:jni CheckJNI
 */
 
 import java.net.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import jdk.testlibrary.NetworkConfiguration;
 
 public class CheckJNI {
     static Socket s;
@@ -49,32 +53,23 @@ public class CheckJNI {
         dg2 = new DatagramSocket (0, InetAddress.getByName ("127.0.0.1"));
         testDatagrams (dg1, dg2);
 
-        /* Use NetworkInterface to find link local IPv6 addrs to test */
+        /* Find link local IPv6 addrs to test */
+        List<Inet6Address> addrs = NetworkConfiguration.probe()
+                .ip6Addresses()
+                .filter(Inet6Address::isLinkLocalAddress)
+                .collect(Collectors.toList());
 
-        Enumeration ifs = NetworkInterface.getNetworkInterfaces();
-        server = new ServerSocket (0);
+        server = new ServerSocket(0);
+        for (Inet6Address ia6 : addrs) {
+            System.out.println("Address:" + ia6);
+            System.out.println("Testing IPv6 Socket");
+            s = new Socket(ia6, server.getLocalPort());
+            s.close();
 
-        while (ifs.hasMoreElements()) {
-            NetworkInterface nif = (NetworkInterface)ifs.nextElement();
-            if (!nif.isUp())
-                continue;
-            Enumeration addrs = nif.getInetAddresses();
-            while (addrs.hasMoreElements()) {
-                InetAddress addr = (InetAddress) addrs.nextElement();
-                if (addr instanceof Inet6Address) {
-                    Inet6Address ia6 = (Inet6Address) addr;
-                    if (ia6.isLinkLocalAddress()) {
-                        System.out.println ("Testing IPv6 Socket");
-                        s = new Socket (ia6, server.getLocalPort());
-                        s.close();
-
-                        System.out.println ("Testing IPv6 DatagramSocket");
-                        dg1 = new DatagramSocket (0, ia6);
-                        dg2 = new DatagramSocket (0, ia6);
-                        testDatagrams (dg1, dg2);
-                    }
-                }
-            }
+            System.out.println("Testing IPv6 DatagramSocket");
+            dg1 = new DatagramSocket(0, ia6);
+            dg2 = new DatagramSocket(0, ia6);
+            testDatagrams(dg1, dg2);
         }
         server.close();
         System.out.println ("OK");

@@ -28,7 +28,6 @@
  *          ThreadInfo.getThreadState()
  * @author  Mandy Chung
  *
- * @modules java.management
  * @run build Utils
  * @run main ThreadStackTrace
  */

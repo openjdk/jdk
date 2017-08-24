@@ -84,7 +84,6 @@
 package jdk.dynalink.beans;
 
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;

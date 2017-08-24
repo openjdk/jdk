@@ -29,13 +29,19 @@
  * <P>
  * This module also contains SASL mechanisms including DIGEST-MD5,
  * CRAM-MD5, and NTLM.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.security.sasl {
     requires java.logging;
 
     exports javax.security.sasl;
+
     exports com.sun.security.sasl.util to
         jdk.security.jgss;
-    provides java.security.Provider with com.sun.security.sasl.Provider;
+
+    provides java.security.Provider with
+        com.sun.security.sasl.Provider;
 }
 
