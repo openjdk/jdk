@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,10 @@
 
 /*
  * @test
- * @bug 7152176 8164437
+ * @bug 7152176
  * @summary More krb5 tests
  * @compile -XDignore.symbol.file Basic.java
- * @run main/othervm
- *      Basic jdk.security.jgss
- * @run main/othervm --limit-modules java.security.jgss,jdk.security.auth
- *      Basic java.security.jgss
+ * @run main/othervm Basic
  */
 
 import sun.security.jgss.GSSUtil;
@@ -63,12 +60,5 @@ public class Basic {
         b.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
         Context.handshake(s2, b);
-
-        // Bonus test for 8164437.
-        String moduleName = c.x().getClass().getModule().getName();
-        if (!moduleName.equals(args[0])) {
-            throw new Exception("Expected: " + args[0]
-                    + ". Actual: " + moduleName);
-        }
     }
 }

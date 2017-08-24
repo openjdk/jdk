@@ -523,9 +523,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         dynamicColorModel = null;
         defaultConfig = null;
         configs = null;
+        initScaleFactors();
         // pass on to all top-level windows on this display
         topLevels.notifyListeners();
-        initScaleFactors();
     }
 
     /**

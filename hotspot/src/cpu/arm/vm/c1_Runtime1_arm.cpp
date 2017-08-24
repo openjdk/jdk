@@ -618,7 +618,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                          DirtyCardQueue::byte_offset_of_buf()));
 
-        AddressLiteral cardtable((address)ct->byte_map_base);
+        AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
         assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
 
         // save at least the registers that need saving if the runtime is called
@@ -645,7 +645,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Note: there is a comment in x86 code about not using
         // ExternalAddress / lea, due to relocation not working
         // properly for that address. Should be OK for arm, where we
-        // explicitly specify that 'cartable' has a relocInfo::none
+        // explicitly specify that 'cardtable' has a relocInfo::none
         // type.
         __ lea(r_card_base_1, cardtable);
         __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTableModRefBS::card_shift));

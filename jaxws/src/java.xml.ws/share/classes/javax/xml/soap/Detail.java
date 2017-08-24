@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ public interface Detail extends SOAPFaultElement {
      * @param name a {@code Name} object identifying the
      *         new {@code DetailEntry} object
      *
+     * @return the new {@code DetailEntry} object that was
+     *         created
+     *
      * @exception SOAPException thrown when there is a problem in adding a
      * DetailEntry object to this Detail object.
      *
@@ -83,6 +86,9 @@ public interface Detail extends SOAPFaultElement {
      * @param qname a {@code QName} object identifying the
      *         new {@code DetailEntry} object
      *
+     * @return the new {@code DetailEntry} object that was
+     *         created
+     *
      * @exception SOAPException thrown when there is a problem in adding a
      * DetailEntry object to this Detail object.
      *
@@ -97,5 +103,5 @@ public interface Detail extends SOAPFaultElement {
      * @return an {@code Iterator} object over the {@code DetailEntry}
      *             objects in this {@code Detail} object
      */
-    public Iterator getDetailEntries();
+    public Iterator<DetailEntry> getDetailEntries();
 }

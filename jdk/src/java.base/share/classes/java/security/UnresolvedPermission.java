@@ -96,6 +96,7 @@ import java.security.cert.*;
  *
  *
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class UnresolvedPermission extends Permission

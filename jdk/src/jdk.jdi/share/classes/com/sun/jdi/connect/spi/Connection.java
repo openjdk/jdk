@@ -82,7 +82,7 @@ public abstract class Connection {
      * thrown. The first byte of the packet is stored in element
      * {@code 0} of the byte array, the second in element {@code 1},
      * and so on. The bytes in the byte array are laid out as per the
-     * <a href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
+     * <a href="{@docRoot}/../specs/jdwp/jdwp-spec.html">
      * JDWP specification</a>. That is, all fields in the packet
      * are in big endian order as per the JDWP specification.
      *
@@ -119,7 +119,7 @@ public abstract class Connection {
      *
      * <p> The byte array provided to this method should be laid out
      * as per the <a
-     * href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
+     * href="{@docRoot}/../specs/jdwp/jdwp-spec.html">
      * JDWP specification</a>. That is, all fields in the packet
      * are in big endian order. The first byte, that is element
      * {@code pkt[0]}, is the first byte of the {@code length} field.

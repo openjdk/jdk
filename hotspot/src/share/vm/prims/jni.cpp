@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -935,8 +935,7 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
   inline void get_long()   { _arguments->push_long(va_arg(_ap, jlong)); }
   inline void get_float()  { _arguments->push_float((jfloat)va_arg(_ap, jdouble)); } // float is coerced to double w/ va_arg
   inline void get_double() { _arguments->push_double(va_arg(_ap, jdouble)); }
-  inline void get_object() { jobject l = va_arg(_ap, jobject);
-                             _arguments->push_oop(Handle((oop *)l, false)); }
+  inline void get_object() { _arguments->push_jobject(va_arg(_ap, jobject)); }
 
   inline void set_ap(va_list rap) {
     va_copy(_ap, rap);
@@ -1025,7 +1024,7 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
   inline void get_long()   { _arguments->push_long((_ap++)->j);  }
   inline void get_float()  { _arguments->push_float((_ap++)->f); }
   inline void get_double() { _arguments->push_double((_ap++)->d);}
-  inline void get_object() { _arguments->push_oop(Handle((oop *)(_ap++)->l, false)); }
+  inline void get_object() { _arguments->push_jobject((_ap++)->l); }
 
   inline void set_ap(const jvalue *rap) { _ap = rap; }
 

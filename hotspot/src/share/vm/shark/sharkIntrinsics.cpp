@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,7 +66,7 @@ bool SharkIntrinsics::is_intrinsic(ciMethod *target) {
     return true;
 
     // Unsafe
-  case vmIntrinsics::_compareAndSwapInt:
+  case vmIntrinsics::_compareAndSetInt:
     return true;
 
   default:
@@ -140,8 +140,8 @@ void SharkIntrinsics::do_intrinsic() {
     break;
 
     // Unsafe
-  case vmIntrinsics::_compareAndSwapInt:
-    do_Unsafe_compareAndSwapInt();
+  case vmIntrinsics::_compareAndSetInt:
+    do_Unsafe_compareAndSetInt();
     break;
 
   default:
@@ -241,7 +241,7 @@ void SharkIntrinsics::do_Thread_currentThread() {
       true));
 }
 
-void SharkIntrinsics::do_Unsafe_compareAndSwapInt() {
+void SharkIntrinsics::do_Unsafe_compareAndSetInt() {
   // Pop the arguments
   Value *x      = state()->pop()->jint_value();
   Value *e      = state()->pop()->jint_value();
