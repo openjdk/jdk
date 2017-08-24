@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 
 package sun.nio.ch;
 
-import java.lang.reflect.*;
 import java.io.FileDescriptor;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
@@ -456,21 +459,4 @@ public class Util {
         }
         return dbb;
     }
-
-
-    // -- Bug compatibility --
-
-    private static volatile String bugLevel;
-
-    static boolean atBugLevel(String bl) {              // package-private
-        if (bugLevel == null) {
-            if (!jdk.internal.misc.VM.isBooted())
-                return false;
-            String value = GetPropertyAction
-                    .privilegedGetProperty("sun.nio.ch.bugLevel");
-            bugLevel = (value != null) ? value : "";
-        }
-        return bugLevel.equals(bl);
-    }
-
 }

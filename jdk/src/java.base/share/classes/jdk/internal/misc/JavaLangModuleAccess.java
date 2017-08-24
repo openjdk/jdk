@@ -34,16 +34,10 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReader;
-import java.lang.module.ModuleReference;
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
-
-import jdk.internal.module.ModuleHashes;
 
 /**
  * Provides access to non-public methods in java.lang.module.
@@ -131,12 +125,16 @@ public interface JavaLangModuleAccess {
 
     /**
      * Resolves a collection of root modules, with service binding
-     * and the empty configuration as the parent. The post resolution
-     * checks are optionally run.
+     * and the empty configuration as the parent.
      */
     Configuration resolveAndBind(ModuleFinder finder,
                                  Collection<String> roots,
-                                 boolean check,
                                  PrintStream traceOutput);
+
+    /**
+     * Creates a configuration from a pre-generated readability graph.
+     */
+    Configuration newConfiguration(ModuleFinder finder,
+                                   Map<String, Set<String>> graph);
 
 }

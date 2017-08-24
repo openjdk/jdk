@@ -24,6 +24,7 @@ grant codebase "file:${test.classes}/proxydir/-" {
 
 grant codeBase "jrt:/jdk.incubator.httpclient" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
 
