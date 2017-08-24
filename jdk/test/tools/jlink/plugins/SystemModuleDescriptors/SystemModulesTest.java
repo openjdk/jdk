@@ -111,16 +111,10 @@ public class SystemModulesTest {
 
     private void checkAttributes(ModuleReference modRef) {
         try {
-            if (modRef.descriptor().name().equals("java.base")) {
-                ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                String[] values = mt.targetPlatform().split("-");
-                assertTrue(checkOSName(values[0]));
-                assertTrue(checkOSArch(values[1]));
-            } else {
-                // target platform attribute is dropped by jlink plugin for other modules
-                ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                assertTrue(mt == null || mt.targetPlatform() == null);
-            }
+            ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
+            String[] values = mt.targetPlatform().split("-");
+            assertTrue(checkOSName(values[0]));
+            assertTrue(checkOSArch(values[1]));
         } catch (IOException exp) {
             throw new UncheckedIOException(exp);
         }
