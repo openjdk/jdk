@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
+import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
 import org.w3c.dom.Element;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
@@ -39,6 +40,10 @@ import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 public abstract class DetailImpl extends FaultElementImpl implements Detail {
     public DetailImpl(SOAPDocumentImpl ownerDoc, NameImpl detailName) {
         super(ownerDoc, detailName);
+    }
+
+    public DetailImpl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     protected abstract DetailEntry createDetailEntry(Name name);
@@ -65,8 +70,9 @@ public abstract class DetailImpl extends FaultElementImpl implements Detail {
     }
 
     protected SOAPElement convertToSoapElement(Element element) {
-        if (element instanceof DetailEntry) {
-            return (SOAPElement) element;
+        final javax.xml.soap.Node soapNode = getSoapDocument().find(element);
+        if (soapNode instanceof DetailEntry) {
+            return (SOAPElement) soapNode;
         } else {
             DetailEntry detailEntry =
                 createDetailEntry(NameImpl.copyElementName(element));

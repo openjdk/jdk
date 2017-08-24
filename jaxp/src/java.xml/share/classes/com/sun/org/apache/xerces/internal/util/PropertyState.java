@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +23,6 @@
  * questions.
  */
 
-/*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
- */
-
-/*
- * $Id: PropertyState.java 3024 2011-03-01 03:46:13Z joehw $
- */
 package com.sun.org.apache.xerces.internal.util;
 
 public class PropertyState {

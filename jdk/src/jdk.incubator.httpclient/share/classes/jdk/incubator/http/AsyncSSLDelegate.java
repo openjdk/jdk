@@ -28,8 +28,10 @@ package jdk.incubator.http;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -72,13 +74,13 @@ import jdk.incubator.http.internal.common.ExceptionallyCloseable;
  *     channelInputQ
  *        /\
  *        ||
- * "lowerRead" method puts buffers into channelInputQ. It is invoked from
+ * "asyncReceive" method puts buffers into channelInputQ. It is invoked from
  * OP_READ events from the selector.
  *
  * Whenever handshaking is required, the doHandshaking() method is called
  * which creates a thread to complete the handshake. It takes over the
  * channelInputQ from upperRead, and puts outgoing packets on channelOutputQ.
- * Selector events are delivered to lowerRead and lowerWrite as normal.
+ * Selector events are delivered to asyncReceive and lowerWrite as normal.
  *
  * Errors
  *
@@ -92,9 +94,6 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
     // while SSL handshaking happening.
     final AsyncWriteQueue appOutputQ = new AsyncWriteQueue(this::upperWrite);
 
-    // queue of wrapped ByteBuffers waiting to be sent on socket channel
-    //final Queue<ByteBuffer> channelOutputQ;
-
     // Bytes read into this queue before being unwrapped. Backup on this
     // Q should only happen when the engine is stalled due to delegated tasks
     final Queue<ByteBufferReference> channelInputQ;
@@ -107,35 +106,34 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
 
     final SSLEngine engine;
     final SSLParameters sslParameters;
-    //final SocketChannel chan;
     final HttpConnection lowerOutput;
     final HttpClientImpl client;
     // should be volatile to provide proper synchronization(visibility) action
     volatile Consumer<ByteBufferReference> asyncReceiver;
     volatile Consumer<Throwable> errorHandler;
+    volatile boolean connected = false;
 
     // Locks.
     final Object reader = new Object();
     // synchronizing handshake state
     final Semaphore handshaker = new Semaphore(1);
-    // flag set when frame or writer is blocked waiting for handshake to finish
-    //boolean writerBlocked;
-    //boolean readerBlocked;
+    final String[] alpn;
 
     // alpn[] may be null. upcall is callback which receives incoming decoded bytes off socket
 
     AsyncSSLDelegate(HttpConnection lowerOutput, HttpClientImpl client, String[] alpn)
     {
         SSLContext context = client.sslContext();
-        //channelOutputQ = new Queue<>();
-        //channelOutputQ.registerPutCallback(this::lowerWrite);
         engine = context.createSSLEngine();
         engine.setUseClientMode(true);
         SSLParameters sslp = client.sslParameters()
                                    .orElseGet(context::getSupportedSSLParameters);
         sslParameters = Utils.copySSLParameters(sslp);
         if (alpn != null) {
+            Log.logSSL("AsyncSSLDelegate: Setting application protocols: " + Arrays.toString(alpn));
             sslParameters.setApplicationProtocols(alpn);
+        } else {
+            Log.logSSL("AsyncSSLDelegate: no applications set!");
         }
         logParams(sslParameters);
         engine.setSSLParameters(sslParameters);
@@ -143,6 +141,7 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
         this.client = client;
         this.channelInputQ = new Queue<>();
         this.channelInputQ.registerPutCallback(this::upperRead);
+        this.alpn = alpn;
     }
 
     @Override
@@ -160,6 +159,10 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
         if (appOutputQ.flush()) {
             lowerOutput.flushAsync();
         }
+    }
+
+    SSLEngine getEngine() {
+        return engine;
     }
 
     @Override
@@ -223,6 +226,18 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
         }
     }
 
+    // Connecting at this level means the initial handshake has completed.
+    // This means that the initial SSL parameters are available including
+    // ALPN result.
+    void connect() throws IOException, InterruptedException {
+        doHandshakeNow("Init");
+        connected = true;
+    }
+
+    boolean connected() {
+        return connected;
+    }
+
     private void startHandshake(String tag) {
         Runnable run = () -> {
             try {
@@ -241,15 +256,20 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
     {
         handshaker.acquire();
         try {
-            channelInputQ.registerPutCallback(null);
+            channelInputQ.disableCallback();
             lowerOutput.flushAsync();
             Log.logTrace("{0}: Starting handshake...", tag);
             doHandshakeImpl();
             Log.logTrace("{0}: Handshake completed", tag);
-            channelInputQ.registerPutCallback(this::upperRead);
+            // don't unblock the channel here, as we aren't sure yet, whether ALPN
+            // negotiation succeeded. Caller will call enableCallback() externally
         } finally {
             handshaker.release();
         }
+    }
+
+    public void enableCallback() {
+        channelInputQ.enableCallback();
     }
 
      /**
@@ -257,6 +277,7 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
      * Returns after handshake is completed or error occurs
      */
     private void doHandshakeImpl() throws IOException {
+        engine.beginHandshake();
         while (true) {
             SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
             switch(status) {
@@ -272,7 +293,9 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
                 case NEED_UNWRAP: case NEED_UNWRAP_AGAIN:
                     handshakeReceiveAndUnWrap();
                     break;
-                case FINISHED: case NOT_HANDSHAKING:
+                case FINISHED:
+                    return;
+                case NOT_HANDSHAKING:
                     return;
                 default:
                     throw new InternalError("Unexpected Handshake Status: "
@@ -310,6 +333,12 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
     public void startReading() {
         // maybe this class does not need to implement AsyncConnection
     }
+
+    @Override
+    public void stopAsyncReading() {
+        // maybe this class does not need to implement AsyncConnection
+    }
+
 
     static class EngineResult {
         final SSLEngineResult result;
@@ -609,11 +638,13 @@ class AsyncSSLDelegate implements ExceptionallyCloseable, AsyncConnection {
         }
 
         // SSLParameters.getApplicationProtocols() can't return null
+        // JDK 8 EXCL START
         for (String approto : p.getApplicationProtocols()) {
             sb.append("\n    application protocol: {")
               .append(params.size()).append("}");
             params.add(approto);
         }
+        // JDK 8 EXCL END
 
         if (p.getProtocols() != null) {
             for (String protocol : p.getProtocols()) {

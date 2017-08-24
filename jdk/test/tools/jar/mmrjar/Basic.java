@@ -221,7 +221,8 @@ public class Basic {
         Assert.assertEquals(actual, expected);
     }
 
-    // jar tool does two updates, no exported packages, all concealed
+    // jar tool does two updates, no exported packages, all concealed.
+    // Along with various --describe-module variants
     @Test
     public void test5() throws IOException {
         // compile the mr10 directory
@@ -266,10 +267,13 @@ public class Basic {
 
         jar("-d --file mr.jar");
 
+        String uri = (Paths.get("mr.jar")).toUri().toString();
+        uri = "jar:" + uri + "/!module-info.class";
+
         actual = lines(outbytes);
         expected = Set.of(
-                "hi",
-                "requires mandated java.base",
+                "hi " + uri,
+                "requires java.base mandated",
                 "contains p",
                 "contains p.internal"
         );
@@ -304,13 +308,19 @@ public class Basic {
 
         actual = lines(outbytes);
         expected = Set.of(
-                "hi",
-                "requires mandated java.base",
+                "hi " + uri,
+                "requires java.base mandated",
                 "contains p",
                 "contains p.internal",
                 "contains p.internal.bar"
         );
         Assert.assertEquals(actual, expected);
+
+        for (String release : new String[] {"9" , "10", "100", "1000"}) {
+            jar("-d --file mr.jar --release " + release);
+            actual = lines(outbytes);
+            Assert.assertEquals(actual, expected);
+        }
     }
 
     // root and versioned module-info entries have different main-class, version
@@ -331,7 +341,7 @@ public class Basic {
         ModuleInfoExtender mie = ModuleInfoExtender.newExtender(
             new ByteArrayInputStream(mdBytes));
 
-        mie.mainClass("foo.main");
+        mie.mainClass("p.Main");
         mie.version(Version.parse("1.0"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -345,7 +355,7 @@ public class Basic {
 
         // different main-class
         mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
-        mie.mainClass("foo.main2");
+        mie.mainClass("p.Main2");
         mie.version(Version.parse("1.0"));
         baos.reset();
         mie.write(baos);
@@ -360,7 +370,7 @@ public class Basic {
 
         // different version
         mie = ModuleInfoExtender.newExtender(new ByteArrayInputStream(mdBytes));
-        mie.mainClass("foo.main");
+        mie.mainClass("p.Main");
         mie.version(Version.parse("2.0"));
         baos.reset();
         mie.write(baos);
@@ -395,21 +405,48 @@ public class Basic {
         Files.copy(Paths.get("test7-v9", "module-info.class"),
                    Paths.get("test7-v10", "module-info.class"));
 
-        int rc = jar("--create --file mmr.jar --main-class=foo.main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
-
-System.out.println("-----------------------");
-System.out.println( new String(errbytes.toByteArray()));
-
-
+        int rc = jar("--create --file mmr.jar --main-class=p.Main -C test7 . --release 9 -C test7-v9 . --release 10 -C test7-v10 .");
         Assert.assertEquals(rc, 0);
 
+        jar("-d --file=mmr.jar");
+        Set<String> actual = lines(outbytes);
+        Set<String> expected = Set.of(
+                "releases: 9 10",
+                "No root module descriptor, specify --release"
+        );
+        Assert.assertEquals(actual, expected);
 
-        jar("-tf mmr.jar");
+        String uriPrefix = "jar:" + (Paths.get("mmr.jar")).toUri().toString();
 
-System.out.println("-----------------------");
-System.out.println( new String(outbytes.toByteArray()));
+        jar("-d --file=mmr.jar --release 9");
+        actual = lines(outbytes);
+        expected = Set.of(
+                "releases: 9 10",
+                "m1 " + uriPrefix + "/!META-INF/versions/9/module-info.class",
+                "requires java.base mandated",
+                "exports p",
+                "main-class p.Main"
+        );
+        Assert.assertEquals(actual, expected);
 
-        Optional<String> exp = Optional.of("foo.main");
+        jar("-d --file=mmr.jar --release 10");
+        actual = lines(outbytes);
+        expected = Set.of(
+                "releases: 9 10",
+                "m1 " + uriPrefix + "/!META-INF/versions/10/module-info.class",
+                "requires java.base mandated",
+                "exports p",
+                "main-class p.Main"
+        );
+        Assert.assertEquals(actual, expected);
+
+        for (String release : new String[] {"11", "12", "15", "100"}) {
+            jar("-d --file mmr.jar --release " + release);
+            actual = lines(outbytes);
+            Assert.assertEquals(actual, expected);
+        }
+
+        Optional<String> exp = Optional.of("p.Main");
         try (ZipFile zf = new ZipFile("mmr.jar")) {
             Assert.assertTrue(zf.getEntry("module-info.class") == null);
 
