@@ -26,6 +26,8 @@
 /**
  * Defines the JDBC RowSet API.
  *
+ * @uses javax.sql.rowset.RowSetFactory
+ *
  * @moduleGraph
  * @since 9
  */
@@ -37,6 +39,6 @@ module java.sql.rowset {
     exports javax.sql.rowset;
     exports javax.sql.rowset.serial;
     exports javax.sql.rowset.spi;
+
     uses javax.sql.rowset.RowSetFactory;
 }
-

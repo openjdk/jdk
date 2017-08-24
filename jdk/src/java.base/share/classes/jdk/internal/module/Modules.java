@@ -136,10 +136,12 @@ public class Modules {
     public static void addProvides(Module m, Class<?> service, Class<?> impl) {
         ModuleLayer layer = m.getLayer();
 
-        if (layer == null || layer == ModuleLayer.boot()) {
+        PrivilegedAction<ClassLoader> pa = m::getClassLoader;
+        ClassLoader loader = AccessController.doPrivileged(pa);
+
+        ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();
+        if (layer == null || loader == null || loader == platformClassLoader) {
             // update ClassLoader catalog
-            PrivilegedAction<ClassLoader> pa = m::getClassLoader;
-            ClassLoader loader = AccessController.doPrivileged(pa);
             ServicesCatalog catalog;
             if (loader == null) {
                 catalog = BootLoader.getServicesCatalog();

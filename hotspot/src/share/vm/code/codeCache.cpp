@@ -130,6 +130,7 @@ class CodeBlob_sizes {
 // Iterate over all CodeHeaps
 #define FOR_ALL_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _heaps->begin(); heap != _heaps->end(); ++heap)
 #define FOR_ALL_NMETHOD_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _nmethod_heaps->begin(); heap != _nmethod_heaps->end(); ++heap)
+#define FOR_ALL_ALLOCABLE_HEAPS(heap) for (GrowableArrayIterator<CodeHeap*> heap = _allocable_heaps->begin(); heap != _allocable_heaps->end(); ++heap)
 
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != NULL; cb = next_blob(heap, cb))
@@ -140,10 +141,11 @@ int CodeCache::_number_of_nmethods_with_dependencies = 0;
 bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
 
-// Initialize array of CodeHeaps
+// Initialize arrays of CodeHeap subsets
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
 GrowableArray<CodeHeap*>* CodeCache::_compiled_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
 GrowableArray<CodeHeap*>* CodeCache::_nmethod_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
+GrowableArray<CodeHeap*>* CodeCache::_allocable_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
 
 void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set) {
   size_t total_size = non_nmethod_size + profiled_size + non_profiled_size;
@@ -338,6 +340,7 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   return rs;
 }
 
+// Heaps available for allocation
 bool CodeCache::heap_available(int code_blob_type) {
   if (!SegmentedCodeCache) {
     // No segmentation: use a single code heap
@@ -390,6 +393,9 @@ void CodeCache::add_heap(CodeHeap* heap) {
   }
   if (code_blob_type_accepts_nmethod(type)) {
     _nmethod_heaps->insert_sorted<code_heap_compare>(heap);
+  }
+  if (code_blob_type_accepts_allocable(type)) {
+    _allocable_heaps->insert_sorted<code_heap_compare>(heap);
   }
 }
 
@@ -620,7 +626,7 @@ nmethod* CodeCache::find_nmethod(void* start) {
 
 void CodeCache::blobs_do(void f(CodeBlob* nm)) {
   assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
       f(cb);
     }
@@ -663,7 +669,7 @@ void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurre
 
 void CodeCache::blobs_do(CodeBlobClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
       if (cb->is_alive()) {
         f->do_code_blob(cb);
@@ -960,7 +966,7 @@ address CodeCache::high_bound(int code_blob_type) {
 
 size_t CodeCache::capacity() {
   size_t cap = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     cap += (*heap)->capacity();
   }
   return cap;
@@ -973,7 +979,7 @@ size_t CodeCache::unallocated_capacity(int code_blob_type) {
 
 size_t CodeCache::unallocated_capacity() {
   size_t unallocated_cap = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     unallocated_cap += (*heap)->unallocated_capacity();
   }
   return unallocated_cap;
@@ -981,7 +987,7 @@ size_t CodeCache::unallocated_capacity() {
 
 size_t CodeCache::max_capacity() {
   size_t max_cap = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     max_cap += (*heap)->max_capacity();
   }
   return max_cap;
@@ -1007,7 +1013,7 @@ double CodeCache::reverse_free_ratio(int code_blob_type) {
 
 size_t CodeCache::bytes_allocated_in_freelists() {
   size_t allocated_bytes = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     allocated_bytes += (*heap)->allocated_in_freelist();
   }
   return allocated_bytes;
@@ -1015,7 +1021,7 @@ size_t CodeCache::bytes_allocated_in_freelists() {
 
 int CodeCache::allocated_segments() {
   int number_of_segments = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     number_of_segments += (*heap)->allocated_segments();
   }
   return number_of_segments;
@@ -1023,7 +1029,7 @@ int CodeCache::allocated_segments() {
 
 size_t CodeCache::freelists_length() {
   size_t length = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     length += (*heap)->freelist_length();
   }
   return length;
@@ -1354,7 +1360,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
 
 void CodeCache::print_memory_overhead() {
   size_t wasted_bytes = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
       CodeHeap* curr_heap = *heap;
       for (CodeBlob* cb = (CodeBlob*)curr_heap->first(); cb != NULL; cb = (CodeBlob*)curr_heap->next(cb)) {
         HeapBlock* heap_block = ((HeapBlock*)cb) - 1;
@@ -1400,7 +1406,7 @@ void CodeCache::print_internals() {
   ResourceMark rm;
 
   int i = 0;
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     if ((_nmethod_heaps->length() >= 1) && Verbose) {
       tty->print_cr("-- %s --", (*heap)->name());
     }
@@ -1497,7 +1503,7 @@ void CodeCache::print() {
   CodeBlob_sizes live;
   CodeBlob_sizes dead;
 
-  FOR_ALL_NMETHOD_HEAPS(heap) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
       if (!cb->is_alive()) {
         dead.add(cb);
@@ -1523,7 +1529,7 @@ void CodeCache::print() {
     int number_of_blobs = 0;
     int number_of_oop_maps = 0;
     int map_size = 0;
-    FOR_ALL_NMETHOD_HEAPS(heap) {
+    FOR_ALL_ALLOCABLE_HEAPS(heap) {
       FOR_ALL_BLOBS(cb, *heap) {
         if (cb->is_alive()) {
           number_of_blobs++;

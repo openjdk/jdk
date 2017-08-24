@@ -42,6 +42,7 @@ import java.util.List;
  * @since  1.3
  */
 public interface ClassType extends ReferenceType {
+
     /**
      * Gets the superclass of this class.
      *

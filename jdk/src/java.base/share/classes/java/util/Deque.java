@@ -72,24 +72,24 @@ package java.util;
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link Deque#addFirst addFirst(e)}</td>
- *    <td>{@link Deque#offerFirst offerFirst(e)}</td>
- *    <td>{@link Deque#addLast addLast(e)}</td>
- *    <td>{@link Deque#offerLast offerLast(e)}</td>
+ *    <td>{@link #addFirst(Object) addFirst(e)}</td>
+ *    <td>{@link #offerFirst(Object) offerFirst(e)}</td>
+ *    <td>{@link #addLast(Object) addLast(e)}</td>
+ *    <td>{@link #offerLast(Object) offerLast(e)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
- *    <td>{@link Deque#removeFirst removeFirst()}</td>
- *    <td>{@link Deque#pollFirst pollFirst()}</td>
- *    <td>{@link Deque#removeLast removeLast()}</td>
- *    <td>{@link Deque#pollLast pollLast()}</td>
+ *    <td>{@link #removeFirst() removeFirst()}</td>
+ *    <td>{@link #pollFirst() pollFirst()}</td>
+ *    <td>{@link #removeLast() removeLast()}</td>
+ *    <td>{@link #pollLast() pollLast()}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link Deque#getFirst getFirst()}</td>
- *    <td>{@link Deque#peekFirst peekFirst()}</td>
- *    <td>{@link Deque#getLast getLast()}</td>
- *    <td>{@link Deque#peekLast peekLast()}</td>
+ *    <td>{@link #getFirst() getFirst()}</td>
+ *    <td>{@link #peekFirst() peekFirst()}</td>
+ *    <td>{@link #getLast() getLast()}</td>
+ *    <td>{@link #peekLast() peekLast()}</td>
  *  </tr>
  * </table>
  *
@@ -106,28 +106,28 @@ package java.util;
  *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#add add(e)}</td>
- *    <td>{@link #addLast addLast(e)}</td>
+ *    <td>{@link #add(Object) add(e)}</td>
+ *    <td>{@link #addLast(Object) addLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#offer offer(e)}</td>
- *    <td>{@link #offerLast offerLast(e)}</td>
+ *    <td>{@link #offer(Object) offer(e)}</td>
+ *    <td>{@link #offerLast(Object) offerLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#remove remove()}</td>
- *    <td>{@link #removeFirst removeFirst()}</td>
+ *    <td>{@link #remove() remove()}</td>
+ *    <td>{@link #removeFirst() removeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#poll poll()}</td>
- *    <td>{@link #pollFirst pollFirst()}</td>
+ *    <td>{@link #poll() poll()}</td>
+ *    <td>{@link #pollFirst() pollFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#element element()}</td>
- *    <td>{@link #getFirst getFirst()}</td>
+ *    <td>{@link #element() element()}</td>
+ *    <td>{@link #getFirst() getFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link java.util.Queue#peek peek()}</td>
- *    <td>{@link #peek peekFirst()}</td>
+ *    <td>{@link #peek() peek()}</td>
+ *    <td>{@link #peekFirst() peekFirst()}</td>
  *  </tr>
  * </table>
  *
@@ -144,16 +144,16 @@ package java.util;
  *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
  *  </tr>
  *  <tr>
- *    <td>{@link #push push(e)}</td>
- *    <td>{@link #addFirst addFirst(e)}</td>
+ *    <td>{@link #push(Object) push(e)}</td>
+ *    <td>{@link #addFirst(Object) addFirst(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #pop pop()}</td>
- *    <td>{@link #removeFirst removeFirst()}</td>
+ *    <td>{@link #pop() pop()}</td>
+ *    <td>{@link #removeFirst() removeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #peek peek()}</td>
- *    <td>{@link #peekFirst peekFirst()}</td>
+ *    <td>{@link #peek() peek()}</td>
+ *    <td>{@link #peekFirst() peekFirst()}</td>
  *  </tr>
  * </table>
  *
@@ -430,8 +430,8 @@ public interface Deque<E> extends Queue<E> {
     /**
      * Retrieves and removes the head of the queue represented by this deque
      * (in other words, the first element of this deque).
-     * This method differs from {@link #poll poll} only in that it throws an
-     * exception if this deque is empty.
+     * This method differs from {@link #poll() poll()} only in that it
+     * throws an exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #removeFirst()}.
      *
@@ -477,6 +477,31 @@ public interface Deque<E> extends Queue<E> {
      */
     E peek();
 
+    /**
+     * Adds all of the elements in the specified collection at the end
+     * of this deque, as if by calling {@link #addLast} on each one,
+     * in the order that they are returned by the collection's iterator.
+     *
+     * <p>When using a capacity-restricted deque, it is generally preferable
+     * to call {@link #offer(Object) offer} separately on each element.
+     *
+     * <p>An exception encountered while trying to add an element may result
+     * in only some of the elements having been successfully added when
+     * the associated exception is thrown.
+     *
+     * @param c the elements to be inserted into this deque
+     * @return {@code true} if this deque changed as a result of the call
+     * @throws IllegalStateException if not all the elements can be added at
+     *         this time due to insertion restrictions
+     * @throws ClassCastException if the class of an element of the specified
+     *         collection prevents it from being added to this deque
+     * @throws NullPointerException if the specified collection contains a
+     *         null element and this deque does not permit null elements,
+     *         or if the specified collection is null
+     * @throws IllegalArgumentException if some property of an element of the
+     *         specified collection prevents it from being added to this deque
+     */
+    boolean addAll(Collection<? extends E> c);
 
     // *** Stack methods ***
 
