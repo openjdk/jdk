@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import com.sun.media.sound.RIFFReader;
 import com.sun.media.sound.RIFFWriter;
@@ -74,8 +76,6 @@ public class Skip {
             assertEquals(readchunk.read(), 44);
             fis.close();
             reader = null;
-
-
         }
         finally
         {
@@ -83,10 +83,7 @@ public class Skip {
                 writer.close();
             if(reader != null)
                 reader.close();
-
-            if(tempfile.exists())
-                if(!tempfile.delete())
-                    tempfile.deleteOnExit();
+            Files.delete(Paths.get(tempfile.getAbsolutePath()));
         }
     }
 }

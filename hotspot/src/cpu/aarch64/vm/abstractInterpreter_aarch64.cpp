@@ -109,9 +109,15 @@ int AbstractInterpreter::size_activation(int max_stack,
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +
-         (callee_locals - callee_params)*Interpreter::stackElementWords +
+         (callee_locals - callee_params) +
          monitors * frame::interpreter_frame_monitor_size() +
-         temps* Interpreter::stackElementWords + extra_args;
+         // On the top frame, at all times SP <= ESP, and SP is
+         // 16-aligned.  We ensure this by adjusting SP on method
+         // entry and re-entry to allow room for the maximum size of
+         // the expression stack.  When we call another method we bump
+         // SP so that no stack space is wasted.  So, only on the top
+         // frame do we need to allow max_stack words.
+         (is_top_frame ? max_stack : temps + extra_args);
 
   // On AArch64 we always keep the stack pointer 16-aligned, so we
   // must round up here.

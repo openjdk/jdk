@@ -43,6 +43,7 @@ import jdk.internal.reflect.ReflectionFactory;
  *
  * @author Nakul Saraiya
  * @author Kenneth Russell
+ * @since 1.1
  */
 public class Modifier {
 

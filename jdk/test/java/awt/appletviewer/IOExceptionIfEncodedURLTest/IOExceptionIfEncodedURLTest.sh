@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #!/bin/ksh -p
 #
 #   @test    IOExceptionIfEncodedURLTest.sh
-#   @bug     6193279 6619458
+#   @bug     6193279 6619458 8137087
 #   @summary REGRESSION: AppletViewer throws IOException when path is encoded URL
 #   @author  Dmitry Cherepanov: area=appletviewer
 #   @modules java.base/sun.net.www
@@ -56,7 +56,7 @@ pass()
 #Call this to run the test with a file name
 test()
  {
-   ${TESTJAVA}${FILESEP}bin${FILESEP}appletviewer -Xnosecurity ${URL} > err 2>&1 &
+   "${TESTJAVA}"${FILESEP}bin${FILESEP}appletviewer -Xnosecurity ${URL} > err 2>&1 &
    APPLET_ID=$!
    sleep 15
    kill -9 $APPLET_ID
@@ -134,7 +134,9 @@ case "$OS" in
       DEFAULT_JDK="/cygdrive/c/Program\ Files/Java/jdk1.8.0"
       FILESEP="/"
       PATHSEP=";"
-      TMP=`cd "${SystemRoot}/Temp"; echo ${PWD}`
+      TMP=`cd "${SYSTEMROOT}/Temp"; echo ${PWD}`
+      x="cygpath -m $PWD"
+      PWD=$(eval $x)
       ;;
 
     AIX )

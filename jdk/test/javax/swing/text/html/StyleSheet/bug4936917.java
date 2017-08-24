@@ -21,7 +21,7 @@
  * questions.
  */
 /* @test
-   @bug 4936917 7190578
+   @bug 4936917 7190578 8174717
    @summary  Tests if background is correctly painted when <BODY> has css margins
    @author Denis Sharypov
    @library ../../../regtesthelpers
@@ -72,6 +72,7 @@ public class bug4936917 {
         blockTillDisplayed(editorPane);
         Robot robot  = new Robot();
         robot.waitForIdle();
+        robot.delay(300);
 
         int x0 = p.x + 15 ;
         int y = p.y + 15;

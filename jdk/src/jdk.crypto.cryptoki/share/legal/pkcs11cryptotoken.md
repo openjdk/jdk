@@ -1,4 +1,4 @@
-## PKCS #11 Cryptographic Token Interface, v2.20 amendment 3 Header Files
+## PKCS #11 Cryptographic Token Interface v2.20 Amendment 3 Header Files
 
 ### PKCS #11 Cryptographic Token Interface License
 <pre>
