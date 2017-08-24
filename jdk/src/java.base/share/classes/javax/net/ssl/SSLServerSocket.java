@@ -31,17 +31,17 @@ import java.net.*;
 
 
 /**
- * This class extends <code>ServerSocket</code>s and
+ * This class extends <code>ServerSocket</code> and
  * provides secure server sockets using protocols such as the Secure
  * Sockets Layer (SSL) or Transport Layer Security (TLS) protocols.
  * <P>
- * Instances of this class are generally created using a
+ * Instances of this class are generally created using an
  * <code>SSLServerSocketFactory</code>.  The primary function
- * of <code>SSLServerSocket</code>s
+ * of an <code>SSLServerSocket</code>
  * is to create <code>SSLSocket</code>s by <code>accept</code>ing
  * connections.
  * <P>
- * <code>SSLServerSocket</code>s contain several pieces of state data
+ * An <code>SSLServerSocket</code> contains several pieces of state data
  * which are inherited by the <code>SSLSocket</code> at
  * socket creation.  These include the enabled cipher
  * suites and protocols, whether client

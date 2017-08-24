@@ -25,6 +25,8 @@
  * @test
  * @bug 8167063
  * @library /test/lib
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
  * @run main LauncherMessageTest
