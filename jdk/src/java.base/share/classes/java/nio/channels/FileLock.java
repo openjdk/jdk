@@ -73,7 +73,7 @@ import java.util.Objects;
  * <p> File-lock objects are safe for use by multiple concurrent threads.
  *
  *
- * <a name="pdep"></a><h2> Platform dependencies </h2>
+ * <a id="pdep"></a><h2> Platform dependencies </h2>
  *
  * <p> This file-locking API is intended to map directly to the native locking
  * facility of the underlying operating system.  Thus the locks held on a file

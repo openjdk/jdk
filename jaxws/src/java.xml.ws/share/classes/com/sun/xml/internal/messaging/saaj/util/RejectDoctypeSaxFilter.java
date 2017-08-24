@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public class RejectDoctypeSaxFilter extends XMLFilterImpl implements XMLReader, 
      * Override setProperty() to capture any LexicalHandler that is set for
      * forwarding of events.
      */
+    @Override
     public void setProperty(String name, Object value)
     throws SAXNotRecognizedException, SAXNotSupportedException {
         if (LEXICAL_HANDLER_PROP.equals(name)) {
@@ -109,38 +110,45 @@ public class RejectDoctypeSaxFilter extends XMLFilterImpl implements XMLReader, 
     // Beginning of SAX LexicalHandler callbacks...
     //
 
+    @Override
     public void startDTD(String name, String publicId, String systemId)
     throws SAXException {
         throw new SAXException("Document Type Declaration is not allowed");
     }
 
+    @Override
     public void endDTD() throws SAXException {
     }
 
+    @Override
     public void startEntity(String name) throws SAXException {
         if (lexicalHandler != null) {
             lexicalHandler.startEntity(name);
         }
     }
 
+    @Override
     public void endEntity(String name) throws SAXException {
         if (lexicalHandler != null) {
             lexicalHandler.endEntity(name);
         }
     }
 
+    @Override
     public void startCDATA() throws SAXException {
         if (lexicalHandler != null) {
             lexicalHandler.startCDATA();
         }
     }
 
+    @Override
     public void endCDATA() throws SAXException {
         if (lexicalHandler != null) {
             lexicalHandler.endCDATA();
         }
     }
 
+    @Override
     public void comment(char[] ch, int start, int length) throws SAXException {
         if (lexicalHandler != null) {
             lexicalHandler.comment(ch, start, length);
@@ -151,6 +159,7 @@ public class RejectDoctypeSaxFilter extends XMLFilterImpl implements XMLReader, 
     // End of SAX LexicalHandler callbacks
     //
 
+    @Override
     public void startElement(String namespaceURI, String localName,
     String qName, Attributes atts)   throws SAXException{
         if(atts != null ){

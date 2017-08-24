@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import java.util.Set;
  * for the {@link PropertyChangeSupport PropertyChangeSupport} class
  * and the {@link VetoableChangeSupport VetoableChangeSupport} class.
  *
- * @see PropertyChangeListenerMap
- * @see VetoableChangeListenerMap
+ * @see PropertyChangeSupport.PropertyChangeListenerMap
+ * @see VetoableChangeSupport.VetoableChangeListenerMap
  *
  * @author Sergey A. Malenkov
  */

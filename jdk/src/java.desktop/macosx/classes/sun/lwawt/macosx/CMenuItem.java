@@ -63,7 +63,7 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
         CMenuComponent parent = (CMenuComponent)LWToolkit.targetToPeer(getTarget().getParent());
         return parent.executeGet(ptr->nativeCreate(ptr, isSeparator()));
     }
-
+    @SuppressWarnings("deprecation")
     public void setLabel(String label, char keyChar, int keyCode, int modifiers) {
         int keyMask = modifiers;
         if (keyCode == KeyEvent.VK_UNDEFINED) {
@@ -113,7 +113,13 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
      */
     public final void setImage(final java.awt.Image img) {
         CImage cimg = CImage.getCreator().createFromImage(img);
-        execute(ptr -> nativeSetImage(ptr, cimg == null ? 0L : cimg.ptr));
+        execute(ptr -> {
+            if (cimg == null) {
+                nativeSetImage(ptr, 0L);
+            } else {
+                cimg.execute(imgPtr -> nativeSetImage(ptr, imgPtr));
+            }
+        });
     }
 
     /**

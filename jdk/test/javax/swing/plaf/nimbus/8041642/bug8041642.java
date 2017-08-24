@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 8041642 8079450
+ * @bug 8041642 8079450 8140237
  * @summary Incorrect paint of JProgressBar in Nimbus LF
  * @author Semyon Sadetsky
  */
@@ -39,16 +39,7 @@ public class bug8041642 {
     private static JProgressBar bar;
 
     public static void main(String[] args) throws Exception {
-        for (UIManager.LookAndFeelInfo info : UIManager
-                .getInstalledLookAndFeels()) {
-            if ("Nimbus".equals(info.getName())) {
-                try {
-                    UIManager.setLookAndFeel(info.getClassName());
-                } catch (Exception ex) {
-                }
-                break;
-            }
-        }
+        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -58,14 +49,14 @@ public class bug8041642 {
                     setup(frame);
                 }
             });
+            final Robot robot = new Robot();
+            robot.delay(300);
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
                     point = bar.getLocationOnScreen();
                 }
             });
-            final Robot robot = new Robot();
-            robot.delay(100);
             Color color = robot.getPixelColor(point.x + 1, point.y + 7);
             System.out.println(color);
             if (color.getGreen() < 150 || color.getBlue() > 30 ||
@@ -77,7 +68,7 @@ public class bug8041642 {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
-                    //frame.dispose();
+                    frame.dispose();
                 }
             });
         }

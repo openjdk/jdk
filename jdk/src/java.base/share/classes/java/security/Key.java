@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ package java.security;
  * <p> A Key should use KeyRep as its serialized representation.
  * Note that a serialized Key may contain sensitive information
  * which should not be exposed in untrusted environments.  See the
- * <a href="../../../platform/serialization/spec/security.html">
+ * <a href="{@docRoot}/../specs/serialization/security.html">
  * Security Appendix</a>
  * of the Serialization Specification for more information.
  *
@@ -97,6 +97,7 @@ package java.security;
  * @see Signer
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public interface Key extends java.io.Serializable {
@@ -113,10 +114,10 @@ public interface Key extends java.io.Serializable {
     /**
      * Returns the standard algorithm name for this key. For
      * example, "DSA" would indicate that this key is a DSA key.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
-     * for information about standard algorithm names.
+     * See the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
+     * for more information.
      *
      * @return the name of the algorithm associated with this key.
      */

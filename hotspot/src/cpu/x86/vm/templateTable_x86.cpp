@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2210,7 +2210,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // Out-of-line code to allocate method data oop.
       __ bind(profile_method);
       __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::profile_method));
-      __ load_unsigned_byte(rbx, Address(rbcp, 0));  // restore target bytecode
       __ set_method_data_pointer_for_bcp();
       __ jmp(dispatch);
     }
@@ -2225,10 +2224,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                  CAST_FROM_FN_PTR(address,
                                   InterpreterRuntime::frequency_counter_overflow),
                  rdx);
-      __ load_unsigned_byte(rbx, Address(rbcp, 0));  // restore target bytecode
 
       // rax: osr nmethod (osr ok) or NULL (osr not possible)
-      // rbx: target bytecode
       // rdx: scratch
       // r14: locals pointer
       // r13: bcp
@@ -2238,12 +2235,13 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ cmpb(Address(rax, nmethod::state_offset()), nmethod::in_use);
       __ jcc(Assembler::notEqual, dispatch);
 
-      // We have the address of an on stack replacement routine in rax
-      // We need to prepare to execute the OSR method. First we must
-      // migrate the locals and monitors off of the stack.
+      // We have the address of an on stack replacement routine in rax.
+      // In preparation of invoking it, first we must migrate the locals
+      // and monitors from off the interpreter frame on the stack.
+      // Ensure to save the osr nmethod over the migration call,
+      // it will be preserved in rbx.
+      __ mov(rbx, rax);
 
-      LP64_ONLY(__ mov(r13, rax));                             // save the nmethod
-      NOT_LP64(__ mov(rbx, rax));                             // save the nmethod
       NOT_LP64(__ get_thread(rcx));
 
       call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
@@ -2257,7 +2255,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
       const Register retaddr   = LP64_ONLY(j_rarg2) NOT_LP64(rdi);
       const Register sender_sp = LP64_ONLY(j_rarg1) NOT_LP64(rdx);
-
 
       // pop the interpreter frame
       __ movptr(sender_sp, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
@@ -2274,8 +2271,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ push(retaddr);
 
       // and begin the OSR nmethod
-      LP64_ONLY(__ jmp(Address(r13, nmethod::osr_entry_point_offset())));
-      NOT_LP64(__ jmp(Address(rbx, nmethod::osr_entry_point_offset())));
+      __ jmp(Address(rbx, nmethod::osr_entry_point_offset()));
     }
   }
 }
