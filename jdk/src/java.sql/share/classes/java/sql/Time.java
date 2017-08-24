@@ -38,6 +38,8 @@ import jdk.internal.misc.JavaLangAccess;
  * values.
  * <p>The date components should be set to the "zero epoch"
  * value of January 1, 1970 and should not be accessed.
+ *
+ * @since 1.1
  */
 public class Time extends java.util.Date {
 

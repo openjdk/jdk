@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1095,8 +1095,11 @@ inline intptr_t bitfield(intptr_t x, int start_bit_no, int field_length) {
 #undef min
 #endif
 
-#define max(a,b) Do_not_use_max_use_MAX2_instead
-#define min(a,b) Do_not_use_min_use_MIN2_instead
+// The following defines serve the purpose of preventing use of accidentally
+// included min max macros from compiling, while continuing to allow innocent
+// min and max identifiers in the code to compile as intended.
+#define max max
+#define min min
 
 // It is necessary to use templates here. Having normal overloaded
 // functions does not work because it is necessary to provide both 32-

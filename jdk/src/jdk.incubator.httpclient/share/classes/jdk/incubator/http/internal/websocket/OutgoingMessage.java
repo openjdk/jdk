@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import static jdk.incubator.http.internal.websocket.Frame.Opcode.TEXT;
  */
 abstract class OutgoingMessage {
 
+    // Share per WebSocket?
     private static final SecureRandom maskingKeys = new SecureRandom();
 
     protected ByteBuffer[] frame;
@@ -71,6 +72,8 @@ abstract class OutgoingMessage {
      * convenient moment (up to the point where sentTo is invoked).
      */
     protected void contextualize(Context context) {
+        // masking and charset decoding should be performed here rather than in
+        // the constructor (as of today)
         if (context.isCloseSent()) {
             throw new IllegalStateException("Close sent");
         }
@@ -101,7 +104,7 @@ abstract class OutgoingMessage {
         private final boolean isLast;
 
         Text(CharSequence characters, boolean isLast) {
-            CharsetEncoder encoder = UTF_8.newEncoder();
+            CharsetEncoder encoder = UTF_8.newEncoder(); // Share per WebSocket?
             try {
                 payload = encoder.encode(CharBuffer.wrap(characters));
             } catch (CharacterCodingException e) {
@@ -172,11 +175,11 @@ abstract class OutgoingMessage {
 
         Close(int statusCode, CharSequence reason) {
             ByteBuffer payload = ByteBuffer.allocate(125)
-                                           .putChar((char) statusCode);
+                    .putChar((char) statusCode);
             CoderResult result = UTF_8.newEncoder()
-                                      .encode(CharBuffer.wrap(reason),
-                                              payload,
-                                              true);
+                    .encode(CharBuffer.wrap(reason),
+                            payload,
+                            true);
             if (result.isOverflow()) {
                 throw new IllegalArgumentException("Long reason");
             } else if (result.isError()) {
