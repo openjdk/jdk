@@ -28,7 +28,6 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
- * @compile --add-modules jdk.crypto.cryptoki TestCurves.java
  * @run main/othervm TestCurves
  * @run main/othervm TestCurves sm
  * @key randomness

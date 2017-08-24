@@ -28,7 +28,7 @@
  * for the test codebase as it is executed by the MLet code using
  * doPrivileged.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean MLetCommand
  * @run build MLetCommand
  * @run main/othervm/java.security.policy=policy MLetCommand

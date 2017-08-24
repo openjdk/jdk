@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,18 @@ import org.xml.sax.InputSource;
 
 /**
  * {@code XPath} provides access to the XPath evaluation environment and expressions.
+ * The XPath evaluation is affected by the factors described in the following table.
  *
- * <a name="XPath-evaluation"></a>
- * <table border="1" cellpadding="2">
+ * <a id="XPath-evaluation"></a>
+ * <table class="striped">
+ *    <caption>Evaluation of XPath Expressions</caption>
  *    <thead>
  *      <tr>
- *        <th colspan="2">Evaluation of XPath Expressions.</th>
+ *        <th>Factor</th>
+ *        <th>Behavior</th>
  *      </tr>
  *    </thead>
+ *    <tbody>
  *    <tr>
  *      <td>context</td>
  *      <td>
@@ -84,6 +88,7 @@ import org.xml.sax.InputSource;
  *        Conversion to the return type follows XPath conversion rules.
  *      </td>
  *    </tr>
+ *    </tbody>
  * </table>
  *
  * <p>An XPath object is not thread-safe and not reentrant.

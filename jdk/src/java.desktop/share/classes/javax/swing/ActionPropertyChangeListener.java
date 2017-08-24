@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.lang.ref.ReferenceQueue;
  * a strong reference will be held to the containing class, which in most
  * cases defeats the purpose of this class.
  *
- * @param T the type of JComponent the underlying Action is attached to
+ * @param <T> the type of JComponent the underlying Action is attached to
  *
  * @author Georges Saab
  * @see AbstractButton

@@ -47,7 +47,7 @@
 #define SCROLL_PHASE_UNSUPPORTED 1
 #define SCROLL_PHASE_BEGAN 2
 #define SCROLL_PHASE_CONTINUED 3
-#define SCROLL_PHASE_CANCELLED 4
+#define SCROLL_PHASE_MOMENTUM_BEGAN 4
 #define SCROLL_PHASE_ENDED 5
 
 int gNumberOfButtons;
@@ -85,16 +85,33 @@ static long eventCount;
         return 0;
     }
     
-    NSEventPhase phase = [event phase];
-    NSEventPhase momentumPhase = [event momentumPhase];
-    
-    if (!phase && !momentumPhase) return SCROLL_PHASE_UNSUPPORTED;
-    switch (phase) {
-        case NSEventPhaseBegan: return SCROLL_PHASE_BEGAN;
-        case NSEventPhaseCancelled: return SCROLL_PHASE_CANCELLED;
-        case NSEventPhaseEnded: return SCROLL_PHASE_ENDED;
-        default: return SCROLL_PHASE_CONTINUED;
+    if ([event phase]) {
+        // process a phase of manual scrolling
+        switch ([event phase]) {
+            case NSEventPhaseBegan: return SCROLL_PHASE_BEGAN;
+            case NSEventPhaseCancelled: return SCROLL_PHASE_ENDED;
+            case NSEventPhaseEnded: return SCROLL_PHASE_ENDED;
+            default: return SCROLL_PHASE_CONTINUED;
+        }
     }
+
+    if ([event momentumPhase]) {
+        // process a phase of automatic scrolling
+        switch ([event momentumPhase]) {
+            case NSEventPhaseBegan: return SCROLL_PHASE_MOMENTUM_BEGAN;
+            case NSEventPhaseCancelled: return SCROLL_PHASE_ENDED;
+            case NSEventPhaseEnded: return SCROLL_PHASE_ENDED;
+            default: return SCROLL_PHASE_CONTINUED;
+        }
+    }
+    // phase and momentum phase both are not set
+    return SCROLL_PHASE_UNSUPPORTED;
+}
+
++ (BOOL) hasPreciseScrollingDeltas: (NSEvent*) event {
+    return [event type] == NSScrollWheel
+        && [event respondsToSelector:@selector(hasPreciseScrollingDeltas)]
+        && [event hasPreciseScrollingDeltas];
 }
 @end
 

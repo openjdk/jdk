@@ -31,9 +31,9 @@
  * @bug 6216082
  * @summary  Redirect problem with HttpsURLConnection using a proxy
  * @modules java.base/sun.net.www
- * @library ..
+ * @library .. /lib/testlibrary
  * @build HttpCallback TestHttpsServer ClosedChannelList
- *        HttpTransaction TunnelProxy
+ *        HttpTransaction TunnelProxy jdk.testlibrary.NetworkConfiguration
  * @key intermittent
  * @run main/othervm B6216082
  */
@@ -42,6 +42,8 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
+
+import jdk.testlibrary.NetworkConfiguration;
 
 public class B6216082 {
     static SimpleHttpTransaction httpTrans;
@@ -118,21 +120,17 @@ public class B6216082 {
     }
 
     public static InetAddress getNonLoAddress() throws Exception {
-        NetworkInterface loNIC = NetworkInterface.getByInetAddress(InetAddress.getByName("localhost"));
-        Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-        while (nics.hasMoreElements()) {
-            NetworkInterface nic = nics.nextElement();
-            if (!nic.getName().equalsIgnoreCase(loNIC.getName())) {
-                Enumeration<InetAddress> addrs = nic.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = addrs.nextElement();
-                    if (!addr.isLoopbackAddress())
-                        return addr;
-                }
-            }
-        }
+        InetAddress lh = InetAddress.getByName("localhost");
+        NetworkInterface loNIC = NetworkInterface.getByInetAddress(lh);
 
-        return null;
+        NetworkConfiguration nc = NetworkConfiguration.probe();
+        Optional<InetAddress> oaddr = nc.interfaces()
+                .filter(nif -> !nif.getName().equalsIgnoreCase(loNIC.getName()))
+                .flatMap(nif -> nc.addresses(nif))
+                .filter(a -> !a.isLoopbackAddress())
+                .findFirst();
+
+        return oaddr.orElseGet(() -> null);
     }
 
     public static void startHttpServer() throws IOException {

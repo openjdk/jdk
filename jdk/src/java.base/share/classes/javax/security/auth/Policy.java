@@ -153,6 +153,7 @@ import sun.security.util.Debug;
  * These two APIs provide callers the means to query the
  * Policy for Principal-based Permission entries.
  *
+ * @since 1.4
  * @see java.security.Security security properties
  */
 @Deprecated(since="1.4")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8170859
  * @summary Basic test for incubator modules in jmods and images
  * @library /lib/testlibrary
+ * @key intermittent
  * @modules jdk.compiler jdk.jartool jdk.jlink
  * @build CompilerUtils
  * @run testng/othervm ImageModules
@@ -98,7 +99,7 @@ public class ImageModules {
               List.of("hello world", "message.converter", "java.base"),
               List.of("WARNING") },
             { "--do-not-resolve-by-default",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.base", "java.lang.ClassNotFoundException: converter.MessageConverter"),
               List.of("WARNING", "message.converter") },
@@ -109,7 +110,7 @@ public class ImageModules {
                       "WARNING: Using incubator modules: message.converter"),
               List.of() },
             { "--do-not-resolve-by-default --warn-if-resolved=incubating",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.base", "java.lang.ClassNotFoundException: converter.MessageConverter"),
               List.of("WARNING", "message.converter") },
@@ -215,13 +216,13 @@ public class ImageModules {
               List.of() },
             { "--do-not-resolve-by-default",
               "",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.lang.ClassNotFoundException: writer.MessageWriter", "java.base"),
               List.of("message.writer") },
             { "--do-not-resolve-by-default",
               "--do-not-resolve-by-default",
-              List.of("ALL-DEFAULT", "ALL-SYSTEM"),
+              List.of("ALL-DEFAULT"),
               ToolResult.ASSERT_FAILURE,
               List.of("java.lang.ClassNotFoundException: writer.MessageWriter", "java.base"),
               List.of("message.converter", "message.writer") },
@@ -239,7 +240,8 @@ public class ImageModules {
               ToolResult.ASSERT_SUCCESS,
               List.of("HELLO CHEGAR !!!", "message.writer", "message.converter", "java.base",
                       "WARNING: Using incubator modules: message.converter"),
-              List.of() } };
+              List.of() }
+            };
         return values;
     }
 
