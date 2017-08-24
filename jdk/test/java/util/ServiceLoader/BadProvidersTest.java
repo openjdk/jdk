@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
- * @modules jdk.compiler
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider
@@ -43,6 +44,10 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 import jdk.test.lib.compiler.CompilerUtils;
 
@@ -191,6 +196,69 @@ public class BadProvidersTest {
 
         // load providers and instantiate each one
         loadProviders(mods, TEST2_MODULE).forEach(Provider::get);
+    }
+
+
+    /**
+     * Test a service provider that defines more than one no-args
+     * public static "provider" method.
+     */
+    @Test(expectedExceptions = ServiceConfigurationError.class)
+    public void testWithTwoFactoryMethods() throws Exception {
+        Path mods = compileTest(TEST1_MODULE);
+
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                                         + ClassWriter.COMPUTE_FRAMES);
+        cw.visit(V1_9,
+                ACC_PUBLIC + ACC_SUPER,
+                "p/ProviderFactory",
+                null,
+                "java/lang/Object",
+                null);
+
+        // public static p.Service provider()
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
+                "provider",
+                "()Lp/Service;",
+                null,
+                null);
+        mv.visitTypeInsn(NEW, "p/ProviderFactory$1");
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL,
+                "p/ProviderFactory$1",
+                "<init>", "()V",
+                false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // public static p.ProviderFactory$1 provider()
+        mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
+                "provider",
+                "()Lp/ProviderFactory$1;",
+                null,
+                null);
+        mv.visitTypeInsn(NEW, "p/ProviderFactory$1");
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL,
+                "p/ProviderFactory$1",
+                "<init>",
+                "()V",
+                false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        cw.visitEnd();
+
+        // write the class bytes into the compiled module directory
+        Path classFile = mods.resolve(TEST1_MODULE)
+                .resolve("p")
+                .resolve("ProviderFactory.class");
+        Files.write(classFile, cw.toByteArray());
+
+        // load providers and instantiate each one
+        loadProviders(mods, TEST1_MODULE).forEach(Provider::get);
     }
 
 }

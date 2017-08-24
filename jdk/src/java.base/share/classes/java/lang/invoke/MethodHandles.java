@@ -212,7 +212,7 @@ public class MethodHandles {
         if (!callerModule.isNamed() && targetModule.isNamed()) {
             IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
             if (logger != null) {
-                logger.logIfOpenedByBackdoor(lookup, targetClass);
+                logger.logIfOpenedForIllegalAccess(lookup, targetClass);
             }
         }
         return new Lookup(targetClass);

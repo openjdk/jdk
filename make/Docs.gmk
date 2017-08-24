@@ -63,7 +63,7 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
 # URLs
 JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
-COPYRIGHT_URL := {@docroot}/../legal/cpyr.html
+COPYRIGHT_URL := {@docroot}/../legal/copyright.html
 LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java9speclicense.html
 REDISTRIBUTION_URL := http://www.oracle.com/technetwork/java/redist-137594.html
 
@@ -116,9 +116,9 @@ endif
 # General text snippets
 
 FULL_COMPANY_NAME := Oracle and/or its affiliates
-COMPANY_ADDRESS := 500 Oracle Parkway<br>Redwood Shores, CA 94065 USA
+COMPANY_ADDRESS := 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 
-JAVA_PLATFORM := Java&trade; Platform
+JAVA_PLATFORM := Java Platform
 
 ifeq ($(IS_DRAFT), true)
   DRAFT_MARKER_STR := <br><strong>DRAFT $(VERSION_STRING)</strong>
@@ -127,51 +127,44 @@ ifeq ($(IS_DRAFT), true)
   else
     DRAFT_MARKER_TITLE := [build $(VERSION_BUILD)]
   endif
-  DRAFT_TEXT := Please note that the specifications and other information \
-      contained herein are not final and are subject to change. The \
-      information is being made available to you solely for purpose of \
-      evaluation.
+  DRAFT_TEXT := This specification is not final and is subject to change. \
+      Use is subject to <a href="$(LICENSE_URL)">license terms</a>.
 endif
 
 JAVADOC_BOTTOM := \
-    <span style="font-size:smaller"> \
-    <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a><br> \
-    For further API reference and developer documentation, see \
+    <a href="$(BUG_SUBMIT_URL)">Report a bug or suggest an enhancement</a><br> \
+    For further API reference and developer documentation see the \
     <a href="$(JAVADOC_BASE_URL)" target="_blank">Java SE \
-    Documentation</a>. That documentation contains more detailed, \
-    developer-targeted descriptions, with conceptual overviews, definitions \
+    Documentation</a>, which contains more detailed, \
+    developer-targeted descriptions with conceptual overviews, definitions \
     of terms, workarounds, and working code examples.<br> \
     Java is a trademark or registered trademark of $(FULL_COMPANY_NAME) in \
     the US and other countries.<br> \
     <a href="$(COPYRIGHT_URL)">Copyright</a> \
-    &copy; 1993, $(COPYRIGHT_YEAR), $(FULL_COMPANY_NAME). \
-    $(COMPANY_ADDRESS). All rights reserved. \
-    Use is subject to <a href="$(LICENSE_URL)">license terms</a>. Also see the \
+    &copy; 1993, $(COPYRIGHT_YEAR), $(FULL_COMPANY_NAME), \
+    $(COMPANY_ADDRESS).<br>All rights reserved. \
+    Use is subject to <a href="$(LICENSE_URL)">license terms</a> and the \
     <a href="$(REDISTRIBUTION_URL)">documentation redistribution policy</a>. \
-    $(DRAFT_MARKER_STR)</span>
+    $(DRAFT_MARKER_STR) <!-- Version $(VERSION_STRING) -->
+
 
 JAVADOC_TOP := \
-    <div style="background-color: $(HASH)EEEEEE"><div style="padding: 6px; \
-    margin-top: 2px; margin-bottom: 6px; margin-left: 6px; margin-right: \
-    6px; text-align: justify; font-size: 80%; font-family: Helvetica, Arial, \
-    sans-serif; font-weight: normal;">$(DRAFT_TEXT)</div></div>
+    <div style="padding: 6px; text-align: center; font-size: 80%; \
+    font-family: DejaVu Sans, Arial, Helvetica, sans-serif; \
+    font-weight: normal;">$(DRAFT_TEXT)</div>
 
 ################################################################################
 # JDK javadoc titles/text snippets
 
-JDK_SHORT_NAME := JDK&trade; $(VERSION_SPECIFICATION)
-JDK_LONG_NAME := Standard Edition Development Kit (JDK&trade;) $(VERSION_SPECIFICATION)
+JDK_SHORT_NAME := Java SE $(VERSION_SPECIFICATION) &amp; JDK $(VERSION_SPECIFICATION)
+JDK_LONG_NAME := Java<sup>&reg;</sup> Platform, Standard Edition \
+    <span style="white-space: nowrap;">&amp; Java Development Kit</span>
 
 ################################################################################
 # Java SE javadoc titles/text snippets
 
-JAVASE_SHORT_NAME := SE $(VERSION_SPECIFICATION)
-JAVASE_LONG_NAME := Standard Edition $(VERSION_SPECIFICATION)
-
-################################################################################
-# Index page text titles/snippets
-
-JDK_INDEX_TITLE := $(JAVA_PLATFORM), $(JDK_LONG_NAME) Specification $(DRAFT_MARKER_TITLE)
+JAVASE_SHORT_NAME := Java SE $(VERSION_SPECIFICATION)
+JAVASE_LONG_NAME := Java<sup>&reg;</sup> Platform, Standard Edition
 
 ################################################################################
 # Functions
@@ -204,24 +197,19 @@ define create_overview_file
   $1_OVERVIEW_TEXT := \
       <!DOCTYPE html> \
       <html><head></head><body> \
-      <p>This document is the API specification for $$($1_FULL_NAME).</p> \
       #
   ifneq ($$($1_GROUPS),)
     $1_OVERVIEW_TEXT += \
-        <p>For an overview of the full specification, grouped by usage, see the <a href="../index.html">$$(JAVA_PLATFORM), $$($1_LONG_NAME) Specification</a>.</p> \
-        <dl> \
-        #
+      <p>This document is divided into \
+      $$(subst 2,two,$$(subst 3,three,$$(words $$($1_GROUPS)))) sections:</p> \
+      <blockquote><dl> \
+      #
     $1_OVERVIEW_TEXT += $$(foreach g, $$($1_GROUPS), \
-        <dt><a href="\#$$g">$$($$g_GROUP_NAME)</a></dt> \
-        <dd>$$($$g_GROUP_DESCRIPTION)</dt> \
+        <dt style="margin-top: 8px;"><a href="\#$$g">$$($$g_GROUP_NAME)</a></dt> \
+        <dd style="margin-top: 8px;">$$($$g_GROUP_DESCRIPTION)</dt> \
     )
     $1_OVERVIEW_TEXT += \
-        </dl> \
-        #
-  endif
-  ifeq ($$(IS_DRAFT), true)
-    $1_OVERVIEW_TEXT += \
-        <p><strong>$$(DRAFT_TEXT)</strong></p> \
+        </dl><blockquote> \
         #
   endif
   $1_OVERVIEW_TEXT += \
@@ -279,13 +267,16 @@ define SetupApiDocsGenerationBody
   $1_OPTIONS += -Xdoclint:all,$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT)))
 
-  $1_FULL_NAME := $$(JAVA_PLATFORM), $$($1_LONG_NAME) \
-      $$(DRAFT_MARKER_TITLE)
-  $1_DOC_TITLE := $$($1_FULL_NAME)<br>API Specification
-  $1_WINDOW_TITLE := $$(subst &trade;,,$$(JAVA_PLATFORM) $$($1_SHORT_NAME)) \
+  $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API Specification
+  $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME)) \
     $$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <strong>$$(JAVA_PLATFORM)<br>$$($1_SHORT_NAME)</strong> \
-      $$(DRAFT_MARKER_STR)
+  ifeq ($(VERSION_IS_GA), true) # Workaround stylesheet bug
+    $1_HEADER_PAD := 14
+  else
+    $1_HEADER_PAD := 9
+  endif
+  $1_HEADER_TITLE := <div style="margin-top: $$($1_HEADER_PAD)px;"><strong>$$($1_SHORT_NAME)</strong> \
+      $$(DRAFT_MARKER_STR)</div>
 
   $1_OPTIONS += -doctitle '$$($1_DOC_TITLE)'
   $1_OPTIONS += -windowtitle '$$($1_WINDOW_TITLE)'
@@ -379,18 +370,18 @@ JavaSE_GROUP_NAME := Java SE
 JavaSE_GROUP_MODULES := $(call ColonList, $(sort java.se.ee \
     $(call FindTransitiveIndirectDepsForModules, java.se.ee)))
 JavaSE_GROUP_DESCRIPTION := \
-    The Java Platform, Standard Edition ("Java SE") APIs define the core Java \
-    platform for general-purpose computing. These APIs are in modules with \
-    names starting with the string "java.". \
+    The Java Platform, Standard Edition (Java SE) APIs define the core Java \
+    platform for general-purpose computing. These APIs are in modules whose \
+    names start with {@code java}. \
     #
 JDK_GROUPS += JavaSE
 
 JDK_GROUP_NAME := JDK
 JDK_GROUP_MODULES := jdk.*
 JDK_GROUP_DESCRIPTION := \
-    The Java Development Kit ("JDK") APIs define an implementation of the Java \
-    SE Platform which may include platform-specific details. These APIs are in \
-    modules with names starting with the string "jdk.". \
+    The Java Development Kit (JDK) APIs are specific to the JDK and will not \
+    necessarily be available in all implementations of the Java SE Platform. \
+    These APIs are in modules whose names start with {@code jdk}. \
     #
 JDK_GROUPS += JDK
 
@@ -401,9 +392,9 @@ ifneq ($(findstring javafx., $(IMPORTED_MODULES)), )
   JavaFX_GROUP_NAME := JavaFX
   JavaFX_GROUP_MODULES := javafx.*
   JavaFX_GROUP_DESCRIPTION := \
-      The JavaFX APIs define a set of user interface (UI) controls, graphics, \
+      The JavaFX APIs define a set of user-interface controls, graphics, \
       media, and web packages for developing rich client applications. These \
-      APIs are in modules with names starting with the string "javafx.". \
+      APIs are in modules whose names start with {@code javafx}. \
       #
   JDK_GROUPS += JavaFX
 endif
@@ -425,7 +416,7 @@ $(eval $(call SetupApiDocsGeneration, JDK_API, \
 ################################################################################
 # Setup generation of the Java SE API documentation (javadoc + modulegraph)
 
-# The Java SE module scope is just java.se.ee and it's transitive indirect
+# The Java SE module scope is just java.se.ee and its transitive indirect
 # exports.
 JAVASE_MODULES := java.se.ee
 
@@ -442,17 +433,19 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 ################################################################################
 
 JDK_INDEX_HTML := $(DOCS_OUTPUTDIR)/index.html
-JDK_INDEX_TOOLS_DIR := $(TOOLS_CLASSES_DIR)/build/tools/docs
 
-$(JDK_INDEX_HTML): $(BUILD_JIGSAW_TOOLS) \
-    $(JDK_INDEX_TOOLS_DIR)/docs-bundle-page.html  \
-    $(JDK_INDEX_TOOLS_DIR)/docs-module-groups.properties
-	$(call LogInfo, Generating docs bundle index page)
-	$(MKDIR) -p $(@D)
-	$(TOOL_GEN_DOCS_BUNDLE_PAGE) --title '$(JDK_INDEX_TITLE)' \
-		--output $@
+JDK_INDEX_CONTENT := \
+    <!DOCTYPE html> \
+    <html lang="en"> \
+    <head> \
+    <meta http-equiv="refresh" content="0;url=api/index.html"> \
+    </head> \
+    </html>
 
-JDK_INDEX_TARGETS := $(JDK_INDEX_HTML)
+$(JDK_INDEX_HTML): 
+	$(ECHO) '$(JDK_INDEX_CONTENT)' > $@
+
+JDK_INDEX_TARGETS += $(JDK_INDEX_HTML)
 
 # Copy the global resources
 GLOBAL_SPECS_RESOURCES_DIR := $(JDK_TOPDIR)/make/data/docs-resources/
@@ -462,6 +455,15 @@ $(eval $(call SetupCopyFiles, COPY_GLOBAL_RESOURCES, \
     DEST := $(DOCS_OUTPUTDIR), \
 ))
 JDK_INDEX_TARGETS += $(COPY_GLOBAL_RESOURCES)
+
+# Copy the legal notices distributed with the docs bundle
+DOCS_LEGAL_NOTICES := jquery.md jszip.md pako.md
+$(eval $(call SetupCopyFiles, COPY_DOCS_LEGAL_NOTICES, \
+    SRC := $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/legal, \
+    FILES := $(DOCS_LEGAL_NOTICES), \
+    DEST := $(DOCS_OUTPUTDIR)/legal, \
+))
+JDK_INDEX_TARGETS += $(COPY_DOCS_LEGAL_NOTICES)
 
 ################################################################################
 # Copy JDK specs files

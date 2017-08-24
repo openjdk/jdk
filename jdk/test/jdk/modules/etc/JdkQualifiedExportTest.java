@@ -69,8 +69,7 @@ public class JdkQualifiedExportTest {
     }
 
     static Set<String> KNOWN_EXCEPTIONS =
-        Set.of("java.xml/com.sun.xml.internal.stream.writers",
-               "jdk.internal.vm.ci/jdk.vm.ci.services",
+        Set.of("jdk.internal.vm.ci/jdk.vm.ci.services",
                "jdk.jsobject/jdk.internal.netscape.javascript.spi");
 
     static void checkExports(ModuleDescriptor md) {

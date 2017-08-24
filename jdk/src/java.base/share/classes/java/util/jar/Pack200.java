@@ -34,8 +34,7 @@ import sun.security.action.GetPropertyAction;
 
 /**
  * Transforms a JAR file to or from a packed stream in Pack200 format.
- * Please refer to Network Transfer Format JSR 200 Specification at
- * <a href=http://jcp.org/aboutJava/communityprocess/review/jsr200/index.html>http://jcp.org/aboutJava/communityprocess/review/jsr200/index.html</a>
+ * Please refer to <a href="{@docRoot}/../specs/pack-spec.html">Network Transfer Format JSR 200 Specification</a>
  * <p>
  * Typically the packer engine is used by application developers
  * to deploy or host JAR files on a website.

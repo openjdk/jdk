@@ -27,7 +27,7 @@
  * @modules java.base/java.lang:open
  *          java.base/jdk.internal.perf
  *          java.base/jdk.internal.misc:+open
- * @run testng TrySetAccessibleTest
+ * @run testng/othervm --illegal-access=deny TrySetAccessibleTest
  * @summary Test AccessibleObject::trySetAccessible method
  */
 

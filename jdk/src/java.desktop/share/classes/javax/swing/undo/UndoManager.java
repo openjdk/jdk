@@ -58,7 +58,8 @@ import sun.swing.text.UndoableEditLockSupport;
  * and italicized are insignificant.
  * <p>
  * <a id="figure1"></a>
- * <table border=0 summary="">
+ * <table class="borderless">
+ * <caption style="display:none">Figure 1</caption>
  * <tr><td>
  *     <img src="doc-files/UndoManager-1.gif" alt="">
  * <tr><td style="text-align:center">Figure 1
@@ -71,7 +72,8 @@ import sun.swing.text.UndoableEditLockSupport;
  * figure.
  * <p>
  * <a id="figure2"></a>
- * <table border=0 summary="">
+ * <table class="borderless">
+ * <caption style="display:none">Figure 2</caption>
  * <tr><td>
  *     <img src="doc-files/UndoManager-2.gif" alt="">
  * <tr><td style="text-align:center">Figure 2
@@ -83,7 +85,8 @@ import sun.swing.text.UndoableEditLockSupport;
  * next edit to 0, as shown in the following figure.
  * <p>
  * <a id="figure3"></a>
- * <table border=0 summary="">
+ * <table class="borderless">
+ * <caption style="display:none">Figure 3</caption>
  * <tr><td>
  *     <img src="doc-files/UndoManager-3.gif" alt="">
  * <tr><td style="text-align:center">Figure 3
@@ -109,7 +112,8 @@ import sun.swing.text.UndoableEditLockSupport;
  * figure.
  * <p>
  * <a id="figure4"></a>
- * <table border=0 summary="">
+ * <table class="borderless">
+ * <caption style="display:none">Figure 4</caption>
  * <tr><td>
  *     <img src="doc-files/UndoManager-4.gif" alt="">
  * <tr><td style="text-align:center">Figure 4
