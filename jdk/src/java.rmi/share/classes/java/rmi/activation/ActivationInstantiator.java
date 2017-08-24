@@ -60,7 +60,20 @@ public interface ActivationInstantiator extends Remote {
     * initialization data, and
     *
     * <li> returning a MarshalledObject containing the stub for the
-    * remote object it created </ul>
+    * remote object it created.</ul>
+    *
+    * <p>In order for activation to be successful, one of the following requirements
+    * must be met, otherwise {@link ActivationException} is thrown:
+    *
+    * <ul><li>The class to be activated and the special activation constructor are both public,
+    * and the class resides in a package that is
+    * {@linkplain Module#isExported(String,Module) exported}
+    * to at least the {@code java.rmi} module; or
+    *
+    * <li>The class to be activated resides in a package that is
+    * {@linkplain Module#isOpen(String,Module) open}
+    * to at least the {@code java.rmi} module.
+    * </ul>
     *
     * @param id the object's activation identifier
     * @param desc the object's descriptor

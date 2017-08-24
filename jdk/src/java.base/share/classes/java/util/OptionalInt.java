@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,19 @@ import java.util.stream.IntStream;
  * <p>Additional methods that depend on the presence or absence of a contained
  * value are provided, such as {@link #orElse(int) orElse()}
  * (returns a default value if no value is present) and
- * {@link #ifPresent(java.util.function.IntConsumer) ifPresent()} (performs an
+ * {@link #ifPresent(IntConsumer) ifPresent()} (performs an
  * action if a value is present).
  *
  * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code OptionalInt} may have unpredictable results and should be avoided.
+ *
+ * @apiNote
+ * {@code OptionalInt} is primarily intended for use as a method return type where
+ * there is a clear need to represent "no result." A variable whose type is
+ * {@code OptionalInt} should never itself be {@code null}; it should always point
+ * to an {@code OptionalInt} instance.
  *
  * @since 1.8
  */
@@ -109,6 +115,12 @@ public final class OptionalInt {
     /**
      * If a value is present, returns the value, otherwise throws
      * {@code NoSuchElementException}.
+     *
+     * @apiNote
+     * The methods {@link #orElse(int) orElse} and
+     * {@link #orElseGet(IntSupplier) orElseGet}
+     * are generally preferable to this method, as they return a substitute
+     * value if the value is absent, instead of throwing an exception.
      *
      * @return the value described by this {@code OptionalInt}
      * @throws NoSuchElementException if no value is present

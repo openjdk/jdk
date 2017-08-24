@@ -573,7 +573,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             repaint();
         }
     }
-
+    @SuppressWarnings("deprecation")
     void mousePressed(MouseEvent mouseEvent) {
         if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer(mouseEvent.toString() + ", hsb " + hsbVis + ", vsb " + vsbVis);
@@ -641,6 +641,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             isMousePressed = true;
         }
     }
+    @SuppressWarnings("deprecation")
     void mouseReleased(MouseEvent mouseEvent) {
         if (isEnabled() && mouseEvent.getButton() == MouseEvent.BUTTON1) {
             //winReleaseCursorFocus();
@@ -685,6 +686,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
     }
 
+    @SuppressWarnings("deprecation")
     void mouseDragged(MouseEvent mouseEvent) {
         // TODO: can you drag w/ any other buttons?  what about multiple buttons?
         if (isEnabled() &&
@@ -810,7 +812,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
               break;
         }
     }
-
+    @SuppressWarnings("deprecation")
     void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
         if (log.isLoggable(PlatformLogger.Level.FINE)) {

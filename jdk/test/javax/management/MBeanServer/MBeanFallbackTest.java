@@ -33,7 +33,7 @@ import javax.management.ObjectName;
  *          It needs to be a separate class because the "jdk.jmx.mbeans.allowNonPublic"
  *          system property must be set before c.s.j.m.MBeanAnalyzer has been loaded.
  * @author Jaroslav Bachorik
- * @modules java.management
+ *
  * @run clean MBeanFallbackTest
  * @run build MBeanFallbackTest
  * @run main/othervm -Djdk.jmx.mbeans.allowNonPublic=true MBeanFallbackTest
