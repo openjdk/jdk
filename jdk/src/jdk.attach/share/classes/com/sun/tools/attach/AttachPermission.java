@@ -42,14 +42,16 @@ package com.sun.tools.attach;
  *
  * <table class="striped"><caption style="display:none">Table shows permission
  * target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
- *
+ * </thead>
+ * <tbody>
  * <tr>
- *   <td>attachVirtualMachine</td>
+ *   <th scope="row">attachVirtualMachine</th>
  *   <td>Ability to attach to another Java virtual machine and load agents
  *       into that VM.
  *   </td>
@@ -59,14 +61,14 @@ package com.sun.tools.attach;
  * </tr>
  *
  * <tr>
- *   <td>createAttachProvider</td>
+ *   <th scope="row">createAttachProvider</th>
  *   <td>Ability to create an <code>AttachProvider</code> instance.
  *   </td>
  *   <td>This allows an attacker to create an AttachProvider which can
  *       potentially be used to attach to other Java virtual machines.
  *   </td>
  * </tr>
-
+ * </tbody>
  *
  * </table>
 

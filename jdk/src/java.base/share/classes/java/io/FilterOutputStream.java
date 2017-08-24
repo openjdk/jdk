@@ -50,7 +50,12 @@ public class FilterOutputStream extends OutputStream {
     /**
      * Whether the stream is closed; implicitly initialized to false.
      */
-    private boolean closed;
+    private volatile boolean closed;
+
+    /**
+     * Object used to prevent a race on the 'closed' instance variable.
+     */
+    private final Object closeLock = new Object();
 
     /**
      * Creates an output stream filter built on top of the specified
@@ -165,7 +170,12 @@ public class FilterOutputStream extends OutputStream {
         if (closed) {
             return;
         }
-        closed = true;
+        synchronized (closeLock) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+        }
 
         Throwable flushException = null;
         try {
