@@ -124,11 +124,11 @@ public class VM {
     }
 
     /**
-     * Returns true if the given class loader is in the system domain
-     * in which all permissions are granted.
+     * Returns true if the given class loader is the bootstrap class loader
+     * or the platform class loader.
      */
     public static boolean isSystemDomainLoader(ClassLoader loader) {
-        return loader == null;
+        return loader == null || loader == ClassLoader.getPlatformClassLoader();
     }
 
     /**

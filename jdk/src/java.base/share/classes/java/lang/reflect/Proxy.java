@@ -453,7 +453,7 @@ public class Proxy implements java.io.Serializable {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = caller.getClassLoader();
-            if (VM.isSystemDomainLoader(loader) && !VM.isSystemDomainLoader(ccl)) {
+            if (loader == null && ccl != null) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
             ReflectUtil.checkProxyPackageAccess(ccl, interfaces);
