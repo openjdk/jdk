@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ import sun.security.jca.GetInstance;
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code TrustManagerFactory} algorithm:
  * <ul>
- * <li><tt>PKIX</tt></li>
+ * <li>{@code PKIX}</li>
  * </ul>
  * This algorithm is described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#TrustManagerFactory">
+ * "{@docRoot}/../specs/security/standard-names.html#trustmanagerfactory-algorithms">
  * TrustManagerFactory section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -141,8 +141,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @return the new {@code TrustManagerFactory} object
@@ -179,8 +179,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -223,8 +223,8 @@ public class TrustManagerFactory {
      *
      * @param algorithm the standard name of the requested trust management
      *          algorithm.  See the <a href=
-     *  "{@docRoot}/../technotes/guides/security/jsse/JSSERefGuide.html">
-     *          Java Secure Socket Extension Reference Guide </a>
+     *          "{@docRoot}/../specs/security/standard-names.html">
+     *          Java Security Standard Algorithm Names</a> document
      *          for information about standard algorithm names.
      *
      * @param provider an instance of the provider.

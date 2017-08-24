@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,10 +127,13 @@ import sun.util.locale.provider.LocaleResources;
  * The earliest period is referred to as week 0 if it has less than the minimal number of days
  * and week 1 if it has at least the minimal number of days.
  *
- * <table cellpadding="0" cellspacing="3" border="0" style="text-align: left; width: 50%;">
+ * <table class=striped style="text-align: left">
  * <caption>Examples of WeekFields</caption>
+ * <thead>
  * <tr><th>Date</th><td>Day-of-week</td>
  *  <td>First day: Monday<br>Minimal days: 4</td><td>First day: Monday<br>Minimal days: 5</td></tr>
+ * </thead>
+ * <tbody>
  * <tr><th>2008-12-31</th><td>Wednesday</td>
  *  <td>Week 5 of December 2008</td><td>Week 5 of December 2008</td></tr>
  * <tr><th>2009-01-01</th><td>Thursday</td>
@@ -139,6 +142,7 @@ import sun.util.locale.provider.LocaleResources;
  *  <td>Week 1 of January 2009</td><td>Week 0 of January 2009</td></tr>
  * <tr><th>2009-01-05</th><td>Monday</td>
  *  <td>Week 2 of January 2009</td><td>Week 1 of January 2009</td></tr>
+ * </tbody>
  * </table>
  *
  * <h3>Week of Year</h3>
@@ -157,10 +161,13 @@ import sun.util.locale.provider.LocaleResources;
  * The first and last weeks of a year may contain days from the
  * previous calendar year or next calendar year respectively.
  *
- * <table cellpadding="0" cellspacing="3" border="0" style="text-align: left; width: 50%;">
+ * <table class=striped style="text-align: left;">
  * <caption>Examples of WeekFields for week-based-year</caption>
+ * <thead>
  * <tr><th>Date</th><td>Day-of-week</td>
  *  <td>First day: Monday<br>Minimal days: 4</td><td>First day: Monday<br>Minimal days: 5</td></tr>
+ * </thead>
+ * <tbody>
  * <tr><th>2008-12-31</th><td>Wednesday</td>
  *  <td>Week 1 of 2009</td><td>Week 53 of 2008</td></tr>
  * <tr><th>2009-01-01</th><td>Thursday</td>
@@ -169,6 +176,7 @@ import sun.util.locale.provider.LocaleResources;
  *  <td>Week 1 of 2009</td><td>Week 53 of 2008</td></tr>
  * <tr><th>2009-01-05</th><td>Monday</td>
  *  <td>Week 2 of 2009</td><td>Week 1 of 2009</td></tr>
+ * </tbody>
  * </table>
  *
  * @implSpec
