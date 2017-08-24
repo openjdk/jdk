@@ -72,8 +72,8 @@ public class SimpleMultiplier {
     }
 
     public void initIterator() {
+        size = 1;
         if (!valueSpace.isEmpty()) {
-            size = 1;
             for (int i = 0; i < valueSpace.size(); i++)
                 size *= valueSpace.get(i).size();
         }

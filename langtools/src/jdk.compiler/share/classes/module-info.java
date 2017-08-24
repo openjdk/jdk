@@ -26,6 +26,9 @@
 /** Defines the implementation of the
  *  {@link javax.tools.ToolProvider#getSystemJavaCompiler system Java compiler}
  *  and its command line equivalent, <em>javac</em>, as well as <em>javah</em>.
+ *
+ *  @moduleGraph
+ *  @since 9
  */
 module jdk.compiler {
     requires transitive java.compiler;

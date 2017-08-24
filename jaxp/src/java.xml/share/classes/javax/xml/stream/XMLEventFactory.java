@@ -155,7 +155,7 @@ public abstract class XMLEventFactory {
    *              #newFactory(java.lang.String, java.lang.ClassLoader)}
    *              method defines no changes in behavior.
    */
-  @Deprecated(since="7")
+  @Deprecated(since="1.7")
   public static XMLEventFactory newInstance(String factoryId,
           ClassLoader classLoader)
           throws FactoryConfigurationError {

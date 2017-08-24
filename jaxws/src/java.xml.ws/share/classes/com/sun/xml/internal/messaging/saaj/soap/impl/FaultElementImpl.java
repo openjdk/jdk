@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.xml.soap.SOAPFaultElement;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
+import org.w3c.dom.Element;
 
 public abstract class FaultElementImpl
     extends ElementImpl
@@ -45,6 +46,10 @@ public abstract class FaultElementImpl
 
     protected FaultElementImpl(SOAPDocumentImpl ownerDoc, QName qname) {
         super(ownerDoc, qname);
+    }
+
+    public FaultElementImpl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
     }
 
     protected abstract boolean isStandardFaultElement();
