@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import java.io.IOException;
  * Some {@link com.sun.jdi.connect.Connector} implementations may require slightly
  * different handling than presented below.
  *
- * <TABLE BORDER WIDTH="75%" SUMMARY="Four scenarios for connecting a debugger
- *  to a virtual machine">
+ * <TABLE BORDER="1" style="width:75%">
+ * <CAPTION style="display:none">Four scenarios for connecting a debugger to a virtual machine"</CAPTION>
  * <TR>
  * <TH scope=col>Scenario</TH>
  * <TH scope=col>Description</TH>

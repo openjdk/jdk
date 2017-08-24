@@ -26,7 +26,7 @@
  * @bug 5057532
  * @summary Tests that host names are parsed correctly in URLs
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean URLTest
  * @run build URLTest
  * @run main URLTest

@@ -89,6 +89,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      */
     protected boolean heavyWeightPopupEnabled = false;
 
+    @SuppressWarnings("deprecation")
     ToolTipManager() {
         enterTimer = new Timer(750, new insideTimerAction());
         enterTimer.setRepeats(false);

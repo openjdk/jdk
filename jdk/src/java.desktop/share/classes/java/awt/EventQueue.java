@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,12 +668,16 @@ public class EventQueue {
      * dispatched depends upon the type of the event and the
      * type of the event's source object:
      *
-     * <table border=1 summary="Event types, source types, and dispatch methods">
+     * <table class="striped">
+     * <caption>Event types, source types, and dispatch methods</caption>
+     * <thead>
      * <tr>
      *     <th>Event Type</th>
      *     <th>Source Type</th>
      *     <th>Dispatched To</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *     <td>ActiveEvent</td>
      *     <td>Any</td>
@@ -694,6 +698,7 @@ public class EventQueue {
      *     <td>Other</td>
      *     <td>No action (ignored)</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * @param event an instance of {@code java.awt.AWTEvent},
