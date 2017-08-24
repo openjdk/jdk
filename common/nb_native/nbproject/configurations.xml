@@ -3517,7 +3517,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -10570,7 +10569,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -18227,7 +18225,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -20787,7 +20784,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -21531,7 +21527,6 @@
             <Elem>ARCHPROPNAME="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="java_props_macosx.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23025,7 +23020,6 @@
             <Elem>ARCHPROPNAME="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="java_props_md.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23104,7 +23098,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="ExtendedOptionsImpl.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -23481,7 +23474,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="SocketDispatcher.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -29987,7 +29979,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30069,7 +30060,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30104,7 +30094,6 @@
             <Elem>ARCH="x86_64"</Elem>
             <Elem>DEBUG</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
             <Elem>_GNU_SOURCE</Elem>
@@ -30147,7 +30136,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30211,7 +30199,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30274,7 +30261,6 @@
             <Elem>COMPILER2</Elem>
             <Elem>DTRACE_ENABLED</Elem>
             <Elem>HOTSPOT_LIB_ARCH="amd64"</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
             <Elem>TARGET_COMPILER_gcc</Elem>
@@ -30341,7 +30327,6 @@
           <preprocessorList>
             <Elem>ARCH="x86_64"</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="agent_util.c"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>
@@ -30354,7 +30339,6 @@
           <preprocessorList>
             <Elem>ARCH="x86_64"</Elem>
             <Elem>MACOSX</Elem>
-            <Elem>MAC_OS_X_VERSION_MAX_ALLOWED=1070</Elem>
             <Elem>THIS_FILE="Agent.cpp"</Elem>
             <Elem>_ALLBSD_SOURCE</Elem>
             <Elem>_DARWIN_UNLIMITED_SELECT</Elem>

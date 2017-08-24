@@ -47,17 +47,22 @@ import java.nio.channels.spi.AbstractSelectableChannel;
  * {@link #setOption(SctpSocketOption,Object) setOption} method. SCTP server socket
  * channels support the following options:
  * <blockquote>
- * <table><caption style="display:none">Socket options</caption>
+ * <table class="striped">
+ *   <caption style="display:none">Socket options</caption>
+ *   <thead>
  *   <tr>
- *     <th>Option Name</th>
- *     <th>Description</th>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
- *     <td> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
- *                                          SCTP_INIT_MAXSTREAMS} </td>
+ *     <th scope="row"> {@link SctpStandardSocketOptions#SCTP_INIT_MAXSTREAMS
+ *                                          SCTP_INIT_MAXSTREAMS} </th>
  *     <td> The maximum number of streams requested by the local endpoint during
  *          association initialization </td>
  *   </tr>
+ *   </tbody>
  * </table>
  * </blockquote>
  * Additional (implementation specific) options may also be supported. The list
