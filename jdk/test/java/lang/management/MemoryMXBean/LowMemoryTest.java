@@ -27,17 +27,16 @@
  * @summary Basic unit test of memory management testing:
  *          1) setUsageThreshold() and getUsageThreshold()
  *          2) test low memory detection on the old generation.
- *
  * @author  Mandy Chung
  *
- * @library /lib/testlibrary/
- * @modules java.management
- * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
- * @run main/timeout=600 LowMemoryTest
  * @requires vm.gc == "null"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.ExplicitGCInvokesConcurrentAndUnloadsClasses != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
+ * @library /lib/testlibrary/
+ *
+ * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @run main/timeout=600 LowMemoryTest
  */
 
 import java.lang.management.*;

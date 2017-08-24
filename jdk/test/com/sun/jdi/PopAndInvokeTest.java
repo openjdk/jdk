@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 6517249
- *  @modules jdk.jdi
- *  @ignore 6951287
- *  @summary JDWP: Cannot do an invokeMethod after a popFrames operation
+ * @test
+ * @bug 6517249
+ * @summary JDWP: Cannot do an invokeMethod after a popFrames operation
+ * @author jjh
  *
- *  @author jjh
+ * @ignore 6951287
  *
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g PopAndInvokeTest.java
- *  @run driver PopAndInvokeTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g PopAndInvokeTest.java
+ * @run driver PopAndInvokeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

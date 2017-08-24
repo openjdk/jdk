@@ -3,13 +3,14 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;
@@ -1013,7 +1015,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
      "\uC2DC\uC2A4\uD15C \uC18D\uC131 org.xml.sax.parser\uAC00 \uC9C0\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
 
     { ER_PARSER_ARG_CANNOT_BE_NULL,
-     "\uAD6C\uBB38 \uBD84\uC11D\uAE30 \uC778\uC218\uB294 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+     "\uAD6C\uBB38\uBD84\uC11D\uAE30 \uC778\uC218\uB294 \uB110\uC774 \uC544\uB2C8\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
 
     { ER_FEATURE,
      "\uAE30\uB2A5: {0}"},
@@ -1250,7 +1252,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
       "\uD2B9\uC218 \uCDA9\uB3CC\uC774 \uBC1C\uACAC\uB428: {0}. \uC2A4\uD0C0\uC77C\uC2DC\uD2B8\uC5D0\uC11C \uBC1C\uACAC\uB41C \uB9C8\uC9C0\uB9C9 \uD56D\uBAA9\uC774 \uC0AC\uC6A9\uB429\uB2C8\uB2E4."},
 
     { WG_PARSING_AND_PREPARING,
-      "========= \uAD6C\uBB38 \uBD84\uC11D \uD6C4 {0} \uC900\uBE44 \uC911 =========="},
+      "========= \uAD6C\uBB38\uBD84\uC11D \uD6C4 {0} \uC900\uBE44 \uC911 =========="},
 
     { WG_ATTR_TEMPLATE,
      "\uC18D\uC131 \uD15C\uD50C\uB9AC\uD2B8, {0}"},
@@ -1355,7 +1357,7 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   { "optionOUT",  "   [-OUT outputFileName]"},
   { "optionLXCIN", "   [-LXCIN compiledStylesheetFileNameIn]"},
   { "optionLXCOUT", "   [-LXCOUT compiledStylesheetFileNameOutOut]"},
-  { "optionPARSER", "   [-PARSER \uAD6C\uBB38 \uBD84\uC11D\uAE30 \uC5F0\uACB0\uC758 \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984]"},
+  { "optionPARSER", "   [-PARSER \uAD6C\uBB38\uBD84\uC11D\uAE30 \uC5F0\uACB0\uC758 \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984]"},
   {  "optionE", "   [-E(\uC5D4\uD2F0\uD2F0 \uCC38\uC870 \uD655\uC7A5 \uC548\uD568)]"},
   {  "optionV",  "   [-E(\uC5D4\uD2F0\uD2F0 \uCC38\uC870 \uD655\uC7A5 \uC548\uD568)]"},
   {  "optionQC", "   [-QC(\uC790\uB3D9 \uD328\uD134 \uCDA9\uB3CC \uACBD\uACE0)]"},
@@ -1376,9 +1378,9 @@ public class XSLTErrorResources_ko extends ListResourceBundle
   {  "optionHTML", "   [-HTML(HTML \uD3EC\uB9F7\uD130 \uC0AC\uC6A9)]"},
   {  "optionPARAM", "   [-PARAM \uC774\uB984 \uD45C\uD604\uC2DD(\uC2A4\uD0C0\uC77C\uC2DC\uD2B8 \uB9E4\uAC1C\uBCC0\uC218 \uC124\uC815)]"},
   {  "noParsermsg1", "XSL \uD504\uB85C\uC138\uC2A4\uB97C \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4."},
-  {  "noParsermsg2", "** \uAD6C\uBB38 \uBD84\uC11D\uAE30\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C **"},
+  {  "noParsermsg2", "** \uAD6C\uBB38\uBD84\uC11D\uAE30\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC74C **"},
   { "noParsermsg3",  "\uD074\uB798\uC2A4 \uACBD\uB85C\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624."},
-  { "noParsermsg4", "IBM\uC758 Java\uC6A9 XML \uAD6C\uBB38 \uBD84\uC11D\uAE30\uAC00 \uC5C6\uC744 \uACBD\uC6B0 \uB2E4\uC74C \uC704\uCE58\uC5D0\uC11C \uB2E4\uC6B4\uB85C\uB4DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
+  { "noParsermsg4", "IBM\uC758 Java\uC6A9 XML \uAD6C\uBB38\uBD84\uC11D\uAE30\uAC00 \uC5C6\uC744 \uACBD\uC6B0 \uB2E4\uC74C \uC704\uCE58\uC5D0\uC11C \uB2E4\uC6B4\uB85C\uB4DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."},
   { "noParsermsg5", "IBM AlphaWorks: http://www.alphaworks.ibm.com/formula/xml"},
   { "optionURIRESOLVER", "   [-URIRESOLVER \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984(URI \uBD84\uC11D\uC5D0 \uC0AC\uC6A9\uD560 URIResolver)]"},
   { "optionENTITYRESOLVER",  "   [-ENTITYRESOLVER \uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984(\uC5D4\uD2F0\uD2F0 \uBD84\uC11D\uC5D0 \uC0AC\uC6A9\uD560 EntityResolver)]"},
