@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.misc
  *          java.base/sun.security.x509
  *          java.activation
