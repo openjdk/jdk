@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,12 @@
  * questions.
  */
 
-/**
- * Defines Nashorn shell module.
- *
- * <p>This module includes the command line tool <em>{@index jjs jjs tool}</em>
- * to invoke the Nashorn engine.
- *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Tool Guides:
- * <dd>{@extLink jjs_tool_reference jjs}
- * </dl>
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.scripting.nashorn.shell {
-    requires java.compiler;
-    requires java.desktop;
-    requires jdk.internal.le;
-    requires jdk.scripting.nashorn;
-    requires jdk.internal.ed;
-    uses jdk.internal.editor.spi.BuildInEditorProvider;
-}
+package jdk.nashorn.test.models;
 
+public class JDK_8184241Test {
+    public JDK_8184241Test() {
+        foo();
+    }
+    public void foo() {
+    }
+}
