@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ fi
     -Xlog:redefine+class+load=debug,redefine+class+load+exceptions=info ${NMT} \
     -javaagent:RedefineBigClassAgent.jar=BigClass.class \
     -classpath "${TESTCLASSES}" RedefineBigClassApp \
-    > output.log 2>&1 
+    > output.log 2>&1
 result=$?
 
 cat output.log

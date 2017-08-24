@@ -891,8 +891,9 @@ bool StringConcat::validate_control_flow() {
       ctrl_path.push(cn);
       ctrl_path.push(cn->proj_out(0));
       ctrl_path.push(cn->proj_out(0)->unique_out());
-      if (cn->proj_out(0)->unique_out()->as_Catch()->proj_out(0) != NULL) {
-        ctrl_path.push(cn->proj_out(0)->unique_out()->as_Catch()->proj_out(0));
+      Node* catchproj = cn->proj_out(0)->unique_out()->as_Catch()->proj_out(0);
+      if (catchproj != NULL) {
+        ctrl_path.push(catchproj);
       }
     } else {
       ShouldNotReachHere();

@@ -107,11 +107,6 @@ public class CPlatformLWWindow extends CPlatformWindow {
     }
 
     @Override
-    public long getNSWindowPtr() {
-        return 0;
-    }
-
-    @Override
     public SurfaceData getSurfaceData() {
         return null;
     }

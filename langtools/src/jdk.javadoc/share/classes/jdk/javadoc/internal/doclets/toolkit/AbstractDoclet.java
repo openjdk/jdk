@@ -34,7 +34,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.doclets.StandardDoclet;
+import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /** byte[]/UTF16 version    */
-    static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
+    private static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
         int charPos = offset + len;
         int radix = 1 << shift;
         int mask = radix - 1;
@@ -475,7 +475,7 @@ public final class Long extends Number implements Comparable<Long> {
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
-            getCharsUTF16(i, size, buf);
+            StringUTF16.getChars(i, size, buf);
             return new String(buf, UTF16);
         }
     }
@@ -557,61 +557,6 @@ public final class Long extends Number implements Comparable<Long> {
 
         if (negative) {
             buf[--charPos] = (byte)'-';
-        }
-        return charPos;
-    }
-
-    /**
-     * This is a variant of {@link #getChars(long, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getCharsUTF16(long i, int index, byte[] buf) {
-        long q;
-        int r;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
-            q = i / 100;
-            r = (int)((q * 100) - i);
-            i = q;
-            StringUTF16.putChar(buf, --charPos, Integer.DigitOnes[r]);
-            StringUTF16.putChar(buf, --charPos, Integer.DigitTens[r]);
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            r  = (q2 * 100) - i2;
-            i2 = q2;
-            StringUTF16.putChar(buf, --charPos, Integer.DigitOnes[r]);
-            StringUTF16.putChar(buf, --charPos, Integer.DigitTens[r]);
-        }
-
-        // We know there are at most two digits left at this point.
-        q2 = i2 / 10;
-        r  = (q2 * 10) - i2;
-        StringUTF16.putChar(buf, --charPos, '0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q2 < 0) {
-            StringUTF16.putChar(buf, --charPos, '0' - q2);
-        }
-
-        if (negative) {
-            StringUTF16.putChar(buf, --charPos, '-');
         }
         return charPos;
     }

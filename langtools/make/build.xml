@@ -89,16 +89,22 @@
     </pathconvert>
 
     <pathconvert property="xpatch.rest" pathsep=" --patch-module=">
-        <regexpmapper from="/([^$/]+)$"
-                      to='\1="${build.modules}/\1"'
-                      handledirsep="yes"/>
+        <scriptmapper language="javascript">
+            fs = project.getProperty("file.separator");
+            path = project.getProperty("build.modules");
+            mod = source.substr(source.lastIndexOf(fs)+1);
+            self.addMappedName(mod + "=\"" + path + fs + mod + "\"");
+        </scriptmapper>
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
     <pathconvert property="xpatch.noquotes.rest" pathsep=" --patch-module=">
-        <regexpmapper from="/([^$/]+)$"
-                      to="\1=${build.modules}/\1"
-                      handledirsep="yes"/>
+        <scriptmapper language="javascript">
+            fs = project.getProperty("file.separator");
+            path = project.getProperty("build.modules");
+            mod = source.substr(source.lastIndexOf(fs)+1);
+            self.addMappedName(mod + "=" + path + fs + mod);
+        </scriptmapper>
         <dirset dir="${src.dir}" includes="*.*"/>
     </pathconvert>
 
@@ -341,7 +347,7 @@
             <attribute name="agentvm" default="true"/>
             <attribute name="verbose" default="${default.jtreg.verbose}"/>
             <attribute name="options" default="${other.jtreg.options}"/>
-            <attribute name="keywords" default="-keywords:!ignore"/>
+            <attribute name="ignore" default="-keywords:!ignore -exclude:${test.dir}/ProblemList.txt"/>
             <attribute name="jpda.jvmargs" default=""/>
             <attribute name="extra.jvmargs" default=""/>
             <attribute name="build.modules" default="${build.modules}"/>
@@ -360,7 +366,7 @@
                     failonerror="false" resultproperty="jtreg.@{name}.result"
                     vmoptions="${coverage.options} @{extra.jvmargs} ${xpatch.noquotes.cmd}">
                     <arg value="-debug:@{jpda.jvmargs}"/>
-                    <arg line="@{keywords}"/>
+                    <arg line="@{ignore}"/>
                     <arg line="@{options}"/>
                     <arg line="@{tests}"/>
                 </jtreg>

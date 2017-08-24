@@ -59,6 +59,7 @@ import java.io.ByteArrayInputStream;
  * @see DigestOutputStream
  *
  * @author Benjamin Renaud
+ * @since 1.2
  */
 
 public class DigestInputStream extends FilterInputStream {

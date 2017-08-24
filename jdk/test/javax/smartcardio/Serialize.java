@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 6445367
  * @summary make sure serialization works
  * @author Andreas Sterbenz
- * @compile --add-modules=java.smartcardio Serialize.java
- * @run main/othervm --add-modules=java.smartcardio Serialize
  */
 
 import java.io.*;

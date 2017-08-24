@@ -22,9 +22,7 @@
  */
 package org.netbeans.jemmy.drivers.windows;
 
-import java.awt.Dimension;
 import java.awt.Frame;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
 
@@ -61,16 +59,28 @@ public class DefaultFrameDriver extends LightSupportiveDriver implements FrameDr
         ((FrameOperator) oper).setState(Frame.NORMAL);
     }
 
+    /** Maximizes the frame.
+     *
+     * @param oper Frame operator.
+     * @throws UnsupportedOperatorException if operator class name is not in
+     *         the list of supported classes names
+     */
     @Override
     public void maximize(ComponentOperator oper) {
         checkSupported(oper);
-        oper.setLocation(0, 0);
-        Dimension ssize = Toolkit.getDefaultToolkit().getScreenSize();
-        oper.setSize(ssize.width, ssize.height);
+        ((FrameOperator) oper).setExtendedState(Frame.MAXIMIZED_BOTH);
     }
 
+    /** Demaximizes the frame.
+     *
+     * @param oper Frame operator.
+     * @throws UnsupportedOperatorException if operator class name is not in
+     *         the list of supported classes names
+     */
     @Override
     public void demaximize(ComponentOperator oper) {
         checkSupported(oper);
+        ((FrameOperator) oper).setExtendedState(Frame.NORMAL);
     }
+
 }
