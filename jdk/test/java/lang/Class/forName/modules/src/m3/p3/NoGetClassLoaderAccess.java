@@ -23,8 +23,6 @@
 
 package p3;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.security.AccessControlException;
 import java.security.Permission;
 
@@ -37,7 +35,7 @@ public class NoGetClassLoaderAccess {
     private static final Permission GET_CLASSLOADER_PERMISSION = new RuntimePermission("getClassLoader");
 
     public static void main(String[] args) throws Exception {
-        Layer boot = Layer.boot();
+        ModuleLayer boot = ModuleLayer.boot();
 
         System.setSecurityManager(new SecurityManager());
         Module m1 = boot.findModule("m1").get();

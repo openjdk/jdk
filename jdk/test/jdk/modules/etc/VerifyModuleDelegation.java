@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,8 @@
  */
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.Set;
 import static java.util.stream.Collectors.toSet;
-
-import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import org.testng.annotations.*;
 
@@ -46,10 +40,10 @@ public class VerifyModuleDelegation {
     private static final String JAVA_BASE = "java.base";
 
     private static final ModuleDescriptor BASE
-        = ModuleDescriptor.module(JAVA_BASE).build();
+        = ModuleDescriptor.newModule(JAVA_BASE).build();
 
     private static final Set<ModuleDescriptor> MREFS
-            = Layer.boot().modules().stream().map(Module::getDescriptor)
+            = ModuleLayer.boot().modules().stream().map(Module::getDescriptor)
                 .collect(toSet());
 
     private void check(ModuleDescriptor md, ModuleDescriptor ref) {
@@ -69,7 +63,7 @@ public class VerifyModuleDelegation {
 
     @Test
     public void checkLoaderDelegation() {
-        Layer boot = Layer.boot();
+        ModuleLayer boot = ModuleLayer.boot();
         MREFS.stream()
              .forEach(md -> md.requires().stream().forEach(req ->
                  {
@@ -78,8 +72,9 @@ public class VerifyModuleDelegation {
                      ClassLoader loader1 = boot.findLoader(md.name());
                      ClassLoader loader2 = boot.findLoader(req.name());
                      if (loader1 != loader2 && !isAncestor(loader2, loader1)) {
-                         throw new Error(md.name() + " can't delegate to " +
-                                         "find classes from " + req.name());
+                         throw new Error(loader1.getName() + "/" + md.name() +
+                             " can't delegate to find classes from " +
+                             loader2.getName() + "/" + req.name());
                      }
                  }));
     }

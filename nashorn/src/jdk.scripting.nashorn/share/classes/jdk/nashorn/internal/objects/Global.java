@@ -90,9 +90,9 @@ import jdk.nashorn.tools.ShellFunctions;
 @ScriptClass("Global")
 public final class Global extends Scope {
     // This special value is used to flag a lazily initialized global property.
-    // This also serves as placeholder value used in place of a location property
-    // (__FILE__, __DIR__, __LINE__)
     private static final Object LAZY_SENTINEL = new Object();
+    // This serves as placeholder value used in place of a location property (__FILE__, __DIR__, __LINE__)
+    private static final Object LOCATION_PLACEHOLDER = new Object();
 
     private static final String PACKAGE_PREFIX = "jdk.nashorn.internal.objects.";
 
@@ -916,7 +916,7 @@ public final class Global extends Scope {
     public volatile Object org;
 
     /**
-     * Getter for the Nashorn extension: Java access - global.javaImporter.
+     * Getter for the Nashorn extension: Java access - global.JavaImporter.
      *
      * @param self self reference
      * @return the value of the JavaImporter property
@@ -931,7 +931,7 @@ public final class Global extends Scope {
     }
 
     /**
-     * Setter for the Nashorn extension: Java access - global.javaImporter.
+     * Setter for the Nashorn extension: Java access - global.JavaImporter.
      *
      * @param self self reference
      * @param value value of the JavaImporter property
@@ -975,15 +975,15 @@ public final class Global extends Scope {
 
     /** Nashorn extension: current script's file name */
     @Property(name = "__FILE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public static final Object __FILE__ = LAZY_SENTINEL;
+    public static final Object __FILE__ = LOCATION_PLACEHOLDER;
 
     /** Nashorn extension: current script's directory */
     @Property(name = "__DIR__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public static final Object __DIR__ = LAZY_SENTINEL;
+    public static final Object __DIR__ = LOCATION_PLACEHOLDER;
 
     /** Nashorn extension: current source line number being executed */
     @Property(name = "__LINE__", attributes = Attribute.NON_ENUMERABLE_CONSTANT)
-    public static final Object __LINE__ = LAZY_SENTINEL;
+    public static final Object __LINE__ = LOCATION_PLACEHOLDER;
 
     private volatile NativeDate DEFAULT_DATE;
 
@@ -2093,6 +2093,9 @@ public final class Global extends Scope {
     }
 
     private synchronized ScriptFunction getBuiltinJavaImporter() {
+        if (getContext().getEnv()._no_java) {
+            throw new IllegalStateException();
+        }
         if (this.builtinJavaImporter == null) {
             this.builtinJavaImporter = initConstructor("JavaImporter", ScriptFunction.class);
         }
@@ -2100,6 +2103,9 @@ public final class Global extends Scope {
     }
 
     private synchronized ScriptObject getBuiltinJavaApi() {
+        if (getContext().getEnv()._no_java) {
+            throw new IllegalStateException();
+        }
         if (this.builtinJavaApi == null) {
             this.builtinJavaApi = initConstructor("Java", ScriptObject.class);
             this.builtInJavaExtend = (ScriptFunction)builtinJavaApi.get("extend");
@@ -2325,7 +2331,7 @@ public final class Global extends Scope {
      * @return true if the value is a placeholder, false otherwise.
      */
     public static boolean isLocationPropertyPlaceholder(final Object placeholder) {
-        return placeholder == LAZY_SENTINEL;
+        return placeholder == LOCATION_PLACEHOLDER;
     }
 
     /**
@@ -2628,6 +2634,17 @@ public final class Global extends Scope {
             this.javaApi = LAZY_SENTINEL;
             this.javaImporter = LAZY_SENTINEL;
             initJavaAccess();
+        } else {
+            // delete nasgen-created global properties related to java access
+            this.delete("Java", false);
+            this.delete("JavaImporter", false);
+            this.delete("Packages", false);
+            this.delete("com", false);
+            this.delete("edu", false);
+            this.delete("java", false);
+            this.delete("javafx", false);
+            this.delete("javax", false);
+            this.delete("org", false);
         }
 
         if (! env._no_typed_arrays) {

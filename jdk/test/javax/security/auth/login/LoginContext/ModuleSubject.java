@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4378100
+ * @modules jdk.security.auth
  * @summary LoginContext doesn't reinit modules with new Subject
  *      if authentication fails
  *
@@ -31,9 +32,9 @@
  * @run main/othervm -Djava.security.auth.login.config=file:${test.src}/ModuleSubject.config ModuleSubject
  */
 
-import javax.security.auth.*;
-import javax.security.auth.login.*;
 import java.security.Principal;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 public class ModuleSubject {
 

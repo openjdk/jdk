@@ -27,7 +27,7 @@
  * @summary Test that all monitors will be well started when sharing
  * a single thread pool.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ThreadPoolTest
  * @run build ThreadPoolTest
  * @run main/othervm/timeout=300 ThreadPoolTest 1

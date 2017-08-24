@@ -176,6 +176,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
             final int index = getIndex((Number)key);
             if (index > -1) {
                 return ((JSObject)jsobj).getSlot(index);
+            } else {
+                return ((JSObject)jsobj).getMember(JSType.toString(key));
             }
         } else if (isString(key)) {
             final String name = key.toString();
@@ -193,7 +195,12 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         if (key instanceof Integer) {
             ((JSObject)jsobj).setSlot((Integer)key, value);
         } else if (key instanceof Number) {
-            ((JSObject)jsobj).setSlot(getIndex((Number)key), value);
+            final int index = getIndex((Number)key);
+            if (index > -1) {
+                ((JSObject)jsobj).setSlot(index, value);
+            } else {
+                ((JSObject)jsobj).setMember(JSType.toString(key), value);
+            }
         } else if (isString(key)) {
             ((JSObject)jsobj).setMember(key.toString(), value);
         }
