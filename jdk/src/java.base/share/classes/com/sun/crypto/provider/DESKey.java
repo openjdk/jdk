@@ -31,6 +31,8 @@ import java.security.InvalidKeyException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DESKeySpec;
 
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * This class represents a DES key.
  *
@@ -74,6 +76,11 @@ final class DESKey implements SecretKey {
         this.key = new byte[DESKeySpec.DES_KEY_LEN];
         System.arraycopy(key, offset, this.key, 0, DESKeySpec.DES_KEY_LEN);
         DESKeyGenerator.setParityBit(this.key, 0);
+
+        // Use the cleaner to zero the key when no longer referenced
+        final byte[] k = this.key;
+        CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
@@ -143,21 +150,5 @@ final class DESKey implements SecretKey {
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
-    }
-
-    /**
-     * Ensures that the bytes of this key are
-     * set to zero when there are no more references to it.
-     */
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        try {
-            if (this.key != null) {
-                java.util.Arrays.fill(this.key, (byte)0x00);
-                this.key = null;
-            }
-        } finally {
-            super.finalize();
-        }
     }
 }

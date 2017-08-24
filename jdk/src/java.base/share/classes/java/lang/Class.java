@@ -432,18 +432,21 @@ public final class Class<T> implements java.io.Serializable,
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
 
-        Class<?> caller = Reflection.getCallerClass();
-        if (caller != null && caller.getModule() != module) {
-            // if caller is null, Class.forName is the last java frame on the stack.
-            // java.base has all permissions
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
+        ClassLoader cl;
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            Class<?> caller = Reflection.getCallerClass();
+            if (caller != null && caller.getModule() != module) {
+                // if caller is null, Class.forName is the last java frame on the stack.
+                // java.base has all permissions
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
+            PrivilegedAction<ClassLoader> pa = module::getClassLoader;
+            cl = AccessController.doPrivileged(pa);
+        } else {
+            cl = module.getClassLoader();
         }
 
-        PrivilegedAction<ClassLoader> pa = module::getClassLoader;
-        ClassLoader cl = AccessController.doPrivileged(pa);
         if (cl != null) {
             return cl.loadClass(module, name);
         } else {

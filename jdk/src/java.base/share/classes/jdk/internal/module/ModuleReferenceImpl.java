@@ -68,14 +68,14 @@ public class ModuleReferenceImpl extends ModuleReference {
     /**
      * Constructs a new instance of this class.
      */
-    ModuleReferenceImpl(ModuleDescriptor descriptor,
-                        URI location,
-                        Supplier<ModuleReader> readerSupplier,
-                        ModulePatcher patcher,
-                        ModuleTarget target,
-                        ModuleHashes recordedHashes,
-                        ModuleHashes.HashSupplier hasher,
-                        ModuleResolution moduleResolution)
+    public ModuleReferenceImpl(ModuleDescriptor descriptor,
+                               URI location,
+                               Supplier<ModuleReader> readerSupplier,
+                               ModulePatcher patcher,
+                               ModuleTarget target,
+                               ModuleHashes recordedHashes,
+                               ModuleHashes.HashSupplier hasher,
+                               ModuleResolution moduleResolution)
     {
         super(descriptor, Objects.requireNonNull(location));
         this.location = location;
