@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class MutliReleaseModuleInfoTest {
             }
             boolean foundjd = false;
             for (RequiresDirective rd : ElementFilter.requiresIn(sm.getDirectives())) {
-                foundjd |= rd.getDependency().getSimpleName().contentEquals("java.desktop");
+                foundjd |= rd.getDependency().getQualifiedName().contentEquals("java.desktop");
             }
             if (!foundjd) {
                 throw new AssertionError("Missing dependency on java desktop module!");

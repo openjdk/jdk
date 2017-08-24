@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ class MyExecutionControl extends JdiExecutionControl {
                     + System.getProperty("path.separator")
                     + System.getProperty("user.dir"));
             JdiInitiator jdii = new JdiInitiator(port,
-                    opts, REMOTE_AGENT, true, null, TIMEOUT);
+                    opts, REMOTE_AGENT, true, null, TIMEOUT, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
 

@@ -24,14 +24,17 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.invoke.MethodType;
+import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -51,8 +54,13 @@ import jdk.tools.jlink.plugin.Plugin;
 public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String NAME = "generate-jli-classes";
+    private static final String IGNORE_VERSION = "ignore-version";
 
     private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
+    private static final String IGNORE_VERSION_WARNING = NAME + ".ignore.version.warn";
+    private static final String VERSION_MISMATCH_WARNING = NAME + ".version.mismatch.warn";
+
+    private static final String DEFAULT_TRACE_FILE = "default_jli_trace.txt";
 
     private static final String DIRECT_HOLDER = "java/lang/invoke/DirectMethodHandle$Holder";
     private static final String DMH_INVOKE_VIRTUAL = "invokeVirtual";
@@ -69,11 +77,15 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
 
-    Set<String> speciesTypes;
+    Set<String> speciesTypes = Set.of();
 
-    Set<String> invokerTypes;
+    Set<String> invokerTypes = Set.of();
 
-    Map<String, Set<String>> dmhMethods;
+    Map<String, Set<String>> dmhMethods = Map.of();
+
+    String mainArgument;
+
+    boolean ignoreVersion;
 
     public GenerateJLIClassesPlugin() {
     }
@@ -157,67 +169,99 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        String mainArgument = config.get(NAME);
+        mainArgument = config.get(NAME);
+        ignoreVersion = Boolean.parseBoolean(config.get(IGNORE_VERSION));
+    }
 
+    public void initialize(ResourcePool in) {
         // Start with the default configuration
-        Set<String> defaultBMHSpecies = defaultSpecies();
-        // Expand BMH species signatures
-        defaultBMHSpecies = defaultBMHSpecies.stream()
+        speciesTypes = defaultSpecies().stream()
                 .map(type -> expandSignature(type))
                 .collect(Collectors.toSet());
 
-        Set<String> defaultInvokerTypes = defaultInvokers();
-        validateMethodTypes(defaultInvokerTypes);
+        invokerTypes = defaultInvokers();
+        validateMethodTypes(invokerTypes);
 
-        Map<String, Set<String>> defaultDmhMethods = defaultDMHMethods();
-        for (Set<String> dmhMethodTypes : defaultDmhMethods.values()) {
+        dmhMethods = defaultDMHMethods();
+        for (Set<String> dmhMethodTypes : dmhMethods.values()) {
             validateMethodTypes(dmhMethodTypes);
         }
 
         // Extend the default configuration with the contents in the supplied
-        // input file
+        // input file - if none was supplied we look for the default file
         if (mainArgument == null || !mainArgument.startsWith("@")) {
-            speciesTypes = defaultBMHSpecies;
-            invokerTypes = defaultInvokerTypes;
-            dmhMethods = defaultDmhMethods;
+            try (InputStream traceFile =
+                    this.getClass().getResourceAsStream(DEFAULT_TRACE_FILE)) {
+                if (traceFile != null) {
+                    readTraceConfig(
+                        new BufferedReader(
+                            new InputStreamReader(traceFile)).lines());
+                }
+            } catch (Exception e) {
+                throw new PluginException("Couldn't read " + DEFAULT_TRACE_FILE, e);
+            }
         } else {
             File file = new File(mainArgument.substring(1));
             if (file.exists()) {
-                // Use TreeSet/TreeMap to keep things sorted in a deterministic
-                // order to avoid scrambling the layout on small changes and to
-                // ease finding methods in the generated code
-                speciesTypes = new TreeSet<>(defaultBMHSpecies);
-                invokerTypes = new TreeSet<>(defaultInvokerTypes);
-                dmhMethods = new TreeMap<>();
-                for (Map.Entry<String, Set<String>> entry : defaultDmhMethods.entrySet()) {
-                    dmhMethods.put(entry.getKey(), new TreeSet<>(entry.getValue()));
-                }
-                fileLines(file)
-                    .map(line -> line.split(" "))
-                    .forEach(parts -> {
-                        switch (parts[0]) {
-                            case "[BMH_RESOLVE]":
-                                speciesTypes.add(expandSignature(parts[1]));
-                                break;
-                            case "[LF_RESOLVE]":
-                                String methodType = parts[3];
-                                validateMethodType(methodType);
-                                if (parts[1].contains("Invokers")) {
-                                    invokerTypes.add(methodType);
-                                } else if (parts[1].contains("DirectMethodHandle")) {
-                                    String dmh = parts[2];
-                                    // ignore getObject etc for now (generated
-                                    // by default)
-                                    if (DMH_METHOD_TYPE_MAP.containsKey(dmh)) {
-                                        addDMHMethodType(dmh, methodType);
-                                    }
-                                }
-                                break;
-                            default: break; // ignore
-                        }
-                });
+                readTraceConfig(fileLines(file));
             }
         }
+    }
+
+    private boolean checkVersion(Runtime.Version linkedVersion) {
+        Runtime.Version baseVersion = Runtime.version();
+        if (baseVersion.major() != linkedVersion.major() ||
+                baseVersion.minor() != linkedVersion.minor()) {
+            return false;
+        }
+        return true;
+    }
+
+    private Runtime.Version getLinkedVersion(ResourcePool in) {
+        ModuleDescriptor.Version version = in.moduleView()
+                .findModule("java.base")
+                .get()
+                .descriptor()
+                .version()
+                .orElseThrow(() -> new PluginException("No version defined in "
+                        + "the java.base being linked"));
+         return Runtime.Version.parse(version.toString());
+    }
+
+    private void readTraceConfig(Stream<String> lines) {
+        // Use TreeSet/TreeMap to keep things sorted in a deterministic
+        // order to avoid scrambling the layout on small changes and to
+        // ease finding methods in the generated code
+        speciesTypes = new TreeSet<>(speciesTypes);
+        invokerTypes = new TreeSet<>(invokerTypes);
+        TreeMap<String, Set<String>> newDMHMethods = new TreeMap<>();
+        for (Map.Entry<String, Set<String>> entry : dmhMethods.entrySet()) {
+            newDMHMethods.put(entry.getKey(), new TreeSet<>(entry.getValue()));
+        }
+        dmhMethods = newDMHMethods;
+        lines.map(line -> line.split(" "))
+             .forEach(parts -> {
+                switch (parts[0]) {
+                    case "[BMH_RESOLVE]":
+                        speciesTypes.add(expandSignature(parts[1]));
+                        break;
+                    case "[LF_RESOLVE]":
+                        String methodType = parts[3];
+                        validateMethodType(methodType);
+                        if (parts[1].contains("Invokers")) {
+                            invokerTypes.add(methodType);
+                        } else if (parts[1].contains("DirectMethodHandle")) {
+                            String dmh = parts[2];
+                            // ignore getObject etc for now (generated
+                            // by default)
+                            if (DMH_METHOD_TYPE_MAP.containsKey(dmh)) {
+                                addDMHMethodType(dmh, methodType);
+                            }
+                        }
+                        break;
+                    default: break; // ignore
+                }
+            });
     }
 
     private void addDMHMethodType(String dmh, String methodType) {
@@ -265,6 +309,25 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
+        if (ignoreVersion) {
+            System.out.println(
+                    PluginsResourceBundle
+                            .getMessage(IGNORE_VERSION_WARNING));
+        } else if (!checkVersion(getLinkedVersion(in))) {
+            // The linked images are not version compatible
+            if (mainArgument != null) {
+                // Log a mismatch warning if an argument was specified
+                System.out.println(
+                        PluginsResourceBundle
+                                .getMessage(VERSION_MISMATCH_WARNING,
+                                            getLinkedVersion(in),
+                                            Runtime.version()));
+            }
+            in.transformAndCopy(entry -> entry, out);
+            return out.build();
+        }
+
+        initialize(in);
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {
                 // filter out placeholder entries
@@ -277,8 +340,18 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                     return entry;
                 }
             }, out);
+
+        // Generate BMH Species classes
         speciesTypes.forEach(types -> generateBMHClass(types, out));
+
+        // Generate LambdaForm Holder classes
         generateHolderClasses(out);
+
+        // Let it go
+        speciesTypes = null;
+        invokerTypes = null;
+        dmhMethods = null;
+
         return out.build();
     }
 

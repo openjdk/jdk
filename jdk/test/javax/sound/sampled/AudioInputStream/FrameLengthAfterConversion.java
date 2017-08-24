@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public final class FrameLengthAfterConversion {
         }
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
         for (final FormatConversionProvider fcp : load(
                 FormatConversionProvider.class)) {
             System.out.println("fcp = " + fcp);
@@ -139,7 +139,8 @@ public final class FrameLengthAfterConversion {
      */
     private static void testAfterSaveToStream(final AudioFileWriter afw,
                                               final AudioFileFormat.Type type,
-                                              final AudioInputStream ais) {
+                                              final AudioInputStream ais)
+            throws IOException {
         try {
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
             afw.write(ais, type, out);
@@ -147,7 +148,7 @@ public final class FrameLengthAfterConversion {
                     out.toByteArray());
             validate(AudioSystem.getAudioInputStream(input).getFrameLength());
         } catch (IllegalArgumentException | UnsupportedAudioFileException
-                | IOException ignored) {
+                ignored) {
         }
     }
 
@@ -156,18 +157,19 @@ public final class FrameLengthAfterConversion {
      */
     private static void testAfterSaveToFile(final AudioFileWriter afw,
                                             final AudioFileFormat.Type type,
-                                            AudioInputStream ais) {
+                                            AudioInputStream ais)
+            throws IOException {
+        final File temp = File.createTempFile("sound", ".tmp");
         try {
-            final File temp = File.createTempFile("sound", ".tmp");
-            temp.deleteOnExit();
             afw.write(ais, type, temp);
             ais = AudioSystem.getAudioInputStream(temp);
             final long frameLength = ais.getFrameLength();
             ais.close();
-            Files.delete(Paths.get(temp.getAbsolutePath()));
             validate(frameLength);
         } catch (IllegalArgumentException | UnsupportedAudioFileException
-                | IOException ignored) {
+                ignored) {
+        } finally {
+            Files.delete(Paths.get(temp.getAbsolutePath()));
         }
     }
 

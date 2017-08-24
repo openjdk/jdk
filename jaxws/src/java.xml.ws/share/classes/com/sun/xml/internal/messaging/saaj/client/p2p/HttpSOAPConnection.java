@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ class HttpSOAPConnection extends SOAPConnection {
         }
     }
 
+    @Override
     public void close() throws SOAPException {
         if (closed) {
             log.severe("SAAJ0002.p2p.close.already.closed.conn");
@@ -86,6 +87,7 @@ class HttpSOAPConnection extends SOAPConnection {
         closed = true;
     }
 
+    @Override
    public SOAPMessage call(SOAPMessage message, Object endPoint)
         throws SOAPException {
         if (closed) {
@@ -348,6 +350,7 @@ class HttpSOAPConnection extends SOAPConnection {
     // Object identifies where the request should be sent.
     // It is required to support objects of type String and java.net.URL.
 
+    @Override
     public SOAPMessage get(Object endPoint) throws SOAPException {
         if (closed) {
             log.severe("SAAJ0011.p2p.get.already.closed.conn");
@@ -512,9 +515,13 @@ class HttpSOAPConnection extends SOAPConnection {
                         : httpConnection.getInputStream());
                 // If no reply message is returned,
                 // content-Length header field value is expected to be zero.
-                // InputStream#available() can't be used here - it just says no data *YET*!
+                // java SE 6 documentation says :
+                // available() : an estimate of the number of bytes that can be read
+                //(or skipped over) from this input stream without blocking
+                //or 0 when it reaches the end of the input stream.
                 if ((httpIn == null )
-                        || (httpConnection.getContentLength() == 0)) {
+                        || (httpConnection.getContentLength() == 0)
+                        || (httpIn.available() == 0)) {
                     response = null;
                     log.warning("SAAJ0014.p2p.content.zero");
                 } else {

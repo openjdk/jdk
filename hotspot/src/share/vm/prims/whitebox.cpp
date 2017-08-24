@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1457,15 +1457,6 @@ WB_ENTRY(void, WB_AddReadsModule(JNIEnv* env, jobject o, jobject from_module, jo
   Modules::add_reads_module(from_module, source_module, CHECK);
 WB_END
 
-WB_ENTRY(void, WB_AddModulePackage(JNIEnv* env, jobject o, jclass module, jstring package))
-  ResourceMark rm(THREAD);
-  char* package_name = NULL;
-  if (package != NULL) {
-      package_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(package));
-  }
-  Modules::add_module_package(module, package_name, CHECK);
-WB_END
-
 WB_ENTRY(jobject, WB_GetModuleByPackageName(JNIEnv* env, jobject o, jobject loader, jstring package))
   ResourceMark rm(THREAD);
   char* package_name = NULL;
@@ -1910,8 +1901,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddModuleExports },
   {CC"AddReadsModule",     CC"(Ljava/lang/Object;Ljava/lang/Object;)V",
                                                       (void*)&WB_AddReadsModule },
-  {CC"AddModulePackage",   CC"(Ljava/lang/Object;Ljava/lang/String;)V",
-                                                      (void*)&WB_AddModulePackage },
   {CC"GetModuleByPackageName", CC"(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;",
                                                       (void*)&WB_GetModuleByPackageName },
   {CC"AddModuleExportsToAllUnnamed", CC"(Ljava/lang/Object;Ljava/lang/String;)V",

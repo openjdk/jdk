@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.security.BasicPermission;
  * <p>
  * The following targets are defined:
  *
- * <table border=1 cellpadding=5 summary="permission target name,
- *  what the target allows,and associated risks">
+ * <table class="striped"><caption style="display:none">permission target name,
+ *  what the target allows,and associated risks</caption>
  * <tr>
  *   <th>Permission Target Name</th>
  *   <th>What the Permission Allows</th>

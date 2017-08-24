@@ -22,6 +22,8 @@
  */
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jdk.jshell.JShell;
 import jdk.jshell.execution.JdiExecutionControlProvider;
 import jdk.jshell.execution.RemoteExecutionControl;
@@ -59,6 +61,8 @@ class HangingRemoteAgent extends RemoteExecutionControl {
         pm.put(JdiExecutionControlProvider.PARAM_HOST_NAME, host==null? "" : host);
         pm.put(JdiExecutionControlProvider.PARAM_LAUNCH, ""+isLaunch);
         pm.put(JdiExecutionControlProvider.PARAM_TIMEOUT, ""+TIMEOUT);
+        // turn on logging of launch failures
+        Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JShell.builder()
                 .executionEngine(ecp, pm)
                 .build();
