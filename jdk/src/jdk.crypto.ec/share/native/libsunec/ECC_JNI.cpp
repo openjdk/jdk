@@ -240,7 +240,7 @@ cleanup:
  */
 JNIEXPORT jbyteArray
 JNICALL Java_sun_security_ec_ECDSASignature_signDigest
-  (JNIEnv *env, jclass clazz, jbyteArray digest, jbyteArray privateKey, jbyteArray encodedParams, jbyteArray seed)
+  (JNIEnv *env, jclass clazz, jbyteArray digest, jbyteArray privateKey, jbyteArray encodedParams, jbyteArray seed, jint timing)
 {
     jbyte* pDigestBuffer = NULL;
     jint jDigestLength = env->GetArrayLength(digest);
@@ -300,7 +300,7 @@ JNICALL Java_sun_security_ec_ECDSASignature_signDigest
 
     // Sign the digest (using the supplied seed)
     if (ECDSA_SignDigest(&privKey, &signature_item, &digest_item,
-        (unsigned char *) pSeedBuffer, jSeedLength, 0) != SECSuccess) {
+        (unsigned char *) pSeedBuffer, jSeedLength, 0, timing) != SECSuccess) {
         ThrowException(env, KEY_EXCEPTION);
         goto cleanup;
     }
