@@ -85,7 +85,7 @@ class Inflater {
     private static final byte[] defaultBuf = new byte[0];
 
     static {
-        /* Zip library is loaded from System.initializeSystemClass */
+        ZipUtils.loadLibrary();
         initIDs();
     }
 

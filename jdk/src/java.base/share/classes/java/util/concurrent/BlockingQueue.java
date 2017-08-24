@@ -39,10 +39,9 @@ import java.util.Collection;
 import java.util.Queue;
 
 /**
- * A {@link java.util.Queue} that additionally supports operations
- * that wait for the queue to become non-empty when retrieving an
- * element, and wait for space to become available in the queue when
- * storing an element.
+ * A {@link Queue} that additionally supports operations that wait for
+ * the queue to become non-empty when retrieving an element, and wait
+ * for space to become available in the queue when storing an element.
  *
  * <p>{@code BlockingQueue} methods come in four forms, with different ways
  * of handling operations that cannot be satisfied immediately, but may be
@@ -64,22 +63,22 @@ import java.util.Queue;
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link #add add(e)}</td>
- *    <td>{@link #offer offer(e)}</td>
- *    <td>{@link #put put(e)}</td>
+ *    <td>{@link #add(Object) add(e)}</td>
+ *    <td>{@link #offer(Object) offer(e)}</td>
+ *    <td>{@link #put(Object) put(e)}</td>
  *    <td>{@link #offer(Object, long, TimeUnit) offer(e, time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
- *    <td>{@link #remove remove()}</td>
- *    <td>{@link #poll poll()}</td>
- *    <td>{@link #take take()}</td>
+ *    <td>{@link #remove() remove()}</td>
+ *    <td>{@link #poll() poll()}</td>
+ *    <td>{@link #take() take()}</td>
  *    <td>{@link #poll(long, TimeUnit) poll(time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link #element element()}</td>
- *    <td>{@link #peek peek()}</td>
+ *    <td>{@link #element() element()}</td>
+ *    <td>{@link #peek() peek()}</td>
  *    <td><em>not applicable</em></td>
  *    <td><em>not applicable</em></td>
  *  </tr>
@@ -99,7 +98,7 @@ import java.util.Queue;
  *
  * <p>{@code BlockingQueue} implementations are designed to be used
  * primarily for producer-consumer queues, but additionally support
- * the {@link java.util.Collection} interface.  So, for example, it is
+ * the {@link Collection} interface.  So, for example, it is
  * possible to remove an arbitrary element from a queue using
  * {@code remove(x)}. However, such operations are in general
  * <em>not</em> performed very efficiently, and are intended for only

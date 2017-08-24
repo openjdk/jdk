@@ -113,8 +113,7 @@ public abstract class AbstractQueuedLongSynchronizer
      * @param newState the new state value
      */
     protected final void setState(long newState) {
-        // Use putLongVolatile instead of ordinary volatile store when
-        // using compareAndSwapLong, for sake of some 32bit systems.
+        // See JDK-8180620: Clarify VarHandle mixed-access subtleties
         STATE.setVolatile(this, newState);
     }
 

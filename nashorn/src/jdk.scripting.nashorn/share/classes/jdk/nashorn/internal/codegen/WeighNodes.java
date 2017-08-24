@@ -77,7 +77,6 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     static final long CALL_WEIGHT      = 10;
     static final long CATCH_WEIGHT     = 10;
     static final long COMPARE_WEIGHT   =  6;
-    static final long CONST_WEIGHT     =  2;
     static final long CONTINUE_WEIGHT  =  1;
     static final long IF_WEIGHT        =  2;
     static final long LITERAL_WEIGHT   = 10;
@@ -211,11 +210,6 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     @SuppressWarnings("rawtypes")
     @Override
     public boolean enterLiteralNode(final LiteralNode literalNode) {
-        if (literalNode instanceof LiteralNode.PrimitiveLiteralNode) {
-            weight += CONST_WEIGHT;
-            return false;
-        }
-
         weight += LITERAL_WEIGHT;
 
         if (literalNode instanceof ArrayLiteralNode) {

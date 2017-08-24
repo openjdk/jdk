@@ -25,6 +25,8 @@
  * @test
  * @bug 8170832 8180447
  * @summary Arguments passed in environment variable
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @build TestHelper
  * @run main ArgsEnvVar
  */
