@@ -134,7 +134,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 objArrayOop ConstantPool::resolved_references() const {
-  return (objArrayOop)JNIHandles::resolve(_cache->resolved_references());
+  return (objArrayOop)_cache->resolved_references();
 }
 
 // Create resolved_references array and mapping array for original cp indexes

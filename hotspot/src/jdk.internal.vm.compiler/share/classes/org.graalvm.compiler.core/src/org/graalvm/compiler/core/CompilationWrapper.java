@@ -82,26 +82,6 @@ public abstract class CompilationWrapper<T> {
          */
         ExitVM;
 
-        static ValueHelp HELP = new ValueHelp();
-
-        static class ValueHelp implements EnumOptionKey.ValueHelp<ExceptionAction> {
-            @Override
-            public String getHelp(Object value) {
-                ExceptionAction action = (ExceptionAction) value;
-                switch (action) {
-                    case Silent:
-                        return action + ": Print nothing to the console.";
-                    case Print:
-                        return action + ": Print a stack trace to the console.";
-                    case Diagnose:
-                        return action + ": Retry the compilation with extra diagnostics.";
-                    case ExitVM:
-                        return action + ": Same as " + Diagnose + " except that the VM process exits after retrying.";
-                }
-                return null;
-            }
-        }
-
         /**
          * Gets the action that is one level less verbose than this action, bottoming out at the
          * least verbose action.

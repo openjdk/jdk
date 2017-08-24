@@ -4660,6 +4660,12 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL, R
   }
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  z_lg(result, 0, result);
+}
+
 void MacroAssembler::load_mirror(Register mirror, Register method) {
   mem2reg_opt(mirror, Address(method, Method::const_offset()));
   mem2reg_opt(mirror, Address(mirror, ConstMethod::constants_offset()));
