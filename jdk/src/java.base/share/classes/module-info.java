@@ -26,8 +26,8 @@
 /**
  * Defines the foundational APIs of the Java SE Platform.
  *
- * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
- * <dt class="simpleTagLabel">Providers:</dt>
+ * <dl>
+ * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Providers:</dt>
  * <dd> The JDK implementation of this module provides an implementation of
  *      the {@index jrt jrt} {@linkplain java.nio.file.spi.FileSystemProvider
  *      file system provider} to enumerate and read the class and resource
@@ -36,8 +36,8 @@
  *      {@link java.nio.file.FileSystems#newFileSystem
  *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
  *      <p></dd>
- * <dt class="simpleTagLabel">Tool Guides:</dt>
- * <dd> {@extLink java_tool_reference java launcher},
+ * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Tool Guides:</dt>
+ * <dd style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif"> {@extLink java_tool_reference java launcher},
  *      {@extLink keytool_tool_reference keytool}</dd>
  * </dl>
  *

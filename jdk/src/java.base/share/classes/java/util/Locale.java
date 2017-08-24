@@ -3257,6 +3257,9 @@ public final class Locale implements Cloneable, Serializable {
      * Returns a list of matching {@code Locale} instances using the filtering
      * mechanism defined in RFC 4647.
      *
+     * This filter operation on the given {@code locales} ensures that only
+     * unique matching locale(s) are returned.
+     *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
      * @param locales {@code Locale} instances used for matching
@@ -3284,6 +3287,9 @@ public final class Locale implements Cloneable, Serializable {
      * {@link #filter(List, Collection, FilteringMode)} when {@code mode} is
      * {@link FilteringMode#AUTOSELECT_FILTERING}.
      *
+     * This filter operation on the given {@code locales} ensures that only
+     * unique matching locale(s) are returned.
+     *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
      * @param locales {@code Locale} instances used for matching
@@ -3303,6 +3309,17 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a list of matching languages tags using the basic filtering
      * mechanism defined in RFC 4647.
+     *
+     * This filter operation on the given {@code tags} ensures that only
+     * unique matching tag(s) are returned with preserved case. In case of
+     * duplicate matching tags with the case difference, the first matching
+     * tag with preserved case is returned.
+     * For example, "de-ch" is returned out of the duplicate matching tags
+     * "de-ch" and "de-CH", if "de-ch" is checked first for matching in the
+     * given {@code tags}. Note that if the given {@code tags} is an unordered
+     * {@code Collection}, the returned matching tag out of duplicate tags is
+     * subject to change, depending on the implementation of the
+     * {@code Collection}.
      *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
@@ -3330,6 +3347,17 @@ public final class Locale implements Cloneable, Serializable {
      * mechanism defined in RFC 4647. This is equivalent to
      * {@link #filterTags(List, Collection, FilteringMode)} when {@code mode}
      * is {@link FilteringMode#AUTOSELECT_FILTERING}.
+     *
+     * This filter operation on the given {@code tags} ensures that only
+     * unique matching tag(s) are returned with preserved case. In case of
+     * duplicate matching tags with the case difference, the first matching
+     * tag with preserved case is returned.
+     * For example, "de-ch" is returned out of the duplicate matching tags
+     * "de-ch" and "de-CH", if "de-ch" is checked first for matching in the
+     * given {@code tags}. Note that if the given {@code tags} is an unordered
+     * {@code Collection}, the returned matching tag out of duplicate tags is
+     * subject to change, depending on the implementation of the
+     * {@code Collection}.
      *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
@@ -3369,6 +3397,9 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns the best-matching language tag using the lookup mechanism
      * defined in RFC 4647.
+     *
+     * This lookup operation on the given {@code tags} ensures that the
+     * first matching tag with preserved case is returned.
      *
      * @param priorityList user's Language Priority List in which each language
      *     tag is sorted in descending order based on priority or weight
