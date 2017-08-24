@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,6 +63,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Edwin Goei
  *
  */
+@SuppressWarnings("deprecation")
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
     implements JAXPConstants, PSVIProvider {
 

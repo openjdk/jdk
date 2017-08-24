@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -131,6 +131,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @author Pavani Mukthipudi, Sun Microsystems
  *
  */
+@SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public class XSDHandler {
 
     /** Feature identifier: validation. */

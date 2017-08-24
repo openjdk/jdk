@@ -749,12 +749,14 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
 
-  $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX): $(BUILD_LIBJAWT)
-	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%, %, $@))
-	$(call MakeDir, $(@D))
-	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX) $@
+  $(eval $(call SetupCopyFiles, COPY_JAWT_LIB, \
+      FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX), \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
+  ))
 
-  TARGETS += $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX)
+  $(COPY_JAWT_LIB): $(BUILD_LIBJAWT)
+
+  TARGETS += $(COPY_JAWT_LIB)
 
 else # OPENJDK_TARGET_OS not windows
 

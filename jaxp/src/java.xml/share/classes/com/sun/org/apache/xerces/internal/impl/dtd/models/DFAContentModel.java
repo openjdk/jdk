@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -684,7 +683,7 @@ public class DFAContentModel
                         fTransTable[curState] = makeDefStateList();
 
             /* Optimization(Jan, 2001) */
-                        stateTable.put(newSet, new Integer(curState));
+                        stateTable.put(newSet, curState);
             /* Optimization(Jan, 2001) */
 
                         // We now have a new state to do so bump the count

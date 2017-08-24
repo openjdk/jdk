@@ -48,6 +48,7 @@ import static org.testng.Assert.*;
 
 @Test
 public class ModulesInCustomFileSystem {
+    private static final Path HERE = Paths.get("");
 
     /**
      * Test exploded modules in a JAR file system.
@@ -59,7 +60,7 @@ public class ModulesInCustomFileSystem {
         assertEquals(mlib, m2.getParent());
 
         // create JAR file containing m1/** and m2/**
-        Path jar = Files.createTempDirectory("mlib").resolve("modules.jar");
+        Path jar = Files.createTempDirectory(HERE, "mlib").resolve("modules.jar");
         JarUtils.createJarFile(jar, mlib);
         testJarFileSystem(jar);
     }
@@ -70,12 +71,12 @@ public class ModulesInCustomFileSystem {
     public void testModularJARsInJarFileSystem() throws Exception {
         Path m1 = findModuleDirectory("m1");
         Path m2 = findModuleDirectory("m2");
-        Path contents = Files.createTempDirectory("contents");
+        Path contents = Files.createTempDirectory(HERE, "contents");
         JarUtils.createJarFile(contents.resolve("m1.jar"), m1);
         JarUtils.createJarFile(contents.resolve("m2.jar"), m2);
 
         // create JAR file containing m1.jar and m2.jar
-        Path jar = Files.createTempDirectory("mlib").resolve("modules.jar");
+        Path jar = Files.createTempDirectory(HERE, "mlib").resolve("modules.jar");
         JarUtils.createJarFile(jar, contents);
         testJarFileSystem(jar);
     }

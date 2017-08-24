@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -157,7 +156,7 @@ public final class ObjectFactory {
         // assert(className != null);
         try{
             Class providerClass = findProviderClass(className, cl, doFallback);
-            Object instance = providerClass.newInstance();
+            Object instance = providerClass.getConstructor().newInstance();
             debugPrintln(()->"created new instance of " + providerClass +
                              " using ClassLoader: " + cl);
             return instance;

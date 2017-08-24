@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,6 +25,7 @@ import java.util.ArrayList;
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.InvocationTargetException;
 
 
 /**
@@ -134,13 +134,14 @@ public class ObjectPool implements java.io.Serializable
       // Create a new object if so.
       try
       {
-        return objectType.newInstance();
+        return objectType.getConstructor().newInstance();
       }
-      catch (InstantiationException ex){}
-      catch (IllegalAccessException ex){}
+      catch (InstantiationException | IllegalAccessException | SecurityException |
+              IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex){}
 
       // Throw unchecked exception for error in pool configuration.
-      throw new RuntimeException(XMLMessages.createXMLMessage(XMLErrorResources.ER_EXCEPTION_CREATING_POOL, null)); //"exception creating new instance for pool");
+      throw new RuntimeException(XMLMessages.createXMLMessage(
+              XMLErrorResources.ER_EXCEPTION_CREATING_POOL, null));
     }
     else
     {
