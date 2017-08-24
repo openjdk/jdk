@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4529320
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file UnresolvedExceptions.java
  * @run main UnresolvedExceptions
  * @summary Verifying jvm won't segv if exception not available

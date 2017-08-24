@@ -25,6 +25,7 @@
  * @test
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
+ *          jdk.naming.dns
  * @build PatchTest JarUtils jdk.testlibrary.*
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchTest
