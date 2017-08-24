@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class TagletWriterImpl extends TagletWriter {
         String desc = ch.getText(itt.getDescription());
 
         String anchorName = htmlWriter.getName(tagText);
-        Content result = HtmlTree.A_ID(anchorName, new StringContent(tagText));
+        Content result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
         if (configuration.createindex && !tagText.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
             si.setLabel(tagText);
@@ -115,7 +115,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
                     si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getSimpleName(element));
+                    si.setHolder(utils.getFullyQualifiedName(element));
                     return null;
                 }
 

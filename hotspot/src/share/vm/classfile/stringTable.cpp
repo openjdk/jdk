@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,12 @@ CompactHashtable<oop, char> StringTable::_shared_table;
 
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
-  return use_alternate_hashcode() ? AltHashing::murmur3_32(seed(), s, len) :
+  return use_alternate_hashcode() ? alt_hash_string(s, len) :
                                     java_lang_String::hash_code(s, len);
+}
+
+unsigned int StringTable::alt_hash_string(const jchar* s, int len) {
+  return AltHashing::murmur3_32(seed(), s, len);
 }
 
 unsigned int StringTable::hash_string(oop string) {
@@ -117,11 +121,10 @@ unsigned int StringTable::hash_string(oop string) {
   }
 }
 
-oop StringTable::lookup_shared(jchar* name, int len) {
-  // java_lang_String::hash_code() was used to compute hash values in the shared table. Don't
-  // use the hash value from StringTable::hash_string() as it might use alternate hashcode.
-  return _shared_table.lookup((const char*)name,
-                              java_lang_String::hash_code(name, len), len);
+oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
+  assert(hash == java_lang_String::hash_code(name, len),
+         "hash must be computed using java_lang_String::hash_code");
+  return _shared_table.lookup((const char*)name, hash, len);
 }
 
 oop StringTable::lookup_in_main_table(int index, jchar* name,
@@ -156,7 +159,7 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
   unsigned int hashValue;
   int index;
   if (use_alternate_hashcode()) {
-    hashValue = hash_string(name, len);
+    hashValue = alt_hash_string(name, len);
     index = hash_to_index(hashValue);
   } else {
     hashValue = hashValue_arg;
@@ -199,12 +202,15 @@ static void ensure_string_alive(oop string) {
 }
 
 oop StringTable::lookup(jchar* name, int len) {
-  oop string = lookup_shared(name, len);
+  // shared table always uses java_lang_String::hash_code
+  unsigned int hash = java_lang_String::hash_code(name, len);
+  oop string = lookup_shared(name, len, hash);
   if (string != NULL) {
     return string;
   }
-
-  unsigned int hash = hash_string(name, len);
+  if (use_alternate_hashcode()) {
+    hash = alt_hash_string(name, len);
+  }
   int index = the_table()->hash_to_index(hash);
   string = the_table()->lookup_in_main_table(index, name, len, hash);
 
@@ -215,12 +221,15 @@ oop StringTable::lookup(jchar* name, int len) {
 
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
-  oop found_string = lookup_shared(name, len);
+  // shared table always uses java_lang_String::hash_code
+  unsigned int hashValue = java_lang_String::hash_code(name, len);
+  oop found_string = lookup_shared(name, len, hashValue);
   if (found_string != NULL) {
     return found_string;
   }
-
-  unsigned int hashValue = hash_string(name, len);
+  if (use_alternate_hashcode()) {
+    hashValue = alt_hash_string(name, len);
+  }
   int index = the_table()->hash_to_index(hashValue);
   found_string = the_table()->lookup_in_main_table(index, name, len, hashValue);
 
@@ -305,7 +314,11 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
 }
 
 void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int* processed, int* removed) {
-  buckets_unlink_or_oops_do(is_alive, f, 0, the_table()->table_size(), processed, removed);
+  BucketUnlinkContext context;
+  buckets_unlink_or_oops_do(is_alive, f, 0, the_table()->table_size(), &context);
+  _the_table->bulk_free_entries(&context);
+  *processed = context._num_processed;
+  *removed = context._num_removed;
 }
 
 void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int* processed, int* removed) {
@@ -314,6 +327,7 @@ void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_aliv
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   const int limit = the_table()->table_size();
 
+  BucketUnlinkContext context;
   for (;;) {
     // Grab next set of buckets to scan
     int start_idx = Atomic::add(ClaimChunkSize, &_parallel_claimed_idx) - ClaimChunkSize;
@@ -323,8 +337,11 @@ void StringTable::possibly_parallel_unlink_or_oops_do(BoolObjectClosure* is_aliv
     }
 
     int end_idx = MIN2(limit, start_idx + ClaimChunkSize);
-    buckets_unlink_or_oops_do(is_alive, f, start_idx, end_idx, processed, removed);
+    buckets_unlink_or_oops_do(is_alive, f, start_idx, end_idx, &context);
   }
+  _the_table->bulk_free_entries(&context);
+  *processed = context._num_processed;
+  *removed = context._num_removed;
 }
 
 void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
@@ -350,7 +367,7 @@ void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
   }
 }
 
-void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, int* processed, int* removed) {
+void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f, int start_idx, int end_idx, BucketUnlinkContext* context) {
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
@@ -374,10 +391,9 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
         p = entry->next_addr();
       } else {
         *p = entry->next();
-        the_table()->free_entry(entry);
-        (*removed)++;
+        context->free_entry(entry);
       }
-      (*processed)++;
+      context->_num_processed++;
       entry = *p;
     }
   }

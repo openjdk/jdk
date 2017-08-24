@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,12 +106,16 @@ import jdk.internal.misc.SharedSecrets;
  * multiple decimal digits sets are specified for the same Unicode
  * range, one of the sets will take precedence as follows.
  *
- * <table border=1 cellspacing=3 cellpadding=0 summary="NumericShaper constants precedence.">
+ * <table class="plain">
+ * <caption>NumericShaper constants precedence</caption>
+ *    <thead>
  *    <tr>
  *       <th class="TableHeadingColor">Unicode Range</th>
  *       <th class="TableHeadingColor">{@code NumericShaper} Constants</th>
  *       <th class="TableHeadingColor">Precedence</th>
  *    </tr>
+ *    </thead>
+ *    <tbody>
  *    <tr>
  *       <td rowspan="2">Arabic</td>
  *       <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}<br>
@@ -123,12 +127,15 @@ import jdk.internal.misc.SharedSecrets;
  *           {@link NumericShaper.Range#EASTERN_ARABIC}</td>
  *       <td>{@link NumericShaper.Range#EASTERN_ARABIC}</td>
  *    </tr>
+ *    </tbody>
+ *    <tbody>
  *    <tr>
  *       <td>Tai Tham</td>
  *       <td>{@link NumericShaper.Range#TAI_THAM_HORA}<br>
  *           {@link NumericShaper.Range#TAI_THAM_THAM}</td>
  *       <td>{@link NumericShaper.Range#TAI_THAM_THAM}</td>
  *    </tr>
+ *    </tbody>
  * </table>
  *
  * @since 1.4

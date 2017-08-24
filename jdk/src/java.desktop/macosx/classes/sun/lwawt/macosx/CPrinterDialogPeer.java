@@ -68,6 +68,7 @@ public class CPrinterDialogPeer extends LWWindowPeer {
     public void setResizable(boolean resizable) {}
     public void setEnabled(boolean enable) {}
     public void setBounds(int x, int y, int width, int height) {}
+    @SuppressWarnings("deprecation")
     public boolean handleEvent(Event e) { return false; }
     public void setForeground(Color c) {}
     public void setBackground(Color c) {}
