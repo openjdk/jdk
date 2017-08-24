@@ -505,6 +505,8 @@ int ZEXPORT deflateResetKeep (strm)
     s->pending = 0;
     s->pending_out = s->pending_buf;
 
+    s->high_water = 0;      /* reset to its inital value 0 */
+
     if (s->wrap < 0) {
         s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
     }

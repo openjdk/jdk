@@ -11518,6 +11518,48 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
   ins_pipe(pipe_slow);
 %}
 
+// Unsigned long compare Instructions; really, same as signed long except they
+// produce an rFlagsRegU instead of rFlagsReg.
+instruct compUL_rReg(rFlagsRegU cr, rRegL op1, rRegL op2)
+%{
+  match(Set cr (CmpUL op1 op2));
+
+  format %{ "cmpq    $op1, $op2\t# unsigned" %}
+  opcode(0x3B);  /* Opcode 3B /r */
+  ins_encode(REX_reg_reg_wide(op1, op2), OpcP, reg_reg(op1, op2));
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+instruct compUL_rReg_imm(rFlagsRegU cr, rRegL op1, immL32 op2)
+%{
+  match(Set cr (CmpUL op1 op2));
+
+  format %{ "cmpq    $op1, $op2\t# unsigned" %}
+  opcode(0x81, 0x07); /* Opcode 81 /7 */
+  ins_encode(OpcSErm_wide(op1, op2), Con8or32(op2));
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct compUL_rReg_mem(rFlagsRegU cr, rRegL op1, memory op2)
+%{
+  match(Set cr (CmpUL op1 (LoadL op2)));
+
+  format %{ "cmpq    $op1, $op2\t# unsigned" %}
+  opcode(0x3B); /* Opcode 3B /r */
+  ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct testUL_reg(rFlagsRegU cr, rRegL src, immL0 zero)
+%{
+  match(Set cr (CmpUL src zero));
+
+  format %{ "testq   $src, $src\t# unsigned" %}
+  opcode(0x85);
+  ins_encode(REX_reg_reg_wide(src, src), OpcP, reg_reg(src, src));
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
 //----------Max and Min--------------------------------------------------------
 // Min Instructions
 
