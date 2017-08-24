@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 
 /**
- * This builder is optimized for reconstituting ModuleDescriptor
+ * This builder is optimized for reconstituting the {@code ModuleDescriptor}s
  * for system modules.  The validation should be done at jlink time.
  *
  * 1. skip name validation
@@ -136,9 +136,7 @@ final class Builder {
     }
 
     final String name;
-    boolean open;
-    boolean automatic;
-    boolean synthetic;
+    boolean open, synthetic, mandated;
     Set<Requires> requires;
     Set<Exports> exports;
     Set<Opens> opens;
@@ -147,9 +145,6 @@ final class Builder {
     Set<Provides> provides;
     Version version;
     String mainClass;
-    String osName;
-    String osArch;
-    String osVersion;
 
     Builder(String name) {
         this.name = name;
@@ -165,13 +160,13 @@ final class Builder {
         return this;
     }
 
-    Builder automatic(boolean value) {
-        this.automatic = value;
+    Builder synthetic(boolean value) {
+        this.synthetic = value;
         return this;
     }
 
-    Builder synthetic(boolean value) {
-        this.synthetic = value;
+    Builder mandated(boolean value) {
+        this.mandated = value;
         return this;
     }
 
@@ -228,13 +223,10 @@ final class Builder {
      *
      * @throws IllegalArgumentException if {@code v} is null or cannot be
      *         parsed as a version string
-     * @throws IllegalStateException if the module version is already set
      *
      * @see Version#parse(String)
      */
     public Builder version(String v) {
-        if (version != null)
-            throw new IllegalStateException("module version already set");
         Version ver = cachedVersion;
         if (ver != null && v.equals(ver.toString())) {
             version = ver;
@@ -246,50 +238,29 @@ final class Builder {
 
     /**
      * Sets the module main class.
-     *
-     * @throws IllegalStateException if already set
      */
     public Builder mainClass(String mc) {
-        if (mainClass != null)
-            throw new IllegalStateException("main class already set");
         mainClass = mc;
         return this;
     }
 
     /**
-     * Sets the OS name.
-     *
-     * @throws IllegalStateException if already set
+     * Returns an immutable set of the module modifiers derived from the flags.
      */
-    public Builder osName(String name) {
-        if (osName != null)
-            throw new IllegalStateException("OS name already set");
-        this.osName = name;
-        return this;
-    }
-
-    /**
-     * Sets the OS arch.
-     *
-     * @throws IllegalStateException if already set
-     */
-    public Builder osArch(String arch) {
-        if (osArch != null)
-            throw new IllegalStateException("OS arch already set");
-        this.osArch = arch;
-        return this;
-    }
-
-    /**
-     * Sets the OS version.
-     *
-     * @throws IllegalStateException if already set
-     */
-    public Builder osVersion(String version) {
-        if (osVersion != null)
-            throw new IllegalStateException("OS version already set");
-        this.osVersion = version;
-        return this;
+    private Set<ModuleDescriptor.Modifier> modifiers() {
+        int n = 0;
+        if (open) n++;
+        if (synthetic) n++;
+        if (mandated) n++;
+        if (n == 0) {
+            return Collections.emptySet();
+        } else {
+            ModuleDescriptor.Modifier[] mods = new ModuleDescriptor.Modifier[n];
+            if (open) mods[--n] = ModuleDescriptor.Modifier.OPEN;
+            if (synthetic) mods[--n] = ModuleDescriptor.Modifier.SYNTHETIC;
+            if (mandated) mods[--n] = ModuleDescriptor.Modifier.MANDATED;
+            return Set.of(mods);
+        }
     }
 
     /**
@@ -297,12 +268,9 @@ final class Builder {
      */
     public ModuleDescriptor build(int hashCode) {
         assert name != null;
-
         return JLMA.newModuleDescriptor(name,
                                         version,
-                                        open,
-                                        automatic,
-                                        synthetic,
+                                        modifiers(),
                                         requires,
                                         exports,
                                         opens,
@@ -310,9 +278,6 @@ final class Builder {
                                         provides,
                                         packages,
                                         mainClass,
-                                        osName,
-                                        osArch,
-                                        osVersion,
                                         hashCode);
     }
 }

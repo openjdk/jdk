@@ -37,6 +37,7 @@ package javax.security.auth.login;
  * the application.  The application can then take the appropriate
  * steps to assist the user in updating the password.
  *
+ * @since 1.4
  */
 public class CredentialExpiredException extends CredentialException {
 

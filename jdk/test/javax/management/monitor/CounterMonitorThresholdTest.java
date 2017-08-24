@@ -26,7 +26,7 @@
  * @bug 6229368 8025207
  * @summary Wrong threshold value in CounterMonitor with offset and modulus.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean CounterMonitorThresholdTest
  * @run build CounterMonitorThresholdTest
  * @run main CounterMonitorThresholdTest
