@@ -98,17 +98,17 @@ import java.io.IOException;
  * <caption style="display:none">Supported attributes</caption>
  * <thead>
  *   <tr>
- *     <th> Name </th>
- *     <th> Type </th>
+ *     <th scope="col"> Name </th>
+ *     <th scope="col"> Type </th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td> "acl" </td>
+ *     <th scope="row"> "acl" </th>
  *     <td> {@link List}&lt;{@link AclEntry}&gt; </td>
  *   </tr>
  *   <tr>
- *     <td> "owner" </td>
+ *     <th scope="row"> "owner" </th>
  *     <td> {@link UserPrincipal} </td>
  *   </tr>
  * </tbody>

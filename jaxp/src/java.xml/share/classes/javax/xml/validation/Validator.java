@@ -135,7 +135,7 @@ public abstract class Validator {
      * <caption>{@code Source} / {@code Result} Accepted</caption>
      * <thead>
      *  <tr>
-     *   <td></td>>
+     *   <td></td>
      *   <th scope="col">{@link javax.xml.transform.stream.StreamSource}</th>
      *   <th scope="col">{@link javax.xml.transform.sax.SAXSource}</th>
      *   <th scope="col">{@link javax.xml.transform.dom.DOMSource}</th>
