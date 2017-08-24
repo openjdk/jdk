@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,13 +89,16 @@ import java.util.Objects;
  * The following table lists some common properties which service providers
  * should use, if applicable:
  *
- * <table border=0>
- *  <caption>Audio Format Properties</caption>
+ * <table class="striped">
+ * <caption>Audio Format Properties</caption>
+ * <thead>
  *  <tr>
  *   <th>Property key</th>
  *   <th>Value type</th>
  *   <th>Description</th>
  *  </tr>
+ * </thead>
+ * <tbody>
  *  <tr>
  *   <td>&quot;bitrate&quot;</td>
  *   <td>{@link java.lang.Integer Integer}</td>
@@ -112,6 +115,7 @@ import java.util.Objects;
  *   <td>{@link java.lang.Integer Integer}</td>
  *   <td>encoding/conversion quality, 1..100</td>
  *  </tr>
+ * </tbody>
  * </table>
  * <p>
  * Vendors of service providers (plugins) are encouraged to seek information

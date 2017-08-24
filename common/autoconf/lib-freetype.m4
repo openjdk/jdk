@@ -194,6 +194,8 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
       [specify directory with freetype sources to automatically build the library (experimental, Windows-only)])])
   AC_ARG_ENABLE(freetype-bundling, [AS_HELP_STRING([--disable-freetype-bundling],
       [disable bundling of the freetype library with the build result @<:@enabled on Windows or when using --with-freetype, disabled otherwise@:>@])])
+  AC_ARG_WITH(freetype-license, [AS_HELP_STRING([--with-freetype-license],
+      [if bundling freetype, also bundle this license file])])
 
   # Need to specify explicitly since it needs to be overridden on some versions of macosx
   FREETYPE_BASE_NAME=freetype
@@ -443,7 +445,21 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
   fi # end freetype needed
 
+  FREETYPE_LICENSE=""
+  if test "x$with_freetype_license" = "xyes"; then
+    AC_MSG_ERROR([--with-freetype-license must have a value])
+  elif test "x$with_freetype_license" != "x"; then
+    AC_MSG_CHECKING([for freetype license])
+    AC_MSG_RESULT([$with_freetype_license])
+    FREETYPE_LICENSE="$with_freetype_license"
+    BASIC_FIXUP_PATH(FREETYPE_LICENSE)
+    if test ! -f "$FREETYPE_LICENSE"; then
+      AC_MSG_ERROR([$FREETYPE_LICENSE cannot be found])
+    fi
+  fi
+
   AC_SUBST(FREETYPE_BUNDLE_LIB_PATH)
   AC_SUBST(FREETYPE_CFLAGS)
   AC_SUBST(FREETYPE_LIBS)
+  AC_SUBST(FREETYPE_LICENSE)
 ])

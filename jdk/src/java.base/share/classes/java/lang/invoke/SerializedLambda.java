@@ -54,6 +54,7 @@ import java.util.Objects;
  * lambda actually captured by that class.
  *
  * @see LambdaMetafactory
+ * @since 1.8
  */
 public final class SerializedLambda implements Serializable {
     private static final long serialVersionUID = 8025925345765570181L;

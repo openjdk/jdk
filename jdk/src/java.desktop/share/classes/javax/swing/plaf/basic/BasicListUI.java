@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,8 +583,14 @@ public class BasicListUI extends ListUI
 
     /**
      * The preferredSize of the list depends upon the layout orientation.
-     * <table summary="Describes the preferred size for each layout orientation">
+     *
+     * <table class="striped">
+     * <caption>Describes the preferred size for each layout orientation
+     * </caption>
+     * <thead>
      * <tr><th>Layout Orientation</th><th>Preferred Size</th></tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td>JList.VERTICAL
      *   <td>The preferredSize of the list is total height of the rows
@@ -626,6 +632,7 @@ public class BasicListUI extends ListUI
      *       Max cell height is either the fixed
      *       cell height, or is determined by iterating through all the cells
      *       to find the maximum height from the ListCellRenderer.
+     * </tbody>
      * </table>
      * The above specifies the raw preferred width and height. The resulting
      * preferred width is the above width + insets.left + insets.right and
