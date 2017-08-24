@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,41 +38,46 @@ import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWrit
  * @author shih-chang.chen@oracle.com
  */
 public class StaxReaderBridge extends StaxBridge {
-        private XMLStreamReader in;
+    private XMLStreamReader in;
 
-        public StaxReaderBridge(XMLStreamReader reader, SOAPPartImpl soapPart) throws SOAPException {
-                super(soapPart);
-                in = reader;
-                final String soapEnvNS = soapPart.getSOAPNamespace();
-                breakpoint =  new XMLStreamReaderToXMLStreamWriter.Breakpoint(reader, saajWriter) {
-                        boolean seenBody = false;
-                        boolean stopedAtBody = false;
-                    public boolean proceedBeforeStartElement()  {
-                        if (stopedAtBody) return true;
-                        if (seenBody) {
-                                stopedAtBody = true;
-                                return false;
-                        }
-                            if ("Body".equals(reader.getLocalName()) && soapEnvNS.equals(reader.getNamespaceURI()) ){
-                                seenBody = true;
-                            }
-                            return true;
+    public StaxReaderBridge(XMLStreamReader reader, SOAPPartImpl soapPart) throws SOAPException {
+        super(soapPart);
+        in = reader;
+        final String soapEnvNS = soapPart.getSOAPNamespace();
+        breakpoint =  new XMLStreamReaderToXMLStreamWriter.Breakpoint(reader, saajWriter) {
+                boolean seenBody = false;
+                boolean stopedAtBody = false;
+                @Override
+                public boolean proceedBeforeStartElement()  {
+                    if (stopedAtBody) return true;
+                    if (seenBody) {
+                        stopedAtBody = true;
+                        return false;
                     }
-                };
-        }
+                    if ("Body".equals(reader.getLocalName()) && soapEnvNS.equals(reader.getNamespaceURI()) ){
+                        seenBody = true;
+                    }
+                    return true;
+                }
+            };
+    }
 
+    @Override
     public XMLStreamReader getPayloadReader() {
         return in;
     }
 
+    @Override
     public QName getPayloadQName() {
         return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getName() : null;
     }
 
+    @Override
     public String getPayloadAttributeValue(String attName) {
         return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getAttributeValue(null, attName) : null;
     }
 
+    @Override
     public String getPayloadAttributeValue(QName attName) {
         return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getAttributeValue(attName.getNamespaceURI(), attName.getLocalPart()) : null;
     }

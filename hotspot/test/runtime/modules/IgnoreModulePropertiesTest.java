@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class IgnoreModulePropertiesTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-D" + prop + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("java version ");
+        output.shouldContain(" version ");
         output.shouldHaveExitValue(0);
 
         // Ensure that the property and its value aren't available.
@@ -67,8 +67,8 @@ public class IgnoreModulePropertiesTest {
     }
 
     public static void main(String[] args) throws Exception {
-        testOption("--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.ResolutionException");
-        testOption("--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.ResolutionException");
+        testOption("--add-modules", "java.sqlx", "jdk.module.addmods.0", "java.lang.module.FindException");
+        testOption("--limit-modules", "java.sqlx", "jdk.module.limitmods", "java.lang.module.FindException");
         testOption("--add-reads", "xyzz=yyzd", "jdk.module.addreads.0", "WARNING: Unknown module: xyzz");
         testOption("--add-exports", "java.base/xyzz=yyzd", "jdk.module.addexports.0",
                    "WARNING: package xyzz not in java.base");

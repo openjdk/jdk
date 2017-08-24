@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.*;
 
-import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Configuration;
@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 
 
 /**
- * Process and manage grouping of packages, as specified by "-group" option on
+ * Process and manage grouping of elements, as specified by "-group" option on
  * the command line.
  * <p>
  * For example, if user has used -group option as
@@ -79,10 +79,10 @@ public class Group {
     private List<String> groupList = new ArrayList<>();
 
     /**
-     * Map of non-regular expressions(possible package names) with the
+     * Map of non-regular expressions(possible package or module names) with the
      * corresponding group name.
      */
-    private Map<String,String> pkgNameGroupMap = new HashMap<>();
+    private Map<String,String> elementNameGroupMap = new HashMap<>();
 
     /**
      * The global configuration information for this run.
@@ -107,11 +107,57 @@ public class Group {
     }
 
     /**
+     * Depending upon the format of the module name provided in the "-group"
+     * option, generate two separate maps. There will be a map for mapping
+     * regular expression(only meta character allowed is '*' and that is at the
+     * end of the regular expression) on to the group name. And another map
+     * for mapping (possible) module names(if the name format doesn't contain
+     * meta character '*', then it is assumed to be a module name) on to the
+     * group name. This will also sort all the regular expressions found in the
+     * reverse order of their lengths, i.e. longest regular expression will be
+     * first in the sorted list.
+     *
+     * @param groupname       The name of the group from -group option.
+     * @param moduleNameFormList List of the module name formats.
+     */
+    public boolean checkModuleGroups(String groupname, String moduleNameFormList) {
+        String[] mdlPatterns = moduleNameFormList.split(":");
+        if (groupList.contains(groupname)) {
+            initMessages();
+            messages.warning("doclet.Groupname_already_used", groupname);
+            return false;
+        }
+        groupList.add(groupname);
+        for (String mdlPattern : mdlPatterns) {
+            if (mdlPattern.length() == 0) {
+                initMessages();
+                messages.warning("doclet.Error_in_grouplist", groupname, moduleNameFormList);
+                return false;
+            }
+            if (mdlPattern.endsWith("*")) {
+                mdlPattern = mdlPattern.substring(0, mdlPattern.length() - 1);
+                if (foundGroupFormat(regExpGroupMap, mdlPattern)) {
+                    return false;
+                }
+                regExpGroupMap.put(mdlPattern, groupname);
+                sortedRegExpList.add(mdlPattern);
+            } else {
+                if (foundGroupFormat(elementNameGroupMap, mdlPattern)) {
+                    return false;
+                }
+                elementNameGroupMap.put(mdlPattern, groupname);
+            }
+        }
+        Collections.sort(sortedRegExpList, new MapKeyComparator());
+        return true;
+    }
+
+    /**
      * Depending upon the format of the package name provided in the "-group"
      * option, generate two separate maps. There will be a map for mapping
      * regular expression(only meta character allowed is '*' and that is at the
      * end of the regular expression) on to the group name. And another map
-     * for mapping (possible) package names(if the name format doesen't contain
+     * for mapping (possible) package names(if the name format doesn't contain
      * meta character '*', then it is assumed to be a package name) on to the
      * group name. This will also sort all the regular expressions found in the
      * reverse order of their lengths, i.e. longest regular expression will be
@@ -121,32 +167,31 @@ public class Group {
      * @param pkgNameFormList List of the package name formats.
      */
     public boolean checkPackageGroups(String groupname, String pkgNameFormList) {
-        StringTokenizer strtok = new StringTokenizer(pkgNameFormList, ":");
+        String[] pkgPatterns = pkgNameFormList.split(":");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
             return false;
         }
         groupList.add(groupname);
-        while (strtok.hasMoreTokens()) {
-            String id = strtok.nextToken();
-            if (id.length() == 0) {
+        for (String pkgPattern : pkgPatterns) {
+            if (pkgPattern.length() == 0) {
                 initMessages();
-                messages.warning("doclet.Error_in_packagelist", groupname, pkgNameFormList);
+                messages.warning("doclet.Error_in_grouplist", groupname, pkgNameFormList);
                 return false;
             }
-            if (id.endsWith("*")) {
-                id = id.substring(0, id.length() - 1);
-                if (foundGroupFormat(regExpGroupMap, id)) {
+            if (pkgPattern.endsWith("*")) {
+                pkgPattern = pkgPattern.substring(0, pkgPattern.length() - 1);
+                if (foundGroupFormat(regExpGroupMap, pkgPattern)) {
                     return false;
                 }
-                regExpGroupMap.put(id, groupname);
-                sortedRegExpList.add(id);
+                regExpGroupMap.put(pkgPattern, groupname);
+                sortedRegExpList.add(pkgPattern);
             } else {
-                if (foundGroupFormat(pkgNameGroupMap, id)) {
+                if (foundGroupFormat(elementNameGroupMap, pkgPattern)) {
                     return false;
                 }
-                pkgNameGroupMap.put(id, groupname);
+                elementNameGroupMap.put(pkgPattern, groupname);
             }
         }
         Collections.sort(sortedRegExpList, new MapKeyComparator());
@@ -162,20 +207,62 @@ public class Group {
     }
 
     /**
-     * Search if the given map has given the package format.
+     * Search if the given map has the given element format.
      *
      * @param map Map to be searched.
-     * @param pkgFormat The pacakge format to search.
+     * @param elementFormat The format to search.
      *
-     * @return true if package name format found in the map, else false.
+     * @return true if element name format found in the map, else false.
      */
-    boolean foundGroupFormat(Map<String,?> map, String pkgFormat) {
-        if (map.containsKey(pkgFormat)) {
+    boolean foundGroupFormat(Map<String,?> map, String elementFormat) {
+        if (map.containsKey(elementFormat)) {
             initMessages();
-            messages.error("doclet.Same_package_name_used", pkgFormat);
+            messages.error("doclet.Same_element_name_used", elementFormat);
             return true;
         }
         return false;
+    }
+
+    /**
+     * Group the modules according the grouping information provided on the
+     * command line. Given a list of modules, search each module name in
+     * regular expression map as well as module name map to get the
+     * corresponding group name. Create another map with mapping of group name
+     * to the module list, which will fall under the specified group. If any
+     * module doesn't belong to any specified group on the command line, then
+     * a new group named "Other Modules" will be created for it. If there are
+     * no groups found, in other words if "-group" option is not at all used,
+     * then all the modules will be grouped under group "Modules".
+     *
+     * @param modules Specified modules.
+     * @return map of group names and set of module elements.
+     */
+    public Map<String, SortedSet<ModuleElement>> groupModules(Set<ModuleElement> modules) {
+        Map<String, SortedSet<ModuleElement>> groupModuleMap = new HashMap<>();
+        String defaultGroupName =
+            (elementNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
+                configuration.getResources().getText("doclet.Modules") :
+                configuration.getResources().getText("doclet.Other_Modules");
+        // if the user has not used the default group name, add it
+        if (!groupList.contains(defaultGroupName)) {
+            groupList.add(defaultGroupName);
+        }
+        for (ModuleElement mdl : modules) {
+            String moduleName = mdl.isUnnamed() ? null : mdl.getQualifiedName().toString();
+            String groupName = mdl.isUnnamed() ? null : elementNameGroupMap.get(moduleName);
+            // if this module is not explicitly assigned to a group,
+            // try matching it to group specified by regular expression
+            if (groupName == null) {
+                groupName = regExpGroupName(moduleName);
+            }
+            // if it is in neither group map, put it in the default
+            // group
+            if (groupName == null) {
+                groupName = defaultGroupName;
+            }
+            getModuleList(groupModuleMap, groupName).add(mdl);
+        }
+        return groupModuleMap;
     }
 
     /**
@@ -184,17 +271,18 @@ public class Group {
      * regular expression map as well as package name map to get the
      * corresponding group name. Create another map with mapping of group name
      * to the package list, which will fall under the specified group. If any
-     * package doesen't belong to any specified group on the comamnd line, then
+     * package doesn't belong to any specified group on the command line, then
      * a new group named "Other Packages" will be created for it. If there are
      * no groups found, in other words if "-group" option is not at all used,
      * then all the packages will be grouped under group "Packages".
      *
      * @param packages Packages specified on the command line.
+     * @return map of group names and set of package elements
      */
     public Map<String, SortedSet<PackageElement>> groupPackages(Set<PackageElement> packages) {
         Map<String, SortedSet<PackageElement>> groupPackageMap = new HashMap<>();
         String defaultGroupName =
-            (pkgNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
+            (elementNameGroupMap.isEmpty() && regExpGroupMap.isEmpty())?
                 configuration.getResources().getText("doclet.Packages") :
                 configuration.getResources().getText("doclet.Other_Packages");
         // if the user has not used the default group name, add it
@@ -203,7 +291,7 @@ public class Group {
         }
         for (PackageElement pkg : packages) {
             String pkgName = pkg.isUnnamed() ? null : configuration.utils.getPackageName(pkg);
-            String groupName = pkg.isUnnamed() ? null : pkgNameGroupMap.get(pkgName);
+            String groupName = pkg.isUnnamed() ? null : elementNameGroupMap.get(pkgName);
             // if this package is not explicitly assigned to a group,
             // try matching it to group specified by regular expression
             if (groupName == null) {
@@ -220,15 +308,15 @@ public class Group {
     }
 
     /**
-     * Search for package name in the sorted regular expression
+     * Search for element name in the sorted regular expression
      * list, if found return the group name.  If not, return null.
      *
-     * @param pkgName Name of package to be found in the regular
+     * @param elementName Name of element to be found in the regular
      * expression list.
      */
-    String regExpGroupName(String pkgName) {
+    String regExpGroupName(String elementName) {
         for (String regexp : sortedRegExpList) {
-            if (pkgName.startsWith(regexp)) {
+            if (elementName.startsWith(regexp)) {
                 return regExpGroupMap.get(regexp);
             }
         }
@@ -239,12 +327,24 @@ public class Group {
      * For the given group name, return the package list, on which it is mapped.
      * Create a new list, if not found.
      *
-     * @param map Map to be searched for gorup name.
+     * @param map Map to be searched for group name.
      * @param groupname Group name to search.
      */
     SortedSet<PackageElement> getPkgList(Map<String, SortedSet<PackageElement>> map,
             String groupname) {
         return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.makePackageComparator()));
+    }
+
+    /**
+     * For the given group name, return the module list, on which it is mapped.
+     * Create a new list, if not found.
+     *
+     * @param map Map to be searched for group name.
+     * @param groupname Group name to search.
+     */
+    SortedSet<ModuleElement> getModuleList(Map<String, SortedSet<ModuleElement>> map,
+            String groupname) {
+        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.makeModuleComparator()));
     }
 
     /**

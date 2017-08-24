@@ -838,7 +838,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         for(TypeElement a  : annotationsPresent) {
             ModuleElement mod = elementUtils.getModuleOf(a);
-            String moduleSpec = allowModules && mod != null ? mod.getSimpleName() + "/" : "";
+            String moduleSpec = allowModules && mod != null ? mod.getQualifiedName() + "/" : "";
             unmatchedAnnotations.put(moduleSpec + a.getQualifiedName().toString(),
                                      a);
         }
@@ -1059,8 +1059,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             roots = prev.roots.appendList(parsedFiles);
 
             // Check for errors after parsing
-            if (unrecoverableError())
+            if (unrecoverableError()) {
+                compiler.initModules(List.nil());
                 return;
+            }
 
             roots = compiler.initModules(roots);
 
