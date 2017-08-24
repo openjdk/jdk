@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,8 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      * {@link javax.management.openmbean.TabularData TabularData}
      * with two items in each row as follows:
      * <blockquote>
-     * <table border summary="Name and Type for each item">
+     * <table border="1">
+     * <caption style="display:none">Name and Type for each item</caption>
      * <tr>
      *   <th>Item Name</th>
      *   <th>Item Type</th>

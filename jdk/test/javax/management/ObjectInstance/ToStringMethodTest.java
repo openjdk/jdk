@@ -26,7 +26,7 @@
  * @bug 5080083
  * @summary Test new added method "toString"
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean ToStringMethodTest
  * @run build ToStringMethodTest
  * @run main ToStringMethodTest

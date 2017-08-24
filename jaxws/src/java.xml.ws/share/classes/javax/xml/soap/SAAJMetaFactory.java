@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package javax.xml.soap;
 * The access point for the implementation classes of the factories defined in the
 * SAAJ API. The {@code newInstance} methods defined on factories {@link SOAPFactory} and
 * {@link MessageFactory} in SAAJ 1.3 defer to instances of this class to do the actual object creation.
-* The implementations of {@code newInstance()} methods (in SOAPFactory and MessageFactory)
+* The implementations of {@code newInstance()} methods (in {@link SOAPFactory} and {@link MessageFactory})
 * that existed in SAAJ 1.2 have been updated to also delegate to the SAAJMetaFactory when the SAAJ 1.2
 * defined lookup fails to locate the Factory implementation class name.
 *
@@ -94,7 +94,7 @@ public abstract class SAAJMetaFactory {
 
             } catch (Exception e) {
                 throw new SOAPException(
-                    "Unable to create SAAJ meta-factory" + e.getMessage());
+                    "Unable to create SAAJ meta-factory: " + e.getMessage());
             }
     }
 

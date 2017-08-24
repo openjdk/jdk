@@ -73,3 +73,11 @@ void MethodCounters::set_highest_osr_comp_level(int level) {
 #endif
 }
 
+
+void MethodCounters::print_value_on(outputStream* st) const {
+  assert(is_methodCounters(), "must be methodCounters");
+  st->print("method counters");
+  print_address_on(st);
+}
+
+
