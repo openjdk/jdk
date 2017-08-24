@@ -99,7 +99,7 @@ public interface Constants extends InstructionConstants {
         = com.sun.org.apache.bcel.internal.Constants.ACC_STATIC;
 
     public static final String MODULE_SIG
-        = "Ljava/lang/reflect/Module;";
+        = "Ljava/lang/Module;";
     public static final String CLASS_SIG
         = "Ljava/lang/Class;";
     public static final String STRING_SIG
@@ -255,7 +255,7 @@ public interface Constants extends InstructionConstants {
     public static final String CLASS_CLASS
         = "java.lang.Class";
     public static final String MODULE_CLASS
-        = "java.lang.reflect.Module";
+        = "java.lang.Module";
     public static final String STRING_CLASS
         = "java.lang.String";
     public static final String OBJECT_CLASS

@@ -234,8 +234,8 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 
-bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, int c, LIR_Opr result, LIR_Opr tmp) {
-  if (tmp->is_valid()) {
+bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
+  if (tmp->is_valid() && c > 0 && c < max_jint) {
     if (is_power_of_2(c + 1)) {
       __ move(left, tmp);
       __ shift_left(left, log2_intptr(c + 1), left);
@@ -603,8 +603,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
       bool use_constant = false;
       bool use_tmp = false;
       if (right_arg->is_constant()) {
-        int iconst = right_arg->get_jint_constant();
-        if (iconst > 0) {
+        jint iconst = right_arg->get_jint_constant();
+        if (iconst > 0 && iconst < max_jint) {
           if (is_power_of_2(iconst)) {
             use_constant = true;
           } else if (is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1)) {
@@ -1429,12 +1429,17 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
 
   // info for exceptions
-  CodeEmitInfo* info_for_exception = state_for(x);
+  CodeEmitInfo* info_for_exception =
+      (x->needs_exception_state() ? state_for(x) :
+                                    state_for(x, x->state_before(), true /*ignore_xhandler*/));
 
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == NULL, "can't patch this");
     stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+  } else if (x->is_invokespecial_receiver_check()) {
+    assert(patching_info == NULL, "can't patch this");
+    stub = new DeoptimizeStub(info_for_exception, Deoptimization::Reason_class_check, Deoptimization::Action_none);
   } else {
     stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
