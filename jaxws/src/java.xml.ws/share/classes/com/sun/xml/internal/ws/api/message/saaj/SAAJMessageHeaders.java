@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
 
+import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
+import com.sun.xml.internal.messaging.saaj.soap.impl.HeaderImpl;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Header;
@@ -234,11 +236,12 @@ public class SAAJMessageHeaders implements MessageHeaders {
         if (soapHeader == null) {
             return null;
         }
+        SOAPDocumentImpl soapDocument = ((HeaderImpl)soapHeader).getSoapDocument();
         SOAPHeaderElement headerElem = find(nsUri, localName);
         if (headerElem == null) {
             return null;
         }
-        headerElem = (SOAPHeaderElement) soapHeader.removeChild(headerElem);
+        headerElem = (SOAPHeaderElement) soapDocument.find(soapHeader.removeChild(headerElem));
 
         //it might have been a nonSAAJHeader - remove from that map
         removeNonSAAJHeader(headerElem);
@@ -330,7 +333,7 @@ public class SAAJMessageHeaders implements MessageHeaders {
 
     private void addNonSAAJHeader(SOAPHeaderElement headerElem, Header header) {
         if (nonSAAJHeaders == null) {
-            nonSAAJHeaders = new HashMap<SOAPHeaderElement, Header>();
+            nonSAAJHeaders = new HashMap<>();
         }
         nonSAAJHeaders.put(headerElem, header);
     }

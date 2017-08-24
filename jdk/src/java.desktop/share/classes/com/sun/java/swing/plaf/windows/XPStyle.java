@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ class XPStyle {
      *
      * @param part a <code>Part</code>
      * @param state a <code>String</code>
-     * @param attributeKey a <code>String</code>
+     * @param prop a <code>String</code>
      * @return a <code>String</code> or null if key is not found
      *    in the current style
      *
@@ -172,7 +172,6 @@ class XPStyle {
 
     /** Get a named <code>Dimension</code> value from the current style
      *
-     * @param key a <code>String</code>
      * @return a <code>Dimension</code> or null if key is not found
      *    in the current style
      *
@@ -189,7 +188,6 @@ class XPStyle {
     /** Get a named <code>Point</code> (e.g. a location or an offset) value
      *  from the current style
      *
-     * @param key a <code>String</code>
      * @return a <code>Point</code> or null if key is not found
      *    in the current style
      *
@@ -205,7 +203,6 @@ class XPStyle {
 
     /** Get a named <code>Insets</code> value from the current style
      *
-     * @param key a <code>String</code>
      * @return an <code>Insets</code> object or null if key is not found
      *    in the current style
      *
@@ -223,7 +220,6 @@ class XPStyle {
 
     /** Get a named <code>Color</code> value from the current style
      *
-     * @param part a <code>Part</code>
      * @return a <code>Color</code> or null if key is not found
      *    in the current style
      */
@@ -479,6 +475,7 @@ class XPStyle {
 
         private final String string;
         private Dimension size = null;
+        private boolean switchStates = false;
 
         Skin(Component component, Part part) {
             this(component, part, null);
@@ -511,6 +508,14 @@ class XPStyle {
                 part.getControlName(null), part.getValue(),
                 0, boundingWidth, boundingHeight);
             return (insets != null) ? insets : new Insets(0, 0, 0, 0);
+        }
+
+        boolean haveToSwitchStates() {
+            return switchStates;
+        }
+
+        void switchStates(boolean b) {
+            switchStates = b;
         }
 
         private int getWidth(State state) {
@@ -689,7 +694,7 @@ class XPStyle {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class GlyphButton extends JButton {
-        private Skin skin;
+        protected Skin skin;
 
         public GlyphButton(Component parent, Part part) {
             XPStyle xp = getXP();

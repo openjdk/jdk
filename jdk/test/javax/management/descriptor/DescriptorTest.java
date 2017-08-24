@@ -26,7 +26,7 @@
  * @bug 6204469 6273765
  * @summary Test various aspects of the Descriptor interface
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DescriptorTest
  * @run build DescriptorTest
  * @run main DescriptorTest

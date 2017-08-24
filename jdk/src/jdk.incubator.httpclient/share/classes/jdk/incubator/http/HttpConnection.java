@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ abstract class HttpConnection implements Closeable {
     }
 
     /* Returns either a plain HTTP connection or a plain tunnelling connection
-     * for proxied websockets */
+     * for proxied WebSocket */
     private static HttpConnection getPlainConnection(InetSocketAddress addr,
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
@@ -152,15 +152,16 @@ abstract class HttpConnection implements Closeable {
             HttpClientImpl client,
             HttpRequestImpl request, boolean isHttp2)
     {
-        HttpConnection c;
+        HttpConnection c = null;
         InetSocketAddress proxy = request.proxy(client);
         boolean secure = request.secure();
         ConnectionPool pool = client.connectionPool();
         String[] alpn =  null;
 
-        if (secure && client.version() == HttpClient.Version.HTTP_2) {
-            alpn = new String[1];
+        if (secure && isHttp2) {
+            alpn = new String[2];
             alpn[0] = "h2";
+            alpn[1] = "http/1.1";
         }
 
         if (!secure) {
@@ -171,7 +172,9 @@ abstract class HttpConnection implements Closeable {
                 return getPlainConnection(addr, proxy, request, client);
             }
         } else {
-            c = pool.getConnection(true, addr, proxy);
+            if (!isHttp2) { // if http2 we don't cache connections
+                c = pool.getConnection(true, addr, proxy);
+            }
             if (c != null) {
                 return c;
             } else {
@@ -320,12 +323,9 @@ abstract class HttpConnection implements Closeable {
         }
     }
 
-    final int read(ByteBuffer buffer) throws IOException {
-        return readImpl(buffer);
-    }
-
     final ByteBuffer read() throws IOException {
-        return readImpl();
+        ByteBuffer b = readImpl();
+        return b;
     }
 
     /*
@@ -333,9 +333,6 @@ abstract class HttpConnection implements Closeable {
      * reached EOF.
      */
     protected abstract ByteBuffer readImpl() throws IOException;
-
-    /** Reads as much as possible into given buffer and returns amount read. */
-    protected abstract int readImpl(ByteBuffer buffer) throws IOException;
 
     @Override
     public String toString() {

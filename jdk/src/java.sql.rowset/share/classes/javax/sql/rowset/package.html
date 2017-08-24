@@ -1,11 +1,11 @@
-<!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 
   <meta http-equiv="Content-Type"
  content="text/html; charset=iso-8859-1">
 <!--
-Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ questions.
 -->
   <title>javax.sql.rowset Package</title>
 </head>
-  <body bgcolor="#ffffff">
+  <body>
 
 <!-- Description clause -->
 Standard interfaces and base classes for JDBC <code>RowSet</code>
@@ -48,7 +48,7 @@ that a standard <code>RowSet</code> implementation either implements or extends.
 <li><a href="#reldocs">5.0 Related Documentation</a>
 </ul>
 
-<h3><a name="pkgspec">1.0 Package Specification</a></h3>
+<h3><a id="pkgspec">1.0 Package Specification</a></h3>
 This package specifies five standard JDBC <code>RowSet</code> interfaces.
  All five extend the 
 <a href="../RowSet.html">RowSet</a> interface described in the JDBC 3.0
@@ -63,7 +63,7 @@ developers who intend to provide their own compliant <code>RowSet</code> impleme
 should pay particular attention to the assertions detailed in specification
 interfaces. 
 
-<h3><a name="stdrowset">2.0 Standard RowSet Definitions</a></h3>
+<h3><a id="stdrowset">2.0 Standard RowSet Definitions</a></h3>
 <ul>
 <li><a href="JdbcRowSet.html"><b><code>JdbcRowSet</code></b></a> - A wrapper around
 a <code>ResultSet</code> object that makes it possible to use the result set as a
@@ -136,7 +136,7 @@ column matches, a <code>JoinRowSet</code> object establishes relationships betwe
 <code>RowSet</code> instances without the need to touch the originating data source.
 </ul>
 
-<h3><a name="impl">3.0 Implementer's Guide</a></h3>
+<h3><a id="impl">3.0 Implementer's Guide</a></h3>
 Compliant implementations of JDBC <code>RowSet</code> Implementations
 <b>must</b> follow the assertions described in this specification. In accordance
 with the terms of the <a href="http://www.jcp.org">Java Community Process</a>, a
@@ -173,47 +173,40 @@ the <code>BaseRowSet</code> class as a basis for their implementations.
 The following table illustrates the features that the <code>BaseRowSet</code>
 abstract class provides.
   <blockquote>
-    <table cellpadding="2" cellspacing="2" border="1" width="75%">
+    <table class="striped" style="vertical-align:top; width:75%">
+	<caption>Features in <code>BaseRowSet</code></caption>
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Details</th>
+            </tr>
+          </thead>
           <tbody>
             <tr>
-              <td valign="top"><b>Feature</b><br>
-              </td>
-              <td valign="top"><b>Details</b><br>
-              </td>
-            </tr>
-            <tr>
-              <td valign="top">Properties<br>
-              </td>
-              <td valign="top">Provides standard JavaBeans property manipulation
+              <td>Properties</td>
+              <td>Provides standard JavaBeans property manipulation
 mechanisms to allow applications to get and set <code>RowSet</code> command and
 property  values. Refer to the   documentation of the <code>javax.sql.RowSet</code>
 interface  (available in the JDBC 3.0 specification) for more details on
-the standard  <code>RowSet</code> properties.<br>
-              </td>
+the standard  <code>RowSet</code> properties.</td>
             </tr>
             <tr>
-              <td valign="top">Event notification<br>
-              </td>
-              <td valign="top">Provides standard JavaBeans event notifications
+              <td>Event notification</td>
+              <td>Provides standard JavaBeans event notifications
 to registered event listeners. Refer to the documentation of <code>javax.sql.RowSetEvent</code>
 interface (available in the JDBC 3.0 specification) for
 more details on how  to register and handle standard RowSet events generated
-by  compliant implementations.<br>
-              </td>
+by  compliant implementations.</td>
             </tr>
             <tr>
-              <td valign="top">Setters for a RowSet object's command<br>
-              </td>
-              <td valign="top">Provides a complete set of setter methods
-                 for setting RowSet command parameters.<br>
-              </td>
+              <td>Setters for a RowSet object's command</td>
+              <td>Provides a complete set of setter methods
+                 for setting RowSet command parameters.</td>
             </tr>
             <tr>
-              <td valign="top">Streams<br>
-              </td>
-              <td valign="top">Provides fields for storing of stream instances
-  in addition to providing a set of constants for stream type designation.<br>
-              </td>
+              <td>Streams</td>
+              <td>Provides fields for storing of stream instances
+  in addition to providing a set of constants for stream type designation.</td>
             </tr>
       </tbody>
     </table>
@@ -289,13 +282,13 @@ match column as a basis for adding the <code>RowSet</code> object.
 </li>
 </ul>
 
-<h3><a name="relspec">4.0 Related Specifications</a></h3>
+<h3><a id="relspec">4.0 Related Specifications</a></h3>
 <ul>
-<li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.2 Specification</a>
+<li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.3 Specification</a>
 <li><a href="http://www.w3.org/XML/Schema">XML Schema</a>
 </ul>
 
-<h3><a name="reldocs">5.0 Related Documentation</a></h3>
+<h3><a id="reldocs">5.0 Related Documentation</a></h3>
 <ul>
 <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/basics/rowset.html">
 JDBC RowSet Tutorial</a>

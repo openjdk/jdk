@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package java.security;
 
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
+
+import jdk.internal.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -44,6 +45,7 @@ import sun.security.jca.*;
  * {@code conf/security/java.security} in the Java installation directory.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public final class Security {
@@ -280,8 +282,8 @@ public final class Security {
     /**
      * Gets a specified property for an algorithm. The algorithm name
      * should be a standard name. See the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * One possible use is by specialized algorithm parsers, which may map
@@ -510,8 +512,8 @@ public final class Security {
      * </ul>
      *
      * <p> See the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
@@ -581,8 +583,8 @@ public final class Security {
      * </ul>
      *
      * <p> See the <a href=
-     * "../../../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
@@ -800,9 +802,6 @@ public final class Security {
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
      * invalidate it's local cache values.
-     *
-     * Rather than create a new API entry for this function,
-     * we use reflection to set a private variable.
      */
     private static void invalidateSMCache(String key) {
 
@@ -810,42 +809,8 @@ public final class Security {
         final boolean pd = key.equals("package.definition");
 
         if (pa || pd) {
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Void run() {
-                    try {
-                        /* Get the class via the bootstrap class loader. */
-                        Class<?> cl = Class.forName(
-                            "java.lang.SecurityManager", false, null);
-                        Field f = null;
-                        boolean accessible = false;
-
-                        if (pa) {
-                            f = cl.getDeclaredField("packageAccessValid");
-                            accessible = f.isAccessible();
-                            f.setAccessible(true);
-                        } else {
-                            f = cl.getDeclaredField("packageDefinitionValid");
-                            accessible = f.isAccessible();
-                            f.setAccessible(true);
-                        }
-                        f.setBoolean(f, false);
-                        f.setAccessible(accessible);
-                    }
-                    catch (Exception e1) {
-                        /* If we couldn't get the class, it hasn't
-                         * been loaded yet.  If there is no such
-                         * field, we shouldn't try to set it.  There
-                         * shouldn't be a security execption, as we
-                         * are loaded by boot class loader, and we
-                         * are inside a doPrivileged() here.
-                         *
-                         * NOOP: don't do anything...
-                         */
-                    }
-                    return null;
-                }  /* run */
-            });  /* PrivilegedAction */
-        }  /* if */
+            SharedSecrets.getJavaLangAccess().invalidatePackageAccessCache();
+        }
     }
 
     private static void check(String directive) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ import java.io.Serializable;
  * start angle, angular extent (length of the arc), and a closure type
  * ({@code OPEN}, {@code CHORD}, or {@code PIE}).
  * <p>
- * <a name="inscribes">
+ * <a id="inscribes">
  * The arc is a partial section of a full ellipse which
  * inscribes the framing rectangle of its parent</a> {@link RectangularShape}.
  *
- * <a name="angles">
+ * <a id="angles">
  * The angles are specified relative to the non-square
  * framing rectangle such that 45 degrees always falls on the line from
  * the center of the ellipse to the upper right corner of the framing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,19 +71,15 @@ import javax.xml.namespace.QName;
  * If a method is called in an invalid state the method will throw a
  * java.lang.IllegalStateException.
  *
- * <table border="2" rules="all" cellpadding="4">
+ * <table class="striped">
+ *   <caption>Valid methods for each state</caption>
  *   <thead>
- *     <tr>
- *       <th align="center" colspan="2">
- *         Valid methods for each state
- *       </th>
- *     </tr>
- *   </thead>
- *   <tbody>
  *     <tr>
  *       <th>Event Type</th>
  *       <th>Valid Methods</th>
  *     </tr>
+ *   </thead>
+ *   <tbody>
  *     <tr>
  *       <td> All States  </td>
  *       <td> getProperty(), hasNext(), require(), close(),
