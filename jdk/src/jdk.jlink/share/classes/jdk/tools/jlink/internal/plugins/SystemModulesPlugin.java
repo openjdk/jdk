@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
@@ -37,12 +38,15 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,18 +54,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ClassFileAttributes;
 import jdk.internal.module.ClassFileConstants;
+import jdk.internal.module.DefaultRoots;
 import jdk.internal.module.IllegalAccessMaps;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
+import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.module.SystemModules;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
@@ -72,33 +78,42 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 import jdk.tools.jlink.internal.ModuleSorter;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 /**
- * Jlink plugin to reconstitute module descriptors for system modules.
- * It will extend module-info.class with ModulePackages attribute,
- * if not present. It also determines the number of packages of
- * the boot layer at link time.
+ * Jlink plugin to reconstitute module descriptors and other attributes for system
+ * modules. The plugin generates implementations of SystemModules to avoid parsing
+ * module-info.class files at startup. It also generates SystemModulesMap to return
+ * the SystemModules implementation for a specific initial module.
  *
- * This plugin will override jdk.internal.module.SystemModules class
+ * As a side effect, the plugin adds the ModulePackages class file attribute to the
+ * module-info.class files that don't have the attribute.
  *
- * @see jdk.internal.module.SystemModuleFinder
- * @see SystemModules
+ * @see jdk.internal.module.SystemModuleFinders
+ * @see jdk.internal.module.SystemModules
  */
+
 public final class SystemModulesPlugin implements Plugin {
     private static final String NAME = "system-modules";
     private static final String DESCRIPTION =
-        PluginsResourceBundle.getDescription(NAME);
+            PluginsResourceBundle.getDescription(NAME);
+    private static final String SYSTEM_MODULES_MAP_CLASS =
+            "jdk/internal/module/SystemModulesMap";
+    private static final String SYSTEM_MODULES_CLASS_PREFIX =
+            "jdk/internal/module/SystemModules$";
+    private static final String ALL_SYSTEM_MODULES_CLASS =
+            SYSTEM_MODULES_CLASS_PREFIX + "all";
+    private static final String DEFAULT_SYSTEM_MODULES_CLASS =
+            SYSTEM_MODULES_CLASS_PREFIX + "default";
 
     private boolean enabled;
-    private boolean retainModuleTarget;
+
     public SystemModulesPlugin() {
         this.enabled = true;
-        this.retainModuleTarget = false;
     }
 
     @Override
@@ -131,11 +146,7 @@ public final class SystemModulesPlugin implements Plugin {
     public void configure(Map<String, String> config) {
         String arg = config.get(NAME);
         if (arg != null) {
-            if (arg.equals("retainModuleTarget")) {
-                retainModuleTarget = true;
-            } else {
-                throw new IllegalArgumentException(NAME + ": " + arg);
-            }
+            throw new IllegalArgumentException(NAME + ": " + arg);
         }
     }
 
@@ -145,25 +156,56 @@ public final class SystemModulesPlugin implements Plugin {
             throw new PluginException(NAME + " was set");
         }
 
-        SystemModulesClassGenerator generator =
-            new SystemModulesClassGenerator(retainModuleTarget);
+        // validate, transform (if needed), and add the module-info.class files
+        List<ModuleInfo> moduleInfos = transformModuleInfos(in, out);
 
-        // generate the byte code to create ModuleDescriptors
-        // such that the modules linked in the image would skip parsing
-        // of module-info.class and also skip name check
+        // generate and add the SystemModuleMap and SystemModules classes
+        Set<String> generated = genSystemModulesClasses(moduleInfos, out);
+
+        // pass through all other resources
+        in.entries()
+            .filter(data -> !data.path().endsWith("/module-info.class")
+                    && !generated.contains(data.path()))
+            .forEach(data -> out.add(data));
+
+        return out.build();
+    }
+
+    /**
+     * Validates and transforms the module-info.class files in the modules, adding
+     * the ModulePackages class file attribute if needed.
+     *
+     * @return the list of ModuleInfo objects, the first element is java.base
+     */
+    List<ModuleInfo> transformModuleInfos(ResourcePool in, ResourcePoolBuilder out) {
+        List<ModuleInfo> moduleInfos = new ArrayList<>();
 
         // Sort modules in the topological order so that java.base is always first.
         new ModuleSorter(in.moduleView()).sorted().forEach(module -> {
             ResourcePoolEntry data = module.findEntry("module-info.class").orElseThrow(
-                // automatic module not supported yet
+                // automatic modules not supported
                 () ->  new PluginException("module-info.class not found for " +
-                    module.name() + " module")
+                        module.name() + " module")
             );
 
             assert module.name().equals(data.moduleName());
+
             try {
-                // validate the module and add to system modules
-                data = generator.buildModuleInfo(data, module.packages());
+                byte[] content = data.contentBytes();
+                Set<String> packages = module.packages();
+                ModuleInfo moduleInfo = new ModuleInfo(content, packages);
+
+                // link-time validation
+                moduleInfo.validateNames();
+
+                // check if any exported or open package is not present
+                moduleInfo.validatePackages();
+
+                // module-info.class may be overridden to add ModulePackages
+                if (moduleInfo.shouldRewrite()) {
+                    data = data.copyWithContent(moduleInfo.getBytes());
+                }
+                moduleInfos.add(moduleInfo);
 
                 // add resource pool entry
                 out.add(data);
@@ -172,37 +214,134 @@ public final class SystemModulesPlugin implements Plugin {
             }
         });
 
-        // Generate the new class
-        ClassWriter cwriter = generator.getClassWriter();
-        in.entries().forEach(data -> {
-            if (data.path().endsWith("module-info.class"))
-                return;
-            if (generator.isOverriddenClass(data.path())) {
-                byte[] bytes = cwriter.toByteArray();
-                ResourcePoolEntry ndata = data.copyWithContent(bytes);
-                out.add(ndata);
-            } else {
-                out.add(data);
-            }
-        });
+        return moduleInfos;
+    }
 
-        return out.build();
+    /**
+     * Generates the SystemModules classes (at least one) and the SystemModulesMap
+     * class to map initial modules to a SystemModules class.
+     *
+     * @return the resource names of the resources added to the pool
+     */
+    private Set<String> genSystemModulesClasses(List<ModuleInfo> moduleInfos,
+                                                ResourcePoolBuilder out) {
+        int moduleCount = moduleInfos.size();
+        ModuleFinder finder = finderOf(moduleInfos);
+        assert finder.findAll().size() == moduleCount;
+
+        // map of initial module name to SystemModules class name
+        Map<String, String> map = new LinkedHashMap<>();
+
+        // the names of resources written to the pool
+        Set<String> generated = new HashSet<>();
+
+        // generate the SystemModules implementation to reconstitute all modules
+        Set<String> allModuleNames = moduleInfos.stream()
+                .map(ModuleInfo::moduleName)
+                .collect(Collectors.toSet());
+        String rn = genSystemModulesClass(moduleInfos,
+                                          resolve(finder, allModuleNames),
+                                          ALL_SYSTEM_MODULES_CLASS,
+                                          out);
+        generated.add(rn);
+
+        // generate, if needed, a SystemModules class to reconstitute the modules
+        // needed for the case that the initial module is the unnamed module.
+        String defaultSystemModulesClassName;
+        Configuration cf = resolve(finder, DefaultRoots.compute(finder));
+        if (cf.modules().size() == moduleCount) {
+            // all modules are resolved so no need to generate a class
+            defaultSystemModulesClassName = ALL_SYSTEM_MODULES_CLASS;
+        } else {
+            defaultSystemModulesClassName = DEFAULT_SYSTEM_MODULES_CLASS;
+            rn = genSystemModulesClass(sublist(moduleInfos, cf),
+                                       cf,
+                                       defaultSystemModulesClassName,
+                                       out);
+            generated.add(rn);
+        }
+
+        // Generate a SystemModules class for each module with a main class
+        int suffix = 0;
+        for (ModuleInfo mi : moduleInfos) {
+            if (mi.descriptor().mainClass().isPresent()) {
+                String moduleName = mi.moduleName();
+                cf = resolve(finder, Set.of(moduleName));
+                if (cf.modules().size() == moduleCount) {
+                    // resolves all modules so no need to generate a class
+                    map.put(moduleName, ALL_SYSTEM_MODULES_CLASS);
+                } else {
+                    String cn = SYSTEM_MODULES_CLASS_PREFIX + (suffix++);
+                    rn = genSystemModulesClass(sublist(moduleInfos, cf), cf, cn, out);
+                    map.put(moduleName, cn);
+                    generated.add(rn);
+                }
+            }
+        }
+
+        // generate SystemModulesMap
+        rn = genSystemModulesMapClass(ALL_SYSTEM_MODULES_CLASS,
+                                      defaultSystemModulesClassName,
+                                      map,
+                                      out);
+        generated.add(rn);
+
+        // return the resource names of the generated classes
+        return generated;
+    }
+
+    /**
+     * Resolves a collection of root modules, with service binding, to create
+     * configuration.
+     */
+    private Configuration resolve(ModuleFinder finder, Set<String> roots) {
+        return Configuration.empty().resolveAndBind(finder, ModuleFinder.of(), roots);
+    }
+
+    /**
+     * Returns the list of ModuleInfo objects that correspond to the modules in
+     * the given configuration.
+     */
+    private List<ModuleInfo> sublist(List<ModuleInfo> moduleInfos, Configuration cf) {
+        Set<String> names = cf.modules()
+                .stream()
+                .map(ResolvedModule::name)
+                .collect(Collectors.toSet());
+        return moduleInfos.stream()
+                .filter(mi -> names.contains(mi.moduleName()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Generate a SystemModules implementation class and add it as a resource.
+     *
+     * @return the name of the class resource added to the pool
+     */
+    private String genSystemModulesClass(List<ModuleInfo> moduleInfos,
+                                         Configuration cf,
+                                         String className,
+                                         ResourcePoolBuilder out) {
+        SystemModulesClassGenerator generator
+            = new SystemModulesClassGenerator(className, moduleInfos);
+        byte[] bytes = generator.getClassWriter(cf).toByteArray();
+        String rn = "/java.base/" + className + ".class";
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
+        out.add(e);
+        return rn;
     }
 
     static class ModuleInfo {
-        private final ByteArrayInputStream bain;
+        private final ByteArrayInputStream bais;
         private final Attributes attrs;
         private final Set<String> packages;
-        private final boolean dropModuleTarget;
         private final boolean addModulePackages;
         private ModuleDescriptor descriptor;  // may be different that the original one
 
-        ModuleInfo(byte[] bytes, Set<String> packages, boolean dropModuleTarget)
-            throws IOException
-        {
-            this.bain = new ByteArrayInputStream(bytes);
+        ModuleInfo(byte[] bytes, Set<String> packages) throws IOException {
+            this.bais = new ByteArrayInputStream(bytes);
             this.packages = packages;
-            this.attrs = jdk.internal.module.ModuleInfo.read(bain, null);
+            this.attrs = jdk.internal.module.ModuleInfo.read(bais, null);
+
             // If ModulePackages attribute is present, the packages from this
             // module descriptor returns the packages in that attribute.
             // If it's not present, ModuleDescriptor::packages only contains
@@ -215,14 +354,6 @@ public final class SystemModulesPlugin implements Plugin {
             // add ModulePackages attribute if this module contains some packages
             // and ModulePackages is not present
             this.addModulePackages = packages.size() > 0 && !hasModulePackages();
-
-            // drop target attribute only if any OS property is present
-            ModuleTarget target = attrs.target();
-            if (dropModuleTarget && target != null) {
-                this.dropModuleTarget = (target.targetPlatform() != null);
-            } else {
-                this.dropModuleTarget = false;
-            }
         }
 
         String moduleName() {
@@ -232,7 +363,6 @@ public final class SystemModulesPlugin implements Plugin {
         ModuleDescriptor descriptor() {
             return descriptor;
         }
-
 
         Set<String> packages() {
             return packages;
@@ -283,7 +413,6 @@ public final class SystemModulesPlugin implements Plugin {
             }
         }
 
-
         /**
          * Validates if exported and open packages are present
          */
@@ -328,17 +457,15 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /**
-         * Returns true if module-info.class should be written
-         * 1. add ModulePackages attribute if not present; or
-         * 2. drop ModuleTarget attribute except java.base
+         * Returns true if module-info.class should be rewritten to add the
+         * ModulePackages attribute.
          */
         boolean shouldRewrite() {
-            return addModulePackages || dropModuleTarget;
+            return addModulePackages;
         }
 
         /**
-         * Returns the bytes for the module-info.class with ModulePackages
-         * attribute added and/or with ModuleTarget attribute dropped.
+         * Returns the bytes for the (possibly updated) module-info.class.
          */
         byte[] getBytes() throws IOException {
             try (InputStream in = getInputStream()) {
@@ -347,13 +474,10 @@ public final class SystemModulesPlugin implements Plugin {
                     if (addModulePackages) {
                         rewriter.addModulePackages(packages);
                     }
-                    if (dropModuleTarget) {
-                        rewriter.dropModuleTarget();
-                    }
                     // rewritten module descriptor
                     byte[] bytes = rewriter.getBytes();
-                    try (ByteArrayInputStream bain = new ByteArrayInputStream(bytes)) {
-                        this.descriptor = ModuleDescriptor.read(bain);
+                    try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
+                        this.descriptor = ModuleDescriptor.read(bais);
                     }
                     return bytes;
                 } else {
@@ -366,8 +490,8 @@ public final class SystemModulesPlugin implements Plugin {
          * Returns the input stream of the module-info.class
          */
         InputStream getInputStream() {
-            bain.reset();
-            return bain;
+            bais.reset();
+            return bais;
         }
 
         class ModuleInfoRewriter extends ByteArrayOutputStream {
@@ -383,10 +507,6 @@ public final class SystemModulesPlugin implements Plugin {
                 }
             }
 
-            void dropModuleTarget() {
-                extender.targetPlatform("");
-            }
-
             byte[] getBytes() throws IOException {
                 extender.write(this);
                 return buf;
@@ -395,12 +515,10 @@ public final class SystemModulesPlugin implements Plugin {
     }
 
     /**
-     * ClassWriter of a new jdk.internal.module.SystemModules class
-     * to reconstitute ModuleDescriptor of the system modules.
+     * Generates a SystemModules class to reconstitute the ModuleDescriptor
+     * and other attributes of system modules.
      */
     static class SystemModulesClassGenerator {
-        private static final String CLASSNAME =
-            "jdk/internal/module/SystemModules";
         private static final String MODULE_DESCRIPTOR_BUILDER =
             "jdk/internal/module/Builder";
         private static final String MODULE_DESCRIPTOR_ARRAY_SIGNATURE =
@@ -422,10 +540,6 @@ public final class SystemModulesPlugin implements Plugin {
         private static final String MODULE_RESOLUTIONS_ARRAY_SIGNATURE  =
             "[Ljdk/internal/module/ModuleResolution;";
 
-        // static variables in SystemModules class
-        private static final String MODULE_NAMES = "MODULE_NAMES";
-        private static final String PACKAGE_COUNT = "PACKAGES_IN_BOOT_LAYER";
-
         private static final int MAX_LOCAL_VARS = 256;
 
         private final int BUILDER_VAR    = 0;
@@ -434,14 +548,14 @@ public final class SystemModulesPlugin implements Plugin {
         private final int MH_VAR         = 1;  // variable for ModuleHashes
         private int nextLocalVar         = 2;  // index to next local variable
 
-        private final ClassWriter cw;
-        private boolean dropModuleTarget;
-
         // Method visitor for generating the SystemModules::modules() method
         private MethodVisitor mv;
 
+        // name of class to generate
+        private final String className;
+
         // list of all ModuleDescriptorBuilders, invoked in turn when building.
-        private final List<ModuleInfo> moduleInfos = new ArrayList<>();
+        private final List<ModuleInfo> moduleInfos;
 
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
@@ -449,10 +563,11 @@ public final class SystemModulesPlugin implements Plugin {
         private final DedupSetBuilder dedupSetBuilder
             = new DedupSetBuilder(this::getNextLocalVar);
 
-        public SystemModulesClassGenerator(boolean retainModuleTarget) {
-            this.cw = new ClassWriter(ClassWriter.COMPUTE_MAXS +
-                                      ClassWriter.COMPUTE_FRAMES);
-            this.dropModuleTarget = !retainModuleTarget;
+        public SystemModulesClassGenerator(String className,
+                                           List<ModuleInfo> moduleInfos) {
+            this.className = className;
+            this.moduleInfos = moduleInfos;
+            moduleInfos.forEach(mi -> dedups(mi.descriptor()));
         }
 
         private int getNextLocalVar() {
@@ -460,105 +575,10 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /*
-         * static initializer initializing the static fields
-         *
-         * static Map<String, ModuleDescriptor> map = new HashMap<>();
-         */
-        private void clinit(int numModules, int numPackages,
-                            boolean hasSplitPackages) {
-            cw.visit(Opcodes.V1_8, ACC_PUBLIC+ACC_FINAL+ACC_SUPER, CLASSNAME,
-                     null, "java/lang/Object", null);
-
-            // public static String[] MODULE_NAMES = new String[] {....};
-            cw.visitField(ACC_PUBLIC+ACC_FINAL+ACC_STATIC, MODULE_NAMES,
-                    "[Ljava/lang/String;", null, null)
-                    .visitEnd();
-
-            // public static int PACKAGES_IN_BOOT_LAYER;
-            cw.visitField(ACC_PUBLIC+ACC_FINAL+ACC_STATIC, PACKAGE_COUNT,
-                    "I", null, numPackages)
-                    .visitEnd();
-
-            MethodVisitor clinit =
-                cw.visitMethod(ACC_STATIC, "<clinit>", "()V",
-                               null, null);
-            clinit.visitCode();
-
-            // create the MODULE_NAMES array
-            pushInt(clinit, numModules);
-            clinit.visitTypeInsn(ANEWARRAY, "java/lang/String");
-
-            int index = 0;
-            for (ModuleInfo minfo : moduleInfos) {
-                clinit.visitInsn(DUP);                  // arrayref
-                pushInt(clinit, index++);
-                clinit.visitLdcInsn(minfo.moduleName()); // value
-                clinit.visitInsn(AASTORE);
-            }
-
-            clinit.visitFieldInsn(PUTSTATIC, CLASSNAME, MODULE_NAMES,
-                    "[Ljava/lang/String;");
-
-            clinit.visitInsn(RETURN);
-            clinit.visitMaxs(0, 0);
-            clinit.visitEnd();
-
-            // public static boolean hasSplitPackages();
-            MethodVisitor split =
-                cw.visitMethod(ACC_PUBLIC+ACC_STATIC, "hasSplitPackages",
-                               "()Z", null, null);
-            split.visitCode();
-            split.visitInsn(hasSplitPackages ? ICONST_1 : ICONST_0);
-            split.visitInsn(IRETURN);
-            split.visitMaxs(0, 0);
-            split.visitEnd();
-
-        }
-
-        /*
          * Adds the given ModuleDescriptor to the system module list.
          * It performs link-time validation and prepares mapping from various
          * Sets to SetBuilders to emit an optimized number of sets during build.
          */
-        public ResourcePoolEntry buildModuleInfo(ResourcePoolEntry entry,
-                                                 Set<String> packages)
-            throws IOException
-        {
-            if (moduleInfos.isEmpty() && !entry.moduleName().equals("java.base")) {
-                throw new InternalError("java.base must be the first module to process");
-            }
-
-            ModuleInfo moduleInfo;
-            if (entry.moduleName().equals("java.base")) {
-                moduleInfo = new ModuleInfo(entry.contentBytes(), packages, false);
-                ModuleDescriptor md = moduleInfo.descriptor;
-                // drop ModuleTarget attribute if java.base has all OS properties
-                ModuleTarget target = moduleInfo.target();
-                if (dropModuleTarget && target.targetPlatform() != null) {
-                    dropModuleTarget = true;
-                } else {
-                    dropModuleTarget = false;
-                }
-            } else {
-                moduleInfo = new ModuleInfo(entry.contentBytes(), packages, dropModuleTarget);
-            }
-
-            // link-time validation
-            moduleInfo.validateNames();
-            // check if any exported or open package is not present
-            moduleInfo.validatePackages();
-
-            // module-info.class may be overridden for optimization
-            // 1. update ModuleTarget attribute to drop targetPlartform
-            // 2. add/update ModulePackages attribute
-            if (moduleInfo.shouldRewrite()) {
-                entry = entry.copyWithContent(moduleInfo.getBytes());
-            }
-            moduleInfos.add(moduleInfo);
-            dedups(moduleInfo.descriptor());
-            return entry;
-        }
-
         private void dedups(ModuleDescriptor md) {
             // exports
             for (Exports e : md.exports()) {
@@ -581,47 +601,123 @@ public final class SystemModulesPlugin implements Plugin {
             dedupSetBuilder.stringSet(md.uses());
         }
 
-        /*
-         * Generate bytecode for SystemModules
+        /**
+         * Generate SystemModules class
          */
-        public ClassWriter getClassWriter() {
-            int numModules = moduleInfos.size();
-            Set<String> allPackages = new HashSet<>();
-            int packageCount = 0;
-            for (ModuleInfo minfo : moduleInfos) {
-                allPackages.addAll(minfo.packages);
-                packageCount += minfo.packages.size();
-            }
+        public ClassWriter getClassWriter(Configuration cf) {
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                                             + ClassWriter.COMPUTE_FRAMES);
+            cw.visit(Opcodes.V1_8,
+                     ACC_FINAL+ACC_SUPER,
+                     className,
+                     null,
+                     "java/lang/Object",
+                     new String[] { "jdk/internal/module/SystemModules" });
 
-            int numPackages = allPackages.size();
-            boolean hasSplitPackages = (numPackages < packageCount);
-            clinit(numModules, numPackages, hasSplitPackages);
+            // generate <init>
+            genConstructor(cw);
 
-            // generate SystemModules::descriptors
-            genDescriptorsMethod();
+            // generate hasSplitPackages
+            genHasSplitPackages(cw);
 
-            // generate SystemModules::targets
-            genTargetsMethod();
+            // generate hasIncubatorModules
+            genIncubatorModules(cw);
 
-            // generate SystemModules::hashes
-            genHashesMethod();
+            // generate moduleDescriptors
+            genModuleDescriptorsMethod(cw);
 
-            // generate SystemModules::moduleResolutions
-            genModuleResolutionsMethod();
+            // generate moduleTargets
+            genModuleTargetsMethod(cw);
 
-            // generate SystemModules::concealedPackagesToOpen and
-            // SystemModules::exportedPackagesToOpen
-            genXXXPackagesToOpenMethods();
+            // generate moduleHashes
+            genModuleHashesMethod(cw);
+
+            // generate moduleResolutions
+            genModuleResolutionsMethod(cw);
+
+            // generate moduleReads
+            genModuleReads(cw, cf);
+
+            // generate concealedPackagesToOpen and exportedPackagesToOpen
+            genXXXPackagesToOpenMethods(cw);
 
             return cw;
         }
 
         /**
-         * Generate bytecode for SystemModules::descriptors method
+         * Generate byteccode for no-arg constructor
          */
-        private void genDescriptorsMethod() {
-            this.mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
-                                     "descriptors",
+        private void genConstructor(ClassWriter cw) {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL,
+                               "java/lang/Object",
+                               "<init>",
+                               "()V",
+                               false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        /**
+         * Generate bytecode for hasSplitPackages method
+         */
+        private void genHasSplitPackages(ClassWriter cw) {
+            boolean distinct = moduleInfos.stream()
+                    .map(ModuleInfo::packages)
+                    .flatMap(Set::stream)
+                    .allMatch(new HashSet<>()::add);
+            boolean hasSplitPackages = !distinct;
+
+            mv = cw.visitMethod(ACC_PUBLIC,
+                                "hasSplitPackages",
+                                "()Z",
+                                "()Z",
+                                null);
+            mv.visitCode();
+            if (hasSplitPackages) {
+                mv.visitInsn(ICONST_1);
+            } else {
+                mv.visitInsn(ICONST_0);
+            }
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        /**
+         * Generate bytecode for hasIncubatorModules method
+         */
+        private void genIncubatorModules(ClassWriter cw) {
+            boolean hasIncubatorModules = moduleInfos.stream()
+                    .map(ModuleInfo::moduleResolution)
+                    .filter(mres -> (mres != null && mres.hasIncubatingWarning()))
+                    .findFirst()
+                    .isPresent();
+
+            mv = cw.visitMethod(ACC_PUBLIC,
+                                "hasIncubatorModules",
+                                "()Z",
+                                "()Z",
+                                null);
+            mv.visitCode();
+            if (hasIncubatorModules) {
+                mv.visitInsn(ICONST_1);
+            } else {
+                mv.visitInsn(ICONST_0);
+            }
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        /**
+         * Generate bytecode for moduleDescriptors method
+         */
+        private void genModuleDescriptorsMethod(ClassWriter cw) {
+            this.mv = cw.visitMethod(ACC_PUBLIC,
+                                     "moduleDescriptors",
                                      "()" + MODULE_DESCRIPTOR_ARRAY_SIGNATURE,
                                      "()" + MODULE_DESCRIPTOR_ARRAY_SIGNATURE,
                                      null);
@@ -643,11 +739,11 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /**
-         * Generate bytecode for SystemModules::targets method
+         * Generate bytecode for moduleTargets method
          */
-        private void genTargetsMethod() {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
-                                              "targets",
+        private void genModuleTargetsMethod(ClassWriter cw) {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC,
+                                              "moduleTargets",
                                               "()" + MODULE_TARGET_ARRAY_SIGNATURE,
                                               "()" + MODULE_TARGET_ARRAY_SIGNATURE,
                                               null);
@@ -656,18 +752,34 @@ public final class SystemModulesPlugin implements Plugin {
             mv.visitTypeInsn(ANEWARRAY, MODULE_TARGET_CLASSNAME);
             mv.visitVarInsn(ASTORE, MT_VAR);
 
-            for (int index=0; index < moduleInfos.size(); index++) {
+
+            // if java.base has a ModuleTarget attribute then generate the array
+            // with one element, all other elements will be null.
+
+            ModuleInfo base = moduleInfos.get(0);
+            if (!base.moduleName().equals("java.base"))
+                throw new InternalError("java.base should be first module in list");
+            ModuleTarget target = base.target();
+
+            int count;
+            if (target != null && target.targetPlatform() != null) {
+                count = 1;
+            } else {
+                count = moduleInfos.size();
+            }
+
+            for (int index = 0; index < count; index++) {
                 ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.target() != null && !minfo.dropModuleTarget) {
+                if (minfo.target() != null) {
                     mv.visitVarInsn(ALOAD, MT_VAR);
                     pushInt(mv, index);
 
-                    // new ModuleTarget(String, String)
+                    // new ModuleTarget(String)
                     mv.visitTypeInsn(NEW, MODULE_TARGET_CLASSNAME);
                     mv.visitInsn(DUP);
                     mv.visitLdcInsn(minfo.target().targetPlatform());
                     mv.visitMethodInsn(INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
-                        "<init>", "(Ljava/lang/String;)V", false);
+                                       "<init>", "(Ljava/lang/String;)V", false);
 
                     mv.visitInsn(AASTORE);
                 }
@@ -680,12 +792,12 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /**
-         * Generate bytecode for SystemModules::hashes method
+         * Generate bytecode for moduleHashes method
          */
-        private void genHashesMethod() {
+        private void genModuleHashesMethod(ClassWriter cw) {
             MethodVisitor hmv =
-                cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
-                               "hashes",
+                cw.visitMethod(ACC_PUBLIC,
+                               "moduleHashes",
                                "()" + MODULE_HASHES_ARRAY_SIGNATURE,
                                "()" + MODULE_HASHES_ARRAY_SIGNATURE,
                                null);
@@ -710,11 +822,11 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /**
-         * Generate bytecode for SystemModules::methodResoultions method
+         * Generate bytecode for moduleResolutions method
          */
-        private void genModuleResolutionsMethod() {
+        private void genModuleResolutionsMethod(ClassWriter cw) {
             MethodVisitor mresmv =
-                cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+                cw.visitMethod(ACC_PUBLIC,
                                "moduleResolutions",
                                "()" + MODULE_RESOLUTIONS_ARRAY_SIGNATURE,
                                "()" + MODULE_RESOLUTIONS_ARRAY_SIGNATURE,
@@ -746,75 +858,88 @@ public final class SystemModulesPlugin implements Plugin {
         }
 
         /**
-         * Generate SystemModules::concealedPackagesToOpen and
-         * SystemModules::exportedPackagesToOpen methods.
+         * Generate bytecode for moduleReads method
          */
-        private void genXXXPackagesToOpenMethods() {
-            List<ModuleDescriptor> descriptors = moduleInfos.stream()
-                    .map(ModuleInfo::descriptor)
-                    .collect(Collectors.toList());
-            ModuleFinder finder = finderOf(descriptors);
-            IllegalAccessMaps maps = IllegalAccessMaps.generate(finder);
-            generate("concealedPackagesToOpen", maps.concealedPackagesToOpen());
-            generate("exportedPackagesToOpen", maps.exportedPackagesToOpen());
+        private void genModuleReads(ClassWriter cw, Configuration cf) {
+            // module name -> names of modules that it reads
+            Map<String, Set<String>> map = cf.modules().stream()
+                    .collect(Collectors.toMap(
+                            ResolvedModule::name,
+                            m -> m.reads().stream()
+                                    .map(ResolvedModule::name)
+                                    .collect(Collectors.toSet())));
+            generate(cw, "moduleReads", map, true);
         }
 
         /**
-         * Generate SystemModules:XXXPackagesToOpen
+         * Generate concealedPackagesToOpen and exportedPackagesToOpen methods.
          */
-        private void generate(String methodName, Map<String, Set<String>> map) {
-            // Map<String, Set<String>> XXXPackagesToOpen()
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+        private void genXXXPackagesToOpenMethods(ClassWriter cw) {
+            ModuleFinder finder = finderOf(moduleInfos);
+            IllegalAccessMaps maps = IllegalAccessMaps.generate(finder);
+            generate(cw, "concealedPackagesToOpen", maps.concealedPackagesToOpen(), false);
+            generate(cw, "exportedPackagesToOpen", maps.exportedPackagesToOpen(), false);
+        }
+
+        /**
+         * Generate method to return {@code Map<String, Set<String>>}.
+         *
+         * If {@code dedup} is true then the values are de-duplicated.
+         */
+        private void generate(ClassWriter cw,
+                              String methodName,
+                              Map<String, Set<String>> map,
+                              boolean dedup) {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC,
                                               methodName,
                                               "()Ljava/util/Map;",
                                               "()Ljava/util/Map;",
                                               null);
             mv.visitCode();
 
-            // new Map$Entry[moduleCount]
+            // map of Set -> local
+            Map<Set<String>, Integer> locals;
+
+            // generate code to create the sets that are duplicated
+            if (dedup) {
+                Collection<Set<String>> values = map.values();
+                Set<Set<String>> duplicateSets = values.stream()
+                        .distinct()
+                        .filter(s -> Collections.frequency(values, s) > 1)
+                        .collect(Collectors.toSet());
+                locals = new HashMap<>();
+                int index = 1;
+                for (Set<String> s : duplicateSets) {
+                    genImmutableSet(mv, s);
+                    mv.visitVarInsn(ASTORE, index);
+                    locals.put(s, index);
+                    if (++index >= MAX_LOCAL_VARS) {
+                        break;
+                    }
+                }
+            } else {
+                locals = Map.of();
+            }
+
+            // new Map$Entry[size]
             pushInt(mv, map.size());
             mv.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
 
             int index = 0;
             for (Map.Entry<String, Set<String>> e : map.entrySet()) {
-                String moduleName = e.getKey();
-                Set<String> packages = e.getValue();
-                int packageCount = packages.size();
+                String name = e.getKey();
+                Set<String> s = e.getValue();
 
                 mv.visitInsn(DUP);
                 pushInt(mv, index);
-                mv.visitLdcInsn(moduleName);
+                mv.visitLdcInsn(name);
 
-                // use Set.of(Object[]) when there are more than 2 packages
-                // use Set.of(Object) or Set.of(Object, Object) when fewer packages
-                if (packageCount > 2) {
-                    pushInt(mv, packageCount);
-                    mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
-                    int i = 0;
-                    for (String pn : packages) {
-                        mv.visitInsn(DUP);
-                        pushInt(mv, i);
-                        mv.visitLdcInsn(pn);
-                        mv.visitInsn(AASTORE);
-                        i++;
-                    }
-                    mv.visitMethodInsn(INVOKESTATIC,
-                                       "java/util/Set",
-                                       "of",
-                                       "([Ljava/lang/Object;)Ljava/util/Set;",
-                                       true);
+                // if de-duplicated then load the local, otherwise generate code
+                Integer varIndex = locals.get(s);
+                if (varIndex == null) {
+                    genImmutableSet(mv, s);
                 } else {
-                    StringBuilder sb = new StringBuilder("(");
-                    for (String pn : packages) {
-                        mv.visitLdcInsn(pn);
-                        sb.append("Ljava/lang/Object;");
-                    }
-                    sb.append(")Ljava/util/Set;");
-                    mv.visitMethodInsn(INVOKESTATIC,
-                                       "java/util/Set",
-                                       "of",
-                                       sb.toString(),
-                                       true);
+                    mv.visitVarInsn(ALOAD, varIndex);
                 }
 
                 String desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;";
@@ -835,19 +960,42 @@ public final class SystemModulesPlugin implements Plugin {
             mv.visitEnd();
         }
 
-        public boolean isOverriddenClass(String path) {
-            return path.equals("/java.base/" + CLASSNAME + ".class");
-        }
+        /**
+         * Generate code to generate an immutable set.
+         */
+        private void genImmutableSet(MethodVisitor mv, Set<String> set) {
+            int size = set.size();
 
-        void pushInt(MethodVisitor mv, int num) {
-            if (num <= 5) {
-                mv.visitInsn(ICONST_0 + num);
-            } else if (num < Byte.MAX_VALUE) {
-                mv.visitIntInsn(BIPUSH, num);
-            } else if (num < Short.MAX_VALUE) {
-                mv.visitIntInsn(SIPUSH, num);
+            // use Set.of(Object[]) when there are more than 2 elements
+            // use Set.of(Object) or Set.of(Object, Object) when fewer
+            if (size > 2) {
+                pushInt(mv, size);
+                mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                int i = 0;
+                for (String element : set) {
+                    mv.visitInsn(DUP);
+                    pushInt(mv, i);
+                    mv.visitLdcInsn(element);
+                    mv.visitInsn(AASTORE);
+                    i++;
+                }
+                mv.visitMethodInsn(INVOKESTATIC,
+                        "java/util/Set",
+                        "of",
+                        "([Ljava/lang/Object;)Ljava/util/Set;",
+                        true);
             } else {
-                throw new IllegalArgumentException("exceed limit: " + num);
+                StringBuilder sb = new StringBuilder("(");
+                for (String element : set) {
+                    mv.visitLdcInsn(element);
+                    sb.append("Ljava/lang/Object;");
+                }
+                sb.append(")Ljava/util/Set;");
+                mv.visitMethodInsn(INVOKESTATIC,
+                        "java/util/Set",
+                        "of",
+                        sb.toString(),
+                        true);
             }
         }
 
@@ -1564,18 +1712,159 @@ public final class SystemModulesPlugin implements Plugin {
         }
     }
 
-    static ModuleFinder finderOf(Iterable<ModuleDescriptor> descriptors) {
+    /**
+     * Generate SystemModulesMap and add it as a resource.
+     *
+     * @return the name of the class resource added to the pool
+     */
+    private String genSystemModulesMapClass(String allSystemModulesClassName,
+                                            String defaultSystemModulesClassName,
+                                            Map<String, String> map,
+                                            ResourcePoolBuilder out) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
+                                         + ClassWriter.COMPUTE_FRAMES);
+        cw.visit(Opcodes.V1_8,
+                 ACC_FINAL+ACC_SUPER,
+                 SYSTEM_MODULES_MAP_CLASS,
+                 null,
+                 "java/lang/Object",
+                 null);
+
+        // <init>
+        MethodVisitor mv = cw.visitMethod(0, "<init>", "()V", null, null);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL,
+                           "java/lang/Object",
+                           "<init>",
+                           "()V",
+                           false);
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // allSystemModules()
+        mv = cw.visitMethod(ACC_STATIC,
+                            "allSystemModules",
+                            "()Ljdk/internal/module/SystemModules;",
+                            "()Ljdk/internal/module/SystemModules;",
+                            null);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, allSystemModulesClassName);
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL,
+                           allSystemModulesClassName,
+                           "<init>",
+                           "()V",
+                           false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // defaultSystemModules()
+        mv = cw.visitMethod(ACC_STATIC,
+                            "defaultSystemModules",
+                            "()Ljdk/internal/module/SystemModules;",
+                            "()Ljdk/internal/module/SystemModules;",
+                            null);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, defaultSystemModulesClassName);
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL,
+                           defaultSystemModulesClassName,
+                           "<init>",
+                           "()V",
+                           false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // moduleNames()
+        mv = cw.visitMethod(ACC_STATIC,
+                            "moduleNames",
+                            "()[Ljava/lang/String;",
+                            "()[Ljava/lang/String;",
+                            null);
+        mv.visitCode();
+        pushInt(mv, map.size());
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+
+        int index = 0;
+        for (String moduleName : map.keySet()) {
+            mv.visitInsn(DUP);                  // arrayref
+            pushInt(mv, index);
+            mv.visitLdcInsn(moduleName);
+            mv.visitInsn(AASTORE);
+            index++;
+        }
+
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // classNames()
+        mv = cw.visitMethod(ACC_STATIC,
+                            "classNames",
+                            "()[Ljava/lang/String;",
+                            "()[Ljava/lang/String;",
+                            null);
+        mv.visitCode();
+        pushInt(mv, map.size());
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+
+        index = 0;
+        for (String className : map.values()) {
+            mv.visitInsn(DUP);                  // arrayref
+            pushInt(mv, index);
+            mv.visitLdcInsn(className.replace('/', '.'));
+            mv.visitInsn(AASTORE);
+            index++;
+        }
+
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // write the class file to the pool as a resource
+        String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASS + ".class";
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, cw.toByteArray());
+        out.add(e);
+
+        return rn;
+    }
+
+    /**
+     * Pushes an int constant
+     */
+    private static void pushInt(MethodVisitor mv, int value) {
+        if (value <= 5) {
+            mv.visitInsn(ICONST_0 + value);
+        } else if (value < Byte.MAX_VALUE) {
+            mv.visitIntInsn(BIPUSH, value);
+        } else if (value < Short.MAX_VALUE) {
+            mv.visitIntInsn(SIPUSH, value);
+        } else {
+            throw new IllegalArgumentException("exceed limit: " + value);
+        }
+    }
+
+    /**
+     * Returns a module finder that finds all modules in the given list
+     */
+    private static ModuleFinder finderOf(Collection<ModuleInfo> moduleInfos) {
+        Supplier<ModuleReader> readerSupplier = () -> null;
         Map<String, ModuleReference> namesToReference = new HashMap<>();
-        for (ModuleDescriptor descriptor : descriptors) {
-            String name = descriptor.name();
-            URI uri = URI.create("module:/" + name);
-            ModuleReference mref = new ModuleReference(descriptor, uri) {
-                @Override
-                public ModuleReader open() {
-                    throw new UnsupportedOperationException();
-                }
-            };
-            namesToReference.putIfAbsent(name, mref);
+        for (ModuleInfo mi : moduleInfos) {
+            String name = mi.moduleName();
+            ModuleReference mref
+                = new ModuleReferenceImpl(mi.descriptor(),
+                                          URI.create("jrt:/" + name),
+                                          readerSupplier,
+                                          null,
+                                          mi.target(),
+                                          null,
+                                          null,
+                                          mi.moduleResolution());
+            namesToReference.put(name, mref);
         }
 
         return new ModuleFinder() {
