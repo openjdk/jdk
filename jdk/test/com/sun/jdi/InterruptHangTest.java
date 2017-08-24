@@ -26,16 +26,14 @@ import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
 /**
- *  @test
- *  @bug 6459476
- *  @summary Debuggee is blocked,  looks like running
+ * @test
+ * @bug 6459476
+ * @summary Debuggee is blocked,  looks like running
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g InterruptHangTest.java
- *  @run driver InterruptHangTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g InterruptHangTest.java
+ * @run driver InterruptHangTest
  */
 
 /**

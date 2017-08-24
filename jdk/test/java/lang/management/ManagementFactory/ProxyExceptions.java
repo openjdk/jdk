@@ -27,7 +27,6 @@
  * @summary Test type mapping of the platform MXBean proxy
  *          returned from Management.newPlatformMXBeanProxy().
  * @author  Mandy Chung
- * @modules jdk.management
  */
 import java.lang.management.*;
 import javax.management.*;

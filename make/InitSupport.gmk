@@ -33,6 +33,11 @@ ifndef _INITSUPPORT_GMK
 _INITSUPPORT_GMK := 1
 
 ifeq ($(HAS_SPEC),)
+
+  # Include the corresponding closed file, if present.
+  # Normal hook mechanism cannot be used since we have no SPEC.
+  -include $(topdir)/closed/make/InitSupport.gmk
+
   ##############################################################################
   # Helper functions for the initial part of Init.gmk, before the spec file is
   # loaded. Most of these functions provide parsing and setting up make options
@@ -40,8 +45,8 @@ ifeq ($(HAS_SPEC),)
   ##############################################################################
 
   # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS TEST_JOBS CONF_CHECK \
-      COMPARE_BUILD
+  INIT_CONTROL_VARIABLES += LOG CONF CONF_NAME SPEC JOBS TEST_JOBS CONF_CHECK \
+      COMPARE_BUILD JTREG GTEST
 
   # All known make control variables
   MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER
@@ -498,6 +503,7 @@ else # $(HAS_SPEC)=true
   define PrepareFailureLogs
 	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null && \
 	$(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR)/failure-logs
+	$(RM) $(MAKESUPPORT_OUTPUTDIR)/exit-with-error 2> /dev/null
   endef
 
   # Remove any javac server logs and port files. This

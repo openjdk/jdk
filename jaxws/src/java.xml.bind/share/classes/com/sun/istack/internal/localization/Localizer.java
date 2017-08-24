@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.istack.internal.localization;
 
-import com.sun.istack.internal.localization.LocalizableMessageFactory.ResourceBundleSupplier;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -41,7 +40,7 @@ import java.util.ResourceBundle;
 public class Localizer {
 
     private final Locale _locale;
-    private final HashMap _resourceBundles;
+    private final HashMap<String, ResourceBundle> _resourceBundles;
 
     public Localizer() {
         this(Locale.getDefault());
@@ -49,7 +48,7 @@ public class Localizer {
 
     public Localizer(Locale l) {
         _locale = l;
-        _resourceBundles = new HashMap();
+        _resourceBundles = new HashMap<>();
     }
 
     public Locale getLocale() {

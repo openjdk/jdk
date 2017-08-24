@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4408582
- *  @summary Test fix for: JDWP: WatchpointEvents outside of class filtered out
+ * @test
+ * @bug 4408582
+ * @summary Test fix for: JDWP: WatchpointEvents outside of class filtered out
+ * @author Tim Bell
  *
- *  @author Tim Bell
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g FieldWatchpoints.java
- *  @run driver FieldWatchpoints
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g FieldWatchpoints.java
+ * @run driver FieldWatchpoints
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
