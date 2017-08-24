@@ -183,7 +183,8 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * <p>The following table shows the example document and the results
  * of various methods described above.</p>
  *
- * <table border=1 cellspacing=0 summary="HTML Content of example above">
+ * <table class="plain">
+ * <caption>HTML Content of example above</caption>
  *   <tr>
  *     <th>Example</th>
  *     <th><code>insertAfterStart</code></th>
@@ -2129,8 +2130,13 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <p>
      * The assignment of the actions described is shown in the
      * following table for the tags defined in <code>HTML.Tag</code>.
-     * <table border=1 summary="HTML tags and assigned actions">
+     *
+     * <table class="striped">
+     * <caption>HTML tags and assigned actions</caption>
+     * <thead>
      * <tr><th>Tag</th><th>Action</th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td><code>HTML.Tag.A</code>         <td>CharacterAction
      * <tr><td><code>HTML.Tag.ADDRESS</code>   <td>CharacterAction
      * <tr><td><code>HTML.Tag.APPLET</code>    <td>HiddenAction
@@ -2203,6 +2209,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <tr><td><code>HTML.Tag.U</code>         <td>CharacterAction
      * <tr><td><code>HTML.Tag.UL</code>        <td>BlockAction
      * <tr><td><code>HTML.Tag.VAR</code>       <td>CharacterAction
+     * </tbody>
      * </table>
      * <p>
      * Once &lt;/html&gt; is encountered, the Actions are no longer notified.
@@ -3385,10 +3392,17 @@ public class HTMLDocument extends DefaultStyledDocument {
          * be iterated over picking up the data of the form.
          * The following are the model assignments for the
          * various type of form elements.
-         * <table summary="model assignments for the various types of form elements">
+         *
+         * <table class="striped">
+         * <caption>Model assignments for the various types of form elements
+         * </caption>
+         * <thead>
          * <tr>
          *   <th>Element Type
          *   <th>Model Type
+         * </tr>
+         * </thead>
+         * <tbody>
          * <tr>
          *   <td>input, type button
          *   <td>{@link DefaultButtonModel}
@@ -3419,6 +3433,7 @@ public class HTMLDocument extends DefaultStyledDocument {
          * <tr>
          *   <td>textarea
          *   <td>{@link PlainDocument}
+         * </tbody>
          * </table>
          *
          */

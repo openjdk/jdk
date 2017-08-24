@@ -39,14 +39,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
 
@@ -59,7 +62,7 @@ import jdk.internal.perf.PerfCounter;
  * -m and --add-modules options. The modules are located on a module path that
  * is constructed from the upgrade module path, system modules, and application
  * module path. The Configuration is instantiated as the boot layer with each
- * module in the the configuration defined to one of the built-in class loaders.
+ * module in the the configuration defined to a class loader.
  */
 
 public final class ModuleBootstrap {
@@ -119,20 +122,20 @@ public final class ModuleBootstrap {
      */
     public static ModuleLayer boot() {
 
-        long t0 = System.nanoTime();
-
-        // system modules (may be patched)
-        ModuleFinder systemModules = ModuleFinder.ofSystem();
-
-        PerfCounters.systemModulesTime.addElapsedTimeFrom(t0);
-
+        // Step 1: Locate system modules (may be patched)
 
         long t1 = System.nanoTime();
+        ModuleFinder systemModules = ModuleFinder.ofSystem();
+        PerfCounters.systemModulesTime.addElapsedTimeFrom(t1);
 
-        // Once we have the system modules then we define the base module to
-        // the VM. We do this here so that java.base is defined as early as
-        // possible and also that resources in the base module can be located
-        // for error messages that may happen from here on.
+
+        // Step 2: Define and load java.base. This patches all classes loaded
+        // to date so that they are members of java.base. Once java.base is
+        // loaded then resources in java.base are available for error messages
+        // needed from here on.
+
+        long t2 = System.nanoTime();
+
         ModuleReference base = systemModules.find(JAVA_BASE).orElse(null);
         if (base == null)
             throw new InternalError(JAVA_BASE + " not found");
@@ -142,15 +145,23 @@ public final class ModuleBootstrap {
         BootLoader.loadModule(base);
         Modules.defineModule(null, base.descriptor(), baseUri);
 
-        PerfCounters.defineBaseTime.addElapsedTimeFrom(t1);
+        PerfCounters.defineBaseTime.addElapsedTimeFrom(t2);
 
-        // special mode to boot with only java.base, ignores other options
+
+        // Step 2a: If --validate-modules is specified then the VM needs to
+        // start with only java.base, all other options are ignored.
+
         String propValue = getAndRemoveProperty("jdk.module.minimumBoot");
         if (propValue != null) {
             return createMinimalBootLayer();
         }
 
-        long t2 = System.nanoTime();
+
+        // Step 3: Construct the module path and the set of root modules to
+        // resolve. If --limit-modules is specified then it limits the set
+        // modules that are observable.
+
+        long t3 = System.nanoTime();
 
         // --upgrade-module-path option specified to launcher
         ModuleFinder upgradeModulePath
@@ -269,10 +280,13 @@ public final class ModuleBootstrap {
                 .forEach(mn -> roots.add(mn));
         }
 
-        PerfCounters.optionsAndRootsTime.addElapsedTimeFrom(t2);
+        PerfCounters.optionsAndRootsTime.addElapsedTimeFrom(t3);
 
 
-        long t3 = System.nanoTime();
+        // Step 4: Resolve the root modules, with service binding, to create
+        // the configuration for the boot layer.
+
+        long t4 = System.nanoTime();
 
         // determine if post resolution checks are needed
         boolean needPostResolutionChecks = true;
@@ -295,11 +309,17 @@ public final class ModuleBootstrap {
                                 needPostResolutionChecks,
                                 traceOutput);
 
-        // time to create configuration
-        PerfCounters.resolveTime.addElapsedTimeFrom(t3);
+        PerfCounters.resolveTime.addElapsedTimeFrom(t4);
 
-        // check module names and incubating status
-        checkModuleNamesAndStatus(cf);
+
+        // Step 5: Map the modules in the configuration to class loaders.
+        // The static configuration provides the mapping of standard and JDK
+        // modules to the boot and platform loaders. All other modules (JDK
+        // tool modules, and both explicit and automatic modules on the
+        // application module path) are defined to the application class
+        // loader.
+
+        long t5 = System.nanoTime();
 
         // mapping of modules to class loaders
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
@@ -312,11 +332,9 @@ public final class ModuleBootstrap {
                 String name = mref.descriptor().name();
                 ClassLoader cl = clf.apply(name);
                 if (cl == null) {
-
                     if (upgradeModulePath != null
                             && upgradeModulePath.find(name).isPresent())
                         fail(name + ": cannot be loaded from upgrade module path");
-
                     if (!systemModules.find(name).isPresent())
                         fail(name + ": cannot be loaded from application module path");
                 }
@@ -330,55 +348,38 @@ public final class ModuleBootstrap {
             }
         }
 
-        // if needed check that there are no split packages in the set of
-        // resolved modules for the boot layer
+        // check for split packages in the modules mapped to the built-in loaders
         if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
-            Map<String, String> packageToModule = new HashMap<>();
-            for (ResolvedModule resolvedModule : cf.modules()) {
-                ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
-                String name = descriptor.name();
-                for (String p : descriptor.packages()) {
-                    String other = packageToModule.putIfAbsent(p, name);
-                    if (other != null) {
-                        String msg = "Package " + p + " in both module "
-                                     + name + " and module " + other;
-                        throw new LayerInstantiationException(msg);
-                    }
-                }
-            }
+            checkSplitPackages(cf, clf);
         }
 
-        long t4 = System.nanoTime();
-
-        // define modules to VM/runtime
-        ModuleLayer bootLayer = ModuleLayer.empty().defineModules(cf, clf);
-
-        PerfCounters.layerCreateTime.addElapsedTimeFrom(t4);
-
-
-        long t5 = System.nanoTime();
-
-        // define the module to its class loader, except java.base
-        for (ResolvedModule resolvedModule : cf.modules()) {
-            ModuleReference mref = resolvedModule.reference();
-            String name = mref.descriptor().name();
-            ClassLoader cl = clf.apply(name);
-            if (cl == null) {
-                if (!name.equals(JAVA_BASE)) BootLoader.loadModule(mref);
-            } else {
-                ((BuiltinClassLoader)cl).loadModule(mref);
-            }
-        }
+        // load/register the modules with the built-in class loaders
+        loadModules(cf, clf);
 
         PerfCounters.loadModulesTime.addElapsedTimeFrom(t5);
 
 
-        // --add-reads, --add-exports/--add-opens
+        // Step 6: Define all modules to the VM
+
+        long t6 = System.nanoTime();
+        ModuleLayer bootLayer = ModuleLayer.empty().defineModules(cf, clf);
+        PerfCounters.layerCreateTime.addElapsedTimeFrom(t6);
+
+
+        // Step 7: Miscellaneous
+
+        // check incubating status
+        checkIncubatingStatus(cf);
+
+        // --add-reads, --add-exports/--add-opens, and -illegal-access
+        long t7 = System.nanoTime();
         addExtraReads(bootLayer);
-        addExtraExportsAndOpens(bootLayer);
+        boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+        addIllegalAccess(bootLayer, upgradeModulePath, extraExportsOrOpens);
+        PerfCounters.adjustModulesTime.addElapsedTimeFrom(t7);
 
         // total time to initialize
-        PerfCounters.bootstrapTime.addElapsedTimeFrom(t0);
+        PerfCounters.bootstrapTime.addElapsedTimeFrom(t1);
 
         return bootLayer;
     }
@@ -395,6 +396,51 @@ public final class ModuleBootstrap {
 
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
         return ModuleLayer.empty().defineModules(cf, clf);
+    }
+
+    /**
+     * Load/register the modules to the built-in class loaders.
+     */
+    private static void loadModules(Configuration cf,
+                                    Function<String, ClassLoader> clf) {
+        for (ResolvedModule resolvedModule : cf.modules()) {
+            ModuleReference mref = resolvedModule.reference();
+            String name = resolvedModule.name();
+            ClassLoader loader = clf.apply(name);
+            if (loader == null) {
+                // skip java.base as it is already loaded
+                if (!name.equals(JAVA_BASE)) {
+                    BootLoader.loadModule(mref);
+                }
+            } else if (loader instanceof BuiltinClassLoader) {
+                ((BuiltinClassLoader) loader).loadModule(mref);
+            }
+        }
+    }
+
+    /**
+     * Checks for split packages between modules defined to the built-in class
+     * loaders.
+     */
+    private static void checkSplitPackages(Configuration cf,
+                                           Function<String, ClassLoader> clf) {
+        Map<String, String> packageToModule = new HashMap<>();
+        for (ResolvedModule resolvedModule : cf.modules()) {
+            ModuleDescriptor descriptor = resolvedModule.reference().descriptor();
+            String name = descriptor.name();
+            ClassLoader loader = clf.apply(name);
+            if (loader == null || loader instanceof BuiltinClassLoader) {
+                for (String p : descriptor.packages()) {
+                    String other = packageToModule.putIfAbsent(p, name);
+                    if (other != null) {
+                        String msg = "Package " + p + " in both module "
+                                     + name + " and module " + other;
+                        throw new LayerInstantiationException(msg);
+                    }
+                }
+            }
+
+        }
     }
 
     /**
@@ -458,15 +504,14 @@ public final class ModuleBootstrap {
         }
     }
 
-
     /**
      * Initialize the module patcher for the initial configuration passed on the
      * value of the --patch-module options.
      */
     private static ModulePatcher initModulePatcher() {
         Map<String, List<String>> map = decode("jdk.module.patch.",
-                                               File.pathSeparator,
-                                               false);
+                File.pathSeparator,
+                false);
         return new ModulePatcher(map);
     }
 
@@ -538,38 +583,27 @@ public final class ModuleBootstrap {
      * Process the --add-exports and --add-opens options to export/open
      * additional packages specified on the command-line.
      */
-    private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
+    private static boolean addExtraExportsAndOpens(ModuleLayer bootLayer) {
+        boolean extraExportsOrOpens = false;
+
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
         if (!extraExports.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraExports, false);
+            extraExportsOrOpens = true;
         }
+
 
         // --add-opens
         prefix = "jdk.module.addopens.";
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
+            extraExportsOrOpens = true;
         }
 
-        // --permit-illegal-access
-        if (getAndRemoveProperty("jdk.module.permitIllegalAccess") != null) {
-            warn("--permit-illegal-access will be removed in the next major release");
-            IllegalAccessLogger.Builder builder = new IllegalAccessLogger.Builder();
-            Module unnamed = BootLoader.getUnnamedModule();
-            bootLayer.modules().stream().forEach(m -> {
-                m.getDescriptor()
-                 .packages()
-                 .stream()
-                 .filter(pn -> !m.isOpen(pn, unnamed))  // skip if opened by --add-opens
-                 .forEach(pn -> {
-                     builder.logAccessToOpenPackage(m, pn, "--permit-illegal-access");
-                     Modules.addOpensToAllUnnamed(m, pn);
-                 });
-            });
-            IllegalAccessLogger.setIllegalAccessLogger(builder.build());
-        }
+        return extraExportsOrOpens;
     }
 
     private static void addExtraExportsOrOpens(ModuleLayer bootLayer,
@@ -636,6 +670,102 @@ public final class ModuleBootstrap {
 
             }
         }
+    }
+
+    /**
+     * Process the --illegal-access option (and its default) to open packages
+     * of system modules in the boot layer to code in unnamed modules.
+     */
+    private static void addIllegalAccess(ModuleLayer bootLayer,
+                                         ModuleFinder upgradeModulePath,
+                                         boolean extraExportsOrOpens) {
+        String value = getAndRemoveProperty("jdk.module.illegalAccess");
+        IllegalAccessLogger.Mode mode = IllegalAccessLogger.Mode.ONESHOT;
+        if (value != null) {
+            switch (value) {
+                case "deny":
+                    return;
+                case "permit":
+                    break;
+                case "warn":
+                    mode = IllegalAccessLogger.Mode.WARN;
+                    break;
+                case "debug":
+                    mode = IllegalAccessLogger.Mode.DEBUG;
+                    break;
+                default:
+                    fail("Value specified to --illegal-access not recognized:"
+                            + " '" + value + "'");
+                    return;
+            }
+        }
+        IllegalAccessLogger.Builder builder
+            = new IllegalAccessLogger.Builder(mode, System.err);
+
+        Map<String, Set<String>> map1 = SystemModules.concealedPackagesToOpen();
+        Map<String, Set<String>> map2 = SystemModules.exportedPackagesToOpen();
+        if (map1.isEmpty() && map2.isEmpty()) {
+            // need to generate maps when on exploded build
+            IllegalAccessMaps maps = IllegalAccessMaps.generate(limitedFinder());
+            map1 = maps.concealedPackagesToOpen();
+            map2 = maps.exportedPackagesToOpen();
+        }
+
+        // open specific packages in the system modules
+        for (Module m : bootLayer.modules()) {
+            ModuleDescriptor descriptor = m.getDescriptor();
+            String name = m.getName();
+
+            // skip open modules
+            if (descriptor.isOpen()) {
+                continue;
+            }
+
+            // skip modules loaded from the upgrade module path
+            if (upgradeModulePath != null
+                && upgradeModulePath.find(name).isPresent()) {
+                continue;
+            }
+
+            Set<String> concealedPackages = map1.getOrDefault(name, Set.of());
+            Set<String> exportedPackages = map2.getOrDefault(name, Set.of());
+
+            // refresh the set of concealed and exported packages if needed
+            if (extraExportsOrOpens) {
+                concealedPackages = new HashSet<>(concealedPackages);
+                exportedPackages = new HashSet<>(exportedPackages);
+                Iterator<String> iterator = concealedPackages.iterator();
+                while (iterator.hasNext()) {
+                    String pn = iterator.next();
+                    if (m.isExported(pn, BootLoader.getUnnamedModule())) {
+                        // concealed package is exported to ALL-UNNAMED
+                        iterator.remove();
+                        exportedPackages.add(pn);
+                    }
+                }
+                iterator = exportedPackages.iterator();
+                while (iterator.hasNext()) {
+                    String pn = iterator.next();
+                    if (m.isOpen(pn, BootLoader.getUnnamedModule())) {
+                        // exported package is opened to ALL-UNNAMED
+                        iterator.remove();
+                    }
+                }
+            }
+
+            // log reflective access to all types in concealed packages
+            builder.logAccessToConcealedPackages(m, concealedPackages);
+
+            // log reflective access to non-public members/types in exported packages
+            builder.logAccessToExportedPackages(m, exportedPackages);
+
+            // open the packages to unnamed modules
+            JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+            jla.addOpensToAllUnnamed(m, concat(concealedPackages.iterator(),
+                                               exportedPackages.iterator()));
+        }
+
+        builder.complete();
     }
 
     /**
@@ -708,17 +838,16 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Checks the names and resolution bit of each module in the configuration,
-     * emitting warnings if needed.
+     * Checks incubating status of modules in the configuration
      */
-    private static void checkModuleNamesAndStatus(Configuration cf) {
+    private static void checkIncubatingStatus(Configuration cf) {
         String incubating = null;
-        for (ResolvedModule rm : cf.modules()) {
-            ModuleReference mref = rm.reference();
-            String mn = mref.descriptor().name();
+        for (ResolvedModule resolvedModule : cf.modules()) {
+            ModuleReference mref = resolvedModule.reference();
 
             // emit warning if the WARN_INCUBATING module resolution bit set
             if (ModuleResolution.hasIncubatingWarning(mref)) {
+                String mn = mref.descriptor().name();
                 if (incubating == null) {
                     incubating = mn;
                 } else {
@@ -777,6 +906,21 @@ public final class ModuleBootstrap {
         }
     }
 
+    static <T> Iterator<T> concat(Iterator<T> iterator1, Iterator<T> iterator2) {
+        return new Iterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return iterator1.hasNext() || iterator2.hasNext();
+            }
+            @Override
+            public T next() {
+                if (iterator1.hasNext()) return iterator1.next();
+                if (iterator2.hasNext()) return iterator2.next();
+                throw new NoSuchElementException();
+            }
+        };
+    }
+
     static class PerfCounters {
 
         static PerfCounter systemModulesTime
@@ -791,6 +935,8 @@ public final class ModuleBootstrap {
             = PerfCounter.newPerfCounter("jdk.module.bootstrap.layerCreateTime");
         static PerfCounter loadModulesTime
             = PerfCounter.newPerfCounter("jdk.module.bootstrap.loadModulesTime");
+        static PerfCounter adjustModulesTime
+            = PerfCounter.newPerfCounter("jdk.module.bootstrap.adjustModulesTime");
         static PerfCounter bootstrapTime
             = PerfCounter.newPerfCounter("jdk.module.bootstrap.totalTime");
     }

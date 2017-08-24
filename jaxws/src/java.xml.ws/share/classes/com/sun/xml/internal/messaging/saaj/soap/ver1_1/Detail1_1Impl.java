@@ -51,11 +51,13 @@ public class Detail1_1Impl extends DetailImpl {
         super(ownerDoc, domElement);
     }
 
+    @Override
     protected DetailEntry createDetailEntry(Name name) {
         return new DetailEntry1_1Impl(
             (SOAPDocumentImpl) getOwnerDocument(),
             name);
     }
+    @Override
     protected DetailEntry createDetailEntry(QName name) {
         return new DetailEntry1_1Impl(
             (SOAPDocumentImpl) getOwnerDocument(),

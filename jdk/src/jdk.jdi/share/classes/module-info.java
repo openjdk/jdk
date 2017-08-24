@@ -39,12 +39,13 @@
  * creation, etc. The ability to inspect a suspended thread's state, local
  * variables, stack backtrace, etc.
  * <p>
- * JDI is the highest-layer of the Java Platform Debugger Architecture (JPDA).
- * For more information on the Java Platform Debugger Architecture, see the <a
- * href="{@docRoot}/../../../../technotes/guides/jpda/index.html"> Java
- * Platform Debugger Architecture documentation</a> for this release and the <a
- * href="http://java.sun.com/products/jpda">Java Platform Debugger Architecture
- * website</a>.
+ * JDI is the highest-layer of the
+ * <a href="{@docRoot}/../specs/jpda/jpda.html">
+ * Java Platform Debugger Architecture (JPDA)</a>.
+ * <p>
+ * This module includes a simple command-line debugger,
+ * <em>{@index jdb jdb tool}</em>.
+ *
  * <h3>Global Exceptions</h3>
  * <p>
  * This section documents exceptions which apply to the entire API and are thus
@@ -102,10 +103,6 @@
  *   unloaded.
  * </blockquote>
  *
- * <h3>jdb</h3>
- *
- * <em>{@index jdb jdb tool}</em> is a simple command-line debugger provided
- * in this module.
  *
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
  * <dt class="simpleTagLabel">Tool Guides:
@@ -119,6 +116,8 @@
  *
  * @moduleGraph
  * @since 9
+ * @see <a href="{@docRoot}/../specs/jpda/jpda.html">
+ * Java Platform Debugger Architecture (JPDA)</a>
  */
 module jdk.jdi {
     requires jdk.attach;

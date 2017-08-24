@@ -40,8 +40,8 @@ module jdk.policytool {
     requires java.desktop;
     requires java.logging;
     requires java.management;
+    requires java.security.jgss;
     requires java.sql;
     requires jdk.net;
-    requires java.security.jgss;
     requires jdk.security.jgss;
 }

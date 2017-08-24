@@ -154,6 +154,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public ResolvedJavaType getHostClass() {
+        return null;
+    }
+
+    @Override
     public JavaKind getJavaKind() {
         return kind;
     }

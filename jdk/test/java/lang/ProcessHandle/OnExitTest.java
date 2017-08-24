@@ -42,14 +42,7 @@ import org.testng.TestNG;
  * @test
  * @key intermittent
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          jdk.management
  * @build jdk.test.lib.Utils
- *        jdk.test.lib.Asserts
- *        jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.JDKToolLauncher
- *        jdk.test.lib.Platform
- *        jdk.test.lib.process.*
  * @run testng OnExitTest
  * @summary Functions of Process.onExit and ProcessHandle.onExit
  * @author Roger Riggs
@@ -251,10 +244,30 @@ public class OnExitTest extends ProcessUtil {
                 }
                 Assert.assertNull(line, "waitpid didn't wait");
 
+                A.toHandle().onExit().thenAccept(p -> {
+                    System.out.printf(" A.toHandle().onExit().A info: %s, now: %s%n",
+                            p.info(), Instant.now());
+                });
+
+                A.onExit().thenAccept(p -> {
+                    System.out.printf(" A.onExit().A info: %s, now: %s%n",
+                            p.info(), Instant.now());
+                });
+
+                ProcessHandle.Info A_info = A.info();
+
                 A.sendAction("exit", 0L);
 
                 // Look for B to report that A has exited
                 do {
+                    Instant start = Instant.now();
+                    while (blines.isEmpty() && A.isAlive()) {
+                        A_info = A.info(); // Spin
+                    }
+                    Instant end = Instant.now();
+                    System.out.printf(" a.isAlive: %s, a.info: %s, @%s%n", A.isAlive(), A.info(),
+                            Duration.between(start, end));
+
                     split = getSplitLine(blines);
                 } while (!"waitpid".equals(split[1]));
 

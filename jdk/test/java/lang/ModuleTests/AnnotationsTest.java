@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ public class AnnotationsTest {
     public void testUnnamedModule() {
         Module module = this.getClass().getModule();
         assertTrue(module.getAnnotations().length == 0);
+        assertTrue(module.getDeclaredAnnotations().length == 0);
     }
 
     /**
@@ -88,6 +89,7 @@ public class AnnotationsTest {
         Annotation[] a = module.getAnnotations();
         assertTrue(a.length == 1);
         assertTrue(a[0] instanceof Deprecated);
+        assertEquals(module.getDeclaredAnnotations(), a);
     }
 
 

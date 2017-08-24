@@ -46,11 +46,13 @@ class AsyncSSLConnection extends HttpConnection
 
     final AsyncSSLDelegate sslDelegate;
     final PlainHttpConnection plainConnection;
+    final String serverName;
 
     AsyncSSLConnection(InetSocketAddress addr, HttpClientImpl client, String[] ap) {
         super(addr, client);
         plainConnection = new PlainHttpConnection(addr, client);
-        sslDelegate = new AsyncSSLDelegate(plainConnection, client, ap);
+        serverName = Utils.getServerName(addr);
+        sslDelegate = new AsyncSSLDelegate(plainConnection, client, ap, serverName);
     }
 
     @Override
