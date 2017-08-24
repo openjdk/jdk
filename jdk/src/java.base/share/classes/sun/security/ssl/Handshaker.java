@@ -1034,6 +1034,12 @@ abstract class Handshaker {
             input.mark(4);
 
             messageType = (byte)input.getInt8();
+            if (HandshakeMessage.isUnsupported(messageType)) {
+                throw new SSLProtocolException(
+                    "Received unsupported or unknown handshake message: " +
+                    messageType);
+            }
+
             messageLen = input.getInt24();
 
             if (input.available() < messageLen) {
