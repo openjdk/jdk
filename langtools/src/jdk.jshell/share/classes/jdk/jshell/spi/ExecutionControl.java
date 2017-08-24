@@ -45,6 +45,8 @@ import java.util.Set;
  * <p>
  * Methods defined in this interface should only be called by the core JShell
  * implementation.
+ *
+ * @since 9
  */
 public interface ExecutionControl extends AutoCloseable {
 
