@@ -26,6 +26,7 @@
 package jdk.incubator.http.internal.common;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
@@ -39,6 +40,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * All methods of CompletionStage return instances of this class.
  */
 public final class MinimalFuture<T> extends CompletableFuture<T> {
+
+    @FunctionalInterface
+    public interface ExceptionalSupplier<U> {
+        U get() throws Throwable;
+    }
 
     final static AtomicLong TOKENS = new AtomicLong();
     final long id;
@@ -54,6 +60,29 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         MinimalFuture<U> f = new MinimalFuture<>();
         f.completeExceptionally(ex);
         return f;
+    }
+
+    public static <U> CompletableFuture<U> supply(ExceptionalSupplier<U> supplier) {
+        CompletableFuture<U> cf = new MinimalFuture<>();
+        try {
+            U value = supplier.get();
+            cf.complete(value);
+        } catch (Throwable t) {
+            cf.completeExceptionally(t);
+        }
+        return cf;
+    }
+
+    public static <U> CompletableFuture<U> supply(ExceptionalSupplier<U> supplier, Executor executor) {
+        CompletableFuture<U> cf = new MinimalFuture<>();
+        cf.completeAsync( () -> {
+            try {
+                return supplier.get();
+            } catch (Throwable ex) {
+                throw new CompletionException(ex);
+            }
+        }, executor);
+        return cf;
     }
 
     public MinimalFuture() {
@@ -110,7 +139,6 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         }
     }
 
-    @Override
     public <U> MinimalFuture<U> newIncompleteFuture() {
         return new MinimalFuture<>();
     }

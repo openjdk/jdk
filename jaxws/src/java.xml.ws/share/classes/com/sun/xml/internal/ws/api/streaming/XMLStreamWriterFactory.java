@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.encoding.HasEncoding;
 import com.sun.xml.internal.ws.encoding.SOAPBindingCodec;
 import com.sun.xml.internal.ws.streaming.XMLReaderException;
+import com.sun.xml.internal.ws.util.MrJarUtil;
 import com.sun.xml.internal.ws.util.xml.XMLStreamWriterFilter;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -85,7 +86,7 @@ public abstract class XMLStreamWriterFactory {
 
             // this system property can be used to disable the pooling altogether,
             // in case someone hits an issue with pooling in the production system.
-            if (!Boolean.getBoolean(XMLStreamWriterFactory.class.getName()+".noPool")) {
+            if (!MrJarUtil.getNoPoolProperty(XMLStreamWriterFactory.class.getName())) {
                 try {
                     Class<?> clazz = xof.createXMLStreamWriter(new StringWriter()).getClass();
                     if (clazz.getName().startsWith("com.sun.xml.internal.stream.")) {

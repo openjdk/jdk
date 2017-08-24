@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,6 @@
  */
 package utils;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,11 +33,7 @@ import java.util.List;
 public class GcProvoker{
 
     // Uses fixed small objects to avoid Humongous objects allocation in G1
-    public static final int MEMORY_CHUNK = 2048;
-    public static final float ALLOCATION_TOLERANCE = 0.05f;
-
-    public static List<Object> allocatedMetaspace;
-    public static List<Object> allocatedMemory;
+    private static final int MEMORY_CHUNK = 2048;
 
     private final Runtime runtime;
 
@@ -61,21 +54,6 @@ public class GcProvoker{
         return list;
     }
 
-    private List<Object> allocateAvailableHeap(float targetUsage) {
-        // Calculates size of free memory after allocation with small tolerance.
-        long minFreeMemory = (long) ((1.0 - (targetUsage + ALLOCATION_TOLERANCE)) * runtime.maxMemory());
-        List<Object> list = new ArrayList<>();
-        do {
-            try {
-                list.add(new byte[MEMORY_CHUNK]);
-            } catch (OutOfMemoryError e) {
-                list = null;
-                throw new RuntimeException("Unexpected OOME '" + e.getMessage() + "' while eating " + targetUsage + " of heap memory.");
-            }
-        } while (runtime.freeMemory() > minFreeMemory);
-        return list;
-    }
-
     /**
      * This method provokes a GC
      */
@@ -93,65 +71,7 @@ public class GcProvoker{
         }
     }
 
-    /**
-     * Allocates heap and metaspace upon exit not less than targetMemoryUsagePercent percents
-     * of heap and metaspace have been consumed.
-     *
-     * @param targetMemoryUsagePercent how many percent of heap and metaspace to
-     * allocate
-     */
-
-    public void allocateMetaspaceAndHeap(float targetMemoryUsagePercent) {
-        // Metaspace should be filled before Java Heap to prevent unexpected OOME
-        // in the Java Heap while filling Metaspace
-        allocatedMetaspace = eatMetaspace(targetMemoryUsagePercent);
-        allocatedMemory = allocateHeap(targetMemoryUsagePercent);
-    }
-
-    /**
-     * Allocates heap and metaspace upon exit targetMemoryUsagePercent percents
-     * of heap and metaspace have been consumed.
-     *
-     * @param targetMemoryUsagePercent how many percent of heap and metaspace to
-     * allocate
-     */
-    public void allocateAvailableMetaspaceAndHeap(float targetMemoryUsagePercent) {
-        // Metaspace should be filled before Java Heap to prevent unexpected OOME
-        // in the Java Heap while filling Metaspace
-        allocatedMetaspace = eatMetaspace(targetMemoryUsagePercent);
-        allocatedMemory = allocateAvailableHeap(targetMemoryUsagePercent);
-    }
-
-    private List<Object> eatMetaspace(float targetUsage) {
-        List<Object> list = new ArrayList<>();
-        final String metaspacePoolName = "Metaspace";
-        MemoryPoolMXBean metaspacePool = null;
-        for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
-            if (pool.getName().contains(metaspacePoolName)) {
-                metaspacePool = pool;
-                break;
-            }
-        }
-        if (metaspacePool == null) {
-            throw new RuntimeException("MXBean for Metaspace pool wasn't found");
-        }
-        float currentUsage;
-        GeneratedClassProducer gp = new GeneratedClassProducer();
-        do {
-            try {
-                list.add(gp.create(0));
-            } catch (OutOfMemoryError oome) {
-                list = null;
-                throw new RuntimeException("Unexpected OOME '" + oome.getMessage() + "' while eating " + targetUsage + " of Metaspace.");
-            }
-            MemoryUsage memoryUsage = metaspacePool.getUsage();
-            currentUsage = (((float) memoryUsage.getUsed()) / memoryUsage.getMax());
-        } while (currentUsage < targetUsage);
-        return list;
-    }
-
     public GcProvoker() {
         runtime = Runtime.getRuntime();
     }
-
 }

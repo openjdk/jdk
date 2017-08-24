@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,11 +148,7 @@ class ResponseContent {
     // make sure we have at least 1 byte to look at
     private void getHunk() throws IOException {
         if (chunkbuf == null || !chunkbuf.hasRemaining()) {
-            if (chunkbuf == null) {
-                chunkbuf = Utils.getBuffer();
-            }
-            chunkbuf.clear();
-            connection.read(chunkbuf);
+            chunkbuf = connection.read();
         }
     }
 
@@ -256,7 +252,6 @@ class ResponseContent {
 
     private void pushBodyFixed(ByteBuffer b) throws IOException {
         int remaining = contentLength;
-        //lastBufferUsed = b;
         while (b.hasRemaining() && remaining > 0) {
             ByteBuffer buffer = Utils.getBuffer();
             int amount = Math.min(b.remaining(), remaining);
@@ -265,22 +260,14 @@ class ResponseContent {
             buffer.flip();
             dataConsumer.accept(Optional.of(buffer));
         }
-        //client.returnBuffer(b);
         while (remaining > 0) {
-            ByteBuffer buffer = Utils.getBuffer();
-            int xx = connection.read(buffer);
-            if (xx == -1)
+            ByteBuffer buffer = connection.read();
+            if (buffer == null)
                 throw new IOException("connection closed");
 
             int bytesread = buffer.remaining();
             // assume for now that pipelining not implemented
             if (bytesread > remaining) {
-                System.err.println("xx = " + xx);
-                System.err.println("bytesread = " + bytesread);
-                System.err.println("remaining = " + remaining);
-                for (int i=0; i<remaining; i++) {
-                    System.err.printf("%x ", buffer.get());
-                }
                 throw new IOException("too many bytes read");
             }
             remaining -= bytesread;

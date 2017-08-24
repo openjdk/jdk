@@ -198,6 +198,15 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
+//------------------------------CmpULNode---------------------------------------
+// Compare 2 unsigned long values, returning condition codes (-1, 0 or 1).
+class CmpULNode : public CmpNode {
+public:
+  CmpULNode(Node* in1, Node* in2) : CmpNode(in1, in2) { }
+  virtual int Opcode() const;
+  virtual const Type* sub(const Type*, const Type*) const;
+};
+
 //------------------------------CmpL3Node--------------------------------------
 // Compare 2 long values, returning integer value (-1, 0 or 1).
 class CmpL3Node : public CmpLNode {
