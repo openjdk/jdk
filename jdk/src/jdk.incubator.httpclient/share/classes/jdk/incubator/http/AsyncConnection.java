@@ -71,6 +71,11 @@ interface AsyncConnection {
     void startReading();
 
     /**
+     * Cancel asynchronous reading. Used to downgrade a HTTP/2 connection to HTTP/1
+     */
+    void stopAsyncReading();
+
+    /**
      * In async mode, this method puts buffers at the end of the send queue.
      * When in async mode, calling this method should later be followed by
      * subsequent flushAsync invocation.
@@ -78,6 +83,11 @@ interface AsyncConnection {
      * thread is writing.
      */
     void writeAsync(ByteBufferReference[] buffers) throws IOException;
+
+    /**
+     * Re-enable asynchronous reads through the callback
+     */
+    void enableCallback();
 
     /**
      * In async mode, this method may put buffers at the beginning of send queue,
@@ -99,5 +109,4 @@ interface AsyncConnection {
      * and continue execution.
      */
     void flushAsync() throws IOException;
-
 }

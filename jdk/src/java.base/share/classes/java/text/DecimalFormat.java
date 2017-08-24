@@ -172,60 +172,63 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * are not localized.
  *
  * <blockquote>
- * <table border=0 cellspacing=3 cellpadding=0 summary="Chart showing symbol,
- *  location, localized, and meaning.">
- *     <tr style="background-color: rgb(204, 204, 255);">
- *          <th align=left>Symbol
- *          <th align=left>Location
- *          <th align=left>Localized?
- *          <th align=left>Meaning
- *     <tr valign=top>
+ * <table class="striped">
+ * <caption style="display:none">Chart showing symbol, location, localized, and meaning.</caption>
+ * <thead>
+ *     <tr>
+ *          <th style="text-align:left">Symbol
+ *          <th style="text-align:left">Location
+ *          <th style="text-align:left">Localized?
+ *          <th style="text-align:left">Meaning
+ * </thead>
+ * <tbody>
+ *     <tr style="vertical-align:top">
  *          <td><code>0</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>#</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Digit, zero shows as absent
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>.</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Decimal separator or monetary decimal separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>-</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Minus sign
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>,</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Grouping separator
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>E</code>
  *          <td>Number
  *          <td>Yes
  *          <td>Separates mantissa and exponent in scientific notation.
  *              <em>Need not be quoted in prefix or suffix.</em>
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>;</code>
  *          <td>Subpattern boundary
  *          <td>Yes
  *          <td>Separates positive and negative subpatterns
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>%</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 100 and show as percentage
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>&#92;u2030</code>
  *          <td>Prefix or suffix
  *          <td>Yes
  *          <td>Multiply by 1000 and show as per mille value
- *     <tr style="vertical-align: top; background-color: rgb(238, 238, 255);">
+ *     <tr style="vertical-align: top">
  *          <td><code>&#164;</code> (<code>&#92;u00A4</code>)
  *          <td>Prefix or suffix
  *          <td>No
@@ -233,7 +236,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              doubled, replaced by international currency symbol.
  *              If present in a pattern, the monetary decimal separator
  *              is used instead of the decimal separator.
- *     <tr valign=top>
+ *     <tr style="vertical-align:top">
  *          <td><code>'</code>
  *          <td>Prefix or suffix
  *          <td>No
@@ -241,6 +244,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *              for example, <code>"'#'#"</code> formats 123 to
  *              <code>"#123"</code>.  To create a single quote
  *              itself, use two in a row: <code>"# o''clock"</code>.
+ * </tbody>
  * </table>
  * </blockquote>
  *
@@ -327,7 +331,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * and <code>isParseIntegerOnly()</code> are false.
  * </ul>
  *
- * <h4><a name="synchronization">Synchronization</a></h4>
+ * <h4><a id="synchronization">Synchronization</a></h4>
  *
  * <p>
  * Decimal formats are generally not synchronized.
@@ -377,6 +381,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @see          ParsePosition
  * @author       Mark Davis
  * @author       Alan Liu
+ * @since 1.1
  */
 public class DecimalFormat extends NumberFormat {
 

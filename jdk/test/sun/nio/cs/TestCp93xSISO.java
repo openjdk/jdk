@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4429358
-   @summary Remove illegal SI/SO char to byte mappings
+ * @bug 4429358
+ * @summary Remove illegal SI/SO char to byte mappings
+ * @modules jdk.charsets
  */
 
 public class TestCp93xSISO {

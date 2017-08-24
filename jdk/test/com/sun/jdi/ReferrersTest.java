@@ -22,15 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 5089849
- *  @summary Add support for backtracking reference graph.
- *  @author jjh
+ * @test
+ * @bug 5089849
+ * @summary Add support for backtracking reference graph.
+ * @author jjh
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g ReferrersTest.java
- *  @run driver ReferrersTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g ReferrersTest.java
+ * @run driver ReferrersTest
  */
 
 /*

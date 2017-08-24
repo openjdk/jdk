@@ -812,7 +812,7 @@ public class JEditorPane extends JTextComponent {
 
     /**
      * Scrolls the view to the given reference location
-     * (that is, the value returned by the <code>UL.getRef</code>
+     * (that is, the value returned by the <code>URL.getRef</code>
      * method for the URL being displayed).  By default, this
      * method only knows how to locate a reference in an
      * HTMLDocument.  The implementation calls the

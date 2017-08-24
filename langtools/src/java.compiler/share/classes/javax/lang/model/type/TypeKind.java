@@ -157,6 +157,7 @@ public enum TypeKind {
      * A pseudo-type corresponding to a module element.
      * @see NoType
      * @since 9
+     * @spec JPMS
      */
     MODULE;
 

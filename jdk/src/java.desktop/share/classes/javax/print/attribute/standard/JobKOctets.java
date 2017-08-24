@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,15 @@ import javax.print.attribute.PrintJobAttribute;
  * specified by the doc's {@link javax.print.DocFlavor DocFlavor}, as
  * shown in the table below.
  *
- * <TABLE BORDER=1 CELLPADDING=2 CELLSPACING=1 SUMMARY="Table showing computation of doc sizes">
+ * <table class="striped">
+ * <caption>Table showing computation of doc sizes</caption>
+ * <thead>
  * <TR>
  * <TH>Representation Class</TH>
  * <TH>Document Size</TH>
  * </TR>
+ * </thead>
+ * <tbody>
  * <TR>
  * <TD>byte[]</TD>
  * <TD>Length of the byte array</TD>
@@ -107,6 +111,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <TD>java.awt.print.Pageable</TD>
  * <TD>Implementation dependent&#42;</TD>
  * </TR>
+ * </tbody>
  * </TABLE>
  * <P>
  * &#42; In these cases the Print Service itself generates the print data sent
