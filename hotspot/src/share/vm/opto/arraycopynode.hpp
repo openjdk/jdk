@@ -108,7 +108,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
-  static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, ArrayCopyNode*& ac);
+  static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call);
 
 public:
 
@@ -167,7 +167,7 @@ public:
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
   static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
-  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify);
+  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

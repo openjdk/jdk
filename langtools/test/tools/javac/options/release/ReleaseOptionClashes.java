@@ -44,17 +44,19 @@ public class ReleaseOptionClashes {
     }
 
     void run() throws Exception {
-        doRunTest("-bootclasspath", "any");
-        doRunTest("-Xbootclasspath:any");
-        doRunTest("-Xbootclasspath/a:any");
-        doRunTest("-Xbootclasspath/p:any");
-        doRunTest("-endorseddirs", "any");
-        doRunTest("-extdirs", "any");
-        doRunTest("-source", "8");
-        doRunTest("-target", "8");
+        doRunTest("7", "-bootclasspath", "any");
+        doRunTest("7", "-Xbootclasspath:any");
+        doRunTest("7", "-Xbootclasspath/a:any");
+        doRunTest("7", "-Xbootclasspath/p:any");
+        doRunTest("7", "-endorseddirs", "any");
+        doRunTest("7", "-extdirs", "any");
+        doRunTest("7", "-source", "8");
+        doRunTest("7", "-target", "8");
+        doRunTest("9", "--system", "none");
+        doRunTest("9", "--upgrade-module-path", "any");
     }
 
-    void doRunTest(String... args) throws Exception {
+    void doRunTest(String release, String... args) throws Exception {
         System.out.println("Testing clashes for arguments: " + Arrays.asList(args));
         Class<?> log = Class.forName("com.sun.tools.javac.util.Log", true, cl);
         Field useRawMessages = log.getDeclaredField("useRawMessages");
@@ -62,7 +64,7 @@ public class ReleaseOptionClashes {
         useRawMessages.setBoolean(null, true);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         List<String> options = new ArrayList<>();
-        options.addAll(Arrays.asList("--release", "7"));
+        options.addAll(Arrays.asList("--release", release));
         options.addAll(Arrays.asList(args));
         options.add(System.getProperty("test.src") + File.separator + "ReleaseOptionClashes.java");
         compiler.run(null, null, out, options.toArray(new String[0]));

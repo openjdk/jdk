@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,7 +425,7 @@ module IOP {
      * encoded using GIOP 1.2 with a TCS-W of UTF-16.  This service context
      * may be sent on Reply messages with a reply_status of SYSTEM_EXCEPTION
      * or USER_EXCEPTION. The usage of this service context is defined
-     * by language mappings. <br/> <br/>
+     * by language mappings. <br> <br>
      *
      * IDL/Java: ptc/02-01-22: 1.15.2: 
      * When a System Exception is marshaled, its GIOP Reply message shall

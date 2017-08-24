@@ -25,7 +25,7 @@
  * @test
  * @library modules
  * @build m1/* m2/*
- * @run testng/othervm --add-modules=m1,m2 Basic
+ * @run testng/othervm --add-modules=m1,m2 --illegal-access=deny Basic
  * @summary Basic test of open modules and open packages
  */
 
@@ -36,7 +36,6 @@ import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
-import java.lang.reflect.Module;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;

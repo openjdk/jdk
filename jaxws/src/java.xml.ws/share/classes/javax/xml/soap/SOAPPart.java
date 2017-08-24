@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public abstract class SOAPPart implements org.w3c.dom.Document, Node {
      * @return  an {@code Iterator} object with all of the Mime
      *          headers for this {@code SOAPPart} object
      */
-    public abstract Iterator getAllMimeHeaders();
+    public abstract Iterator<MimeHeader> getAllMimeHeaders();
 
     /**
      * Retrieves all {@code MimeHeader} objects that match a name in
@@ -224,7 +224,7 @@ public abstract class SOAPPart implements org.w3c.dom.Document, Node {
      * @return  all of the MIME headers that match one of the names in the
      *           given array, returned as an {@code Iterator} object
      */
-    public abstract Iterator getMatchingMimeHeaders(String[] names);
+    public abstract Iterator<MimeHeader> getMatchingMimeHeaders(String[] names);
 
     /**
      * Retrieves all {@code MimeHeader} objects whose name does
@@ -237,7 +237,7 @@ public abstract class SOAPPart implements org.w3c.dom.Document, Node {
      *           given array.  The nonmatching MIME headers are returned as an
      *           {@code Iterator} object.
      */
-    public abstract Iterator getNonMatchingMimeHeaders(String[] names);
+    public abstract Iterator<MimeHeader> getNonMatchingMimeHeaders(String[] names);
 
     /**
      * Sets the content of the {@code SOAPEnvelope} object with the data

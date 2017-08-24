@@ -89,7 +89,6 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Module;
 import java.lang.reflect.Method;
 
 /**

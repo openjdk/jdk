@@ -80,22 +80,22 @@ public class JCmd {
             System.exit(0);
         }
 
-        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JCmd.class);
+        Collection<String> pids = ap.getVirtualMachinePids(JCmd.class);
 
-        if (vids.isEmpty()) {
+        if (pids.isEmpty()) {
             System.err.println("Could not find any processes matching : '"
                                + arg.getProcessString() + "'");
             System.exit(1);
         }
 
         boolean success = true;
-        for (VirtualMachineDescriptor vid : vids) {
-            System.out.println(vid.id() + ":");
+        for (String pid : pids) {
+            System.out.println(pid + ":");
             if (arg.isListCounters()) {
-                listCounters(vid.id());
+                listCounters(pid);
             } else {
                 try {
-                    executeCommandForPid(vid.id(), arg.getCommand());
+                    executeCommandForPid(pid, arg.getCommand());
                 } catch(AttachOperationFailedException ex) {
                     System.err.println(ex.getMessage());
                     success = false;
