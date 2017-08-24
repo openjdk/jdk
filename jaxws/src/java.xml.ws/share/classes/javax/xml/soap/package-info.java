@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 
 /**
  * Provides the API for creating and building SOAP messages. This package
- * is defined in the <i>SOAP with Attachments API for Java<sup><font size="-2">TM</font></sup>
- * (SAAJ) 1.4</i> specification.
+ * is defined in the <i>SOAP with Attachments API for Java&trade; (SAAJ) 1.4</i> specification.
  *
  * <p> The API in the <code>javax.xml.soap</code> package allows you to do the following:
  *

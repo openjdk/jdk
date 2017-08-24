@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,15 @@ package javax.sound.midi;
  * {@code MidiMessage} includes methods to get, but not set, these values.
  * Setting them is a subclass responsibility.
  * <p>
- * <a name="integersVsBytes"></a> The MIDI standard expresses MIDI data in
+ * <a id="integersVsBytes"></a> The MIDI standard expresses MIDI data in
  * bytes. However, because Java<sup>TM</sup> uses signed bytes, the Java Sound
  * API uses integers instead of bytes when expressing MIDI data. For example,
  * the {@link #getStatus()} method of {@code MidiMessage} returns MIDI status
  * bytes as integers. If you are processing MIDI data that originated outside
  * Java Sound and now is encoded as signed bytes, the bytes can be
  * converted to integers using this conversion:
- *
- * <center>{@code int i = (int)(byte & 0xFF)}</center>
+ * <p style="text-align:center">
+ * {@code int i = (int)(byte & 0xFF)}
  * <p>
  * If you simply need to pass a known MIDI byte value as a method parameter, it
  * can be expressed directly as an integer, using (for example) decimal or

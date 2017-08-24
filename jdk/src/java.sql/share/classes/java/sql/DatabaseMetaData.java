@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ package java.sql;
  * argument is set to <code>null</code>, that argument's criterion will
  * be dropped from the search.
  *
+ * @since 1.1
  */
 public interface DatabaseMetaData extends Wrapper {
 
@@ -3198,22 +3199,10 @@ public interface DatabaseMetaData extends Wrapper {
     //------------------------- JDBC 4.0 -----------------------------------
 
     /**
-     * Indicates whether or not this data source supports the SQL <code>ROWID</code> type,
-     * and if so  the lifetime for which a <code>RowId</code> object remains valid.
-     * <p>
-     * The returned int values have the following relationship:
-     * <pre>{@code
-     *     ROWID_UNSUPPORTED < ROWID_VALID_OTHER < ROWID_VALID_TRANSACTION
-     *         < ROWID_VALID_SESSION < ROWID_VALID_FOREVER
-     * }</pre>
-     * so conditional logic such as
-     * <pre>{@code
-     *     if (metadata.getRowIdLifetime() > DatabaseMetaData.ROWID_VALID_TRANSACTION)
-     * }</pre>
-     * can be used. Valid Forever means valid across all Sessions, and valid for
-     * a Session means valid across all its contained Transactions.
+     * Indicates whether this data source supports the SQL {@code  ROWID} type,
+     * and the lifetime for which a {@link  RowId} object remains valid.
      *
-     * @return the status indicating the lifetime of a <code>RowId</code>
+     * @return the status indicating the lifetime of a {@code  RowId}
      * @throws SQLException if a database access error occurs
      * @since 1.6
      */

@@ -361,8 +361,8 @@ jdk/src/java.base/share/native/libverify/check_code.c : jdk/src/share/native/com
 jdk/src/java.base/share/native/libverify/check_format.c : jdk/src/share/native/common/check_format.c
 jdk/src/java.base/share/native/libverify/opcodes.in_out : jdk/src/share/native/common/opcodes.in_out
 jdk/src/java.base/share/native/libzip : jdk/src/share/native/java/util/zip
-jdk/src/java.base/share/native/libzip/zlib-1.2.8 : jdk/src/share/native/java/util/zip/zlib-1.2.8
-jdk/src/java.base/share/native/libzip/zlib-1.2.8/patches/ChangeLog_java : jdk/src/share/native/java/util/zip/zlib-1.2.8/patches/ChangeLog_java
+jdk/src/java.base/share/native/libzip/zlib : jdk/src/share/native/java/util/zip/zlib
+jdk/src/java.base/share/native/libzip/zlib/patches/ChangeLog_java : jdk/src/share/native/java/util/zip/zlib/patches/ChangeLog_java
 jdk/src/java.base/unix/classes/java/io : jdk/src/solaris/classes/java/io
 jdk/src/java.base/unix/classes/java/lang : jdk/src/solaris/classes/java/lang
 jdk/src/java.base/unix/classes/java/net : jdk/src/solaris/classes/java/net
