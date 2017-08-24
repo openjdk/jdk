@@ -908,6 +908,8 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public Name version;
         public JavaFileManager.Location sourceLocation;
         public JavaFileManager.Location classLocation;
+        public JavaFileManager.Location patchLocation;
+        public JavaFileManager.Location patchOutputLocation;
 
         /** All directives, in natural order. */
         public List<com.sun.tools.javac.code.Directive> directives;
@@ -945,6 +947,17 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             super(MDL, 0, name, null, owner);
             Assert.checkNonNull(name);
             this.type = new ModuleType(this);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Name getSimpleName() {
+            Name fullName = getQualifiedName();
+            int lastPeriod = fullName.lastIndexOf((byte)'.');
+            if (lastPeriod == -1) {
+                return fullName;
+            } else {
+                return fullName.subName(lastPeriod + 1, fullName.length());
+            }
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)

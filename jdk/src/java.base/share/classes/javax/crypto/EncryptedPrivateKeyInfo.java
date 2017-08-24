@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,9 @@ public class EncryptedPrivateKeyInfo {
      * e.g. EncryptedPrivateKeyInfo(AlgorithmParameters, byte[]),
      * should be used.
      *
-     * @param algName encryption algorithm name. See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * @param algName encryption algorithm name. See the
+     * <a href="{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard Cipher algorithm names.
      * @param encryptedData encrypted data. The contents of
      * <code>encrypedData</code> are copied to protect against subsequent
@@ -199,10 +198,8 @@ public class EncryptedPrivateKeyInfo {
      * Returns the encryption algorithm.
      * <p>Note: Standard name is returned instead of the specified one
      * in the constructor when such mapping is available.
-     * See Appendix A in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture Reference Guide</a>
+     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names</a> document
      * for information about standard Cipher algorithm names.
      *
      * @return the encryption algorithm name.

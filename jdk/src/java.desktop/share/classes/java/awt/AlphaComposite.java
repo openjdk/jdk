@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,9 @@ import sun.java2d.SunCompositeContext;
  * equation in the Porter and Duff paper:
  *
  * <blockquote>
- * <table summary="layout">
- * <tr><th align=left>Factor&nbsp;&nbsp;<th align=left>Definition
+ * <table class="borderless">
+ * <caption style="display:none">Factors</caption>
+ * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
  * <tr><td><em>A<sub>s</sub></em><td>the alpha component of the source pixel
  * <tr><td><em>C<sub>s</sub></em><td>a color component of the source pixel in premultiplied form
  * <tr><td><em>A<sub>d</sub></em><td>the alpha component of the destination pixel
@@ -113,8 +114,9 @@ import sun.java2d.SunCompositeContext;
  * the blending equation in the Porter and Duff paper:
  *
  * <blockquote>
- * <table summary="layout">
- * <tr><th align=left>Factor&nbsp;&nbsp;<th align=left>Definition
+ * <table class="borderless">
+ * <caption style="display:none">Factors</caption>
+ * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
  * <tr><td><em>C<sub>sr</sub></em> <td>one of the raw color components of the source pixel
  * <tr><td><em>C<sub>dr</sub></em> <td>one of the raw color components of the destination pixel
  * <tr><td><em>A<sub>ac</sub></em>  <td>the "extra" alpha component from the AlphaComposite instance
@@ -205,7 +207,7 @@ import sun.java2d.SunCompositeContext;
  * appropriate conversions are performed before and after the compositing
  * operation.
  *
- * <h3><a name="caveats">Implementation Caveats</a></h3>
+ * <h3><a id="caveats">Implementation Caveats</a></h3>
  *
  * <ul>
  * <li>

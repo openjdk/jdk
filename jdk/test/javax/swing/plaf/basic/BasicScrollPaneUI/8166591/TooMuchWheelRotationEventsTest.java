@@ -40,7 +40,7 @@ import javax.swing.SwingUtilities;
 
 /*
  * @test
- * @bug 8166591
+ * @bug 8166591 8173876
  * @key headful
  * @summary [macos 10.12] Trackpad scrolling of text on OS X 10.12 Sierra
  *    is very fast (Trackpad, Retina only)
