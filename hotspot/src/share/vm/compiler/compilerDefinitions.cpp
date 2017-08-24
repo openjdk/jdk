@@ -100,7 +100,9 @@ void set_client_compilation_mode() {
     FLAG_SET_ERGO(size_t, MetaspaceSize, 12*M);
   }
   if (FLAG_IS_DEFAULT(MaxRAM)) {
-    FLAG_SET_ERGO(uint64_t, MaxRAM, 1ULL*G);
+    // Do not use FLAG_SET_ERGO to update MaxRAM, as this will impact
+    // heap setting done based on available phys_mem (see Arguments::set_heap_size).
+    FLAG_SET_DEFAULT(MaxRAM, 1ULL*G);
   }
   if (FLAG_IS_DEFAULT(CompileThreshold)) {
     FLAG_SET_ERGO(intx, CompileThreshold, 1500);

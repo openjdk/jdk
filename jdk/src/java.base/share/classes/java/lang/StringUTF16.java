@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@ import java.util.Locale;
 import java.util.Spliterator;
 import java.util.function.IntConsumer;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.DontInline;
 
 import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
-import static java.lang.String.checkIndex;
-import static java.lang.String.checkOffset;
-import static java.lang.String.checkBoundsOffCount;
 
 final class StringUTF16 {
 
@@ -51,33 +50,37 @@ final class StringUTF16 {
     }
 
     @HotSpotIntrinsicCandidate
-    public static void putChar(byte[] val, int index, int c) {
+    // intrinsic performs no bounds checks
+    static void putChar(byte[] val, int index, int c) {
+        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
         index <<= 1;
         val[index++] = (byte)(c >> HI_BYTE_SHIFT);
         val[index]   = (byte)(c >> LO_BYTE_SHIFT);
     }
 
     @HotSpotIntrinsicCandidate
-    public static char getChar(byte[] val, int index) {
+    // intrinsic performs no bounds checks
+    static char getChar(byte[] val, int index) {
+        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
         index <<= 1;
         return (char)(((val[index++] & 0xff) << HI_BYTE_SHIFT) |
                       ((val[index]   & 0xff) << LO_BYTE_SHIFT));
-    }
-
-    public static char charAt(byte[] value, int index) {
-        if (index < 0 || index >= value.length >> 1) {
-            throw new StringIndexOutOfBoundsException(index);
-        }
-        return getChar(value, index);
     }
 
     public static int length(byte[] value) {
         return value.length >> 1;
     }
 
-    public static int codePointAt(byte[] value, int index, int end) {
+    private static int codePointAt(byte[] value, int index, int end, boolean checked) {
+        assert index < end;
+        if (checked) {
+            checkIndex(index, value);
+        }
         char c1 = getChar(value, index);
         if (Character.isHighSurrogate(c1) && ++index < end) {
+            if (checked) {
+                checkIndex(index, value);
+            }
             char c2 = getChar(value, index);
             if (Character.isLowSurrogate(c2)) {
                return Character.toCodePoint(c1, c2);
@@ -86,10 +89,22 @@ final class StringUTF16 {
         return c1;
     }
 
-    public static int codePointBefore(byte[] value, int index) {
-        char c2 = getChar(value, --index);
+    public static int codePointAt(byte[] value, int index, int end) {
+       return codePointAt(value, index, end, false /* unchecked */);
+    }
+
+    private static int codePointBefore(byte[] value, int index, boolean checked) {
+        --index;
+        if (checked) {
+            checkIndex(index, value);
+        }
+        char c2 = getChar(value, index);
         if (Character.isLowSurrogate(c2) && index > 0) {
-            char c1 = getChar(value, --index);
+            --index;
+            if (checked) {
+                checkIndex(index, value);
+            }
+            char c1 = getChar(value, index);
             if (Character.isHighSurrogate(c1)) {
                return Character.toCodePoint(c1, c2);
             }
@@ -97,17 +112,29 @@ final class StringUTF16 {
         return c2;
     }
 
-    public static int codePointCount(byte[] value, int beginIndex, int endIndex) {
+    public static int codePointBefore(byte[] value, int index) {
+        return codePointBefore(value, index, false /* unchecked */);
+    }
+
+    private static int codePointCount(byte[] value, int beginIndex, int endIndex, boolean checked) {
+        assert beginIndex <= endIndex;
         int count = endIndex - beginIndex;
-        for (int i = beginIndex; i < endIndex; ) {
+        int i = beginIndex;
+        if (checked && i < endIndex) {
+            checkBoundsBeginEnd(i, endIndex, value);
+        }
+        for (; i < endIndex - 1; ) {
             if (Character.isHighSurrogate(getChar(value, i++)) &&
-                i < endIndex &&
                 Character.isLowSurrogate(getChar(value, i))) {
                 count--;
                 i++;
             }
         }
         return count;
+    }
+
+    public static int codePointCount(byte[] value, int beginIndex, int endIndex) {
+        return codePointCount(value, beginIndex, endIndex, false /* unchecked */);
     }
 
     public static char[] toChars(byte[] value) {
@@ -162,7 +189,7 @@ final class StringUTF16 {
     @HotSpotIntrinsicCandidate
     public static int compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
         // We need a range check here because 'getChar' has no checks
-        checkBoundsOffCount(srcOff << 1, len << 1, src.length);
+        checkBoundsOffCount(srcOff, len, src);
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
             if (c > 0xFF) {
@@ -212,7 +239,7 @@ final class StringUTF16 {
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
         // We need a range check here because 'getChar' has no checks
         if (srcBegin < srcEnd) {
-            checkBoundsOffCount(srcBegin << 1, (srcEnd - srcBegin) << 1, value.length);
+            checkBoundsOffCount(srcBegin, srcEnd - srcBegin, value);
         }
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
@@ -319,14 +346,25 @@ final class StringUTF16 {
         if (str.length == 0) {
             return 0;
         }
-        if (value.length == 0) {
+        if (value.length < str.length) {
             return -1;
         }
-        return indexOf(value, length(value), str, length(str), 0);
+        return indexOfUnsafe(value, length(value), str, length(str), 0);
     }
 
     @HotSpotIntrinsicCandidate
     public static int indexOf(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
+        checkBoundsBeginEnd(fromIndex, valueCount, value);
+        checkBoundsBeginEnd(0, strCount, str);
+        return indexOfUnsafe(value, valueCount, str, strCount, fromIndex);
+    }
+
+
+    private static int indexOfUnsafe(byte[] value, int valueCount, byte[] str, int strCount, int fromIndex) {
+        assert fromIndex >= 0;
+        assert strCount > 0;
+        assert strCount <= length(str);
+        assert valueCount >= strCount;
         char first = getChar(str, 0);
         int max = (valueCount - strCount);
         for (int i = fromIndex; i <= max; i++) {
@@ -348,6 +386,7 @@ final class StringUTF16 {
         return -1;
     }
 
+
     /**
      * Handles indexOf Latin1 substring in UTF16 string.
      */
@@ -356,14 +395,24 @@ final class StringUTF16 {
         if (str.length == 0) {
             return 0;
         }
-        if (value.length == 0) {
+        if (length(value) < str.length) {
             return -1;
         }
-        return indexOfLatin1(value, length(value), str, str.length, 0);
+        return indexOfLatin1Unsafe(value, length(value), str, str.length, 0);
     }
 
     @HotSpotIntrinsicCandidate
     public static int indexOfLatin1(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
+        checkBoundsBeginEnd(fromIndex, srcCount, src);
+        String.checkBoundsBeginEnd(0, tgtCount, tgt.length);
+        return indexOfLatin1Unsafe(src, srcCount, tgt, tgtCount, fromIndex);
+    }
+
+    public static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
+        assert fromIndex >= 0;
+        assert tgtCount > 0;
+        assert tgtCount <= tgt.length;
+        assert srcCount >= tgtCount;
         char first = (char)(tgt[0] & 0xff);
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
@@ -389,6 +438,11 @@ final class StringUTF16 {
 
     @HotSpotIntrinsicCandidate
     private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
+        checkBoundsBeginEnd(fromIndex, max, value);
+        return indexOfCharUnsafe(value, ch, fromIndex, max);
+    }
+
+    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
@@ -404,6 +458,7 @@ final class StringUTF16 {
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
             final char lo = Character.lowSurrogate(ch);
+            checkBoundsBeginEnd(fromIndex, max, value);
             for (int i = fromIndex; i < max - 1; i++) {
                 if (getChar(value, i) == hi && getChar(value, i + 1 ) == lo) {
                     return i;
@@ -413,12 +468,20 @@ final class StringUTF16 {
         return -1;
     }
 
+    // srcCoder == UTF16 && tgtCoder == UTF16
     public static int lastIndexOf(byte[] src, int srcCount,
                                   byte[] tgt, int tgtCount, int fromIndex) {
+        assert fromIndex >= 0;
+        assert tgtCount > 0;
+        assert tgtCount <= length(tgt);
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
+
+        checkIndex(strLastIndex, tgt);
         char strLastChar = getChar(tgt, strLastIndex);
+
+        checkIndex(i, src);
 
     startSearchForLastChar:
         while (true) {
@@ -509,6 +572,9 @@ final class StringUTF16 {
     public static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
+        assert toffset >= 0 && ooffset >= 0;
+        assert ooffset + len <= length(other);
+        assert last <= length(value);
         while (toffset < last) {
             char c1 = getChar(value, toffset++);
             char c2 = getChar(other, ooffset++);
@@ -599,6 +665,8 @@ final class StringUTF16 {
     private static String toLowerCaseEx(String str, byte[] value,
                                         byte[] result, int first, Locale locale,
                                         boolean localeDependent) {
+        assert(result.length == value.length);
+        assert(first >= 0);
         int resultOffset = first;
         int length = value.length >> 1;
         int srcCount;
@@ -633,6 +701,8 @@ final class StringUTF16 {
                     System.arraycopy(result, 0, result2, 0, resultOffset << 1);
                     result = result2;
                 }
+                assert resultOffset >= 0;
+                assert resultOffset + mapLen <= length(result);
                 for (int x = 0; x < mapLen; ++x) {
                     putChar(result, resultOffset++, lowerCharArray[x]);
                 }
@@ -697,6 +767,8 @@ final class StringUTF16 {
                                         byte[] result, int first,
                                         Locale locale, boolean localeDependent)
     {
+        assert(result.length == value.length);
+        assert(first >= 0);
         int resultOffset = first;
         int length = value.length >> 1;
         int srcCount;
@@ -733,10 +805,12 @@ final class StringUTF16 {
                     byte[] result2 = newBytesFor((result.length >> 1) + mapLen - srcCount);
                     System.arraycopy(result, 0, result2, 0, resultOffset << 1);
                     result = result2;
-                 }
-                 for (int x = 0; x < mapLen; ++x) {
+                }
+                assert resultOffset >= 0;
+                assert resultOffset + mapLen <= length(result);
+                for (int x = 0; x < mapLen; ++x) {
                     putChar(result, resultOffset++, upperCharArray[x]);
-                 }
+                }
             }
         }
         return newString(result, 0, resultOffset);
@@ -757,7 +831,7 @@ final class StringUTF16 {
             null;
     }
 
-    public static void putChars(byte[] val, int index, char[] str, int off, int end) {
+    private static void putChars(byte[] val, int index, char[] str, int off, int end) {
         while (off < end) {
             putChar(val, index++, str[off++]);
         }
@@ -927,35 +1001,172 @@ final class StringUTF16 {
     ////////////////////////////////////////////////////////////////
 
     public static void putCharSB(byte[] val, int index, int c) {
-        checkIndex(index, val.length >> 1);
+        checkIndex(index, val);
         putChar(val, index, c);
     }
 
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
-        checkOffset(index + end - off, val.length >> 1);
+        checkBoundsBeginEnd(index, index + end - off, val);
         putChars(val, index, ca, off, end);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
-        checkOffset(index + end - off, val.length >> 1);
+        checkBoundsBeginEnd(index, index + end - off, val);
         for (int i = off; i < end; i++) {
             putChar(val, index++, s.charAt(i));
         }
     }
 
     public static int codePointAtSB(byte[] val, int index, int end) {
-        checkOffset(end, val.length >> 1);
-        return codePointAt(val, index, end);
+        return codePointAt(val, index, end, true /* checked */);
     }
 
     public static int codePointBeforeSB(byte[] val, int index) {
-        checkOffset(index, val.length >> 1);
-        return codePointBefore(val, index);
+        return codePointBefore(val, index, true /* checked */);
     }
 
     public static int codePointCountSB(byte[] val, int beginIndex, int endIndex) {
-        checkOffset(endIndex, val.length >> 1);
-        return codePointCount(val, beginIndex, endIndex);
+        return codePointCount(val, beginIndex, endIndex, true /* checked */);
+    }
+
+    public static int getChars(int i, int begin, int end, byte[] value) {
+        checkBoundsBeginEnd(begin, end, value);
+        int pos = getChars(i, end, value);
+        assert begin == pos;
+        return pos;
+    }
+
+    public static int getChars(long l, int begin, int end, byte[] value) {
+        checkBoundsBeginEnd(begin, end, value);
+        int pos = getChars(l, end, value);
+        assert begin == pos;
+        return pos;
+    }
+
+    public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
+        checkBoundsOffCount(0, len, v2);
+        for (int i = 0; i < len; i++) {
+            if ((char)(v1[i] & 0xff) != getChar(v2, i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean contentEquals(byte[] value, CharSequence cs, int len) {
+        checkOffset(len, value);
+        for (int i = 0; i < len; i++) {
+            if (getChar(value, i) != cs.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        int end = i + 4;
+        checkBoundsBeginEnd(i, end, value);
+        putChar(value, i++, c1);
+        putChar(value, i++, c2);
+        putChar(value, i++, c3);
+        putChar(value, i++, c4);
+        assert(i == end);
+        return end;
+    }
+
+    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        int end = i + 5;
+        checkBoundsBeginEnd(i, end, value);
+        putChar(value, i++, c1);
+        putChar(value, i++, c2);
+        putChar(value, i++, c3);
+        putChar(value, i++, c4);
+        putChar(value, i++, c5);
+        assert(i == end);
+        return end;
+    }
+
+    public static char charAt(byte[] value, int index) {
+        checkIndex(index, value);
+        return getChar(value, index);
+    }
+
+    public static void reverse(byte[] val, int count) {
+        checkOffset(count, val);
+        int n = count - 1;
+        boolean hasSurrogates = false;
+        for (int j = (n-1) >> 1; j >= 0; j--) {
+            int k = n - j;
+            char cj = getChar(val, j);
+            char ck = getChar(val, k);
+            putChar(val, j, ck);
+            putChar(val, k, cj);
+            if (Character.isSurrogate(cj) ||
+                Character.isSurrogate(ck)) {
+                hasSurrogates = true;
+            }
+        }
+        if (hasSurrogates) {
+            reverseAllValidSurrogatePairs(val, count);
+        }
+    }
+
+    /** Outlined helper method for reverse() */
+    private static void reverseAllValidSurrogatePairs(byte[] val, int count) {
+        for (int i = 0; i < count - 1; i++) {
+            char c2 = getChar(val, i);
+            if (Character.isLowSurrogate(c2)) {
+                char c1 = getChar(val, i + 1);
+                if (Character.isHighSurrogate(c1)) {
+                    putChar(val, i++, c1);
+                    putChar(val, i, c2);
+                }
+            }
+        }
+    }
+
+    // inflatedCopy byte[] -> byte[]
+    public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        // We need a range check here because 'putChar' has no checks
+        checkBoundsOffCount(dstOff, len, dst);
+        for (int i = 0; i < len; i++) {
+            putChar(dst, dstOff++, src[srcOff++] & 0xff);
+        }
+    }
+
+    // srcCoder == UTF16 && tgtCoder == LATIN1
+    public static int lastIndexOfLatin1(byte[] src, int srcCount,
+                                        byte[] tgt, int tgtCount, int fromIndex) {
+        assert fromIndex >= 0;
+        assert tgtCount > 0;
+        assert tgtCount <= tgt.length;
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+
+        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
+
+        checkIndex(i, src);
+
+    startSearchForLastChar:
+        while (true) {
+            while (i >= min && getChar(src, i) != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - strLastIndex;
+            int k = strLastIndex - 1;
+            while (j > start) {
+                if (getChar(src, j--) != (tgt[k--] & 0xff)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start + 1;
+        }
     }
 
     ////////////////////////////////////////////////////////////////
@@ -975,4 +1186,123 @@ final class StringUTF16 {
     }
 
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
+
+    // Used by trusted callers.  Assumes all necessary bounds checks have
+    // been done by the caller.
+
+    /**
+     * This is a variant of {@link Integer#getChars(int, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    static int getChars(int i, int index, byte[] buf) {
+        int q, r;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using ints
+        while (i <= -100) {
+            q = i / 100;
+            r = (q * 100) - i;
+            i = q;
+            putChar(buf, --charPos, Integer.DigitOnes[r]);
+            putChar(buf, --charPos, Integer.DigitTens[r]);
+        }
+
+        // We know there are at most two digits left at this point.
+        q = i / 10;
+        r = (q * 10) - i;
+        putChar(buf, --charPos, '0' + r);
+
+        // Whatever left is the remaining digit.
+        if (q < 0) {
+            putChar(buf, --charPos, '0' - q);
+        }
+
+        if (negative) {
+            putChar(buf, --charPos, '-');
+        }
+        return charPos;
+    }
+
+    /**
+     * This is a variant of {@link Long#getChars(long, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    static int getChars(long i, int index, byte[] buf) {
+        long q;
+        int r;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i <= Integer.MIN_VALUE) {
+            q = i / 100;
+            r = (int)((q * 100) - i);
+            i = q;
+            putChar(buf, --charPos, Integer.DigitOnes[r]);
+            putChar(buf, --charPos, Integer.DigitTens[r]);
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int)i;
+        while (i2 <= -100) {
+            q2 = i2 / 100;
+            r  = (q2 * 100) - i2;
+            i2 = q2;
+            putChar(buf, --charPos, Integer.DigitOnes[r]);
+            putChar(buf, --charPos, Integer.DigitTens[r]);
+        }
+
+        // We know there are at most two digits left at this point.
+        q2 = i2 / 10;
+        r  = (q2 * 10) - i2;
+        putChar(buf, --charPos, '0' + r);
+
+        // Whatever left is the remaining digit.
+        if (q2 < 0) {
+            putChar(buf, --charPos, '0' - q2);
+        }
+
+        if (negative) {
+            putChar(buf, --charPos, '-');
+        }
+        return charPos;
+    }
+    // End of trusted methods.
+
+    public static void checkIndex(int off, byte[] val) {
+        String.checkIndex(off, length(val));
+    }
+
+    public static void checkOffset(int off, byte[] val) {
+        String.checkOffset(off, length(val));
+    }
+
+    public static void checkBoundsBeginEnd(int begin, int end, byte[] val) {
+        String.checkBoundsBeginEnd(begin, end, length(val));
+    }
+
+    public static void checkBoundsOffCount(int offset, int count, byte[] val) {
+        String.checkBoundsOffCount(offset, count, length(val));
+    }
+
 }

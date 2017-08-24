@@ -34,6 +34,7 @@ import java.security.Principal;
  * interface.) The initial owner Principal should be specified as an
  * argument to the constructor of the class implementing this interface.
  *
+ * @since 1.1
  * @see java.security.acl.Acl
  *
  * @deprecated This package has been replaced by {@code java.security.Policy}

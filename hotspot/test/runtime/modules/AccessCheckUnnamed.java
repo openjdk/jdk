@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 /*
@@ -31,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckUnnamed
@@ -42,29 +41,29 @@ public class AccessCheckUnnamed {
     // Test that a class in the unnamed module can not access a package in a
     // named module that has not been unqualifiedly exported.
     public static void main(String args[]) throws Throwable {
-        Object m1, m2;
+        Object m1x, m2x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for AccessCheckWorks and assume it's also used to
         // load class p2.c2.
         ClassLoader this_cldr = AccessCheckUnnamed.class.getClassLoader();
 
         // Define a module for p2.
-        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should fail because
         // p1 is in the unnamed module and p2.c2 is not unqualifiedly exported.
         Class p1_c1_class = Class.forName("p1.c1");
         try {
             Object c1_obj = p1_c1_class.newInstance();
-            throw new RuntimeException("Failed to get IAE (p2 in m2 is not exported to unnamed module)");
+            throw new RuntimeException("Failed to get IAE (p2 in m2x is not exported to unnamed module)");
         } catch (IllegalAccessError f) {
             System.out.println(f.getMessage());
             if (!f.getMessage().contains("does not export p2 to unnamed module")) {
