@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,32 +180,32 @@ public class JdkInternalMiscUnsafeAccessTestByte {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapByte(base, offset, (byte)0x01, (byte)0x23);
-            assertEquals(r, true, "success compareAndSwap byte");
+            boolean r = UNSAFE.compareAndSetByte(base, offset, (byte)0x01, (byte)0x23);
+            assertEquals(r, true, "success compareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "success compareAndSwap byte value");
+            assertEquals(x, (byte)0x23, "success compareAndSet byte value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapByte(base, offset, (byte)0x01, (byte)0x45);
-            assertEquals(r, false, "failing compareAndSwap byte");
+            boolean r = UNSAFE.compareAndSetByte(base, offset, (byte)0x01, (byte)0x45);
+            assertEquals(r, false, "failing compareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "failing compareAndSwap byte value");
+            assertEquals(x, (byte)0x23, "failing compareAndSet byte value");
         }
 
         // Advanced compare
         {
-            byte r = UNSAFE.compareAndExchangeByteVolatile(base, offset, (byte)0x23, (byte)0x01);
-            assertEquals(r, (byte)0x23, "success compareAndExchangeVolatile byte");
+            byte r = UNSAFE.compareAndExchangeByte(base, offset, (byte)0x23, (byte)0x01);
+            assertEquals(r, (byte)0x23, "success compareAndExchange byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "success compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "success compareAndExchange byte value");
         }
 
         {
-            byte r = UNSAFE.compareAndExchangeByteVolatile(base, offset, (byte)0x23, (byte)0x45);
-            assertEquals(r, (byte)0x01, "failing compareAndExchangeVolatile byte");
+            byte r = UNSAFE.compareAndExchangeByte(base, offset, (byte)0x23, (byte)0x45);
+            assertEquals(r, (byte)0x01, "failing compareAndExchange byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "failing compareAndExchangeVolatile byte value");
+            assertEquals(x, (byte)0x01, "failing compareAndExchange byte value");
         }
 
         {
@@ -239,41 +239,41 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapByte(base, offset, (byte)0x01, (byte)0x23);
+                success = UNSAFE.weakCompareAndSetBytePlain(base, offset, (byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSwap byte");
+            assertEquals(success, true, "weakCompareAndSetPlain byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "weakCompareAndSwap byte value");
+            assertEquals(x, (byte)0x23, "weakCompareAndSetPlain byte value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapByteAcquire(base, offset, (byte)0x23, (byte)0x01);
+                success = UNSAFE.weakCompareAndSetByteAcquire(base, offset, (byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire byte");
+            assertEquals(success, true, "weakCompareAndSetAcquire byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "weakCompareAndSwapAcquire byte");
+            assertEquals(x, (byte)0x01, "weakCompareAndSetAcquire byte");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapByteRelease(base, offset, (byte)0x01, (byte)0x23);
+                success = UNSAFE.weakCompareAndSetByteRelease(base, offset, (byte)0x01, (byte)0x23);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease byte");
+            assertEquals(success, true, "weakCompareAndSetRelease byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x23, "weakCompareAndSwapRelease byte");
+            assertEquals(x, (byte)0x23, "weakCompareAndSetRelease byte");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapByteVolatile(base, offset, (byte)0x23, (byte)0x01);
+                success = UNSAFE.weakCompareAndSetByte(base, offset, (byte)0x23, (byte)0x01);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile byte");
+            assertEquals(success, true, "weakCompareAndSet byte");
             byte x = UNSAFE.getByte(base, offset);
-            assertEquals(x, (byte)0x01, "weakCompareAndSwapVolatile byte");
+            assertEquals(x, (byte)0x01, "weakCompareAndSet byte");
         }
 
         UNSAFE.putByte(base, offset, (byte)0x23);
@@ -306,4 +306,3 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
     }
 }
-

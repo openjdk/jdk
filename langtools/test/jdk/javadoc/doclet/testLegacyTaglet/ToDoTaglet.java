@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,17 @@
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
+import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import jdk.javadoc.doclet.taglet.Taglet;
-import jdk.javadoc.doclet.taglet.Taglet.Location;
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import jdk.javadoc.doclet.Taglet;
+import jdk.javadoc.doclet.Taglet.Location;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 
 /**
@@ -84,27 +84,15 @@ public class ToDoTaglet implements Taglet {
     }
 
     /**
-     * Given the <code>DocTree</code> representation of this custom
-     * tag, return its string representation.
-     * @param tag   the <code>DocTree</code> representing this custom tag.
-     */
-    public String toString(DocTree tag) {
-
-        return "<DT><B>" + HEADER + "</B><DD>"
-               + "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">"
-               + getText(tag)
-               + "</td></tr></table></DD>\n";
-    }
-
-    /**
      * Given an array of <code>Tag</code>s representing this custom
      * tag, return its string representation.
      * @param tags  the array of <code>DocTree</code>s representing this custom tag.
+     * @param element the declaration to which the enclosing comment belongs
      */
     @Override
-    public String toString(List<? extends DocTree> tags) {
+    public String toString(List<? extends DocTree> tags, Element element) {
         if (tags.isEmpty()) {
-            return null;
+            return "";
         }
         String result = "\n<DT><B>" + HEADER + "</B><DD>";
         result += "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">";

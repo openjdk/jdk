@@ -46,7 +46,7 @@ const TypeFunc* CallGenerator::tf() const {
   return TypeFunc::make(method());
 }
 
-bool CallGenerator::is_inlined_mh_linker(JVMState* jvms, ciMethod* callee) {
+bool CallGenerator::is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* callee) {
   ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
   return symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic();
 }
@@ -142,7 +142,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   }
 
   CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
-  if (is_inlined_mh_linker(jvms, method())) {
+  if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call and skip a call to MH.linkTo*/invokeBasic adapter,
     // additional information about the method being invoked should be attached
     // to the call site to make resolution logic work
@@ -241,7 +241,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
   CallDynamicJavaNode *call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
-  if (is_inlined_mh_linker(jvms, method())) {
+  if (is_inlined_method_handle_intrinsic(jvms, method())) {
     // To be able to issue a direct call (optimized virtual or virtual)
     // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
     // about the method being invoked should be attached to the call site to
@@ -785,8 +785,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
 
 CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool delayed_forbidden) {
-  assert(callee->is_method_handle_intrinsic() ||
-         callee->is_compiled_lambda_form(), "for_method_handle_call mismatch");
+  assert(callee->is_method_handle_intrinsic(), "for_method_handle_call mismatch");
   bool input_not_const;
   CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee, input_not_const);
   Compile* C = Compile::current();
@@ -826,6 +825,13 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const TypeOopPtr* oop_ptr = receiver->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_method_handle()->get_vmtarget();
         const int vtable_index = Method::invalid_vtable_index;
+
+        if (!ciMethod::is_consistent_info(callee, target)) {
+          print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                                 "signatures mismatch");
+          return NULL;
+        }
+
         CallGenerator* cg = C->call_generator(target, vtable_index,
                                               false /* call_does_dispatch */,
                                               jvms,
@@ -833,9 +839,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
                                               PROB_ALWAYS);
         return cg;
       } else {
-        const char* msg = "receiver not constant";
-        if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
-        C->log_inline_failure(msg);
+        print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                               "receiver not constant");
       }
     }
     break;
@@ -851,6 +856,12 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         input_not_const = false;
         const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
+
+        if (!ciMethod::is_consistent_info(callee, target)) {
+          print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                                 "signatures mismatch");
+          return NULL;
+        }
 
         // In lambda forms we erase signature types to avoid resolving issues
         // involving class loaders.  When we optimize a method handle invoke
@@ -912,9 +923,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
                                               speculative_receiver_type);
         return cg;
       } else {
-        const char* msg = "member_name not constant";
-        if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
-        C->log_inline_failure(msg);
+        print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
+                               "member_name not constant");
       }
     }
     break;

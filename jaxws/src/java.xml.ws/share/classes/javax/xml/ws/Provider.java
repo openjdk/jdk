@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ package javax.xml.ws;
  *  the {@code Provider} instance will receive entire protocol messages
  *  or just message payloads.
  *
+ * @param <T> The type of the request
  *  @since 1.6, JAX-WS 2.0
  *
  *  @see javax.xml.transform.Source
@@ -46,7 +47,7 @@ package javax.xml.ws;
 **/
 public interface Provider<T> {
 
-  /** Invokes an operation occording to the contents of the request
+  /** Invokes an operation according to the contents of the request
    *  message.
    *
    *  @param  request The request message or message payload.
