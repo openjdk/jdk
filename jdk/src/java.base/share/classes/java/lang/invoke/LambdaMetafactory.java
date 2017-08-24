@@ -149,24 +149,24 @@ import java.util.Arrays;
  * capture argument (corresponding to the receiver) must be non-null.
  *
  * <p>A type Q is considered adaptable to S as follows:
- * <table class="borderless">
+ * <table class="striped">
  *   <caption style="display:none">adaptable types</caption>
  *   <thead>
- *     <tr><th>Q</th><th>S</th><th>Link-time checks</th><th>Invocation-time checks</th></tr>
+ *     <tr><th scope="col">Q</th><th scope="col">S</th><th scope="col">Link-time checks</th><th scope="col">Invocation-time checks</th></tr>
  *   </thead>
  *   <tbody>
  *     <tr>
- *         <td>Primitive</td><td>Primitive</td>
+ *         <th scope="row">Primitive</th><th scope="row">Primitive</th>
  *         <td>Q can be converted to S via a primitive widening conversion</td>
  *         <td>None</td>
  *     </tr>
  *     <tr>
- *         <td>Primitive</td><td>Reference</td>
+ *         <th scope="row">Primitive</th><th scope="row">Reference</th>
  *         <td>S is a supertype of the Wrapper(Q)</td>
  *         <td>Cast from Wrapper(Q) to S</td>
  *     </tr>
  *     <tr>
- *         <td>Reference</td><td>Primitive</td>
+ *         <th scope="row">Reference</th><th scope="row">Primitive</th>
  *         <td>for parameter types: Q is a primitive wrapper and Primitive(Q)
  *         can be widened to S
  *         <br>for return types: If Q is a primitive wrapper, check that
@@ -175,7 +175,7 @@ import java.util.Arrays;
  *         for example Number for numeric types</td>
  *     </tr>
  *     <tr>
- *         <td>Reference</td><td>Reference</td>
+ *         <th scope="row">Reference</th><th scope="row">Reference</th>
  *         <td>for parameter types: S is a supertype of Q
  *         <br>for return types: none</td>
  *         <td>Cast from Q to S</td>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Stack;
 
 
-import com.sun.org.apache.bcel.internal.Constants;
+import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.classfile.Field;
 import com.sun.org.apache.bcel.internal.classfile.Method;
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
@@ -55,7 +55,7 @@ import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.Instruction;
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
+import com.sun.org.apache.bcel.internal.generic.InstructionConst;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.InstructionTargeter;
@@ -86,8 +86,6 @@ public class MethodGenerator extends MethodGen
         = "(" + STRING_SIG + ")V";
     private static final String END_ELEMENT_SIG
         = START_ELEMENT_SIG;
-
-    private InstructionList _mapTypeSub;
 
     private static final int DOM_INDEX       = 1;
     private static final int ITERATOR_INDEX  = 2;
@@ -1315,8 +1313,8 @@ public class MethodGenerator extends MethodGen
         // other two are used for references to fields in the CopyLocals object
         InstructionHandle outlinedMethodCallSetup =
             oldMethCopyInIL.append(new NEW(cpg.addClass(argTypeName)));
-        oldMethCopyInIL.append(InstructionConstants.DUP);
-        oldMethCopyInIL.append(InstructionConstants.DUP);
+        oldMethCopyInIL.append(InstructionConst.DUP);
+        oldMethCopyInIL.append(InstructionConst.DUP);
         oldMethCopyInIL.append(
             new INVOKESPECIAL(cpg.addMethodref(argTypeName, "<init>", "()V")));
 
@@ -1332,8 +1330,8 @@ public class MethodGenerator extends MethodGen
                                           outlinedMethodName,
                                           outlinedMethodGen.getSignature())));
         } else {
-            oldMethCopyOutIL.append(InstructionConstants.THIS);
-            oldMethCopyOutIL.append(InstructionConstants.SWAP);
+            oldMethCopyOutIL.append(InstructionConst.THIS);
+            oldMethCopyOutIL.append(InstructionConst.SWAP);
             outlinedMethodRef =
                 oldMethCopyOutIL.append(
                     new INVOKEVIRTUAL(cpg.addMethodref(
@@ -1479,7 +1477,7 @@ public class MethodGenerator extends MethodGen
                                 // CopyLocals prior to invocation of the
                                 // outlined method.
                                 oldMethCopyInIL.append(
-                                        InstructionConstants.DUP);
+                                        InstructionConst.DUP);
                                 InstructionHandle copyInLoad =
                                     oldMethCopyInIL.append(
                                         loadLocal(oldLocalVarIndex, varType));
@@ -1498,7 +1496,7 @@ public class MethodGenerator extends MethodGen
                                 // CopyLocals to the new local in the outlined
                                 // method
                                 newMethCopyInIL.append(
-                                        InstructionConstants.ALOAD_1);
+                                        InstructionConst.ALOAD_1);
                                 newMethCopyInIL.append(new GETFIELD(fieldRef));
                                 newMethCopyInIL.append(
                                         storeLocal(newLocalVarIndex, varType));
@@ -1510,7 +1508,7 @@ public class MethodGenerator extends MethodGen
                                 // variable into a field in CopyLocals
                                 // method
                                 newMethCopyOutIL.append(
-                                        InstructionConstants.ALOAD_1);
+                                        InstructionConst.ALOAD_1);
                                 newMethCopyOutIL.append(
                                         loadLocal(newLocalVarIndex, varType));
                                 newMethCopyOutIL.append(new PUTFIELD(fieldRef));
@@ -1520,7 +1518,7 @@ public class MethodGenerator extends MethodGen
                                 // method following invocation of the outlined
                                 // method.
                                 oldMethCopyOutIL.append(
-                                        InstructionConstants.DUP);
+                                        InstructionConst.DUP);
                                 oldMethCopyOutIL.append(new GETFIELD(fieldRef));
                                 InstructionHandle copyOutStore =
                                     oldMethCopyOutIL.append(
@@ -1667,7 +1665,7 @@ public class MethodGenerator extends MethodGen
         }
 
         // POP the reference to the CopyLocals object from the stack
-        oldMethCopyOutIL.append(InstructionConstants.POP);
+        oldMethCopyOutIL.append(InstructionConst.POP);
 
         // Now that the generation of the outlined code is complete, update
         // the old local variables with new start and end ranges, as required.
@@ -1708,7 +1706,7 @@ public class MethodGenerator extends MethodGen
         // Insert the copying code into the outlined method
         newIL.insert(newMethCopyInIL);
         newIL.append(newMethCopyOutIL);
-        newIL.append(InstructionConstants.RETURN);
+        newIL.append(InstructionConst.RETURN);
 
         // Discard instructions in outlineable chunk from old method
         try {
@@ -1999,8 +1997,8 @@ public class MethodGenerator extends MethodGen
             switch (inst.getOpcode()) {
                 // Instructions that may have 16-bit or 32-bit branch targets.
                 // The size of the branch offset might increase by two bytes.
-                case Constants.GOTO:
-                case Constants.JSR:
+                case Const.GOTO:
+                case Const.JSR:
                     maxOffsetChange = maxOffsetChange + 2;
                     break;
                 // Instructions that contain padding for alignment purposes
@@ -2008,29 +2006,29 @@ public class MethodGenerator extends MethodGen
                 // accuracy, we should be able to discount any padding already
                 // added to these instructions by InstructionList.setPosition(),
                 // their APIs do not expose that information.
-                case Constants.TABLESWITCH:
-                case Constants.LOOKUPSWITCH:
+                case Const.TABLESWITCH:
+                case Const.LOOKUPSWITCH:
                     maxOffsetChange = maxOffsetChange + 3;
                     break;
                 // Instructions that might be rewritten by this method as a
                 // conditional branch followed by an unconditional branch.
                 // The unconditional branch would require five bytes.
-                case Constants.IF_ACMPEQ:
-                case Constants.IF_ACMPNE:
-                case Constants.IF_ICMPEQ:
-                case Constants.IF_ICMPGE:
-                case Constants.IF_ICMPGT:
-                case Constants.IF_ICMPLE:
-                case Constants.IF_ICMPLT:
-                case Constants.IF_ICMPNE:
-                case Constants.IFEQ:
-                case Constants.IFGE:
-                case Constants.IFGT:
-                case Constants.IFLE:
-                case Constants.IFLT:
-                case Constants.IFNE:
-                case Constants.IFNONNULL:
-                case Constants.IFNULL:
+                case Const.IF_ACMPEQ:
+                case Const.IF_ACMPNE:
+                case Const.IF_ICMPEQ:
+                case Const.IF_ICMPGE:
+                case Const.IF_ICMPGT:
+                case Const.IF_ICMPLE:
+                case Const.IF_ICMPLT:
+                case Const.IF_ICMPNE:
+                case Const.IFEQ:
+                case Const.IFGE:
+                case Const.IFGT:
+                case Const.IFLE:
+                case Const.IFLT:
+                case Const.IFNE:
+                case Const.IFNONNULL:
+                case Const.IFNULL:
                     maxOffsetChange = maxOffsetChange + 5;
                     break;
             }
@@ -2077,7 +2075,7 @@ public class MethodGenerator extends MethodGen
                     // InstructionList, add a new no-op to act as the target
                     // of the new IF
                     if (nextHandle == null) {
-                        nextHandle = il.append(gotoHandle, NOP);
+                        nextHandle = il.append(gotoHandle, InstructionConst.NOP);
                     }
 
                     // Make the new IF instruction branch around the GOTO

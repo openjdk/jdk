@@ -9566,18 +9566,23 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * Determines if the specified character is ISO-LATIN-1 white space.
      * This method returns {@code true} for the following five
      * characters only:
-     * <table class="borderless">
+     * <table class="striped">
      * <caption style="display:none">truechars</caption>
+     * <thead>
+     * <tr><th scope="col">Character
+     *     <th scope="col">Code
+     *     <th scope="col">Name
+     * </thead>
      * <tbody>
-     * <tr><td>{@code '\t'}</td>            <td>{@code U+0009}</td>
+     * <tr><th scope="row">{@code '\t'}</th>            <td>{@code U+0009}</td>
      *     <td>{@code HORIZONTAL TABULATION}</td></tr>
-     * <tr><td>{@code '\n'}</td>            <td>{@code U+000A}</td>
+     * <tr><th scope="row">{@code '\n'}</th>            <td>{@code U+000A}</td>
      *     <td>{@code NEW LINE}</td></tr>
-     * <tr><td>{@code '\f'}</td>            <td>{@code U+000C}</td>
+     * <tr><th scope="row">{@code '\f'}</th>            <td>{@code U+000C}</td>
      *     <td>{@code FORM FEED}</td></tr>
-     * <tr><td>{@code '\r'}</td>            <td>{@code U+000D}</td>
+     * <tr><th scope="row">{@code '\r'}</th>            <td>{@code U+000D}</td>
      *     <td>{@code CARRIAGE RETURN}</td></tr>
-     * <tr><td>{@code ' '}</td>  <td>{@code U+0020}</td>
+     * <tr><th scope="row">{@code ' '}</th>  <td>{@code U+0020}</td>
      *     <td>{@code SPACE}</td></tr>
      * </tbody>
      * </table>

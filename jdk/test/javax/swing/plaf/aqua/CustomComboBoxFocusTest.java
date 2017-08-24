@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug     8073001 8081764
-   @summary Test verifies that combo box with custom editor renders
-            focus ring around arrow button correctly.
-   @library /lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run     main CustomComboBoxFocusTest
-*/
+/**
+ * @test
+ * @key headful
+ * @bug     8073001 8081764
+ * @summary Test verifies that combo box with custom editor renders
+ *          focus ring around arrow button correctly.
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run     main CustomComboBoxFocusTest
+ */
 
 import java.awt.AWTException;
 import java.awt.Component;

@@ -341,7 +341,7 @@ public class AtomicLongArrayTest extends JSR166TestCase {
     }
 
     /**
-     * a deserialized serialized array holds same values
+     * a deserialized/reserialized array holds same values in same order
      */
     public void testSerialization() throws Exception {
         AtomicLongArray x = new AtomicLongArray(SIZE);

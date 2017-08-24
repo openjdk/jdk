@@ -557,7 +557,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
     }
 
     /**
-     * a deserialized serialized queue is usable
+     * a deserialized/reserialized queue is usable
      */
     public void testSerialization() {
         final SynchronousQueue x = new SynchronousQueue();

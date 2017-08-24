@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -18,104 +17,119 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.bcel.internal.classfile;
 
-import java.io.*;
-import  com.sun.org.apache.bcel.internal.Constants;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * Abstract super class for Fieldref and Methodref constants.
+ * Abstract super class for Fieldref, Methodref, InterfaceMethodref and
+ * InvokeDynamic constants.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see     ConstantFieldref
- * @see     ConstantMethodref
- * @see     ConstantInterfaceMethodref
+ * @version $Id: ConstantCP.java 1747278 2016-06-07 17:28:43Z britter $
+ * @see ConstantFieldref
+ * @see ConstantMethodref
+ * @see ConstantInterfaceMethodref
+ * @see ConstantInvokeDynamic
  */
 public abstract class ConstantCP extends Constant {
-  /** References to the constants containing the class and the field signature
-   */
-  protected int class_index, name_and_type_index;
 
-  /**
-   * Initialize from another object.
-   */
-  public ConstantCP(ConstantCP c) {
-    this(c.getTag(), c.getClassIndex(), c.getNameAndTypeIndex());
-  }
+    /**
+     * References to the constants containing the class and the field signature
+     */
+    // Note that this field is used to store the
+    // bootstrap_method_attr_index of a ConstantInvokeDynamic.
+    private int class_index;
+    // This field has the same meaning for all subclasses.
+    private int name_and_type_index;
 
-  /**
-   * Initialize instance from file data.
-   *
-   * @param tag  Constant type tag
-   * @param file Input stream
-   * @throws IOException
-   */
-  ConstantCP(byte tag, DataInputStream file) throws IOException
-  {
-    this(tag, file.readUnsignedShort(), file.readUnsignedShort());
-  }
+    /**
+     * Initialize from another object.
+     */
+    public ConstantCP(final ConstantCP c) {
+        this(c.getTag(), c.getClassIndex(), c.getNameAndTypeIndex());
+    }
 
-  /**
-   * @param class_index Reference to the class containing the field
-   * @param name_and_type_index and the field signature
-   */
-  protected ConstantCP(byte tag, int class_index,
-                       int name_and_type_index) {
-    super(tag);
-    this.class_index         = class_index;
-    this.name_and_type_index = name_and_type_index;
-  }
+    /**
+     * Initialize instance from file data.
+     *
+     * @param tag Constant type tag
+     * @param file Input stream
+     * @throws IOException
+     */
+    ConstantCP(final byte tag, final DataInput file) throws IOException {
+        this(tag, file.readUnsignedShort(), file.readUnsignedShort());
+    }
 
-  /**
-   * Dump constant field reference to file stream in binary format.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(tag);
-    file.writeShort(class_index);
-    file.writeShort(name_and_type_index);
-  }
+    /**
+     * @param class_index Reference to the class containing the field
+     * @param name_and_type_index and the field signature
+     */
+    protected ConstantCP(final byte tag, final int class_index, final int name_and_type_index) {
+        super(tag);
+        this.class_index = class_index;
+        this.name_and_type_index = name_and_type_index;
+    }
 
-  /**
-   * @return Reference (index) to class this field or method belongs to.
-   */
-  public final int getClassIndex()       { return class_index; }
+    /**
+     * Dump constant field reference to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException
+     */
+    @Override
+    public final void dump(final DataOutputStream file) throws IOException {
+        file.writeByte(super.getTag());
+        file.writeShort(class_index);
+        file.writeShort(name_and_type_index);
+    }
 
-  /**
-   * @return Reference (index) to signature of the field.
-   */
-  public final int getNameAndTypeIndex() { return name_and_type_index; }
+    /**
+     * @return Reference (index) to class this constant refers to.
+     */
+    public final int getClassIndex() {
+        return class_index;
+    }
 
-  /**
-   * @param class_index points to Constant_class
-   */
-  public final void setClassIndex(int class_index) {
-    this.class_index = class_index;
-  }
+    /**
+     * @param class_index points to Constant_class
+     */
+    public final void setClassIndex(final int class_index) {
+        this.class_index = class_index;
+    }
 
-  /**
-   * @return Class this field belongs to.
-   */
-  public String getClass(ConstantPool cp) {
-    return cp.constantToString(class_index, Constants.CONSTANT_Class);
-  }
+    /**
+     * @return Reference (index) to signature of the field.
+     */
+    public final int getNameAndTypeIndex() {
+        return name_and_type_index;
+    }
 
-  /**
-   * @param name_and_type_index points to Constant_NameAndType
-   */
-  public final void setNameAndTypeIndex(int name_and_type_index) {
-    this.name_and_type_index = name_and_type_index;
-  }
+    /**
+     * @param name_and_type_index points to Constant_NameAndType
+     */
+    public final void setNameAndTypeIndex(final int name_and_type_index) {
+        this.name_and_type_index = name_and_type_index;
+    }
 
-  /**
-   * @return String representation.
-   */
-  public final String toString() {
-    return super.toString() + "(class_index = " + class_index +
-      ", name_and_type_index = " + name_and_type_index + ")";
-  }
+    /**
+     * @return Class this field belongs to.
+     */
+    public String getClass(final ConstantPool cp) {
+        return cp.constantToString(class_index, Const.CONSTANT_Class);
+    }
+
+    /**
+     * @return String representation.
+     *
+     * not final as ConstantInvokeDynamic needs to modify
+     */
+    @Override
+    public String toString() {
+        return super.toString() + "(class_index = " + class_index + ", name_and_type_index = "
+                + name_and_type_index + ")";
+    }
 }

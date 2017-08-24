@@ -553,7 +553,25 @@ public class ConcurrentSkipListSetTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized set has same elements
+     * A cloned set equals original
+     */
+    public void testClone() {
+        ConcurrentSkipListSet x = populatedSet(SIZE);
+        ConcurrentSkipListSet y = x.clone();
+
+        assertNotSame(x, y);
+        assertEquals(x.size(), y.size());
+        assertEquals(x, y);
+        assertEquals(y, x);
+        while (!x.isEmpty()) {
+            assertFalse(y.isEmpty());
+            assertEquals(x.pollFirst(), y.pollFirst());
+        }
+        assertTrue(y.isEmpty());
+    }
+
+    /**
+     * A deserialized/reserialized set equals original
      */
     public void testSerialization() throws Exception {
         NavigableSet x = populatedSet(SIZE);

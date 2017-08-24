@@ -314,45 +314,49 @@ public abstract class FileSystem
      * representation of the path is matched using a limited pattern language
      * that resembles regular expressions but with a simpler syntax. For example:
      *
-     * <blockquote>
-     * <table class="borderless">
+     * <table class="striped" style="text-align:left; margin-left:2em">
      * <caption style="display:none">Pattern Language</caption>
+     * <thead>
+     * <tr>
+     *   <th scope="col">Example
+     *   <th scope="col">Description
+     * </tr>
+     * </thead>
      * <tbody>
      * <tr>
-     *   <td>{@code *.java}</td>
+     *   <th scope="row">{@code *.java}</th>
      *   <td>Matches a path that represents a file name ending in {@code .java}</td>
      * </tr>
      * <tr>
-     *   <td>{@code *.*}</td>
+     *   <th scope="row">{@code *.*}</th>
      *   <td>Matches file names containing a dot</td>
      * </tr>
      * <tr>
-     *   <td>{@code *.{java,class}}</td>
+     *   <th scope="row">{@code *.{java,class}}</th>
      *   <td>Matches file names ending with {@code .java} or {@code .class}</td>
      * </tr>
      * <tr>
-     *   <td>{@code foo.?}</td>
+     *   <th scope="row">{@code foo.?}</th>
      *   <td>Matches file names starting with {@code foo.} and a single
      *   character extension</td>
      * </tr>
      * <tr>
-     *   <td><code>&#47;home&#47;*&#47;*</code>
+     *   <th scope="row"><code>&#47;home&#47;*&#47;*</code>
      *   <td>Matches <code>&#47;home&#47;gus&#47;data</code> on UNIX platforms</td>
      * </tr>
      * <tr>
-     *   <td><code>&#47;home&#47;**</code>
+     *   <th scope="row"><code>&#47;home&#47;**</code>
      *   <td>Matches <code>&#47;home&#47;gus</code> and
      *   <code>&#47;home&#47;gus&#47;data</code> on UNIX platforms</td>
      * </tr>
      * <tr>
-     *   <td><code>C:&#92;&#92;*</code>
+     *   <th scope="row"><code>C:&#92;&#92;*</code>
      *   <td>Matches <code>C:&#92;foo</code> and <code>C:&#92;bar</code> on the Windows
      *   platform (note that the backslash is escaped; as a string literal in the
      *   Java Language the pattern would be <code>"C:&#92;&#92;&#92;&#92;*"</code>) </td>
      * </tr>
      * </tbody>
      * </table>
-     * </blockquote>
      *
      * <p> The following rules are used to interpret glob patterns:
      *

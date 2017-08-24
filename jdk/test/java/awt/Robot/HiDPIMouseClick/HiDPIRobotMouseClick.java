@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.UIManager;
 
-/* @test
+/**
+ * @test
+ * @key headful
  * @bug 8073320
  * @summary  Windows HiDPI support
  * @author Alexander Scherbatiy
  * @requires (os.family == "windows")
  * @run main/othervm -Dsun.java2d.win.uiScale=2 HiDPIRobotMouseClick
  */
+
 public class HiDPIRobotMouseClick {
 
     private static volatile int mouseX;
