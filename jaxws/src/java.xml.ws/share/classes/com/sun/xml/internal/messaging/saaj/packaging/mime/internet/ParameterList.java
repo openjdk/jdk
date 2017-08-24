@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public final class ParameterList {
      * No-arg Constructor.
      */
     public ParameterList() {
-        this.list = new HashMap<String, String>();
+        this.list = new HashMap<>();
     }
 
     private ParameterList(HashMap<String, String> m) {
@@ -73,7 +73,7 @@ public final class ParameterList {
         int type;
         String name;
 
-        list = new HashMap<String, String>();
+        list = new HashMap<>();
         while (true) {
             tk = h.next();
             type = tk.getType();
@@ -171,6 +171,7 @@ public final class ParameterList {
      *
      * @return          String
      */
+    @Override
     public String toString() {
         return toString(0);
     }
@@ -232,6 +233,6 @@ public final class ParameterList {
     }
 
     public ParameterList copy() {
-        return new ParameterList((HashMap)list.clone());
+        return new ParameterList((HashMap<String, String>)list.clone());
     }
 }

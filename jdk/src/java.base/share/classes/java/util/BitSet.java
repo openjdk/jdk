@@ -1212,7 +1212,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * <p>The stream binds to this bit set when the terminal stream operation
      * commences (specifically, the spliterator for the stream is
-     * <a href="../Spliterator.html#binding"><em>late-binding</em></a>).  If the
+     * <a href="Spliterator.html#binding"><em>late-binding</em></a>).  If the
      * bit set is modified during that operation then the result is undefined.
      *
      * @return a stream of integers representing set indices
