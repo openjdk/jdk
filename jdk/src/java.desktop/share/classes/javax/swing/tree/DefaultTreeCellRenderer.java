@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,16 @@ import sun.swing.DefaultLookup;
  * that have a value of type {@code UIResource} are refreshed from the
  * defaults table. The following table lists the mapping between
  * {@code DefaultTreeCellRenderer} property and defaults table key:
- * <table border="1" cellpadding="1" cellspacing="0" summary="">
- *   <tr valign="top"  align="left">
- *     <th style="background-color:#CCCCFF" align="left">Property:
- *     <th style="background-color:#CCCCFF" align="left">Key:
+ *
+ * <table class="striped">
+ * <caption>Properties</caption>
+ * <thead>
+ *   <tr>
+ *     <th>Property:
+ *     <th>Key:
+ *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr><td>"leafIcon"<td>"Tree.leafIcon"
  *   <tr><td>"closedIcon"<td>"Tree.closedIcon"
  *   <tr><td>"openIcon"<td>"Tree.openIcon"
@@ -72,9 +78,10 @@ import sun.swing.DefaultLookup;
  *   <tr><td>"backgroundSelectionColor"<td>"Tree.selectionBackground"
  *   <tr><td>"backgroundNonSelectionColor"<td>"Tree.textBackground"
  *   <tr><td>"borderSelectionColor"<td>"Tree.selectionBorderColor"
+ * </tbody>
  * </table>
  * <p>
- * <strong><a name="override">Implementation Note:</a></strong>
+ * <strong><a id="override">Implementation Note:</a></strong>
  * This class overrides
  * <code>invalidate</code>,
  * <code>validate</code>,

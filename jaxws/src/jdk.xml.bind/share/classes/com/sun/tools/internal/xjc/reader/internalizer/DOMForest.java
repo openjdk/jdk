@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  */
 public final class DOMForest {
     /** actual data storage {@code map<SystemId,Document>}. */
-    private final Map<String,Document> core = new HashMap<String,Document>();
+    private final Map<String,Document> core = new LinkedHashMap<>();
 
     /**
      * To correctly feed documents to a schema parser, we need to remember

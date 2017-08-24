@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,9 +138,9 @@ public class GTKColorType extends ColorType {
      * arguments to scale.
      *
      * @param color Color to alter
-     * @param hFactory Amount to scale the hue
+     * @param hFactor Amount to scale the hue
      * @param lFactor Amount to scale the lightness
-     * @param sFactory Amount to sacle saturation
+     * @param sFactor Amount to sacle saturation
      * @return newly created color
      */
     static Color adjustColor(Color color, float hFactor, float lFactor,

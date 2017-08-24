@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@ import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
  * @run main/othervm TimeoutOrdering
  */
 
+// To enable logging use
+// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all TimeoutOrdering
+
 public class TimeoutOrdering {
 
     // The assumption is that 5 secs is sufficiently large enough, without being
@@ -81,6 +84,8 @@ public class TimeoutOrdering {
                         if (t != null) {
                             if (!(t.getCause() instanceof HttpTimeoutException)) {
                                 out.println("Wrong exception type:" + t.toString());
+                                Throwable c = t.getCause() == null ? t : t.getCause();
+                                c.printStackTrace();
                                 error = true;
                             } else {
                                 out.println("Caught expected timeout: " + t.getCause());
@@ -116,6 +121,8 @@ public class TimeoutOrdering {
                         out.println("Caught expected timeout: " + e);
                         queue.offer(req);
                     } catch (IOException | InterruptedException ee) {
+                        Throwable c = ee.getCause() == null ? ee : ee.getCause();
+                        c.printStackTrace();
                         error = true;
                     }
                 });
