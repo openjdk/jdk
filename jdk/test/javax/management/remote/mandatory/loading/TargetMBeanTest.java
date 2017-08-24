@@ -26,7 +26,7 @@
  * @bug 4910428
  * @summary Tests target MBean class loader used before JSR 160 loader
  * @author Eamonn McManus
- * @modules java.management.rmi
+ *
  * @run clean TargetMBeanTest
  * @run build TargetMBeanTest
  * @run main TargetMBeanTest

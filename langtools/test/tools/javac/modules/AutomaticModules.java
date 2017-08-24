@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8155026
+ * @bug 8155026 8178011
  * @summary Test automatic modules
  * @library /tools/lib
  * @modules
@@ -34,14 +34,18 @@
  * @run main AutomaticModules
  */
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.Task;
+import toolbox.Task.Mode;
 
 public class AutomaticModules extends ModuleTestBase {
 
@@ -300,9 +304,8 @@ public class AutomaticModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        expected = Arrays.asList("Impl.java:1:47: compiler.err.package.not.visible: apiB, (compiler.misc.not.def.access.does.not.read: m1x, apiB, automaticB)",
-                                 "Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
-                                 "2 errors");
+        expected = Arrays.asList("Impl.java:1:59: compiler.err.package.not.visible: m2x, (compiler.misc.not.def.access.does.not.read: m1x, m2x, m2x)",
+                                 "1 error");
 
         if (!expected.equals(log)) {
             throw new Exception("expected output not found: " + log);
@@ -310,7 +313,7 @@ public class AutomaticModules extends ModuleTestBase {
     }
 
     @Test
-    public void testDropTrailingVersion(Path base) throws Exception {
+    public void testWithTrailingVersion(Path base) throws Exception {
         Path legacySrc = base.resolve("legacy-src");
         tb.writeJavaFiles(legacySrc,
                           "package api; public class Api {}");
@@ -348,7 +351,7 @@ public class AutomaticModules extends ModuleTestBase {
         Files.createDirectories(classes);
 
         tb.writeJavaFiles(m,
-                          "module m { requires test; }",
+                          "module m { requires test1; }",
                           "package impl; public class Impl { public void e(api.Api api) { } }");
 
         new JavacTask(tb)
@@ -358,4 +361,461 @@ public class AutomaticModules extends ModuleTestBase {
                 .run()
                 .writeAll();
     }
+
+    @Test
+    public void testMultipleAutomatic(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        for (char c : new char[] {'A', 'B'}) {
+            Path automaticSrc = base.resolve("automaticSrc" + c);
+            tb.writeJavaFiles(automaticSrc, "package api" + c + "; public class Api {}");
+            Path automaticClasses = base.resolve("automaticClasses" + c);
+            tb.createDirectories(automaticClasses);
+
+            String automaticLog = new JavacTask(tb)
+                                    .outdir(automaticClasses)
+                                    .files(findJavaFiles(automaticSrc))
+                                    .run()
+                                    .writeAll()
+                                    .getOutput(Task.OutputKind.DIRECT);
+
+            if (!automaticLog.isEmpty())
+                throw new Exception("expected output not found: " + automaticLog);
+
+            Path automaticJar = modulePath.resolve("automatic" + c + "-1.0.jar");
+
+            new JarTask(tb, automaticJar)
+              .baseDir(automaticClasses)
+              .files("api" + c + "/Api.class")
+              .run();
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src.resolve("m1x"),
+                          "package impl; public class Impl { apiA.Api a; apiB.Api b; }");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList("Impl.java:1:35: compiler.err.package.not.visible: apiA, (compiler.misc.not.def.access.does.not.read.from.unnamed: apiA, automaticA)",
+                                              "Impl.java:1:47: compiler.err.package.not.visible: apiB, (compiler.misc.not.def.access.does.not.read.from.unnamed: apiB, automaticB)",
+                                              "2 errors");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "--add-modules", "automaticA",
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run()
+                .writeAll();
+    }
+
+    @Test
+    public void testLintRequireAutomatic(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        for (char c : new char[] {'A', 'B'}) {
+            Path automaticSrc = base.resolve("automaticSrc" + c);
+            tb.writeJavaFiles(automaticSrc, "package api" + c + "; public class Api {}");
+            Path automaticClasses = base.resolve("automaticClasses" + c);
+            tb.createDirectories(automaticClasses);
+
+            String automaticLog = new JavacTask(tb)
+                                    .outdir(automaticClasses)
+                                    .files(findJavaFiles(automaticSrc))
+                                    .run()
+                                    .writeAll()
+                                    .getOutput(Task.OutputKind.DIRECT);
+
+            if (!automaticLog.isEmpty())
+                throw new Exception("expected output not found: " + automaticLog);
+
+            Path automaticJar = modulePath.resolve("automatic" + c + "-1.0.jar");
+
+            new JarTask(tb, automaticJar)
+              .baseDir(automaticClasses)
+              .files("api" + c + "/Api.class")
+              .run();
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "module m1x {\n" +
+                          "    requires transitive automaticA;\n" +
+                          "    requires automaticB;\n" +
+                          "}");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> expected;
+        List<String> log;
+
+        log = new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:2:25: compiler.warn.requires.transitive.automatic",
+                                 "- compiler.err.warnings.and.werror",
+                                 "1 error",
+                                 "1 warning");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        log = new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-Xlint:requires-automatic",
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:2:25: compiler.warn.requires.transitive.automatic",
+                                 "module-info.java:3:14: compiler.warn.requires.automatic",
+                                 "- compiler.err.warnings.and.werror",
+                                 "1 error",
+                                 "2 warnings");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        log = new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-Xlint:-requires-transitive-automatic,requires-automatic",
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:2:25: compiler.warn.requires.automatic",
+                                 "module-info.java:3:14: compiler.warn.requires.automatic",
+                                 "- compiler.err.warnings.and.werror",
+                                 "1 error",
+                                 "2 warnings");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-Xlint:-requires-transitive-automatic",
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.writeJavaFiles(src,
+                          "@SuppressWarnings(\"requires-transitive-automatic\")\n" +
+                          "module m1x {\n" +
+                          "    requires transitive automaticA;\n" +
+                          "    requires automaticB;\n" +
+                          "}");
+
+        new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        log = new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-Xlint:requires-automatic",
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:3:25: compiler.warn.requires.automatic",
+                                 "module-info.java:4:14: compiler.warn.requires.automatic",
+                                 "- compiler.err.warnings.and.werror",
+                                 "1 error",
+                                 "2 warnings");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        tb.writeJavaFiles(src,
+                          "@SuppressWarnings(\"requires-automatic\")\n" +
+                          "module m1x {\n" +
+                          "    requires transitive automaticA;\n" +
+                          "    requires automaticB;\n" +
+                          "}");
+
+        log = new JavacTask(tb)
+            .options("--source-path", src.toString(),
+                     "--module-path", modulePath.toString(),
+                     "-Xlint:requires-automatic",
+                     "-XDrawDiagnostics",
+                     "-Werror")
+            .outdir(classes)
+            .files(findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList("module-info.java:3:25: compiler.warn.requires.transitive.automatic",
+                                 "- compiler.err.warnings.and.werror",
+                                 "1 error",
+                                 "1 warning");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+    }
+
+    @Test
+    public void testAutomaticModuleNameCorrect(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc, "package api; public class Api {}");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        String automaticLog = new JavacTask(tb)
+                                .outdir(automaticClasses)
+                                .files(findJavaFiles(automaticSrc))
+                                .run()
+                                .writeAll()
+                                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!automaticLog.isEmpty())
+            throw new Exception("expected output not found: " + automaticLog);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        new JarTask(tb, automaticJar)
+          .baseDir(automaticClasses)
+          .files("api/Api.class")
+          .manifest("Automatic-Module-Name: custom.module.name\n\n")
+          .run();
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "module m { requires custom.module.name; }",
+                          "package impl; public class Impl { api.Api a; }");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.writeJavaFiles(src,
+                          "module m { requires automatic; }");
+
+        List<String> log = new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                Arrays.asList("module-info.java:1:21: compiler.err.module.not.found: automatic",
+                              "1 error");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+    }
+
+    @Test
+    public void testAutomaticModuleNameIncorrect(Path base) throws Exception {
+        for (String name : new String[] {"", "999", "foo.class", "foo._"}) {
+            if (Files.isDirectory(base)) {
+                tb.cleanDirectory(base);
+            }
+            Path modulePath = base.resolve("module-path");
+
+            Files.createDirectories(modulePath);
+
+            Path automaticSrc = base.resolve("automaticSrc");
+            tb.writeJavaFiles(automaticSrc, "package api; public class Api {}");
+            Path automaticClasses = base.resolve("automaticClasses");
+            tb.createDirectories(automaticClasses);
+
+            String automaticLog = new JavacTask(tb)
+                                    .outdir(automaticClasses)
+                                    .files(findJavaFiles(automaticSrc))
+                                    .run()
+                                    .writeAll()
+                                    .getOutput(Task.OutputKind.DIRECT);
+
+            if (!automaticLog.isEmpty())
+                throw new Exception("expected output not found: " + automaticLog);
+
+            Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+            new JarTask(tb, automaticJar)
+              .baseDir(automaticClasses)
+              .files("api/Api.class")
+              .manifest("Automatic-Module-Name: " + name + "\n\n")
+              .run();
+
+            Path src = base.resolve("src");
+
+            tb.writeJavaFiles(src,
+                              "package impl; public class Impl { api.Api a; }");
+
+            Path classes = base.resolve("classes");
+
+            Files.createDirectories(classes);
+
+            List<String> log = new JavacTask(tb, Mode.CMDLINE)
+                    .options("--module-path", modulePath.toString(),
+                             "--add-modules", "ALL-MODULE-PATH",
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+            List<String> expected =
+                    Arrays.asList("- compiler.err.locn.cant.get.module.name.for.jar: " +
+                                      "testAutomaticModuleNameIncorrect/module-path/automatic-1.0.jar".replace("/", File.separator),
+                                  "1 error");
+
+            if (!expected.equals(log)) {
+                throw new Exception("expected output not found: " + log);
+            }
+        }
+    }
+
+    @Test
+    public void testAutomaticModuleNameBroken(Path base) throws Exception {
+        Path modulePath = base.resolve("module-path");
+
+        Files.createDirectories(modulePath);
+
+        Path automaticSrc = base.resolve("automaticSrc");
+        tb.writeJavaFiles(automaticSrc, "package api; public class Api {}");
+        Path automaticClasses = base.resolve("automaticClasses");
+        tb.createDirectories(automaticClasses);
+
+        String automaticLog = new JavacTask(tb)
+                                .outdir(automaticClasses)
+                                .files(findJavaFiles(automaticSrc))
+                                .run()
+                                .writeAll()
+                                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!automaticLog.isEmpty())
+            throw new Exception("expected output not found: " + automaticLog);
+
+        Path automaticJar = modulePath.resolve("automatic-1.0.jar");
+
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(automaticJar))) {
+            out.putNextEntry(new ZipEntry("api/Api.class"));
+            Files.copy(automaticClasses.resolve("api").resolve("Api.class"), out);
+        }
+
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src,
+                          "module m { requires automatic; }",
+                          "package impl; public class Impl { api.Api a; }");
+
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.writeJavaFiles(src,
+                          "module m { requires custom.module.name; }");
+
+        List<String> log = new JavacTask(tb)
+                .options("--module-path", modulePath.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                Arrays.asList("module-info.java:1:34: compiler.err.module.not.found: custom.module.name",
+                              "1 error");
+
+        if (!expected.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+    }
+
 }

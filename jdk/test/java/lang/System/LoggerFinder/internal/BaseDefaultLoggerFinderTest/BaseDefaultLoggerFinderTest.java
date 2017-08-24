@@ -55,7 +55,6 @@ import java.util.function.Function;
 import jdk.internal.logger.DefaultLoggerFinder;
 import jdk.internal.logger.SimpleConsoleLogger;
 import sun.util.logging.PlatformLogger;
-import java.lang.reflect.Module;
 
 /**
  * @test

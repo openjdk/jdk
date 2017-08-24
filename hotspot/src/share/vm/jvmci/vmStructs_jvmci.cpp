@@ -78,6 +78,15 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_ExceptionTableElement,           int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_LocalVariableTableElement,       int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_ConstantPool,                    int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_SymbolPointer,                   int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
+  static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
@@ -85,6 +94,9 @@
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
   static_field(CompilerToVM::Data,             dpow,                                   address)                                      \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             symbol_init,                            address)                                      \
+  static_field(CompilerToVM::Data,             symbol_clinit,                          address)                                      \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \

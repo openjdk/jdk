@@ -89,6 +89,7 @@ public class CacheTest {
         assertTrue(executeTestJava("--class-path", MODS_DIR.resolve(TEST_MODULE).toString(),
                                    "--module-path", MODS_DIR.resolve(MAIN_BUNDLES_MODULE).toString(),
                                    "--add-modules", MAIN_BUNDLES_MODULE,
+                                   "--illegal-access=deny",
                                    MAIN_CLASS, "cache")
                         .outputTo(System.out)
                         .errorTo(System.out)
@@ -111,6 +112,7 @@ public class CacheTest {
         assertTrue(executeTestJava("--class-path", MODS_DIR.resolve(TEST_MODULE).toString(),
                                    "--module-path", MODS_DIR.resolve(MAIN_BUNDLES_MODULE).toString(),
                                    "--add-modules", MAIN_BUNDLES_MODULE,
+                                   "--illegal-access=deny",
                                    MAIN_CLASS)
                         .outputTo(System.out)
                         .errorTo(System.out)

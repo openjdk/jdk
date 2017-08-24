@@ -107,7 +107,7 @@ public class DetectMutableStaticFields {
         // by reflective lookup, to avoid explicit references that are not available
         // when running javac on JDK 8.
         ignore("com/sun/tools/javac/util/JDK9Wrappers$Configuration",
-                "resolveRequiresAndUsesMethod", "configurationClass");
+                "resolveAndBindMethod", "configurationClass");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$Layer",
                 "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod", "layerClass");
         ignore("com/sun/tools/javac/util/JDK9Wrappers$Module",
