@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,8 @@ import sun.reflect.misc.ReflectUtil;
  * @see java.io.ObjectInputStream
  * @see java.io.Serializable
  * @see java.io.Externalizable
- * @see <a href="../../../platform/serialization/spec/output.html">Object Serialization Specification, Section 2, Object Output Classes</a>
+ * @see <a href="{@docRoot}/../specs/serialization/output.html">
+ *     Object Serialization Specification, Section 2, Object Output Classes</a>
  * @since       1.1
  */
 public class ObjectOutputStream
@@ -589,22 +590,24 @@ public class ObjectOutputStream
     }
 
     /**
-     * Enable the stream to do replacement of objects in the stream.  When
-     * enabled, the replaceObject method is called for every object being
+     * Enables the stream to do replacement of objects written to the stream.  When
+     * enabled, the {@link #replaceObject} method is called for every object being
      * serialized.
      *
-     * <p>If <code>enable</code> is true, and there is a security manager
-     * installed, this method first calls the security manager's
-     * <code>checkPermission</code> method with a
-     * <code>SerializablePermission("enableSubstitution")</code> permission to
-     * ensure it's ok to enable the stream to do replacement of objects in the
-     * stream.
+     * <p>If object replacement is currently not enabled, and
+     * {@code enable} is true, and there is a security manager installed,
+     * this method first calls the security manager's
+     * {@code checkPermission} method with the
+     * {@code SerializablePermission("enableSubstitution")} permission to
+     * ensure that the caller is permitted to enable the stream to do replacement
+     * of objects written to the stream.
      *
-     * @param   enable boolean parameter to enable replacement of objects
+     * @param   enable true for enabling use of {@code replaceObject} for
+     *          every object being serialized
      * @return  the previous setting before this method was invoked
      * @throws  SecurityException if a security manager exists and its
-     *          <code>checkPermission</code> method denies enabling the stream
-     *          to do replacement of objects in the stream.
+     *          {@code checkPermission} method denies enabling the stream
+     *          to do replacement of objects written to the stream.
      * @see SecurityManager#checkPermission
      * @see java.io.SerializablePermission
      */

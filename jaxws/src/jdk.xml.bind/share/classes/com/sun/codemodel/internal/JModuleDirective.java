@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,17 @@ public abstract class JModuleDirective {
 
     /**
      * Returns a hash code for this module directive based on directive type and name.
-     * The hash code for a module directive is computed as <blockquote><pre>
-     * 97 * Integer.hashCode(type_ordinal_value + 1) + name.hashCode()
-     * </pre></blockquote> using {@code int} arithmetic.
+     * The hash code for a module directive is computed as
+     * <blockquote><pre>
+     *     {@code 97 * (type_ordinal_value + 1) + name.hashCode()}
+     * </pre></blockquote>
+     * using {@code int} arithmetic.
+     *
      * @return a hash code value for this object.
      */
     @Override
     public int hashCode() {
-        return 97 * (Integer.hashCode(getType().ordinal() + 1)) + name.hashCode();
+        return 97 * (getType().ordinal() + 1) + name.hashCode();
     }
 
     /**

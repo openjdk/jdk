@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,7 @@ import sun.security.jca.*;
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
  * <li>{@code AES/ECB/NoPadding} (128)</li>
  * <li>{@code AES/ECB/PKCS5Padding} (128)</li>
+ * <li>{@code AES/GCM/NoPadding} (128)</li>
  * <li>{@code DES/CBC/NoPadding} (56)</li>
  * <li>{@code DES/CBC/PKCS5Padding} (56)</li>
  * <li>{@code DES/ECB/NoPadding} (56)</li>
@@ -150,9 +151,9 @@ import sun.security.jca.*;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
  * Cipher section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other transformations are supported.
  *
@@ -489,8 +490,8 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @return a cipher that implements the requested transformation
@@ -567,8 +568,8 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the name of the provider.
@@ -627,8 +628,8 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>DES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the provider.
@@ -2615,11 +2616,9 @@ public class Cipher {
      * according to the installed JCE jurisdiction policy files. If
      * JCE unlimited strength jurisdiction policy files are installed,
      * Integer.MAX_VALUE will be returned.
-     * For more information on default key size in JCE jurisdiction
-     * policy files, please see Appendix E in the
-     * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppC">
-     * Java Cryptography Architecture Reference Guide</a>.
+     * For more information on the default key sizes and the JCE jurisdiction
+     * policy files, please see the Cryptographic defaults and limitations in
+     * the {@extLink security_guide_jdk_providers JDK Providers Documentation}.
      *
      * @param transformation the cipher transformation.
      * @return the maximum key length in bits or Integer.MAX_VALUE.
