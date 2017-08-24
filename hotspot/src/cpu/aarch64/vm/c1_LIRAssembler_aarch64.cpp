@@ -1922,12 +1922,17 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     }
 
     if (opr2->is_constant()) {
+      bool is_32bit = false; // width of register operand
       jlong imm;
+
       switch(opr2->type()) {
+      case T_INT:
+        imm = opr2->as_constant_ptr()->as_jint();
+        is_32bit = true;
+        break;
       case T_LONG:
         imm = opr2->as_constant_ptr()->as_jlong();
         break;
-      case T_INT:
       case T_ADDRESS:
         imm = opr2->as_constant_ptr()->as_jint();
         break;
@@ -1942,14 +1947,14 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       }
 
       if (Assembler::operand_valid_for_add_sub_immediate(imm)) {
-        if (type2aelembytes(opr1->type()) <= 4)
+        if (is_32bit)
           __ cmpw(reg1, imm);
         else
           __ cmp(reg1, imm);
         return;
       } else {
         __ mov(rscratch1, imm);
-        if (type2aelembytes(opr1->type()) <= 4)
+        if (is_32bit)
           __ cmpw(reg1, rscratch1);
         else
           __ cmp(reg1, rscratch1);

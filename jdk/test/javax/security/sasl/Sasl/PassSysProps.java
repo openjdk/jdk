@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @author Vincent Ryan
  * @bug 6228412
+ * @modules java.security.sasl
  * @summary Check that a Properties object can be passed to the Sasl create
  *          client and create server methods.
  */
@@ -32,8 +33,12 @@
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
-import javax.security.sasl.*;
-import javax.security.auth.callback.*;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
 import org.ietf.jgss.GSSException;
 
 public class PassSysProps {

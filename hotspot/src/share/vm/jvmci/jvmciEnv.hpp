@@ -127,7 +127,7 @@ private:
   // Helper methods
   static bool       check_klass_accessibility(KlassHandle accessing_klass, KlassHandle resolved_klass);
   static methodHandle  lookup_method(instanceKlassHandle  accessor,
-                           instanceKlassHandle  holder,
+                           KlassHandle     holder,
                            Symbol*         name,
                            Symbol*         sig,
                            Bytecodes::Code bc,

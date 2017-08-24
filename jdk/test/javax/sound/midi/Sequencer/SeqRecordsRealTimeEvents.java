@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
@@ -34,12 +35,18 @@ import javax.sound.midi.Track;
  * @test
  * @bug 5048381
  * @summary Sequencer records real time messages into the sequence
- * @key headful
  */
 public class SeqRecordsRealTimeEvents {
-    public static void main(String argv[]) throws Exception {
-        Sequencer s = MidiSystem.getSequencer();
-        s.open();
+
+    public static void main(String argv[]) {
+        Sequencer s = null;
+        try {
+            s = MidiSystem.getSequencer();
+            s.open();
+        } catch (final MidiUnavailableException ignored) {
+            // the test is not applicable
+            return;
+        }
         try {
             Sequence seq = new Sequence(Sequence.PPQ, 384, 2);
             s.setSequence(seq);
@@ -90,7 +97,7 @@ public class SeqRecordsRealTimeEvents {
         } catch (Exception e) {
             System.out.println("Unexpected Exception: "+e);
             //e.printStackTrace();
-            throw new Exception("Test FAILED!");
+            throw new RuntimeException("Test FAILED!");
         } finally {
             s.close();
         }
