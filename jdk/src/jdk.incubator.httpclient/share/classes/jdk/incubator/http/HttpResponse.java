@@ -618,7 +618,7 @@ public abstract class HttpResponse<T> {
          * on one of the given {@code CompletableFuture<Void}s which themselves complete
          * after all individual responses associated with the multi response
          * have completed, or after all push promises have been received.
-         * <p>
+         *
          * @implNote Implementations might follow the pattern shown below
          * <pre>
          * {@code
@@ -633,7 +633,6 @@ public abstract class HttpResponse<T> {
          *      }
          * }
          * </pre>
-         * <p>
          *
          * @param onComplete a CompletableFuture which completes after all
          * responses have been received relating to this multi request.
