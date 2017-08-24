@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,11 @@ void Universe::fixup_mirrors(TRAPS) {
 #define assert_pll_ownership() assert_pll_locked(owned_by_self)
 
 oop Universe::reference_pending_list() {
-  assert_pll_ownership();
+  if (Thread::current()->is_VM_thread()) {
+    assert_pll_locked(is_locked);
+  } else {
+    assert_pll_ownership();
+  }
   return _reference_pending_list;
 }
 

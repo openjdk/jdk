@@ -98,6 +98,7 @@ package java.text;
  * }
  * }</pre>
  *
+ * @since 1.1
  * @see StringCharacterIterator
  * @see AttributedCharacterIterator
  */

@@ -27,7 +27,6 @@
  * @summary Test that an MBean interface can inherit two methods with
  * the same signature from two unrelated parent interfaces
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.util.*;
