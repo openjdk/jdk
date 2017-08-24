@@ -136,18 +136,18 @@ import sun.util.locale.provider.LocaleResources;
  * <p>
  * For example:
  *
- * <table class=striped style="text-align: left; width: 50%;">
+ * <table class=striped style="text-align: left">
  * <caption>Examples of Week based Years</caption>
  * <thead>
- * <tr><th>Date</th><th>Day-of-week</th><th>Field values</th></tr>
+ * <tr><th scope="col">Date</th><th scope="col">Day-of-week</th><th scope="col">Field values</th></tr>
  * </thead>
  * <tbody>
- * <tr><th>2008-12-28</th><td>Sunday</td><td>Week 52 of week-based-year 2008</td></tr>
- * <tr><th>2008-12-29</th><td>Monday</td><td>Week 1 of week-based-year 2009</td></tr>
- * <tr><th>2008-12-31</th><td>Wednesday</td><td>Week 1 of week-based-year 2009</td></tr>
- * <tr><th>2009-01-01</th><td>Thursday</td><td>Week 1 of week-based-year 2009</td></tr>
- * <tr><th>2009-01-04</th><td>Sunday</td><td>Week 1 of week-based-year 2009</td></tr>
- * <tr><th>2009-01-05</th><td>Monday</td><td>Week 2 of week-based-year 2009</td></tr>
+ * <tr><th scope="row">2008-12-28</th><td>Sunday</td><td>Week 52 of week-based-year 2008</td></tr>
+ * <tr><th scope="row">2008-12-29</th><td>Monday</td><td>Week 1 of week-based-year 2009</td></tr>
+ * <tr><th scope="row">2008-12-31</th><td>Wednesday</td><td>Week 1 of week-based-year 2009</td></tr>
+ * <tr><th scope="row">2009-01-01</th><td>Thursday</td><td>Week 1 of week-based-year 2009</td></tr>
+ * <tr><th scope="row">2009-01-04</th><td>Sunday</td><td>Week 1 of week-based-year 2009</td></tr>
+ * <tr><th scope="row">2009-01-05</th><td>Monday</td><td>Week 2 of week-based-year 2009</td></tr>
  * </tbody>
  * </table>
  *

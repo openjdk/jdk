@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
- /* @test
+/**
+ * @test
+ * @key headful
  * @bug 8158230
  * @summary Verify menu item option apple.laf.useScreenMenuBar implementation
  * @requires (os.family=="mac")
  * @run main ClickMenuTestManual
  */
+
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

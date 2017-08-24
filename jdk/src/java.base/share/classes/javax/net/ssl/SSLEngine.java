@@ -1292,7 +1292,7 @@ public abstract class SSLEngine {
      * href="http://www.ietf.org/rfc/rfc7301.txt"> RFC 7301 </a>, the
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
-     * <p>
+     *
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.
@@ -1317,7 +1317,7 @@ public abstract class SSLEngine {
      * Like {@link #getHandshakeSession()},
      * a connection may be in the middle of a handshake. The
      * application protocol may or may not yet be available.
-     * <p>
+     *
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.

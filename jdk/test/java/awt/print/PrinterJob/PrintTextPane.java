@@ -21,14 +21,15 @@
  * questions.
  */
 
-/*
-  @test PrintTextPane.java
-  @bug 6452415 6570471
-  @summary Test that swing text prints using GDI printer fonts.
-  @author prr: area=PrinterJob
-  @run main PrintTextPane
-
+/**
+ * @test PrintTextPane.java
+ * @key headful printer
+ * @bug 6452415 6570471
+ * @summary Test that swing text prints using GDI printer fonts.
+ * @author prr: area=PrinterJob
+ * @run main PrintTextPane
  */
+
 import java.io.*;
 import java.net.*;
 import java.awt.*;
