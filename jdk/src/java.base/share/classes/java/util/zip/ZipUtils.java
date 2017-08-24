@@ -81,13 +81,24 @@ class ZipUtils {
      * Converts DOS time to Java time (number of milliseconds since epoch).
      */
     public static long dosToJavaTime(long dtime) {
-        LocalDateTime ldt = LocalDateTime.of(
-                (int) (((dtime >> 25) & 0x7f) + 1980),
-                (int) ((dtime >> 21) & 0x0f),
-                (int) ((dtime >> 16) & 0x1f),
-                (int) ((dtime >> 11) & 0x1f),
-                (int) ((dtime >> 5) & 0x3f),
-                (int) ((dtime << 1) & 0x3e));
+        int year;
+        int month;
+        int day;
+        int hour = (int) ((dtime >> 11) & 0x1f);
+        int minute = (int) ((dtime >> 5) & 0x3f);
+        int second = (int) ((dtime << 1) & 0x3e);
+        if ((dtime >> 16) == 0) {
+            // Interpret the 0 DOS date as 1979-11-30 for compatibility with
+            // other implementations.
+            year = 1979;
+            month = 11;
+            day = 30;
+        } else {
+            year = (int) (((dtime >> 25) & 0x7f) + 1980);
+            month = (int) ((dtime >> 21) & 0x0f);
+            day = (int) ((dtime >> 16) & 0x1f);
+        }
+        LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, minute, second);
         return TimeUnit.MILLISECONDS.convert(ldt.toEpochSecond(
                 ZoneId.systemDefault().getRules().getOffset(ldt)), TimeUnit.SECONDS);
     }

@@ -72,10 +72,13 @@ import sun.net.util.IPAddressUtil;
  *
  * <h3> Address types </h3>
  *
- * <blockquote><table class="borderless">
+ * <table class="striped" style="margin-left:2em">
  *   <caption style="display:none">Description of unicast and multicast address types</caption>
+ *   <thead>
+ *   <tr><th scope="col">Address Type</th><th scope="col">Description</th></tr>
+ *   </thead>
  *   <tbody>
- *   <tr><th style="vertical-align:top"><i>unicast</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">unicast</th>
  *       <td>An identifier for a single interface. A packet sent to
  *         a unicast address is delivered to the interface identified by
  *         that address.
@@ -94,12 +97,12 @@ import sun.net.util.IPAddressUtil;
  *         IP address loops around and becomes IP input on the local
  *         host. This address is often used when testing a
  *         client.</td></tr>
- *   <tr><th style="vertical-align:top"><i>multicast</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">multicast</th>
  *       <td>An identifier for a set of interfaces (typically belonging
  *         to different nodes). A packet sent to a multicast address is
  *         delivered to all interfaces identified by that address.</td></tr>
  * </tbody>
- * </table></blockquote>
+ * </table>
  *
  * <h4> IP address scope </h4>
  *
@@ -163,8 +166,7 @@ import sun.net.util.IPAddressUtil;
  * <p> Two Java security properties control the TTL values used for
  *  positive and negative host name resolution caching:
  *
- * <blockquote>
- * <dl>
+ * <dl style="margin-left:2em">
  * <dt><b>networkaddress.cache.ttl</b></dt>
  * <dd>Indicates the caching policy for successful name lookups from
  * the name service. The value is specified as an integer to indicate
@@ -183,7 +185,6 @@ import sun.net.util.IPAddressUtil;
  * A value of -1 indicates "cache forever".
  * </dd>
  * </dl>
- * </blockquote>
  *
  * @author  Chris Warth
  * @see     java.net.InetAddress#getByAddress(byte[])

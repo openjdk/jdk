@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,16 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 6668439
  * @summary Verifies that no exceptions are thrown when frame is resized to 0x0
  * @author Dmitri.Trembovetski@sun.com: area=Graphics
  * @run main/othervm IAEforEmptyFrameTest
  * @run main/othervm -Dsun.java2d.d3d=false IAEforEmptyFrameTest
  */
+
 import javax.swing.JFrame;
 
 public class IAEforEmptyFrameTest {

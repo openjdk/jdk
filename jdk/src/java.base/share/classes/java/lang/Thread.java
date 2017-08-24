@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ class Thread implements Runnable {
      * the calling thread indicates to the runtime that it is busy-waiting.
      * The runtime may take action to improve the performance of invoking
      * spin-wait loop constructions.
-     * <p>
+     *
      * @apiNote
      * As an example consider a method in a class that spins in a loop until
      * some flag is set outside of that method. A call to the {@code onSpinWait}
@@ -373,7 +373,7 @@ class Thread implements Runnable {
      * method was not called at all. However on some architectures the Java
      * Virtual Machine may issue the processor instructions to address such
      * code patterns in a more beneficial way.
-     * <p>
+     *
      * @since 9
      */
     @HotSpotIntrinsicCandidate

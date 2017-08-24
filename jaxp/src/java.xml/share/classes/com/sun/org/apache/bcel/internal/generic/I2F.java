@@ -21,34 +21,35 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * I2F - Convert int to float
  * <PRE>Stack: ..., value -&gt; ..., result</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: I2F.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class I2F extends ConversionInstruction {
-  /** Convert int to float
-   */
-  public I2F() {
-    super(com.sun.org.apache.bcel.internal.Constants.I2F);
-  }
+
+    /** Convert int to float
+     */
+    public I2F() {
+        super(com.sun.org.apache.bcel.internal.Const.I2F);
+    }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitTypedInstruction(this);
-    v.visitStackProducer(this);
-    v.visitStackConsumer(this);
-    v.visitConversionInstruction(this);
-    v.visitI2F(this);
-  }
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitTypedInstruction(this);
+        v.visitStackProducer(this);
+        v.visitStackConsumer(this);
+        v.visitConversionInstruction(this);
+        v.visitI2F(this);
+    }
 }

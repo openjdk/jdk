@@ -120,18 +120,18 @@ import java.util.Arrays;
  * preferred scale for representing a result.  The preferred
  * scale for each operation is listed in the table below.
  *
- * <table class="plain">
- * <caption><b>Preferred Scales for Results of Arithmetic Operations
- * </b></caption>
+ * <table class="striped" style="text-align:left">
+ * <caption>Preferred Scales for Results of Arithmetic Operations
+ * </caption>
  * <thead>
- * <tr><th>Operation</th><th>Preferred Scale of Result</th></tr>
+ * <tr><th scope="col">Operation</th><th scope="col">Preferred Scale of Result</th></tr>
  * </thead>
  * <tbody>
- * <tr><td>Add</td><td>max(addend.scale(), augend.scale())</td>
- * <tr><td>Subtract</td><td>max(minuend.scale(), subtrahend.scale())</td>
- * <tr><td>Multiply</td><td>multiplier.scale() + multiplicand.scale()</td>
- * <tr><td>Divide</td><td>dividend.scale() - divisor.scale()</td>
- * <tr><td>Square root</td><td>radicand.scale()/2</td>
+ * <tr><th scope="row">Add</th><td>max(addend.scale(), augend.scale())</td>
+ * <tr><th scope="row">Subtract</th><td>max(minuend.scale(), subtrahend.scale())</td>
+ * <tr><th scope="row">Multiply</th><td>multiplier.scale() + multiplicand.scale()</td>
+ * <tr><th scope="row">Divide</th><td>dividend.scale() - divisor.scale()</td>
+ * <tr><th scope="row">Square root</th><td>radicand.scale()/2</td>
  * </tbody>
  * </table>
  *

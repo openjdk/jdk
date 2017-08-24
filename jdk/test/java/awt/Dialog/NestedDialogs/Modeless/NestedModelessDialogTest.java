@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,19 @@
  * questions.
  */
 
- /*
- @test 8155740
- @summary See <rdar://problem/3429130>: Events: actionPerformed() method not
-              called when it is button is clicked (system load related)
- @summary com.apple.junit.java.awt.Frame
- @library ../../../regtesthelpers
- @build VisibilityValidator
- @build Util
- @build Waypoint
- @run main NestedModelessDialogTest
+/**
+ * @test 8155740
+ * @key headful
+ * @summary See <rdar://problem/3429130>: Events: actionPerformed() method not
+ *              called when it is button is clicked (system load related)
+ * @summary com.apple.junit.java.awt.Frame
+ * @library ../../../regtesthelpers
+ * @build VisibilityValidator
+ * @build Util
+ * @build Waypoint
+ * @run main NestedModelessDialogTest -Xlog:exception
  */
+
 /////////////////////////////////////////////////////////////////////////////
 //  NestedModelessDialogTest.java
 // The test launches a parent frame. From this parent frame it launches a modal

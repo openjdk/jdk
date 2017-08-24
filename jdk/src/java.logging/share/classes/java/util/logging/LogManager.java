@@ -1887,13 +1887,17 @@ public class LogManager {
      * The registered {@linkplain #addConfigurationListener configuration
      * listeners} will be invoked after the configuration is successfully updated.
      * <br><br>
-     * <table><caption style="display:none">Updating configuration properties</caption>
+     * <table class="striped">
+     * <caption style="display:none">Updating configuration properties</caption>
+     * <thead>
      * <tr>
-     * <th>Property</th>
-     * <th>Resulting Behavior</th>
+     * <th scope="col">Property</th>
+     * <th scope="col">Resulting Behavior</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td valign="top">{@code <logger>.level}</td>
+     * <th scope="row" valign="top">{@code <logger>.level}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a level for a logger and
@@ -1914,7 +1918,7 @@ public class LogManager {
      * </ul>
      * </td>
      * <tr>
-     * <td valign="top">{@code <logger>.useParentHandlers}</td>
+     * <th scope="row" valign="top">{@code <logger>.useParentHandlers}</th>
      * <td>
      * <ul>
      *   <li>If either the resulting or the old value for the useParentHandlers
@@ -1928,7 +1932,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <td valign="top">{@code <logger>.handlers}</td>
+     * <th scope="row" valign="top">{@code <logger>.handlers}</th>
      * <td>
      * <ul>
      *   <li>If the resulting configuration defines a list of handlers for a
@@ -1952,7 +1956,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <td valign="top">{@code <handler-name>.*}</td>
+     * <th scope="row" valign="top">{@code <handler-name>.*}</th>
      * <td>
      * <ul>
      *   <li>Properties configured/changed on handler classes will only affect
@@ -1964,7 +1968,7 @@ public class LogManager {
      * </td>
      * </tr>
      * <tr>
-     * <td valign="top">{@code config} and any other property</td>
+     * <th scope="row" valign="top">{@code config} and any other property</th>
      * <td>
      * <ul>
      *   <li>The resulting value for these property will be stored in the
@@ -1974,6 +1978,7 @@ public class LogManager {
      * </ul>
      * </td>
      * </tr>
+     * </tbody>
      * </table>
      * <p>
      * <em>Example mapper functions:</em>
