@@ -65,8 +65,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * repeatedly, via the Authenticator. Default is false, which means that this
      * behavior is switched off.
      */
-    static boolean serializeAuth;
-
+    static final boolean serializeAuth;
     static {
         serializeAuth = java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
@@ -105,6 +104,16 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     }
     public String getProtocolScheme() {
         return protocol;
+    }
+    /**
+     * Whether we should cache this instance in the AuthCache.
+     * This method returns {@code true} by default.
+     * Subclasses may override this method to add
+     * additional restrictions.
+     * @return {@code true} by default.
+     */
+    protected boolean useAuthCache() {
+        return true;
     }
 
     /**
@@ -373,9 +382,11 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     void addToCache() {
         String key = cacheKey(true);
-        cache.put(key, this);
-        if (supportsPreemptiveAuthorization()) {
-            cache.put(cacheKey(false), this);
+        if (useAuthCache()) {
+            cache.put(key, this);
+            if (supportsPreemptiveAuthorization()) {
+                cache.put(cacheKey(false), this);
+            }
         }
         endAuthRequest(key);
     }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -293,6 +293,10 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletionIncludesExcludes("import java.util.Map.|",
                 new HashSet<>(Arrays.asList("Entry")),
                 new HashSet<>(Arrays.asList("class")));
+    }
+
+    public void testImportStart() {
+        assertCompletionIncludesExcludes("import c|", Set.of("com"), Set.of());
     }
 
     public void testBrokenClassFile() throws Exception {

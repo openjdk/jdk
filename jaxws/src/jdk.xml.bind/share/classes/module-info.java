@@ -23,6 +23,21 @@
  * questions.
  */
 
+/**
+ * Defines tools for JAXB classes and XML schema generation,
+ * including the <em>{@index schemagen schemagen tool}</em>
+ * and <em>{@index xjc xjc tool}</em> tools.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink schemagen_tool_reference schemagen},
+ *     {@extLink xjc_tool_reference xjc}
+ * </dl>
+ *
+ * @moduleGraph
+ * @since 9
+ */
+@Deprecated(since="9", forRemoval=true)
 module jdk.xml.bind {
     requires java.activation;
     requires java.compiler;

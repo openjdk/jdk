@@ -26,7 +26,6 @@
  * @bug 6610174
  * @summary Test that CompositeDataSupport.toString() represents arrays correctly
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import javax.management.openmbean.ArrayType;

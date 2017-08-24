@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,15 @@ import java.io.IOException;
  * BasicFileAttributeView}, and in addition, the following attributes are
  * supported:
  * <blockquote>
- * <table border="1" cellpadding="8" summary="Supported attributes">
+ * <table class="striped">
+ * <caption style="display:none">Supported attributes</caption>
+ * <thead>
  *   <tr>
  *     <th> Name </th>
  *     <th> Type </th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr>
  *     <td> readonly </td>
  *     <td> {@link Boolean} </td>
@@ -62,6 +66,7 @@ import java.io.IOException;
  *     <td> archive </td>
  *     <td> {@link Boolean} </td>
  *   </tr>
+ * </tbody>
  * </table>
  * </blockquote>
  *
