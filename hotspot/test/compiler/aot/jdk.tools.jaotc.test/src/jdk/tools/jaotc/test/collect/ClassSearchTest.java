@@ -20,10 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @modules jdk.aot/jdk.tools.jaotc
+ *          jdk.aot/jdk.tools.jaotc.collect
+ * @run junit/othervm jdk.tools.jaotc.test.collect.ClassSearchTest
+ */
+
 package jdk.tools.jaotc.test.collect;
 
 
 import jdk.tools.jaotc.LoadedClass;
+import jdk.tools.jaotc.collect.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,45 +41,90 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 public class ClassSearchTest {
     @Test(expected = InternalError.class)
     public void itShouldThrowExceptionIfNoProvidersAvailable() {
         ClassSearch target = new ClassSearch();
         SearchPath searchPath = new SearchPath();
-        target.search(list("foo"), searchPath);
+        target.search(list(new SearchFor("foo")), searchPath);
     }
 
     @Test
     public void itShouldFindAProviderForEachEntry() {
         Set<String> searched = new HashSet<>();
         ClassSearch target = new ClassSearch();
-        target.addProvider(new SourceProvider() {
-            @Override
-            public ClassSource findSource(String name, SearchPath searchPath) {
+        target.addProvider(provider("", (name, searchPath) -> {
                 searched.add(name);
                 return new NoopSource();
-            }
-        });
-        target.search(list("foo", "bar", "foobar"), null);
+        }));
+        target.search(searchForList("foo", "bar", "foobar"), null);
         Assert.assertEquals(hashset("foo", "bar", "foobar"), searched);
     }
 
+    private SourceProvider provider(String supports, BiFunction<String, SearchPath, ClassSource> fn) {
+        return new SourceProvider() {
+            @Override
+            public ClassSource findSource(String name, SearchPath searchPath) {
+                return fn.apply(name, searchPath);
+            }
+
+            @Override
+            public boolean supports(String type) {
+                return supports.equals(type);
+            }
+        };
+    }
+
     @Test
-    public void itShouldSearchAllProviders() {
+    public void itShouldOnlySearchSupportedProvidersForKnownType() {
         Set<String> visited = new HashSet<>();
         ClassSearch target = new ClassSearch();
-        target.addProvider((name, searchPath) -> {
-            visited.add("1");
+
+        target.addProvider(provider("jar", (name, searchPath) -> {
+            visited.add("jar");
             return null;
-        });
-        target.addProvider((name, searchPath) -> {
-            visited.add("2");
+        }));
+
+        target.addProvider(provider("dir", (name, searchPath) -> {
+            visited.add("dir");
             return null;
-        });
+        }));
 
         try {
-            target.search(list("foo"), null);
+            target.search(list(new SearchFor("some", "dir")), null);
+        } catch (InternalError e) {
+            // throws because no provider gives a source
+        }
+
+        Assert.assertEquals(hashset("dir"), visited);
+    }
+
+    @Test(expected = InternalError.class)
+    public void itShouldThrowErrorIfMultipleSourcesAreAvailable() {
+        ClassSearch target = new ClassSearch();
+        target.addProvider(provider("", (name, searchPath) -> consumer -> Assert.fail()));
+        target.addProvider(provider("", (name, searchPath) -> consumer -> Assert.fail()));
+
+        target.search(searchForList("somethign"), null);
+    }
+
+    @Test
+    public void itShouldSearchAllProvidersForUnknownType() {
+        Set<String> visited = new HashSet<>();
+        ClassSearch target = new ClassSearch();
+        target.addProvider(provider("", (name, searchPath) -> {
+            visited.add("1");
+            return null;
+        }));
+        target.addProvider(provider("", (name, searchPath) -> {
+            visited.add("2");
+            return null;
+        }));
+
+        try {
+            target.search(searchForList("foo"), null);
         } catch (InternalError e) {
             // throws because no provider gives a source
         }
@@ -84,6 +138,11 @@ public class ClassSearchTest {
 
         ClassSearch target = new ClassSearch();
         target.addProvider(new SourceProvider() {
+            @Override
+            public boolean supports(String type) {
+                return true;
+            }
+
             @Override
             public ClassSource findSource(String name, SearchPath searchPath) {
                 return new ClassSource() {
@@ -101,7 +160,7 @@ public class ClassSearchTest {
             }
         });
 
-        java.util.List<LoadedClass> search = target.search(list("/tmp/something"), null);
+        java.util.List<LoadedClass> search = target.search(searchForList("/tmp/something"), null);
         Assert.assertEquals(list(new LoadedClass("foo.Bar", null)), search);
     }
 
@@ -115,8 +174,16 @@ public class ClassSearchTest {
         };
 
         ClassSearch target = new ClassSearch();
-        target.addProvider((name, searchPath) -> consumer -> consumer.accept("foo.Bar", classLoader));
-        target.search(list("foobar"), null);
+        target.addProvider(provider("", (name, searchPath) -> consumer -> consumer.accept("foo.Bar", classLoader)));
+        target.search(searchForList("foobar"), null);
+    }
+
+    private List<SearchFor> searchForList(String... entries) {
+        List<SearchFor> list = new ArrayList<>();
+        for (String entry : entries) {
+            list.add(new SearchFor(entry));
+        }
+        return list;
     }
 
     private <T> List<T> list(T... entries) {
