@@ -40,15 +40,15 @@ import javax.xml.transform.Result;
  *     <caption>Configuration Parameters</caption>
  *     <thead>
  *      <tr>
- *        <th>Property Name</th>
- *        <th>Behavior</th>
- *        <th>Return type</th>
- *        <th>Default Value</th>
- *        <th>Required</th>
+ *        <th scope="col">Property Name</th>
+ *        <th scope="col">Behavior</th>
+ *        <th scope="col">Return type</th>
+ *        <th scope="col">Default Value</th>
+ *        <th scope="col">Required</th>
  *              </tr>
  *    </thead>
  *    <tbody>
- *         <tr><td>javax.xml.stream.isRepairingNamespaces</td><td>defaults prefixes
+ *         <tr><th scope="row">javax.xml.stream.isRepairingNamespaces</th><td>defaults prefixes
  *                 on the output side</td><td>Boolean</td><td>False</td><td>Yes</td></tr>
  *      </tbody>
  *   </table>

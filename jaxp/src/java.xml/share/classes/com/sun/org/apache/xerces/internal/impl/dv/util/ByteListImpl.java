@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -96,7 +95,7 @@ public class ByteListImpl extends AbstractList implements ByteList {
 
     public Object get(int index) {
         if (index >= 0 && index < data.length) {
-            return new Byte(data[index]);
+            return data[index];
         }
         throw new IndexOutOfBoundsException("Index: " + index);
     }

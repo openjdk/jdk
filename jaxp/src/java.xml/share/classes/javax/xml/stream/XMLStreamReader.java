@@ -75,13 +75,13 @@ import javax.xml.namespace.QName;
  *   <caption>Valid methods for each state</caption>
  *   <thead>
  *     <tr>
- *       <th>Event Type</th>
- *       <th>Valid Methods</th>
+ *       <th scope="col">Event Type</th>
+ *       <th scope="col">Valid Methods</th>
  *     </tr>
  *   </thead>
  *   <tbody>
  *     <tr>
- *       <td> All States  </td>
+ *       <th scope="row"> All States  </th>
  *       <td> getProperty(), hasNext(), require(), close(),
  *            getNamespaceURI(), isStartElement(),
  *            isEndElement(), isCharacters(), isWhiteSpace(),
@@ -90,7 +90,7 @@ import javax.xml.namespace.QName;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td> START_ELEMENT  </td>
+ *       <th scope="row"> START_ELEMENT  </th>
  *       <td> next(), getName(), getLocalName(), hasName(), getPrefix(),
  *            getAttributeXXX(), isAttributeSpecified(),
  *            getNamespaceXXX(),
@@ -98,58 +98,58 @@ import javax.xml.namespace.QName;
  *       </td>
  *     </tr>
  *     <tr>
- *       <td> ATTRIBUTE  </td>
+ *       <th scope="row"> ATTRIBUTE  </th>
  *       <td> next(), nextTag()
  *            getAttributeXXX(), isAttributeSpecified(),
  *       </td>
  *     </tr>
  *     <tr>
- *       <td> NAMESPACE  </td>
+ *       <th scope="row"> NAMESPACE  </th>
  *       <td> next(), nextTag()
  *            getNamespaceXXX()
  *       </td>
  *     </tr>
  *     <tr>
- *       <td> END_ELEMENT  </td>
+ *       <th scope="row"> END_ELEMENT  </th>
  *       <td> next(), getName(), getLocalName(), hasName(), getPrefix(),
  *            getNamespaceXXX(), nextTag()
  *      </td>
  *     </tr>
  *     <tr>
- *       <td> CHARACTERS  </td>
+ *       <th scope="row"> CHARACTERS  </th>
  *       <td> next(), getTextXXX(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> CDATA  </td>
+ *       <th scope="row"> CDATA  </th>
  *       <td> next(), getTextXXX(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> COMMENT  </td>
+ *       <th scope="row"> COMMENT  </th>
  *       <td> next(), getTextXXX(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> SPACE  </td>
+ *       <th scope="row"> SPACE  </th>
  *       <td> next(), getTextXXX(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> START_DOCUMENT  </td>
+ *       <th scope="row"> START_DOCUMENT  </th>
  *       <td> next(), getEncoding(), getVersion(), isStandalone(), standaloneSet(),
  *            getCharacterEncodingScheme(), nextTag()</td>
  *     </tr>
  *     <tr>
- *       <td> END_DOCUMENT  </td>
+ *       <th scope="row"> END_DOCUMENT  </th>
  *       <td> close()</td>
  *     </tr>
  *     <tr>
- *       <td> PROCESSING_INSTRUCTION  </td>
+ *       <th scope="row"> PROCESSING_INSTRUCTION  </th>
  *       <td> next(), getPITarget(), getPIData(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> ENTITY_REFERENCE  </td>
+ *       <th scope="row"> ENTITY_REFERENCE  </th>
  *       <td> next(), getLocalName(), getText(), nextTag() </td>
  *     </tr>
  *     <tr>
- *       <td> DTD  </td>
+ *       <th scope="row"> DTD  </th>
  *       <td> next(), getText(), nextTag() </td>
  *     </tr>
  *   </tbody>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,16 @@ static char *script_names[] = {
     "iqtelif", "Latn",
     "latin", "Latn",
 #endif
+    "Arab", "Arab",
+    "Cyrl", "Cyrl",
+    "Deva", "Deva",
+    "Ethi", "Ethi",
+    "Hans", "Hans",
+    "Hant", "Hant",
+    "Latn", "Latn",
+    "Sund", "Sund",
+    "Syrc", "Syrc",
+    "Tfng", "Tfng",
     "", "",
 };
 
