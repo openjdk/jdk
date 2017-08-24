@@ -28,7 +28,7 @@
  *          jmx.monitor.error.type notification when the attribute
  *          being monitored returns a non comparable value.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean NonComparableAttributeValueTest
  * @run build NonComparableAttributeValueTest
  * @run main NonComparableAttributeValueTest

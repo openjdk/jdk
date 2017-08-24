@@ -45,7 +45,7 @@ import javax.management.remote.rmi.RMIConnectorServer;
  * @bug 6697180
  * @summary test on a client notification deadlock.
  * @author Shanliang JIANG
- * @modules java.management.rmi
+ *
  * @run clean MultiThreadDeadLockTest
  * @run build MultiThreadDeadLockTest
  * @run main MultiThreadDeadLockTest

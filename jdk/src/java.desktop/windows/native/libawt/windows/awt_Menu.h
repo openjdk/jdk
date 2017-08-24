@@ -42,13 +42,6 @@ class AwtMenuBar;
 
 class AwtMenu : public AwtMenuItem {
 public:
-    // id's for methods executed on toolkit thread
-    enum {
-        MENU_ADDSEPARATOR = MENUITEM_LAST+1,
-        MENU_DELITEM,
-        MENU_LAST
-    };
-
     /* method ids for java.awt.Menu */
     static jmethodID countItemsMID;
     static jmethodID getItemMID;
@@ -61,7 +54,7 @@ public:
     virtual LPCTSTR GetClassName();
 
     /* Create a new AwtMenu.  This must be run on the main thread. */
-    static AwtMenu* Create(jobject self, AwtMenu* parentMenu);
+    static AwtMenu* Create(jobject self, jobject parent);
 
     INLINE HMENU GetHMenu() { return m_hMenu; }
     INLINE void SetHMenu(HMENU hMenu) {
@@ -94,9 +87,9 @@ public:
     void MeasureItem(HDC hDC, MEASUREITEMSTRUCT& measureInfo);
     void MeasureItems(HDC hDC, MEASUREITEMSTRUCT& measureInfo);
 
-    virtual LRESULT WinThreadExecProc(ExecuteArgs * args);
-
     // invoked on Toolkit thread
+    static void _AddSeparator(void *param);
+    static void _DelItem(void *param);
     static void _CreateMenu(void *param);
     static void _CreateSubMenu(void *param);
     virtual BOOL IsSeparator() { return FALSE; }
