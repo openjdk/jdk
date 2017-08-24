@@ -1473,12 +1473,12 @@ public class CoreDocumentImpl
         if (nodeTable == null) {
             nodeTable = new HashMap<>();
             num = --nodeCounter;
-            nodeTable.put(node, new Integer(num));
+            nodeTable.put(node, num);
         } else {
             Integer n = (Integer) nodeTable.get(node);
             if (n == null) {
                 num = --nodeCounter;
-                nodeTable.put(node, new Integer(num));
+                nodeTable.put(node, num);
             } else {
                 num = n.intValue();
             }

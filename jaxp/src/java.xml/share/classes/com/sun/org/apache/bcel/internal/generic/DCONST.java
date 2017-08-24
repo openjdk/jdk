@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -52,7 +51,7 @@ public class DCONST extends Instruction
     value = f;
   }
 
-  public Number getValue() { return new Double(value); }
+  public Number getValue() { return Double.valueOf(value); }
 
   /** @return Type.DOUBLE
    */

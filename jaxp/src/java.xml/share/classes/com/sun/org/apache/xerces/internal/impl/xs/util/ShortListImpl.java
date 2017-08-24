@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -112,7 +111,7 @@ public final class ShortListImpl extends AbstractList implements ShortList {
 
     public Object get(int index) {
         if (index >= 0 && index < fLength) {
-            return new Short(fArray[index]);
+            return fArray[index];
         }
         throw new IndexOutOfBoundsException("Index: " + index);
     }

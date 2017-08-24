@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -201,7 +201,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
                     fAttributes.getLength() > fElementAttributeLimit){
                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                              "ElementAttributeLimit",
-                                             new Object[]{rawname, new Integer(fElementAttributeLimit) },
+                                             new Object[]{rawname, fElementAttributeLimit },
                                              XMLErrorReporter.SEVERITY_FATAL_ERROR );
             }
 
