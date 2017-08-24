@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class QPEncoderStream extends FilterOutputStream {
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         for (int i = 0; i < len; i++)
             write(b[off + i]);
@@ -91,6 +92,7 @@ public class QPEncoderStream extends FilterOutputStream {
      * @param      b   the data to be written.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
@@ -100,6 +102,7 @@ public class QPEncoderStream extends FilterOutputStream {
      * @param      c   the <code>byte</code>.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void write(int c) throws IOException {
         c = c & 0xff; // Turn off the MSB.
         if (gotSpace) { // previous character was <SPACE>
@@ -139,6 +142,7 @@ public class QPEncoderStream extends FilterOutputStream {
      * to be encoded out to the stream.
      * @exception  IOException  if an I/O error occurs.
      */
+    @Override
     public void flush() throws IOException {
         out.flush();
     }
@@ -147,6 +151,7 @@ public class QPEncoderStream extends FilterOutputStream {
      * Forces any buffered output bytes to be encoded out to the stream
      * and closes this output stream
      */
+    @Override
     public void close() throws IOException {
         out.close();
     }

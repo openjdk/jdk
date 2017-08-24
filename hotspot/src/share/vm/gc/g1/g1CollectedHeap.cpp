@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4388,6 +4388,15 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
 
   rp->verify_no_references_recorded();
   assert(!rp->discovery_enabled(), "should have been disabled");
+
+  // If during an initial mark pause we install a pending list head which is not otherwise reachable
+  // ensure that it is marked in the bitmap for concurrent marking to discover.
+  if (collector_state()->during_initial_mark_pause()) {
+    oop pll_head = Universe::reference_pending_list();
+    if (pll_head != NULL) {
+      _cm->grayRoot(pll_head);
+    }
+  }
 
   // FIXME
   // CM's reference processing also cleans up the string and symbol tables.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import jdk.incubator.http.ResponseProcessors.MultiFile;
 import jdk.incubator.http.ResponseProcessors.MultiProcessorImpl;
+import static jdk.incubator.http.internal.common.Utils.unchecked;
+import static jdk.incubator.http.internal.common.Utils.charsetFrom;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -222,7 +224,7 @@ public abstract class HttpResponse<T> {
     public interface BodyHandler<T> {
 
         /**
-         * Return a {@link BodyProcessor BodyProcessor} considering the given response status
+         * Returns a {@link BodyProcessor BodyProcessor} considering the given response status
          * code and headers. This method is always called before the body is read
          * and its implementation can decide to keep the body and store it somewhere
          * or else discard it, by  returning the {@code BodyProcessor} returned
@@ -230,7 +232,7 @@ public abstract class HttpResponse<T> {
          *
          * @param statusCode the HTTP status code received
          * @param responseHeaders the response headers received
-         * @return
+         * @return a response body handler
          */
         public BodyProcessor<T> apply(int statusCode, HttpHeaders responseHeaders);
 
@@ -240,7 +242,7 @@ public abstract class HttpResponse<T> {
          *
          * @param <U> the response body type
          * @param value the value of U to return as the body
-         * @return
+         * @return a response body handler
          */
         public static <U> BodyHandler<U> discard(U value) {
             return (status, headers) -> BodyProcessor.discard(value);
@@ -258,7 +260,7 @@ public abstract class HttpResponse<T> {
          *
          * @param charset the name of the charset to interpret the body as. If
          * {@code null} then charset determined from Content-encoding header
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<String> asString(Charset charset) {
             return (status, headers) -> {
@@ -269,19 +271,6 @@ public abstract class HttpResponse<T> {
             };
         }
 
-        /**
-         * Get the Charset from the Content-encoding header. Defaults to
-         * UTF_8
-         */
-        private static Charset charsetFrom(HttpHeaders headers) {
-            String encoding = headers.firstValue("Content-encoding")
-                    .orElse("UTF_8");
-            try {
-                return Charset.forName(encoding);
-            } catch (IllegalArgumentException e) {
-                return StandardCharsets.UTF_8;
-            }
-        }
 
         /**
          * Returns a {@code BodyHandler<Path>} that returns a
@@ -293,7 +282,7 @@ public abstract class HttpResponse<T> {
          * {@link Path}.
          *
          * @param file the file to store the body in
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<Path> asFile(Path file) {
             return (status, headers) -> BodyProcessor.asFile(file);
@@ -317,7 +306,7 @@ public abstract class HttpResponse<T> {
          *
          * @param directory the directory to store the file in
          * @param openOptions open options
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<Path> asFileDownload(Path directory, OpenOption... openOptions) {
             return (status, headers) -> {
@@ -342,10 +331,6 @@ public abstract class HttpResponse<T> {
             };
         }
 
-        private static UncheckedIOException unchecked(IOException e) {
-            return new UncheckedIOException(e);
-        }
-
         /**
          * Returns a {@code BodyHandler<Path>} that returns a
          * {@link BodyProcessor BodyProcessor}{@code <Path>} obtained from
@@ -358,7 +343,7 @@ public abstract class HttpResponse<T> {
          *
          * @param file the filename to store the body in
          * @param openOptions any options to use when opening/creating the file
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<Path> asFile(Path file, OpenOption... openOptions) {
             return (status, headers) -> BodyProcessor.asFile(file, openOptions);
@@ -374,7 +359,7 @@ public abstract class HttpResponse<T> {
          * written to the consumer.
          *
          * @param consumer a Consumer to accept the response body
-         * @return a a response handler
+         * @return a response body handler
          */
         public static BodyHandler<Void> asByteArrayConsumer(Consumer<Optional<byte[]>> consumer) {
             return (status, headers) -> BodyProcessor.asByteArrayConsumer(consumer);
@@ -388,7 +373,7 @@ public abstract class HttpResponse<T> {
          * When the {@code HttpResponse} object is returned, the body has been completely
          * written to the byte array.
          *
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<byte[]> asByteArray() {
             return (status, headers) -> BodyProcessor.asByteArray();
@@ -407,7 +392,7 @@ public abstract class HttpResponse<T> {
          * When the {@code HttpResponse} object is returned, the body has been completely
          * written to the string.
          *
-         * @return a response handler
+         * @return a response body handler
          */
         public static BodyHandler<String> asString() {
             return (status, headers) -> BodyProcessor.asString(charsetFrom(headers));
@@ -621,7 +606,7 @@ public abstract class HttpResponse<T> {
          * either one of onResponse() or onError() is guaranteed to be called,
          * but not both.
          *
-         * @param request
+         * @param request the main request or subsequent push promise
          * @param t the Throwable that caused the error
          */
         void onError(HttpRequest request, Throwable t);
@@ -732,7 +717,7 @@ public abstract class HttpResponse<T> {
          * join() call returns, all {@code HttpResponse}s and their associated
          * body objects are available.
          *
-         * @param <V>
+         * @param <V> the body type used for all responses
          * @param pushHandler a function invoked for each request or push
          * promise
          * @return a MultiProcessor
@@ -743,48 +728,5 @@ public abstract class HttpResponse<T> {
             return asMap(pushHandler, true);
         }
 
-        /**
-         * Returns a {@code MultiProcessor} which writes the response bodies to
-         * files under a given root directory and which returns an aggregate
-         * response map that is a {@code Map<HttpRequest, HttpResponse<Path>>}.
-         * The keyset of the {@code Map} represents the original request and any
-         * additional requests generated by the server. The values are the
-         * responses containing the paths of the destination files. Each file
-         * uses the URI path of the request relative to the destination parent
-         * directorycprovided.
-         *
-         * <p>
-         * All incoming additional requests (push promises) are accepted by this
-         * multi response processor. Errors are effectively ignored and any
-         * failed responses are simply omitted from the result {@code Map}.
-         * Other implementations of {@code MultiProcessor} may handle these
-         * situations.
-         *
-         * <p>
-         * <b>Example usage</b>
-         * <pre>
-         * {@code
-         *    HttpClient client = ..
-         *    HttpRequest request = HttpRequest
-         *               .create(new URI("https://www.foo.com/"))
-         *               .version(Version.HTTP2)
-         *               .GET();
-         *
-         *    Map<HttpRequest, HttpResponse<Path>>> map = client
-         *               .sendAsync(HttpResponse.MultiProcessor.multiFile("/usr/destination"))
-         *               .join();
-         *
-         * }
-         * </pre>
-         * TEMPORARILY REMOVING THIS FROM API. MIGHT NOT BE NEEDED.
-         *
-         * @param destination the destination parent directory of all response
-         * bodies
-         * @return a MultiProcessor
-         */
-        private static MultiProcessor<MultiMapResult<Path>,Path> multiFile(Path destination) {
-            MultiFile mf = new MultiFile(destination);
-            return new MultiProcessorImpl<Path>(mf::handlePush, true);
-        }
     }
 }

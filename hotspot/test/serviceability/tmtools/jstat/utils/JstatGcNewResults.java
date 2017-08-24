@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ public class JstatGcNewResults extends JstatResults {
     /**
      * Checks the overall consistency of the results reported by the tool
      */
+    @Override
     public void assertConsistency() {
 
         assertThat(getExitCode() == 0, "Unexpected exit code: " + getExitCode());
@@ -83,11 +84,5 @@ public class JstatGcNewResults extends JstatResults {
         int TT = getIntValue("TT");
         int MTT = getIntValue("MTT");
         assertThat(TT <= MTT, "TT > MTT (tenuring threshold > maximum tenuring threshold)");
-    }
-
-    private void assertThat(boolean b, String message) {
-        if (!b) {
-            throw new RuntimeException(message);
-        }
     }
 }

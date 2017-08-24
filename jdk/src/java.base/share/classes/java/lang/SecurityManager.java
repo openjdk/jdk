@@ -25,13 +25,11 @@
 
 package java.lang;
 
-import java.lang.RuntimePermission;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
-import java.lang.reflect.Layer;
+import java.lang.module.ModuleReference;
 import java.lang.reflect.Member;
-import java.lang.reflect.Module;
 import java.io.FileDescriptor;
 import java.io.File;
 import java.io.FilePermission;
@@ -44,12 +42,15 @@ import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.SecurityPermission;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.PropertyPermission;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
 
@@ -193,18 +194,15 @@ import sun.security.util.SecurityConstants;
  * of system administrators who might need to perform multiple
  * tasks that require all (or numerous) permissions.
  * <p>
- * See <a href ="../../../technotes/guides/security/permissions.html">
- * Permissions in the JDK</a> for permission-related information.
+ * See {@extLink security_guide_permissions
+ * Permissions in the Java Development Kit (JDK)}
+ * for permission-related information.
  * This document includes, for example, a table listing the various SecurityManager
  * <code>check</code> methods and the permission(s) the default
  * implementation of each such method requires.
  * It also contains a table of all the version 1.2 methods
  * that require permissions, and for each such method tells
  * which permission it requires.
- * <p>
- * For more information about <code>SecurityManager</code> changes made in
- * the JDK and advice regarding porting of 1.1-style security managers,
- * see the <a href="../../../technotes/guides/security/index.html">security documentation</a>.
  *
  * @author  Arthur van Hoff
  * @author  Roland Schemers
@@ -1433,36 +1431,40 @@ class SecurityManager {
         return packages;
     }
 
-    // The non-exported packages of the modules in the boot layer that are
-    // loaded by the platform class loader or its ancestors. A non-exported
-    // package is a package that either is not exported at all by its containing
-    // module or is exported in a qualified fashion by its containing module.
-    private static final Set<String> nonExportedPkgs;
-
+    // The non-exported packages in modules defined to the boot or platform
+    // class loaders. A non-exported package is a package that is not exported
+    // or is only exported to specific modules.
+    private static final Map<String, Boolean> nonExportedPkgs = new ConcurrentHashMap<>();
     static {
-        // Get the modules in the boot layer
-        Stream<Module> bootLayerModules = Layer.boot().modules().stream();
-
-        // Filter out the modules loaded by the boot or platform loader
-        PrivilegedAction<Set<Module>> pa = () ->
-            bootLayerModules.filter(SecurityManager::isBootOrPlatformModule)
-                            .collect(Collectors.toSet());
-        Set<Module> modules = AccessController.doPrivileged(pa);
-
-        // Filter out the non-exported packages
-        nonExportedPkgs = modules.stream()
-                                 .map(Module::getDescriptor)
-                                 .map(SecurityManager::nonExportedPkgs)
-                                 .flatMap(Set::stream)
-                                 .collect(Collectors.toSet());
+        addNonExportedPackages(ModuleLayer.boot());
     }
 
     /**
-     * Returns true if the module's loader is the boot or platform loader.
+     * Record the non-exported packages of the modules in the given layer
      */
-    private static boolean isBootOrPlatformModule(Module m) {
-        return m.getClassLoader() == null ||
-               m.getClassLoader() == ClassLoader.getPlatformClassLoader();
+    static void addNonExportedPackages(ModuleLayer layer) {
+        Set<String> bootModules = ModuleLoaderMap.bootModules();
+        Set<String> platformModules = ModuleLoaderMap.platformModules();
+        layer.modules().stream()
+                .map(Module::getDescriptor)
+                .filter(md -> bootModules.contains(md.name())
+                        || platformModules.contains(md.name()))
+                .map(SecurityManager::nonExportedPkgs)
+                .flatMap(Set::stream)
+                .forEach(pn -> nonExportedPkgs.put(pn, Boolean.TRUE));
+    }
+
+
+    /**
+     * Called by java.security.Security
+     */
+    static void invalidatePackageAccessCache() {
+        synchronized (packageAccessLock) {
+            packageAccessValid = false;
+        }
+        synchronized (packageDefinitionLock) {
+            packageDefinitionValid = false;
+        }
     }
 
     /**
@@ -1491,7 +1493,10 @@ class SecurityManager {
      * Throws a {@code SecurityException} if the calling thread is not allowed
      * to access the specified package.
      * <p>
-     * This method is called by the {@code loadClass} method of class loaders.
+     * During class loading, this method may be called by the {@code loadClass}
+     * method of class loaders and by the Java Virtual Machine to ensure that
+     * the caller is allowed to access the package of the class that is
+     * being loaded.
      * <p>
      * This method checks if the specified package starts with or equals
      * any of the packages in the {@code package.access} Security Property.
@@ -1525,7 +1530,7 @@ class SecurityManager {
         Objects.requireNonNull(pkg, "package name can't be null");
 
         // check if pkg is not exported to all modules
-        if (nonExportedPkgs.contains(pkg)) {
+        if (nonExportedPkgs.containsKey(pkg)) {
             checkPermission(
                 new RuntimePermission("accessClassInPackage." + pkg));
             return;
@@ -1624,7 +1629,7 @@ class SecurityManager {
         Objects.requireNonNull(pkg, "package name can't be null");
 
         // check if pkg is not exported to all modules
-        if (nonExportedPkgs.contains(pkg)) {
+        if (nonExportedPkgs.containsKey(pkg)) {
             checkPermission(
                 new RuntimePermission("defineClassInPackage." + pkg));
             return;

@@ -24,8 +24,18 @@
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.*;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+
 import javax.annotation.processing.Processor;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -63,6 +73,7 @@ class Example implements Comparable<Example> {
         procFiles = new ArrayList<File>();
         srcPathFiles = new ArrayList<File>();
         moduleSourcePathFiles = new ArrayList<File>();
+        patchModulePathFiles = new ArrayList<File>();
         modulePathFiles = new ArrayList<File>();
         classPathFiles = new ArrayList<File>();
         additionalFiles = new ArrayList<File>();
@@ -88,6 +99,9 @@ class Example implements Comparable<Example> {
                 } else if (files == srcFiles && c.getName().equals("modulesourcepath")) {
                     moduleSourcePathDir = c;
                     findFiles(c, moduleSourcePathFiles);
+                } else if (files == srcFiles && c.getName().equals("patchmodule")) {
+                    patchModulePathDir = c;
+                    findFiles(c, patchModulePathFiles);
                 } else if (files == srcFiles && c.getName().equals("additional")) {
                     additionalFilesDir = c;
                     findFiles(c, additionalFiles);
@@ -206,9 +220,53 @@ class Example implements Comparable<Example> {
             File modulepathDir = new File(tempDir, "modulepath");
             modulepathDir.mkdirs();
             clean(modulepathDir);
-            List<String> sOpts = Arrays.asList("-d", modulepathDir.getPath(),
-                                               "--module-source-path", new File(file, "modulepath").getAbsolutePath());
-            new Jsr199Compiler(verbose).run(null, null, false, sOpts, modulePathFiles);
+            boolean hasModuleInfo =
+                    modulePathFiles.stream()
+                                   .anyMatch(f -> f.getName().equalsIgnoreCase("module-info.java"));
+            Path modulePath = new File(file, "modulepath").toPath().toAbsolutePath();
+            if (hasModuleInfo) {
+                //ordinary modules
+                List<String> sOpts =
+                        Arrays.asList("-d", modulepathDir.getPath(),
+                                      "--module-source-path", modulePath.toString());
+                new Jsr199Compiler(verbose).run(null, null, false, sOpts, modulePathFiles);
+            } else {
+                //automatic modules:
+                Map<String, List<Path>> module2Files =
+                        modulePathFiles.stream()
+                                       .map(f -> f.toPath())
+                                       .collect(Collectors.groupingBy(p -> modulePath.relativize(p)
+                                                                            .getName(0)
+                                                                            .toString()));
+                for (Entry<String, List<Path>> e : module2Files.entrySet()) {
+                    File scratchDir = new File(tempDir, "scratch");
+                    scratchDir.mkdirs();
+                    clean(scratchDir);
+                    List<String> sOpts =
+                            Arrays.asList("-d", scratchDir.getPath());
+                    new Jsr199Compiler(verbose).run(null,
+                                                    null,
+                                                    false,
+                                                    sOpts,
+                                                    e.getValue().stream()
+                                                                .map(p -> p.toFile())
+                                                                .collect(Collectors.toList()));
+                    try (JarOutputStream jarOut =
+                            new JarOutputStream(new FileOutputStream(new File(modulepathDir, e.getKey() + ".jar")))) {
+                        Files.find(scratchDir.toPath(), Integer.MAX_VALUE, (p, attr) -> attr.isRegularFile())
+                                .forEach(p -> {
+                                    try (InputStream in = Files.newInputStream(p)) {
+                                        jarOut.putNextEntry(new ZipEntry(scratchDir.toPath()
+                                                                                   .relativize(p)
+                                                                                   .toString()));
+                                        jarOut.write(in.readAllBytes());
+                                    } catch (IOException ex) {
+                                        throw new IllegalStateException(ex);
+                                    }
+                                });
+                    }
+                }
+            }
             opts.add("--module-path");
             opts.add(modulepathDir.getAbsolutePath());
         }
@@ -269,6 +327,16 @@ class Example implements Comparable<Example> {
             opts.add(moduleSourcePathDir.getPath());
             files = new ArrayList<>();
             files.addAll(moduleSourcePathFiles);
+            files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
+        }
+
+        if (patchModulePathDir != null) {
+            for (File mod : patchModulePathDir.listFiles()) {
+                opts.add("--patch-module");
+                opts.add(mod.getName() + "=" + mod.getPath());
+            }
+            files = new ArrayList<>();
+            files.addAll(patchModulePathFiles);
             files.addAll(nonEmptySrcFiles); // srcFiles containing declarations
         }
 
@@ -343,9 +411,11 @@ class Example implements Comparable<Example> {
     List<File> procFiles;
     File srcPathDir;
     File moduleSourcePathDir;
+    File patchModulePathDir;
     File additionalFilesDir;
     List<File> srcPathFiles;
     List<File> moduleSourcePathFiles;
+    List<File> patchModulePathFiles;
     List<File> modulePathFiles;
     List<File> classPathFiles;
     List<File> additionalFiles;
