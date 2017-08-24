@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  // to create a sub-type of jdk.internal.reflect.MethodAccessorImpl in order
  // to bypass Reflection.getCallerClass.  That should fail with an IAE.
  //
- import java.lang.reflect.Module;
  class fakeMethodAccessor extends jdk.internal.reflect.MethodAccessorImpl {
      public static void main(String[] a) throws Exception {
         fakeMethodAccessor f = new fakeMethodAccessor();
@@ -60,11 +59,11 @@ public static Method main:"([Ljava/lang/String;)V"
         astore_1;
         getstatic    Field java/lang/System.out:"Ljava/io/PrintStream;";
         ldc    class java/lang/String;
-        invokevirtual    Method java/lang/Class.getModule:"()Ljava/lang/reflect/Module;";
+        invokevirtual    Method java/lang/Class.getModule:"()Ljava/lang/Module;";
         ldc    String "jdk.internal.misc";
         ldc    class FakeMethodAccessor;
-        invokevirtual    Method java/lang/Class.getModule:"()Ljava/lang/reflect/Module;";
-        invokevirtual    Method java/lang/reflect/Module.isExported:"(Ljava/lang/String;Ljava/lang/reflect/Module;)Z";
+        invokevirtual    Method java/lang/Class.getModule:"()Ljava/lang/Module;";
+        invokevirtual    Method java/lang/Module.isExported:"(Ljava/lang/String;Ljava/lang/Module;)Z";
         invokevirtual    Method java/io/PrintStream.println:"(Z)V";
         return;
 }

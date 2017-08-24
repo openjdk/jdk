@@ -24,11 +24,10 @@
 /*
  * @test
  * @bug     4530538
+ * @key intermittent
  * @summary Basic unit test of ThreadMXBean.getAllThreadIds()
  * @author  Alexei Guibadoulline and Mandy Chung
  *
- * @key intermittent
- * @modules java.management
  * @run main/othervm AllThreadIds
  */
 

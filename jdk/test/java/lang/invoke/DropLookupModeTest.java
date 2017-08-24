@@ -65,6 +65,10 @@ public class DropLookupModeTest {
         lookup = fullPowerLookup.dropLookupMode(PUBLIC);
         assertTrue(lookup.lookupClass() == lc);
         assertTrue(lookup.lookupModes() == 0);
+
+        lookup = fullPowerLookup.dropLookupMode(UNCONDITIONAL);
+        assertTrue(lookup.lookupClass() == lc);
+        assertTrue(lookup.lookupModes() == (PUBLIC|MODULE|PACKAGE|PRIVATE));
     }
 
     /**
@@ -108,7 +112,7 @@ public class DropLookupModeTest {
     public void testPublicLookup() {
         final Lookup publicLookup = MethodHandles.publicLookup();
         final Class<?> lc = publicLookup.lookupClass();
-        assertTrue(publicLookup.lookupModes() == PUBLIC);
+        assertTrue(publicLookup.lookupModes() == (PUBLIC|UNCONDITIONAL));
 
         Lookup lookup = publicLookup.dropLookupMode(PRIVATE);
         assertTrue(lookup.lookupClass() == lc);
@@ -129,6 +133,10 @@ public class DropLookupModeTest {
         lookup = publicLookup.dropLookupMode(PUBLIC);
         assertTrue(lookup.lookupClass() == lc);
         assertTrue(lookup.lookupModes() == 0);
+
+        lookup = publicLookup.dropLookupMode(UNCONDITIONAL);
+        assertTrue(lookup.lookupClass() == lc);
+        assertTrue(lookup.lookupModes() == PUBLIC);
     }
 
     @DataProvider(name = "badInput")

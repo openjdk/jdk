@@ -39,7 +39,6 @@
 import com.sun.org.apache.xml.internal.serializer.EncodingInfo;
 import com.sun.org.apache.xml.internal.serializer.Encodings;
 import java.io.InputStreamReader;
-import java.lang.reflect.Module;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
