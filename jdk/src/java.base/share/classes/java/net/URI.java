@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,11 @@ import java.lang.NullPointerException;  // for javadoc
  * not begin with a slash character ({@code '/'}).  Opaque URIs are not
  * subject to further parsing.  Some examples of opaque URIs are:
  *
- * <blockquote><table cellpadding=0 cellspacing=0 summary="layout">
- * <tr><td>{@code mailto:java-net@java.sun.com}<td></tr>
- * <tr><td>{@code news:comp.lang.java}<td></tr>
- * <tr><td>{@code urn:isbn:096139210x}</td></tr>
- * </table></blockquote>
+ * <blockquote><ul style="list-style-type:none">
+ * <li>{@code mailto:java-net@java.sun.com}</li>
+ * <li>{@code news:comp.lang.java}</li>
+ * <li>{@code urn:isbn:096139210x}</li>
+ * </ul></blockquote>
  *
  * <p> A <i>hierarchical</i> URI is either an absolute URI whose
  * scheme-specific part begins with a slash character, or a relative URI, that
@@ -132,8 +132,12 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <p> All told, then, a URI instance has the following nine components:
  *
- * <blockquote><table summary="Describes the components of a URI:scheme,scheme-specific-part,authority,user-info,host,port,path,query,fragment">
+ * <blockquote><table class="borderless">
+ * <caption style="display:none">Describes the components of a URI:scheme,scheme-specific-part,authority,user-info,host,port,path,query,fragment</caption>
+ * <thead>
  * <tr><th><i>Component</i></th><th><i>Type</i></th></tr>
+ * </thead>
+ * <tbody>
  * <tr><td>scheme</td><td>{@code String}</td></tr>
  * <tr><td>scheme-specific-part&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{@code String}</td></tr>
  * <tr><td>authority</td><td>{@code String}</td></tr>
@@ -143,6 +147,7 @@ import java.lang.NullPointerException;  // for javadoc
  * <tr><td>path</td><td>{@code String}</td></tr>
  * <tr><td>query</td><td>{@code String}</td></tr>
  * <tr><td>fragment</td><td>{@code String}</td></tr>
+ * </tbody>
  * </table></blockquote>
  *
  * In a given instance any particular component is either <i>undefined</i> or
@@ -248,30 +253,32 @@ import java.lang.NullPointerException;  // for javadoc
  * which are taken from that specification, are used below to describe these
  * constraints:
  *
- * <blockquote><table cellspacing=2 summary="Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other">
- *   <tr><th valign=top><i>alpha</i></th>
+ * <blockquote><table class="borderless">
+ * <caption style="display:none">Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other</caption>
+ *   <tbody>
+ *   <tr><th style="vertical-align:top"><i>alpha</i></th>
  *       <td>The US-ASCII alphabetic characters,
  *        {@code 'A'}&nbsp;through&nbsp;{@code 'Z'}
  *        and {@code 'a'}&nbsp;through&nbsp;{@code 'z'}</td></tr>
- *   <tr><th valign=top><i>digit</i></th>
+ *   <tr><th style="vertical-align:top"><i>digit</i></th>
  *       <td>The US-ASCII decimal digit characters,
  *       {@code '0'}&nbsp;through&nbsp;{@code '9'}</td></tr>
- *   <tr><th valign=top><i>alphanum</i></th>
+ *   <tr><th style="vertical-align:top"><i>alphanum</i></th>
  *       <td>All <i>alpha</i> and <i>digit</i> characters</td></tr>
- *   <tr><th valign=top><i>unreserved</i>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *   <tr><th style="vertical-align:top"><i>unreserved</i>&nbsp;&nbsp;&nbsp;&nbsp;</th>
  *       <td>All <i>alphanum</i> characters together with those in the string
  *        {@code "_-!.~'()*"}</td></tr>
- *   <tr><th valign=top><i>punct</i></th>
+ *   <tr><th style="vertical-align:top"><i>punct</i></th>
  *       <td>The characters in the string {@code ",;:$&+="}</td></tr>
- *   <tr><th valign=top><i>reserved</i></th>
+ *   <tr><th style="vertical-align:top"><i>reserved</i></th>
  *       <td>All <i>punct</i> characters together with those in the string
  *        {@code "?/[]@"}</td></tr>
- *   <tr><th valign=top><i>escaped</i></th>
+ *   <tr><th style="vertical-align:top"><i>escaped</i></th>
  *       <td>Escaped octets, that is, triplets consisting of the percent
  *           character ({@code '%'}) followed by two hexadecimal digits
  *           ({@code '0'}-{@code '9'}, {@code 'A'}-{@code 'F'}, and
  *           {@code 'a'}-{@code 'f'})</td></tr>
- *   <tr><th valign=top><i>other</i></th>
+ *   <tr><th style="vertical-align:top"><i>other</i></th>
  *       <td>The Unicode characters that are not in the US-ASCII character set,
  *           are not control characters (according to the {@link
  *           java.lang.Character#isISOControl(char) Character.isISOControl}
@@ -279,9 +286,10 @@ import java.lang.NullPointerException;  // for javadoc
  *           java.lang.Character#isSpaceChar(char) Character.isSpaceChar}
  *           method)&nbsp;&nbsp;<i>(<b>Deviation from RFC 2396</b>, which is
  *           limited to US-ASCII)</i></td></tr>
+ * </tbody>
  * </table></blockquote>
  *
- * <p><a name="legal-chars"></a> The set of all legal URI characters consists of
+ * <p><a id="legal-chars"></a> The set of all legal URI characters consists of
  * the <i>unreserved</i>, <i>reserved</i>, <i>escaped</i>, and <i>other</i>
  * characters.
  *
@@ -308,20 +316,20 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <ul>
  *
- *   <li><p><a name="encode"></a> A character is <i>encoded</i> by replacing it
+ *   <li><p><a id="encode"></a> A character is <i>encoded</i> by replacing it
  *   with the sequence of escaped octets that represent that character in the
  *   UTF-8 character set.  The Euro currency symbol ({@code '\u005Cu20AC'}),
  *   for example, is encoded as {@code "%E2%82%AC"}.  <i>(<b>Deviation from
  *   RFC&nbsp;2396</b>, which does not specify any particular character
  *   set.)</i> </p></li>
  *
- *   <li><p><a name="quote"></a> An illegal character is <i>quoted</i> simply by
+ *   <li><p><a id="quote"></a> An illegal character is <i>quoted</i> simply by
  *   encoding it.  The space character, for example, is quoted by replacing it
  *   with {@code "%20"}.  UTF-8 contains US-ASCII, hence for US-ASCII
  *   characters this transformation has exactly the effect required by
  *   RFC&nbsp;2396. </p></li>
  *
- *   <li><p><a name="decode"></a>
+ *   <li><p><a id="decode"></a>
  *   A sequence of escaped octets is <i>decoded</i> by
  *   replacing it with the sequence of characters that it represents in the
  *   UTF-8 character set.  UTF-8 contains US-ASCII, hence decoding has the
@@ -983,7 +991,7 @@ public final class URI
      * <p> If the given URI is already absolute, or if this URI is opaque, then
      * the given URI is returned.
      *
-     * <p><a name="resolve-frag"></a> If the given URI's fragment component is
+     * <p><a id="resolve-frag"></a> If the given URI's fragment component is
      * defined, its path component is empty, and its scheme, authority, and
      * query components are undefined, then a URI with the given fragment but
      * with all other components equal to those of this URI is returned.  This

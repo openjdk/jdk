@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4749567 8071982
+ * @bug      4749567 8071982 8175200
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree, -stylesheetfile options.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -148,7 +148,7 @@ public class TestOptions extends JavadocTester {
                 "<pre>public&nbsp;java.lang.Object <a href="
                 + "\"../src-html/linksource/Properties.html#line.31\">someProperty</a></pre>",
                 "<pre>public&nbsp;java.lang.Object&nbsp;<a href="
-                + "\"../src-html/linksource/Properties.html#line.31\">someProperty</a>()</pre>");
+                + "\"../src-html/linksource/Properties.html#line.31\">someProperty</a>&#8203;()</pre>");
 
         checkOutput("src-html/linksource/Properties.html", true,
                 "<title>Source code</title>",
@@ -161,9 +161,9 @@ public class TestOptions extends JavadocTester {
                 "<pre>public&nbsp;int <a href=\"../src-html/linksource/SomeClass.html#line.31\">"
                 + "field</a></pre>",
                 "<pre>public&nbsp;<a href=\"../src-html/linksource/SomeClass.html#line.33\">"
-                + "SomeClass</a>()</pre>",
+                + "SomeClass</a>&#8203;()</pre>",
                 "<pre>public&nbsp;int&nbsp;<a href=\"../src-html/linksource/SomeClass.html#line.36\">"
-                + "method</a>()</pre>");
+                + "method</a>&#8203;()</pre>");
 
         checkOutput("src-html/linksource/SomeClass.html", true,
                 "<title>Source code</title>",

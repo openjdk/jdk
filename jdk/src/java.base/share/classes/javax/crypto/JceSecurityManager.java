@@ -25,7 +25,6 @@
 
 package javax.crypto;
 
-import java.lang.reflect.Module;
 import java.security.*;
 import java.net.*;
 import java.util.*;

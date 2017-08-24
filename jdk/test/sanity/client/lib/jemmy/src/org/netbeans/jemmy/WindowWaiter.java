@@ -25,6 +25,7 @@ package org.netbeans.jemmy;
 import java.awt.Component;
 import java.awt.Frame;
 import java.awt.Window;
+import java.util.stream.Stream;
 
 /**
  * A WindowWaiter is a utility class used to look or wait for Windows. It
@@ -280,6 +281,91 @@ public class WindowWaiter extends Waiter<Window, Void> implements Timeoutable {
     public Window waitWindow(Window o, ComponentChooser ch)
             throws InterruptedException {
         return waitWindow(o, ch, 0);
+    }
+
+    /**
+     * Wait till the count of windows which meet the the search criteria becomes
+     * equal to count.
+     *
+     * @param ch a component chooser used to define and apply the search
+     * criteria.
+     * @param count the number of expected windows meeting the search criteria.
+     * @throws InterruptedException
+     */
+    public static void waitWindowCount(ComponentChooser ch, int count)
+            throws InterruptedException {
+        waitWindowCount(null, ch, count);
+    }
+
+    /**
+     * Wait till the count of windows which meet the the search criteria becomes
+     * equal to count.
+     *
+     * @param owner The owner window of all the windows to be checked
+     * @param ch a component chooser used to define and apply the search
+     * criteria.
+     * @param count the number of expected windows meeting the search criteria.
+     * @throws InterruptedException
+     */
+    public static void waitWindowCount(Window owner, ComponentChooser ch, int count)
+            throws InterruptedException {
+        Waiter<String, Void> stateWaiter = new Waiter<>(new Waitable<String, Void>() {
+            @Override
+            public String actionProduced(Void obj) {
+                return countWindows(owner, ch) == count ? "" : null;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Wait till the count of windows matching the criteria "
+                        + "specified by ComponentChooser reaches :" + count;
+            }
+
+            @Override
+            public String toString() {
+                return "Operator.waitState.Waitable{description = "
+                        + getDescription() + '}';
+            }
+        });
+        stateWaiter.waitAction(null);
+    }
+
+    /**
+     * Counts all the windows owned by the owner window which match the
+     * criterion specified by component chooser.
+     *
+     * @param owner The owner window of all the windows to be checked
+     * @param ch A component chooser used to define and apply the search
+     * criteria
+     * @return the number of matched windows
+     */
+    public static int countWindows(Window owner, ComponentChooser ch) {
+        return new QueueTool().invokeAndWait(new QueueTool.QueueAction<Integer>(null) {
+
+            @Override
+            public Integer launch() {
+                Window[] windows;
+                if (owner == null) {
+                    windows = Window.getWindows();
+                } else {
+                    windows = owner.getOwnedWindows();
+                }
+                return (int) Stream.of(windows)
+                        .filter(x -> ch.checkComponent(x)).count();
+            }
+        });
+    }
+
+    /**
+     * Counts all the windows which match the criterion specified by component
+     * chooser.
+     *
+     * @param ch A component chooser used to define and apply the search
+     * criteria
+     * @return the number of matched windows
+     */
+    public static int countWindows(ComponentChooser ch) {
+        return countWindows(null, ch);
     }
 
     @Override

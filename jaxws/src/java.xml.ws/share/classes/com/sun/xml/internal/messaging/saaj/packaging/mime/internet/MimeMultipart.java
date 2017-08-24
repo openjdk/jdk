@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,21 @@
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
-import java.io.*;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MessagingException;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.MultipartDataSource;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.ASCIIUtility;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.LineInputStream;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.OutputUtil;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import com.sun.xml.internal.messaging.saaj.util.FinalArrayList;
+import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
 
 import javax.activation.DataSource;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.*;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.util.*;
-import com.sun.xml.internal.messaging.saaj.util.FinalArrayList;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * The MimeMultipart class is an implementation
@@ -133,6 +139,7 @@ public  class MimeMultipart {
      * <code>contentType</code> field. <p>
      *
      * MimeBodyParts may be added later.
+     * @param subtype subtype.
      */
     public MimeMultipart(String subtype) {
         //super();
@@ -163,6 +170,8 @@ public  class MimeMultipart {
      *      This must be the same information as {@link DataSource#getContentType()}.
      *      All the callers of this method seem to have this object handy, so
      *      for performance reason this method accepts it. Can be null.
+     *
+     * @exception MessagingException in case of error
      */
     public MimeMultipart(DataSource ds, ContentType ct) throws MessagingException {
         // 'ds' was not a MultipartDataSource, we have
@@ -189,7 +198,8 @@ public  class MimeMultipart {
     /**
      * Return the number of enclosed MimeBodyPart objects.
      *
-     * @return          number of parts
+     * @return          number of parts.
+     * @throws MessagingException in case of error.
      */
     public  int getCount() throws MessagingException {
         parse();
@@ -202,12 +212,12 @@ public  class MimeMultipart {
     /**
      * Get the specified MimeBodyPart.  BodyParts are numbered starting at 0.
      *
-     * @param index     the index of the desired MimeBodyPart
-     * @return          the MimeBodyPart
+     * @param index     the index of the desired MimeBodyPart.
+     * @return          the MimeBodyPart.
      * @exception       MessagingException if no such MimeBodyPart exists
      */
     public  MimeBodyPart getBodyPart(int index)
-                        throws MessagingException {
+            throws MessagingException {
         parse();
         if (parts == null)
             throw new IndexOutOfBoundsException("No such BodyPart");
@@ -221,21 +231,22 @@ public  class MimeMultipart {
      *
      * @param  CID      the ContentID of the desired part
      * @return          the MimeBodyPart
+     * @exception       MessagingException if no such MimeBodyPart exists.
      */
     public  MimeBodyPart getBodyPart(String CID)
-                        throws MessagingException {
+            throws MessagingException {
         parse();
 
         int count = getCount();
         for (int i = 0; i < count; i++) {
            MimeBodyPart part = getBodyPart(i);
            String s = part.getContentID();
-           // Old versions of AXIS2 put angle brackets around the content
-           // id but not the start param
-           String sNoAngle = (s!= null) ? s.replaceFirst("^<", "").replaceFirst(">$", "")
-                   :null;
+               // Old versions of AXIS2 put angle brackets around the content
+               // id but not the start param
+               String sNoAngle = (s!= null) ? s.replaceFirst("^<", "").replaceFirst(">$", "")
+                       :null;
            if (s != null && (s.equals(CID) || CID.equals(sNoAngle)))
-                return part;
+               return part;
         }
         return null;
     }
@@ -256,6 +267,8 @@ public  class MimeMultipart {
      * expensive for a specific MimeMultipart subclass, then it
      * might itself want to track whether its internal state actually
      * did change, and do the header updating only if necessary.
+     *
+     * @exception       MessagingException in case of error.
      */
     protected void updateHeaders() throws MessagingException {
         for (int i = 0; i < parts.size(); i++)
@@ -265,6 +278,11 @@ public  class MimeMultipart {
     /**
      * Iterates through all the parts and outputs each Mime part
      * separated by a boundary.
+     *
+     * @param os output stream.
+     *
+     * @exception IOException if an I/O Error occurs.
+     * @exception MessagingException in case of error.
      */
     public void writeTo(OutputStream os)
             throws IOException, MessagingException {
@@ -291,6 +309,8 @@ public  class MimeMultipart {
      * method is called by all other methods that need data for
      * the body parts, to make sure the data has been parsed.
      *
+     * @exception MessagingException in case of error.
+     *
      * @since   JavaMail 1.2
      */
     protected  void parse() throws MessagingException {
@@ -305,14 +325,14 @@ public  class MimeMultipart {
         try {
             in = ds.getInputStream();
             if (!(in instanceof ByteArrayInputStream) &&
-                !(in instanceof BufferedInputStream) &&
-                !(in instanceof SharedInputStream))
+                    !(in instanceof BufferedInputStream) &&
+                    !(in instanceof SharedInputStream))
                 in = new BufferedInputStream(in);
         } catch (Exception ex) {
             throw new MessagingException("No inputstream from datasource");
         }
         if (in instanceof SharedInputStream)
-            sin = (SharedInputStream)in;
+            sin = (SharedInputStream) in;
 
         String boundary = "--" + contentType.getParameter("boundary");
         byte[] bndbytes = ASCIIUtility.getBytes(boundary);
@@ -324,12 +344,12 @@ public  class MimeMultipart {
             LineInputStream lin = new LineInputStream(in);
             String line;
             while ((line = lin.readLine()) != null) {
-                /*
-                 * Strip trailing whitespace.  Can't use trim method
-                 * because it's too aggressive.  Some bogus MIME
-                 * messages will include control characters in the
-                 * boundary string.
-                 */
+        /*
+         * Strip trailing whitespace.  Can't use trim method
+         * because it's too aggressive.  Some bogus MIME
+         * messages will include control characters in the
+         * boundary string.
+         */
                 int i;
                 for (i = line.length() - 1; i >= 0; i--) {
                     char c = line.charAt(i);
@@ -343,12 +363,12 @@ public  class MimeMultipart {
             if (line == null)
                 throw new MessagingException("Missing start boundary");
 
-            /*
-             * Read and process body parts until we see the
-             * terminating boundary line (or EOF).
-             */
+        /*
+         * Read and process body parts until we see the
+         * terminating boundary line (or EOF).
+         */
             boolean done = false;
-        getparts:
+            getparts:
             while (!done) {
                 InternetHeaders headers = null;
                 if (sin != null) {
@@ -358,7 +378,7 @@ public  class MimeMultipart {
                         ;
                     if (line == null) {
                         if (!ignoreMissingEndBoundary) {
-                           throw new MessagingException("Missing End Boundary for Mime Package : EOF while skipping headers");
+                            throw new MessagingException("Missing End Boundary for Mime Package : EOF while skipping headers");
                         }
                         // assume there's just a missing end boundary
                         break getparts;
@@ -383,7 +403,7 @@ public  class MimeMultipart {
                 /*
                  * Read and save the content bytes in buf.
                  */
-                for (;;) {
+                for (; ; ) {
                     if (bol) {
                         /*
                          * At the beginning of a line, check whether the
@@ -402,7 +422,7 @@ public  class MimeMultipart {
                                 if (in.read() == '-') {
                                     done = true;
                                     foundClosingBoundary = true;
-                                    break;      // ignore trailing text
+                                    break;    // ignore trailing text
                                 }
                             }
                             // skip linear whitespace
@@ -410,12 +430,12 @@ public  class MimeMultipart {
                                 b2 = in.read();
                             // check for end of line
                             if (b2 == '\n')
-                                break;  // got it!  break out of the loop
+                                break;    // got it!  break out of the loop
                             if (b2 == '\r') {
                                 in.mark(1);
                                 if (in.read() != '\n')
                                     in.reset();
-                                break;  // got it!  break out of the loop
+                                break;    // got it!  break out of the loop
                             }
                         }
                         // failed to match, reset and proceed normally
@@ -477,7 +497,7 @@ public  class MimeMultipart {
                 buf.close();
         }
 
-        if (!ignoreMissingEndBoundary && !foundClosingBoundary && sin== null) {
+        if (!ignoreMissingEndBoundary && !foundClosingBoundary && sin == null) {
             throw new MessagingException("Missing End Boundary for Mime Package : EOF while skipping headers");
         }
         parsed = true;
@@ -490,12 +510,13 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * an InternetHeaders object.
      *
-     * @param   is      the InputStream to read the headers from
-     * @exception       MessagingException
+     * @param   is      the InputStream to read the headers from.
+     * @return headers.
+     * @exception       MessagingException in case of error.
      * @since           JavaMail 1.2
      */
     protected InternetHeaders createInternetHeaders(InputStream is)
-                                throws MessagingException {
+                throws MessagingException {
         return new InternetHeaders(is);
     }
 
@@ -506,12 +527,14 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * a MimeBodyPart object.
      *
-     * @param   headers         the headers for the body part
-     * @param   content         the content of the body part
+     * @param   headers         the headers for the body part.
+     * @param   content         the content of the body part.
+     * @param   len                     the content length.
+     * @return  MimeBodyPart
      * @since                   JavaMail 1.2
      */
     protected MimeBodyPart createMimeBodyPart(InternetHeaders headers, byte[] content, int len) {
-            return new MimeBodyPart(headers, content,len);
+        return new MimeBodyPart(headers, content,len);
     }
 
     /**
@@ -521,12 +544,13 @@ public  class MimeMultipart {
      * necessary.  This implementation simply constructs and returns
      * a MimeBodyPart object.
      *
-     * @param   is              InputStream containing the body part
-     * @exception               MessagingException
+     * @param   is              InputStream containing the body part.
+     * @return  MimeBodyPart.
+     * @exception               MessagingException in case of error.
      * @since                   JavaMail 1.2
      */
     protected MimeBodyPart createMimeBodyPart(InputStream is) throws MessagingException {
-            return new MimeBodyPart(is);
+        return new MimeBodyPart(is);
     }
 
     /**
@@ -543,10 +567,10 @@ public  class MimeMultipart {
      * a specific multipart subtype.
      *
      * @param   mp      MimeMultipart datasource
+     * @exception               MessagingException in case of error.
      */
-
     protected void setMultipartDataSource(MultipartDataSource mp)
-                        throws MessagingException {
+            throws MessagingException {
         contentType = new ContentType(mp.getContentType());
 
         int count = mp.getCount();
@@ -564,7 +588,7 @@ public  class MimeMultipart {
      * @see     #contentType
      */
     public ContentType getContentType() {
-            return contentType;
+        return contentType;
     }
 
     /**

@@ -595,6 +595,16 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
   return impl;
 }
 
+ciInstanceKlass* ciInstanceKlass::host_klass() {
+  assert(is_loaded(), "must be loaded");
+  if (is_anonymous()) {
+    VM_ENTRY_MARK
+    Klass* host_klass = get_instanceKlass()->host_klass();
+    return CURRENT_ENV->get_instance_klass(host_klass);
+  }
+  return NULL;
+}
+
 // Utility class for printing of the contents of the static fields for
 // use by compilation replay.  It only prints out the information that
 // could be consumed by the compiler, so for primitive types it prints

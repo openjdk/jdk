@@ -30,14 +30,13 @@
  */
 import java.io.IOException;
 import java.nio.channels.Selector;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SelectTimeout {
     private static final long BIG_TIMEOUT    = 100_000_001_000L; // 8165000
     private static final long BIGGER_TIMEOUT = 850_000_000_000_000L; // 8172547
-    private static final long SLEEP_MILLIS   = 10000;
-
-    private static volatile Exception theException;
-    private static volatile boolean isTimedOut;
+    private static final long SLEEP_MILLIS   = 10_000;
 
     public static void main(String[] args)
         throws IOException, InterruptedException {
@@ -59,17 +58,18 @@ public class SelectTimeout {
 
     private static boolean test(final long timeout)
         throws InterruptedException, IOException {
-        theException = null;
+        AtomicReference<Exception> theException =
+            new AtomicReference<>();
+        AtomicBoolean isTimedOut = new AtomicBoolean();
 
         Selector selector = Selector.open();
 
         Thread t = new Thread(() -> {
             try {
-                isTimedOut = false;
                 selector.select(timeout);
-                isTimedOut = true;
+                isTimedOut.set(true);
             } catch (IOException ioe) {
-                theException = ioe;
+                theException.set(ioe);
             }
         });
         t.start();
@@ -77,8 +77,8 @@ public class SelectTimeout {
         t.join(SLEEP_MILLIS);
 
         boolean result;
-        if (theException == null) {
-            if (timeout > SLEEP_MILLIS && isTimedOut) {
+        if (theException.get() == null) {
+            if (timeout > SLEEP_MILLIS && isTimedOut.get()) {
                 System.err.printf("Test timed out early with timeout %d%n",
                     timeout);
                 result = false;
@@ -88,11 +88,12 @@ public class SelectTimeout {
             }
         } else {
             System.err.printf("Test failed with timeout %d%n", timeout);
-            theException.printStackTrace();
+            theException.get().printStackTrace();
             result = false;
         }
 
         t.interrupt();
+        selector.close();
 
         return result;
     }
