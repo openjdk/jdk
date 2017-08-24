@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,11 @@ public class BasicTest {
             sslContext = sslct.get();
             client = getClient();
             httpServer = new Http2TestServer(false, 0, exec, sslContext);
-            httpServer.addHandler(new EchoHandler(), "/");
+            httpServer.addHandler(new Http2EchoHandler(), "/");
             httpPort = httpServer.getAddress().getPort();
 
             httpsServer = new Http2TestServer(true, 0, exec, sslContext);
-            httpsServer.addHandler(new EchoHandler(), "/");
+            httpsServer.addHandler(new Http2EchoHandler(), "/");
 
             httpsPort = httpsServer.getAddress().getPort();
             httpURIString = "http://127.0.0.1:" + httpPort + "/foo/";
@@ -94,6 +94,7 @@ public class BasicTest {
         } catch (Throwable tt) {
             System.err.println("tt caught");
             tt.printStackTrace();
+            throw tt;
         } finally {
             httpServer.stop();
             httpsServer.stop();
@@ -223,7 +224,7 @@ public class BasicTest {
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
         final Path source = TestUtil.getAFile(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(fromFile(tempFile()))
+                                         .POST(fromFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
             responses[i] = client.sendAsync(request, asFile(tempFile()))

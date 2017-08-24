@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.incubator.http.internal.hpack;
+
+import jdk.internal.vm.annotation.Stable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -60,6 +62,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Decoder {
 
+    @Stable
     private static final State[] states = new State[256];
 
     static {

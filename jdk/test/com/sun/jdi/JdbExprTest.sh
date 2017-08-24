@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class $classname {
     public static void bkpt() {
        int i = 0;     //@1 breakpoint
     }
-    
+
     public static void main(String[] args) {
         bkpt();
     }
@@ -73,7 +73,7 @@ dojdbCmds()
 
     cmd print java.lang.Long.MIN_VALUE
     jdbFailIfNotPresent " \= \-9223372036854775808" 3
-    
+
     cmd print 9223372036854775807L
     jdbFailIfNotPresent "9223372036854775807L = 9223372036854775807" 3
     cmd print 9223372036854775807
@@ -83,7 +83,7 @@ dojdbCmds()
     jdbFailIfNotPresent "\-9223372036854775807L = \-9223372036854775807" 3
     cmd print -9223372036854775807
     jdbFailIfNotPresent "\-9223372036854775807 = \-9223372036854775807" 3
-    
+
     cmd print -1
     jdbFailIfNotPresent "\-1 = \-1" 3
     cmd print 1L
@@ -92,7 +92,7 @@ dojdbCmds()
     jdbFailIfNotPresent "\-1L = \-1" 3
     cmd print 0x1
     jdbFailIfNotPresent "0x1 = 1" 3
-    
+
     cmd set $classname.aLong = 9223372036854775807L
     cmd print $classname.aLong
     jdbFailIfNotPresent "$classname.aLong = 9223372036854775807" 3
@@ -142,7 +142,7 @@ mysetup()
 
     for ii in . $TESTSRC $TESTSRC/.. ; do
         if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
+            . $ii/ShellScaffold.sh
             break
         fi
     done

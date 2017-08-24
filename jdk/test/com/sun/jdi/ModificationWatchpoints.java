@@ -22,17 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4409582
- *  @summary Test all info returned by modification watchpoints
+ * @test
+ * @bug 4409582
+ * @summary Test all info returned by modification watchpoints
+ * @author Daniel Prusa (or someone in the FFJ group)
+ * @author Robert Field (modified to JDIScaffold)
  *
- *  @author Daniel Prusa (or someone in the FFJ group)
- *  @author Robert Field (modified to JDIScaffold)
- *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g ModificationWatchpoints.java
- *  @run driver ModificationWatchpoints
+ * @run build JDIScaffold VMConnection
+ * @run compile -g ModificationWatchpoints.java
+ * @run driver ModificationWatchpoints
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
