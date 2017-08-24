@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,20 @@
 /**
  * Defines the Java API for XML Processing (JAXP), the Streaming API for XML (StAX),
  * the Simple API for XML (SAX), and the W3C Document Object Model (DOM) API.
+ *
+ * @uses javax.xml.datatype.DatatypeFactory
+ * @uses javax.xml.parsers.DocumentBuilderFactory
+ * @uses javax.xml.parsers.SAXParserFactory
+ * @uses javax.xml.stream.XMLEventFactory
+ * @uses javax.xml.stream.XMLInputFactory
+ * @uses javax.xml.stream.XMLOutputFactory
+ * @uses javax.xml.transform.TransformerFactory
+ * @uses javax.xml.validation.SchemaFactory
+ * @uses javax.xml.xpath.XPathFactory
+ * @uses org.xml.sax.XMLReader
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.xml {
     exports javax.xml;
@@ -53,12 +67,7 @@ module java.xml {
     exports org.xml.sax;
     exports org.xml.sax.ext;
     exports org.xml.sax.helpers;
-    exports com.sun.org.apache.xerces.internal.dom to
-        java.xml.ws;
-    exports com.sun.org.apache.xerces.internal.jaxp to
-        java.xml.ws;
-    exports com.sun.org.apache.xerces.internal.util to
-        java.xml.ws;
+
     exports com.sun.org.apache.xml.internal.dtm to
         java.xml.crypto;
     exports com.sun.org.apache.xml.internal.utils to
@@ -73,8 +82,7 @@ module java.xml {
         java.xml.crypto;
     exports com.sun.org.apache.xpath.internal.res to
         java.xml.crypto;
-    // reflection access from com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory
-    exports com.sun.xml.internal.stream.writers to java.xml.ws;
+
     uses javax.xml.datatype.DatatypeFactory;
     uses javax.xml.parsers.DocumentBuilderFactory;
     uses javax.xml.parsers.SAXParserFactory;

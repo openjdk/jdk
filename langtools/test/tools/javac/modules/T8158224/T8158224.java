@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,41 @@
  * @test
  * @bug 8158224
  * @summary NullPointerException in com.sun.tools.javac.comp.Modules.checkCyclicDependencies when module missing
+ * @library /tools/lib
+ * @modules
+ *      jdk.compiler/com.sun.tools.javac.api
+ *      jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @build Processor
- * @compile/fail/ref=T8158224.out -XDrawDiagnostics -processor Processor mods/foo/module-info.java
+ * @run main T8158224
  */
 
-// No code here, this file is just to host test description.
+// previously:
+// @compile/fail/ref=T8158224.out -XDrawDiagnostics -processor Processor mods/foo/module-info.java
+
+import java.util.List;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
+public class T8158224 {
+    public static void main(String... args) throws Exception {
+        ToolBox tb = new ToolBox();
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                        "-processor", "Processor",
+                        "-sourcepath", tb.testSrc + "/mods/foo",
+                        "-classpath", tb.testClasses)
+                .files(tb.testSrc + "/mods/foo/module-info.java")
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!log.equals(List.of(
+                "module-info.java:4:14: compiler.err.module.not.found: nonexistent",
+                "1 error"))) {
+            throw new Exception("Expected output not found");
+        }
+    }
+}

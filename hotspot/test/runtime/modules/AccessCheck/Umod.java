@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in unnamed module.
+ * @summary class p1.c1 defined in m1x tries to access p2.c2 defined in unnamed module.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
@@ -39,21 +39,19 @@
 
 import static jdk.test.lib.Asserts.*;
 
-import java.lang.reflect.Layer;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Module;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import myloaders.MySameClassLoader;
 
 //
-// ClassLoader1 --> defines m1 --> packages p1
-//                  package p1 in m1 is exported unqualifiedly
+// ClassLoader1 --> defines m1x --> packages p1
+//                  package p1 in m1x is exported unqualifiedly
 //
-// class p1.c1 defined in m1 tries to access p2.c2 defined in
+// class p1.c1 defined in m1x tries to access p2.c2 defined in
 // in unnamed module.
 //
 // Three access attempts occur in this test:
@@ -62,47 +60,47 @@ import myloaders.MySameClassLoader;
 //   2. In this scenario a strict module establishes readability
 //      to the particular unnamed module it is trying to access.
 //      Access is allowed.
-//   3. Module m1 in the test_looseModuleLayer() method
+//   3. Module m1x in the test_looseModuleLayer() method
 //      is transitioned to a loose module, access
 //      to all unnamed modules is allowed.
 //
 public class Umod {
 
- // Create Layers over the boot layer to test different
+ // Create layers over the boot layer to test different
  // accessing scenarios of a named module to an unnamed module.
 
- // Module m1 is a strict module and has not established
+ // Module m1x is a strict module and has not established
  // readability to an unnamed module that p2.c2 is defined in.
  public void test_strictModuleLayer() throws Throwable {
 
-     // Define module:     m1
+     // Define module:     m1x
      // Can read:          java.base
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
-     ModuleDescriptor descriptor_m1 =
-             ModuleDescriptor.module("m1")
+     ModuleDescriptor descriptor_m1x =
+             ModuleDescriptor.newModule("m1x")
                      .requires("java.base")
                      .exports("p1")
                      .build();
 
      // Set up a ModuleFinder containing all modules for this layer.
-     ModuleFinder finder = ModuleLibrary.of(descriptor_m1);
+     ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
-     // Resolves "m1"
-     Configuration cf = Layer.boot()
+     // Resolves "m1x"
+     Configuration cf = ModuleLayer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+             .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
-     // map module m1 to class loader.
+     // map module m1x to class loader.
      // class c2 will be loaded in an unnamed module/loader.
      MySameClassLoader loader = new MySameClassLoader();
      Map<String, ClassLoader> map = new HashMap<>();
-     map.put("m1", loader);
+     map.put("m1x", loader);
 
-     // Create Layer that contains m1
-     Layer layer = Layer.boot().defineModules(cf, map::get);
+     // Create layer that contains m1x
+     ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
-     assertTrue(layer.findLoader("m1") == loader);
+     assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
 
      // now use the same loader to load class p1.c1
@@ -111,103 +109,103 @@ public class Umod {
      // Attempt access
      try {
          p1_c1_class.newInstance();
-         throw new RuntimeException("Test Failed, strict module m1, type p1.c1, should not be able " +
+         throw new RuntimeException("Test Failed, strict module m1x, type p1.c1, should not be able " +
                                     "to access public type p2.c2 defined in unnamed module");
      } catch (IllegalAccessError e) {
      }
  }
 
- // Module m1 is a strict module and has established
+ // Module m1x is a strict module and has established
  // readability to an unnamed module that p2.c2 is defined in.
  public void test_strictModuleUnnamedReadableLayer() throws Throwable {
 
-     // Define module:     m1
+     // Define module:     m1x
      // Can read:          java.base
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
-     ModuleDescriptor descriptor_m1 =
-             ModuleDescriptor.module("m1")
+     ModuleDescriptor descriptor_m1x =
+             ModuleDescriptor.newModule("m1x")
                      .requires("java.base")
                      .exports("p1")
                      .build();
 
      // Set up a ModuleFinder containing all modules for this layer.
-     ModuleFinder finder = ModuleLibrary.of(descriptor_m1);
+     ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
-     // Resolves "m1"
-     Configuration cf = Layer.boot()
+     // Resolves "m1x"
+     Configuration cf = ModuleLayer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+             .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
      MySameClassLoader loader = new MySameClassLoader();
-     // map module m1 to class loader.
+     // map module m1x to class loader.
      // class c2 will be loaded in an unnamed module/loader.
      Map<String, ClassLoader> map = new HashMap<>();
-     map.put("m1", loader);
+     map.put("m1x", loader);
 
-     // Create Layer that contains m1
-     Layer layer = Layer.boot().defineModules(cf, map::get);
+     // Create layer that contains m1x
+     ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
-     assertTrue(layer.findLoader("m1") == loader);
+     assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
 
      // now use the same loader to load class p1.c1ReadEdge
      Class p1_c1_class = loader.loadClass("p1.c1ReadEdge");
 
      try {
-       // Read edge between m1 and the unnamed module that loads p2.c2 is established in
+       // Read edge between m1x and the unnamed module that loads p2.c2 is established in
        // c1ReadEdge's ctor before attempting access.
        p1_c1_class.newInstance();
      } catch (IllegalAccessError e) {
-         throw new RuntimeException("Test Failed, strict module m1, type p1.c1ReadEdge, should be able to acccess public type " +
+         throw new RuntimeException("Test Failed, strict module m1x, type p1.c1ReadEdge, should be able to acccess public type " +
                                     "p2.c2 defined in unnamed module: " + e.getMessage());
      }
 }
 
- // Module m1 is a loose module and thus can read all unnamed modules.
+ // Module m1x is a loose module and thus can read all unnamed modules.
  public void test_looseModuleLayer() throws Throwable {
 
-     // Define module:     m1
+     // Define module:     m1x
      // Can read:          java.base
      // Packages:          p1
      // Packages exported: p1 is exported unqualifiedly
-     ModuleDescriptor descriptor_m1 =
-             ModuleDescriptor.module("m1")
+     ModuleDescriptor descriptor_m1x =
+             ModuleDescriptor.newModule("m1x")
                      .requires("java.base")
                      .exports("p1")
                      .build();
 
      // Set up a ModuleFinder containing all modules for this layer.
-     ModuleFinder finder = ModuleLibrary.of(descriptor_m1);
+     ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
-     // Resolves "m1"
-     Configuration cf = Layer.boot()
+     // Resolves "m1x"
+     Configuration cf = ModuleLayer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
+             .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
      MySameClassLoader loader = new MySameClassLoader();
-     // map module m1 to class loader.
+     // map module m1x to class loader.
      // class c2 will be loaded in an unnamed module/loader.
      Map<String, ClassLoader> map = new HashMap<>();
-     map.put("m1", loader);
+     map.put("m1x", loader);
 
-     // Create Layer that contains m1
-     Layer layer = Layer.boot().defineModules(cf, map::get);
+     // Create layer that contains m1x
+     ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
-     assertTrue(layer.findLoader("m1") == loader);
+     assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
 
      // now use the same loader to load class p1.c1Loose
      Class p1_c1_class = loader.loadClass("p1.c1Loose");
 
-     // change m1 to read all unnamed modules
-     Module m1 = layer.findModule("m1").get();
-     jdk.internal.module.Modules.addReadsAllUnnamed(m1);
+     // change m1x to read all unnamed modules
+     Module m1x = layer.findModule("m1x").get();
+     jdk.internal.module.Modules.addReadsAllUnnamed(m1x);
 
      try {
          p1_c1_class.newInstance();
      } catch (IllegalAccessError e) {
-         throw new RuntimeException("Test Failed, strict module m1, type p1.c1Loose, should be able to acccess public type " +
+         throw new RuntimeException("Test Failed, strict module m1x, type p1.c1Loose, should be able to acccess public type " +
                                     "p2.c2 defined in unnamed module: " + e.getMessage());
      }
  }
