@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public int getSize() throws SOAPException {
         if (mimePart != null) {
             try {
@@ -124,6 +125,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public void clearContent() {
         if (mimePart != null) {
             mimePart.close();
@@ -133,6 +135,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         rawContent = null;
     }
 
+    @Override
     public Object getContent() throws SOAPException {
         try {
             if (mimePart != null) {
@@ -153,6 +156,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public void setContent(Object object, String contentType)
         throws IllegalArgumentException {
         if (mimePart != null) {
@@ -165,23 +169,28 @@ public class AttachmentPartImpl extends AttachmentPart {
     }
 
 
+    @Override
     public DataHandler getDataHandler() throws SOAPException {
         if (mimePart != null) {
             //return an inputstream
             return new DataHandler(new DataSource() {
 
+                @Override
                 public InputStream getInputStream() throws IOException {
                     return mimePart.read();
                 }
 
+                @Override
                 public OutputStream getOutputStream() throws IOException {
                     throw new UnsupportedOperationException("getOutputStream cannot be supported : You have enabled LazyAttachments Option");
                 }
 
+                @Override
                 public String getContentType() {
                     return mimePart.getContentType();
                 }
 
+                @Override
                 public String getName() {
                     return "MIMEPart Wrapper DataSource";
                 }
@@ -197,6 +206,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         return dataHandler;
     }
 
+    @Override
     public void setDataHandler(DataHandler dataHandler)
         throws IllegalArgumentException {
         if (mimePart != null) {
@@ -216,35 +226,43 @@ public class AttachmentPartImpl extends AttachmentPart {
         setMimeHeader("Content-Type", dataHandler.getContentType());
     }
 
+    @Override
     public void removeAllMimeHeaders() {
         headers.removeAllHeaders();
     }
 
+    @Override
     public void removeMimeHeader(String header) {
         headers.removeHeader(header);
     }
 
+    @Override
     public String[] getMimeHeader(String name) {
         return headers.getHeader(name);
     }
 
+    @Override
     public void setMimeHeader(String name, String value) {
         headers.setHeader(name, value);
     }
 
+    @Override
     public void addMimeHeader(String name, String value) {
         headers.addHeader(name, value);
     }
 
-    public Iterator getAllMimeHeaders() {
+    @Override
+    public Iterator<MimeHeader> getAllMimeHeaders() {
         return headers.getAllHeaders();
     }
 
-    public Iterator getMatchingMimeHeaders(String[] names) {
+    @Override
+    public Iterator<MimeHeader> getMatchingMimeHeaders(String[] names) {
         return headers.getMatchingHeaders(names);
     }
 
-    public Iterator getNonMatchingMimeHeaders(String[] names) {
+    @Override
+    public Iterator<MimeHeader> getNonMatchingMimeHeaders(String[] names) {
         return headers.getNonMatchingHeaders(names);
     }
 
@@ -329,6 +347,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public  void setBase64Content(InputStream content, String contentType)
         throws SOAPException {
 
@@ -365,6 +384,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public  InputStream getBase64Content() throws SOAPException {
         InputStream stream;
         if (mimePart != null) {
@@ -425,6 +445,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public void setRawContent(InputStream content, String contentType)
         throws SOAPException {
         if (mimePart != null) {
@@ -475,6 +496,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     } */
 
+    @Override
     public void setRawContentBytes(
         byte[] content, int off, int len, String contentType)
         throws SOAPException {
@@ -498,6 +520,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public  InputStream getRawContent() throws SOAPException {
         if (mimePart != null) {
             return mimePart.read();
@@ -522,6 +545,7 @@ public class AttachmentPartImpl extends AttachmentPart {
         }
     }
 
+    @Override
     public  byte[] getRawContentBytes() throws SOAPException {
         InputStream ret;
         if (mimePart != null) {
@@ -556,12 +580,14 @@ public class AttachmentPartImpl extends AttachmentPart {
     }
 
     // attachments are equal if they are the same reference
+    @Override
     public boolean equals(Object o) {
         return (this == o);
     }
 
     // In JDK 8 we get a warning if we implement equals() but not hashCode().
     // There is no intuitive value for this, the default one in Object is fine.
+    @Override
     public int hashCode() {
         return super.hashCode();
     }

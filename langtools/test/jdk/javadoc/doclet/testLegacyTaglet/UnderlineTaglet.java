@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.doclet.taglet.Taglet;
-import static jdk.javadoc.doclet.taglet.Taglet.Location.*;
+import jdk.javadoc.doclet.Taglet;
+import static jdk.javadoc.doclet.Taglet.Location.*;
 
 /**
  * A sample Inline Taglet representing {@underline ...}.  The text
@@ -69,20 +70,11 @@ public class UnderlineTaglet implements Taglet {
     /**
      * Given the <code>DocTree</code> representation of this custom
      * tag, return its string representation.
-     * @param tag he <code>DocTree</code> representation of this custom tag.
+     * @param tags the <code>DocTree</code> representation of this custom tag.
+     * @param element the declaration to which the enclosing comment belongs
      */
     @Override
-    public String toString(DocTree tag) {
-        return "<u>" + ToDoTaglet.getText(tag) + "</u>";
-    }
-
-    /**
-     * This method should not be called since arrays of inline tags do not
-     * exist.  Method {@link #tostring(DocTree)} should be used to convert this
-     * inline tag to a string.
-     */
-    @Override
-    public String toString(List<? extends DocTree> tags) {
-        return null;
+    public String toString(List<? extends DocTree> tags, Element element) {
+        return "<u>" + ToDoTaglet.getText(tags.get(0)) + "</u>";
     }
 }

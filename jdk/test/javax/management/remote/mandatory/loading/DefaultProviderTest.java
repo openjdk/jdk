@@ -26,7 +26,7 @@
  * @bug 4884913
  * @summary Tests that default protocols are loaded correctly
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean DefaultProviderTest
  * @run build DefaultProviderTest
  * @run main DefaultProviderTest
