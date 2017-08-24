@@ -106,7 +106,7 @@ public class TagletWriterImpl extends TagletWriter {
         String desc = ch.getText(itt.getDescription());
 
         String anchorName = htmlWriter.getName(tagText);
-        Content result = HtmlTree.A_ID(anchorName, new StringContent(tagText));
+        Content result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
         if (configuration.createindex && !tagText.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
             si.setLabel(tagText);
