@@ -1088,8 +1088,12 @@ public class Main {
 
     private String withWeak(PublicKey key) {
         if (DISABLED_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
-            return String.format(
-                    rb.getString("key.bit"), KeyUtil.getKeySize(key));
+            int kLen = KeyUtil.getKeySize(key);
+            if (kLen >= 0) {
+                return String.format(rb.getString("key.bit"), kLen);
+            } else {
+                return rb.getString("unknown.size");
+            }
         } else {
             seeWeak = true;
             return String.format(

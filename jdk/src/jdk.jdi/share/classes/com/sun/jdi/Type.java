@@ -43,79 +43,86 @@ package com.sun.jdi;
  *  {@link ArrayType#componentType()}
  * </BLOCKQUOTE>
  * <P>
- * The following table illustrates which subinterfaces of Type
+ * The following tables illustrate which subinterfaces of Type
  * are used to mirror types in the target VM --
- * <TABLE BORDER="1">
- * <CAPTION style="display:none">Maps each type declared in target to a mirrored
- *  instance of a subinterface of PrimitiveType or ReferenceType"</CAPTION>
- * <TR style="background-color:#EEEEFF">
- *   <TH id="primtype" colspan=3>Subinterfaces of {@link PrimitiveType}</TH>
- * <TR style="background-color:#EEEEFF">
- *   <TH id="declared" style="text-align:left" colspan=2>Type declared in target as</TH>
- *   <TH id="mirrored" style="text-align:left">Is mirrored as an instance of</TH>
+ * <TABLE class="plain">
+ * <CAPTION>Subinterfaces of {@link PrimitiveType}</CAPTION>
+ * <THEAD style="background-color:#EEEEFF; text-align:left">
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>boolean</CODE></TD>
- *   <TD headers="primtype mirrored"> {@link BooleanType}</TD>
+ *   <TH scope="col" style="width:25em">Type declared in target as</TH>
+ *   <TH scope="col" style="width:20em">Is mirrored as an instance of</TH>
+ * </THEAD>
+ * <TBODY style="text-align:left">
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>byte</CODE></TD>
- *   <TD headers="primtype mirrored">{@link ByteType}</TD>
+ *   <TH scope="row"><CODE>boolean</CODE></TH>
+ *   <TD> {@link BooleanType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>char</CODE></TD>
- *   <TD headers="primtype mirrored">{@link CharType}</TD>
+ *   <TH scope="row"><CODE>byte</CODE></TH>
+ *   <TD>{@link ByteType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>double</CODE></TD>
- *   <TD headers="primtype mirrored">{@link DoubleType}</TD>
+ *   <TH scope="row"><CODE>char</CODE></TH>
+ *   <TD>{@link CharType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>float</CODE></TD>
- *   <TD headers="primtype mirrored">{@link FloatType}</TD>
+ *   <TH scope="row"><CODE>double</CODE></TH>
+ *   <TD>{@link DoubleType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>int</CODE></TD>
- *   <TD headers="primtype mirrored">{@link IntegerType}</TD>
+ *   <TH scope="row"><CODE>float</CODE></TH>
+ *   <TD>{@link FloatType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>long</CODE></TD>
- *   <TD headers="primtype mirrored">{@link LongType}</TD>
+ *   <TH scope="row"><CODE>int</CODE></TH>
+ *   <TD>{@link IntegerType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>short</CODE></TD>
- *   <TD headers="primtype mirrored">{@link ShortType}</TD>
+ *   <TH scope="row"><CODE>long</CODE></TH>
+ *   <TD>{@link LongType}</TD>
  * <TR>
- *   <TD headers="primtype declared" colspan=2><CODE>void</CODE></TD>
- *   <TD headers="primtype mirrored">{@link VoidType}</TD>
- * <TR style="background-color:#EEEEFF">
- *   <TH id="reftype"  colspan=3>Subinterfaces of {@link ReferenceType}</TH>
- * <TR style="background-color:#EEEEFF">
- *   <TH id="declared2"style="text-align:left">Type declared in target as</TH>
- *   <TH id="example2"  style="text-align:left">For example</TH>
- *   <TH id="mirrored2" style="text-align:left">Is mirrored as an instance of</TH>
+ *   <TH scope="row"><CODE>short</CODE></TH>
+ *   <TD>{@link ShortType}</TD>
  * <TR>
- *   <TD headers="reftype declared2"><I>a class</I></TD>
- *   <TD headers="reftype example2"><CODE>Date</CODE></TD>
- *   <TD headers="reftype mirrored2">{@link ClassType}</TD>
+ *   <TH scope="row"><CODE>void</CODE></TH>
+ *   <TD>{@link VoidType}</TD>
+ * </TBODY>
+ * </TABLE>
+ *
+ * <TABLE class="plain">
+ * <CAPTION>Subinterfaces of {@link ReferenceType}</CAPTION>
+ * <THEAD style="background-color:#EEEEFF; text-align:left">
  * <TR>
- *   <TD headers="reftype declared2"><I>an interface</I></TD>
- *   <TD headers="reftype example2"><CODE>Runnable</CODE></TD>
- *   <TD headers="reftype mirrored2">{@link InterfaceType}</TD>
+ *   <TH scope="col" style="width:15em">Type declared in target as</TH>
+ *   <TH scope="col" style="width:10em">For example</TH>
+ *   <TH scope="col" style="width:20em">Is mirrored as an instance of</TH>
+ * </THEAD>
+ * <TBODY style="text-align:left">
  * <TR>
- *   <TD headers="reftype declared2"><I>an array</I></TD>
- *   <TD headers="reftype example2">&nbsp;</TD>
- *   <TD headers="reftype mirrored2">{@link ArrayType}</TD>
+ *   <TH scope="row"><I>a class</I></TH>
+ *   <TH scope="row"><CODE>Date</CODE></TH>
+ *   <TD>{@link ClassType}</TD>
  * <TR>
- *   <TD headers="reftype declared2"><I>an array</I></TD>
- *   <TD headers="reftype example2"><CODE>int[]</CODE></TD>
- *   <TD headers="reftype mirrored2">{@link ArrayType} whose
+ *   <TH scope="row"><I>an interface</I></TH>
+ *   <TH scope="row"><CODE>Runnable</CODE></TH>
+ *   <TD>{@link InterfaceType}</TD>
+ * <TR>
+ *   <TH scope="row" rowspan="4"><I>an array</I></TH>
+ *   <TH scope="row"><i>(any)</i></TH>
+ *   <TD>{@link ArrayType}</TD>
+ * <TR>
+ *   <!--<TH scope="row"><I>an array</I></TH>-->
+ *   <TH scope="row"><CODE>int[]</CODE></TH>
+ *   <TD>{@link ArrayType} whose
  *         {@link ArrayType#componentType() componentType()} is
  *         {@link IntegerType}</TD>
  * <TR>
- *   <TD headers="reftype declared2"><I>an array</I></TD>
- *   <TD headers="reftype example2"><CODE>Date[]</CODE></TD>
- *   <TD headers="reftype mirrored2">{@link ArrayType} whose
+ *   <!--<TH scope="row"><I>an array</I></TH>-->
+ *   <TH scope="row"><CODE>Date[]</CODE></TH>
+ *   <TD>{@link ArrayType} whose
  *         {@link ArrayType#componentType() componentType()} is
  *         {@link ClassType}</TD>
  * <TR>
- *   <TD headers="reftype declared2"><I>an array</I></TD>
- *   <TD headers="reftype example2"><CODE>Runnable[]</CODE></TD>
- *   <TD headers="reftype mirrored2">{@link ArrayType} whose
+ *   <!--<TH scope="row"><I>an array</I></TH>-->
+ *   <TH scope="row"><CODE>Runnable[]</CODE></TH>
+ *   <TD>{@link ArrayType} whose
  *         {@link ArrayType#componentType() componentType()} is
  *         {@link InterfaceType}</TD>
+ * </TBODY>
  * </TABLE>
  *
  * @see PrimitiveType Subinterface PrimitiveType

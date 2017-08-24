@@ -1800,7 +1800,7 @@ public class LinkedBlockingDequeTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized deque has same elements in same order
+     * A deserialized/reserialized deque has same elements in same order
      */
     public void testSerialization() throws Exception {
         Queue x = populatedDeque(SIZE);

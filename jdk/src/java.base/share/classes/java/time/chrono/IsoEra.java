@@ -70,27 +70,27 @@ import java.time.DateTimeException;
  * A definition has therefore been created with two eras - 'Current era' (CE) for
  * years on or after 0001-01-01 (ISO), and 'Before current era' (BCE) for years before that.
  *
- * <table class="striped">
+ * <table class="striped" style="text-align:left">
  * <caption style="display:none">ISO years and eras</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left">year-of-era</th>
- * <th style="text-align:left">era</th>
- * <th style="text-align:left">proleptic-year</th>
+ * <th scope="col">year-of-era</th>
+ * <th scope="col">era</th>
+ * <th scope="col">proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>2</td><td>CE</td><td>2</td>
+ * <td>2</td><td>CE</td><th scope="row">2</th>
  * </tr>
  * <tr>
- * <td>1</td><td>CE</td><td>1</td>
+ * <td>1</td><td>CE</td><th scope="row">1</th>
  * </tr>
  * <tr>
- * <td>1</td><td>BCE</td><td>0</td>
+ * <td>1</td><td>BCE</td><th scope="row">0</th>
  * </tr>
  * <tr>
- * <td>2</td><td>BCE</td><td>-1</td>
+ * <td>2</td><td>BCE</td><th scope="row">-1</th>
  * </tr>
  * </tbody>
  * </table>

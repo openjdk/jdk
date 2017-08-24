@@ -34,12 +34,15 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A plain text socket tunnel through a proxy. Uses "CONNECT" but does not
- * encrypt. Used by WebSocket. Subclassed in SSLTunnelConnection for encryption.
+ * encrypt. Used by WebSocket, as well as HTTP over SSL + Proxy.
+ * Wrapped in SSLTunnelConnection or AsyncSSLTunnelConnection for encryption.
  */
-class PlainTunnelingConnection extends HttpConnection {
+class PlainTunnelingConnection extends HttpConnection implements AsyncConnection {
 
     final PlainHttpConnection delegate;
     protected final InetSocketAddress proxyAddr;
@@ -116,17 +119,17 @@ class PlainTunnelingConnection extends HttpConnection {
     }
 
     @Override
-    void writeAsync(ByteBufferReference[] buffers) throws IOException {
+    public void writeAsync(ByteBufferReference[] buffers) throws IOException {
         delegate.writeAsync(buffers);
     }
 
     @Override
-    void writeAsyncUnordered(ByteBufferReference[] buffers) throws IOException {
+    public void writeAsyncUnordered(ByteBufferReference[] buffers) throws IOException {
         delegate.writeAsyncUnordered(buffers);
     }
 
     @Override
-    void flushAsync() throws IOException {
+    public void flushAsync() throws IOException {
         delegate.flushAsync();
     }
 
@@ -164,5 +167,33 @@ class PlainTunnelingConnection extends HttpConnection {
     @Override
     boolean isProxied() {
         return true;
+    }
+
+    @Override
+    public void setAsyncCallbacks(Consumer<ByteBufferReference> asyncReceiver,
+            Consumer<Throwable> errorReceiver,
+            Supplier<ByteBufferReference> readBufferSupplier) {
+        delegate.setAsyncCallbacks(asyncReceiver, errorReceiver, readBufferSupplier);
+    }
+
+    @Override
+    public void startReading() {
+        delegate.startReading();
+    }
+
+    @Override
+    public void stopAsyncReading() {
+        delegate.stopAsyncReading();
+    }
+
+    @Override
+    public void enableCallback() {
+        delegate.enableCallback();
+    }
+
+    @Override
+    synchronized void configureMode(Mode mode) throws IOException {
+        super.configureMode(mode);
+        delegate.configureMode(mode);
     }
 }

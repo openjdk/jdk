@@ -951,12 +951,36 @@ jdk.xml.dsig.secureValidationPolicy=\
 #
 # The filter pattern uses the same format as jdk.serialFilter.
 # This filter can override the builtin filter if additional types need to be
-# allowed or rejected from the RMI Registry.
+# allowed or rejected from the RMI Registry or to decrease limits but not
+# to increase limits.
+# If the limits (maxdepth, maxrefs, or maxbytes) are exceeded, the object is rejected.
+#
+# Each non-array type is allowed or rejected if it matches one of the patterns,
+# evaluated from left to right, and is otherwise allowed. Arrays of any
+# component type, including subarrays and arrays of primitives, are allowed.
+#
+# Array construction of any component type, including subarrays and arrays of
+# primitives, are allowed unless the length is greater than the maxarray limit.
+# The filter is applied to each array element.
 #
 # Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
 #
-#sun.rmi.registry.registryFilter=pattern;pattern
+# The built-in filter allows subclasses of allowed classes and
+# can approximately be represented as the pattern:
+#
+#sun.rmi.registry.registryFilter=\
+#    maxarray=1000000;\
+#    maxdepth=20;\
+#    java.lang.String;\
+#    java.lang.Number;\
+#    java.lang.reflect.Proxy;\
+#    java.rmi.Remote;\
+#    sun.rmi.server.UnicastRef;\
+#    sun.rmi.server.RMIClientSocketFactory;\
+#    sun.rmi.server.RMIServerSocketFactory;\
+#    java.rmi.activation.ActivationID;\
+#    java.rmi.server.UID
 #
 # RMI Distributed Garbage Collector (DGC) Serial Filter
 #
