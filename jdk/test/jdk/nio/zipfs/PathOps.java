@@ -27,11 +27,13 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.ProviderMismatchException;
 
 /**
  *
  * @test
- * @bug 8038500 8040059 8139956 8146754 8172921
+ * @bug 8038500 8040059 8139956 8146754 8172921 8186142
  * @summary Tests path operations for zip provider.
  *
  * @run main PathOps
@@ -571,16 +573,46 @@ public class PathOps {
 
     }
 
+    static void mismatchedProviders() {
+        header("ProviderMismatchException");
+        Path path = fs.getPath("foo");
+        Path other = Paths.get("foo");
+        try {
+            path.compareTo(other);
+            throw new RuntimeException("ProviderMismatchException not thrown");
+        } catch (ProviderMismatchException pme) {}
+
+        try {
+            path.resolve(other);
+            throw new RuntimeException("ProviderMismatchException not thrown");
+        } catch (ProviderMismatchException pme) {}
+
+        try {
+            path.relativize(other);
+            throw new RuntimeException("ProviderMismatchException not thrown");
+        } catch (ProviderMismatchException pme) {}
+
+        try {
+            if (path.startsWith(other))
+                throw new RuntimeException("providerMismatched startsWith() returns true ");
+            if (path.endsWith(other))
+                throw new RuntimeException("providerMismatched endsWith() returns true ");
+        } catch (ProviderMismatchException pme) {
+            throw new RuntimeException("ProviderMismatchException is thrown for starts/endsWith()");
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         // create empty JAR file, test doesn't require any contents
         Path emptyJar = Utils.createJarFile("empty.jar");
 
         fs = FileSystems.newFileSystem(emptyJar, null);
         try {
-        npes();
-        doPathOpTests();
+            npes();
+            mismatchedProviders();
+            doPathOpTests();
         } finally {
-        fs.close();
+            fs.close();
+        }
     }
-}
 }
