@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,29 @@ import java.lang.annotation.RetentionPolicy;
 public @interface WebServiceProvider {
     /**
      * Location of the WSDL description for the service.
+     *
+     * @return location of the WSDL description
      */
     String wsdlLocation() default "";
 
     /**
      * Service name.
+     *
+     * @return service name
      */
     String serviceName() default "";
 
     /**
      * Target namespace for the service
+     *
+     * @return target namespace
      */
     String targetNamespace() default "";
 
     /**
      * Port name.
+     *
+     * @return port name
      */
     String portName() default "";
 }

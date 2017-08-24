@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7088989 8014374 8167512
+ * @bug 7088989 8014374 8167512 8173708
  * @summary Ensure the AES ciphers of OracleUcrypto provider works correctly
  * @key randomness
  * @run main TestAES
@@ -177,6 +177,12 @@ public class TestAES extends UcryptoTest {
                     k += c.doFinal(eout, firstPartLen+1, eout.length - firstPartLen - 1, dout, k);
                     if (!checkArrays(in, in.length, dout, k)) testPassed = false;
                 } catch(Exception ex) {
+                    if (ex instanceof BadPaddingException &&
+                            algos[i].indexOf("CFB128") != -1 &&
+                            p.getName().equals("OracleUcrypto")) {
+                        System.out.println("Ignore due to a pre-S11.3 bug: " + ex);
+                        continue;
+                    }
                     System.out.println("Unexpected Exception: " + algos[i]);
                     ex.printStackTrace();
                     testPassed = false;

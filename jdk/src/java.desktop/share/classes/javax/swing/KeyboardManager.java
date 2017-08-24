@@ -207,6 +207,7 @@ class KeyboardManager {
       * want a crack at the event.
       * If one of them wants it, then it will "DO-THE-RIGHT-THING"
       */
+    @SuppressWarnings("deprecation")
     public boolean fireKeyboardAction(KeyEvent e, boolean pressed, Container topAncestor) {
 
          if (e.isConsumed()) {
