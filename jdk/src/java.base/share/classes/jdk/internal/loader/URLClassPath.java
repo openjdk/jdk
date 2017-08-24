@@ -46,6 +46,7 @@ import java.security.Permission;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -66,7 +67,6 @@ import java.util.jar.Attributes.Name;
 import java.util.zip.ZipFile;
 
 import jdk.internal.misc.JavaNetURLAccess;
-import jdk.internal.misc.JavaNetURLClassLoaderAccess;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.util.jar.InvalidJarIndexError;
@@ -100,19 +100,19 @@ public class URLClassPath {
     }
 
     /* The original search path of URLs. */
-    private ArrayList<URL> path = new ArrayList<>();
+    private final List<URL> path;
 
     /* The stack of unopened URLs */
-    Stack<URL> urls = new Stack<>();
+    private final Stack<URL> urls = new Stack<>();
 
     /* The resulting search path of Loaders */
-    ArrayList<Loader> loaders = new ArrayList<>();
+    private final ArrayList<Loader> loaders = new ArrayList<>();
 
     /* Map of each URL opened to its corresponding Loader */
-    HashMap<String, Loader> lmap = new HashMap<>();
+    private final HashMap<String, Loader> lmap = new HashMap<>();
 
     /* The jar protocol handler to use when creating new URLs */
-    private URLStreamHandler jarHandler;
+    private final URLStreamHandler jarHandler;
 
     /* Whether this URLClassLoader has been closed yet */
     private boolean closed = false;
@@ -137,12 +137,16 @@ public class URLClassPath {
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory,
                         AccessControlContext acc) {
-        for (int i = 0; i < urls.length; i++) {
-            path.add(urls[i]);
+        List<URL> path = new ArrayList<>(urls.length);
+        for (URL url : urls) {
+            path.add(url);
         }
+        this.path = path;
         push(urls);
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
+        } else {
+            jarHandler = null;
         }
         if (DISABLE_ACC_CHECKING)
             this.acc = null;
@@ -150,16 +154,50 @@ public class URLClassPath {
             this.acc = acc;
     }
 
-    /**
-     * Constructs a URLClassPath with no additional security restrictions.
-     * Used by code that implements the class path.
-     */
-    public URLClassPath(URL[] urls) {
-        this(urls, null, null);
-    }
-
     public URLClassPath(URL[] urls, AccessControlContext acc) {
         this(urls, null, acc);
+    }
+
+    /**
+     * Constructs a URLClassPath from a class path string.
+     *
+     * @param cp the class path string
+     * @param skipEmptyElements indicates if empty elements are ignored or
+     *        treated as the current working directory
+     *
+     * @apiNote Used to create the application class path.
+     */
+    URLClassPath(String cp, boolean skipEmptyElements) {
+        List<URL> path = new ArrayList<>();
+        if (cp != null) {
+            // map each element of class path to a file URL
+            int off = 0;
+            int next;
+            while ((next = cp.indexOf(File.pathSeparator, off)) != -1) {
+                String element = cp.substring(off, next);
+                if (element.length() > 0 || !skipEmptyElements) {
+                    URL url = toFileURL(element);
+                    if (url != null) path.add(url);
+                }
+                off = next + 1;
+            }
+
+            // remaining element
+            String element = cp.substring(off);
+            if (element.length() > 0 || !skipEmptyElements) {
+                URL url = toFileURL(element);
+                if (url != null) path.add(url);
+            }
+
+            // push the URLs
+            for (int i = path.size() - 1; i >= 0; --i) {
+                urls.push(path.get(i));
+            }
+        }
+
+        this.path = path;
+        this.jarHandler = null;
+        this.acc = null;
     }
 
     public synchronized List<IOException> closeLoaders() {
@@ -194,6 +232,28 @@ public class URLClassPath {
 
             urls.add(0, url);
             path.add(url);
+        }
+    }
+
+    /**
+     * Appends the specified file path as a file URL to the search path.
+     */
+    public void addFile(String s) {
+        URL url = toFileURL(s);
+        if (url != null) {
+            addURL(url);
+        }
+    }
+
+    /**
+     * Returns a file URL for the given file path.
+     */
+    private static URL toFileURL(String s) {
+        try {
+            File f = new File(s).getCanonicalFile();
+            return ParseUtil.fileToEncodedURL(f);
+        } catch (IOException e) {
+            return null;
         }
     }
 

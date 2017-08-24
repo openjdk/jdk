@@ -313,6 +313,10 @@ public final class System {
      * @see java.lang.RuntimePermission
      */
     public static void setSecurityManager(final SecurityManager s) {
+        if (security == null) {
+            // ensure image reader is initialized
+            Object.class.getResource("java/lang/ANY");
+        }
         if (s != null) {
             try {
                 s.checkPackageAccess("java.lang");

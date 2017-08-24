@@ -32,7 +32,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 import jdk.internal.module.ClassFileAttributes;
@@ -67,8 +67,7 @@ public class Main {
     }
 
     private static boolean hasModuleTarget(String modName) throws IOException {
-        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
-                                                  Collections.emptyMap());
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), Map.of());
         Path path = fs.getPath("/", "modules", modName, "module-info.class");
         try (InputStream in = Files.newInputStream(path)) {
             return hasModuleTarget(in);
@@ -86,8 +85,8 @@ public class Main {
             expectModuleTarget = true;
         }
 
-        // java.base is packaged with osName/osArch/osVersion
-        if (! hasModuleTarget("java.base")) {
+        // java.base is packaged with ModuleTarget
+        if (!hasModuleTarget("java.base")) {
             throw new RuntimeException("ModuleTarget absent for java.base");
         }
 
@@ -109,8 +108,7 @@ public class Main {
         }
 
         // verify ModuleDescriptor from module-info.class read from jimage
-        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
-            Collections.emptyMap());
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), Map.of());
         Path path = fs.getPath("/", "modules", mn, "module-info.class");
         checkModuleDescriptor(ModuleDescriptor.read(Files.newInputStream(path)), packages);
     }
@@ -121,16 +119,9 @@ public class Main {
             throw new RuntimeException(md.mainClass().toString());
         }
 
-        if (expectModuleTarget) {
-            // ModuleTarget attribute is retained
-            if (! hasModuleTarget(md.name())) {
-                throw new RuntimeException("ModuleTarget missing for " + md.name());
-            }
-        } else {
-            // by default ModuleTarget attribute is dropped
-            if (hasModuleTarget(md.name())) {
-                throw new RuntimeException("ModuleTarget present for " + md.name());
-            }
+        // ModuleTarget attribute should be present
+        if (!hasModuleTarget(md.name())) {
+            throw new RuntimeException("ModuleTarget missing for " + md.name());
         }
 
         Set<String> pkgs = md.packages();

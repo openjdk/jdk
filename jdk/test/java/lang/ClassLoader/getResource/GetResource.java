@@ -125,10 +125,9 @@ public class GetResource {
         return new Object[][] {
             new Object[] { List.of("-Xbootclasspath/a:."), "a"},
 
-            // "b" is the expected result when JDK-8185540 is resolved
-            new Object[] { List.of("-Xbootclasspath/a:" + dirB), "a"},
+            new Object[] { List.of("-Xbootclasspath/a:" + dirB), "b"},
             // empty path in first element
-            new Object[] { List.of("-Xbootclasspath/a:" + File.pathSeparator + dirB), "a"},
+            new Object[] { List.of("-Xbootclasspath/a:" + File.pathSeparator + dirB), "b"},
 
             new Object[] { List.of("-cp", File.pathSeparator), "a"},
             new Object[] { List.of("-cp", dirB), "b"},

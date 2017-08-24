@@ -32,6 +32,8 @@ import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * This class represents a PBE key.
  *
@@ -49,7 +51,7 @@ final class PBEKey implements SecretKey {
     /**
      * Creates a PBE key from a given PBE key specification.
      *
-     * @param key the given PBE key specification
+     * @param keytype the given PBE key specification
      */
     PBEKey(PBEKeySpec keySpec, String keytype) throws InvalidKeySpecException {
         char[] passwd = keySpec.getPassword();
@@ -70,6 +72,11 @@ final class PBEKey implements SecretKey {
             this.key[i] = (byte) (passwd[i] & 0x7f);
         java.util.Arrays.fill(passwd, ' ');
         type = keytype;
+
+        // Use the cleaner to zero the key when no longer referenced
+        final byte[] k = this.key;
+        CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
@@ -139,21 +146,5 @@ final class PBEKey implements SecretKey {
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
-    }
-
-    /**
-     * Ensures that the password bytes of this key are
-     * set to zero when there are no more references to it.
-     */
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        try {
-            if (this.key != null) {
-                java.util.Arrays.fill(this.key, (byte)0x00);
-                this.key = null;
-            }
-        } finally {
-            super.finalize();
-        }
     }
 }

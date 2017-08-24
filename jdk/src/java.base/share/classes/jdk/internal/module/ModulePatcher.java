@@ -200,10 +200,10 @@ public final class ModulePatcher {
     }
 
     /**
-     * Returns true is this module patcher has no patches.
+     * Returns true is this module patcher has patches.
      */
-    public boolean isEmpty() {
-        return map.isEmpty();
+    public boolean hasPatches() {
+        return !map.isEmpty();
     }
 
     /*
