@@ -292,8 +292,12 @@ public abstract class AWTEvent extends EventObject {
 
     /**
      * Constructs an AWTEvent object from the parameters of a 1.0-style event.
+     *
      * @param event the old-style event
+     * @deprecated It is recommended that {@link #AWTEvent(Object, int)} be used
+     *             instead
      */
+    @Deprecated(since = "9")
     public AWTEvent(Event event) {
         this(event.target, event.id);
     }
@@ -436,6 +440,7 @@ public abstract class AWTEvent extends EventObject {
      * event class in java.awt.event because we don't want to make
      * it public and it needs to be called from java.awt.
      */
+    @SuppressWarnings("deprecation")
     Event convertToOld() {
         Object src = getSource();
         int newid = id;

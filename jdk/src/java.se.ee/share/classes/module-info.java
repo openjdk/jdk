@@ -26,10 +26,16 @@
 /**
  * Defines the full API of the Java SE Platform.
  * <P>
- * This module requires {@code java.se} and supplements it with modules
- * that define CORBA and Java EE APIs. These modules are upgradeable.
+ * This module requires the <a href="java.se-summary.html">{@code java.se}</a>
+ * module and supplements it with modules that define the CORBA and Java EE
+ * APIs. These modules are upgradeable.
+ *
+ * @moduleGraph
+ * @since 9
  */
-@SuppressWarnings("deprecation")
+// suppress warning for java.corba and other modules
+@SuppressWarnings({"deprecation", "removal"})
+@Deprecated(since="9", forRemoval=true)
 module java.se.ee {
 
     requires transitive java.se;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,11 +112,13 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
     }
 
     public static class GLXWindowSurfaceData extends GLXSurfaceData {
+        protected final int scale;
 
         public GLXWindowSurfaceData(X11ComponentPeer peer,
                                     GLXGraphicsConfig gc)
         {
             super(peer, gc, peer.getColorModel(), WINDOW);
+            scale = gc.getScale();
         }
 
         public SurfaceData getReplacement() {
@@ -126,6 +128,8 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         public Rectangle getBounds() {
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
+            r.width = (int) Math.ceil(r.width * scale);
+            r.height = (int) Math.ceil(r.height * scale);
             return r;
         }
 
@@ -134,6 +138,16 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
          */
         public Object getDestination() {
             return peer.getTarget();
+        }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
         }
     }
 
@@ -177,6 +191,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
 
         private Image offscreenImage;
         private int width, height;
+        private final int scale;
 
         public GLXOffScreenSurfaceData(X11ComponentPeer peer,
                                        GLXGraphicsConfig gc,
@@ -186,11 +201,12 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
         {
             super(peer, gc, cm, type);
 
-            this.width = width;
-            this.height = height;
+            scale = gc.getDevice().getScaleFactor();
+            this.width = width * scale;
+            this.height = height * scale;
             offscreenImage = image;
 
-            initSurface(width, height);
+            initSurface(this.width, this.height);
         }
 
         public SurfaceData getReplacement() {
@@ -201,6 +217,8 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
             if (type == FLIP_BACKBUFFER) {
                 Rectangle r = peer.getBounds();
                 r.x = r.y = 0;
+                r.width = (int) Math.ceil(r.width * scale);
+                r.height = (int) Math.ceil(r.height * scale);
                 return r;
             } else {
                 return new Rectangle(width, height);
@@ -212,6 +230,16 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
          */
         public Object getDestination() {
             return offscreenImage;
+        }
+
+        @Override
+        public double getDefaultScaleX() {
+            return scale;
+        }
+
+        @Override
+        public double getDefaultScaleY() {
+            return scale;
         }
     }
 }

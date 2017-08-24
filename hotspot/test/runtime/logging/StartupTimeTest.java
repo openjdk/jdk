@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class StartupTimeTest {
 
     static void analyzeModulesOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[modules,startuptime]");
+        output.shouldNotContain("[module,startuptime]");
         output.shouldHaveExitValue(0);
     }
 
@@ -70,11 +70,11 @@ public class StartupTimeTest {
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+modules",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+module",
                                                    InnerClass.class.getName());
         analyzeModulesOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+modules=off",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+module=off",
                                                    InnerClass.class.getName());
         analyzeModulesOutputOff(pb);
     }
