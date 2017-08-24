@@ -302,6 +302,8 @@ public final class Main {
         Command.IMPORTPASS.setAltName("-importpassword");
     }
 
+    // If an option is allowed multiple times, remember to record it
+    // in the optionsSet.contains() block in parseArgs().
     enum Option {
         ALIAS("alias", "<alias>", "alias.name.of.the.entry.to.process"),
         DESTALIAS("destalias", "<alias>", "destination.alias"),
@@ -423,9 +425,31 @@ public final class Main {
 
         String confFile = null;
 
+        // Records all commands and options set. Used to check dups.
+        Set<String> optionsSet = new HashSet<>();
+
         for (i=0; i < args.length; i++) {
             String flags = args[i];
             if (flags.startsWith("-")) {
+                String lowerFlags = flags.toLowerCase(Locale.ROOT);
+                if (optionsSet.contains(lowerFlags)) {
+                    switch (lowerFlags) {
+                        case "-ext":
+                        case "-id":
+                        case "-provider":
+                        case "-addprovider":
+                        case "-providerclass":
+                        case "-providerarg":
+                            // These options are allowed multiple times
+                            break;
+                        default:
+                            weakWarnings.add(String.format(
+                                    rb.getString("option.1.set.twice"),
+                                    lowerFlags));
+                    }
+                } else {
+                    optionsSet.add(lowerFlags);
+                }
                 if (collator.compare(flags, "-conf") == 0) {
                     if (i == args.length - 1) {
                         errorNeedArgument(flags);
@@ -433,7 +457,15 @@ public final class Main {
                     confFile = args[++i];
                 } else {
                     Command c = Command.getCommand(flags);
-                    if (c != null) command = c;
+                    if (c != null) {
+                        if (command == null) {
+                            command = c;
+                        } else {
+                            throw new Exception(String.format(
+                                    rb.getString("multiple.commands.1.2"),
+                                    command.name, c.name));
+                        }
+                    }
                 }
             }
         }
