@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ public @interface ServiceMode {
    * wishes to work with protocol message payloads only. {@code MESSAGE} indicates
    * that the {@code Provider} implementation wishes to work with entire protocol
    * messages.
-  **/
+   *
+   * @return Service mode.
+   **/
   public Service.Mode value() default Service.Mode.PAYLOAD;
 }
