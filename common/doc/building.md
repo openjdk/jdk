@@ -392,11 +392,8 @@ issues.
 
 ### gcc
 
-The minimum accepted version of gcc is 4.3. Older versions will not be accepted
-by `configure`.
-
-However, gcc 4.3 is quite old and OpenJDK is not regularly tested on this
-version, so it is recommended to use a more modern gcc.
+The minimum accepted version of gcc is 4.7. Older versions will generate a warning 
+by `configure` and are unlikely to work.
 
 OpenJDK 9 includes patches that should allow gcc 6 to compile, but this should
 be considered experimental.
