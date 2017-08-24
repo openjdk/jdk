@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,9 +176,9 @@ import sun.security.util.Debug;
  * <li>{@code PKCS12}</li>
  * </ul>
  * This type is described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
+ * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
  * KeyStore section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other types are supported.
  *
@@ -291,9 +291,8 @@ public class KeyStore {
          * @param protectionAlgorithm the encryption algorithm name, for
          *     example, {@code PBEWithHmacSHA256AndAES_256}.
          *     See the Cipher section in the <a href=
-         * "{@docRoot}/../technotes/guides/security/StandardNames.html#Cipher">
-         * Java Cryptography Architecture Standard Algorithm Name
-         * Documentation</a>
+         * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+         * Java Security Standard Algorithm Names Specification</a>
          *     for information about standard encryption algorithm names.
          * @param protectionParameters the encryption algorithm parameter
          *     specification, which may be {@code null}
@@ -854,8 +853,8 @@ public class KeyStore {
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
      * @return a keystore object of the specified type
@@ -895,8 +894,8 @@ public class KeyStore {
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
      * @param provider the name of the provider.
@@ -941,8 +940,8 @@ public class KeyStore {
      *
      * @param type the type of keystore.
      * See the KeyStore section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keystore-types">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
      * @param provider the provider.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,8 +233,12 @@ public final class Files {
      * <p> In the addition to {@code READ} and {@code WRITE}, the following
      * options may be present:
      *
-     * <table border=1 cellpadding=5 summary="Options">
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
      * <tr> <th>Option</th> <th>Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
      *   <td> If this option is present then the file is opened for writing and
@@ -294,6 +298,7 @@ public final class Files {
      *   href="package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> An implementation may also support additional implementation specific
@@ -1188,8 +1193,12 @@ public final class Files {
      *
      * <p> The {@code options} parameter may include any of the following:
      *
-     * <table border=1 cellpadding=5 summary="">
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
      * <tr> <th>Option</th> <th>Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
      *   <td> If the target file exists, then the target file is replaced if it
@@ -1215,6 +1224,7 @@ public final class Files {
      *     new link. In other words, the {@code COPY_ATTRIBUTES} option may be
      *     ignored when copying a symbolic link. </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> An implementation of this interface may support additional
@@ -1306,8 +1316,12 @@ public final class Files {
      *
      * <p> The {@code options} parameter may include any of the following:
      *
-     * <table border=1 cellpadding=5 summary="">
+     * <table class="striped">
+     * <caption style="display:none">Options</caption>
+     * <thead>
      * <tr> <th>Option</th> <th>Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
      *   <td> If the target file exists, then the target file is replaced if it
@@ -1326,6 +1340,7 @@ public final class Files {
      *     example, when the target location is on a different {@code FileStore}
      *     and would require that the file be copied, or target location is
      *     associated with a different provider to this object. </td>
+     * </tbody>
      * </table>
      *
      * <p> An implementation of this interface may support additional
@@ -1909,7 +1924,9 @@ public final class Files {
      * attributes} parameter:
      *
      * <blockquote>
-     * <table border="0" summary="Possible values">
+     * <table class="borderless">
+     * <caption style="display:none">Possible values</caption>
+     * <tbody>
      * <tr>
      *   <td> {@code "*"} </td>
      *   <td> Read all {@link BasicFileAttributes basic-file-attributes}. </td>
@@ -1927,6 +1944,7 @@ public final class Files {
      *   <td> {@code "posix:permissions,owner,size"} </td>
      *   <td> Reads the POSIX file permissions, owner, and file size. </td>
      * </tr>
+     * </tbody>
      * </table>
      * </blockquote>
      *

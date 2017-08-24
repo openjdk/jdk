@@ -594,9 +594,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
       } else {
-        jobject jlrm = module_to->module();
-        assert(jlrm != NULL, "Null jlrm in module_to ModuleEntry");
-        intptr_t identity_hash = JNIHandles::resolve(jlrm)->identity_hash();
+        jobject jlm = module_to->module();
+        assert(jlm != NULL, "Null jlm in module_to ModuleEntry");
+        intptr_t identity_hash = JNIHandles::resolve(jlm)->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
@@ -621,9 +621,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
-        jobject jlrm = module_from->module();
-        assert(jlrm != NULL, "Null jlrm in module_from ModuleEntry");
-        intptr_t identity_hash = JNIHandles::resolve(jlrm)->identity_hash();
+        jobject jlm = module_from->module();
+        assert(jlm != NULL, "Null jlm in module_from ModuleEntry");
+        intptr_t identity_hash = JNIHandles::resolve(jlm)->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
