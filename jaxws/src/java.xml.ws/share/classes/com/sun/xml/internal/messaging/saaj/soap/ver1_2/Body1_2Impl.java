@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
@@ -52,25 +53,34 @@ public class Body1_2Impl extends BodyImpl {
             super(ownerDocument, NameImpl.createBody1_2Name(prefix));
     }
 
+    public Body1_2Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
+    @Override
     protected NameImpl getFaultName(String name) {
         return NameImpl.createFault1_2Name(name, null);
     }
 
+    @Override
     protected SOAPBodyElement createBodyElement(Name name) {
         return new BodyElement1_2Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
             name);
     }
+    @Override
     protected SOAPBodyElement createBodyElement(QName name) {
         return new BodyElement1_2Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(),
             name);
     }
 
+    @Override
     protected QName getDefaultFaultCode() {
         return SOAPConstants.SOAP_RECEIVER_FAULT;
     }
 
+    @Override
     public SOAPFault addFault() throws SOAPException {
         if (hasAnyChildElement()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -84,6 +94,7 @@ public class Body1_2Impl extends BodyImpl {
      * Override setEncodingStyle of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Body (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public void setEncodingStyle(String encodingStyle) throws SOAPException {
         log.severe("SAAJ0401.ver1_2.no.encodingstyle.in.body");
         throw new SOAPExceptionImpl("encodingStyle attribute cannot appear on Body");
@@ -93,6 +104,7 @@ public class Body1_2Impl extends BodyImpl {
      * Override addAttribute of ElementImpl to restrict adding encodingStyle
      * attribute to SOAP Body (SOAP 1.2 spec, part 1, section 5.1.1)
      */
+    @Override
     public SOAPElement addAttribute(Name name, String value)
         throws SOAPException {
         if (name.getLocalName().equals("encodingStyle")
@@ -103,6 +115,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     public SOAPElement addAttribute(QName name, String value)
         throws SOAPException {
         if (name.getLocalPart().equals("encodingStyle")
@@ -113,6 +126,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addAttribute(name, value);
     }
 
+    @Override
     protected boolean isFault(SOAPElement child) {
         return (child.getElementName().getURI().equals(
                     SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE) &&
@@ -120,6 +134,7 @@ public class Body1_2Impl extends BodyImpl {
                     "Fault"));
     }
 
+    @Override
     protected SOAPFault createFaultElement() {
         return new Fault1_2Impl(
             ((SOAPDocument) getOwnerDocument()).getDocument(), getPrefix());
@@ -130,6 +145,7 @@ public class Body1_2Impl extends BodyImpl {
      * SOAP message MUST contain a single Fault element as the only
      * child element of the SOAP Body.
      */
+    @Override
     public SOAPBodyElement addBodyElement(Name name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -139,6 +155,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addBodyElement(name);
     }
 
+    @Override
     public SOAPBodyElement addBodyElement(QName name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -148,6 +165,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addBodyElement(name);
     }
 
+    @Override
     protected SOAPElement addElement(Name name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -157,6 +175,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addElement(name);
     }
 
+    @Override
     protected SOAPElement addElement(QName name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -166,6 +185,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addElement(name);
     }
 
+    @Override
     public SOAPElement addChildElement(Name name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");
@@ -175,6 +195,7 @@ public class Body1_2Impl extends BodyImpl {
         return super.addChildElement(name);
     }
 
+    @Override
     public SOAPElement addChildElement(QName name) throws SOAPException {
         if (hasFault()) {
             log.severe("SAAJ0402.ver1_2.only.fault.allowed.in.body");

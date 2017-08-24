@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,13 +448,21 @@ public class Attr extends JCTree.Visitor {
 
         NORMAL,
 
-        NO_TREE_UPDATE {     // Mode signalling 'fake check' - skip tree update
+        /**
+         * Mode signalling 'fake check' - skip tree update. A side-effect of this mode is
+         * that the captured var cache in {@code InferenceContext} will be used in read-only
+         * mode when performing inference checks.
+         */
+        NO_TREE_UPDATE {
             @Override
             public boolean updateTreeType() {
                 return false;
             }
         },
-        NO_INFERENCE_HOOK { // Mode signalling that caller will manage free types in tree decorations.
+        /**
+         * Mode signalling that caller will manage free types in tree decorations.
+         */
+        NO_INFERENCE_HOOK {
             @Override
             public boolean installPostInferenceHook() {
                 return false;
@@ -497,9 +505,12 @@ public class Attr extends JCTree.Visitor {
             this.checkMode = checkMode;
         }
 
-        protected void attr(JCTree tree, Env<AttrContext> env) {
-            tree.accept(Attr.this);
-        }
+        /**
+         * Should {@link Attr#attribTree} use the {@ArgumentAttr} visitor instead of this one?
+         * @param tree The tree to be type-checked.
+         * @return true if {@ArgumentAttr} should be used.
+         */
+        protected boolean needsArgumentAttr(JCTree tree) { return false; }
 
         protected Type check(final DiagnosticPosition pos, final Type found) {
             return chk.checkType(pos, found, pt, checkContext);
@@ -545,8 +556,8 @@ public class Attr extends JCTree.Visitor {
         }
 
         @Override
-        protected void attr(JCTree tree, Env<AttrContext> env) {
-            result = argumentAttr.attribArg(tree, env);
+        protected boolean needsArgumentAttr(JCTree tree) {
+            return true;
         }
 
         protected ResultInfo dup(Type newPt) {
@@ -636,7 +647,11 @@ public class Attr extends JCTree.Visitor {
         try {
             this.env = env;
             this.resultInfo = resultInfo;
-            resultInfo.attr(tree, env);
+            if (resultInfo.needsArgumentAttr(tree)) {
+                result = argumentAttr.attribArg(tree, env);
+            } else {
+                tree.accept(this);
+            }
             if (tree == breakTree &&
                     resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
                 throw new BreakAttr(copyEnv(env));
@@ -974,8 +989,11 @@ public class Attr extends JCTree.Visitor {
 
             ClassSymbol owner = env.enclClass.sym;
             if ((owner.flags() & ANNOTATION) != 0 &&
-                    tree.params.nonEmpty())
-                log.error(tree.params.head.pos(),
+                    (tree.params.nonEmpty() ||
+                    tree.recvparam != null))
+                log.error(tree.params.nonEmpty() ?
+                        tree.params.head.pos() :
+                        tree.recvparam.pos(),
                         "intf.annotation.members.cant.have.params");
 
             // Attribute all value parameters.
@@ -1514,7 +1532,9 @@ public class Attr extends JCTree.Visitor {
                             isBooleanOrNumeric(env, condTree.falsepart);
                 case APPLY:
                     JCMethodInvocation speculativeMethodTree =
-                            (JCMethodInvocation)deferredAttr.attribSpeculative(tree, env, unknownExprInfo);
+                            (JCMethodInvocation)deferredAttr.attribSpeculative(
+                                    tree, env, unknownExprInfo,
+                                    argumentAttr.withLocalCacheContext());
                     Symbol msym = TreeInfo.symbol(speculativeMethodTree.meth);
                     Type receiverType = speculativeMethodTree.meth.hasTag(IDENT) ?
                             env.enclClass.type :
@@ -1525,10 +1545,13 @@ public class Attr extends JCTree.Visitor {
                     JCExpression className =
                             removeClassParams.translate(((JCNewClass)tree).clazz);
                     JCExpression speculativeNewClassTree =
-                            (JCExpression)deferredAttr.attribSpeculative(className, env, unknownTypeInfo);
+                            (JCExpression)deferredAttr.attribSpeculative(
+                                    className, env, unknownTypeInfo,
+                                    argumentAttr.withLocalCacheContext());
                     return primitiveOrBoxed(speculativeNewClassTree.type);
                 default:
-                    Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo).type;
+                    Type speculativeType = deferredAttr.attribSpeculative(tree, env, unknownExprInfo,
+                            argumentAttr.withLocalCacheContext()).type;
                     return primitiveOrBoxed(speculativeType);
             }
         }
@@ -3058,7 +3081,8 @@ public class Attr extends JCTree.Visitor {
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType, types.noWarnings)) {
+                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
+                            checkContext.checkWarner(tree, resType, returnType))) {
                 incompatibleReturnType = null;
             }
         }
@@ -3765,7 +3789,7 @@ public class Attr extends JCTree.Visitor {
                 break;
             case MTH: {
                 owntype = checkMethod(site, sym,
-                        new ResultInfo(resultInfo.pkind, resultInfo.pt.getReturnType(), resultInfo.checkContext),
+                        new ResultInfo(resultInfo.pkind, resultInfo.pt.getReturnType(), resultInfo.checkContext, resultInfo.checkMode),
                         env, TreeInfo.args(env.tree), resultInfo.pt.getParameterTypes(),
                         resultInfo.pt.getTypeArguments());
                 break;
@@ -3994,10 +4018,16 @@ public class Attr extends JCTree.Visitor {
                         rs.methodArguments(argtypes.map(checkDeferredMap)),
                         kindName(sym.location()),
                         sym.location());
-               owntype = new MethodType(owntype.getParameterTypes(),
-                       types.erasure(owntype.getReturnType()),
-                       types.erasure(owntype.getThrownTypes()),
-                       syms.methodClass);
+                if (resultInfo.pt != Infer.anyPoly ||
+                        !owntype.hasTag(METHOD) ||
+                        !owntype.isPartial()) {
+                    //if this is not a partially inferred method type, erase return type. Otherwise,
+                    //erasure is carried out in PartiallyInferredMethodType.check().
+                    owntype = new MethodType(owntype.getParameterTypes(),
+                            types.erasure(owntype.getReturnType()),
+                            types.erasure(owntype.getThrownTypes()),
+                            syms.methodClass);
+                }
             }
 
             PolyKind pkind = (sym.type.hasTag(FORALL) &&
@@ -4958,6 +4988,9 @@ public class Attr extends JCTree.Visitor {
             if (that.sym == null) {
                 that.sym = new VarSymbol(0, that.name, that.type, syms.noSymbol);
                 that.sym.adr = 0;
+            }
+            if (that.vartype == null) {
+                that.vartype = make.Erroneous();
             }
             super.visitVarDef(that);
         }
