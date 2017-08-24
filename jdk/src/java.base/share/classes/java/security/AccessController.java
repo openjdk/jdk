@@ -259,6 +259,7 @@ import jdk.internal.reflect.Reflection;
  *
  * @author Li Gong
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class AccessController {
