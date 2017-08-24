@@ -51,14 +51,14 @@ import java.util.StringTokenizer;
  * <caption style="display:none">Permission target name, what the permission allows, and associated risks</caption>
  * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- *   <td>allowHttpTrace</td>
+ *   <th scope="row">allowHttpTrace</th>
  *   <td>The ability to use the HTTP TRACE method in HttpURLConnection.</td>
  *   <td>Malicious code using HTTP TRACE could get access to security sensitive
  *   information in the HTTP headers (such as cookies) that it might not
@@ -66,7 +66,7 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *   <td>getCookieHandler</td>
+ *   <th scope="row">getCookieHandler</th>
  *   <td>The ability to get the cookie handler that processes highly
  *   security sensitive cookie information for an Http session.</td>
  *   <td>Malicious code can get a cookie handler to obtain access to
@@ -76,14 +76,14 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *   <td>getNetworkInformation</td>
+ *   <th scope="row">getNetworkInformation</th>
  *   <td>The ability to retrieve all information about local network interfaces.</td>
  *   <td>Malicious code can read information about network hardware such as
  *   MAC addresses, which could be used to construct local IPv6 addresses.</td>
  * </tr>
  *
  * <tr>
- *   <td>getProxySelector</td>
+ *   <th scope="row">getProxySelector</th>
  *   <td>The ability to get the proxy selector used to make decisions
  *   on which proxies to use when making network connections.</td>
  *   <td>Malicious code can get a ProxySelector to discover proxy
@@ -92,7 +92,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>getResponseCache</td>
+ *   <th scope="row">getResponseCache</th>
  *   <td>The ability to get the response cache that provides
  *   access to a local response cache.</td>
  *   <td>Malicious code getting access to the local response cache
@@ -100,7 +100,7 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *   <td>requestPasswordAuthentication</td>
+ *   <th scope="row">requestPasswordAuthentication</th>
  *   <td>The ability
  *   to ask the authenticator registered with the system for
  *   a password</td>
@@ -108,7 +108,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setCookieHandler</td>
+ *   <th scope="row">setCookieHandler</th>
  *   <td>The ability to set the cookie handler that processes highly
  *   security sensitive cookie information for an Http session.</td>
  *   <td>Malicious code can set a cookie handler to obtain access to
@@ -118,7 +118,7 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *   <td>setDefaultAuthenticator</td>
+ *   <th scope="row">setDefaultAuthenticator</th>
  *   <td>The ability to set the
  *   way authentication information is retrieved when
  *   a proxy or HTTP server asks for authentication</td>
@@ -128,7 +128,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setProxySelector</td>
+ *   <th scope="row">setProxySelector</th>
  *   <td>The ability to set the proxy selector used to make decisions
  *   on which proxies to use when making network connections.</td>
  *   <td>Malicious code can set a ProxySelector that directs network
@@ -136,7 +136,7 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
- *   <td>setResponseCache</td>
+ *   <th scope="row">setResponseCache</th>
  *   <td>The ability to set the response cache that provides access to
  *   a local response cache.</td>
  *   <td>Malicious code getting access to the local response cache
@@ -145,7 +145,7 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *   <td>specifyStreamHandler</td>
+ *   <th scope="row">specifyStreamHandler</th>
  *   <td>The ability
  *   to specify a stream handler when constructing a URL</td>
  *   <td>Malicious code may create a URL with resources that it would
