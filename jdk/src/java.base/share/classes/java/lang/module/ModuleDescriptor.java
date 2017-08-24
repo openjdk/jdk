@@ -2728,10 +2728,15 @@ public class ModuleDescriptor
                 @Override
                 public Configuration resolveAndBind(ModuleFinder finder,
                                                     Collection<String> roots,
-                                                    boolean check,
                                                     PrintStream traceOutput)
                 {
-                    return Configuration.resolveAndBind(finder, roots, check, traceOutput);
+                    return Configuration.resolveAndBind(finder, roots, traceOutput);
+                }
+
+                @Override
+                public Configuration newConfiguration(ModuleFinder finder,
+                                                      Map<String, Set<String>> graph) {
+                    return new Configuration(finder, graph);
                 }
             });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,13 @@
  * @summary Check various properties of key and selected-key sets
  *
  * @run main KeySets
- * @run main/othervm -Dsun.nio.ch.bugLevel=1.4 KeySets
  */
 
 import java.io.*;
 import java.nio.channels.*;
 import java.util.*;
 
-
 public class KeySets {
-
-    static boolean compat;
 
     static abstract class Catch {
         abstract void go() throws Exception;
@@ -44,16 +40,11 @@ public class KeySets {
             try {
                 go();
             } catch (Exception x) {
-                if (compat)
-                    throw new Exception("Exception thrown", x);
                 if (xc.isInstance(x))
                     return;
                 throw new Exception("Wrong exception", x);
             }
-            if (compat)
-                return;
-            throw new Exception("Not thrown as expected: "
-                                + xc.getName());
+            throw new Exception("Not thrown as expected: " + xc.getName());
         }
     }
 
@@ -74,7 +65,6 @@ public class KeySets {
                 void go() throws Exception {
                     sel.selectedKeys();
                 }};
-
     }
 
     static void testNoAddition(final Set s) throws Exception {
@@ -174,14 +164,10 @@ public class KeySets {
         sel.selectedKeys().clear();
         if (!sel.selectedKeys().isEmpty())
             throw new Exception("clear failed");
-
     }
 
     public static void main(String[] args) throws Exception {
-        String bl = System.getProperty("sun.nio.ch.bugLevel");
-        compat = (bl != null) && bl.equals("1.4");
         testClose();
         testMutability();
     }
-
 }
