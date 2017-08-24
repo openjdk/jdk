@@ -765,7 +765,7 @@ C2V_END
 
 C2V_VMENTRY(jboolean, hasNeverInlineDirective,(JNIEnv *, jobject, jobject jvmci_method))
   methodHandle method = CompilerToVM::asMethod(jvmci_method);
-  return CompilerOracle::should_not_inline(method) || method->dont_inline();
+  return !Inline || CompilerOracle::should_not_inline(method) || method->dont_inline();
 C2V_END
 
 C2V_VMENTRY(jboolean, shouldInlineMethod,(JNIEnv *, jobject, jobject jvmci_method))

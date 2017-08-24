@@ -23,14 +23,18 @@
 
 package compiler.aot.cli.jaotc;
 
+import compiler.aot.AotCompiler;
+
 import java.io.File;
 import java.io.IOException;
+
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class JaotcTestHelper {
     public static final String DEFAULT_LIB_PATH = "./unnamed." + Platform.sharedLibraryExt();
@@ -49,10 +53,15 @@ public class JaotcTestHelper {
         for (String arg : args) {
             launcher.addToolArg(arg);
         }
+        String linker = AotCompiler.resolveLinker();
+        if (linker != null) {
+            launcher.addToolArg("--linker-path");
+            launcher.addToolArg(linker);
+        }
         String[] cmd = launcher.getCommand();
         try {
-            return new OutputAnalyzer(new ProcessBuilder(cmd).start());
-        } catch (IOException e) {
+            return ProcessTools.executeCommand(cmd);
+        } catch (Throwable e) {
             throw new Error("Can't start test process: " + e, e);
         }
     }

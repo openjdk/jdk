@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import org.graalvm.compiler.hotspot.stubs.Stub;
 
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 
-public class AOTStub implements JavaMethodInfo {
+final class AOTStub implements JavaMethodInfo {
 
     private final Stub stub;
     private final Backend backend;
 
-    public AOTStub(Stub stub, Backend backend) {
+    AOTStub(Stub stub, Backend backend) {
         this.stub = stub;
         this.backend = backend;
     }

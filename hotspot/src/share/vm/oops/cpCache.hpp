@@ -28,6 +28,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 
@@ -413,7 +414,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // stored in the ConstantPool, which is read-only.
   // Array of resolved objects from the constant pool and map from resolved
   // object index to original constant pool index
-  jobject              _resolved_references;
+  OopHandle            _resolved_references;
   Array<u2>*           _reference_map;
   // The narrowOop pointer to the archived resolved_references. Set at CDS dump
   // time when caching java heap object is supported.
@@ -455,8 +456,8 @@ class ConstantPoolCache: public MetaspaceObj {
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
 
-  jobject resolved_references()           { return _resolved_references; }
-  void set_resolved_references(jobject s) { _resolved_references = s; }
+  oop resolved_references()                 { return _resolved_references.resolve(); }
+  void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 

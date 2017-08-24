@@ -23,7 +23,7 @@
 
 /*
  * @test TestPrintReferences
- * @bug 8136991
+ * @bug 8136991 8186402
  * @summary Validate the reference processing logging
  * @key gc
  * @library /test/lib
@@ -42,6 +42,8 @@ public class TestPrintReferences {
     ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
                                                                       "-XX:+UseG1GC",
                                                                       "-Xmx10M",
+                                                                      // Explicit thread setting is required to avoid using only 1 thread
+                                                                      "-XX:ParallelGCThreads=2",
                                                                       GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 

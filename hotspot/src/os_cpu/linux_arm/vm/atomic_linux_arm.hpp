@@ -200,9 +200,38 @@ inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest) {
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 
-inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value, cmpxchg_memory_order order) {
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+
+#ifndef AARCH64
+
+inline jint reorder_cmpxchg_func(jint exchange_value,
+                                 jint volatile* dest,
+                                 jint compare_value) {
+  // Warning:  Arguments are swapped to avoid moving them for kernel call
+  return (*os::atomic_cmpxchg_func)(compare_value, exchange_value, dest);
+}
+
+inline jlong reorder_cmpxchg_long_func(jlong exchange_value,
+                                       jlong volatile* dest,
+                                       jlong compare_value) {
+  assert(VM_Version::supports_cx8(), "Atomic compare and exchange jlong not supported on this architecture!");
+  // Warning:  Arguments are swapped to avoid moving them for kernel call
+  return (*os::atomic_cmpxchg_long_func)(compare_value, exchange_value, dest);
+}
+
+#endif // !AARCH64
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
 #ifdef AARCH64
-  jint rv;
+  T rv;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -220,14 +249,19 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
     : "memory");
   return rv;
 #else
-  // Warning:  Arguments are swapped to avoid moving them for kernel call
-  return (*os::atomic_cmpxchg_func)(compare_value, exchange_value, dest);
+  return cmpxchg_using_helper<jint>(reorder_cmpxchg_func, exchange_value, dest, compare_value);
 #endif
 }
 
-inline jlong Atomic::cmpxchg (jlong exchange_value, volatile jlong* dest, jlong compare_value, cmpxchg_memory_order order) {
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
 #ifdef AARCH64
-  jlong rv;
+  T rv;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -245,21 +279,8 @@ inline jlong Atomic::cmpxchg (jlong exchange_value, volatile jlong* dest, jlong 
     : "memory");
   return rv;
 #else
-  assert(VM_Version::supports_cx8(), "Atomic compare and exchange jlong not supported on this architecture!");
-  return (*os::atomic_cmpxchg_long_func)(compare_value, exchange_value, dest);
+  return cmpxchg_using_helper<jlong>(reorder_cmpxchg_long_func, exchange_value, dest, compare_value);
 #endif
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
-#ifdef AARCH64
-  return (intptr_t)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
-#else
-  return (intptr_t)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value, order);
-#endif
-}
-
-inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void* compare_value, cmpxchg_memory_order order) {
-  return (void*)cmpxchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest, (intptr_t)compare_value, order);
 }
 
 #endif // OS_CPU_LINUX_ARM_VM_ATOMIC_LINUX_ARM_HPP

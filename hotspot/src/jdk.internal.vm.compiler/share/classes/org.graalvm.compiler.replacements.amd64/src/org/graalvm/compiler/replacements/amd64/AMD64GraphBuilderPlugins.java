@@ -31,6 +31,8 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
+import java.util.Arrays;
+
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool.RoundingMode;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -44,6 +46,7 @@ import org.graalvm.compiler.nodes.java.AtomicReadAndAddNode;
 import org.graalvm.compiler.nodes.java.AtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
+import org.graalvm.compiler.replacements.ArraysSubstitutions;
 import org.graalvm.compiler.replacements.IntegerSubstitutions;
 import org.graalvm.compiler.replacements.LongSubstitutions;
 import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.UnsafeGetPlugin;
@@ -73,6 +76,7 @@ public class AMD64GraphBuilderPlugins {
                 registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider);
                 registerStringPlugins(invocationPlugins, arch, replacementsBytecodeProvider);
                 registerMathPlugins(invocationPlugins, arch, arithmeticStubs, replacementsBytecodeProvider);
+                registerArraysEqualsPlugins(invocationPlugins, replacementsBytecodeProvider);
             }
         });
     }
@@ -228,5 +232,11 @@ public class AMD64GraphBuilderPlugins {
             r.registerOptional3("get" + kind.name() + "Unaligned", Receiver.class, Object.class, long.class, new UnsafeGetPlugin(kind, false));
             r.registerOptional4("put" + kind.name() + "Unaligned", Receiver.class, Object.class, long.class, javaClass, new UnsafePutPlugin(kind, false));
         }
+    }
+
+    private static void registerArraysEqualsPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
+        Registration r = new Registration(plugins, Arrays.class, bytecodeProvider);
+        r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", float[].class, float[].class);
+        r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", double[].class, double[].class);
     }
 }

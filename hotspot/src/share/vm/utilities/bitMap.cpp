@@ -210,12 +210,12 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
-    intptr_t* pw  = (intptr_t*)word_addr(beg);
-    intptr_t  w   = *pw;
-    intptr_t  mr  = (intptr_t)inverted_bit_mask_for_range(beg, end);
-    intptr_t  nw  = value ? (w | ~mr) : (w & mr);
+    bm_word_t* pw = word_addr(beg);
+    bm_word_t  w  = *pw;
+    bm_word_t  mr = inverted_bit_mask_for_range(beg, end);
+    bm_word_t  nw = value ? (w | ~mr) : (w & mr);
     while (true) {
-      intptr_t res = Atomic::cmpxchg_ptr(nw, pw, w);
+      bm_word_t res = Atomic::cmpxchg(nw, pw, w);
       if (res == w) break;
       w  = res;
       nw = value ? (w | ~mr) : (w & mr);
@@ -617,7 +617,7 @@ bool BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
   return true;
 }
 
-BitMap::idx_t* BitMap::_pop_count_table = NULL;
+const BitMap::idx_t* BitMap::_pop_count_table = NULL;
 
 void BitMap::init_pop_count_table() {
   if (_pop_count_table == NULL) {
@@ -626,11 +626,8 @@ void BitMap::init_pop_count_table() {
       table[i] = num_set_bits(i);
     }
 
-    intptr_t res = Atomic::cmpxchg_ptr((intptr_t)  table,
-                                       (intptr_t*) &_pop_count_table,
-                                       (intptr_t)  NULL_WORD);
-    if (res != NULL_WORD) {
-      guarantee( _pop_count_table == (void*) res, "invariant" );
+    if (!Atomic::replace_if_null(table, &_pop_count_table)) {
+      guarantee(_pop_count_table != NULL, "invariant");
       FREE_C_HEAP_ARRAY(idx_t, table);
     }
   }
