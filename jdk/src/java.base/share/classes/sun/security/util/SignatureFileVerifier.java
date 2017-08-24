@@ -59,9 +59,15 @@ public class SignatureFileVerifier {
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    private static final DisabledAlgorithmConstraints JAR_DISABLED_CHECK =
+    /**
+     * Holder class to delay initialization of DisabledAlgorithmConstraints
+     * until needed.
+     */
+    private static class ConfigurationHolder {
+        static final DisabledAlgorithmConstraints JAR_DISABLED_CHECK =
             new DisabledAlgorithmConstraints(
                     DisabledAlgorithmConstraints.PROPERTY_JAR_DISABLED_ALGS);
+    }
 
     private ArrayList<CodeSigner[]> signerCache;
 
@@ -371,7 +377,7 @@ public class SignatureFileVerifier {
         Boolean permitted = permittedAlgs.get(algorithm);
         if (permitted == null) {
             try {
-                JAR_DISABLED_CHECK.permits(algorithm,
+                ConfigurationHolder.JAR_DISABLED_CHECK.permits(algorithm,
                         new ConstraintsParameters(timestamp));
             } catch(GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
