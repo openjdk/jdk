@@ -993,12 +993,19 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
 
   // info for exceptions
-  CodeEmitInfo* info_for_exception = state_for (x);
+  CodeEmitInfo* info_for_exception =
+      (x->needs_exception_state() ? state_for(x) :
+                                    state_for(x, x->state_before(), true /*ignore_xhandler*/));
 
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == NULL, "can't patch this");
     stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+  } else if (x->is_invokespecial_receiver_check()) {
+    assert(patching_info == NULL, "can't patch this");
+    stub = new DeoptimizeStub(info_for_exception,
+                              Deoptimization::Reason_class_check,
+                              Deoptimization::Action_none);
   } else {
     stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }

@@ -51,6 +51,7 @@ import sun.security.util.SecurityConstants;
  *
  *
  * @author Roland Schemers
+ * @since 1.2
  *
  * @serial exclude
  */

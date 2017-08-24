@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,32 +180,32 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapFloat(base, offset, 1.0f, 2.0f);
-            assertEquals(r, true, "success compareAndSwap float");
+            boolean r = UNSAFE.compareAndSetFloat(base, offset, 1.0f, 2.0f);
+            assertEquals(r, true, "success compareAndSet float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 2.0f, "success compareAndSwap float value");
+            assertEquals(x, 2.0f, "success compareAndSet float value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapFloat(base, offset, 1.0f, 3.0f);
-            assertEquals(r, false, "failing compareAndSwap float");
+            boolean r = UNSAFE.compareAndSetFloat(base, offset, 1.0f, 3.0f);
+            assertEquals(r, false, "failing compareAndSet float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 2.0f, "failing compareAndSwap float value");
+            assertEquals(x, 2.0f, "failing compareAndSet float value");
         }
 
         // Advanced compare
         {
-            float r = UNSAFE.compareAndExchangeFloatVolatile(base, offset, 2.0f, 1.0f);
-            assertEquals(r, 2.0f, "success compareAndExchangeVolatile float");
+            float r = UNSAFE.compareAndExchangeFloat(base, offset, 2.0f, 1.0f);
+            assertEquals(r, 2.0f, "success compareAndExchange float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 1.0f, "success compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "success compareAndExchange float value");
         }
 
         {
-            float r = UNSAFE.compareAndExchangeFloatVolatile(base, offset, 2.0f, 3.0f);
-            assertEquals(r, 1.0f, "failing compareAndExchangeVolatile float");
+            float r = UNSAFE.compareAndExchangeFloat(base, offset, 2.0f, 3.0f);
+            assertEquals(r, 1.0f, "failing compareAndExchange float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 1.0f, "failing compareAndExchangeVolatile float value");
+            assertEquals(x, 1.0f, "failing compareAndExchange float value");
         }
 
         {
@@ -239,41 +239,41 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapFloat(base, offset, 1.0f, 2.0f);
+                success = UNSAFE.weakCompareAndSetFloatPlain(base, offset, 1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSwap float");
+            assertEquals(success, true, "weakCompareAndSetPlain float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 2.0f, "weakCompareAndSwap float value");
+            assertEquals(x, 2.0f, "weakCompareAndSetPlain float value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapFloatAcquire(base, offset, 2.0f, 1.0f);
+                success = UNSAFE.weakCompareAndSetFloatAcquire(base, offset, 2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire float");
+            assertEquals(success, true, "weakCompareAndSetAcquire float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 1.0f, "weakCompareAndSwapAcquire float");
+            assertEquals(x, 1.0f, "weakCompareAndSetAcquire float");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapFloatRelease(base, offset, 1.0f, 2.0f);
+                success = UNSAFE.weakCompareAndSetFloatRelease(base, offset, 1.0f, 2.0f);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease float");
+            assertEquals(success, true, "weakCompareAndSetRelease float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 2.0f, "weakCompareAndSwapRelease float");
+            assertEquals(x, 2.0f, "weakCompareAndSetRelease float");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapFloatVolatile(base, offset, 2.0f, 1.0f);
+                success = UNSAFE.weakCompareAndSetFloat(base, offset, 2.0f, 1.0f);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile float");
+            assertEquals(success, true, "weakCompareAndSet float");
             float x = UNSAFE.getFloat(base, offset);
-            assertEquals(x, 1.0f, "weakCompareAndSwapVolatile float");
+            assertEquals(x, 1.0f, "weakCompareAndSet float");
         }
 
         UNSAFE.putFloat(base, offset, 2.0f);
@@ -306,4 +306,3 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
     }
 }
-
