@@ -240,14 +240,14 @@ public class AquaImageFactory {
         }
     }
 
-    protected static final NamedImageSingleton northArrow = new NamedImageSingleton("NSMenuScrollUp");
-    protected static final IconUIResourceSingleton northArrowIcon = new IconUIResourceSingleton(northArrow);
-    protected static final NamedImageSingleton southArrow = new NamedImageSingleton("NSMenuScrollDown");
-    protected static final IconUIResourceSingleton southArrowIcon = new IconUIResourceSingleton(southArrow);
-    protected static final NamedImageSingleton westArrow = new NamedImageSingleton("NSMenuSubmenuLeft");
-    protected static final IconUIResourceSingleton westArrowIcon = new IconUIResourceSingleton(westArrow);
-    protected static final NamedImageSingleton eastArrow = new NamedImageSingleton("NSMenuSubmenu");
-    protected static final IconUIResourceSingleton eastArrowIcon = new IconUIResourceSingleton(eastArrow);
+    private static final NamedImageSingleton northArrow = new NamedImageSingleton("NSMenuScrollUp");
+    private static final IconUIResourceSingleton northArrowIcon = new IconUIResourceSingleton(northArrow);
+    private static final NamedImageSingleton southArrow = new NamedImageSingleton("NSMenuScrollDown");
+    private static final IconUIResourceSingleton southArrowIcon = new IconUIResourceSingleton(southArrow);
+    private static final NamedImageSingleton westArrow = new NamedImageSingleton("NSMenuSubmenuLeft");
+    private static final IconUIResourceSingleton westArrowIcon = new IconUIResourceSingleton(westArrow);
+    private static final NamedImageSingleton eastArrow = new NamedImageSingleton("NSMenuSubmenu");
+    private static final IconUIResourceSingleton eastArrowIcon = new IconUIResourceSingleton(eastArrow);
 
     static Image getArrowImageForDirection(final int direction) {
         switch(direction) {

@@ -26,7 +26,7 @@
  * @bug 1234567
  * @summary Open, connect then close multi-connectors.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean MultiOpenCloseTest
  * @run build MultiOpenCloseTest
  * @run main MultiOpenCloseTest

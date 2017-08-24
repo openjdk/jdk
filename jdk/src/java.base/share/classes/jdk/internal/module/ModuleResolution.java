@@ -39,6 +39,10 @@ public final class ModuleResolution {
         this.value = value;
     }
 
+    public int value() {
+        return value;
+    }
+
     public static ModuleResolution empty() {
         return new ModuleResolution(0);
     }
@@ -74,35 +78,30 @@ public final class ModuleResolution {
             throw new InternalError("cannot add deprecated for removal to " + value);
         return new ModuleResolution(value | WARN_DEPRECATED_FOR_REMOVAL);
     }
+
     public ModuleResolution withIncubating() {
         if ((value & (WARN_DEPRECATED | WARN_DEPRECATED_FOR_REMOVAL)) != 0)
             throw new InternalError("cannot add incubating to " + value);
         return new ModuleResolution(value | WARN_INCUBATING);
     }
 
-    public int value() {
-        return value;
-    }
-
     public static boolean doNotResolveByDefault(ModuleReference mref) {
         // get the DO_NOT_RESOLVE_BY_DEFAULT flag, if any
-        if (!(mref instanceof ModuleReferenceImpl))
-            return false;
-
-        ModuleResolution mres = ((ModuleReferenceImpl)mref).moduleResolution();
-        if (mres != null)
-            return mres.doNotResolveByDefault();
+        if (mref instanceof ModuleReferenceImpl) {
+            ModuleResolution mres = ((ModuleReferenceImpl) mref).moduleResolution();
+            if (mres != null)
+                return mres.doNotResolveByDefault();
+        }
 
         return false;
     }
 
     public static boolean hasIncubatingWarning(ModuleReference mref) {
-        if (!(mref instanceof ModuleReferenceImpl))
-            return false;
-
-        ModuleResolution mres = ((ModuleReferenceImpl)mref).moduleResolution();
-        if (mres != null)
-            return mres.hasIncubatingWarning();
+        if (mref instanceof ModuleReferenceImpl) {
+            ModuleResolution mres = ((ModuleReferenceImpl) mref).moduleResolution();
+            if (mres != null)
+                return mres.hasIncubatingWarning();
+        }
 
         return false;
     }

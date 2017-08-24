@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,7 @@ import java.util.ServiceConfigurationError;
  * A typical output document format may be Postscript(TM).
  * <p>
  * This class is implemented by a service and located by the
- * implementation using the
- * <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">
- * SPI JAR File specification</a>.
+ * implementation using the {@link java.util.ServiceLoader} facility.
  * <p>
  * Applications locate instances of this class by calling the
  * {@link #lookupStreamPrintServiceFactories(DocFlavor, String)} method.

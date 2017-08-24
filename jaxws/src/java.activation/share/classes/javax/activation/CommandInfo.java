@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,9 @@ public class CommandInfo {
      *                  passed to the command.
      * @param loader    The ClassLoader to be used to instantiate the bean.
      * @return The bean
+     * @exception       IOException     for failures reading data
+     * @exception       ClassNotFoundException  if command object class can't
+     *                                          be found
      * @see java.beans.Beans#instantiate
      * @see javax.activation.CommandObject
      */
