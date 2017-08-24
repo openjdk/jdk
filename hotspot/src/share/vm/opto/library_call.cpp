@@ -5171,6 +5171,10 @@ bool LibraryCallKit::inline_arraycopy() {
                     Deoptimization::Action_make_not_entrant);
       assert(stopped(), "Should be stopped");
     }
+
+    const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
+    const Type *toop = TypeOopPtr::make_from_klass(dest_klass_t->klass());
+    src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
   }
 
   arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,19 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Prints a stack trace before returning null.
+     * Used by the various helper functions which parse information from
+     * VM properties in the case where they don't find an expected property
+     * or a propoerty doesn't conform to an expected format.
+     *
+     * @return null
+     */
+    private String nullWithException(String message) {
+        new Exception(message).printStackTrace();
+        return null;
+    }
+
+    /**
      * @return vm.simpleArch value of "os.simpleArch" property of tested JDK.
      */
     protected String vmArch() {
@@ -96,7 +109,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // E.g. "Java HotSpot(TM) 64-Bit Server VM"
         String vmName = System.getProperty("java.vm.name");
         if (vmName == null) {
-            return null;
+            return nullWithException("Can't get 'java.vm.name' property");
         }
 
         Pattern startP = Pattern.compile(".* (\\S+) VM");
@@ -104,7 +117,7 @@ public class VMProps implements Callable<Map<String, String>> {
         if (m.matches()) {
             return m.group(1).toLowerCase();
         }
-        return null;
+        return nullWithException("Can't get VM flavor from 'java.vm.name'");
     }
 
     /**
@@ -114,18 +127,16 @@ public class VMProps implements Callable<Map<String, String>> {
         // E.g. "mixed mode"
         String vmInfo = System.getProperty("java.vm.info");
         if (vmInfo == null) {
-            return null;
+            return nullWithException("Can't get 'java.vm.info' property");
         }
-        int k = vmInfo.toLowerCase().indexOf(" mode");
-        if (k < 0) {
-            return null;
-        }
-        vmInfo = vmInfo.substring(0, k);
-        switch (vmInfo) {
-            case "mixed" : return "Xmixed";
-            case "compiled" : return "Xcomp";
-            case "interpreted" : return "Xint";
-            default: return null;
+        if (vmInfo.toLowerCase().indexOf("mixed mode") != -1) {
+            return "Xmixed";
+        } else if (vmInfo.toLowerCase().indexOf("compiled mode") != -1) {
+            return "Xcomp";
+        } else if (vmInfo.toLowerCase().indexOf("interpreted mode") != -1) {
+            return "Xint";
+        } else {
+            return nullWithException("Can't get compilation mode from 'java.vm.info'");
         }
     }
 
@@ -133,7 +144,12 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return VM bitness, the value of the "sun.arch.data.model" property.
      */
     protected String vmBits() {
-        return System.getProperty("sun.arch.data.model");
+        String dataModel = System.getProperty("sun.arch.data.model");
+        if (dataModel != null) {
+            return dataModel;
+        } else {
+            return nullWithException("Can't get 'sun.arch.data.model' property");
+        }
     }
 
     /**
@@ -158,7 +174,12 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return debug level value extracted from the "jdk.debug" property.
      */
     protected String vmDebug() {
-        return "" + System.getProperty("jdk.debug").contains("debug");
+        String debug = System.getProperty("jdk.debug");
+        if (debug != null) {
+            return "" + debug.contains("debug");
+        } else {
+            return nullWithException("Can't get 'jdk.debug' property");
+        }
     }
 
     /**

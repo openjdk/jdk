@@ -28,6 +28,7 @@ import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class AnnotationsTest {
     public void testNamedModule() throws IOException {
 
         // "deprecate" java.xml
-        Path dir = Files.createTempDirectory("mods");
+        Path dir = Files.createTempDirectory(Paths.get(""), "mods");
         deprecateModule("java.xml", true, "9", dir);
 
         // "load" the cloned java.xml

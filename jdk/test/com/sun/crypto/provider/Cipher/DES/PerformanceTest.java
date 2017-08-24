@@ -58,11 +58,15 @@ public class PerformanceTest {
         (byte)0xfe,(byte)0xdc,(byte)0xba,(byte)0x98,
         (byte)0x76,(byte)0x54,(byte)0x32,(byte)0x10};
 
-    public static byte[] plain_data = "Isaiah, a little boy is dead. He fell from the roof of an apartment house, just a few days before Christmas. The only person who truly grieves for the boy is Smilla Jasperson, a polar researcher. Smilla was Isaiah's only friend. Isaiah came with his alcoholic mother from Greenland but never really got used to life in Copenhagen. Smilla's mother was also from Greenland. Smilla feels a particular affinity to the arctic landscape. She knows a lot about the snow and how to read its movements and is convinced that the boy's death was not accidental.".getBytes();
-
-    // The codemgrtool won't let me checkin this line, so I had to break it up.
-
-    /* Smilla decides to embark upon her own investigations but soon finds  herself running up against a brick wall. Isaiah's mother, Juliane, mistrusts her and the authorities also make life difficult for Smilla. But she won't let go. Then there's this mechanic ­ a reticent, inscrutable sort of guy ­ who lives in the same apartment building. He also knew the boy and even constructed a workbench for him in his cellar workshop. The mechanic tells Smilla that he'd like to help her, but then again, he may just be one of those who seem to want to dog her heels. End ".getBytes();*/
+    public static byte[] plain_data =
+            ("Isaiah, a little boy is dead. He fell from the roof of an apartment house, "
+            + "just a few days before Christmas. The only person who truly grieves for "
+            + "the boy is Smilla Jasperson, a polar researcher. Smilla was Isaiah's "
+            + "only friend. Isaiah came with his alcoholic mother from Greenland but "
+            + "never really got used to life in Copenhagen. Smilla's mother was also "
+            + "from Greenland. Smilla feels a particular affinity to the arctic landscape. "
+            + "She knows a lot about the snow and how to read its movements and is "
+            + "convinced that the boy's death was not accidental.").getBytes();
 
     static int[] dataSizes = {1024, 8192};
     static String[] crypts = {"DES", "DESede"};
