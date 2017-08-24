@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,32 +151,32 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapBoolean(base, offset, true, false);
-            assertEquals(r, true, "success compareAndSwap boolean");
+            boolean r = UNSAFE.compareAndSetBoolean(base, offset, true, false);
+            assertEquals(r, true, "success compareAndSet boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "success compareAndSwap boolean value");
+            assertEquals(x, false, "success compareAndSet boolean value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapBoolean(base, offset, true, false);
-            assertEquals(r, false, "failing compareAndSwap boolean");
+            boolean r = UNSAFE.compareAndSetBoolean(base, offset, true, false);
+            assertEquals(r, false, "failing compareAndSet boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "failing compareAndSwap boolean value");
+            assertEquals(x, false, "failing compareAndSet boolean value");
         }
 
         // Advanced compare
         {
-            boolean r = UNSAFE.compareAndExchangeBooleanVolatile(base, offset, false, true);
-            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean r = UNSAFE.compareAndExchangeBoolean(base, offset, false, true);
+            assertEquals(r, false, "success compareAndExchange boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "success compareAndExchange boolean value");
         }
 
         {
-            boolean r = UNSAFE.compareAndExchangeBooleanVolatile(base, offset, false, false);
-            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean r = UNSAFE.compareAndExchangeBoolean(base, offset, false, false);
+            assertEquals(r, true, "failing compareAndExchange boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+            assertEquals(x, true, "failing compareAndExchange boolean value");
         }
 
         {
@@ -210,41 +210,41 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapBoolean(base, offset, true, false);
+                success = UNSAFE.weakCompareAndSetBooleanPlain(base, offset, true, false);
             }
-            assertEquals(success, true, "weakCompareAndSwap boolean");
+            assertEquals(success, true, "weakCompareAndSetPlain boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "weakCompareAndSwap boolean value");
+            assertEquals(x, false, "weakCompareAndSetPlain boolean value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapBooleanAcquire(base, offset, false, true);
+                success = UNSAFE.weakCompareAndSetBooleanAcquire(base, offset, false, true);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire boolean");
+            assertEquals(success, true, "weakCompareAndSetAcquire boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "weakCompareAndSwapAcquire boolean");
+            assertEquals(x, true, "weakCompareAndSetAcquire boolean");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapBooleanRelease(base, offset, true, false);
+                success = UNSAFE.weakCompareAndSetBooleanRelease(base, offset, true, false);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease boolean");
+            assertEquals(success, true, "weakCompareAndSetRelease boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, false, "weakCompareAndSwapRelease boolean");
+            assertEquals(x, false, "weakCompareAndSetRelease boolean");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapBooleanVolatile(base, offset, false, true);
+                success = UNSAFE.weakCompareAndSetBoolean(base, offset, false, true);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile boolean");
+            assertEquals(success, true, "weakCompareAndSet boolean");
             boolean x = UNSAFE.getBoolean(base, offset);
-            assertEquals(x, true, "weakCompareAndSwapVolatile boolean");
+            assertEquals(x, true, "weakCompareAndSet boolean");
         }
 
         UNSAFE.putBoolean(base, offset, false);
@@ -260,4 +260,3 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
     }
 
 }
-
