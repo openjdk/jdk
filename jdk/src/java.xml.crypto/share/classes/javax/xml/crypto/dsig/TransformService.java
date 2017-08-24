@@ -69,11 +69,10 @@ import javax.xml.crypto.dsig.spec.TransformParameterSpec;
  * <code>TransformService</code> implementations that support the DOM
  * mechanism type must abide by the DOM interoperability requirements defined
  * in the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#DOM%20Mechanism%20Requirements">
- * DOM Mechanism Requirements</a> section of the API overview. See the
- * <a href="../../../../../technotes/guides/security/xmldsig/overview.html#Service%20Provider">
- * Service Providers</a> section of the API overview for a list of standard
- * mechanism types.
+ * {@extLink security_guide_xmldsig_rqmts DOM Mechanism Requirements} section
+ * of the API overview. See the
+ * {@extLink security_guide_xmldsig_provider Service Providers} section of
+ * the API overview for a list of standard mechanism types.
  * <p>
  * Once a <code>TransformService</code> has been created, it can be used
  * to process <code>Transform</code> or <code>CanonicalizationMethod</code>

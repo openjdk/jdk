@@ -36,8 +36,12 @@ module jdk.attach {
 
     exports com.sun.tools.attach;
     exports com.sun.tools.attach.spi;
+
     exports sun.tools.attach to
         jdk.jcmd;
+
     uses com.sun.tools.attach.spi.AttachProvider;
-    provides com.sun.tools.attach.spi.AttachProvider with sun.tools.attach.AttachProviderImpl;
+
+    provides com.sun.tools.attach.spi.AttachProvider with
+        sun.tools.attach.AttachProviderImpl;
 }

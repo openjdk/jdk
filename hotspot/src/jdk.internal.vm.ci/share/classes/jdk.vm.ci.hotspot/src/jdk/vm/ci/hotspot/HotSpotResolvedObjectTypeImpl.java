@@ -412,6 +412,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
+    public ResolvedJavaType getHostClass() {
+        if (isArray()) {
+            return null;
+        }
+        return compilerToVM().getHostClass(this);
+    }
+
+    @Override
     public boolean isJavaLangObject() {
         return javaClass.equals(Object.class);
     }

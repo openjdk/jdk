@@ -57,7 +57,7 @@
  * accessible name, description, <a href="#AccessibleRole">role</a>, and
  * <a href="#AccessibleState">state</a> of the object, as well as information
  * about the parent and children of the object.&nbsp; In addition,
- * JavaBeans&trade; property change support is also included to allow assisitive
+ * JavaBeans&trade; property change support is also included to allow assistive
  * technologies learn when the values of the accessible properties change.
  * AccessibleContext also contains methods for obtaining more specific
  * accessibility information about a component. If the component supports it,
@@ -175,7 +175,7 @@
  * <a href="#Accessible">Accessible</a>) and then calling the
  * {@code getAccessibleAction} method of
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
- * not null, the object supports this interface.
+ * not {@code null}, the object supports this interface.
  *
  * <h3> <a id="AccessibleComponent"></a><a href="AccessibleComponent.html">
  * Interface AccessibleComponent</a></h3>
@@ -188,7 +188,7 @@
  * <a href="#Accessible">Accessible</a>) and then calling the
  * {@code getAccessibleComponent} method of
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
- * not null, the object supports this interface.
+ * not {@code null}, the object supports this interface.
  *
  * <h3><a id="AccessibleSelection"></a><a href="AccessibleSelection.html">
  * Interface AccessibleSelection</a></h3>
@@ -204,7 +204,7 @@
  * <a href="#Accessible">Accessible</a>) and then calling the
  * {@code getAccessibleSelection} method of
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
- * not null, the object supports this interface.
+ * not {@code null}, the object supports this interface.
  *
  * <h3><a id="AccessibleText"></a><a href="AccessibleText.html">Interface
  * AccessibleText</a></h3>
@@ -228,7 +228,7 @@
  * (see <a href="#Accessible">Accessible</a>) and then calling the
  * {@code getAccessibleText} method of
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
- * not null, the object supports this interface.
+ * not {@code null}, the object supports this interface.
  *
  * <h3><a id="AccessibleHypertext"></a> <a href="AccessibleHypertext.html">
  * Interface AccessibleHypertext</a></h3>
@@ -268,7 +268,7 @@
  * <a href="#Accessible">Accessible</a>) and then calling the
  * {@code getAccessibleValue} method of
  * <a href="#AccessibleContext">AccessibleContext</a>. If the return value is
- * not null, the object supports this interface.
+ * not {@code null}, the object supports this interface.
  *
  * @since 1.2
  */
