@@ -73,7 +73,8 @@ import sun.java2d.SunCompositeContext;
  * equation in the Porter and Duff paper:
  *
  * <blockquote>
- * <table summary="layout">
+ * <table class="borderless">
+ * <caption style="display:none">Factors</caption>
  * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
  * <tr><td><em>A<sub>s</sub></em><td>the alpha component of the source pixel
  * <tr><td><em>C<sub>s</sub></em><td>a color component of the source pixel in premultiplied form
@@ -113,7 +114,8 @@ import sun.java2d.SunCompositeContext;
  * the blending equation in the Porter and Duff paper:
  *
  * <blockquote>
- * <table summary="layout">
+ * <table class="borderless">
+ * <caption style="display:none">Factors</caption>
  * <tr><th style="text-align:left">Factor&nbsp;&nbsp;<th style="text-align:left">Definition
  * <tr><td><em>C<sub>sr</sub></em> <td>one of the raw color components of the source pixel
  * <tr><td><em>C<sub>dr</sub></em> <td>one of the raw color components of the destination pixel

@@ -368,11 +368,15 @@ public class SystemTray {
      * Adds a {@code PropertyChangeListener} to the list of listeners for the
      * specific property. The following properties are currently supported:
      *
-     * <table border=1 summary="SystemTray properties">
+     * <table class="striped">
+     * <caption>SystemTray properties</caption>
+     * <thead>
      * <tr>
      *    <th>Property</th>
      *    <th>Description</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *    <td>{@code trayIcons}</td>
      *    <td>The {@code SystemTray}'s array of {@code TrayIcon} objects.
@@ -389,6 +393,7 @@ public class SystemTray {
      *        when the system tray becomes available or unavailable on the desktop.<br>
      *        The property is accessed by the {@link #getSystemTray} method.</td>
      * </tr>
+     * </tbody>
      * </table>
      * <p>
      * The {@code listener} listens to property changes only in this context.

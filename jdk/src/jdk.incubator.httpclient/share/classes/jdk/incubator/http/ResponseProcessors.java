@@ -51,21 +51,7 @@ import jdk.incubator.http.internal.common.Log;
 
 class ResponseProcessors {
 
-    abstract static class AbstractProcessor<T>
-        implements HttpResponse.BodyProcessor<T>
-    {
-        HttpClientImpl client;
-
-        synchronized void setClient(HttpClientImpl client) {
-            this.client = client;
-        }
-
-        synchronized HttpClientImpl getClient() {
-            return client;
-        }
-    }
-
-    static class ConsumerProcessor extends AbstractProcessor<Void> {
+    static class ConsumerProcessor implements HttpResponse.BodyProcessor<Void> {
         private final Consumer<Optional<byte[]>> consumer;
         private Flow.Subscription subscription;
         private final CompletableFuture<Void> result = new MinimalFuture<>();
@@ -106,7 +92,7 @@ class ResponseProcessors {
 
     }
 
-    static class PathProcessor extends AbstractProcessor<Path> {
+    static class PathProcessor implements HttpResponse.BodyProcessor<Path> {
 
         private final Path file;
         private final CompletableFuture<Path> result = new MinimalFuture<>();
@@ -163,7 +149,7 @@ class ResponseProcessors {
         }
     }
 
-    static class ByteArrayProcessor<T> extends AbstractProcessor<T> {
+    static class ByteArrayProcessor<T> implements HttpResponse.BodyProcessor<T> {
         private final Function<byte[], T> finisher;
         private final CompletableFuture<T> result = new MinimalFuture<>();
         private final List<ByteBuffer> received = new ArrayList<>();
@@ -301,7 +287,7 @@ class ResponseProcessors {
     /**
      * Currently this consumes all of the data and ignores it
      */
-    static class NullProcessor<T> extends AbstractProcessor<T> {
+    static class NullProcessor<T> implements HttpResponse.BodyProcessor<T> {
 
         Flow.Subscription subscription;
         final CompletableFuture<T> cf = new MinimalFuture<>();

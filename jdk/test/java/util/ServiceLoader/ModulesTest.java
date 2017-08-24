@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /**
  * @test
- * @library modules
  * @modules java.scripting
+ * @library modules /lib/testlibrary
  * @build bananascript/*
- * @compile src/pearscript/org/pear/PearScriptEngineFactory.java
- *          src/pearscript/org/pear/PearScript.java
- * @run testng/othervm Basic
+ * @build JarUtils
+ * @compile classpath/pearscript/org/pear/PearScriptEngineFactory.java
+ *          classpath/pearscript/org/pear/PearScript.java
+ * @run testng/othervm ModulesTest
  * @summary Basic test for ServiceLoader with a provider deployed as a module.
  */
 
@@ -38,8 +39,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.script.ScriptEngineFactory;
 
@@ -56,16 +64,16 @@ import static org.testng.Assert.*;
  *    with a service configuration file.
  */
 
-public class Basic {
+public class ModulesTest {
 
     // Copy the services configuration file for "pearscript" into place.
     @BeforeTest
     public void setup() throws Exception {
-        Path src = Paths.get(System.getProperty("test.src", ""));
-        Path classes = Paths.get(System.getProperty("test.classes", ""));
+        Path src = Paths.get(System.getProperty("test.src"));
+        Path classes = Paths.get(System.getProperty("test.classes"));
         String st = ScriptEngineFactory.class.getName();
         Path config = Paths.get("META-INF", "services", st);
-        Path source = src.resolve("src").resolve("pearscript").resolve(config);
+        Path source = src.resolve("classpath").resolve("pearscript").resolve(config);
         Path target = classes.resolve(config);
         Files.createDirectories(target.getParent());
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
@@ -204,7 +212,7 @@ public class Basic {
 
         // iterator
         ServiceLoader<ScriptEngineFactory> loader
-                = ServiceLoader.load(ScriptEngineFactory.class, pcl);
+            = ServiceLoader.load(ScriptEngineFactory.class, pcl);
         Set<String> names = collectAll(loader)
                 .stream()
                 .map(ScriptEngineFactory::getEngineName)
@@ -220,6 +228,44 @@ public class Basic {
                 .collect(Collectors.toSet());
         assertFalse(names.contains("BananaScriptEngine"));
         assertFalse(names.contains("PearScriptEngine"));
+    }
+
+    /**
+     * Basic test of ServiceLoader.load where the service provider module is an
+     * automatic module.
+     */
+    @Test
+    public void testWithAutomaticModule() throws Exception {
+        Path classes = Paths.get(System.getProperty("test.classes"));
+        Path jar = Files.createTempDirectory("lib").resolve("pearscript.jar");
+        JarUtils.createJarFile(jar, classes, "META-INF", "org");
+
+        ModuleFinder finder = ModuleFinder.of(jar);
+        ModuleLayer bootLayer = ModuleLayer.boot();
+        Configuration parent = bootLayer.configuration();
+        Configuration cf = parent.resolveAndBind(finder, ModuleFinder.of(), Set.of());
+        assertTrue(cf.modules().size() == 1);
+
+        ClassLoader scl = ClassLoader.getSystemClassLoader();
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        assertTrue(layer.modules().size() == 1);
+
+        ClassLoader loader = layer.findLoader("pearscript");
+        ScriptEngineFactory factory;
+
+        // load using the class loader as context
+        factory = ServiceLoader.load(ScriptEngineFactory.class, loader)
+                .findFirst()
+                .orElse(null);
+        assertNotNull(factory);
+        assertTrue(factory.getClass().getClassLoader() == loader);
+
+        // load using the layer as context
+        factory = ServiceLoader.load(layer, ScriptEngineFactory.class)
+                .findFirst()
+                .orElse(null);
+        assertNotNull(factory);
+        assertTrue(factory.getClass().getClassLoader() == loader);
     }
 
     /**

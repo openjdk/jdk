@@ -129,37 +129,6 @@ module java.base {
     exports javax.security.cert;
 
 
-    // the service types defined by the APIs in this module
-
-    uses java.lang.System.LoggerFinder;
-    uses java.net.ContentHandlerFactory;
-    uses java.net.spi.URLStreamHandlerProvider;
-    uses java.nio.channels.spi.AsynchronousChannelProvider;
-    uses java.nio.channels.spi.SelectorProvider;
-    uses java.nio.charset.spi.CharsetProvider;
-    uses java.nio.file.spi.FileSystemProvider;
-    uses java.nio.file.spi.FileTypeDetector;
-    uses java.security.Provider;
-    uses java.text.spi.BreakIteratorProvider;
-    uses java.text.spi.CollatorProvider;
-    uses java.text.spi.DateFormatProvider;
-    uses java.text.spi.DateFormatSymbolsProvider;
-    uses java.text.spi.DecimalFormatSymbolsProvider;
-    uses java.text.spi.NumberFormatProvider;
-    uses java.time.chrono.AbstractChronology;
-    uses java.time.chrono.Chronology;
-    uses java.time.zone.ZoneRulesProvider;
-    uses java.util.spi.CalendarDataProvider;
-    uses java.util.spi.CalendarNameProvider;
-    uses java.util.spi.CurrencyNameProvider;
-    uses java.util.spi.LocaleNameProvider;
-    uses java.util.spi.ResourceBundleControlProvider;
-    uses java.util.spi.ResourceBundleProvider;
-    uses java.util.spi.TimeZoneNameProvider;
-    uses java.util.spi.ToolProvider;
-    uses javax.security.auth.spi.LoginModule;
-
-
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
@@ -192,11 +161,6 @@ module java.base {
         jdk.scripting.nashorn;
     exports jdk.internal.math to
         java.desktop;
-    exports jdk.internal.module to
-        java.instrument,
-        java.management.rmi,
-        jdk.jartool,
-        jdk.jlink;
     exports jdk.internal.misc to
         java.desktop,
         java.logging,
@@ -218,6 +182,11 @@ module java.base {
         jdk.scripting.nashorn.shell,
         jdk.unsupported,
         jdk.internal.vm.ci;
+    exports jdk.internal.module to
+        java.instrument,
+        java.management.rmi,
+        jdk.jartool,
+        jdk.jlink;
     exports jdk.internal.perf to
         java.desktop,
         java.management,
@@ -233,6 +202,9 @@ module java.base {
         jdk.dynalink,
         jdk.scripting.nashorn,
         jdk.unsupported;
+    exports jdk.internal.vm to
+        jdk.management.agent,
+        jdk.internal.jvmstat;
     exports jdk.internal.vm.annotation to
         jdk.unsupported,
         jdk.internal.vm.ci,
@@ -241,9 +213,6 @@ module java.base {
         jdk.jartool,
         jdk.jdeps,
         jdk.jlink;
-    exports jdk.internal.vm to
-        jdk.management.agent,
-        jdk.internal.jvmstat;
     exports sun.net to
         jdk.incubator.httpclient;
     exports sun.net.ext to
@@ -253,7 +222,8 @@ module java.base {
         jdk.naming.dns;
     exports sun.net.util to
         java.desktop,
-        jdk.jconsole;
+        jdk.jconsole,
+        jdk.incubator.httpclient;
     exports sun.net.www to
         java.desktop,
         jdk.incubator.httpclient,
@@ -349,7 +319,39 @@ module java.base {
     exports sun.util.resources to
         jdk.localedata;
 
+
+    // the service types defined by the APIs in this module
+
+    uses java.lang.System.LoggerFinder;
+    uses java.net.ContentHandlerFactory;
+    uses java.net.spi.URLStreamHandlerProvider;
+    uses java.nio.channels.spi.AsynchronousChannelProvider;
+    uses java.nio.channels.spi.SelectorProvider;
+    uses java.nio.charset.spi.CharsetProvider;
+    uses java.nio.file.spi.FileSystemProvider;
+    uses java.nio.file.spi.FileTypeDetector;
+    uses java.security.Provider;
+    uses java.text.spi.BreakIteratorProvider;
+    uses java.text.spi.CollatorProvider;
+    uses java.text.spi.DateFormatProvider;
+    uses java.text.spi.DateFormatSymbolsProvider;
+    uses java.text.spi.DecimalFormatSymbolsProvider;
+    uses java.text.spi.NumberFormatProvider;
+    uses java.time.chrono.AbstractChronology;
+    uses java.time.chrono.Chronology;
+    uses java.time.zone.ZoneRulesProvider;
+    uses java.util.spi.CalendarDataProvider;
+    uses java.util.spi.CalendarNameProvider;
+    uses java.util.spi.CurrencyNameProvider;
+    uses java.util.spi.LocaleNameProvider;
+    uses java.util.spi.ResourceBundleControlProvider;
+    uses java.util.spi.ResourceBundleProvider;
+    uses java.util.spi.TimeZoneNameProvider;
+    uses java.util.spi.ToolProvider;
+    uses javax.security.auth.spi.LoginModule;
+
     // JDK-internal service types
+
     uses jdk.internal.logger.DefaultLoggerFinder;
     uses sun.security.ssl.ClientKeyExchangeService;
     uses sun.text.spi.JavaTimeDateTimePatternProvider;
@@ -357,7 +359,6 @@ module java.base {
     uses sun.util.locale.provider.LocaleDataMetaInfo;
     uses sun.util.resources.LocaleData.CommonResourceBundleProvider;
     uses sun.util.resources.LocaleData.SupplementaryResourceBundleProvider;
-
 
     // Built-in service providers that are located via ServiceLoader
 
