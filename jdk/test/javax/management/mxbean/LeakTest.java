@@ -25,7 +25,7 @@
  * @bug 6482247
  * @summary Test that creating MXBeans does not introduce memory leaks.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run build LeakTest RandomMXBeanTest MerlinMXBean TigerMXBean
  * @run main LeakTest
  */

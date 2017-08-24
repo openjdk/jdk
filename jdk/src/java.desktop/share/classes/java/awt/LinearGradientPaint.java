@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,9 @@ import java.beans.ConstructorProperties;
  * <p>
  * This image demonstrates the example code above for each
  * of the three cycle methods:
- * <center>
+ * <p style="text-align:center">
  * <img src = "doc-files/LinearGradientPaint.png"
  * alt="image showing the output of the example code">
- * </center>
  *
  * @see java.awt.Paint
  * @see java.awt.Graphics2D#setPaint

@@ -23,6 +23,36 @@
  * questions.
  */
 
+/**
+ * Defines the <em>{@index jlink jlink tool}</em> tool for creating run-time
+ * images, the <em>{@index jmod jmod tool}</em> tool for creating and manipulating
+ * JMOD files, and the <em>{@index jimage jimage tool}</em> tool for inspecting
+ * the JDK implementation-specific container file for classes and resources.
+ *
+ * <p> This module provides the equivalent of command-line access to the
+ * <em>{@extLink jlink_tool_reference jlink}</em> and
+ * <em>{@extLink jmod_tool_reference jmod}</em> tools via the
+ * {@link java.util.spi.ToolProvider ToolProvider} SPI.
+ * Instances of the tools can be obtained by calling
+ * {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ * or the {@link java.util.ServiceLoader service loader} with the name
+ * {@code "jlink"} or {@code "jmod"} as appropriate.
+ *
+ * <p> <em>{@extLink jimage_tool_reference jimage}</em> only exists
+ * as a command-line tool, and does not provide any direct API.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jlink_tool_reference jlink},
+ *     {@extLink jmod_tool_reference jmod},
+ *     {@extLink jimage_tool_reference jimage}
+ * </dl>
+ *
+ * @provides java.util.spi.ToolProvider
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
