@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8134828
-   @summary Scrollbar thumb disappears with Nimbus L&F
-   @author Semyon Sadetsky
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 8134828
+ * @summary Scrollbar thumb disappears with Nimbus L&F
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import java.awt.*;
@@ -76,7 +78,7 @@ public class ScrollBarThumbVisibleTest
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
-                    frame.dispose();
+                    if (frame != null) { frame.dispose(); }
                 }
             });
         }

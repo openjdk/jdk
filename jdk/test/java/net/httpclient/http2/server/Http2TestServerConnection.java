@@ -133,10 +133,10 @@ public class Http2TestServerConnection {
     }
 
     void close() {
+        stopping = true;
         streams.forEach((i, q) -> {
             q.close();
         });
-        stopping = true;
         try {
             socket.close();
             // TODO: put a reset on each stream
@@ -557,7 +557,14 @@ public class Http2TestServerConnection {
     void writeLoop() {
         try {
             while (!stopping) {
-                Http2Frame frame = outputQ.take();
+                Http2Frame frame;
+                try {
+                    frame = outputQ.take();
+                } catch(IOException x) {
+                    if (stopping && x.getCause() instanceof InterruptedException) {
+                        break;
+                    } else throw x;
+                }
                 if (frame instanceof ResponseHeaders) {
                     ResponseHeaders rh = (ResponseHeaders)frame;
                     HeadersFrame hf = new HeadersFrame(rh.streamid(), rh.getFlags(), encodeHeaders(rh.headers));

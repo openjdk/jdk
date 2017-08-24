@@ -774,7 +774,7 @@ public class CopyOnWriteArrayListTest extends JSR166TestCase {
     }
 
     /**
-     * a deserialized serialized list is equal
+     * a deserialized/reserialized list equals original
      */
     public void testSerialization() throws Exception {
         List x = populatedArray(SIZE);

@@ -130,17 +130,17 @@ import sun.util.locale.provider.LocaleResources;
  * <table class=striped style="text-align: left">
  * <caption>Examples of WeekFields</caption>
  * <thead>
- * <tr><th>Date</th><td>Day-of-week</td>
- *  <td>First day: Monday<br>Minimal days: 4</td><td>First day: Monday<br>Minimal days: 5</td></tr>
+ * <tr><th scope="col">Date</th><th scope="col">Day-of-week</th>
+ *  <th scope="col">First day: Monday<br>Minimal days: 4</th><th scope="col">First day: Monday<br>Minimal days: 5</th></tr>
  * </thead>
  * <tbody>
- * <tr><th>2008-12-31</th><td>Wednesday</td>
+ * <tr><th scope="row">2008-12-31</th><td>Wednesday</td>
  *  <td>Week 5 of December 2008</td><td>Week 5 of December 2008</td></tr>
- * <tr><th>2009-01-01</th><td>Thursday</td>
+ * <tr><th scope="row">2009-01-01</th><td>Thursday</td>
  *  <td>Week 1 of January 2009</td><td>Week 0 of January 2009</td></tr>
- * <tr><th>2009-01-04</th><td>Sunday</td>
+ * <tr><th scope="row">2009-01-04</th><td>Sunday</td>
  *  <td>Week 1 of January 2009</td><td>Week 0 of January 2009</td></tr>
- * <tr><th>2009-01-05</th><td>Monday</td>
+ * <tr><th scope="row">2009-01-05</th><td>Monday</td>
  *  <td>Week 2 of January 2009</td><td>Week 1 of January 2009</td></tr>
  * </tbody>
  * </table>
@@ -164,17 +164,17 @@ import sun.util.locale.provider.LocaleResources;
  * <table class=striped style="text-align: left;">
  * <caption>Examples of WeekFields for week-based-year</caption>
  * <thead>
- * <tr><th>Date</th><td>Day-of-week</td>
- *  <td>First day: Monday<br>Minimal days: 4</td><td>First day: Monday<br>Minimal days: 5</td></tr>
+ * <tr><th scope="col">Date</th><th scope="col">Day-of-week</th>
+ *  <th scope="col">First day: Monday<br>Minimal days: 4</th><th scope="col">First day: Monday<br>Minimal days: 5</th></tr>
  * </thead>
  * <tbody>
- * <tr><th>2008-12-31</th><td>Wednesday</td>
+ * <tr><th scope="row">2008-12-31</th><td>Wednesday</td>
  *  <td>Week 1 of 2009</td><td>Week 53 of 2008</td></tr>
- * <tr><th>2009-01-01</th><td>Thursday</td>
+ * <tr><th scope="row">2009-01-01</th><td>Thursday</td>
  *  <td>Week 1 of 2009</td><td>Week 53 of 2008</td></tr>
- * <tr><th>2009-01-04</th><td>Sunday</td>
+ * <tr><th scope="row">2009-01-04</th><td>Sunday</td>
  *  <td>Week 1 of 2009</td><td>Week 53 of 2008</td></tr>
- * <tr><th>2009-01-05</th><td>Monday</td>
+ * <tr><th scope="row">2009-01-05</th><td>Monday</td>
  *  <td>Week 2 of 2009</td><td>Week 1 of 2009</td></tr>
  * </tbody>
  * </table>

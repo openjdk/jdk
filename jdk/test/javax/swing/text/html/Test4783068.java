@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 4783068
-   @summary Disabled components should render grayed-out HTML
-   @author Peter Zhelezniakov
-   @run main Test4783068
+/**
+ * @test
+ * @key headful
+ * @bug 4783068
+ * @summary Disabled components should render grayed-out HTML
+ * @author Peter Zhelezniakov
+ * @run main Test4783068
 */
 
 import java.awt.*;

@@ -150,73 +150,73 @@ import java.util.Locale;
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
  * <thead>
  *    <tr>
- *       <th id="ft" class="TableHeadingColor">FormatType
- *       <th id="fs" class="TableHeadingColor">FormatStyle
- *       <th id="sc" class="TableHeadingColor">Subformat Created
+ *       <th scope="col" class="TableHeadingColor">FormatType
+ *       <th scope="col" class="TableHeadingColor">FormatStyle
+ *       <th scope="col" class="TableHeadingColor">Subformat Created
  * </thead>
  * <tbody>
  *    <tr>
- *       <td headers="ft"><i>(none)</i>
- *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc"><code>null</code>
+ *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <td>{@code null}
  *    <tr>
- *       <td headers="ft" rowspan=5><code>number</code>
- *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc">{@link NumberFormat#getInstance(Locale) NumberFormat.getInstance}{@code (getLocale())}
+ *       <th scope="row" style="text-weight: normal" rowspan=5>{@code number}
+ *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <td>{@link NumberFormat#getInstance(Locale) NumberFormat.getInstance}{@code (getLocale())}
  *    <tr>
- *       <td headers="fs"><code>integer</code>
- *       <td headers="sc">{@link NumberFormat#getIntegerInstance(Locale) NumberFormat.getIntegerInstance}{@code (getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code integer}
+ *       <td>{@link NumberFormat#getIntegerInstance(Locale) NumberFormat.getIntegerInstance}{@code (getLocale())}
  *    <tr>
- *       <td headers="fs"><code>currency</code>
- *       <td headers="sc">{@link NumberFormat#getCurrencyInstance(Locale) NumberFormat.getCurrencyInstance}{@code (getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code currency}
+ *       <td>{@link NumberFormat#getCurrencyInstance(Locale) NumberFormat.getCurrencyInstance}{@code (getLocale())}
  *    <tr>
- *       <td headers="fs"><code>percent</code>
- *       <td headers="sc">{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code percent}
+ *       <td>{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
- *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc">{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
+ *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <td>{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
- *       <td headers="ft" rowspan=6><code>date</code>
- *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal" rowspan=6>{@code date}
+ *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>short</code>
- *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code short}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>medium</code>
- *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code medium}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>long</code>
- *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code long}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>full</code>
- *       <td headers="sc">{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code full}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
+ *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <td headers="ft" rowspan=6><code>time</code>
- *       <td headers="fs"><i>(none)</i>
- *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal" rowspan=6>{@code time}
+ *       <th scope="row" style="text-weight: normal"><i>(none)</i>
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>short</code>
- *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code short}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>medium</code>
- *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code medium}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>long</code>
- *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code long}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><code>full</code>
- *       <td headers="sc">{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
+ *       <th scope="row" style="text-weight: normal">{@code full}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#FULL}{@code , getLocale())}
  *    <tr>
- *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc">{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
+ *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <td headers="ft"><code>choice</code>
- *       <td headers="fs"><i>SubformatPattern</i>
- *       <td headers="sc">{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
+ *       <th scope="row" style="text-weight: normal">{@code choice}
+ *       <th scope="row" style="text-weight: normal"><i>SubformatPattern</i>
+ *       <td>{@code new} {@link ChoiceFormat#ChoiceFormat(String) ChoiceFormat}{@code (subformatPattern)}
  * </tbody>
  * </table>
  *
@@ -776,44 +776,40 @@ public class MessageFormat extends Format {
      * <caption style="display:none">Examples of subformat,argument,and formatted text</caption>
      * <thead>
      *    <tr>
-     *       <th>Subformat
-     *       <th>Argument
-     *       <th>Formatted Text
+     *       <th scope="col">Subformat
+     *       <th scope="col">Argument
+     *       <th scope="col">Formatted Text
      * </thead>
      * <tbody>
      *    <tr>
-     *       <td><i>any</i>
-     *       <td><i>unavailable</i>
+     *       <th scope="row" style="text-weight-normal" rowspan=2><i>any</i>
+     *       <th scope="row" style="text-weight-normal"><i>unavailable</i>
      *       <td><code>"{" + argumentIndex + "}"</code>
      *    <tr>
-     *       <td><i>any</i>
-     *       <td><code>null</code>
+     *       <th scope="row" style="text-weight-normal"><code>null</code>
      *       <td><code>"null"</code>
      *    <tr>
-     *       <td><code>instanceof ChoiceFormat</code>
-     *       <td><i>any</i>
+     *       <th scope="row" style="text-weight-normal"><code>instanceof ChoiceFormat</code>
+     *       <th scope="row" style="text-weight-normal"><i>any</i>
      *       <td><code>subformat.format(argument).indexOf('{') &gt;= 0 ?<br>
      *           (new MessageFormat(subformat.format(argument), getLocale())).format(argument) :
      *           subformat.format(argument)</code>
      *    <tr>
-     *       <td><code>!= null</code>
-     *       <td><i>any</i>
+     *       <th scope="row" style="text-weight-normal"><code>!= null</code>
+     *       <th scope="row" style="text-weight-normal"><i>any</i>
      *       <td><code>subformat.format(argument)</code>
      *    <tr>
-     *       <td><code>null</code>
-     *       <td><code>instanceof Number</code>
+     *       <th scope="row" style="text-weight-normal" rowspan=4><code>null</code>
+     *       <th scope="row" style="text-weight-normal"><code>instanceof Number</code>
      *       <td><code>NumberFormat.getInstance(getLocale()).format(argument)</code>
      *    <tr>
-     *       <td><code>null</code>
-     *       <td><code>instanceof Date</code>
+     *       <th scope="row" style="text-weight-normal"><code>instanceof Date</code>
      *       <td><code>DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, getLocale()).format(argument)</code>
      *    <tr>
-     *       <td><code>null</code>
-     *       <td><code>instanceof String</code>
+     *       <th scope="row" style="text-weight-normal"><code>instanceof String</code>
      *       <td><code>argument</code>
      *    <tr>
-     *       <td><code>null</code>
-     *       <td><i>any</i>
+     *       <th scope="row" style="text-weight-normal"><i>any</i>
      *       <td><code>argument.toString()</code>
      * </tbody>
      * </table>

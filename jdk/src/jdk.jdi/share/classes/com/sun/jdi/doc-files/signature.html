@@ -1,34 +1,42 @@
 <!DOCTYPE HTML>
-<HTML>
+<HTML lang="EN">
 <HEAD>
 <TITLE>
 JDI Type Signatures
 </TITLE>
+<META charset="UTF-8">
+<STYLE type="text/css">
+tbody th { font-weight: normal }
+</STYLE>
 </HEAD>
 <BODY style="background-color:white">
 <dl><dd>
 <Table Border="0">
-<caption><font size=5><b>JDI Type Signatures</b></font></caption>
-<tr><th>Type Signature
-<th>Java Type
-<tr><td>Z<td>boolean
-<tr><td>B<td>byte
-<tr><td>C<td>char
-<tr><td>S<td>short
-<tr><td>I<td>int
-<tr><td>J<td>long
-<tr><td>F<td>float
-<tr><td>D<td>double
-<tr><td><strong>L</strong> <em>fully-qualified-class</em> 
+<caption style="font-size:x-large"><b>JDI Type Signatures</b></caption>
+<thead>
+<tr><th scope="col">Type Signature
+<th scope="col">Java Type
+</thead>
+<tbody>
+<tr><th scope="row">Z<td>boolean
+<tr><th scope="row">B<td>byte
+<tr><th scope="row">C<td>char
+<tr><th scope="row">S<td>short
+<tr><th scope="row">I<td>int
+<tr><th scope="row">J<td>long
+<tr><th scope="row">F<td>float
+<tr><th scope="row">D<td>double
+<tr><th scope="row"><strong>L</strong> <em>fully-qualified-class</em> 
 <strong>;</strong>
 <td>fully-qualified-class
-<tr><td><strong>[</strong> <em>type
+<tr><th scope="row"><strong>[</strong> <em>type
 </em>
 <td><em>type</em>[]
-<tr><td>
+<tr><th scope="row">
 <strong>(</strong> <em>arg-types </em><strong>)</strong> <em>ret-type
 </em>
 <td>method type (including constructors)
+</tbody>
 </Table>
 </dd></dl>
 <p>For example, the Java method:

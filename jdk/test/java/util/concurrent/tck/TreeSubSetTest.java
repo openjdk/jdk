@@ -500,7 +500,7 @@ public class TreeSubSetTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized set has same elements
+     * A deserialized/reserialized set equals original
      */
     public void testSerialization() throws Exception {
         NavigableSet x = populatedSet(SIZE);
@@ -988,7 +988,7 @@ public class TreeSubSetTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized set has same elements
+     * A deserialized/reserialized set equals original
      */
     public void testDescendingSerialization() throws Exception {
         NavigableSet x = dset5();

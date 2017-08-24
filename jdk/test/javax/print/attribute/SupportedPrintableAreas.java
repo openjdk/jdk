@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key printer
  * @bug 4762773 6289206 6324049 6362765
  * @summary Tests that get non-null return list of printable areas.
  * @run main SupportedPrintableAreas

@@ -1319,8 +1319,8 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
     public void testMaximumPoolSizeIllegalArgumentException2() {
         final ThreadPoolExecutor p =
             new CustomTPE(2, 3,
-                          LONG_DELAY_MS,
-                          MILLISECONDS,new ArrayBlockingQueue<Runnable>(10));
+                          LONG_DELAY_MS, MILLISECONDS,
+                          new ArrayBlockingQueue<Runnable>(10));
         try (PoolCleaner cleaner = cleaner(p)) {
             try {
                 p.setMaximumPoolSize(-1);
