@@ -40,17 +40,20 @@ package com.sun.jdi;
  * permission allows, and discusses the risks of granting code the
  * permission.
  *
- * <table class="plain">
+ * <table class="striped">
  * <caption style="display:none">Table shows permission target name, what the
  * permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
  *
+ * <tbody>
  * <tr>
- *   <td>virtualMachineManager</td>
+ *   <th scope="row">virtualMachineManager</th>
  *   <td>Ability to inspect and modify the JDI objects in the
  *   {@code VirtualMachineManager}
  *   </td>
@@ -59,6 +62,7 @@ package com.sun.jdi;
  *   misbehave.
  *   </td>
  * </tr>
+ * </tbody>
  *
  * </table>
  *

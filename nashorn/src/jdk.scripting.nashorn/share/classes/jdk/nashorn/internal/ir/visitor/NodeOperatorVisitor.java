@@ -47,8 +47,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
     @Override
     public boolean enterUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
-        case ADD:
-            return enterADD(unaryNode);
+        case POS:
+            return enterPOS(unaryNode);
         case BIT_NOT:
             return enterBIT_NOT(unaryNode);
         case DELETE:
@@ -57,8 +57,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return enterNEW(unaryNode);
         case NOT:
             return enterNOT(unaryNode);
-        case SUB:
-            return enterSUB(unaryNode);
+        case NEG:
+            return enterNEG(unaryNode);
         case TYPEOF:
             return enterTYPEOF(unaryNode);
         case VOID:
@@ -76,8 +76,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
     @Override
     public final Node leaveUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
-        case ADD:
-            return leaveADD(unaryNode);
+        case POS:
+            return leavePOS(unaryNode);
         case BIT_NOT:
             return leaveBIT_NOT(unaryNode);
         case DELETE:
@@ -86,8 +86,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return leaveNEW(unaryNode);
         case NOT:
             return leaveNOT(unaryNode);
-        case SUB:
-            return leaveSUB(unaryNode);
+        case NEG:
+            return leaveNEG(unaryNode);
         case TYPEOF:
             return leaveTYPEOF(unaryNode);
         case VOID:
@@ -280,7 +280,7 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
      * @param  unaryNode the node
      * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public boolean enterADD(final UnaryNode unaryNode) {
+    public boolean enterPOS(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -290,7 +290,7 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
      * @param  unaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-     public Node leaveADD(final UnaryNode unaryNode) {
+     public Node leavePOS(final UnaryNode unaryNode) {
         return leaveDefault(unaryNode);
     }
 
@@ -400,7 +400,7 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
      * @param  unaryNode the node
      * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public boolean enterSUB(final UnaryNode unaryNode) {
+    public boolean enterNEG(final UnaryNode unaryNode) {
         return enterDefault(unaryNode);
     }
 
@@ -410,7 +410,7 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
      * @param  unaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leaveSUB(final UnaryNode unaryNode) {
+    public Node leaveNEG(final UnaryNode unaryNode) {
         return leaveDefault(unaryNode);
     }
 

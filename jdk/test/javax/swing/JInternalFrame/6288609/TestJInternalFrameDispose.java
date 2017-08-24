@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 6288609
  * @summary JInternalFrame.setDefaultCloseOperation() interferes with "close"
               behavior
@@ -30,6 +31,7 @@
  * @build Util
  * @run main TestJInternalFrameDispose
  */
+
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;

@@ -75,8 +75,8 @@ in visitUnary POSTFIX_INCREMENT x
 in visitUnary POSTFIX_DECREMENT x
 in visitUnary PREFIX_INCREMENT x
 in visitUnary PREFIX_DECREMENT x
-in visitUnary PLUS x
-in visitUnary MINUS x
+in visitUnary UNARY_PLUS x
+in visitUnary UNARY_MINUS x
 in visitUnary BITWISE_COMPLEMENT x
 in visitUnary LOGICAL_COMPLEMENT x
 in visitUnary DELETE x

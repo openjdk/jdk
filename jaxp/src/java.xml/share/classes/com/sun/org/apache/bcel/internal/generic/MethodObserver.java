@@ -21,13 +21,13 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Implement this interface if you're interested in changes to a MethodGen object
  * and register yourself with addObserver().
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: MethodObserver.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface MethodObserver {
-  public void notify(MethodGen method);
+
+    void notify( MethodGen method );
 }

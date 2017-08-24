@@ -51,31 +51,16 @@ import sun.security.action.GetPropertyAction;
  * The abstract class {@code URLConnection} is the superclass
  * of all classes that represent a communications link between the
  * application and a URL. Instances of this class can be used both to
- * read from and to write to the resource referenced by the URL. In
- * general, creating a connection to a URL is a multistep process:
+ * read from and to write to the resource referenced by the URL.
  *
- * <div style="text-align:center"><table class="plain" style="margin:0 auto">
- * <caption style="display:none">Describes the process of creating a connection to a URL: openConnection() and connect() over time.</caption>
- * <thead>
- * <tr><th>{@code openConnection()}</th>
- *     <th>{@code connect()}</th></tr>
- * </thead>
- * <tbody>
- * <tr><td>Manipulate parameters that affect the connection to the remote
- *         resource.</td>
- *     <td>Interact with the resource; query header fields and
- *         contents.</td></tr>
- * </tbody>
- * </table>
- * ----------------------------&gt;
- * <br>time</div>
- *
+ * <p>
+ * In general, creating a connection to a URL is a multistep process:
  * <ol>
  * <li>The connection object is created by invoking the
- *     {@code openConnection} method on a URL.
+ *     {@link URL#openConnection() openConnection} method on a URL.
  * <li>The setup parameters and general request properties are manipulated.
  * <li>The actual connection to the remote object is made, using the
- *    {@code connect} method.
+ *    {@link #connect() connect} method.
  * <li>The remote object becomes available. The header fields and the contents
  *     of the remote object can be accessed.
  * </ol>

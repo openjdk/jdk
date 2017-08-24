@@ -21,57 +21,67 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * JSR_W - Jump to subroutine
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: JSR_W.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class JSR_W extends JsrInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  JSR_W() {}
 
-  public JSR_W(InstructionHandle target) {
-    super(com.sun.org.apache.bcel.internal.Constants.JSR_W, target);
-    length = 5;
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    JSR_W() {
+    }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    index = getTargetOffset();
-    out.writeByte(opcode);
-    out.writeInt(index);
-  }
 
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    index = bytes.readInt();
-    length = 5;
-  }
+    public JSR_W(final InstructionHandle target) {
+        super(com.sun.org.apache.bcel.internal.Const.JSR_W, target);
+        super.setLength(5);
+    }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitStackProducer(this);
-    v.visitBranchInstruction(this);
-    v.visitJsrInstruction(this);
-    v.visitJSR_W(this);
-  }
+
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        super.setIndex(getTargetOffset());
+        out.writeByte(super.getOpcode());
+        out.writeInt(super.getIndex());
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.setIndex(bytes.readInt());
+        super.setLength(5);
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitStackProducer(this);
+        v.visitBranchInstruction(this);
+        v.visitJsrInstruction(this);
+        v.visitJSR_W(this);
+    }
 }

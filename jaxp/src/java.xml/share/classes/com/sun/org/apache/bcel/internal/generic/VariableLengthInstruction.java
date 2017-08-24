@@ -21,16 +21,16 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Denotes an instruction to be a variable length instruction, such as
  * GOTO, JSR, LOOKUPSWITCH and TABLESWITCH.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: VariableLengthInstruction.java 1747278 2016-06-07 17:28:43Z britter $
 
  * @see GOTO
  * @see JSR
  * @see LOOKUPSWITCH
  * @see TABLESWITCH
  */
-public interface VariableLengthInstruction {}
+public interface VariableLengthInstruction {
+}

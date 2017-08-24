@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8158918
  * @summary setExtendedState(1) for maximized Frame results in state==7
  * @run main SetExtendedState
  */
+
 import java.awt.Frame;
 
 public class SetExtendedState {

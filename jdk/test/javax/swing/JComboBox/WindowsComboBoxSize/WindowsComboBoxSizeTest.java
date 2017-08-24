@@ -21,8 +21,9 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8179027
  * @requires (os.family == "windows")
  * @summary JComboBox too small under Windows LAF

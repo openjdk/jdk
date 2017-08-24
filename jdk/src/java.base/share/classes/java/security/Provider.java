@@ -61,19 +61,19 @@ import java.util.function.Function;
  * security framework. Services of this type cannot be added, removed,
  * or modified by applications.
  * The following attributes are automatically placed in each Provider object:
- * <table class="plain">
+ * <table class="striped">
  * <caption><b>Attributes Automatically Placed in a Provider Object</b></caption>
  * <thead>
- * <tr><th>Name</th><th>Value</th>
+ * <tr><th scope="col">Name</th><th scope="col">Value</th>
  * </thead>
- * <tbody>
- * <tr><td>{@code Provider.id name}</td>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">{@code Provider.id name}</th>
  *     <td>{@code String.valueOf(provider.getName())}</td>
- * <tr><td>{@code Provider.id version}</td>
+ * <tr><th scope="row">{@code Provider.id version}</th>
  *     <td>{@code String.valueOf(provider.getVersionStr())}</td>
- * <tr><td>{@code Provider.id info}</td>
+ * <tr><th scope="row">{@code Provider.id info}</th>
  *     <td>{@code String.valueOf(provider.getInfo())}</td>
- * <tr><td>{@code Provider.id className}</td>
+ * <tr><th scope="row">{@code Provider.id className}</th>
  *     <td>{@code provider.getClass().getName()}</td>
  * </tbody>
  * </table>

@@ -21,94 +21,97 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
  * TABLESWITCH - Switch within given range of values, i.e., low..high
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: TABLESWITCH.java 1749603 2016-06-21 20:50:19Z ggregory $
  * @see SWITCH
  */
 public class TABLESWITCH extends Select {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  TABLESWITCH() {}
 
-  /**
-   * @param match sorted array of match values, match[0] must be low value,
-   * match[match_length - 1] high value
-   * @param targets where to branch for matched values
-   * @param target default branch
-   */
-  public TABLESWITCH(int[] match, InstructionHandle[] targets,
-                     InstructionHandle target) {
-    super(com.sun.org.apache.bcel.internal.Constants.TABLESWITCH, match, targets, target);
-
-    length = (short)(13 + match_length * 4); /* Alignment remainder assumed
-                                              * 0 here, until dump time */
-    fixed_length = length;
-  }
-
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    super.dump(out);
-
-    int low = (match_length > 0)? match[0] : 0;
-    out.writeInt(low);
-
-    int high = (match_length > 0)? match[match_length - 1] : 0;
-    out.writeInt(high);
-
-    for(int i=0; i < match_length; i++)     // jump offsets
-      out.writeInt(indices[i] = getTargetOffset(targets[i]));
-  }
-
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    super.initFromFile(bytes, wide);
-
-    int low    = bytes.readInt();
-    int high   = bytes.readInt();
-
-    match_length = high - low + 1;
-    fixed_length = (short)(13 + match_length * 4);
-    length       = (short)(fixed_length + padding);
-
-    match   = new int[match_length];
-    indices = new int[match_length];
-    targets = new InstructionHandle[match_length];
-
-    for(int i=low; i <= high; i++)
-      match[i - low] = i;
-
-    for(int i=0; i < match_length; i++) {
-      indices[i] = bytes.readInt();
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    TABLESWITCH() {
     }
-  }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitVariableLengthInstruction(this);
-    v.visitStackProducer(this);
-    v.visitBranchInstruction(this);
-    v.visitSelect(this);
-    v.visitTABLESWITCH(this);
-  }
+    /**
+     * @param match sorted array of match values, match[0] must be low value,
+     * match[match_length - 1] high value
+     * @param targets where to branch for matched values
+     * @param defaultTarget default branch
+     */
+    public TABLESWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle defaultTarget) {
+        super(com.sun.org.apache.bcel.internal.Const.TABLESWITCH, match, targets, defaultTarget);
+        /* Alignment remainder assumed 0 here, until dump time */
+        final short _length = (short) (13 + getMatch_length() * 4);
+        super.setLength(_length);
+        setFixed_length(_length);
+    }
+
+
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        super.dump(out);
+        final int _match_length = getMatch_length();
+        final int low = (_match_length > 0) ? super.getMatch(0) : 0;
+        out.writeInt(low);
+        final int high = (_match_length > 0) ? super.getMatch(_match_length - 1) : 0;
+        out.writeInt(high);
+        for (int i = 0; i < _match_length; i++) {
+            out.writeInt(setIndices(i, getTargetOffset(super.getTarget(i))));
+        }
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        super.initFromFile(bytes, wide);
+        final int low = bytes.readInt();
+        final int high = bytes.readInt();
+        final int _match_length = high - low + 1;
+        setMatch_length(_match_length);
+        final short _fixed_length = (short) (13 + _match_length * 4);
+        setFixed_length(_fixed_length);
+        super.setLength((short) (_fixed_length + super.getPadding()));
+        super.setMatches(new int[_match_length]);
+        super.setIndices(new int[_match_length]);
+        super.setTargets(new InstructionHandle[_match_length]);
+        for (int i = 0; i < _match_length; i++) {
+            super.setMatch(i, low + i);
+            super.setIndices(i, bytes.readInt());
+        }
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitVariableLengthInstruction(this);
+        v.visitStackConsumer(this);
+        v.visitBranchInstruction(this);
+        v.visitSelect(this);
+        v.visitTABLESWITCH(this);
+    }
 }

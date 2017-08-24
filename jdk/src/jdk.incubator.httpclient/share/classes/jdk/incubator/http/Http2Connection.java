@@ -211,12 +211,13 @@ class Http2Connection  {
         this.hpackIn = new Decoder(clientSettings.getParameter(HEADER_TABLE_SIZE));
         this.windowUpdater = new ConnectionWindowUpdateSender(this, client.getReceiveBufferSize());
     }
-        /**
-         * Case 1) Create from upgraded HTTP/1.1 connection.
-         * Is ready to use. Will not be SSL. exchange is the Exchange
-         * that initiated the connection, whose response will be delivered
-         * on a Stream.
-         */
+
+    /**
+     * Case 1) Create from upgraded HTTP/1.1 connection.
+     * Is ready to use. Will not be SSL. exchange is the Exchange
+     * that initiated the connection, whose response will be delivered
+     * on a Stream.
+     */
     Http2Connection(HttpConnection connection,
                     Http2ClientImpl client2,
                     Exchange<?> exchange,
@@ -280,7 +281,7 @@ class Http2Connection  {
      * Throws an IOException if h2 was not negotiated
      */
     private void checkSSLConfig() throws IOException {
-        AsyncSSLConnection aconn = (AsyncSSLConnection)connection;
+        AbstractAsyncSSLConnection aconn = (AbstractAsyncSSLConnection)connection;
         SSLEngine engine = aconn.getEngine();
         String alpn = engine.getApplicationProtocol();
         if (alpn == null || !alpn.equals("h2")) {
@@ -906,14 +907,14 @@ class Http2Connection  {
      */
     static final class ALPNException extends IOException {
         private static final long serialVersionUID = 23138275393635783L;
-        final AsyncSSLConnection connection;
+        final AbstractAsyncSSLConnection connection;
 
-        ALPNException(String msg, AsyncSSLConnection connection) {
+        ALPNException(String msg, AbstractAsyncSSLConnection connection) {
             super(msg);
             this.connection = connection;
         }
 
-        AsyncSSLConnection getConnection() {
+        AbstractAsyncSSLConnection getConnection() {
             return connection;
         }
     }

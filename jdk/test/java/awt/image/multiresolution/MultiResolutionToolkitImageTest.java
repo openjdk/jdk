@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
 
 /**
  * @test
+ * @key headful
  * @bug 8040291
  * @author Alexander Scherbatiy
  * @summary [macosx] Http-Images are not fully loaded when using ImageIcon
@@ -43,6 +44,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  *          java.desktop/sun.awt.image
  * @run main MultiResolutionToolkitImageTest
  */
+
 public class MultiResolutionToolkitImageTest {
 
     private static final int IMAGE_WIDTH = 300;

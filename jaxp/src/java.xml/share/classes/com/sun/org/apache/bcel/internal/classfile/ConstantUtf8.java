@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,94 +20,193 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
-
-import  com.sun.org.apache.bcel.internal.Constants;
-import  java.io.*;
+import com.sun.org.apache.bcel.internal.Const;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
- * This class is derived from the abstract
- * <A HREF="com.sun.org.apache.bcel.internal.classfile.Constant.html">Constant</A> class
+ * This class is derived from the abstract {@link Constant}
  * and represents a reference to a Utf8 encoded string.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ConstantUtf8.java 1750029 2016-06-23 22:14:38Z sebb $
  * @see     Constant
  */
 public final class ConstantUtf8 extends Constant {
-  private String bytes;
 
-  /**
-   * Initialize from another object.
-   */
-  public ConstantUtf8(ConstantUtf8 c) {
-    this(c.getBytes());
-  }
+    private final String bytes;
 
-  /**
-   * Initialize instance from file data.
-   *
-   * @param file Input stream
-   * @throws IOException
-   */
-  ConstantUtf8(DataInputStream file) throws IOException
-  {
-    super(Constants.CONSTANT_Utf8);
+    // TODO these should perhaps be AtomicInt?
+    private static volatile int considered = 0;
+    private static volatile int hits = 0;
+    private static volatile int skipped = 0;
+    private static volatile int created = 0;
 
-    bytes = file.readUTF();
-  }
+    // Set the size to 0 or below to skip caching entirely
+    private static final int MAX_CACHED_SIZE = 200;
+    private static final boolean BCEL_STATISTICS = false;
 
-  /**
-   * @param bytes Data
-   */
-  public ConstantUtf8(String bytes)
-  {
-    super(Constants.CONSTANT_Utf8);
 
-    if(bytes == null)
-      throw new IllegalArgumentException("bytes must not be null!");
+    private static class CACHE_HOLDER {
 
-    this.bytes  = bytes;
-  }
+        private static final int MAX_CACHE_ENTRIES = 20000;
+        private static final int INITIAL_CACHE_CAPACITY = (int)(MAX_CACHE_ENTRIES/0.75);
 
-  /**
-   * Called by objects that are traversing the nodes of the tree implicitely
-   * defined by the contents of a Java class. I.e., the hierarchy of methods,
-   * fields, attributes, etc. spawns a tree of objects.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitConstantUtf8(this);
-  }
+        private static final HashMap<String, ConstantUtf8> CACHE =
+                new LinkedHashMap<String, ConstantUtf8>(INITIAL_CACHE_CAPACITY, 0.75f, true) {
+            private static final long serialVersionUID = -8506975356158971766L;
 
-  /**
-   * Dump String in Utf8 format to file stream.
-   *
-   * @param file Output file stream
-   * @throws IOException
-   */
-  public final void dump(DataOutputStream file) throws IOException
-  {
-    file.writeByte(tag);
-    file.writeUTF(bytes);
-  }
+            @Override
+            protected boolean removeEldestEntry(final Map.Entry<String, ConstantUtf8> eldest) {
+                 return size() > MAX_CACHE_ENTRIES;
+            }
+        };
 
-  /**
-   * @return Data converted to string.
-   */
-  public final String getBytes() { return bytes; }
+    }
 
-  /**
-   * @param bytes.
-   */
-  public final void setBytes(String bytes) {
-    this.bytes = bytes;
-  }
+    // for accesss by test code
+    static void printStats() {
+        System.err.println("Cache hit " + hits + "/" + considered +", " + skipped + " skipped");
+        System.err.println("Total of " + created + " ConstantUtf8 objects created");
+    }
 
-  /**
-   * @return String representation
-   */
-  public final String toString()
-  {
-    return super.toString() + "(\"" + Utility.replace(bytes, "\n", "\\n") + "\")";
-  }
+    // for accesss by test code
+    static void clearStats() {
+        hits = considered = skipped = created = 0;
+    }
+
+    static {
+        if (BCEL_STATISTICS) {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    printStats();
+                }
+            });
+        }
+    }
+
+    /**
+     * @since 6.0
+     */
+    public static ConstantUtf8 getCachedInstance(final String s) {
+        if (s.length() > MAX_CACHED_SIZE) {
+            skipped++;
+            return  new ConstantUtf8(s);
+        }
+        considered++;
+        synchronized (ConstantUtf8.class) { // might be better with a specific lock object
+            ConstantUtf8 result = CACHE_HOLDER.CACHE.get(s);
+            if (result != null) {
+                    hits++;
+                    return result;
+                }
+            result = new ConstantUtf8(s);
+            CACHE_HOLDER.CACHE.put(s, result);
+            return result;
+        }
+    }
+
+    /**
+     * @since 6.0
+     */
+    public static ConstantUtf8 getInstance(final String s) {
+        return new ConstantUtf8(s);
+    }
+
+    /**
+     * @since 6.0
+     */
+    public static ConstantUtf8 getInstance (final DataInput input)  throws IOException {
+        return getInstance(input.readUTF());
+    }
+
+    /**
+     * Initialize from another object.
+     */
+    public ConstantUtf8(final ConstantUtf8 c) {
+        this(c.getBytes());
+    }
+
+
+    /**
+     * Initialize instance from file data.
+     *
+     * @param file Input stream
+     * @throws IOException
+     */
+    ConstantUtf8(final DataInput file) throws IOException {
+        super(Const.CONSTANT_Utf8);
+        bytes = file.readUTF();
+        created++;
+    }
+
+
+    /**
+     * @param bytes Data
+     */
+    public ConstantUtf8(final String bytes) {
+        super(Const.CONSTANT_Utf8);
+        if (bytes == null) {
+            throw new IllegalArgumentException("bytes must not be null!");
+        }
+        this.bytes = bytes;
+        created++;
+    }
+
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitely
+     * defined by the contents of a Java class. I.e., the hierarchy of methods,
+     * fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitConstantUtf8(this);
+    }
+
+
+    /**
+     * Dump String in Utf8 format to file stream.
+     *
+     * @param file Output file stream
+     * @throws IOException
+     */
+    @Override
+    public final void dump( final DataOutputStream file ) throws IOException {
+        file.writeByte(super.getTag());
+        file.writeUTF(bytes);
+    }
+
+
+    /**
+     * @return Data converted to string.
+     */
+    public final String getBytes() {
+        return bytes;
+    }
+
+
+    /**
+     * @param bytes the raw bytes of this Utf-8
+     * @deprecated (since 6.0)
+     */
+    @java.lang.Deprecated
+    public final void setBytes( final String bytes ) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    /**
+     * @return String representation
+     */
+    @Override
+    public final String toString() {
+        return super.toString() + "(\"" + Utility.replace(bytes, "\n", "\\n") + "\")";
+    }
 }

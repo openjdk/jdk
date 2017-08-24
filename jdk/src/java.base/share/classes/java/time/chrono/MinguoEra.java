@@ -71,28 +71,28 @@ import java.time.DateTimeException;
  * All previous years, zero or earlier in the proleptic count or one and greater
  * in the year-of-era count, are part of the 'Before Republic of China' era.
  *
- * <table class="striped">
+ * <table class="striped" style="text-align:left">
  * <caption style="display:none">Minguo years and eras</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left">year-of-era</th>
- * <th style="text-align:left">era</th>
- * <th style="text-align:left">proleptic-year</th>
- * <th style="text-align:left">ISO proleptic-year</th>
+ * <th>year-of-era</th>
+ * <th>era</th>
+ * <th>proleptic-year</th>
+ * <th>ISO proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>2</td><td>ROC</td><td>2</td><td>1913</td>
+ * <td>2</td><td>ROC</td><th scope="row">2</th><td>1913</td>
  * </tr>
  * <tr>
- * <td>1</td><td>ROC</td><td>1</td><td>1912</td>
+ * <td>1</td><td>ROC</td><th scope="row">1</th><td>1912</td>
  * </tr>
  * <tr>
- * <td>1</td><td>BEFORE_ROC</td><td>0</td><td>1911</td>
+ * <td>1</td><td>BEFORE_ROC</td><th scope="row">0</th><td>1911</td>
  * </tr>
  * <tr>
- * <td>2</td><td>BEFORE_ROC</td><td>-1</td><td>1910</td>
+ * <td>2</td><td>BEFORE_ROC</td><th scope="row">-1</th><td>1910</td>
  * </tr>
  * </tbody>
  * </table>
