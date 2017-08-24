@@ -71,28 +71,28 @@ import java.time.DateTimeException;
  * All previous years, zero or earlier in the proleptic count or one and greater
  * in the year-of-era count, are part of the 'Before Buddhist' era.
  *
- * <table class="striped">
+ * <table class="striped" style="text-align:left">
  * <caption style="display:none">Buddhist years and eras</caption>
  * <thead>
  * <tr>
- * <th style="text-align:left">year-of-era</th>
- * <th style="text-align:left">era</th>
- * <th style="text-align:left">proleptic-year</th>
- * <th style="text-align:left">ISO proleptic-year</th>
+ * <th scope="col">year-of-era</th>
+ * <th scope="col">era</th>
+ * <th scope="col">proleptic-year</th>
+ * <th scope="col">ISO proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
  * <tr>
- * <td>2</td><td>BE</td><td>2</td><td>-542</td>
+ * <td>2</td><td>BE</td><th scope="row">2</th><td>-542</td>
  * </tr>
  * <tr>
- * <td>1</td><td>BE</td><td>1</td><td>-543</td>
+ * <td>1</td><td>BE</td><th scope="row">1</th><td>-543</td>
  * </tr>
  * <tr>
- * <td>1</td><td>BEFORE_BE</td><td>0</td><td>-544</td>
+ * <td>1</td><td>BEFORE_BE</td><th scope="row">0</th><td>-544</td>
  * </tr>
  * <tr>
- * <td>2</td><td>BEFORE_BE</td><td>-1</td><td>-545</td>
+ * <td>2</td><td>BEFORE_BE</td><th scope="row">-1</th><td>-545</td>
  * </tr>
  * </tbody>
  * </table>

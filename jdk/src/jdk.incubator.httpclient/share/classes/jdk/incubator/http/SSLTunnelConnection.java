@@ -85,6 +85,19 @@ class SSLTunnelConnection extends HttpConnection {
         delegate = new PlainTunnelingConnection(addr, proxy, client);
     }
 
+    /**
+     * Create an SSLTunnelConnection from an existing connected AsyncSSLTunnelConnection.
+     * Used when downgrading from HTTP/2 to HTTP/1.1
+     */
+    SSLTunnelConnection(AsyncSSLTunnelConnection c) {
+        super(c.address, c.client);
+        this.delegate = c.plainConnection();
+        AsyncSSLDelegate adel = c.sslDelegate();
+        this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client, adel.serverName);
+        this.serverName = adel.serverName;
+        connected = c.connected();
+    }
+
     @Override
     SSLParameters sslParameters() {
         return sslDelegate.getSSLParameters();

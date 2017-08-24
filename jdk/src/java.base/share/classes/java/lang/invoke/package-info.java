@@ -165,28 +165,33 @@
  * <p>
  * Given these rules, here are examples of legal bootstrap method declarations,
  * given various numbers {@code N} of extra arguments.
- * The first rows (marked {@code *}) will work for any number of extra arguments.
- * <table class="plain">
+ * The first row (marked {@code *}) will work for any number of extra arguments.
+ * <table class="plain" style="vertical-align:top">
  * <caption style="display:none">Static argument types</caption>
- * <tr><th>N</th><th>Sample bootstrap method</th></tr>
- * <tr><td>*</td>
- *     <td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
- * <tr><td>*</td><td>
- *     <code>CallSite bootstrap(Object... args)</code></td></tr>
- * <tr><td>*</td><td>
- *     <code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code></td></tr>
- * <tr><td>0</td><td>
- *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code></td></tr>
- * <tr><td>0</td><td>
- *     <code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code></td></tr>
- * <tr><td>1</td><td>
+ * <thead>
+ * <tr><th scope="col">N</th><th scope="col">Sample bootstrap method</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="font-weight:normal; vertical-align:top">*</th><td>
+ *     <ul style="list-style:none; padding-left: 0; margin:0">
+ *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code>
+ *     <li><code>CallSite bootstrap(Object... args)</code>
+ *     <li><code>CallSite bootstrap(Object caller, Object... nameAndTypeWithArgs)</code>
+ *     </ul></td></tr>
+ * <tr><th scope="row" style="font-weight:normal; vertical-align:top">0</th><td>
+ *     <ul style="list-style:none; padding-left: 0; margin:0">
+ *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type)</code>
+ *     <li><code>CallSite bootstrap(Lookup caller, Object... nameAndType)</code>
+ *     </ul></td></tr>
+ * <tr><th scope="row" style="font-weight:normal; vertical-align:top">1</th><td>
  *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object arg)</code></td></tr>
- * <tr><td>2</td><td>
- *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code></td></tr>
- * <tr><td>2</td><td>
- *     <code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code></td></tr>
- * <tr><td>2</td>
- *     <td><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code></td></tr>
+ * <tr><th scope="row" style="font-weight:normal; vertical-align:top">2</th><td>
+ *     <ul style="list-style:none; padding-left: 0; margin:0">
+ *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, Object... args)</code>
+ *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String... args)</code>
+ *     <li><code>CallSite bootstrap(Lookup caller, String name, MethodType type, String x, int y)</code>
+ *     </ul></td></tr>
+ * </tbody>
  * </table>
  * The last example assumes that the extra arguments are of type
  * {@code CONSTANT_String} and {@code CONSTANT_Integer}, respectively.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6866751
-   @summary J2SE_Swing_Reg: the caret disappears when moving to the end of the line.
-   @author Semyon Sadetsky
-  */
+/**
+ * @test
+ * @key headful
+ * @bug 6866751
+ * @summary J2SE_Swing_Reg: the caret disappears when moving to the end of the line.
+ * @author Semyon Sadetsky
+ */
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -77,7 +80,7 @@ public class bug6866751 {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
-                    frame.dispose();
+                    if (frame != null) { frame.dispose(); }
                 }
             });
         }

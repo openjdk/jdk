@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,15 @@
  * questions.
  */
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8152981 8159135
  * @summary Double icons with JMenuItem setHorizontalTextPosition on Win 10
  * @requires (os.family == "windows")
  * @run main MenuItemIconTest
  */
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;

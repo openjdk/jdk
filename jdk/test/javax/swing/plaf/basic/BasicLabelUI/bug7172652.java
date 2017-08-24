@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,17 @@
  * questions.
  */
 
-/* @test
-   @bug 7172652
-   @summary With JDK 1.7 text field does not obtain focus when using mnemonic Alt/Key combin
-   @author Semyon Sadetsky
-   @library /lib/testlibrary
-   @build jdk.testlibrary.OSInfo
-   @run main bug7172652
-  */
+/**
+ * @test
+ * @key headful
+ * @bug 7172652
+ * @summary With JDK 1.7 text field does not obtain focus when using mnemonic Alt/Key combin
+ * @author Semyon Sadetsky
+ * @requires (os.family == "windows")
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main bug7172652
+ */
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;

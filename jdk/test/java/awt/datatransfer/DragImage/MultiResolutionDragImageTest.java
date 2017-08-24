@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import static java.awt.event.InputEvent.BUTTON1_DOWN_MASK;
 
 /**
  * @test
+ * @key headful
  * @bug 8076106
  * @author Hendrik Schreiber
  * @summary [macosx] Drag image of TransferHandler does not honor

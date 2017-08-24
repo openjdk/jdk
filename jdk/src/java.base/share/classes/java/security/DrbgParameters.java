@@ -263,18 +263,18 @@ public class DrbgParameters {
      * Capability effective = ((DrbgParametes.Initiate) s.getParameters())
      *         .getCapability();</pre>
      * </blockquote>
-     * <table class="plain">
+     * <table class="striped">
      * <caption style="display:none">requested and effective capabilities</caption>
      * <thead>
      * <tr>
-     * <th>Requested Value</th>
-     * <th>Possible Effective Values</th>
+     * <th scope="col">Requested Value</th>
+     * <th scope="col">Possible Effective Values</th>
      * </tr>
      * </thead>
-     * <tbody>
-     * <tr><td>NONE</td><td>NONE, RESEED_ONLY, PR_AND_RESEED</td></tr>
-     * <tr><td>RESEED_ONLY</td><td>RESEED_ONLY, PR_AND_RESEED</td></tr>
-     * <tr><td>PR_AND_RESEED</td><td>PR_AND_RESEED</td></tr>
+     * <tbody style="text-align:left">
+     * <tr><th scope="row">NONE</th><td>NONE, RESEED_ONLY, PR_AND_RESEED</td></tr>
+     * <tr><th scope="row">RESEED_ONLY</th><td>RESEED_ONLY, PR_AND_RESEED</td></tr>
+     * <tr><th scope="row">PR_AND_RESEED</th><td>PR_AND_RESEED</td></tr>
      * </tbody>
      * </table>
      * <p>

@@ -132,23 +132,23 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <p> All told, then, a URI instance has the following nine components:
  *
- * <blockquote><table class="borderless">
+ * <table class="striped" style="margin-left:2em">
  * <caption style="display:none">Describes the components of a URI:scheme,scheme-specific-part,authority,user-info,host,port,path,query,fragment</caption>
  * <thead>
- * <tr><th><i>Component</i></th><th><i>Type</i></th></tr>
+ * <tr><th scope="col">Component</th><th scope="col">Type</th></tr>
  * </thead>
- * <tbody>
- * <tr><td>scheme</td><td>{@code String}</td></tr>
- * <tr><td>scheme-specific-part&nbsp;&nbsp;&nbsp;&nbsp;</td><td>{@code String}</td></tr>
- * <tr><td>authority</td><td>{@code String}</td></tr>
- * <tr><td>user-info</td><td>{@code String}</td></tr>
- * <tr><td>host</td><td>{@code String}</td></tr>
- * <tr><td>port</td><td>{@code int}</td></tr>
- * <tr><td>path</td><td>{@code String}</td></tr>
- * <tr><td>query</td><td>{@code String}</td></tr>
- * <tr><td>fragment</td><td>{@code String}</td></tr>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">scheme</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">scheme-specific-part</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">authority</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">user-info</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">host</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">port</th><td>{@code int}</td></tr>
+ * <tr><th scope="row">path</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">query</th><td>{@code String}</td></tr>
+ * <tr><th scope="row">fragment</th><td>{@code String}</td></tr>
  * </tbody>
- * </table></blockquote>
+ * </table>
  *
  * In a given instance any particular component is either <i>undefined</i> or
  * <i>defined</i> with a distinct value.  Undefined string components are
@@ -253,32 +253,35 @@ import java.lang.NullPointerException;  // for javadoc
  * which are taken from that specification, are used below to describe these
  * constraints:
  *
- * <blockquote><table class="borderless">
+ * <table class="striped" style="margin-left:2em">
  * <caption style="display:none">Describes categories alpha,digit,alphanum,unreserved,punct,reserved,escaped,and other</caption>
- *   <tbody>
- *   <tr><th style="vertical-align:top"><i>alpha</i></th>
+ *   <thead>
+ *   <tr><th scope="col">Category</th><th scope="col">Description</th></tr>
+ *   </thead>
+ *   <tbody style="text-align:left">
+ *   <tr><th scope="row" style="vertical-align:top">alpha</th>
  *       <td>The US-ASCII alphabetic characters,
  *        {@code 'A'}&nbsp;through&nbsp;{@code 'Z'}
  *        and {@code 'a'}&nbsp;through&nbsp;{@code 'z'}</td></tr>
- *   <tr><th style="vertical-align:top"><i>digit</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">digit</th>
  *       <td>The US-ASCII decimal digit characters,
  *       {@code '0'}&nbsp;through&nbsp;{@code '9'}</td></tr>
- *   <tr><th style="vertical-align:top"><i>alphanum</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">alphanum</th>
  *       <td>All <i>alpha</i> and <i>digit</i> characters</td></tr>
- *   <tr><th style="vertical-align:top"><i>unreserved</i>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *   <tr><th scope="row" style="vertical-align:top">unreserved</th>
  *       <td>All <i>alphanum</i> characters together with those in the string
  *        {@code "_-!.~'()*"}</td></tr>
- *   <tr><th style="vertical-align:top"><i>punct</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">punct</th>
  *       <td>The characters in the string {@code ",;:$&+="}</td></tr>
- *   <tr><th style="vertical-align:top"><i>reserved</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">reserved</th>
  *       <td>All <i>punct</i> characters together with those in the string
  *        {@code "?/[]@"}</td></tr>
- *   <tr><th style="vertical-align:top"><i>escaped</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">escaped</th>
  *       <td>Escaped octets, that is, triplets consisting of the percent
  *           character ({@code '%'}) followed by two hexadecimal digits
  *           ({@code '0'}-{@code '9'}, {@code 'A'}-{@code 'F'}, and
  *           {@code 'a'}-{@code 'f'})</td></tr>
- *   <tr><th style="vertical-align:top"><i>other</i></th>
+ *   <tr><th scope="row" style="vertical-align:top">other</th>
  *       <td>The Unicode characters that are not in the US-ASCII character set,
  *           are not control characters (according to the {@link
  *           java.lang.Character#isISOControl(char) Character.isISOControl}
@@ -287,7 +290,7 @@ import java.lang.NullPointerException;  // for javadoc
  *           method)&nbsp;&nbsp;<i>(<b>Deviation from RFC 2396</b>, which is
  *           limited to US-ASCII)</i></td></tr>
  * </tbody>
- * </table></blockquote>
+ * </table>
  *
  * <p><a id="legal-chars"></a> The set of all legal URI characters consists of
  * the <i>unreserved</i>, <i>reserved</i>, <i>escaped</i>, and <i>other</i>

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 #
 
 # @test
+# @key printer
 # @bug 6662775
-# @summary Tests queuePrintJob is sufficient permission.
+# @summary Tests queuePrintJob is sufficient permission for printing. This test 
+#          prints a page to a printer. If a document printer is installed, a 
+#          popup can appear (to select the file location).
 # @run clean PrintSE
 # @run build PrintSE
 # @run compile PrintSE.java
