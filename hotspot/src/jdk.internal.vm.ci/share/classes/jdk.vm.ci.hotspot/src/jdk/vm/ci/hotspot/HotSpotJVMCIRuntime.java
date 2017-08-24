@@ -367,13 +367,17 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider {
 
         // Resolve non-primitive types in the VM.
         HotSpotResolvedObjectTypeImpl hsAccessingType = (HotSpotResolvedObjectTypeImpl) accessingType;
-        final HotSpotResolvedObjectTypeImpl klass = compilerToVm.lookupType(name, hsAccessingType.mirror(), resolve);
+        try {
+            final HotSpotResolvedObjectTypeImpl klass = compilerToVm.lookupType(name, hsAccessingType.mirror(), resolve);
 
-        if (klass == null) {
-            assert resolve == false;
-            return HotSpotUnresolvedJavaType.create(this, name);
+            if (klass == null) {
+                assert resolve == false;
+                return HotSpotUnresolvedJavaType.create(this, name);
+            }
+            return klass;
+        } catch (ClassNotFoundException e) {
+            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
         }
-        return klass;
     }
 
     public JVMCIBackend getHostJVMCIBackend() {

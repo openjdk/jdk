@@ -952,7 +952,7 @@ jlong os::javaTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const uint64_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&Bsd::_max_abstime, prev);
+  const uint64_t obsv = Atomic::cmpxchg(now, &Bsd::_max_abstime, prev);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then

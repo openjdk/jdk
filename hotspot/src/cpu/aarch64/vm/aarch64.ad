@@ -3806,15 +3806,24 @@ void Compile::reshape_address(AddPNode* addp) {
       // Any use that can't embed the address computation?
       for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
         Node* u = addp->fast_out(i);
-        if (!u->is_Mem() || u->is_LoadVector() || u->is_StoreVector() || u->Opcode() == Op_StoreCM) {
+        if (!u->is_Mem()) {
           return;
         }
+        if (u->is_LoadVector() || u->is_StoreVector() || u->Opcode() == Op_StoreCM) {
+          return;
+        }
+        if (addp2->in(AddPNode::Offset)->Opcode() != Op_ConvI2L) {
+          int scale = 1 << addp2->in(AddPNode::Offset)->in(2)->get_int();
+          if (VM_Version::expensive_load(u->as_Mem()->memory_size(), scale)) {
+            return;
+          }
+        }
       }
-      
+
       Node* off = addp->in(AddPNode::Offset);
       Node* addr2 = addp2->in(AddPNode::Address);
       Node* base = addp->in(AddPNode::Base);
-      
+
       Node* new_addr = NULL;
       // Check whether the graph already has the new AddP we need
       // before we create one (no GVN available here).
@@ -3828,7 +3837,7 @@ void Compile::reshape_address(AddPNode* addp) {
           break;
         }
       }
-      
+
       if (new_addr == NULL) {
         new_addr = new AddPNode(base, addr2, off);
       }
@@ -4415,6 +4424,22 @@ encode %{
                /*weak*/ false, noreg);
   %}
 
+  enc_class aarch64_enc_cmpxchgs(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+    MacroAssembler _masm(&cbuf);
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::halfword, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, noreg);
+  %}
+
+  enc_class aarch64_enc_cmpxchgb(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+    MacroAssembler _masm(&cbuf);
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
+               Assembler::byte, /*acquire*/ false, /*release*/ true,
+               /*weak*/ false, noreg);
+  %}  
+    
 
   // The only difference between aarch64_enc_cmpxchg and
   // aarch64_enc_cmpxchg_acq is that we use load-acquire in the
@@ -9636,6 +9661,42 @@ instruct storeIConditional(indirect mem, iRegINoSp oldval, iRegINoSp newval, rFl
 
 // XXX No flag versions for CompareAndSwap{I,L,P,N} because matcher
 // can't match them
+
+instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+
+  match(Set res (CompareAndSwapB mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  effect(KILL cr);
+
+  format %{
+    "cmpxchgb $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
+    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+
+  ins_encode(aarch64_enc_cmpxchgb(mem, oldval, newval),
+            aarch64_enc_cset_eq(res));
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
+
+  match(Set res (CompareAndSwapS mem (Binary oldval newval)));
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  effect(KILL cr);
+
+  format %{
+    "cmpxchgs $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval"
+    "cset $res, EQ\t# $res <-- (EQ ? 1 : 0)"
+  %}
+
+  ins_encode(aarch64_enc_cmpxchgs(mem, oldval, newval),
+            aarch64_enc_cset_eq(res));
+
+  ins_pipe(pipe_slow);
+%}
 
 instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr) %{
 

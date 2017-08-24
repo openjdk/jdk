@@ -26,6 +26,8 @@
 
 #include "aot/aotCompiledMethod.hpp"
 #include "classfile/symbolTable.hpp"
+#include "metaprogramming/integralConstant.hpp"
+#include "metaprogramming/isRegisteredEnum.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 
@@ -34,6 +36,8 @@ enum CodeState {
   in_use  = 1, // _aot field is set to corresponding AOTCompiledMethod
   invalid = 2  // AOT code is invalidated because dependencies failed
 };
+
+template<> struct IsRegisteredEnum<CodeState> : public TrueType {};
 
 typedef struct {
   AOTCompiledMethod* _aot;
@@ -77,7 +81,7 @@ typedef struct {
   int _version;
   int _class_count;
   int _method_count;
-  int _metaspace_got_size;
+  int _klasses_got_size;
   int _metadata_got_size;
   int _oop_got_size;
   int _jvm_version_offset;
@@ -180,11 +184,11 @@ class AOTCodeHeap : public CodeHeap {
   address _klasses_offsets;
   address _dependencies;
 
-  Metadata** _metaspace_got;
+  Metadata** _klasses_got;
   Metadata** _metadata_got;
   oop*    _oop_got;
 
-  int _metaspace_got_size;
+  int _klasses_got_size;
   int _metadata_got_size;
   int _oop_got_size;
 
@@ -251,7 +255,7 @@ public:
 #ifdef ASSERT
   bool got_contains(Metadata **p) {
     return (p >= &_metadata_got[0] && p < &_metadata_got[_metadata_got_size]) ||
-           (p >= &_metaspace_got[0] && p < &_metaspace_got[_metaspace_got_size]);
+           (p >= &_klasses_got[0] && p < &_klasses_got[_klasses_got_size]);
   }
 #endif
 

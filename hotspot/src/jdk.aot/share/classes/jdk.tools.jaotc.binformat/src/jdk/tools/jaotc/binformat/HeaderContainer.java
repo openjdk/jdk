@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class HeaderContainer {
+public final class HeaderContainer {
 
     private static final int CURRENT_VERSION = 1;
     private final ReadOnlyDataContainer container;
+
     // int _version;
     // int _class_count;
     // int _method_count;
-    // int _metaspace_got_size;
+    // int _klasses_got_size;
     // int _metadata_got_size;
     // int _oop_got_size;
     // int _jvm_version_offset;
@@ -76,7 +77,7 @@ public class HeaderContainer {
         this.container.putIntAt(2 * 4, count);
     }
 
-    public void setMetaspaceGotSize(int size) {
+    public void setKlassesGotSize(int size) {
         this.container.putIntAt(3 * 4, size);
     }
 

@@ -54,8 +54,8 @@ requires.properties= \
     vm.aot \
     vm.cds
 
-# Tests using jtreg 4.2 b07 features
-requiredVersion=4.2 b07
+# Minimum jtreg version
+requiredVersion=4.2 b08
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

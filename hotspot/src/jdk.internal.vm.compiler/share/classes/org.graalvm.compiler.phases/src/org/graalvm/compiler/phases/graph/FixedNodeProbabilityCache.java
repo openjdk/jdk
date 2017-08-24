@@ -39,6 +39,8 @@ import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.Equivalence;
 
+import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyProbabilities;
+
 /**
  * Compute probabilities for fixed nodes on the fly and cache them at {@link AbstractBeginNode}s.
  */
@@ -106,7 +108,7 @@ public class FixedNodeProbabilityCache implements ToDoubleFunction<FixedNode> {
             }
         } else {
             ControlSplitNode split = (ControlSplitNode) current.predecessor();
-            probability = split.probability((AbstractBeginNode) current) * applyAsDouble(split);
+            probability = multiplyProbabilities(split.probability((AbstractBeginNode) current), applyAsDouble(split));
         }
         assert !Double.isNaN(probability) && !Double.isInfinite(probability) : current + " " + probability;
         cache.put(current, probability);
@@ -125,7 +127,7 @@ public class FixedNodeProbabilityCache implements ToDoubleFunction<FixedNode> {
             result += applyAsDouble(endNode);
         }
         if (current instanceof LoopBeginNode) {
-            result *= ((LoopBeginNode) current).loopFrequency();
+            result = multiplyProbabilities(result, ((LoopBeginNode) current).loopFrequency());
         }
         return result;
     }

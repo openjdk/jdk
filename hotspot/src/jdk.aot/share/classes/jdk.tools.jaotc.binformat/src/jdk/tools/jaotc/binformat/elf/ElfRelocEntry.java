@@ -24,28 +24,23 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.elf.Elf;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rela;
-import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
-import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
 import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
-public class ElfRelocEntry {
-    ByteBuffer entry;
+final class ElfRelocEntry {
+    private final ByteBuffer entry;
 
-    public ElfRelocEntry(int offset, int symno, int type, int addend) {
+    ElfRelocEntry(int offset, int symno, int type, int addend) {
 
         entry = ElfByteBuffer.allocate(Elf64_Rela.totalsize);
 
         entry.putLong(Elf64_Rela.r_offset.off, offset);
-        entry.putLong(Elf64_Rela.r_info.off, Elf64_Rela.ELF64_R_INFO(symno,type));
+        entry.putLong(Elf64_Rela.r_info.off, Elf64_Rela.ELF64_R_INFO(symno, type));
         entry.putLong(Elf64_Rela.r_addend.off, addend);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return entry.array();
     }
 }
-

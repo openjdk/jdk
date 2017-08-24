@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -59,7 +60,11 @@ class HeapRegion;
 void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
                                       bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
+  HandleMark hm;  // Discard invalid handles created during gc
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  DerivedPointerTable::clear();
+#endif
 #ifdef ASSERT
   if (G1CollectedHeap::heap()->collector_policy()->should_clear_all_soft_refs()) {
     assert(clear_all_softrefs, "Policy should have been checked earler");
@@ -85,8 +90,10 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   // The marking doesn't preserve the marks of biased objects.
   BiasedLocking::preserve_marks();
 
+  // Process roots and do the marking.
   mark_sweep_phase1(marked_for_unloading, clear_all_softrefs);
 
+  // Prepare compaction.
   mark_sweep_phase2();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -94,13 +101,20 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   DerivedPointerTable::set_active(false);
 #endif
 
+  // Adjust all pointers.
   mark_sweep_phase3();
 
+  // Do the actual compaction.
   mark_sweep_phase4();
 
   GenMarkSweep::restore_marks();
   BiasedLocking::restore_marks();
   GenMarkSweep::deallocate_stacks();
+
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  // Now update the derived pointers.
+  DerivedPointerTable::update_pointers();
+#endif
 
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
@@ -109,6 +123,13 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   GenMarkSweep::set_ref_processor(NULL);
 }
 
+STWGCTimer* G1MarkSweep::gc_timer() {
+  return G1FullGCScope::instance()->timer();
+}
+
+SerialOldTracer* G1MarkSweep::gc_tracer() {
+  return G1FullGCScope::instance()->tracer();
+}
 
 void G1MarkSweep::allocate_stacks() {
   GenMarkSweep::_preserved_count_max = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.tools.jaotc.binformat.Symbol.Binding;
  */
 final class StubDirectCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
 
-    public StubDirectCallSiteRelocationSymbol(CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
+    StubDirectCallSiteRelocationSymbol(CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
         super(binaryContainer.getSymbol(callSiteRelocation.targetSymbol));
         assert symbol != null && symbol.getBinding() == Binding.LOCAL : "Stub symbol must exist and must be LOCAL";
     }
