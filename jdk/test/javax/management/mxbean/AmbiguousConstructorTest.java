@@ -26,7 +26,7 @@
  * @bug 6175517 6278707
  * @summary Test that ambiguous ConstructorProperties annotations are detected.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean AmbiguousConstructorTest
  * @run build AmbiguousConstructorTest
  * @run main AmbiguousConstructorTest
