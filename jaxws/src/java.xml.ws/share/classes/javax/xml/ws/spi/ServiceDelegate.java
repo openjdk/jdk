@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ import javax.xml.ws.WebServiceException;
  */
 public abstract class ServiceDelegate {
 
+    /**
+     * Default constructor.
+     */
     protected ServiceDelegate() {
     }
 
@@ -61,6 +64,7 @@ public abstract class ServiceDelegate {
      * specifies the service endpoint interface that is supported by
      * the created dynamic proxy instance.
      *
+     * @param <T> Service endpoint interface
      * @param portName  Qualified name of the service endpoint in
      *                  the WSDL service description
      * @param serviceEndpointInterface Service endpoint interface
@@ -92,6 +96,7 @@ public abstract class ServiceDelegate {
      * specifies the service endpoint interface that is supported by
      * the created dynamic proxy instance.
      *
+     * @param <T> Service endpoint interface
      * @param portName  Qualified name of the service endpoint in
      *                  the WSDL service description
      * @param serviceEndpointInterface Service endpoint interface
@@ -164,6 +169,7 @@ public abstract class ServiceDelegate {
      * {@code serviceEndpointInterface} and the WSDL
      * associated with this {@code Service} instance.
      *
+     * @param <T> Service endpoint interface.
      * @param endpointReference  The {@code EndpointReference}
      * for the target service endpoint that will be invoked by the
      * returned proxy.
@@ -209,6 +215,7 @@ public abstract class ServiceDelegate {
      * binding (and a port) and configuring the proxy accordingly.
      * The returned proxy should not be reconfigured by the client.
      *
+     * @param <T> Service endpoint interface
      * @param serviceEndpointInterface Service endpoint interface
      * @return Object instance that supports the
      *                  specified service endpoint interface
@@ -235,6 +242,7 @@ public abstract class ServiceDelegate {
      * binding (and a port) and configuring the proxy accordingly.
      * The returned proxy should not be reconfigured by the client.
      *
+     * @param <T> Service endpoint interface
      * @param serviceEndpointInterface Service endpoint interface
      * @param features  An array of {@code WebServiceFeatures} to configure on the
      *                proxy.  Supported features not in the {@code features
@@ -286,6 +294,8 @@ public abstract class ServiceDelegate {
      * Creates a {@code Dispatch} instance for use with objects of
      * the user's choosing.
      *
+     * @param <T> type used for messages or message payloads. Implementations are required to
+     * support {@code javax.xml.transform.Source} and {@code javax.xml.soap.SOAPMessage}.
      * @param portName  Qualified name for the target service endpoint
      * @param type The class of object used for messages or message
      * payloads. Implementations are required to support
@@ -310,6 +320,8 @@ public abstract class ServiceDelegate {
      * Creates a {@code Dispatch} instance for use with objects of
      * the user's choosing.
      *
+     * @param <T> type used for messages or message payloads. Implementations are required to
+     * support {@code javax.xml.transform.Source} and {@code javax.xml.soap.SOAPMessage}.
      * @param portName  Qualified name for the target service endpoint
      * @param type The class of object used for messages or message
      * payloads. Implementations are required to support
@@ -369,6 +381,9 @@ public abstract class ServiceDelegate {
      * where the {@code portName} is retrieved from the
      * WSDL or {@code EndpointReference} metadata.
      *
+     * @param <T> type of object used to messages or message
+     * payloads. Implementations are required to support
+     * {@code javax.xml.transform.Source} and {@code javax.xml.soap.SOAPMessage}.
      * @param endpointReference  The {@code EndpointReference}
      * for the target service endpoint that will be invoked by the
      * returned {@code Dispatch} object.

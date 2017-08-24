@@ -28,6 +28,7 @@ import java.lang.module.ModuleDescriptor;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import jdk.internal.module.ModuleTarget;
 
 /**
   * Link-time representation of a module.
@@ -55,6 +56,13 @@ public interface ResourcePoolModule {
      * @return The module descriptor.
      */
     public ModuleDescriptor descriptor();
+
+    /**
+     * The target platform
+     *
+     * @return The target platform
+     */
+    public String targetPlatform();
 
     /**
      * Retrieves all the packages located in this module.

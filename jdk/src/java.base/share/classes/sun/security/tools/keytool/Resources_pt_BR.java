@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,8 +357,6 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "Informe o nome do alias:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN se for igual ao de <{0}>)"},
-        {".PATTERN.printX509Cert",
-                "Propriet\u00E1rio: {0}\nEmissor: {1}\nN\u00FAmero de s\u00E9rie: {2}\nV\u00E1lido de {3} at\u00E9 {4}\nFingerprints do certificado:\n\t SHA1: {5}\n\t SHA256: {6}\nNome do algoritmo de assinatura: {7}\nAlgoritmo de Chave P\u00FAblica do Assunto: {8} ({9,number,#})\nVers\u00E3o: {10}"},
         {"What.is.your.first.and.last.name.",
                 "Qual \u00E9 o seu nome e o seu sobrenome?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -421,15 +419,12 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         {"Please.provide.keysize.for.secret.key.generation",
                 "Forne\u00E7a o -keysize para a gera\u00E7\u00E3o da chave secreta"},
 
-        {"verified.by.s.in.s", "Verificado por %s em %s"},
         {"warning.not.verified.make.sure.keystore.is.correct",
             "ADVERT\u00CANCIA: n\u00E3o verificado. Certifique-se que -keystore esteja correto."},
 
         {"Extensions.", "Extens\u00F5es: "},
         {".Empty.value.", "(Valor vazio)"},
         {"Extension.Request.", "Solicita\u00E7\u00E3o de Extens\u00E3o:"},
-        {"PKCS.10.Certificate.Request.Version.1.0.Subject.s.Public.Key.s.format.s.key.",
-                "Solicita\u00E7\u00E3o do Certificado PKCS #10 (Vers\u00E3o 1.0)\nAssunto: %s\nChave P\u00FAblica: %s formato %s chave\n"},
         {"Unknown.keyUsage.type.", "Tipo de keyUsage desconhecido: "},
         {"Unknown.extendedkeyUsage.type.", "Tipo de extendedkeyUsage desconhecido: "},
         {"Unknown.AccessDescription.type.", "Tipo de AccessDescription desconhecido: "},
@@ -438,7 +433,33 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
                  "Esta extens\u00E3o n\u00E3o pode ser marcada como cr\u00EDtica. "},
         {"Odd.number.of.hex.digits.found.", "Encontrado n\u00FAmero \u00EDmpar de seis d\u00EDgitos: "},
         {"Unknown.extension.type.", "Tipo de extens\u00E3o desconhecido: "},
-        {"command.{0}.is.ambiguous.", "o comando {0} \u00E9 amb\u00EDguo:"}
+        {"command.{0}.is.ambiguous.", "o comando {0} \u00E9 amb\u00EDguo:"},
+
+        // 8171319: keytool should print out warnings when reading or
+        // generating cert/cert req using weak algorithms
+        {"the.certificate.request", "A solicita\u00E7\u00E3o do certificado"},
+        {"the.issuer", "O emissor"},
+        {"the.generated.certificate", "O certificado gerado"},
+        {"the.generated.crl", "A CRL gerada"},
+        {"the.generated.certificate.request", "A solicita\u00E7\u00E3o do certificado gerada"},
+        {"the.certificate", "O certificado"},
+        {"the.crl", "A CRL"},
+        {"the.tsa.certificate", "O certificado TSA"},
+        {"the.input", "A entrada"},
+        {"reply", "Resposta"},
+        {"one.in.many", "%s #%d de %d"},
+        {"alias.in.cacerts", "Emissor <%s> no cacerts"},
+        {"alias.in.keystore", "Emissor <%s>"},
+        {"with.weak", "%s (fraca)"},
+        {"key.bit", "Chave %s de %d bits"},
+        {"key.bit.weak", "Chave %s de %d bits (fraca)"},
+        {".PATTERN.printX509Cert.with.weak",
+                "Propriet\u00E1rio: {0}\nEmissor: {1}\nN\u00FAmero de s\u00E9rie: {2}\nV\u00E1lido de: {3} at\u00E9: {4}\nFingerprints do certificado:\n\t SHA1: {5}\n\t SHA256: {6}\nNome do algoritmo de assinatura: {7}\nAlgoritmo de Chave P\u00FAblica do Assunto: {8}\nVers\u00E3o: {9}"},
+        {"PKCS.10.with.weak",
+                "Solicita\u00E7\u00E3o do Certificado PKCS #10 (Vers\u00E3o 1.0)\nAssunto: %s\nFormato: %s\nChave P\u00FAblica: %s\nAlgoritmo de assinatura: %s\n"},
+        {"verified.by.s.in.s.weak", "Verificado por %s em %s com um %s"},
+        {"whose.sigalg.risk", "%s usa o algoritmo de assinatura %s que \u00E9 considerado um risco \u00E0 seguran\u00E7a."},
+        {"whose.key.risk", "%s usa um %s que \u00E9 considerado um risco \u00E0 seguran\u00E7a."},
     };
 
 

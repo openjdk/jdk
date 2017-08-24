@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,92 +400,10 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
 }
 
 #ifdef ASSERT
-static bool check_type(ciType* t1, ciType* t2) {
-  // Either oop-oop or prim-prim pair.
-  if (t1->is_primitive_type() && t2->is_primitive_type()) {
-    return t1->size() == t2->size(); // argument sizes should match
-  } else {
-    return !t1->is_primitive_type() && !t2->is_primitive_type(); // oop-oop
-  }
-}
-
-static bool check_inlined_mh_linker_info(ciMethod* symbolic_info, ciMethod* resolved_method) {
-  assert(symbolic_info->is_method_handle_intrinsic(), "sanity");
-  assert(!resolved_method->is_method_handle_intrinsic(), "sanity");
-
-  if (!symbolic_info->is_loaded() || !resolved_method->is_loaded()) {
-    return true; // Don't compare unloaded methods.
-  }
-  // Linkers have appendix argument which is not passed to callee.
-  int has_appendix = MethodHandles::has_member_arg(symbolic_info->intrinsic_id()) ? 1 : 0;
-  if (symbolic_info->arg_size() != (resolved_method->arg_size() + has_appendix)) {
-    return false; // Total size of arguments on stack mismatch.
-  }
-  if (!symbolic_info->return_type()->is_void()) {
-    // Only check the return type if the symbolic method is not void
-    // i.e. the return value of the resolved method can be dropped
-    if (!check_type(symbolic_info->return_type(), resolved_method->return_type())) {
-      return false; // Return value size or type mismatch encountered.
-    }
-  }
-
-  switch (symbolic_info->intrinsic_id()) {
-    case vmIntrinsics::_linkToVirtual:
-    case vmIntrinsics::_linkToInterface:
-    case vmIntrinsics::_linkToSpecial: {
-      if (resolved_method->is_static())  return false;
-      break;
-    }
-    case vmIntrinsics::_linkToStatic: {
-      if (!resolved_method->is_static())  return false;
-      break;
-    }
-  }
-
-  ciSignature* symbolic_sig = symbolic_info->signature();
-  ciSignature* resolved_sig = resolved_method->signature();
-
-  if (symbolic_sig->count() + (symbolic_info->is_static() ? 0 : 1) !=
-      resolved_sig->count() + (resolved_method->is_static() ? 0 : 1) + has_appendix) {
-    return false; // Argument count mismatch
-  }
-
-  int sbase = 0, rbase = 0;
-  int arg_count = MIN2(symbolic_sig->count() - has_appendix, resolved_sig->count());
-  ciType* recv_type = NULL;
-  if (symbolic_info->is_static() && !resolved_method->is_static()) {
-    recv_type = symbolic_sig->type_at(0);
-    sbase = 1;
-  } else if (!symbolic_info->is_static() && resolved_method->is_static()) {
-    recv_type = resolved_sig->type_at(0);
-    rbase = 1;
-  }
-  if (recv_type != NULL && recv_type->is_primitive_type()) {
-    return false; // Receiver should be an oop.
-  }
-  for (int i = 0; i < arg_count; i++) {
-    if (!check_type(symbolic_sig->type_at(sbase + i), resolved_sig->type_at(rbase + i))) {
-      return false; // Argument size or type mismatch encountered.
-    }
-  }
-  return true;
-}
-
-static bool is_call_consistent_with_jvms(JVMState* jvms, CallGenerator* cg) {
+static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
   ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
   ciMethod* resolved_method = cg->method();
-
-  if (CallGenerator::is_inlined_mh_linker(jvms, resolved_method)) {
-    return check_inlined_mh_linker_info(symbolic_info, resolved_method);
-  } else {
-    // Method name & descriptor should stay the same.
-    return (symbolic_info->get_Method()->name() == resolved_method->get_Method()->name()) &&
-           (symbolic_info->get_Method()->signature() == resolved_method->get_Method()->signature());
-  }
-}
-
-static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
-  if (!is_call_consistent_with_jvms(jvms, cg)) {
+  if (!ciMethod::is_consistent_info(symbolic_info, resolved_method)) {
     tty->print_cr("JVMS:");
     jvms->dump();
     tty->print_cr("Bytecode info:");
@@ -585,6 +503,30 @@ void Parse::do_call() {
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
     speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
+  }
+
+  // invoke-super-special
+  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
+    ciInstanceKlass* calling_klass = method()->holder();
+    ciInstanceKlass* sender_klass =
+        calling_klass->is_anonymous() ? calling_klass->host_klass() :
+                                        calling_klass;
+    if (sender_klass->is_interface()) {
+      Node* receiver_node = stack(sp() - nargs);
+      Node* cls_node = makecon(TypeKlassPtr::make(sender_klass));
+      Node* bad_type_ctrl = NULL;
+      Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
+      if (bad_type_ctrl != NULL) {
+        PreserveJVMState pjvms(this);
+        set_control(bad_type_ctrl);
+        uncommon_trap(Deoptimization::Reason_class_check,
+                      Deoptimization::Action_none);
+      }
+      if (stopped()) {
+        return; // MUST uncommon-trap?
+      }
+      set_stack(sp() - nargs, casted_receiver);
+    }
   }
 
   // Note:  It's OK to try to inline a virtual call.

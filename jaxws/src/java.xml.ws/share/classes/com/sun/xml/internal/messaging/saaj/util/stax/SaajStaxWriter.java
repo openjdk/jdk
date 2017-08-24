@@ -335,24 +335,30 @@ public class SaajStaxWriter implements XMLStreamWriter {
     @Override
     public NamespaceContext getNamespaceContext() {
         return new NamespaceContext() {
+            @Override
             public String getNamespaceURI(final String prefix) {
                 return currentElement.getNamespaceURI(prefix);
             }
+            @Override
             public String getPrefix(final String namespaceURI) {
                 return currentElement.lookupPrefix(namespaceURI);
             }
+            @Override
             public Iterator getPrefixes(final String namespaceURI) {
                 return new Iterator<String>() {
                     String prefix = getPrefix(namespaceURI);
+                    @Override
                     public boolean hasNext() {
                         return (prefix != null);
                     }
+                    @Override
                     public String next() {
                         if (!hasNext()) throw new java.util.NoSuchElementException();
                         String next = prefix;
                         prefix = null;
                         return next;
                     }
+                    @Override
                     public void remove() {}
                 };
             }

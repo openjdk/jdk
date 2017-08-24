@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,9 @@ import sun.security.jca.GetInstance.Instance;
  * <li>{@code DiffieHellman}</li>
  * </ul>
  * This algorithm is described in the <a href=
- * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
+ * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
  * KeyAgreement section</a> of the
- * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
@@ -161,8 +161,8 @@ public class KeyAgreement {
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
      * See the KeyAgreement section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @return the new {@code KeyAgreement} object
@@ -208,8 +208,8 @@ public class KeyAgreement {
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
      * See the KeyAgreement section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -252,8 +252,8 @@ public class KeyAgreement {
      * @param algorithm the standard name of the requested key agreement
      * algorithm.
      * See the KeyAgreement section in the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyAgreement">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.
