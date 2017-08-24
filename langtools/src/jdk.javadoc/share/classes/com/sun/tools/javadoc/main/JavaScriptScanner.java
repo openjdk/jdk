@@ -788,7 +788,7 @@ public class JavaScriptScanner {
     }
 
     /**
-     * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/solaris/javadoc.html#javadoctags">Javadoc Tags</a>
+     * @see <a href="http://docs.oracle.com/javase/8/docs/technotes/tools/unix/javadoc.html#CHDJGIJB">Javadoc Tags</a>
      */
     @SuppressWarnings("deprecation")
     private void initTagParsers() {

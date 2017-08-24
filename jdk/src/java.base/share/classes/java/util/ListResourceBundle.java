@@ -56,7 +56,7 @@ import sun.util.ResourceBundleEnumeration;
  * that key.
  *
  * <p>
- * The following <a name="sample">example</a> shows two members of a resource
+ * The following <a id="sample">example</a> shows two members of a resource
  * bundle family with the base name "MyResources".
  * "MyResources" is the default member of the bundle family, and
  * "MyResources_fr" is the French member.

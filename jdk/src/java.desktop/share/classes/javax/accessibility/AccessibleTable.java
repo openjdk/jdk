@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package javax.accessibility;
 
 /**
- * Class AccessibleTable describes a user-interface component that
+ * Class {@code AccessibleTable} describes a user-interface component that
  * presents data in a two-dimensional table format.
  *
- * @author      Lynn Monsanto
+ * @author Lynn Monsanto
  * @since 1.3
  */
 public interface AccessibleTable {
@@ -44,7 +44,7 @@ public interface AccessibleTable {
     /**
      * Sets the caption for the table.
      *
-     * @param a the caption for the table
+     * @param  a the caption for the table
      */
     public void setAccessibleCaption(Accessible a);
 
@@ -56,9 +56,9 @@ public interface AccessibleTable {
     public Accessible getAccessibleSummary();
 
     /**
-     * Sets the summary description of the table
+     * Sets the summary description of the table.
      *
-     * @param a the summary description of the table
+     * @param  a the summary description of the table
      */
     public void setAccessibleSummary(Accessible a);
 
@@ -77,73 +77,69 @@ public interface AccessibleTable {
     public int getAccessibleColumnCount();
 
     /**
-     * Returns the Accessible at a specified row and column
-     * in the table.
+     * Returns the {@code Accessible} at a specified row and column in the
+     * table.
      *
-     * @param r zero-based row of the table
-     * @param c zero-based column of the table
-     * @return the Accessible at the specified row and column
+     * @param  r zero-based row of the table
+     * @param  c zero-based column of the table
+     * @return the {@code Accessible} at the specified row and column
      */
     public Accessible getAccessibleAt(int r, int c);
 
     /**
-     * Returns the number of rows occupied by the Accessible at
-     * a specified row and column in the table.
+     * Returns the number of rows occupied by the {@code Accessible} at a
+     * specified row and column in the table.
      *
-     * @param r zero-based row of the table
-     * @param c zero-based column of the table
-     * @return the number of rows occupied by the Accessible at a
-     * given specified (row, column)
+     * @param  r zero-based row of the table
+     * @param  c zero-based column of the table
+     * @return the number of rows occupied by the {@code Accessible} at a given
+     *         specified (row, column)
      */
     public int getAccessibleRowExtentAt(int r, int c);
 
     /**
-     * Returns the number of columns occupied by the Accessible at
-     * a specified row and column in the table.
+     * Returns the number of columns occupied by the {@code Accessible} at a
+     * specified row and column in the table.
      *
-     * @param r zero-based row of the table
-     * @param c zero-based column of the table
-     * @return the number of columns occupied by the Accessible at a
-     * given specified row and column
+     * @param  r zero-based row of the table
+     * @param  c zero-based column of the table
+     * @return the number of columns occupied by the {@code Accessible} at a
+     *         given specified row and column
      */
     public int getAccessibleColumnExtentAt(int r, int c);
 
     /**
-     * Returns the row headers as an AccessibleTable.
+     * Returns the row headers as an {@code AccessibleTable}.
      *
-     * @return an AccessibleTable representing the row
-     * headers
+     * @return an {@code AccessibleTable} representing the row headers
      */
     public AccessibleTable getAccessibleRowHeader();
 
     /**
      * Sets the row headers.
      *
-     * @param table an AccessibleTable representing the
-     * row headers
+     * @param  table an {@code AccessibleTable} representing the row headers
      */
     public void setAccessibleRowHeader(AccessibleTable table);
 
     /**
-     * Returns the column headers as an AccessibleTable.
+     * Returns the column headers as an {@code AccessibleTable}.
      *
-     * @return an AccessibleTable representing the column
-     * headers
+     * @return an {@code AccessibleTable} representing the column headers
      */
     public AccessibleTable getAccessibleColumnHeader();
 
     /**
      * Sets the column headers.
      *
-     * @param table an AccessibleTable representing the
-     * column headers
+     * @param  table an {@code AccessibleTable} representing the column headers
      */
     public void setAccessibleColumnHeader(AccessibleTable table);
 
     /**
      * Returns the description of the specified row in the table.
      *
-     * @param r zero-based row of the table
+     * @param  r zero-based row of the table
      * @return the description of the row
      */
     public Accessible getAccessibleRowDescription(int r);
@@ -151,15 +147,15 @@ public interface AccessibleTable {
     /**
      * Sets the description text of the specified row of the table.
      *
-     * @param r zero-based row of the table
-     * @param a the description of the row
+     * @param  r zero-based row of the table
+     * @param  a the description of the row
      */
     public void setAccessibleRowDescription(int r, Accessible a);
 
     /**
      * Returns the description text of the specified column in the table.
      *
-     * @param c zero-based column of the table
+     * @param  c zero-based column of the table
      * @return the text description of the column
      */
     public Accessible getAccessibleColumnDescription(int c);
@@ -167,56 +163,54 @@ public interface AccessibleTable {
     /**
      * Sets the description text of the specified column in the table.
      *
-     * @param c zero-based column of the table
-     * @param a the text description of the column
+     * @param  c zero-based column of the table
+     * @param  a the text description of the column
      */
     public void setAccessibleColumnDescription(int c, Accessible a);
 
     /**
-     * Returns a boolean value indicating whether the accessible at
-     * a specified row and column is selected.
+     * Returns a boolean value indicating whether the accessible at a specified
+     * row and column is selected.
      *
-     * @param r zero-based row of the table
-     * @param c zero-based column of the table
-     * @return the boolean value true if the accessible at the
-     * row and column is selected. Otherwise, the boolean value
-     * false
+     * @param  r zero-based row of the table
+     * @param  c zero-based column of the table
+     * @return the boolean value {@code true} if the accessible at the row and
+     *         column is selected. Otherwise, the boolean value {@code false}
      */
     public boolean isAccessibleSelected(int r, int c);
 
     /**
-     * Returns a boolean value indicating whether the specified row
-     * is selected.
+     * Returns a boolean value indicating whether the specified row is selected.
      *
-     * @param r zero-based row of the table
-     * @return the boolean value true if the specified row is selected.
-     * Otherwise, false.
+     * @param  r zero-based row of the table
+     * @return the boolean value {@code true} if the specified row is selected.
+     *         Otherwise, {@code false}.
      */
     public boolean isAccessibleRowSelected(int r);
 
     /**
-     * Returns a boolean value indicating whether the specified column
-     * is selected.
+     * Returns a boolean value indicating whether the specified column is
+     * selected.
      *
-     * @param c zero-based column of the table
-     * @return the boolean value true if the specified column is selected.
-     * Otherwise, false.
+     * @param  c zero-based column of the table
+     * @return the boolean value {@code true} if the specified column is
+     *         selected. Otherwise, {@code false}.
      */
     public boolean isAccessibleColumnSelected(int c);
 
     /**
      * Returns the selected rows in a table.
      *
-     * @return an array of selected rows where each element is a
-     * zero-based row of the table
+     * @return an array of selected rows where each element is a zero-based row
+     *         of the table
      */
-    public int [] getSelectedAccessibleRows();
+    public int[] getSelectedAccessibleRows();
 
     /**
      * Returns the selected columns in a table.
      *
-     * @return an array of selected columns where each element is a
-     * zero-based column of the table
+     * @return an array of selected columns where each element is a zero-based
+     *         column of the table
      */
-    public int [] getSelectedAccessibleColumns();
+    public int[] getSelectedAccessibleColumns();
 }

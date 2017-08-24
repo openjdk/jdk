@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 
 /**
@@ -237,12 +238,23 @@ public abstract class JavadocTester {
      * @throws Exception if any errors occurred
      */
     public void runTests() throws Exception {
+        runTests(m -> new Object[0]);
+    }
+
+    /**
+     * Run all methods annotated with @Test, followed by printSummary.
+     * Typically called on a tester object in main()
+     * @param f a function which will be used to provide arguments to each
+     *          invoked method
+     * @throws Exception if any errors occurred
+     */
+    public void runTests(Function<Method, Object[]> f) throws Exception {
         for (Method m: getClass().getDeclaredMethods()) {
             Annotation a = m.getAnnotation(Test.class);
             if (a != null) {
                 try {
                     out.println("Running test " + m.getName());
-                    m.invoke(this, new Object[] { });
+                    m.invoke(this, f.apply(m));
                 } catch (InvocationTargetException e) {
                     Throwable cause = e.getCause();
                     throw (cause instanceof Exception) ? ((Exception) cause) : e;

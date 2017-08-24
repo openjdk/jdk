@@ -24,10 +24,8 @@
 #
 # @test
 # @summary Test RMI Bootstrap with SSL and no keystore.
-#
 # @bug 4932854
-# @modules jdk.management.agent/jdk.internal.agent
-#          jdk.management.agent/sun.management.jmxremote
+#
 # @build TestLogger RmiSslNoKeyStoreTest
 # @run shell/timeout=300  RmiSslNoKeyStoreTest.sh
 
@@ -42,7 +40,7 @@ generatePropertyPasswordFiles `ls ${TESTSRC}/*_ssltest*.in`
 
 rm -rf ${TESTCLASSES}/ssl
 mkdir -p ${TESTCLASSES}/ssl
-cp -rf ${TESTSRC}/ssl/*store ${TESTCLASSES}/ssl 
+cp -rf ${TESTSRC}/ssl/*store ${TESTCLASSES}/ssl
 chmod -R 777 ${TESTCLASSES}/ssl
 
 DEBUGOPTIONS=""

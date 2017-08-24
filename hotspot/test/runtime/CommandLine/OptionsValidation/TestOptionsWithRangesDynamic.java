@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.attach/sun.tools.attach
  *          java.management
- * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 TestOptionsWithRangesDynamic
+ * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 -Djdk.attach.allowAttachSelf TestOptionsWithRangesDynamic
  */
 
 import java.util.List;

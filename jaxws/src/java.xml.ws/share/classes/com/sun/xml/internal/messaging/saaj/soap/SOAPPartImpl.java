@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,57 @@
 
 package com.sun.xml.internal.messaging.saaj.soap;
 
-import java.io.*;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.xml.soap.*;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-
-import org.w3c.dom.*;
-
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeBodyPart;
-
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeBodyPart;
 import com.sun.xml.internal.messaging.saaj.soap.impl.ElementImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.EnvelopeImpl;
 import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
-import com.sun.xml.internal.messaging.saaj.util.*;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import com.sun.xml.internal.messaging.saaj.util.FastInfosetReflection;
+import com.sun.xml.internal.messaging.saaj.util.JAXMStreamSource;
+import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import com.sun.xml.internal.messaging.saaj.util.MimeHeadersUtil;
+import com.sun.xml.internal.messaging.saaj.util.SAAJUtil;
+import com.sun.xml.internal.messaging.saaj.util.XMLDeclarationParser;
+import org.w3c.dom.Attr;
+import org.w3c.dom.CDATASection;
+import org.w3c.dom.Comment;
+import org.w3c.dom.DOMConfiguration;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
+import org.w3c.dom.EntityReference;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
+import org.w3c.dom.UserDataHandler;
 
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.xml.soap.MimeHeaders;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPPart;
+import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PushbackReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.xml.soap.MimeHeader;
 
 /**
  * SOAPPartImpl is the first attachment. This contains the XML/SOAP document.
@@ -109,6 +137,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return (message != null) ? message.isFastInfoset() : false;
     }
 
+    @Override
     public SOAPEnvelope getEnvelope() throws SOAPException {
 
         // If there is no SOAP envelope already created, then create
@@ -128,20 +157,21 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
             envelope = createEnvelopeFromSource();
         } else {
             envelope = createEmptyEnvelope(null);
-            document.insertBefore(envelope, null);
+            document.insertBefore(((EnvelopeImpl) envelope).getDomElement(), null);
         }
         return envelope;
     }
 
     protected void lookForEnvelope() throws SOAPException {
         Element envelopeChildElement = document.doGetDocumentElement();
-        if (envelopeChildElement == null || envelopeChildElement instanceof Envelope) {
-            envelope = (EnvelopeImpl) envelopeChildElement;
-        } else if (!(envelopeChildElement instanceof ElementImpl)) {
+        org.w3c.dom.Node soapEnvelope = document.findIfPresent(envelopeChildElement);
+        if (soapEnvelope == null || soapEnvelope instanceof Envelope) {
+            envelope = (EnvelopeImpl) soapEnvelope;
+        } else if (document.find(envelopeChildElement) == null) {
             log.severe("SAAJ0512.soap.incorrect.factory.used");
             throw new SOAPExceptionImpl("Unable to create envelope: incorrect factory used during tree construction");
         } else {
-            ElementImpl soapElement = (ElementImpl) envelopeChildElement;
+            ElementImpl soapElement = (ElementImpl) document.find(envelopeChildElement);
             if (soapElement.getLocalName().equalsIgnoreCase("Envelope")) {
                 String prefix = soapElement.getPrefix();
                 String uri = (prefix == null) ? soapElement.getNamespaceURI() : soapElement.getNamespaceURI(prefix);
@@ -157,38 +187,47 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         }
     }
 
+    @Override
     public void removeAllMimeHeaders() {
         headers.removeAllHeaders();
     }
 
+    @Override
     public void removeMimeHeader(String header) {
         headers.removeHeader(header);
     }
 
+    @Override
     public String[] getMimeHeader(String name) {
         return headers.getHeader(name);
     }
 
+    @Override
     public void setMimeHeader(String name, String value) {
         headers.setHeader(name, value);
     }
 
+    @Override
     public void addMimeHeader(String name, String value) {
         headers.addHeader(name, value);
     }
 
-    public Iterator getAllMimeHeaders() {
+    @Override
+    public Iterator<MimeHeader> getAllMimeHeaders() {
         return headers.getAllHeaders();
     }
 
-    public Iterator getMatchingMimeHeaders(String[] names) {
+    @Override
+    public Iterator<MimeHeader> getMatchingMimeHeaders(String[] names) {
         return headers.getMatchingHeaders(names);
     }
 
-    public Iterator getNonMatchingMimeHeaders(String[] names) {
+    @Override
+    public Iterator<MimeHeader> getNonMatchingMimeHeaders(String[] names) {
         return headers.getNonMatchingHeaders(names);
     }
 
+    @Override
     public Source getContent() throws SOAPException {
         if (source != null) {
             InputStream bis = null;
@@ -220,6 +259,7 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return ((Envelope) getEnvelope()).getContent();
     }
 
+    @Override
     public void setContent(Source source) throws SOAPException {
         try {
             if (source instanceof StreamSource) {
@@ -348,18 +388,22 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
 
     DataHandler getDataHandler() {
         DataSource ds = new DataSource() {
+            @Override
             public OutputStream getOutputStream() throws IOException {
                 throw new IOException("Illegal Operation");
             }
 
+            @Override
             public String getContentType() {
                 return getContentTypeString();
             }
 
+            @Override
             public String getName() {
                 return getContentId();
             }
 
+            @Override
             public InputStream getInputStream() throws IOException {
                 return getContentAsStream();
             }
@@ -367,15 +411,18 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return new DataHandler(ds);
     }
 
+    @Override
     public SOAPDocumentImpl getDocument() {
         handleNewSource();
         return document;
     }
 
+    @Override
     public SOAPPartImpl getSOAPPart() {
         return this;
     }
 
+    @Override
     public DocumentType getDoctype() {
         return document.getDoctype();
     }
@@ -384,10 +431,12 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
     // same way whether they are called from here or directly from the document.
     // If the document needs any help from this SOAPPart then
     // Make it use a call-back as in doGetDocumentElement() below
+    @Override
     public DOMImplementation getImplementation() {
         return document.getImplementation();
     }
 
+    @Override
     public Element getDocumentElement() {
         // If there is no SOAP envelope already created, then create
         // one from a source if one exists. If there is a newer source
@@ -407,26 +456,32 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         }
     }
 
+    @Override
     public Element createElement(String tagName) throws DOMException {
         return document.createElement(tagName);
     }
 
+    @Override
     public DocumentFragment createDocumentFragment() {
         return document.createDocumentFragment();
     }
 
+    @Override
     public org.w3c.dom.Text createTextNode(String data) {
         return document.createTextNode(data);
     }
 
+    @Override
     public Comment createComment(String data) {
         return document.createComment(data);
     }
 
+    @Override
     public CDATASection createCDATASection(String data) throws DOMException {
         return document.createCDATASection(data);
     }
 
+    @Override
     public ProcessingInstruction createProcessingInstruction(
     String target,
     String data)
@@ -434,20 +489,24 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return document.createProcessingInstruction(target, data);
     }
 
+    @Override
     public Attr createAttribute(String name) throws DOMException {
         return document.createAttribute(name);
     }
 
+    @Override
     public EntityReference createEntityReference(String name)
     throws DOMException {
         return document.createEntityReference(name);
     }
 
+    @Override
     public NodeList getElementsByTagName(String tagname) {
         handleNewSource();
         return document.getElementsByTagName(tagname);
     }
 
+    @Override
     public org.w3c.dom.Node importNode(
         org.w3c.dom.Node importedNode,
         boolean deep)
@@ -456,16 +515,19 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return document.importNode(importedNode, deep);
     }
 
+    @Override
     public Element createElementNS(String namespaceURI, String qualifiedName)
     throws DOMException {
         return document.createElementNS(namespaceURI, qualifiedName);
     }
 
+    @Override
     public Attr createAttributeNS(String namespaceURI, String qualifiedName)
     throws DOMException {
         return document.createAttributeNS(namespaceURI, qualifiedName);
     }
 
+    @Override
     public NodeList getElementsByTagNameNS(
         String namespaceURI,
         String localName) {
@@ -473,16 +535,19 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return document.getElementsByTagNameNS(namespaceURI, localName);
     }
 
+    @Override
     public Element getElementById(String elementId) {
         handleNewSource();
         return document.getElementById(elementId);
     }
+    @Override
     public org.w3c.dom.Node appendChild(org.w3c.dom.Node newChild)
         throws DOMException {
         handleNewSource();
         return document.appendChild(newChild);
     }
 
+    @Override
     public org.w3c.dom.Node cloneNode(boolean deep) {
         handleNewSource();
         return document.cloneNode(deep);
@@ -497,75 +562,92 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return newSoapPart;
     }
 
+    @Override
     public NamedNodeMap getAttributes() {
-        return document.getAttributes();
+        return document.getDomDocument().getAttributes();
     }
 
+    @Override
     public NodeList getChildNodes() {
         handleNewSource();
         return document.getChildNodes();
     }
 
+    @Override
     public org.w3c.dom.Node getFirstChild() {
         handleNewSource();
         return document.getFirstChild();
     }
 
+    @Override
     public org.w3c.dom.Node getLastChild() {
         handleNewSource();
         return document.getLastChild();
     }
 
+    @Override
     public String getLocalName() {
-        return document.getLocalName();
+        return document.getDomDocument().getLocalName();
     }
 
+    @Override
     public String getNamespaceURI() {
-        return document.getNamespaceURI();
+        return document.getDomDocument().getNamespaceURI();
     }
 
+    @Override
     public org.w3c.dom.Node getNextSibling() {
         handleNewSource();
         return document.getNextSibling();
     }
 
+    @Override
     public String getNodeName() {
-        return document.getNodeName();
+        return document.getDomDocument().getNodeName();
     }
 
+    @Override
     public short getNodeType() {
-        return document.getNodeType();
+        return document.getDomDocument().getNodeType();
     }
 
+    @Override
     public String getNodeValue() throws DOMException {
         return document.getNodeValue();
     }
 
+    @Override
     public Document getOwnerDocument() {
-        return document.getOwnerDocument();
+        return document.getDomDocument().getOwnerDocument();
     }
 
+    @Override
     public org.w3c.dom.Node getParentNode() {
-        return document.getParentNode();
+        return document.getDomDocument().getParentNode();
     }
 
+    @Override
     public String getPrefix() {
-        return document.getPrefix();
+        return document.getDomDocument().getPrefix();
     }
 
+    @Override
     public org.w3c.dom.Node getPreviousSibling() {
-        return document.getPreviousSibling();
+        return document.getDomDocument().getPreviousSibling();
     }
 
+    @Override
     public boolean hasAttributes() {
-        return document.hasAttributes();
+        return document.getDomDocument().hasAttributes();
     }
 
+    @Override
     public boolean hasChildNodes() {
         handleNewSource();
         return document.hasChildNodes();
     }
 
+    @Override
     public org.w3c.dom.Node insertBefore(
         org.w3c.dom.Node arg0,
         org.w3c.dom.Node arg1)
@@ -574,21 +656,25 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return document.insertBefore(arg0, arg1);
     }
 
+    @Override
     public boolean isSupported(String arg0, String arg1) {
-        return document.isSupported(arg0, arg1);
+        return document.getDomDocument().isSupported(arg0, arg1);
     }
 
+    @Override
     public void normalize() {
         handleNewSource();
         document.normalize();
     }
 
+    @Override
     public org.w3c.dom.Node removeChild(org.w3c.dom.Node arg0)
         throws DOMException {
         handleNewSource();
         return document.removeChild(arg0);
     }
 
+    @Override
     public org.w3c.dom.Node replaceChild(
         org.w3c.dom.Node arg0,
         org.w3c.dom.Node arg1)
@@ -597,10 +683,12 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         return document.replaceChild(arg0, arg1);
     }
 
+    @Override
     public void setNodeValue(String arg0) throws DOMException {
         document.setNodeValue(arg0);
     }
 
+    @Override
     public void setPrefix(String arg0) throws DOMException {
         document.setPrefix(arg0);
     }
@@ -675,141 +763,173 @@ public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
         this.sourceCharsetEncoding = charset;
     }
 
+    @Override
     public org.w3c.dom.Node renameNode(org.w3c.dom.Node n, String namespaceURI, String qualifiedName)
         throws DOMException {
         handleNewSource();
         return document.renameNode(n, namespaceURI, qualifiedName);
     }
 
+    @Override
     public void normalizeDocument() {
         document.normalizeDocument();
     }
 
+    @Override
     public DOMConfiguration getDomConfig() {
-        return document.getDomConfig();
+        return document.getDomDocument().getDomConfig();
     }
 
+    @Override
     public org.w3c.dom.Node adoptNode(org.w3c.dom.Node source) throws DOMException {
         handleNewSource();
         return document.adoptNode(source);
     }
 
+    @Override
     public void setDocumentURI(String documentURI) {
         document.setDocumentURI(documentURI);
     }
 
+    @Override
     public String getDocumentURI() {
-        return document.getDocumentURI();
+        return document.getDomDocument().getDocumentURI();
     }
 
+    @Override
     public void  setStrictErrorChecking(boolean strictErrorChecking) {
         document.setStrictErrorChecking(strictErrorChecking);
     }
 
+    @Override
     public String getInputEncoding() {
-        return document.getInputEncoding();
+        return document.getDomDocument().getInputEncoding();
     }
 
+    @Override
     public String getXmlEncoding() {
-        return document.getXmlEncoding();
+        return document.getDomDocument().getXmlEncoding();
     }
 
+    @Override
     public boolean getXmlStandalone() {
-        return document.getXmlStandalone();
+        return document.getDomDocument().getXmlStandalone();
     }
 
+    @Override
     public void setXmlStandalone(boolean xmlStandalone) throws DOMException {
         document.setXmlStandalone(xmlStandalone);
     }
 
+    @Override
     public String getXmlVersion() {
-        return document.getXmlVersion();
+        return document.getDomDocument().getXmlVersion();
     }
 
+    @Override
     public void setXmlVersion(String xmlVersion) throws DOMException {
         document.setXmlVersion(xmlVersion);
     }
 
+    @Override
     public boolean  getStrictErrorChecking() {
-        return document.getStrictErrorChecking();
+        return document.getDomDocument().getStrictErrorChecking();
     }
 
     // DOM L3 methods from org.w3c.dom.Node
+    @Override
     public String getBaseURI() {
-        return document.getBaseURI();
+        return document.getDomDocument().getBaseURI();
     }
 
+    @Override
     public short compareDocumentPosition(org.w3c.dom.Node other)
                               throws DOMException {
         return document.compareDocumentPosition(other);
     }
 
+    @Override
     public String getTextContent()
                       throws DOMException {
         return document.getTextContent();
     }
 
+    @Override
     public void setTextContent(String textContent) throws DOMException {
          document.setTextContent(textContent);
     }
 
+    @Override
     public boolean isSameNode(org.w3c.dom.Node other) {
         return document.isSameNode(other);
     }
 
+    @Override
     public String lookupPrefix(String namespaceURI) {
-        return document.lookupPrefix(namespaceURI);
+        return document.getDomDocument().lookupPrefix(namespaceURI);
     }
 
+    @Override
     public boolean isDefaultNamespace(String namespaceURI) {
         return document.isDefaultNamespace(namespaceURI);
     }
 
+    @Override
     public String lookupNamespaceURI(String prefix) {
         return document.lookupNamespaceURI(prefix);
     }
 
+    @Override
     public boolean isEqualNode(org.w3c.dom.Node arg) {
-        return document.isEqualNode(arg);
+        return document.getDomDocument().isEqualNode(arg);
     }
 
+    @Override
     public Object getFeature(String feature,
                   String version) {
         return  document.getFeature(feature,version);
     }
 
+    @Override
     public Object setUserData(String key,
                    Object data,
                   UserDataHandler handler) {
         return document.setUserData(key, data, handler);
     }
 
+    @Override
     public Object getUserData(String key) {
-        return document.getUserData(key);
+        return document.getDomDocument().getUserData(key);
     }
 
+    @Override
     public void recycleNode() {
         // Nothing seems to be required to be done here
     }
 
+    @Override
     public String getValue() {
         return null;
     }
 
+    @Override
     public void setValue(String value) {
         log.severe("SAAJ0571.soappart.setValue.not.defined");
         throw new IllegalStateException("Setting value of a soap part is not defined");
     }
 
+    @Override
     public void setParentElement(SOAPElement parent) throws SOAPException {
         log.severe("SAAJ0570.soappart.parent.element.not.defined");
         throw new SOAPExceptionImpl("The parent element of a soap part is not defined");
     }
 
+    @Override
     public SOAPElement getParentElement() {
         return null;
     }
 
+    @Override
     public void detachNode() {
         // Nothing seems to be required to be done here
     }

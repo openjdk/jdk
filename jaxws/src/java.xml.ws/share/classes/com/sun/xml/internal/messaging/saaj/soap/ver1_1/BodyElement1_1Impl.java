@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.soap.SOAPException;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
 import com.sun.xml.internal.messaging.saaj.soap.impl.BodyElementImpl;
+import org.w3c.dom.Element;
 
 public class BodyElement1_1Impl extends BodyElementImpl {
 
@@ -45,6 +46,12 @@ public class BodyElement1_1Impl extends BodyElementImpl {
     public BodyElement1_1Impl(SOAPDocumentImpl ownerDoc, QName qname) {
         super(ownerDoc, qname);
     }
+
+    public BodyElement1_1Impl(SOAPDocumentImpl ownerDoc, Element domElement) {
+        super(ownerDoc, domElement);
+    }
+
+    @Override
     public SOAPElement setElementQName(QName newName) throws SOAPException {
         BodyElementImpl copy =
             new BodyElement1_1Impl((SOAPDocumentImpl) getOwnerDocument(), newName);

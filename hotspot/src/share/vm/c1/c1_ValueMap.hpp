@@ -157,6 +157,12 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_UnsafePutRaw   (UnsafePutRaw*    x) { kill_memory(); }
   void do_UnsafePutObject(UnsafePutObject* x) { kill_memory(); }
   void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { kill_memory(); }
+  void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ }
+  void do_UnsafeGetObject(UnsafeGetObject* x) {
+    if (x->is_volatile()) { // the JMM requires this
+      kill_memory();
+    }
+  }
   void do_Intrinsic      (Intrinsic*       x) { if (!x->preserves_state()) kill_memory(); }
 
   void do_Phi            (Phi*             x) { /* nothing to do */ }
@@ -197,8 +203,6 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_OsrEntry       (OsrEntry*        x) { /* nothing to do */ }
   void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ }
   void do_RoundFP        (RoundFP*         x) { /* nothing to do */ }
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ }
-  void do_UnsafeGetObject(UnsafeGetObject* x) { /* nothing to do */ }
   void do_ProfileCall    (ProfileCall*     x) { /* nothing to do */ }
   void do_ProfileReturnType (ProfileReturnType*  x) { /* nothing to do */ }
   void do_ProfileInvoke  (ProfileInvoke*   x) { /* nothing to do */ };
