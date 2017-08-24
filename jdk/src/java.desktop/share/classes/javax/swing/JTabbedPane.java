@@ -1900,7 +1900,7 @@ public class JTabbedPane extends JComponent
          * Returns the accessible name of this object, or {@code null} if
          * there is no accessible name.
          *
-         * @return the accessible name of this object, nor {@code null}.
+         * @return the accessible name of this object, or {@code null}.
          * @since 1.6
          */
         public String getAccessibleName() {

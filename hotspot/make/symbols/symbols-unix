@@ -188,7 +188,6 @@ JVM_Yield
 JVM_AddModuleExports
 JVM_AddModuleExportsToAll
 JVM_AddModuleExportsToAllUnnamed
-JVM_AddModulePackage
 JVM_AddReadsModule
 JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule

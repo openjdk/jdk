@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,38 +191,27 @@ public final class RSAPrivateCrtKeyImpl
             if (version != 0) {
                 throw new IOException("Version must be 0");
             }
-            n = getBigInteger(data);
-            e = getBigInteger(data);
-            d = getBigInteger(data);
-            p = getBigInteger(data);
-            q = getBigInteger(data);
-            pe = getBigInteger(data);
-            qe = getBigInteger(data);
-            coeff = getBigInteger(data);
+
+            /*
+             * Some implementations do not correctly encode ASN.1 INTEGER values
+             * in 2's complement format, resulting in a negative integer when
+             * decoded. Correct the error by converting it to a positive integer.
+             *
+             * See CR 6255949
+             */
+            n = data.getPositiveBigInteger();
+            e = data.getPositiveBigInteger();
+            d = data.getPositiveBigInteger();
+            p = data.getPositiveBigInteger();
+            q = data.getPositiveBigInteger();
+            pe = data.getPositiveBigInteger();
+            qe = data.getPositiveBigInteger();
+            coeff = data.getPositiveBigInteger();
             if (derValue.data.available() != 0) {
                 throw new IOException("Extra data available");
             }
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA private key", e);
         }
-    }
-
-    /**
-     * Read a BigInteger from the DerInputStream.
-     */
-    static BigInteger getBigInteger(DerInputStream data) throws IOException {
-        BigInteger b = data.getBigInteger();
-
-        /*
-         * Some implementations do not correctly encode ASN.1 INTEGER values
-         * in 2's complement format, resulting in a negative integer when
-         * decoded. Correct the error by converting it to a positive integer.
-         *
-         * See CR 6255949
-         */
-        if (b.signum() < 0) {
-            b = new BigInteger(1, b.toByteArray());
-        }
-        return b;
     }
 }
