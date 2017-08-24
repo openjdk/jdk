@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * <ul>
  *   <li><b>Info-ZIP file format</b> - The JAR format is based on the Info-ZIP
  *       file format. See
- *       <a href="../zip/package-summary.html#package_description">java.util.zip
+ *       <a href="../zip/package-summary.html#package.description">java.util.zip
  *       package description.</a> <p>
  *       In JAR files, all file names must be encoded in the UTF-8 encoding.
  *   <li><a href="{@docRoot}/../specs/jar/jar.html">
