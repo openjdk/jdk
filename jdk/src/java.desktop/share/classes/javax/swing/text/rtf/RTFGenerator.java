@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,8 @@ import javax.swing.text.*;
  * <p>Note that this is a lossy conversion since RTF's model of
  * text does not exactly correspond with LightText's.
  *
- * @see LTAttributedText
- * @see LTRTFFilter
- * @see LTTextAcceptor
  * @see java.io.OutputStream
  */
-
 class RTFGenerator extends Object
 {
     /* These dictionaries map Colors, font names, or Style objects

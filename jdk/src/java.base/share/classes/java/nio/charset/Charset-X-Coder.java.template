@@ -41,7 +41,7 @@ import java.util.Arrays;
  * An engine that can transform a sequence of $itypesPhrase$ into a sequence of
  * $otypesPhrase$.
  *
- * <a name="steps"></a>
+ * <a id="steps"></a>
  *
  * <p> The input $itype$ sequence is provided in a $itype$ buffer or a series
  * of such buffers.  The output $otype$ sequence is written to a $otype$ buffer
@@ -76,14 +76,14 @@ import java.util.Arrays;
  * examine this object and fill the input buffer, flush the output buffer, or
  * attempt to recover from $a$ $coding$ error, as appropriate, and try again.
  *
- * <a name="ce"></a>
+ * <a id="ce"></a>
  *
  * <p> There are two general types of $coding$ errors.  If the input $itype$
  * sequence is $notLegal$ then the input is considered <i>malformed</i>.  If
  * the input $itype$ sequence is legal but cannot be mapped to a valid
  * $outSequence$ then an <i>unmappable character</i> has been encountered.
  *
- * <a name="cae"></a>
+ * <a id="cae"></a>
  *
  * <p> How $a$ $coding$ error is handled depends upon the action requested for
  * that type of error, which is described by an instance of the {@link
