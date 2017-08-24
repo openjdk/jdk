@@ -23,6 +23,8 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -55,7 +57,7 @@ public class Bug4693341Test {
     // save dtd file to current working directory to avoid writing into source repository
     public void copyDTDtoWorkDir() throws IOException {
         try (FileInputStream dtdres = new FileInputStream(getClass().getResource("Bug4693341.dtd").getPath());
-             FileOutputStream dtdwork = new FileOutputStream("Bug4693341.dtd");) {
+             FileOutputStream dtdwork = new FileOutputStream(USER_DIR + "Bug4693341.dtd");) {
             int n;
             byte[] buffer = new byte[1024];
             while((n = dtdres.read(buffer)) > -1) {
@@ -71,7 +73,7 @@ public class Bug4693341Test {
 
             copyDTDtoWorkDir();
 
-            File outf = new File("Bug4693341.out");
+            File outf = new File(USER_DIR + "Bug4693341.out");
             StreamResult result = new StreamResult(new FileOutputStream(outf));
 
             String in = getClass().getResource("Bug4693341.xml").getPath();

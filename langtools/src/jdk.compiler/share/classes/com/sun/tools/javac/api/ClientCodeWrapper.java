@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,17 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public boolean contains(Location location, FileObject file) throws IOException {
+            try {
+                return clientJavaFileManager.contains(location, unwrap(file));
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
         public void flush() throws IOException {
             try {
                 clientJavaFileManager.flush();
@@ -359,9 +370,9 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
             try {
-                return clientJavaFileManager.getLocationForModule(location, fo, pkgName);
+                return clientJavaFileManager.getLocationForModule(location, unwrap(fo));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

@@ -26,7 +26,7 @@
  * @bug 6273752
  * @summary Test ImmutableDescriptor.union
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean UnionTest
  * @run build UnionTest
  * @run main UnionTest

@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 6305746
+ * @key randomness
  * @summary Test that the null values returned by the ThreadMXBean work.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ThreadMXBeanTest
  * @run build ThreadMXBeanTest
  * @run main ThreadMXBeanTest
- * @key randomness
  */
 
 import java.lang.management.*;

@@ -30,6 +30,8 @@ import javax.tools.Diagnostic;
 
 /**
  * Diagnostic information for a Snippet.
+ *
+ * @since 9
  * @see jdk.jshell.JShell#diagnostics(jdk.jshell.Snippet)
  */
 public abstract class Diag {

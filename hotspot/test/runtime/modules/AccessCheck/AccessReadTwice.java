@@ -39,8 +39,6 @@ import static jdk.test.lib.Asserts.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +54,7 @@ import java.util.Set;
 
 public class AccessReadTwice {
 
-    // Create a Layer over the boot layer.
+    // Create a layer over the boot layer.
     // Define modules within this layer to test access between
     // publicly defined classes within packages of those modules.
     public void createLayerOnBoot() throws Throwable {
@@ -66,9 +64,9 @@ public class AccessReadTwice {
         // Packages:          p1, p4
         // Packages exported: none
         ModuleDescriptor descriptor_first_mod =
-                ModuleDescriptor.module("first_mod")
+                ModuleDescriptor.newModule("first_mod")
                         .requires("java.base")
-                        .contains(Set.of("p1", "p4"))
+                        .packages(Set.of("p1", "p4"))
                         .build();
 
         // Define module:     second_mod
@@ -76,7 +74,7 @@ public class AccessReadTwice {
         // Packages:          p2
         // Packages exported: p2 is exported to first_mod
         ModuleDescriptor descriptor_second_mod =
-                ModuleDescriptor.module("second_mod")
+                ModuleDescriptor.newModule("second_mod")
                         .requires("java.base")
                         .exports("p2", Set.of("first_mod"))
                         .build();
@@ -85,9 +83,9 @@ public class AccessReadTwice {
         ModuleFinder finder = ModuleLibrary.of(descriptor_first_mod, descriptor_second_mod);
 
         // Resolves "first_mod" and "second_mod"
-        Configuration cf = Layer.boot()
+        Configuration cf = ModuleLayer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.of(), Set.of("first_mod", "second_mod"));
+                .resolve(finder, ModuleFinder.of(), Set.of("first_mod", "second_mod"));
 
         // Map each module to this class loader
         Map<String, ClassLoader> map = new HashMap<>();
@@ -95,8 +93,8 @@ public class AccessReadTwice {
         map.put("first_mod", loader);
         map.put("second_mod", loader);
 
-        // Create Layer that contains first_mod & second_mod
-        Layer layer = Layer.boot().defineModules(cf, map::get);
+        // Create layer that contains first_mod & second_mod
+        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
         assertTrue(layer.findLoader("first_mod") == loader);
         assertTrue(layer.findLoader("second_mod") == loader);

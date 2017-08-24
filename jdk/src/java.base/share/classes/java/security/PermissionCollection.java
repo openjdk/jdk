@@ -91,6 +91,7 @@ import java.util.stream.StreamSupport;
  *
  *
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public abstract class PermissionCollection implements java.io.Serializable {

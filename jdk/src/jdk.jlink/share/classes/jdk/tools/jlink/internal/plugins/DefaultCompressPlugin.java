@@ -25,6 +25,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -64,9 +65,10 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
             return ss.transform(in, out);
         } else if (zip != null) {
             return zip.transform(in, out);
+        } else {
+            in.transformAndCopy(Function.identity(), out);
+            return out.build();
         }
-
-        return out.build();
     }
 
     @Override
@@ -103,21 +105,20 @@ public final class DefaultCompressPlugin implements Plugin, ResourcePrevisitor {
         if (level != null) {
             switch (level) {
                 case LEVEL_0:
-                    ss = new StringSharingPlugin(resFilter);
+                    ss = null;
+                    zip = null;
                     break;
                 case LEVEL_1:
-                    zip = new ZipPlugin(resFilter);
+                    ss = new StringSharingPlugin(resFilter);
                     break;
                 case LEVEL_2:
-                    ss = new StringSharingPlugin(resFilter);
                     zip = new ZipPlugin(resFilter);
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid compression level " + level);
             }
         } else {
-            ss = new StringSharingPlugin(resFilter);
-            zip = new ZipPlugin(resFilter);
+            throw new IllegalArgumentException("Invalid compression level " + level);
         }
     }
 }

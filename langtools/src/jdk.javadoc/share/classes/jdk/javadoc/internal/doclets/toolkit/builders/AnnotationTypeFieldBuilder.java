@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
         super(context);
         this.typeElement = typeElement;
         this.writer = writer;
-        this.visibleMemberMap = new VisibleMemberMap(typeElement, memberType, configuration);
+        this.visibleMemberMap = configuration.getVisibleMemberMap(typeElement, memberType);
         this.members = this.visibleMemberMap.getMembers(typeElement);
     }
 
