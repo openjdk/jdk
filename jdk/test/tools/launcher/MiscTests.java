@@ -25,6 +25,8 @@
  * @test
  * @bug 6856415 8154212 8154470
  * @summary Miscellaneous tests, Exceptions
+ * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file MiscTests.java
  * @run main MiscTests
  */

@@ -491,9 +491,9 @@ public class ConcurrentSkipListSet<E>
      * encounter order that is ascending order.  Overriding implementations
      * should document the reporting of additional characteristic values.
      *
-     * <p>The spliterator's comparator (see
-     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
-     * the set's comparator (see {@link #comparator()}) is {@code null}.
+     * <p>The {@linkplain Spliterator#getComparator() spliterator's comparator}
+     * is {@code null} if the {@linkplain #comparator() set's comparator}
+     * is {@code null}.
      * Otherwise, the spliterator's comparator is the same as or imposes the
      * same total ordering as the set's comparator.
      *

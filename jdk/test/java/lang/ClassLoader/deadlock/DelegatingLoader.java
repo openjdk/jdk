@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class DelegatingLoader extends URLClassLoader {
             throws ClassNotFoundException {
         for (int i = 0; i < delClasses.length; i++) {
             if (delClasses[i].equals(className)) {
-                Starter.log("Delegating class loading for " + className);
+                DelegateTest.log("Delegating class loading for " + className);
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ie) {
@@ -85,7 +85,7 @@ public class DelegatingLoader extends URLClassLoader {
             }
         }
 
-        Starter.log("Loading local class " + className);
+        DelegateTest.log("Loading local class " + className);
 //        synchronized (getClassLoadingLock(className)) {
             return super.loadClass(className, resolve);
 //        }

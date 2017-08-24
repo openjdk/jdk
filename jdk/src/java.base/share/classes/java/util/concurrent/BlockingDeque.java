@@ -67,22 +67,22 @@ import java.util.NoSuchElementException;
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link #addFirst addFirst(e)}</td>
+ *    <td>{@link #addFirst(Object) addFirst(e)}</td>
  *    <td>{@link #offerFirst(Object) offerFirst(e)}</td>
- *    <td>{@link #putFirst putFirst(e)}</td>
+ *    <td>{@link #putFirst(Object) putFirst(e)}</td>
  *    <td>{@link #offerFirst(Object, long, TimeUnit) offerFirst(e, time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
- *    <td>{@link #removeFirst removeFirst()}</td>
- *    <td>{@link #pollFirst pollFirst()}</td>
- *    <td>{@link #takeFirst takeFirst()}</td>
+ *    <td>{@link #removeFirst() removeFirst()}</td>
+ *    <td>{@link #pollFirst() pollFirst()}</td>
+ *    <td>{@link #takeFirst() takeFirst()}</td>
  *    <td>{@link #pollFirst(long, TimeUnit) pollFirst(time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link #getFirst getFirst()}</td>
- *    <td>{@link #peekFirst peekFirst()}</td>
+ *    <td>{@link #getFirst() getFirst()}</td>
+ *    <td>{@link #peekFirst() peekFirst()}</td>
  *    <td><em>not applicable</em></td>
  *    <td><em>not applicable</em></td>
  *  </tr>
@@ -98,22 +98,22 @@ import java.util.NoSuchElementException;
  *  </tr>
  *  <tr>
  *    <td><b>Insert</b></td>
- *    <td>{@link #addLast addLast(e)}</td>
+ *    <td>{@link #addLast(Object) addLast(e)}</td>
  *    <td>{@link #offerLast(Object) offerLast(e)}</td>
- *    <td>{@link #putLast putLast(e)}</td>
+ *    <td>{@link #putLast(Object) putLast(e)}</td>
  *    <td>{@link #offerLast(Object, long, TimeUnit) offerLast(e, time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Remove</b></td>
  *    <td>{@link #removeLast() removeLast()}</td>
  *    <td>{@link #pollLast() pollLast()}</td>
- *    <td>{@link #takeLast takeLast()}</td>
+ *    <td>{@link #takeLast() takeLast()}</td>
  *    <td>{@link #pollLast(long, TimeUnit) pollLast(time, unit)}</td>
  *  </tr>
  *  <tr>
  *    <td><b>Examine</b></td>
- *    <td>{@link #getLast getLast()}</td>
- *    <td>{@link #peekLast peekLast()}</td>
+ *    <td>{@link #getLast() getLast()}</td>
+ *    <td>{@link #peekLast() peekLast()}</td>
  *    <td><em>not applicable</em></td>
  *    <td><em>not applicable</em></td>
  *  </tr>
@@ -512,7 +512,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Retrieves and removes the head of the queue represented by this deque
      * (in other words, the first element of this deque).
-     * This method differs from {@link #poll poll} only in that it
+     * This method differs from {@link #poll() poll()} only in that it
      * throws an exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #removeFirst() removeFirst}.
@@ -563,7 +563,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /**
      * Retrieves, but does not remove, the head of the queue represented by
      * this deque (in other words, the first element of this deque).
-     * This method differs from {@link #peek peek} only in that it throws an
+     * This method differs from {@link #peek() peek} only in that it throws an
      * exception if this deque is empty.
      *
      * <p>This method is equivalent to {@link #getFirst() getFirst}.

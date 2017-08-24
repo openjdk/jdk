@@ -196,7 +196,8 @@ public class SubmissionPublisherTest extends JSR166TestCase {
     }
 
     /**
-     * A null Executor argument to SubmissionPublisher constructor throws NPE
+     * A null Executor argument to SubmissionPublisher constructor
+     * throws NullPointerException
      */
     public void testConstructor3() {
         try {
@@ -207,7 +208,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
 
     /**
      * A negative capacity argument to SubmissionPublisher constructor
-     * throws IAE
+     * throws IllegalArgumentException
      */
     public void testConstructor4() {
         Executor e = Executors.newFixedThreadPool(1);
@@ -219,8 +220,9 @@ public class SubmissionPublisherTest extends JSR166TestCase {
 
     /**
      * A closed publisher reports isClosed with no closedException and
-     * throws ISE upon attempted submission; a subsequent close or
-     * closeExceptionally has no additional effect.
+     * throws IllegalStateException upon attempted submission; a
+     * subsequent close or closeExceptionally has no additional
+     * effect.
      */
     public void testClose() {
         SubmissionPublisher<Integer> p = basicPublisher();
@@ -240,9 +242,9 @@ public class SubmissionPublisherTest extends JSR166TestCase {
 
     /**
      * A publisher closedExceptionally reports isClosed with the
-     * closedException and throws ISE upon attempted submission; a
-     * subsequent close or closeExceptionally has no additional
-     * effect.
+     * closedException and throws IllegalStateException upon attempted
+     * submission; a subsequent close or closeExceptionally has no
+     * additional effect.
      */
     public void testCloseExceptionally() {
         SubmissionPublisher<Integer> p = basicPublisher();

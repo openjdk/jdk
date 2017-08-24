@@ -167,7 +167,8 @@ public class ExecutorsTest extends JSR166TestCase {
     }
 
     /**
-     * A new newFixedThreadPool with null ThreadFactory throws NPE
+     * A new newFixedThreadPool with null ThreadFactory throws
+     * NullPointerException
      */
     public void testNewFixedThreadPool3() {
         try {
@@ -177,7 +178,7 @@ public class ExecutorsTest extends JSR166TestCase {
     }
 
     /**
-     * A new newFixedThreadPool with 0 threads throws IAE
+     * A new newFixedThreadPool with 0 threads throws IllegalArgumentException
      */
     public void testNewFixedThreadPool4() {
         try {
