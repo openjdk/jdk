@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,16 @@ import com.sun.media.sound.JDK13Services;
  * {@link Properties#load(InputStream) Properties.load}. The following table
  * lists the available property keys and which methods consider them:
  *
- * <table border=0>
- *  <caption>Audio System Property Keys</caption>
+ * <table class="striped">
+ * <caption>Audio System Property Keys</caption>
+ * <thead>
  *  <tr>
  *   <th>Property Key</th>
  *   <th>Interface</th>
  *   <th>Affected Method(s)</th>
  *  </tr>
+ * </thead>
+ * <tbody>
  *  <tr>
  *   <td>{@code javax.sound.sampled.Clip}</td>
  *   <td>{@link Clip}</td>
@@ -99,6 +102,7 @@ import com.sun.media.sound.JDK13Services;
  *   <td>{@link TargetDataLine}</td>
  *   <td>{@link #getLine}, {@link #getTargetDataLine}</td>
  *  </tr>
+ * </tbody>
  * </table>
  *
  * The property value consists of the provider class name and the mixer name,

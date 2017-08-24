@@ -29,7 +29,6 @@
  *          the input CompositeData is invalid.
  * @author  Mandy Chung
  *
- * @modules java.management
  * @compile OpenTypeConverter.java
  * @build ThreadInfoCompositeData
  * @run main ThreadInfoCompositeData

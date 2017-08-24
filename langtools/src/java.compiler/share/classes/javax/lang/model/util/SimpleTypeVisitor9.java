@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ import static javax.lang.model.SourceVersion.*;
  *
  * @see SimpleTypeVisitor6
  * @see SimpleTypeVisitor7
- * @since 1.8
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public class SimpleTypeVisitor9<R, P> extends SimpleTypeVisitor8<R, P> {
