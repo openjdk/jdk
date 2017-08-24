@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ package com.apple.eawt.event;
 public interface GesturePhaseListener extends GestureListener {
     /**
      * Invoked when the user has started a continuous gesture.
-     * @param event representing the start of a continuous gesture.
+     * @param e representing the start of a continuous gesture.
      */
     public void gestureBegan(final GesturePhaseEvent e);
 
     /**
      * Invoked when the user has stopped a continuous gesture.
-     * @param event representing the end of a continuous gesture.
+     * @param e representing the end of a continuous gesture.
      */
     public void gestureEnded(final GesturePhaseEvent e);
 }

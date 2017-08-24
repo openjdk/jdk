@@ -50,6 +50,16 @@ struct SetLabelStruct {
     jobject menuitem;
     jstring label;
 };
+// struct for _SetEnable() method
+struct SetEnableStruct {
+    jobject menuitem;
+    jboolean isEnabled;
+};
+// struct for _setState() method
+struct SetStateStruct {
+    jobject menuitem;
+    jboolean isChecked;
+};
 /************************************************************************
  * AwtMenuItem fields
  */
@@ -104,6 +114,7 @@ void AwtMenuItem::RemoveCmdID()
 {
     if (m_freeId) {
         AwtToolkit::GetInstance().RemoveCmdID( GetID() );
+        m_freeId = FALSE;
     }
 }
 void AwtMenuItem::Dispose()
@@ -206,13 +217,12 @@ AwtMenuItem* AwtMenuItem::Create(jobject peer, jobject menuPeer)
         if (env->EnsureLocalCapacity(1) < 0) {
             return NULL;
         }
-        PDATA pData;
-        JNI_CHECK_PEER_RETURN_NULL(menuPeer);
+        JNI_CHECK_NULL_RETURN_NULL(menuPeer, "peer");
 
         /* target is a java.awt.MenuItem  */
         target = env->GetObjectField(peer, AwtObject::targetID);
 
-        AwtMenu* menu = (AwtMenu *)pData;
+        AwtMenu* menu = (AwtMenu *)JNI_GET_PDATA(menuPeer);
         item = new AwtMenuItem();
         jboolean isCheckbox =
             (jboolean)env->GetBooleanField(peer, AwtMenuItem::isCheckboxID);
@@ -223,7 +233,9 @@ AwtMenuItem* AwtMenuItem::Create(jobject peer, jobject menuPeer)
         item->LinkObjects(env, peer);
         item->SetMenuContainer(menu);
         item->SetNewID();
-        menu->AddItem(item);
+        if (menu != NULL) {
+            menu->AddItem(item);
+        }
     } catch (...) {
         env->DeleteLocalRef(target);
         throw;
@@ -764,30 +776,6 @@ void AwtMenuItem::UpdateContainerLayout() {
     }
 }
 
-LRESULT AwtMenuItem::WinThreadExecProc(ExecuteArgs * args)
-{
-    switch( args->cmdId ) {
-        case MENUITEM_ENABLE:
-        {
-            BOOL        isEnabled = (BOOL)args->param1;
-            this->Enable(isEnabled);
-        }
-        break;
-
-        case MENUITEM_SETSTATE:
-        {
-            BOOL        isChecked = (BOOL)args->param1;
-            this->SetState(isChecked);
-        }
-        break;
-
-        default:
-            AwtObject::WinThreadExecProc(args);
-            break;
-    }
-    return 0L;
-}
-
 void AwtMenuItem::_SetLabel(void *param) {
     if (AwtToolkit::IsMainThread()) {
         JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -887,6 +875,53 @@ ret:
     }
 }
 
+void AwtMenuItem::_SetEnable(void *param)
+{
+    if (AwtToolkit::IsMainThread()) {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+        SetEnableStruct *ses = (SetEnableStruct*) param;
+        jobject self = ses->menuitem;
+        jboolean isEnabled = ses->isEnabled;
+
+        AwtMenuItem *m = NULL;
+
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+
+        m = (AwtMenuItem *)pData;
+
+        m->Enable(isEnabled);
+ret:
+        env->DeleteGlobalRef(self);
+        delete ses;
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtMenuItem::_SetEnable, param);
+    }
+}
+
+void AwtMenuItem::_SetState(void *param)
+{
+    if (AwtToolkit::IsMainThread()) {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+        SetStateStruct *sts = (SetStateStruct*) param;
+        jobject self = sts->menuitem;
+        jboolean isChecked = sts->isChecked;
+
+        AwtMenuItem *m = NULL;
+
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        m = (AwtMenuItem *)pData;
+        m->SetState(isChecked);
+ret:
+        env->DeleteGlobalRef(self);
+        delete sts;
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtMenuItem::_SetState, param);
+    }
+}
 BOOL AwtMenuItem::IsSeparator() {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (env->EnsureLocalCapacity(2) < 0) {
@@ -1050,13 +1085,9 @@ Java_sun_awt_windows_WMenuItemPeer_create(JNIEnv *env, jobject self,
 {
     TRY;
 
-    JNI_CHECK_NULL_RETURN(menu, "null Menu");
     AwtToolkit::CreateComponent(self, menu,
                                 (AwtToolkit::ComponentFactory)
                                 AwtMenuItem::Create);
-    PDATA pData;
-    JNI_CHECK_PEER_CREATION_RETURN(self);
-
     CATCH_BAD_ALLOC;
 }
 
@@ -1071,9 +1102,12 @@ Java_sun_awt_windows_WMenuItemPeer_enable(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-    AwtObject::WinThreadExec(self, AwtMenuItem::MENUITEM_ENABLE, (LPARAM)on );
+    SetEnableStruct *ses = new SetEnableStruct;
+    ses->menuitem = env->NewGlobalRef(self);
+    ses->isEnabled = on;
+
+    AwtToolkit::GetInstance().SyncCall(AwtMenuItem::_SetEnable, ses);
+    // global refs and ses are deleted in _SetEnable
 
     CATCH_BAD_ALLOC;
 }
@@ -1112,9 +1146,12 @@ Java_sun_awt_windows_WCheckboxMenuItemPeer_setState(JNIEnv *env, jobject self,
 {
     TRY;
 
-    PDATA pData;
-    JNI_CHECK_PEER_RETURN(self);
-    AwtObject::WinThreadExec(self, AwtMenuItem::MENUITEM_SETSTATE, (LPARAM)on);
+    SetStateStruct *sts = new SetStateStruct;
+    sts->menuitem = env->NewGlobalRef(self);
+    sts->isChecked = on;
+
+    AwtToolkit::GetInstance().SyncCall(AwtMenuItem::_SetState, sts);
+    // global refs and sts are deleted in _SetState
 
     CATCH_BAD_ALLOC;
 }
