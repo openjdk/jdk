@@ -92,13 +92,13 @@ public interface NamespaceContext {
      *   <caption>Return value for specified prefixes</caption>
      *   <thead>
      *     <tr>
-     *       <th>prefix parameter</th>
-     *       <th>Namespace URI return value</th>
+     *       <th scope="col">prefix parameter</th>
+     *       <th scope="col">Namespace URI return value</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>{@code DEFAULT_NS_PREFIX} ("")</td>
+     *       <th scope="row">{@code DEFAULT_NS_PREFIX} ("")</th>
      *       <td>default Namespace URI in the current scope or
      *         <code> {@link
      *         javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI("")}
@@ -106,11 +106,11 @@ public interface NamespaceContext {
      *         when there is no default Namespace URI in the current scope</td>
      *     </tr>
      *     <tr>
-     *       <td>bound prefix</td>
+     *       <th scope="row">bound prefix</th>
      *       <td>Namespace URI bound to prefix in current scope</td>
      *     </tr>
      *     <tr>
-     *       <td>unbound prefix</td>
+     *       <th scope="row">unbound prefix</th>
      *       <td>
      *         <code> {@link
      *         javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI("")}
@@ -118,17 +118,17 @@ public interface NamespaceContext {
      *       </td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
+     *       <th scope="row">{@code XMLConstants.XML_NS_PREFIX} ("xml")</th>
      *       <td>{@code XMLConstants.XML_NS_URI}
      *           ("http://www.w3.org/XML/1998/namespace")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
+     *       <th scope="row">{@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</th>
      *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
      *         ("http://www.w3.org/2000/xmlns/")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code null}</td>
+     *       <th scope="row">{@code null}</th>
      *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *    </tbody>
@@ -157,39 +157,39 @@ public interface NamespaceContext {
      * <caption>Return value for specified Namespace URIs</caption>
      *   <thead>
      *     <tr>
-     *       <th>Namespace URI parameter</th>
-     *       <th>prefix value returned</th>
+     *       <th scope="col">Namespace URI parameter</th>
+     *       <th scope="col">prefix value returned</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>{@code <default Namespace URI>}</td>
+     *       <th scope="row">{@code <default Namespace URI>}</th>
      *       <td>{@code XMLConstants.DEFAULT_NS_PREFIX} ("")
      *       </td>
      *     </tr>
      *     <tr>
-     *       <td>bound Namespace URI</td>
+     *       <th scope="row">bound Namespace URI</th>
      *       <td>prefix bound to Namespace URI in the current scope,
      *           if multiple prefixes are bound to the Namespace URI in
      *           the current scope, a single arbitrary prefix, whose
      *           choice is implementation dependent, is returned</td>
      *     </tr>
      *     <tr>
-     *       <td>unbound Namespace URI</td>
+     *       <th scope="row">unbound Namespace URI</th>
      *       <td>{@code null}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XML_NS_URI}
-     *           ("http://www.w3.org/XML/1998/namespace")</td>
+     *       <th scope="row">{@code XMLConstants.XML_NS_URI}
+     *           ("http://www.w3.org/XML/1998/namespace")</th>
      *       <td>{@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
-     *           ("http://www.w3.org/2000/xmlns/")</td>
+     *       <th scope="row">{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
+     *           ("http://www.w3.org/2000/xmlns/")</th>
      *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code null}</td>
+     *       <th scope="row">{@code null}</th>
      *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *   </tbody>
@@ -224,14 +224,14 @@ public interface NamespaceContext {
      *   <caption>Return value for specified Namespace URIs</caption>
      *   <thead>
      *     <tr>
-     *       <th>Namespace URI parameter</th>
-     *       <th>prefixes value returned</th>
+     *       <th scope="col">Namespace URI parameter</th>
+     *       <th scope="col">prefixes value returned</th>
      *     </tr>
      *   </thead>
      *   <tbody>
      *     <tr>
-     *       <td>bound Namespace URI,
-     *         including the {@code <default Namespace URI>}</td>
+     *       <th scope="row">bound Namespace URI,
+     *         including the {@code <default Namespace URI>}</th>
      *       <td>
      *         {@code Iterator} over prefixes bound to Namespace URI in
      *         the current scope in an arbitrary,
@@ -240,23 +240,23 @@ public interface NamespaceContext {
      *       </td>
      *     </tr>
      *     <tr>
-     *       <td>unbound Namespace URI</td>
+     *       <th scope="row">unbound Namespace URI</th>
      *       <td>empty {@code Iterator}</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XML_NS_URI}
-     *           ("http://www.w3.org/XML/1998/namespace")</td>
+     *       <th scope="row">{@code XMLConstants.XML_NS_URI}
+     *           ("http://www.w3.org/XML/1998/namespace")</th>
      *       <td>{@code Iterator} with one element set to
      *         {@code XMLConstants.XML_NS_PREFIX} ("xml")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
-     *           ("http://www.w3.org/2000/xmlns/")</td>
+     *       <th scope="row">{@code XMLConstants.XMLNS_ATTRIBUTE_NS_URI}
+     *           ("http://www.w3.org/2000/xmlns/")</th>
      *       <td>{@code Iterator} with one element set to
      *         {@code XMLConstants.XMLNS_ATTRIBUTE} ("xmlns")</td>
      *     </tr>
      *     <tr>
-     *       <td>{@code null}</td>
+     *       <th scope="row">{@code null}</th>
      *       <td>{@code IllegalArgumentException} is thrown</td>
      *     </tr>
      *   </tbody>

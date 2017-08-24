@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -790,7 +789,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
                 // use specified document class
                 try {
                     Class documentClass = ObjectFactory.findProviderClass (fDocumentClassName, true);
-                    fDocument = (Document)documentClass.newInstance ();
+                    fDocument = (Document)documentClass.getConstructor().newInstance();
 
                     // if subclass of our own class that's cool too
                     Class defaultDocClass =
@@ -1750,7 +1749,9 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
                 "xml:base",
                 "http://www.w3.org/XML/1998/namespace",
                 baseURI,
-                true);
+                true,
+                false,
+                null);
             }
         }
         else if (nodeType == Node.PROCESSING_INSTRUCTION_NODE) {

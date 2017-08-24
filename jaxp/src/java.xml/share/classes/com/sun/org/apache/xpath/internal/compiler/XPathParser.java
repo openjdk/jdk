@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -667,8 +666,7 @@ public class XPathParser
   {
 
     int tok;
-
-    Object id;
+    Integer id;
 
     try
     {
@@ -676,7 +674,7 @@ public class XPathParser
       // a FilterExpr.
       id = Keywords.lookupNodeTest(key);
       if (null == id) id = m_functionTable.getFunctionID(key);
-      tok = ((Integer) id).intValue();
+      tok = id;
     }
     catch (NullPointerException npe)
     {
