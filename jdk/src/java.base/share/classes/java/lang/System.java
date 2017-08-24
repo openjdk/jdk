@@ -1960,10 +1960,6 @@ public final class System {
         setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
         setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
 
-        // Load the zip library now in order to keep java.util.zip.ZipFile
-        // from trying to use itself to load this library later.
-        loadLibrary("zip");
-
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
 

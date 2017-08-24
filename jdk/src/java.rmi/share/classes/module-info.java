@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * object registry, and the <em>{@index rmid rmid tool}</em> tool to start
  * the activation system daemon.
  *
- * <p>
  * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
  * <dt class="simpleTagLabel">Tool Guides:</dt>
  * <dd> {@extLink rmiregistry_tool_reference rmiregistry},
