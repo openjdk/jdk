@@ -28,6 +28,7 @@ package jdk.incubator.http;
 import java.net.URI;
 import jdk.incubator.http.HttpRequest.BodyProcessor;
 import java.time.Duration;
+import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 import jdk.incubator.http.internal.common.HttpHeadersImpl;
 import static jdk.incubator.http.internal.common.Utils.isValidName;
@@ -41,7 +42,7 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     //private HttpClient.Redirect followRedirects;
     private boolean expectContinue;
     private HttpRequest.BodyProcessor body;
-    private HttpClient.Version version;
+    private volatile Optional<HttpClient.Version> version;
     //private final HttpClientImpl client;
     //private ProxySelector proxy;
     private Duration duration;
@@ -52,10 +53,12 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
         this.uri = uri;
         this.userHeaders = new HttpHeadersImpl();
         this.method = "GET"; // default, as per spec
+        this.version = Optional.empty();
     }
 
     public HttpRequestBuilderImpl() {
         this.userHeaders = new HttpHeadersImpl();
+        this.version = Optional.empty();
     }
 
     @Override
@@ -149,7 +152,7 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
     @Override
     public HttpRequestBuilderImpl version(HttpClient.Version version) {
         requireNonNull(version);
-        this.version = version;
+        this.version = Optional.of(version);
         return this;
     }
 
@@ -169,7 +172,7 @@ class HttpRequestBuilderImpl extends HttpRequest.Builder {
 
     public HttpRequest.BodyProcessor body() { return body; }
 
-    HttpClient.Version version() { return version; }
+    Optional<HttpClient.Version> version() { return version; }
 
     @Override
     public HttpRequest.Builder GET() { return method("GET", null); }

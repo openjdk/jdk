@@ -24,7 +24,6 @@
 package jdk.test;
 
 import p1.Bundle;
-import java.lang.reflect.Module;
 import java.util.ResourceBundle;
 
 public class Main {

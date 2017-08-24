@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,21 @@
  * questions.
  */
 
+/**
+ * Defines the <em>{@index rmic rmic}</em> compiler for generating stubs and
+ * skeletons using the Java Remote Method Protocol (JRMP) and
+ * stubs and tie class files (IIOP protocol) for remote objects.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink rmic_tool_reference rmic}
+ * </dl>
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.rmic {
     requires java.corba;
     requires jdk.compiler;
     requires jdk.javadoc;
 }
-

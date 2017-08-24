@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3064,12 +3064,17 @@ public class Container extends Component {
      * recommendations for Windows and Unix are listed below. These
      * recommendations are used in the Sun AWT implementations.
      *
-     * <table border=1 summary="Recommended default values for a Container's focus traversal keys">
+     * <table class="striped">
+     * <caption>Recommended default values for a Container's focus traversal
+     * keys</caption>
+     * <thead>
      * <tr>
      *    <th>Identifier</th>
      *    <th>Meaning</th>
      *    <th>Default</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *    <td>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</td>
      *    <td>Normal forward keyboard traversal</td>
@@ -3086,10 +3091,11 @@ public class Container extends Component {
      *    <td>none</td>
      * </tr>
      * <tr>
-     *    <td>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS<td>
+     *    <td>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS</td>
      *    <td>Go down one focus traversal cycle</td>
      *    <td>none</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * To disable a traversal key, use an empty Set; Collections.EMPTY_SET is
@@ -4728,6 +4734,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * Listen for drag events posted in other hw components so we can
      * track enter/exit regardless of where a drag originated
      */
+    @SuppressWarnings("deprecation")
     public void eventDispatched(AWTEvent e) {
         boolean isForeignDrag = (e instanceof MouseEvent) &&
                                 !(e instanceof SunDropTargetEvent) &&
@@ -4826,6 +4833,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
      * If the target has been removed, we don't bother to send the
      * message.
      */
+    @SuppressWarnings("deprecation")
     void retargetMouseEvent(Component target, int id, MouseEvent e) {
         if (target == null) {
             return; // mouse is over another hw component or target is disabled
