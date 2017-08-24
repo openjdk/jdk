@@ -260,8 +260,8 @@ public class ThreadLocalRandom8Test extends JSR166TestCase {
     }
 
     /**
-     * A deserialized ThreadLocalRandom is always identical to
-     * ThreadLocalRandom.current()
+     * A deserialized/reserialized ThreadLocalRandom is always
+     * identical to ThreadLocalRandom.current()
      */
     public void testSerialization() {
         assertSame(

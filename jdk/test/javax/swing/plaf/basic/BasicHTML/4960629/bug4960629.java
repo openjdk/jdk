@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 4960629 7124238
-   @summary  Tests if font for html text on widgets in correct.
-   @author Denis Sharypov
-   @run main bug4960629
-*/
+/**
+ * @test
+ * @key headful
+ * @bug 4960629 7124238
+ * @summary  Tests if font for html text on widgets in correct.
+ * @author Denis Sharypov
+ * @run main bug4960629
+ */
 
 import java.awt.Font;
 import java.lang.reflect.InvocationTargetException;
@@ -57,7 +59,7 @@ public class bug4960629 {
             f.setVisible(true);
             test();
         } finally {
-            f.dispose();
+            if (f != null) { f.dispose(); }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8142966
  * @summary Wrong cursor position in text components on HiDPI display
  * @run main/othervm -Dsun.java2d.uiScale=2 SwingFontMetricsTest

@@ -75,6 +75,8 @@ abstract class TreeImpl implements Tree {
                 return Kind.MULTIPLY;
             case ASSIGN_MUL:
                 return Kind.MULTIPLY_ASSIGNMENT;
+            case POS:
+                return Kind.UNARY_PLUS;
             case ADD:
                 return Kind.PLUS;
             case INCPREFIX:
@@ -83,6 +85,8 @@ abstract class TreeImpl implements Tree {
                 return Kind.POSTFIX_INCREMENT;
             case ASSIGN_ADD:
                 return Kind.PLUS_ASSIGNMENT;
+            case NEG:
+                return Kind.UNARY_MINUS;
             case SUB:
                 return Kind.MINUS;
             case DECPREFIX:

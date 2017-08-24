@@ -21,8 +21,9 @@
  * questions.
  */
 
- /*
+/**
  * @test
+ * @key headful
  * @bug 7160951 8152492
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
@@ -30,6 +31,7 @@
  * @build jdk.testlibrary.OSInfo
  * @run main ActionListenerCalledTwiceTest
  */
+
 import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import java.awt.event.*;

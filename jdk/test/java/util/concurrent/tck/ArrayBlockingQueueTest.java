@@ -903,7 +903,7 @@ public class ArrayBlockingQueueTest extends JSR166TestCase {
     }
 
     /**
-     * A deserialized serialized queue has same elements in same order
+     * A deserialized/reserialized queue has same elements in same order
      */
     public void testSerialization() throws Exception {
         Queue x = populatedQueue(SIZE);

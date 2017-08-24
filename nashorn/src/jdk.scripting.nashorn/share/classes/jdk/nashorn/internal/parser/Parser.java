@@ -4391,10 +4391,15 @@ public class Parser extends AbstractParser implements Loggable {
             appendStatement(new ExpressionStatement(unaryLine, unaryToken, finish, expr));
             return LiteralNode.newInstance(unaryToken, finish, true);
         }
+        case ADD:
+        case SUB: {
+            final TokenType opType = type;
+            next();
+            final Expression expr = unaryExpression();
+            return new UnaryNode(Token.recast(unaryToken, (opType == TokenType.ADD) ? TokenType.POS : TokenType.NEG), expr);
+        }
         case VOID:
         case TYPEOF:
-        case ADD:
-        case SUB:
         case BIT_NOT:
         case NOT:
             next();

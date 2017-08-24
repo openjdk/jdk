@@ -77,8 +77,8 @@ class SSLConnection extends HttpConnection {
      */
     SSLConnection(AsyncSSLConnection c) {
         super(c.address, c.client);
-        this.delegate = c.plainConnection;
-        AsyncSSLDelegate adel = c.sslDelegate;
+        this.delegate = c.plainConnection();
+        AsyncSSLDelegate adel = c.sslDelegate();
         this.sslDelegate = new SSLDelegate(adel.engine, delegate.channel(), client, adel.serverName);
         this.alpn = adel.alpn;
         this.serverName = adel.serverName;
