@@ -27,7 +27,6 @@
  * @summary The capability is disabled regardless of number of times
  *          it was enabled.
  * @author  Mandy Chung
- * @modules java.management
  */
 
 import java.lang.management.ThreadMXBean;

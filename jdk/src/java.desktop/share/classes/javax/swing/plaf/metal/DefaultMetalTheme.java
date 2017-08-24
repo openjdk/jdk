@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import sun.swing.SwingUtilities2;
  * All colors returned by {@code DefaultMetalTheme} are completely
  * opaque.
  *
- * <h3><a name="fontStyle"></a>Font Style</h3>
+ * <h3><a id="fontStyle"></a>Font Style</h3>
  *
  * {@code DefaultMetalTheme} uses bold fonts for many controls.  To make all
  * controls (with the exception of the internal frame title bars and

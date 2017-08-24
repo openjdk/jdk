@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169676
+ * @bug 8169676 8175055
  * @summary boolean result of Option.process is often ignored
  * @modules jdk.compiler/com.sun.tools.javac.api
  * @modules jdk.compiler/com.sun.tools.javac.main
@@ -37,20 +37,6 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-
-import javax.lang.model.SourceVersion;
-
-import jdk.javadoc.doclet.Doclet;
-import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.doclet.Reporter;
 
 import toolbox.JavadocTask;
 import toolbox.ModuleBuilder;
@@ -144,6 +130,25 @@ public class BadOptionsTest extends TestRunner {
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
                 "warning: bad name in value for --add-exports option: 'm!'");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
+    }
+
+    @Test
+    public void testSourcePathAndModuleSourceConflict() throws IOException {
+        Path msrc = Paths.get("msrc");
+        new ModuleBuilder(tb, "m1")
+                .exports("p1")
+                .classes("package p1; public class C1 { }")
+                .write(msrc);
+        Task.Result result = new JavadocTask(tb, Task.Mode.CMDLINE)
+                .options("-sourcepath", "src",
+                        "--module-source-path", msrc.getFileName().toString(),
+                        "--module", "m1")
+                .run(Task.Expect.FAIL)
+                .writeAll();
+        checkFound(result.getOutput(Task.OutputKind.DIRECT),
+                "javadoc: cannot specify both --source-path and --module-source-path");
+        checkFound(result.getOutput(Task.OutputKind.DIRECT),
+                "1 error");
     }
 
     private void checkFound(String log, String... expect) {

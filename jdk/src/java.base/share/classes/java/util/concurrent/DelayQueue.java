@@ -67,7 +67,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * particular order.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5

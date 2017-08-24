@@ -26,7 +26,7 @@
  * @bug 6211220 6616825
  * @summary Test that jmx.serial.form=1.0 works for ObjectName
  * @author Eamonn McManus, Daniel Fuchs
- * @modules java.management
+ *
  * @run clean SerialCompatTest
  * @run build SerialCompatTest
  * @run main/othervm -Djdk.jmx.mbeans.allowNonPublic=true -Djmx.serial.form=1.0 SerialCompatTest
