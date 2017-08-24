@@ -673,7 +673,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
   nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
-  nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
+  volatile_nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                           BasicHashtableEntry<mtInternal>*)      \
   nonstatic_field(BasicHashtable<mtInternal>,  _first_free_entry,                             char*)                                 \
   nonstatic_field(BasicHashtable<mtInternal>,  _end_block,                                    char*)                                 \
   nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
@@ -2008,6 +2008,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(CmpPNode, CmpNode)                                      \
   declare_c2_type(CmpNNode, CmpNode)                                      \
   declare_c2_type(CmpLNode, CmpNode)                                      \
+  declare_c2_type(CmpULNode, CmpNode)                                     \
   declare_c2_type(CmpL3Node, CmpLNode)                                    \
   declare_c2_type(CmpFNode, CmpNode)                                      \
   declare_c2_type(CmpF3Node, CmpFNode)                                    \

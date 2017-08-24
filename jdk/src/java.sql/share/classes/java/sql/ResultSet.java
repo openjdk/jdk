@@ -143,6 +143,7 @@ import java.io.InputStream;
  * @see Statement#executeQuery
  * @see Statement#getResultSet
  * @see ResultSetMetaData
+ * @since 1.1
  */
 
 public interface ResultSet extends Wrapper, AutoCloseable {

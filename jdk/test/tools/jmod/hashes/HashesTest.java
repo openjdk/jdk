@@ -312,9 +312,7 @@ public class HashesTest {
         assertTrue(ht.hashes("m2") == null);
 
         // should not override any JDK packaged modules
-        ModuleFinder finder = new ModulePath(Runtime.version(),
-                                             true,
-                                             mpath);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, mpath);
         assertTrue(ht.hashes(finder,"jdk.compiler") == null);
         assertTrue(ht.hashes(finder,"jdk.attach") == null);
     }
@@ -325,9 +323,7 @@ public class HashesTest {
     }
 
     private ModuleHashes hashes(String name) {
-        ModuleFinder finder = new ModulePath(Runtime.version(),
-                                             true,
-                                             lib);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, lib);
         return hashes(finder, name);
     }
 

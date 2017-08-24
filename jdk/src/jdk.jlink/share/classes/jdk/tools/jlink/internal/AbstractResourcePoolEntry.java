@@ -38,7 +38,7 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * <li>For jimage content: /{module name}/{package1}/.../{packageN}/{file
  * name}</li>
  * <li>For other files (shared lib, launchers, config, ...):/{module name}/
- * {@literal bin|conf|native}/{dir1}>/.../{dirN}/{file name}</li>
+ * {@literal bin|conf|lib}/{dir1}>/.../{dirN}/{file name}</li>
  * </ul>
  */
 abstract class AbstractResourcePoolEntry implements ResourcePoolEntry {

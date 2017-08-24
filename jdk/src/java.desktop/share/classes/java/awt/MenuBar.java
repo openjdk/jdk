@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.awt.event.KeyEvent;
 import java.awt.peer.MenuBarPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Enumeration;
+import java.util.EventListener;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -44,7 +46,7 @@ import sun.awt.AWTAccessor;
  * the menu bar with a {@code Frame} object, call the
  * frame's {@code setMenuBar} method.
  * <p>
- * <A NAME="mbexample"></A><!-- target for cross references -->
+ * <a id="mbexample"></a><!-- target for cross references -->
  * This is what a menu bar might look like:
  * <p>
  * <img src="doc-files/MenuBar-1.gif"
@@ -375,6 +377,7 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * keydown).  Returns true if there is an associated
      * keyboard event.
      */
+    @SuppressWarnings("deprecation")
     boolean handleShortcut(KeyEvent e) {
         // Is it a key event?
         int id = e.getID();

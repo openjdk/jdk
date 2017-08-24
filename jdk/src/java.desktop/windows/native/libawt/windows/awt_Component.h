@@ -275,6 +275,7 @@ public:
     virtual void Show();
     virtual void Hide();
     virtual void Reshape(int x, int y, int w, int h);
+    void ReshapeNoScale(int x, int y, int w, int h);
 
     /*
      * Fix for 4046446.
@@ -582,6 +583,7 @@ public:
     virtual MsgRouting WmNcPaint(HRGN hrgn);
     virtual MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT &retVal);
     virtual MsgRouting WmSysCommand(UINT uCmdType, int xPos, int yPos);
+    virtual MsgRouting WmEnterSizeMove();
     virtual MsgRouting WmExitSizeMove();
     virtual MsgRouting WmEnterMenuLoop(BOOL isTrackPopupMenu);
     virtual MsgRouting WmExitMenuLoop(BOOL isTrackPopupMenu);
