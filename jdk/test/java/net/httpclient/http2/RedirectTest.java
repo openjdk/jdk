@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class RedirectTest {
 
             httpServer.addHandler(new RedirectHandler(sup(altURIString1)), "/foo");
             altServer.addHandler(new RedirectHandler(sup(altURIString2)), "/redir");
-            altServer.addHandler(new EchoHandler(), "/redir/again");
+            altServer.addHandler(new Http2EchoHandler(), "/redir/again");
 
             httpServer.start();
             altServer.start();

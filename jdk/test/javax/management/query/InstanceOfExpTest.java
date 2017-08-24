@@ -26,7 +26,7 @@
  * @bug 5072174 6335848
  * @summary test the new method javax.management.Query.isInstanceOf("className")
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean InstanceOfExpTest
  * @run build InstanceOfExpTest
  * @run main InstanceOfExpTest

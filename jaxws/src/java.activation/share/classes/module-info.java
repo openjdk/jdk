@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,17 @@
 
 /**
  * Defines the JavaBeans Activation Framework (JAF) API.
+ *
+ * <p> This module is upgradeble.
+ *
+ * @moduleGraph
+ * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.activation {
-    requires transitive java.datatransfer;
     requires java.logging;
+
+    requires transitive java.datatransfer;
 
     exports javax.activation;
 }
