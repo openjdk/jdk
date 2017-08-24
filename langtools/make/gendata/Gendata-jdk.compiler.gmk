@@ -25,9 +25,19 @@
 
 include JarArchive.gmk
 include JavaCompilation.gmk
+include Modules.gmk
 include SetupJavaCompilers.gmk
 
 ################################################################################
+
+# This is needed to properly setup DOCS_MODULES.
+$(eval $(call ReadImportMetaData))
+
+# Modules that should be visible for 9 - the documented modules:
+CT_MODULES := $(DOCS_MODULES)
+
+# Get the complete module source path:
+CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
 CT_DATA_DESCRIPTION ?= $(LANGTOOLS_TOPDIR)/make/data/symbols/symbols
 
@@ -41,6 +51,8 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
 
 ifeq ($(BOOT_JDK_MODULAR), true)
   COMPILECREATESYMBOLS_ADD_EXPORTS := \
+      --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+      --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
       --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
       --add-exports=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
       --add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
@@ -59,6 +71,14 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
 	    build-ctsym \
 	    $(CT_DATA_DESCRIPTION) \
 	    $(@D)
+	$(MKDIR) $(@D)/9
+	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
+	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
+	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols \
+	    build.tools.symbolgenerator.TransitiveDependencies \
+	    $(CT_MODULESOURCEPATH) \
+	    $(CT_MODULES) \
+	    >$(@D)/9/system-modules
 	$(TOUCH) $@
 
 # Can't generate ct.sym directly into modules libs as the SetupJarArchive macro
@@ -66,7 +86,7 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
 $(eval $(call SetupJarArchive, CREATE_CTSYM, \
     DEPENDENCIES := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols, \
     SRCS := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files, \
-    SUFFIXES := .sig, \
+    SUFFIXES := .sig system-modules, \
     JAR := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym, \
 ))
 

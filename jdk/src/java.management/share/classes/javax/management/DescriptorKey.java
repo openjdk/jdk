@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,8 @@ import java.lang.annotation.*;
  * <p>then the resulting {@code Descriptor} will contain the following
  * fields:</p>
  *
- * <table border="2" summary="Descriptor Fields">
+ * <table border="1">
+ * <caption style="display:none">Descriptor Fields</caption>
  * <tr><th>Name</th><th>Value</th></tr>
  * <tr><td>units</td><td>"bytes"</td></tr>
  * <tr><td>descriptionResourceKey</td><td>"bytes.key"</td></tr>
@@ -143,7 +144,8 @@ import java.lang.annotation.*;
  * or an array of annotations.  The value of the field is derived from
  * the value of the annotation element as follows:</p>
  *
- * <table border="2" summary="Descriptor Field Types">
+ * <table border="1">
+ * <caption style="display:none">Descriptor Field Types</caption>
  * <tr><th>Annotation element</th><th>Descriptor field</th></tr>
  * <tr><td>Primitive value ({@code 5}, {@code false}, etc)</td>
  *     <td>Wrapped value ({@code Integer.valueOf(5)},
