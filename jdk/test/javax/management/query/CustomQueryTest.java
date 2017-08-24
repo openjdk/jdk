@@ -26,7 +26,6 @@
  * @bug 6692027
  * @summary Check that custom subclasses of QueryEval can be serialized.
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.io.ByteArrayInputStream;

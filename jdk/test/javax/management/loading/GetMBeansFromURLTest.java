@@ -28,7 +28,7 @@
  *          given MLet instance throws a ServiceNotFoundException exception
  *          with a non null cause.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean GetMBeansFromURLTest
  * @run build GetMBeansFromURLTest
  * @run main GetMBeansFromURLTest

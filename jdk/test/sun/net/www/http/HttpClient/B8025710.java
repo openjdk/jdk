@@ -37,6 +37,7 @@ import javax.net.ssl.*;
  * @test
  * @bug 8025710
  * @summary Proxied https connection reuse by HttpClient can send CONNECT to the server
+ * @run main/othervm B8025710
  */
 public class B8025710 {
 

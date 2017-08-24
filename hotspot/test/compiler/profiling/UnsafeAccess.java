@@ -64,7 +64,7 @@ public class UnsafeAccess {
     static Object helperUnsafeLoadStore(Object o, boolean isObjArray) {
         if (isObjArray) {
             Object o1 = U.getObject(o, off);
-            U.compareAndSwapObject(o, off, o1, new Object());
+            U.compareAndSetObject(o, off, o1, new Object());
         }
         return o;
     }

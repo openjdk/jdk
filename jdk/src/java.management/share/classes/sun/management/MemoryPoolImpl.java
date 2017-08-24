@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,8 +304,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
                                           getCount());
         }
         void triggerAction() {
-            // Should not reach here
-            throw new AssertionError("Should not reach here");
+            // do nothing
         }
         void clearAction() {
             // do nothing
@@ -332,8 +331,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
                                           gcSensor.getCount());
         }
         void triggerAction() {
-            // Should not reach here
-            throw new AssertionError("Should not reach here");
+            // do nothing
         }
         void clearAction() {
             // do nothing

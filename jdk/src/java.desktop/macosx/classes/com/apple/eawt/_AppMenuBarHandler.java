@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 
 package com.apple.eawt;
 
+import java.awt.Container;
 import java.awt.Frame;
 
-import javax.swing.*;
+
+import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.JMenuBar;
 import javax.swing.plaf.MenuBarUI;
 
 import com.apple.laf.ScreenMenuBar;
@@ -102,10 +106,15 @@ class _AppMenuBarHandler {
             return;
         }
 
-        final MenuBarUI ui = menuBar.getUI();
+        Container parent = menuBar.getParent();
+        if (parent instanceof JLayeredPane) {
+            ((JLayeredPane) parent).remove(menuBar);
+        }
+
+        MenuBarUI ui = menuBar.getUI();
         if (!(ui instanceof AquaMenuBarUI)) {
-            // Aqua was not installed
-            throw new IllegalStateException("Application.setDefaultMenuBar() only works with the Aqua Look and Feel");
+            ui = new AquaMenuBarUI();
+            menuBar.setUI(ui);
         }
 
         final AquaMenuBarUI aquaUI = (AquaMenuBarUI)ui;
