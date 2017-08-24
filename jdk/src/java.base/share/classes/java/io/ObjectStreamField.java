@@ -45,16 +45,18 @@ public class ObjectStreamField
 
     /** field name */
     private final String name;
-    /** canonical JVM signature of field type */
+    /** canonical JVM signature of field type, if given */
     private final String signature;
     /** field type (Object.class if unknown non-primitive type) */
     private final Class<?> type;
+    /** lazily constructed signature for the type, if no explicit signature */
+    private String typeSignature;
     /** whether or not to (de)serialize field values as unshared */
     private final boolean unshared;
     /** corresponding reflective field object, if any */
     private final Field field;
     /** offset of field value in enclosing field group */
-    private int offset = 0;
+    private int offset;
 
     /**
      * Create a Serializable field with the specified type.  This field should
@@ -91,8 +93,8 @@ public class ObjectStreamField
         this.name = name;
         this.type = type;
         this.unshared = unshared;
-        signature = getClassSignature(type).intern();
-        field = null;
+        this.field = null;
+        this.signature = null;
     }
 
     /**
@@ -106,7 +108,7 @@ public class ObjectStreamField
         this.name = name;
         this.signature = signature.intern();
         this.unshared = unshared;
-        field = null;
+        this.field = null;
 
         switch (signature.charAt(0)) {
             case 'Z': type = Boolean.TYPE; break;
@@ -242,7 +244,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public char getTypeCode() {
-        return signature.charAt(0);
+        return getSignature().charAt(0);
     }
 
     /**
@@ -252,7 +254,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public String getTypeString() {
-        return isPrimitive() ? null : signature;
+        return isPrimitive() ? null : getSignature();
     }
 
     /**
@@ -284,7 +286,7 @@ public class ObjectStreamField
      */
     // REMIND: deprecate?
     public boolean isPrimitive() {
-        char tcode = signature.charAt(0);
+        char tcode = getTypeCode();
         return ((tcode != 'L') && (tcode != '['));
     }
 
@@ -320,7 +322,7 @@ public class ObjectStreamField
      * Return a string that describes this field.
      */
     public String toString() {
-        return signature + ' ' + name;
+        return getSignature() + ' ' + name;
     }
 
     /**
@@ -336,6 +338,17 @@ public class ObjectStreamField
      * that signature strings are returned for primitive fields as well).
      */
     String getSignature() {
-        return signature;
+        if (signature != null) {
+            return signature;
+        }
+
+        String sig = typeSignature;
+        // This lazy calculation is safe since signature can be null iff one
+        // of the public constructors are used, in which case type is always
+        // initialized to the exact type we want the signature to represent.
+        if (sig == null) {
+            typeSignature = sig = getClassSignature(type).intern();
+        }
+        return sig;
     }
 }

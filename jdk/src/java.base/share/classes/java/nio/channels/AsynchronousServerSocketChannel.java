@@ -56,17 +56,17 @@ import java.io.IOException;
  * <caption style="display:none">Socket options</caption>
  * <thead>
  *   <tr>
- *     <th>Option Name</th>
- *     <th>Description</th>
+ *     <th scope="col">Option Name</th>
+ *     <th scope="col">Description</th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </th>
  *     <td> The size of the socket receive buffer </td>
  *   </tr>
  *   <tr>
- *     <td> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </td>
+ *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </th>
  *     <td> Re-use address </td>
  *   </tr>
  * </tbody>
