@@ -380,7 +380,10 @@ public abstract class EditingHistory implements History {
     }
 
     public void fullHistoryReplace(String source) {
-        fullHistory.replace(source);
+        fullHistory.removeLast();
+        for (String line : source.split("\\R")) {
+            fullHistory.add(line);
+        }
     }
 
     private class NarrowingHistoryLine implements CharSequence {

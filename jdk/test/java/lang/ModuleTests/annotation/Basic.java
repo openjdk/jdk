@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @summary Basic test for annotations on modules
  */
 
-import java.util.Arrays;
+import java.lang.annotation.Annotation;
 
 import p.annotation.Foo;
 import p.annotation.Bar;
@@ -71,6 +71,28 @@ public class Basic {
         Baz baz = module.getAnnotation(Baz.class);
         assertNotNull(baz);
         String[] expected = { "one", "two", "three" };
-        assertTrue(Arrays.equals(baz.value(), expected));
+        assertEquals(baz.value(), expected);
+    }
+
+    /**
+     * Test annotations with RUNTIME retention policy
+     */
+    @Test
+    public void testRuntimeAnnotations() {
+        Annotation[] a = module.getAnnotations();
+        assertEquals(a, module.getDeclaredAnnotations());
+        assertTrue(a.length == 2);
+        Bar bar;
+        Baz baz;
+        if (a[0] instanceof Bar) {
+            bar = (Bar)a[0];
+            baz = (Baz)a[1];
+        } else {
+            bar = (Bar)a[1];
+            baz = (Baz)a[0];
+        }
+        assertEquals(bar.value(), "bar");
+        String[] expected = { "one", "two", "three"};
+        assertEquals(baz.value(), expected);
     }
 }

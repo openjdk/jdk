@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 /**
- * Provides the implementation of the {@code javax.security.auth.*}
+ * Provides implementations of the {@code javax.security.auth.*}
  * interfaces and various authentication modules.
  *
  * @provides javax.security.auth.spi.LoginModule
@@ -32,8 +32,10 @@
  * @since 9
  */
 module jdk.security.auth {
-    requires transitive java.naming;
+
     requires java.security.jgss;
+
+    requires transitive java.naming;
 
     exports com.sun.security.auth;
     exports com.sun.security.auth.callback;

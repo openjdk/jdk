@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package com.sun.tools.jdi;
 
-import com.sun.jdi.*;
+import com.sun.jdi.AbsentInformationException;
 
 class StratumLineInfo implements LineInfo {
     private final String stratumID;
@@ -49,16 +49,14 @@ class StratumLineInfo implements LineInfo {
         return lineNumber;
     }
 
-    public String liSourceName()
-                            throws AbsentInformationException {
+    public String liSourceName() throws AbsentInformationException {
         if (sourceName == null) {
             throw new AbsentInformationException();
         }
         return sourceName;
     }
 
-    public String liSourcePath()
-                            throws AbsentInformationException {
+    public String liSourcePath() throws AbsentInformationException {
         if (sourcePath == null) {
             throw new AbsentInformationException();
         }

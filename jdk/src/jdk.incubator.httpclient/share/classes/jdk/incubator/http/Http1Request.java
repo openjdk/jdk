@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.net.InetSocketAddress;
 import jdk.incubator.http.HttpConnection.Mode;
-import jdk.incubator.http.RequestProcessors.ProcessorBase;
 import java.nio.charset.StandardCharsets;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.util.concurrent.CompletableFuture;
@@ -274,9 +273,7 @@ class Http1Request {
         setFinished();
     }
 
-    class StreamSubscriber extends ProcessorBase
-        implements Flow.Subscriber<ByteBuffer>
-    {
+    class StreamSubscriber implements Flow.Subscriber<ByteBuffer> {
         volatile Flow.Subscription subscription;
         volatile boolean includeHeaders;
 
@@ -361,13 +358,11 @@ class Http1Request {
         throws IOException
     {
         StreamSubscriber subscriber = new StreamSubscriber(includeHeaders);
-        subscriber.setClient(client);
         requestProc.subscribe(subscriber);
         waitForCompletion();
     }
 
-    class FixedContentSubscriber extends ProcessorBase
-        implements Flow.Subscriber<ByteBuffer>
+    class FixedContentSubscriber implements Flow.Subscriber<ByteBuffer>
     {
         volatile Flow.Subscription subscription;
         volatile boolean includeHeaders;
@@ -451,7 +446,6 @@ class Http1Request {
             return;
         }
         FixedContentSubscriber subscriber = new FixedContentSubscriber(includeHeaders);
-        subscriber.setClient(client);
         requestProc.subscribe(subscriber);
         waitForCompletion();
     }
