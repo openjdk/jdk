@@ -96,124 +96,124 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <caption style="display:none">Chart shows pattern letters, date/time component, presentation, and examples.</caption>
  * <thead>
  *     <tr>
- *         <th style="text-align:left">Letter
- *         <th style="text-align:left">Date or Time Component
- *         <th style="text-align:left">Presentation
- *         <th style="text-align:left">Examples
+ *         <th scope="col" style="text-align:left">Letter
+ *         <th scope="col" style="text-align:left">Date or Time Component
+ *         <th scope="col" style="text-align:left">Presentation
+ *         <th scope="col" style="text-align:left">Examples
  * </thead>
  * <tbody>
  *     <tr>
- *         <td><code>G</code>
+ *         <th scope="row"><code>G</code>
  *         <td>Era designator
  *         <td><a href="#text">Text</a>
  *         <td><code>AD</code>
  *     <tr>
- *         <td><code>y</code>
+ *         <th scope="row"><code>y</code>
  *         <td>Year
  *         <td><a href="#year">Year</a>
  *         <td><code>1996</code>; <code>96</code>
  *     <tr>
- *         <td><code>Y</code>
+ *         <th scope="row"><code>Y</code>
  *         <td>Week year
  *         <td><a href="#year">Year</a>
  *         <td><code>2009</code>; <code>09</code>
  *     <tr>
- *         <td><code>M</code>
+ *         <th scope="row"><code>M</code>
  *         <td>Month in year (context sensitive)
  *         <td><a href="#month">Month</a>
  *         <td><code>July</code>; <code>Jul</code>; <code>07</code>
  *     <tr>
- *         <td><code>L</code>
+ *         <th scope="row"><code>L</code>
  *         <td>Month in year (standalone form)
  *         <td><a href="#month">Month</a>
  *         <td><code>July</code>; <code>Jul</code>; <code>07</code>
  *     <tr>
- *         <td><code>w</code>
+ *         <th scope="row"><code>w</code>
  *         <td>Week in year
  *         <td><a href="#number">Number</a>
  *         <td><code>27</code>
  *     <tr>
- *         <td><code>W</code>
+ *         <th scope="row"><code>W</code>
  *         <td>Week in month
  *         <td><a href="#number">Number</a>
  *         <td><code>2</code>
  *     <tr>
- *         <td><code>D</code>
+ *         <th scope="row"><code>D</code>
  *         <td>Day in year
  *         <td><a href="#number">Number</a>
  *         <td><code>189</code>
  *     <tr>
- *         <td><code>d</code>
+ *         <th scope="row"><code>d</code>
  *         <td>Day in month
  *         <td><a href="#number">Number</a>
  *         <td><code>10</code>
  *     <tr>
- *         <td><code>F</code>
+ *         <th scope="row"><code>F</code>
  *         <td>Day of week in month
  *         <td><a href="#number">Number</a>
  *         <td><code>2</code>
  *     <tr>
- *         <td><code>E</code>
+ *         <th scope="row"><code>E</code>
  *         <td>Day name in week
  *         <td><a href="#text">Text</a>
  *         <td><code>Tuesday</code>; <code>Tue</code>
  *     <tr>
- *         <td><code>u</code>
+ *         <th scope="row"><code>u</code>
  *         <td>Day number of week (1 = Monday, ..., 7 = Sunday)
  *         <td><a href="#number">Number</a>
  *         <td><code>1</code>
  *     <tr>
- *         <td><code>a</code>
+ *         <th scope="row"><code>a</code>
  *         <td>Am/pm marker
  *         <td><a href="#text">Text</a>
  *         <td><code>PM</code>
  *     <tr>
- *         <td><code>H</code>
+ *         <th scope="row"><code>H</code>
  *         <td>Hour in day (0-23)
  *         <td><a href="#number">Number</a>
  *         <td><code>0</code>
  *     <tr>
- *         <td><code>k</code>
+ *         <th scope="row"><code>k</code>
  *         <td>Hour in day (1-24)
  *         <td><a href="#number">Number</a>
  *         <td><code>24</code>
  *     <tr>
- *         <td><code>K</code>
+ *         <th scope="row"><code>K</code>
  *         <td>Hour in am/pm (0-11)
  *         <td><a href="#number">Number</a>
  *         <td><code>0</code>
  *     <tr>
- *         <td><code>h</code>
+ *         <th scope="row"><code>h</code>
  *         <td>Hour in am/pm (1-12)
  *         <td><a href="#number">Number</a>
  *         <td><code>12</code>
  *     <tr>
- *         <td><code>m</code>
+ *         <th scope="row"><code>m</code>
  *         <td>Minute in hour
  *         <td><a href="#number">Number</a>
  *         <td><code>30</code>
  *     <tr>
- *         <td><code>s</code>
+ *         <th scope="row"><code>s</code>
  *         <td>Second in minute
  *         <td><a href="#number">Number</a>
  *         <td><code>55</code>
  *     <tr>
- *         <td><code>S</code>
+ *         <th scope="row"><code>S</code>
  *         <td>Millisecond
  *         <td><a href="#number">Number</a>
  *         <td><code>978</code>
  *     <tr>
- *         <td><code>z</code>
+ *         <th scope="row"><code>z</code>
  *         <td>Time zone
  *         <td><a href="#timezone">General time zone</a>
  *         <td><code>Pacific Standard Time</code>; <code>PST</code>; <code>GMT-08:00</code>
  *     <tr>
- *         <td><code>Z</code>
+ *         <th scope="row"><code>Z</code>
  *         <td>Time zone
  *         <td><a href="#rfc822timezone">RFC 822 time zone</a>
  *         <td><code>-0800</code>
  *     <tr>
- *         <td><code>X</code>
+ *         <th scope="row"><code>X</code>
  *         <td>Time zone
  *         <td><a href="#iso8601timezone">ISO 8601 time zone</a>
  *         <td><code>-08</code>; <code>-0800</code>;  <code>-08:00</code>
@@ -379,42 +379,42 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <caption style="display:none">Examples of date and time patterns interpreted in the U.S. locale</caption>
  * <thead>
  *     <tr>
- *         <th style="text-align:left">Date and Time Pattern
- *         <th style="text-align:left">Result
+ *         <th scope="col" style="text-align:left">Date and Time Pattern
+ *         <th scope="col" style="text-align:left">Result
  * </thead>
  * <tbody>
  *     <tr>
- *         <td><code>"yyyy.MM.dd G 'at' HH:mm:ss z"</code>
+ *         <th scope="row"><code>"yyyy.MM.dd G 'at' HH:mm:ss z"</code>
  *         <td><code>2001.07.04 AD at 12:08:56 PDT</code>
  *     <tr>
- *         <td><code>"EEE, MMM d, ''yy"</code>
+ *         <th scope="row"><code>"EEE, MMM d, ''yy"</code>
  *         <td><code>Wed, Jul 4, '01</code>
  *     <tr>
- *         <td><code>"h:mm a"</code>
+ *         <th scope="row"><code>"h:mm a"</code>
  *         <td><code>12:08 PM</code>
  *     <tr>
- *         <td><code>"hh 'o''clock' a, zzzz"</code>
+ *         <th scope="row"><code>"hh 'o''clock' a, zzzz"</code>
  *         <td><code>12 o'clock PM, Pacific Daylight Time</code>
  *     <tr>
- *         <td><code>"K:mm a, z"</code>
+ *         <th scope="row"><code>"K:mm a, z"</code>
  *         <td><code>0:08 PM, PDT</code>
  *     <tr>
- *         <td><code>"yyyyy.MMMMM.dd GGG hh:mm aaa"</code>
+ *         <th scope="row"><code>"yyyyy.MMMMM.dd GGG hh:mm aaa"</code>
  *         <td><code>02001.July.04 AD 12:08 PM</code>
  *     <tr>
- *         <td><code>"EEE, d MMM yyyy HH:mm:ss Z"</code>
+ *         <th scope="row"><code>"EEE, d MMM yyyy HH:mm:ss Z"</code>
  *         <td><code>Wed, 4 Jul 2001 12:08:56 -0700</code>
  *     <tr>
- *         <td><code>"yyMMddHHmmssZ"</code>
+ *         <th scope="row"><code>"yyMMddHHmmssZ"</code>
  *         <td><code>010704120856-0700</code>
  *     <tr>
- *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>
+ *         <th scope="row"><code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>
  *         <td><code>2001-07-04T12:08:56.235-0700</code>
  *     <tr>
- *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"</code>
+ *         <th scope="row"><code>"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"</code>
  *         <td><code>2001-07-04T12:08:56.235-07:00</code>
  *     <tr>
- *         <td><code>"YYYY-'W'ww-u"</code>
+ *         <th scope="row"><code>"YYYY-'W'ww-u"</code>
  *         <td><code>2001-W27-3</code>
  * </tbody>
  * </table>
