@@ -55,6 +55,9 @@ import javax.management.remote.JMXServiceURL;
  * @bug 8147857
  * @summary Tests whether RMIConnector logs attribute names correctly.
  * @author Severin Gehwolf
+ *
+ * @modules java.logging
+ *          java.management.rmi
  */
 public class RMIConnectorLogAttributesTest {
 

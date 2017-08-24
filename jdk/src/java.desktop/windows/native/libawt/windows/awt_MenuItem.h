@@ -45,13 +45,6 @@ class AwtMenu;
 
 class AwtMenuItem : public AwtObject {
 public:
-    // id's for methods executed on toolkit thread
-    enum {
-        MENUITEM_ENABLE,
-        MENUITEM_SETSTATE,
-        MENUITEM_LAST
-    };
-
     /* java.awt.MenuComponent fields */
     static jfieldID fontID;
     static jfieldID appContextID;
@@ -154,13 +147,14 @@ public:
      */
     MsgRouting WmNotify(UINT notifyCode);
 
-    virtual LRESULT WinThreadExecProc(ExecuteArgs * args);
     virtual BOOL IsDisabledAndPopup() {
         return FALSE;
     }
     virtual BOOL IsSeparator();
 
     // invoked on Toolkit thread
+    static void _SetState(void *param);
+    static void _SetEnable(void *param);
     static void _SetLabel(void *param);
     static void _UpdateLayout(void *param);
 

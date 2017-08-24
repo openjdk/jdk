@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,10 @@ public class JpegDataContentHandler
     public static final String STR_SRC = "java.awt.Image";
 
     /**
-     * return the DataFlavors for this <code>DataContentHandler</code>
+     * Return the DataFlavors for this <code>DataContentHandler</code>
      * @return The DataFlavors.
      */
+    @Override
     public DataFlavor[] getTransferDataFlavors() { // throws Exception;
         DataFlavor flavors[] = new DataFlavor[1];
 
@@ -67,11 +68,12 @@ public class JpegDataContentHandler
     }
 
     /**
-     * return the Transfer Data of type DataFlavor from InputStream
-     * @param df The DataFlavor.
-     * @param ins The InputStream corresponding to the data.
+     * Return the Transfer Data of type DataFlavor from InputStream
+     * @param df The DataFlavor
+     * @param ds The DataSource
      * @return The constructed Object.
      */
+    @Override
     public Object getTransferData(DataFlavor df, DataSource ds) {
 
         // this is sort of hacky, but will work for the
@@ -98,6 +100,7 @@ public class JpegDataContentHandler
     /**
      *
      */
+    @Override
     public Object getContent(DataSource ds) { // throws Exception;
         InputStream inputStream = null;
         BufferedImage jpegLoadImage = null;
@@ -109,14 +112,18 @@ public class JpegDataContentHandler
         } catch (Exception e) {
         }
 
-        return (Image) jpegLoadImage;
+        return jpegLoadImage;
     }
 
     /**
-     * construct an object from a byte stream
+     * Construct an object from a byte stream
      * (similar semantically to previous method, we are deciding
      *  which one to support)
+     * @param obj object to write
+     * @param mimeType requested MIME type of the resulting byte stream
+     * @param os OutputStream
      */
+    @Override
     public void writeTo(Object obj, String mimeType, OutputStream os)
         throws IOException {
         if (!mimeType.equals("image/jpeg"))
