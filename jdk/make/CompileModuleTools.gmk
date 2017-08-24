@@ -23,10 +23,14 @@
 # questions.
 #
 
+default: all
+
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+
+################################################################################
 
 TOOLS_CLASSES_DIR := $(BUILDTOOLS_OUTPUTDIR)/tools_jigsaw_classes
 
@@ -34,8 +38,18 @@ $(eval $(call SetupJavaCompilation,BUILD_JIGSAW_TOOLS, \
     SETUP := GENERATE_USINGJDKBYTECODE, \
     SRC := $(JDK_TOPDIR)/make/src/classes, \
     INCLUDES := build/tools/deps \
+                build/tools/docs \
                 build/tools/jigsaw, \
+    COPY := .properties .html, \
     BIN := $(TOOLS_CLASSES_DIR), \
     ADD_JAVAC_FLAGS := \
+        --add-modules jdk.jdeps \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+        --add-exports jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED \
 ))
+
+TARGETS += $(BUILD_JIGSAW_TOOLS)
+
+################################################################################
+
+all: $(TARGETS)

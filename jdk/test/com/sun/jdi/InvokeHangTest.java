@@ -22,17 +22,18 @@
  */
 
 /**
- *  @test
- *  @bug 6293795
- *  @summary  Backend hangs when invokeMethod is called from a JDI eventHandler
+ * @test
+ * @bug 6293795
+ * @summary  Backend hangs when invokeMethod is called from a JDI eventHandler
+ * @author jjh
  *
- *  @author jjh
+ * @library /test/lib
+ * @modules java.management
+ *          jdk.jdi
  *
- *  @modules jdk.jdi
- *  @library /test/lib
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g InvokeHangTest.java
- *  @run driver InvokeHangTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g InvokeHangTest.java
+ * @run driver InvokeHangTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

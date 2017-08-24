@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,26 @@ import sun.util.calendar.CalendarSystem;
  */
 class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
-    DerInputBuffer(byte[] buf) { super(buf); }
+    boolean allowBER = true;
 
-    DerInputBuffer(byte[] buf, int offset, int len) {
+    // used by sun/security/util/DerInputBuffer/DerInputBufferEqualsHashCode.java
+    DerInputBuffer(byte[] buf) {
+        this(buf, true);
+    }
+
+    DerInputBuffer(byte[] buf, boolean allowBER) {
+        super(buf);
+        this.allowBER = allowBER;
+    }
+
+    DerInputBuffer(byte[] buf, int offset, int len, boolean allowBER) {
         super(buf, offset, len);
+        this.allowBER = allowBER;
     }
 
     DerInputBuffer dup() {
         try {
             DerInputBuffer retval = (DerInputBuffer)clone();
-
             retval.mark(Integer.MAX_VALUE);
             return retval;
         } catch (CloneNotSupportedException e) {
@@ -147,8 +157,8 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
         System.arraycopy(buf, pos, bytes, 0, len);
         skip(len);
 
-        // check to make sure no extra leading 0s for DER
-        if (len >= 2 && (bytes[0] == 0) && (bytes[1] >= 0)) {
+        // BER allows leading 0s but DER does not
+        if (!allowBER && (len >= 2 && (bytes[0] == 0) && (bytes[1] >= 0))) {
             throw new IOException("Invalid encoding: redundant leading 0s");
         }
 
