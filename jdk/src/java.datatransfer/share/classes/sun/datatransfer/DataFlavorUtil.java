@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-
 /**
- * Utility class with different datatransfer helper functions
+ * Utility class with different datatransfer helper functions.
  *
  * @since 9
  */
@@ -64,11 +63,11 @@ public class DataFlavorUtil {
     }
 
     private static Comparator<String> getCharsetComparator() {
-       return CharsetComparator.INSTANCE;
+        return CharsetComparator.INSTANCE;
     }
 
     public static Comparator<DataFlavor> getDataFlavorComparator() {
-       return DataFlavorComparator.INSTANCE;
+        return DataFlavorComparator.INSTANCE;
     }
 
     public static Comparator<Long> getIndexOrderComparator(Map<Long, Integer> indexMap) {
@@ -83,7 +82,8 @@ public class DataFlavorUtil {
      * Tracks whether a particular text/* MIME type supports the charset
      * parameter. The Map is initialized with all of the standard MIME types
      * listed in the DataFlavor.selectBestTextFlavor method comment. Additional
-     * entries may be added during the life of the JRE for text/<other> types.
+     * entries may be added during the life of the JRE for text/&lt;other&gt;
+     * types.
      */
     private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
 
@@ -127,11 +127,11 @@ public class DataFlavorUtil {
     }
 
     /**
-     * Returns a {@code SortedSet} of Strings which are a total order of the standard
-     * character sets supported by the JRE. The ordering follows the same principles as
-     * {@link java.awt.datatransfer.DataFlavor#selectBestTextFlavor(java.awt.datatransfer.DataFlavor[])}.
-     * So as to avoid loading all available character converters, optional, non-standard,
-     * character sets are not included.
+     * Returns a {@code SortedSet} of Strings which are a total order of the
+     * standard character sets supported by the JRE. The ordering follows the
+     * same principles as {@link DataFlavor#selectBestTextFlavor(DataFlavor[])}.
+     * So as to avoid loading all available character converters, optional,
+     * non-standard, character sets are not included.
      */
     public static Set<String> standardEncodings() {
         return StandardEncodingsHolder.standardEncodings;
@@ -154,9 +154,8 @@ public class DataFlavorUtil {
     }
 
     /**
-     * Tests only whether the flavor's MIME type supports the charset
-     * parameter. Must only be called for flavors with a primary type of
-     * "text".
+     * Tests only whether the flavor's MIME type supports the charset parameter.
+     * Must only be called for flavors with a primary type of "text".
      */
     public static boolean doesSubtypeSupportCharset(DataFlavor flavor) {
         String subType = flavor.getSubType();
@@ -188,10 +187,9 @@ public class DataFlavorUtil {
         return ret_val;
     }
 
-
     /**
-     * Returns whether this flavor is a text type which supports the
-     * 'charset' parameter.
+     * Returns whether this flavor is a text type which supports the 'charset'
+     * parameter.
      */
     public static boolean isFlavorCharsetTextType(DataFlavor flavor) {
         // Although stringFlavor doesn't actually support the charset
@@ -247,9 +245,9 @@ public class DataFlavorUtil {
     /**
      * If the specified flavor is a text flavor which supports the "charset"
      * parameter, then this method returns that parameter, or the default
-     * charset if no such parameter was specified at construction. For non-
-     * text DataFlavors, and for non-charset text flavors, this method returns
-     * null.
+     * charset if no such parameter was specified at construction. For non-text
+     * DataFlavors, and for non-charset text flavors, this method returns
+     * {@code null}.
      */
     public static String getTextCharset(DataFlavor flavor) {
         if (!isFlavorCharsetTextType(flavor)) {
@@ -278,16 +276,16 @@ public class DataFlavorUtil {
 
     /**
      * Helper method to compare two objects by their Integer indices in the
-     * given map. If the map doesn't contain an entry for either of the
-     * objects, the fallback index will be used for the object instead.
+     * given map. If the map doesn't contain an entry for either of the objects,
+     * the fallback index will be used for the object instead.
      *
-     * @param indexMap the map which maps objects into Integer indexes.
-     * @param obj1 the first object to be compared.
-     * @param obj2 the second object to be compared.
-     * @param fallbackIndex the Integer to be used as a fallback index.
-     * @return a negative integer, zero, or a positive integer as the
-     *             first object is mapped to a less, equal to, or greater
-     *             index than the second.
+     * @param  indexMap the map which maps objects into Integer indexes
+     * @param  obj1 the first object to be compared
+     * @param  obj2 the second object to be compared
+     * @param  fallbackIndex the Integer to be used as a fallback index
+     * @return a negative integer, zero, or a positive integer as the first
+     *         object is mapped to a less, equal to, or greater index than the
+     *         second
      */
     static <T> int compareIndices(Map<T, Integer> indexMap,
                                   T obj1, T obj2,
@@ -342,21 +340,20 @@ public class DataFlavorUtil {
          * <p>
          * Charsets are ordered according to the following rules:
          * <ul>
-         * <li>All unsupported charsets are equal.
+         * <li>All unsupported charsets are equal</li>
          * <li>Any unsupported charset is worse than any supported charset.
          * <li>Unicode charsets, such as "UTF-16", "UTF-8", "UTF-16BE" and
-         *     "UTF-16LE", are considered best.
-         * <li>After them, platform default charset is selected.
-         * <li>"US-ASCII" is the worst of supported charsets.
-         * <li>For all other supported charsets, the lexicographically less
-         *     one is considered the better.
+         *     "UTF-16LE", are considered best</li>
+         * <li>After them, platform default charset is selected</li>
+         * <li>"US-ASCII" is the worst of supported charsets</li>
+         * <li>For all other supported charsets, the lexicographically less one
+         *     is considered the better</li>
          * </ul>
          *
-         * @param charset1 the first charset to be compared
-         * @param charset2 the second charset to be compared.
-         * @return a negative integer, zero, or a positive integer as the
-         *             first argument is worse, equal to, or better than the
-         *             second.
+         * @param  charset1 the first charset to be compared
+         * @param  charset2 the second charset to be compared
+         * @return a negative integer, zero, or a positive integer as the first
+         *         argument is worse, equal to, or better than the second
          */
         public int compare(String charset1, String charset2) {
             charset1 = getEncoding(charset1);
@@ -372,20 +369,20 @@ public class DataFlavorUtil {
         }
 
         /**
-         * Returns encoding for the specified charset according to the
-         * following rules:
+         * Returns encoding for the specified charset according to the following
+         * rules:
          * <ul>
-         * <li>If the charset is <code>null</code>, then <code>null</code> will
-         *     be returned.
+         * <li>If the charset is {@code null}, then {@code null} will be
+         *     returned</li>
          * <li>Iff the charset specifies an encoding unsupported by this JRE,
-         *     <code>UNSUPPORTED_CHARSET</code> will be returned.
+         *     {@code UNSUPPORTED_CHARSET} will be returned</li>
          * <li>If the charset specifies an alias name, the corresponding
          *     canonical name will be returned iff the charset is a known
-         *     Unicode, ASCII, or default charset.
+         *     Unicode, ASCII, or default charset</li>
          * </ul>
          *
-         * @param charset the charset.
-         * @return an encoding for this charset.
+         * @param  charset the charset
+         * @return an encoding for this charset
          */
         static String getEncoding(String charset) {
             if (charset == null) {
@@ -408,12 +405,13 @@ public class DataFlavorUtil {
     /**
      * An IndexedComparator which compares two DataFlavors. For text flavors,
      * the comparison follows the rules outlined in
-     * DataFlavor.selectBestTextFlavor. For non-text flavors, unknown
-     * application MIME types are preferred, followed by known
-     * application/x-java-* MIME types. Unknown application types are preferred
-     * because if the user provides his own data flavor, it will likely be the
-     * most descriptive one. For flavors which are otherwise equal, the
-     * flavors' string representation are compared in the alphabetical order.
+     * {@link DataFlavor#selectBestTextFlavor selectBestTextFlavor}. For
+     * non-text flavors, unknown application MIME types are preferred, followed
+     * by known application/x-java-* MIME types. Unknown application types are
+     * preferred because if the user provides his own data flavor, it will
+     * likely be the most descriptive one. For flavors which are otherwise
+     * equal, the flavors' string representation are compared in the
+     * alphabetical order.
      */
     private static class DataFlavorComparator implements Comparator<DataFlavor> {
 
@@ -614,7 +612,7 @@ public class DataFlavorUtil {
         }
     }
 
-    /*
+    /**
      * Given the Map that maps objects to Integer indices and a boolean value,
      * this Comparator imposes a direct or reverse order on set of objects.
      * <p>
@@ -623,9 +621,9 @@ public class DataFlavorUtil {
      * only if the index of A is greater than the index of B. An object that
      * doesn't have an associated index is less or equal than any other object.
      * <p>
-     * If the specified boolean value is SELECT_WORST, the Comparator imposes the
-     * reverse index-based order: an object A is greater than an object B if and
-     * only if A is less than B with the direct index-based order.
+     * If the specified boolean value is SELECT_WORST, the Comparator imposes
+     * the reverse index-based order: an object A is greater than an object B if
+     * and only if A is less than B with the direct index-based order.
      */
     private static class IndexOrderComparator implements Comparator<Long> {
         private final Map<Long, Integer> indexMap;
@@ -643,25 +641,24 @@ public class DataFlavorUtil {
     private static class TextFlavorComparator extends DataFlavorComparator {
 
         static final TextFlavorComparator INSTANCE = new TextFlavorComparator();
+
         /**
-         * Compares two <code>DataFlavor</code> objects. Returns a negative
-         * integer, zero, or a positive integer as the first
-         * <code>DataFlavor</code> is worse than, equal to, or better than the
-         * second.
+         * Compares two {@code DataFlavor} objects. Returns a negative integer,
+         * zero, or a positive integer as the first {@code DataFlavor} is worse
+         * than, equal to, or better than the second.
          * <p>
-         * <code>DataFlavor</code>s are ordered according to the rules outlined
-         * for <code>selectBestTextFlavor</code>.
+         * {@code DataFlavor}s are ordered according to the rules outlined for
+         * {@link DataFlavor#selectBestTextFlavor selectBestTextFlavor}.
          *
-         * @param flavor1 the first <code>DataFlavor</code> to be compared
-         * @param flavor2 the second <code>DataFlavor</code> to be compared
+         * @param  flavor1 the first {@code DataFlavor} to be compared
+         * @param  flavor2 the second {@code DataFlavor} to be compared
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is worse, equal to, or better than the second
          * @throws ClassCastException if either of the arguments is not an
-         *         instance of <code>DataFlavor</code>
+         *         instance of {@code DataFlavor}
          * @throws NullPointerException if either of the arguments is
-         *         <code>null</code>
-         *
-         * @see java.awt.datatransfer.DataFlavor#selectBestTextFlavor
+         *         {@code null}
+         * @see DataFlavor#selectBestTextFlavor
          */
         public int compare(DataFlavor flavor1, DataFlavor flavor2) {
             if (flavor1.isFlavorTextType()) {
@@ -679,8 +676,8 @@ public class DataFlavorUtil {
     }
 
     /**
-     * A fallback implementation of {@link sun.datatransfer.DesktopDatatransferService}
-     * used if there is no desktop.
+     * A fallback implementation of {@link DesktopDatatransferService} used if
+     * there is no desktop.
      */
     private static final class DefaultDesktopDatatransferService implements DesktopDatatransferService {
         static final DesktopDatatransferService INSTANCE = getDesktopService();
@@ -697,9 +694,8 @@ public class DataFlavorUtil {
         }
 
         /**
-         * System singleton FlavorTable.
-         * Only used if there is no desktop
-         * to provide an appropriate FlavorMap.
+         * System singleton FlavorTable. Only used if there is no desktop to
+         * provide an appropriate FlavorMap.
          */
         private volatile FlavorMap flavorMap;
 
@@ -754,8 +750,8 @@ public class DataFlavorUtil {
     }
 
     /**
-     * A class that provides access to java.rmi.Remote and java.rmi.MarshalledObject
-     * without creating a static dependency.
+     * A class that provides access to {@code java.rmi.Remote} and
+     * {@code java.rmi.MarshalledObject} without creating a static dependency.
      */
     public static class RMI {
         private static final Class<?> remoteClass = getClass("java.rmi.Remote");
@@ -788,7 +784,8 @@ public class DataFlavorUtil {
         }
 
         /**
-         * Returns java.rmi.Remote.class if RMI is present; otherwise {@code null}.
+         * Returns {@code java.rmi.Remote.class} if RMI is present; otherwise
+         * {@code null}.
          */
         static Class<?> remoteClass() {
             return remoteClass;
@@ -802,8 +799,8 @@ public class DataFlavorUtil {
         }
 
         /**
-         * Returns a new MarshalledObject containing the serialized representation
-         * of the given object.
+         * Returns a new MarshalledObject containing the serialized
+         * representation of the given object.
          */
         public static Object newMarshalledObject(Object obj) throws IOException {
             try {
@@ -836,6 +833,5 @@ public class DataFlavorUtil {
                 throw new AssertionError(x);
             }
         }
-
     }
 }

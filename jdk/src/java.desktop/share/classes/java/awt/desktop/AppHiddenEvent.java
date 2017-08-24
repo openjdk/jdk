@@ -29,8 +29,8 @@ package java.awt.desktop;
 /**
  * Event sent when the application has been hidden or shown.
  *
- * @see AppHiddenListener#appHidden(AppEvent.AppHiddenEvent)
- * @see AppHiddenListener#appUnhidden(AppEvent.AppHiddenEvent)
+ * @see AppHiddenListener#appHidden(AppHiddenEvent)
+ * @see AppHiddenListener#appUnhidden(AppHiddenEvent)
  *
  * @since 9
  */

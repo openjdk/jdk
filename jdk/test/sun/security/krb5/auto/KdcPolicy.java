@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.security.krb5.Config;
 
 /*
  * @test
- * @bug 8164656
+ * @bug 8164656 8181461
  * @run main/othervm KdcPolicy udp
  * @run main/othervm KdcPolicy tcp
  * @summary krb5.kdc.bad.policy test
@@ -110,7 +110,7 @@ public class KdcPolicy {
         // It is possible the real KDC cannot fulfil the request
         // in 3s, so it might fail (either 1st time or 2nd time).
         writeConf(1, 3000, p1, p3);
-        test("a3000c3000c3000|a3000c3000-|a3000c3000c3000-");
+        test("a3000c3000c3000|a3000c3000-|a3000c3000c3000a3000-");
 
         // If a test case won't use a real KDC, it can be sped up.
         writeConf(3, 5, p1, p2);
