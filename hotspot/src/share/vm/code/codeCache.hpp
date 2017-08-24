@@ -85,6 +85,7 @@ class CodeCache : AllStatic {
   static GrowableArray<CodeHeap*>* _heaps;
   static GrowableArray<CodeHeap*>* _compiled_heaps;
   static GrowableArray<CodeHeap*>* _nmethod_heaps;
+  static GrowableArray<CodeHeap*>* _allocable_heaps;
 
   static address _low_bound;                            // Lower bound of CodeHeap addresses
   static address _high_bound;                           // Upper bound of CodeHeap addresses
@@ -237,6 +238,11 @@ class CodeCache : AllStatic {
     return type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
   }
 
+  static bool code_blob_type_accepts_allocable(int type) {
+    return type <= CodeBlobType::All;
+  }
+
+
   // Returns the CodeBlobType for the given compilation level
   static int get_code_blob_type(int comp_level) {
     if (comp_level == CompLevel_none ||
@@ -304,11 +310,10 @@ template <class T, class Filter> class CodeBlobIterator : public StackObj {
     // If set to NULL, initialized by first call to next()
     _code_blob = (CodeBlob*)nm;
     if (nm != NULL) {
-      address start = nm->code_begin();
-      while(!(*_heap)->contains(start)) {
+      while(!(*_heap)->contains_blob(_code_blob)) {
         ++_heap;
       }
-      assert((*_heap)->contains(start), "match not found");
+      assert((*_heap)->contains_blob(_code_blob), "match not found");
     }
   }
 

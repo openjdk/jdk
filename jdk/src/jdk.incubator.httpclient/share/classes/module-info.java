@@ -26,9 +26,11 @@
 /**
  * Defines the high-level HTTP and WebSocket API.
  * {@Incubating}
+ *
+ * @moduleGraph
+ * @since 9
  */
 module jdk.incubator.httpclient {
-    requires java.base;
     exports jdk.incubator.http;
 }
 
