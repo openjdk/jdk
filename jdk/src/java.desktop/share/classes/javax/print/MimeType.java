@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.util.Vector;
  * <LI>
  * Since not all Java profiles include the AWT, the Jini Print Service should
  * not depend on an AWT class.
- * <P>
  * <LI>
  * The implementation of class java.awt.datatransfer.MimeType does not
  * guarantee
@@ -76,7 +75,6 @@ import java.util.Vector;
  * <LI> Quoting backslash characters inside parameter values are removed.
  * <LI> The parameters are arranged in ascending order of parameter name.
  * </UL>
- * <P>
  *
  * @author  Alan Kaminsky
  */

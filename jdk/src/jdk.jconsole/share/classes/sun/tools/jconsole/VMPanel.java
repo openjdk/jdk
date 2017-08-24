@@ -124,7 +124,9 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
         addMouseListener(new MouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
-                if (connectedIconBounds != null && (e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && connectedIconBounds.contains(e.getPoint())) {
+                if (connectedIconBounds != null
+                        && (e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0
+                        && connectedIconBounds.contains(e.getPoint())) {
 
                     if (isConnected()) {
                         userDisconnected = true;

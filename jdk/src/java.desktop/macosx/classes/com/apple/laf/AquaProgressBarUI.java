@@ -46,7 +46,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
     private static final boolean ADJUSTTIMER = true;
 
-    protected static final RecyclableSingleton<SizeDescriptor> sizeDescriptor = new RecyclableSingleton<SizeDescriptor>() {
+    private static final RecyclableSingleton<SizeDescriptor> sizeDescriptor = new RecyclableSingleton<SizeDescriptor>() {
         @Override
         protected SizeDescriptor getInstance() {
             return new SizeDescriptor(new SizeVariant(146, 20)) {

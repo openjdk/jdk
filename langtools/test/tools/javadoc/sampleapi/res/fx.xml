@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,28 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<package name="sampleapi.fx" style="fx">
-
-    <class basename="FXClass">
-        <modifier>public</modifier>
-        <member>
-            <field basename="id">
+<sampleapi>
+    <module name="UNNAMED">
+        <package name="sampleapi.fx" style="fx">
+            <class basename="FXClass">
                 <modifier>public</modifier>
-                <type>int|boolean</type>
-            </field>
-            <method basename="setProp">
-                <modifier>public|protected|private</modifier>
-                <param>int|String</param>
-                <type>void</type>
-            </method>
-            <method basename="getProp">
-                <modifier>public|protected|private</modifier>
-                <type>int|int|String</type>
-            </method>
-        </member>
-    </class>
+                <member>
+                    <field basename="id">
+                        <modifier>public</modifier>
+                        <type>int|boolean</type>
+                    </field>
+                    <method basename="setProp">
+                        <modifier>public|protected|private</modifier>
+                        <param>int|String</param>
+                        <type>void</type>
+                    </method>
+                    <method basename="getProp">
+                        <modifier>public|protected|private</modifier>
+                        <type>int|int|String</type>
+                    </method>
+                </member>
+            </class>
 
-</package>
+        </package>
+    </module>
+</sampleapi>
