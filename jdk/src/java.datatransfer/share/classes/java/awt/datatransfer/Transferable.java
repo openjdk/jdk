@@ -37,6 +37,7 @@ import java.io.IOException;
  * a section in <em>The Java Tutorial</em>, for more information.
  *
  * @author      Amy Fowler
+ * @since 1.1
  */
 
 public interface Transferable {

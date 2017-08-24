@@ -204,13 +204,6 @@ public enum ToolOption {
         }
     },
 
-    XMODULE("-Xmodule:", false) {
-        @Override
-        public void process(Helper helper, String arg) throws InvalidValueException {
-            Option.XMODULE.process(helper.getOptionHelper(), arg);
-        }
-    },
-
     PATCH_MODULE("--patch-module", true) {
         @Override
         public void process(Helper helper, String arg) throws InvalidValueException {

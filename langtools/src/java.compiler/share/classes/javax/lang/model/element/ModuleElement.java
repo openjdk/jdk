@@ -28,12 +28,14 @@ package javax.lang.model.element;
 import java.util.List;
 
 /**
- * Represents a module program element.  Provides access to information
- * about the module and its members.
+ * Represents a module program element.  Provides access to
+ * information about the module, its directives, and its members.
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
- */  // TODO: add @jls to module section
+ * @jls 7.7 Module Declarations
+ * @spec JPMS
+ */
 public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
@@ -104,6 +106,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
      * future versions of the Java&trade; programming language.
      *
      * @since 9
+     * @spec JPMS
      */
     enum DirectiveKind {
         /** A "requires (static|transitive)* module-name" directive. */
@@ -119,11 +122,13 @@ public interface ModuleElement extends Element, QualifiedNameable {
     };
 
     /**
-     * Represents a "module statement" within the declaration of this module.
+     * Represents a directive within the declaration of this
+     * module. The directives of a module declaration configure the
+     * module in the Java Platform Module System.
      *
      * @since 9
-     *
-     */ // TODO: add jls to Module Statement
+     * @spec JPMS
+     */
     interface Directive {
         /**
          * Returns the {@code kind} of this directive.
@@ -131,11 +136,134 @@ public interface ModuleElement extends Element, QualifiedNameable {
          * @return the kind of this directive
          */
         DirectiveKind getKind();
+
+        /**
+         * Applies a visitor to this directive.
+         *
+         * @param <R> the return type of the visitor's methods
+         * @param <P> the type of the additional parameter to the visitor's methods
+         * @param v   the visitor operating on this directive
+         * @param p   additional parameter to the visitor
+         * @return a visitor-specified result
+         */
+        <R, P> R accept(DirectiveVisitor<R, P> v, P p);
+    }
+
+    /**
+     * A visitor of module directives, in the style of the visitor design
+     * pattern.  Classes implementing this interface are used to operate
+     * on a directive when the kind of directive is unknown at compile time.
+     * When a visitor is passed to a directive's {@link Directive#accept
+     * accept} method, the <code>visit<i>Xyz</i></code> method applicable
+     * to that directive is invoked.
+     *
+     * <p> Classes implementing this interface may or may not throw a
+     * {@code NullPointerException} if the additional parameter {@code p}
+     * is {@code null}; see documentation of the implementing class for
+     * details.
+     *
+     * <p> <b>WARNING:</b> It is possible that methods will be added to
+     * this interface to accommodate new, currently unknown, language
+     * structures added to future versions of the Java&trade; programming
+     * language. Methods to accommodate new language constructs will
+     * be added in a source <em>compatible</em> way using
+     * <em>default methods</em>.
+     *
+     * @param <R> the return type of this visitor's methods.  Use {@link
+     *            Void} for visitors that do not need to return results.
+     * @param <P> the type of the additional parameter to this visitor's
+     *            methods.  Use {@code Void} for visitors that do not need an
+     *            additional parameter.
+     *
+     * @since 9
+     * @spec JPMS
+     */
+    interface DirectiveVisitor<R, P> {
+        /**
+         * Visits any directive as if by passing itself to that
+         * directive's {@link Directive#accept accept} method and passing
+         * {@code null} for the additional parameter.
+         * The invocation {@code v.visit(d)} is equivalent to
+         * {@code d.accept(v, null)}.
+         * @param d  the directive to visit
+         * @return a visitor-specified result
+         * @implSpec This implementation is {@code visit(d, null)}
+         */
+        default R visit(Directive d) {
+            return d.accept(this, null);
+        }
+
+        /**
+         * Visits any directive as if by passing itself to that
+         * directive's {@link Directive#accept accept} method.
+         * The invocation {@code v.visit(d, p)} is equivalent to
+         * {@code d.accept(v, p)}.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        default R visit(Directive d, P p) {
+            return d.accept(this, p);
+        }
+
+        /**
+         * Visits a {@code requires} directive.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        R visitRequires(RequiresDirective d, P p);
+
+        /**
+         * Visits an {@code exports} directive.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        R visitExports(ExportsDirective d, P p);
+
+        /**
+         * Visits an {@code opens} directive.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        R visitOpens(OpensDirective d, P p);
+
+        /**
+         * Visits a {@code uses} directive.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        R visitUses(UsesDirective d, P p);
+
+        /**
+         * Visits a {@code provides} directive.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         */
+        R visitProvides(ProvidesDirective d, P p);
+
+        /**
+         * Visits an unknown directive.
+         * This can occur if the language evolves and new kinds of directive are added.
+         * @param d  the directive to visit
+         * @param p  a visitor-specified parameter
+         * @return a visitor-specified result
+         * @throws UnknownDirectiveException a visitor implementation may optionally throw this exception
+         * @implSpec This implementation throws {@code new UnknownDirectiveException(d, p)}.
+         */
+        default R visitUnknown(Directive d, P p) {
+            throw new UnknownDirectiveException(d, p);
+        }
     }
 
     /**
      * A dependency of a module.
      * @since 9
+     * @spec JPMS
      */
     interface RequiresDirective extends Directive {
         /**
@@ -160,6 +288,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An exported package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface ExportsDirective extends Directive {
 
@@ -181,6 +310,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An opened package of a module.
      * @since 9
+     * @spec JPMS
      */
     interface OpensDirective extends Directive {
 
@@ -202,6 +332,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * An implementation of a service provided by a module.
      * @since 9
+     * @spec JPMS
      */
     interface ProvidesDirective extends Directive {
         /**
@@ -220,6 +351,7 @@ public interface ModuleElement extends Element, QualifiedNameable {
     /**
      * A reference to a service used by a module.
      * @since 9
+     * @spec JPMS
      */
     interface UsesDirective extends Directive {
         /**

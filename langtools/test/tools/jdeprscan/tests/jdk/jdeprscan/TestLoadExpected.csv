@@ -1,4 +1,4 @@
-#jdepr 1
+#jdepr1
 METHOD,jdk/deprcases/members/ExampleAnnotation,name()Ljava/lang/String;,,false
 FIELD,jdk/deprcases/members/ExampleClass,field1,,false
 FIELD,jdk/deprcases/members/ExampleClass,field2,,false

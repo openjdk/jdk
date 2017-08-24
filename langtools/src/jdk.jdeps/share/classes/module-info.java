@@ -25,6 +25,9 @@
 
 /** Defines tools for analysing dependencies in Java libraries and programs, including
  *  the <em>jdeps</em> and <em>javap</em> tools.
+ *
+ *  @moduleGraph
+ *  @since 9
  */
 module jdk.jdeps {
     requires java.base;

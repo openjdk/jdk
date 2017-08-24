@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
 import javax.swing.JComponent;
+import javax.swing.JRootPane;
 
 import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
@@ -5036,6 +5037,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * Returns whether or not event was dispatched to an ancestor
      */
+    @SuppressWarnings("deprecation")
     boolean dispatchMouseWheelToAncestor(MouseWheelEvent e) {
         int newX, newY;
         newX = e.getX() + getX(); // Coordinates take into account at least
@@ -6231,7 +6233,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Indicates whether a class or its superclasses override coalesceEvents.
      * Must be called with lock on coalesceMap and privileged.
-     * @see checkCoalescing
+     * @see #checkCoalescing
      */
     private static boolean isCoalesceEventsOverriden(Class<?> clazz) {
         assert Thread.holdsLock(coalesceMap);
@@ -10379,7 +10381,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Sets a 'mixing-cutout' shape for the given component.
+     * Sets a 'mixing-cutout' shape for this lightweight component.
+     *
+     * This method is used exclusively for the purposes of the
+     * Heavyweight/Lightweight Components Mixing feature and will
+     * have no effect if applied to a heavyweight component.
      *
      * By default a lightweight component is treated as an opaque rectangle for
      * the purposes of the Heavyweight/Lightweight Components Mixing feature.
@@ -10392,7 +10398,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * <li>{@code null} - reverts the default cutout shape (the rectangle equal
      * to the component's {@code getBounds()})
      * <li><i>empty-shape</i> - does not cut out anything from heavyweight
-     * components. This makes the given lightweight component effectively
+     * components. This makes this lightweight component effectively
      * transparent. Note that descendants of the lightweight component still
      * affect the shapes of heavyweight components.  An example of an
      * <i>empty-shape</i> is {@code new Rectangle()}.
@@ -10401,21 +10407,16 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * </ul>
      * <p>
      * The most common example when the 'mixing-cutout' shape is needed is a
-     * glass pane component. The {@link JRootPane#setGlassPane()} method
+     * glass pane component. The {@link JRootPane#setGlassPane} method
      * automatically sets the <i>empty-shape</i> as the 'mixing-cutout' shape
      * for the given glass pane component.  If a developer needs some other
      * 'mixing-cutout' shape for the glass pane (which is rare), this must be
      * changed manually after installing the glass pane to the root pane.
-     * <p>
-     * Note that the 'mixing-cutout' shape neither affects painting, nor the
-     * mouse events handling for the given component. It is used exclusively
-     * for the purposes of the Heavyweight/Lightweight Components Mixing
-     * feature.
      *
      * @param shape the new 'mixing-cutout' shape
      * @since 9
      */
-    void setMixingCutoutShape(Shape shape) {
+    public void setMixingCutoutShape(Shape shape) {
         Region region = shape == null ? null : Region.getInstance(shape, null);
 
         synchronized (getTreeLock()) {

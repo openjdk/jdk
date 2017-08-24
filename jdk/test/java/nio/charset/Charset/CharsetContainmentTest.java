@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4626545 4696726
-   @summary Checks the inter containment relationships between NIO charsets
+ * @bug 4626545 4696726
+ * @summary Checks the inter containment relationships between NIO charsets
+ * @modules jdk.charsets
  */
 
 import java.nio.charset.*;

@@ -22,9 +22,10 @@
  */
 
 /* @test
-   @bug 6254467
-   @summary Checks if Charset.forName() accepts legal IANA alias names
-            for charset IBM037.
+ * @bug 6254467
+ * @summary Checks if Charset.forName() accepts legal IANA alias names
+ *          for charset IBM037.
+ * @modules jdk.charsets
  */
 import java.nio.charset.Charset;
 

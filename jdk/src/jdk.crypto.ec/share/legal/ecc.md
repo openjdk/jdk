@@ -1,12 +1,13 @@
-## Mozilla Elliptic Curve Cryptography
+## Mozilla Elliptic Curve Cryptography (ECC)
 
-### Notice
+### Mozilla ECC Notice
 <pre>
 
 This notice is provided with respect to Elliptic Curve Cryptography,
 which is included with JRE, JDK, and OpenJDK.
 
-You are receiving a copy of the Elliptic Curve Cryptography library in source
+You are receiving a [copy](http://hg.openjdk.java.net/jdk9/jdk9/jdk/file/tip/src/jdk.crypto.ec/share/native/libsunec/impl)
+of the Elliptic Curve Cryptography library in source
 form with the JDK and OpenJDK source distributions, and as object code in
 the JRE & JDK runtimes.
 
@@ -21,7 +22,7 @@ Elliptic Curve Cryptography library:
 
 </pre>
 
-### LGPL 2.1 License
+### LGPL 2.1
 <pre>
 
                   GNU LESSER GENERAL PUBLIC LICENSE

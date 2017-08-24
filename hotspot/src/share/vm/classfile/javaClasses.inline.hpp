@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,8 +162,8 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
-inline bool java_lang_reflect_Module::is_instance(oop obj) {
-  return obj != NULL && obj->klass() == SystemDictionary::reflect_Module_klass();
+inline bool java_lang_Module::is_instance(oop obj) {
+  return obj != NULL && obj->klass() == SystemDictionary::Module_klass();
 }
 
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
