@@ -66,6 +66,7 @@ public class CheckOrigin {
                     "-XX:+UseCodeAging",
                     "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
+                    "-Djdk.attach.allowAttachSelf",
                     "-cp", System.getProperty("test.class.path"),
                     "CheckOrigin",
                     "-runtests");

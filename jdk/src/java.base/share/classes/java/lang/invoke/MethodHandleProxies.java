@@ -38,6 +38,8 @@ import static java.lang.invoke.MethodHandleStatics.*;
 /**
  * This class consists exclusively of static methods that help adapt
  * method handles to other JVM types, such as interfaces.
+ *
+ * @since 1.7
  */
 public class MethodHandleProxies {
 

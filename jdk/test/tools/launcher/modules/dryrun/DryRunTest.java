@@ -167,22 +167,6 @@ public class DryRunTest {
         // test main method with and without --add-modules mm
         int exitValue = exec("--module-path", LIBS_DIR.toString(),
                              "-m", mid);
-        assertTrue(exitValue != 0);
-
-        exitValue = exec("--module-path", LIBS_DIR.toString(),
-                         "--add-modules", M_MODULE,
-                         "-m", mid);
-        assertTrue(exitValue == 0);
-
-        // test dry run with and without --add-modules m
-        // no resolution failure
-        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
-                         "-m", mid);
-        assertTrue(exitValue == 0);
-
-        exitValue = exec("--dry-run", "--module-path", LIBS_DIR.toString(),
-                         "--add-modules", M_MODULE,
-                         "-m", mid);
         assertTrue(exitValue == 0);
     }
 

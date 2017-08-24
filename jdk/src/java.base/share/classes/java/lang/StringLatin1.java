@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.checkOffset;
-import static java.lang.String.checkBoundsOffCount;
 
 final class StringLatin1 {
 
@@ -566,11 +565,7 @@ final class StringLatin1 {
     // inflatedCopy byte[] -> byte[]
     @HotSpotIntrinsicCandidate
     public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        // We need a range check here because 'putChar' has no checks
-        checkBoundsOffCount(dstOff << 1, len << 1, dst.length);
-        for (int i = 0; i < len; i++) {
-            StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
-        }
+        StringUTF16.inflate(src, srcOff, dst, dstOff, len);
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static java.util.zip.ZipConstants64.*;
  * This class is used to represent a ZIP file entry.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class ZipEntry implements ZipConstants, Cloneable {
@@ -441,7 +442,7 @@ class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Sets the size of the compressed entry data.
      *
-     * @param csize the compressed size to set to
+     * @param csize the compressed size to set
      *
      * @see #getCompressedSize()
      */
