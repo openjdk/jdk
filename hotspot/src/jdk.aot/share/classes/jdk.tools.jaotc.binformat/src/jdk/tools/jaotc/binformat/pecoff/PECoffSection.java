@@ -50,7 +50,7 @@ final class PECoffSection {
         byte[] Name = sectName.getBytes();
         int max = Name.length <= IMAGE_SECTION_HEADER.Name.sz ? Name.length : IMAGE_SECTION_HEADER.Name.sz;
 
-        assert (sectAlign < 1 || sectAlign > 1024 || (sectAlign & (sectAlign - 1)) != 0) : "section alignment is not valid: " + sectAlign;
+        assert !(sectAlign < 1 || sectAlign > 1024 || (sectAlign & (sectAlign - 1)) != 0) : "section alignment is not valid: " + sectAlign;
         align = sectAlign;
 
         // Using 32 because IMAGE_SCN_ALIGN_*BYTES is value + 1
