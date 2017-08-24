@@ -80,7 +80,7 @@ public class AttachSetGetFlag {
     try {
       waitForReady(target);
 
-      int pid = (int)target.getPid();
+      int pid = (int)target.pid();
 
       HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(((Integer)pid).toString());
 
@@ -116,7 +116,7 @@ public class AttachSetGetFlag {
     try {
       waitForReady(target);
 
-      int pid = (int)target.getPid();
+      int pid = (int)target.pid();
 
       HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(((Integer)pid).toString());
 

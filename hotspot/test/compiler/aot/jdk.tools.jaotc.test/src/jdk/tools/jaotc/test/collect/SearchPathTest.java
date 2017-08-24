@@ -20,6 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @modules jdk.aot/jdk.tools.jaotc
+ *          jdk.aot/jdk.tools.jaotc.collect
+ *
+ * @build jdk.tools.jaotc.test.collect.Utils
+ * @build jdk.tools.jaotc.test.collect.FakeFileSupport
+ * @run junit/othervm jdk.tools.jaotc.test.collect.SearchPathTest
+ */
+
 package jdk.tools.jaotc.test.collect;
 
 import org.junit.Before;
@@ -29,6 +40,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.tools.jaotc.collect.*;
 
 import static jdk.tools.jaotc.test.collect.Utils.set;
 import static org.junit.Assert.*;

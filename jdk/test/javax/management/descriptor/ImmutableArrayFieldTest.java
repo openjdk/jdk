@@ -27,7 +27,7 @@
  * @summary Test that immutability of ImmutableDescriptor cannot be
  * compromised by modifying field values that are arrays.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean ImmutableArrayFieldTest
  * @run build ImmutableArrayFieldTest
  * @run main ImmutableArrayFieldTest

@@ -239,6 +239,7 @@ public class DefaultButtonModel implements ButtonModel, Serializable {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("deprecation")
     public void setPressed(boolean b) {
         if((isPressed() == b) || !isEnabled()) {
             return;
