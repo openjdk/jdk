@@ -624,12 +624,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             ulAllClasses.addAttr(HtmlAttr.ID, allClassesId);
             subDiv.addContent(ulAllClasses);
             if (header && configuration.createindex) {
-                HtmlTree inputText = HtmlTree.INPUT("text", "search");
-                HtmlTree inputReset = HtmlTree.INPUT("reset", "reset");
-                Content searchTxt = new ContentBuilder();
-                searchTxt.addContent(configuration.getContent("doclet.search"));
-                searchTxt.addContent(Contents.SPACE);
-                HtmlTree liInput = HtmlTree.LI(HtmlTree.SPAN(searchTxt));
+                String searchValueId = "search";
+                String reset = "reset";
+                HtmlTree inputText = HtmlTree.INPUT("text", searchValueId, searchValueId);
+                HtmlTree inputReset = HtmlTree.INPUT(reset, reset, reset);
+                Content searchTxt = configuration.getContent("doclet.search");
+                HtmlTree liInput = HtmlTree.LI(HtmlTree.LABEL(searchValueId, searchTxt));
                 liInput.addContent(inputText);
                 liInput.addContent(inputReset);
                 HtmlTree ulSearch = HtmlTree.UL(HtmlStyle.navListSearch, liInput);
