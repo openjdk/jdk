@@ -130,7 +130,7 @@ public class ECUtil {
         return (ECPrivateKey)keyFactory.generatePrivate(keySpec);
     }
 
-    private static AlgorithmParameters getECParameters(Provider p) {
+    public static AlgorithmParameters getECParameters(Provider p) {
         try {
             if (p != null) {
                 return AlgorithmParameters.getInstance("EC", p);

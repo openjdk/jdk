@@ -48,15 +48,15 @@ import java.security.*;
  * <caption style="display:none">permission name, what it allows, and associated risks</caption>
  * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
  * </thead>
  *
  * <tbody>
  * <tr>
- *   <td>setHostnameVerifier</td>
+ *   <th scope="row">setHostnameVerifier</th>
  *   <td>The ability to set a callback which can decide whether to
  * allow a mismatch between the host being connected to by
  * an HttpsURLConnection and the common name field in
@@ -70,7 +70,7 @@ import java.security.*;
  * </tr>
  *
  * <tr>
- *   <td>getSSLSessionContext</td>
+ *   <th scope="row">getSSLSessionContext</th>
  *   <td>The ability to get the SSLSessionContext of an SSLSession.
  * </td>
  *   <td>Malicious code may monitor sessions which have been established
@@ -79,7 +79,7 @@ import java.security.*;
  * </tr>
  *
  * <tr>
- *   <td>setDefaultSSLContext</td>
+ *   <th scope="row">setDefaultSSLContext</th>
  *   <td>The ability to set the default SSL context
  * </td>
  *   <td>Malicious code can set a context that monitors the opening of
