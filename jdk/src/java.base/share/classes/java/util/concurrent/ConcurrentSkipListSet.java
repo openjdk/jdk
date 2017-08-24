@@ -35,8 +35,7 @@
 
 package java.util.concurrent;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -506,19 +505,21 @@ public class ConcurrentSkipListSet<E>
             : ((ConcurrentSkipListMap.SubMap<E,?>)m).new SubMapKeyIterator();
     }
 
-    // Support for resetting map in clone
+    /** Initializes map field; for use in clone. */
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        MAP.setVolatile(this, map);
-    }
-
-    // VarHandle mechanics
-    private static final VarHandle MAP;
-    static {
+        Field mapField = java.security.AccessController.doPrivileged(
+            (java.security.PrivilegedAction<Field>) () -> {
+                try {
+                    Field f = ConcurrentSkipListSet.class
+                        .getDeclaredField("m");
+                    f.setAccessible(true);
+                    return f;
+                } catch (ReflectiveOperationException e) {
+                    throw new Error(e);
+                }});
         try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            MAP = l.findVarHandle(ConcurrentSkipListSet.class, "m",
-                                  ConcurrentNavigableMap.class);
-        } catch (ReflectiveOperationException e) {
+            mapField.set(this, map);
+        } catch (IllegalAccessException e) {
             throw new Error(e);
         }
     }

@@ -34,8 +34,9 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-/*
+/**
  * @test
+ * @key headful
  * @bug 8024185
  * @summary Native Mac OS X full screen does not work after showing the splash
  * @requires (os.family == "mac")
@@ -48,6 +49,7 @@ import javax.swing.WindowConstants;
  * @author Petr Pchelko area=awt.event
  * @run main/othervm -splash:test.png FullScreenAfterSplash
  */
+
 public class FullScreenAfterSplash {
 
     private static JFrame frame;

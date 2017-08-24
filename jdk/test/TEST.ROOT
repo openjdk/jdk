@@ -10,9 +10,11 @@
 # randomness tests.
 #
 # A "headful" test requires a graphical environment to meaningfully
-# run. Tests that are not headful are "headless."
+# run. Tests that are not headful are "headless".
+# A test flagged with key "printer" requires a printer to succeed, else 
+# throws a PrinterException or the like.
 
-keys=2d dnd i18n intermittent randomness headful
+keys=2d dnd headful i18n intermittent printer randomness
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/print javax/management com/sun/awt sun/awt sun/java2d sun/pisces javax/xml/jaxp/testng/validation java/lang/ProcessHandle

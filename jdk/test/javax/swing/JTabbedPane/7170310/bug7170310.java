@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /**
  * @test
+ * @key headful
  * @bug 7170310
  * @author Alexey Ivanov
  * @summary Selected tab should be scrolled into view.
@@ -44,6 +45,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
  * @build ExtendedRobot
  * @run main bug7170310
  */
+
 public class bug7170310 {
     private static final int TABS_NUMBER = 3;
 
@@ -75,7 +77,7 @@ public class bug7170310 {
                 System.out.printf("Test passed");
             }
         } finally {
-            frame.dispose();
+            if (frame != null) { frame.dispose(); }
         }
     }
 

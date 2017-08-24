@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -889,7 +889,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * <p>
      * This method behaves very much like {@link #asSpreader(Class, int)}, but accepts an additional {@code spreadArgPos}
      * argument to indicate at which position in the parameter list the spreading should take place.
-     * <p>
+     *
      * @apiNote Example:
      * <blockquote><pre>{@code
     MethodHandle compare = LOOKUP.findStatic(Objects.class, "compare", methodType(int.class, Object.class, Object.class, Comparator.class));
@@ -1094,7 +1094,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * This method behaves very much like {@link #asCollector(Class, int)}, but differs in that its {@code
      * collectArgPos} argument indicates at which position in the parameter list arguments should be collected. This
      * index is zero-based.
-     * <p>
+     *
      * @apiNote Examples:
      * <blockquote><pre>{@code
     StringWriter swr = new StringWriter();
