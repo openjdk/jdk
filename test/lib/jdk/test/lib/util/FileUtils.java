@@ -98,7 +98,7 @@ public final class FileUtils {
         while (true) {
             try {
                 Files.delete(path);
-                while (Files.exists(path)) {
+                while (!Files.notExists(path)) {
                     times++;
                     if (times > MAX_RETRY_DELETE_TIMES) {
                         throw new IOException("File still exists after " + times + " waits.");
