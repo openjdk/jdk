@@ -15,10 +15,10 @@
 ^\.mx.jvmci/hotspot/eclipse/.*
 ^\.idea/
 ^workingsets.xml
-^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.xml
-^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.iml
-^src/jdk.vm.ci/share/classes/\w[\w\.]*/nbproject
-^src/jdk.vm.ci/share/classes/\w[\w\.]*/\..*
+^src/jdk.internal.vm.ci/share/classes/\w[\w\.]*/.*\.xml
+^src/jdk.internal.vm.ci/share/classes/\w[\w\.]*/.*\.iml
+^src/jdk.internal.vm.ci/share/classes/\w[\w\.]*/nbproject
+^src/jdk.internal.vm.ci/share/classes/\w[\w\.]*/\..*
 ^test/compiler/jvmci/\w[\w\.]*/.*\.xml
 ^test/compiler/jvmci/\w[\w\.]*/.*\.iml
 ^test/compiler/jvmci/\w[\w\.]*/nbproject
@@ -27,15 +27,15 @@
 ^test/compiler/aot/\w[\w\.]*/.*\.iml
 ^test/compiler/aot/\w[\w\.]*/nbproject
 ^test/compiler/aot/\w[\w\.]*/\..*
-^src/jdk.vm.compiler/\.mx.graal/env
-^src/jdk.vm.compiler/\.mx.graal/.*\.pyc
-^src/jdk.vm.compiler/\.mx.graal/eclipse-launches/.*
+^src/jdk.internal.vm.compiler/\.mx.graal/env
+^src/jdk.internal.vm.compiler/\.mx.graal/.*\.pyc
+^src/jdk.internal.vm.compiler/\.mx.graal/eclipse-launches/.*
 ^src/jdk.aot/share/classes/\w[\w\.]*/.*\.xml
 ^src/jdk.aot/share/classes/\w[\w\.]*/.*\.iml
 ^src/jdk.aot/share/classes/\w[\w\.]*/nbproject
 ^src/jdk.aot/share/classes/\w[\w\.]*/\..*
-^src/jdk.vm.compiler/share/classes/\w[\w\.]*/.*\.xml
-^src/jdk.vm.compiler/share/classes/\w[\w\.]*/.*\.iml
-^src/jdk.vm.compiler/share/classes/\w[\w\.]*/nbproject
-^src/jdk.vm.compiler/share/classes/\w[\w\.]*/\..*
+^src/jdk.internal.vm.compiler/share/classes/\w[\w\.]*/.*\.xml
+^src/jdk.internal.vm.compiler/share/classes/\w[\w\.]*/.*\.iml
+^src/jdk.internal.vm.compiler/share/classes/\w[\w\.]*/nbproject
+^src/jdk.internal.vm.compiler/share/classes/\w[\w\.]*/\..*
 

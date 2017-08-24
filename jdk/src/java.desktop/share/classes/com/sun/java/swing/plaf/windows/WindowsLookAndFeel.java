@@ -672,7 +672,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "ComboBox.buttonHighlight", ControlHighlightColor,
             "ComboBox.selectionBackground", SelectionBackgroundColor,
             "ComboBox.selectionForeground", SelectionTextColor,
-            "ComboBox.editorBorder", new XPValue(new EmptyBorder(1,2,1,1),
+            "ComboBox.editorBorder", new XPValue(new EmptyBorder(1,4,1,1),
                                                  new EmptyBorder(1,4,1,4)),
             "ComboBox.disabledBackground",
                         new XPColorValue(Part.CP_COMBOBOX, State.DISABLED,

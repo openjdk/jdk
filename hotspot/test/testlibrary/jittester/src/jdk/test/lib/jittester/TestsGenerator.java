@@ -43,6 +43,7 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
     protected final Path generatorDir;
     protected final Function<String, String[]> preRunActions;
     protected final String jtDriverOptions;
+    private static final String DISABLE_WARNINGS = "-XX:-PrintWarnings";
 
     protected TestsGenerator(String suffix) {
         this(suffix, s -> new String[0], "");
@@ -57,8 +58,8 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
 
     protected void generateGoldenOut(String mainClassName) {
         String classPath = getRoot() + File.pathSeparator + generatorDir;
-        ProcessBuilder pb = new ProcessBuilder(JAVA, "-Xint", "-Xverify", "-cp", classPath,
-                mainClassName);
+        ProcessBuilder pb = new ProcessBuilder(JAVA, "-Xint", DISABLE_WARNINGS, "-Xverify",
+                "-cp", classPath, mainClassName);
         String goldFile = mainClassName + ".gold";
         try {
             runProcess(pb, generatorDir.resolve(goldFile).toString());
@@ -128,6 +129,8 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
                   .append("\n");
         }
         header.append(" * @run driver jdk.test.lib.jittester.jtreg.JitTesterDriver ")
+              .append(DISABLE_WARNINGS)
+              .append(" ")
               .append(jtDriverOptions)
               .append(" ")
               .append(mainClassName)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *
  * <p>
  * Arbitrary
- * <a href="{@docRoot}/../../../../../technotes/guides/jndi/jndi-ldap-gl.html#PROP">JNDI properties</a>
+ * {@extLink jndi_ldap_gl_prop "JNDI properties"}
  * may also be specified in the {@link Configuration}.
  * They are added to the environment and passed to the LDAP provider.
  * Note that the following four JNDI properties are set by this module directly

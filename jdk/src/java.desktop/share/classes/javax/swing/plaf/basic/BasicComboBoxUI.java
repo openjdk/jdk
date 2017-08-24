@@ -1839,6 +1839,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
         // key.  If it finds a key event that wasn't a navigation key it
         // dispatches it to JComboBox.selectWithKeyChar() so that it can do
         // type-ahead.
+        @SuppressWarnings("deprecation")
         public void keyPressed( KeyEvent e ) {
             if ( isNavigationKey(e.getKeyCode(), e.getModifiers()) ) {
                 lastTime = 0L;

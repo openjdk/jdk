@@ -485,6 +485,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * first order.
      * @see EventListenerList
      */
+    @SuppressWarnings("deprecation")
     protected void fireActionPerformed() {
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();

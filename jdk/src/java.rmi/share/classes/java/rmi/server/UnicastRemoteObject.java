@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,8 +107,9 @@ import sun.rmi.transport.LiveRef;
  * the binary name of the root class with the suffix {@code _Stub}.
  *
  * <li>The stub class is loaded by name using the class loader of the root
- * class. The stub class must extend {@link RemoteStub} and must have a
- * public constructor that has one parameter of type {@link RemoteRef}.
+ * class. The stub class must be public, it must extend {@link RemoteStub}, it must
+ * reside in a package that is exported to at least the {@code java.rmi} module, and it
+ * must have a public constructor that has one parameter of type {@link RemoteRef}.
  *
  * <li>Finally, an instance of the stub class is constructed with a
  * {@link RemoteRef}.
@@ -124,11 +125,20 @@ import sun.rmi.transport.LiveRef;
  *
  * <ul>
  *
- * <li>The proxy's class is defined by the class loader of the remote
- * object's class.
+ * <li>The proxy's class is defined according to the specifications for the
+ * <a href="{@docRoot}/java/lang/reflect/Proxy.html#membership">
+ * {@code Proxy}
+ * </a>
+ * class, using the class loader of the remote object's class.
  *
  * <li>The proxy implements all the remote interfaces implemented by the
  * remote object's class.
+ *
+ * <li>Each remote interface must either be public and reside in a package that is
+ * {@linkplain Module#isExported(String,Module) exported}
+ * to at least the {@code java.rmi} module, or it must reside in a package that is
+ * {@linkplain Module#isOpen(String,Module) open}
+ * to at least the {@code java.rmi} module.
  *
  * <li>The proxy's invocation handler is a {@link
  * RemoteObjectInvocationHandler} instance constructed with a
@@ -161,9 +171,9 @@ import sun.rmi.transport.LiveRef;
  * By default, server sockets created by {@link RMISocketFactory}
  * listen on all network interfaces. See the
  * {@link RMISocketFactory} class and the section
- * <a href="{@docRoot}/../platform/rmi/spec/rmi-server29.html">RMI Socket Factories</a>
+ * <a href="{@docRoot}/../specs/rmi/server.html#rmi-socket-factories">RMI Socket Factories</a>
  * in the
- * <a href="{@docRoot}/../platform/rmi/spec/rmiTOC.html">Java RMI Specification</a>.
+ * <a href="{@docRoot}/../specs/rmi/index.html">Java RMI Specification</a>.
  *
  * @author  Ann Wollrath
  * @author  Peter Jones
