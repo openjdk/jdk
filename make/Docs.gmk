@@ -101,9 +101,9 @@ JAVADOC_TAGS := \
 JAVADOC_DISABLED_DOCLINT := accessibility html missing syntax reference
 
 # The initial set of options for javadoc
-JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
-    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
-    -html5 -javafx --expand-requires transitive
+JAVADOC_OPTIONS := -use -keywords -notimestamp \
+    -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
+    -splitIndex --system none -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
 ifeq ($(VERSION_IS_GA), true)
