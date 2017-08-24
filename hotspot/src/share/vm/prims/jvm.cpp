@@ -1039,11 +1039,6 @@ JVM_ENTRY (void, JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject so
   Modules::add_reads_module(from_module, source_module, CHECK);
 JVM_END
 
-JVM_ENTRY (void, JVM_AddModulePackage(JNIEnv *env, jobject module, const char* package))
-  JVMWrapper("JVM_AddModulePackage");
-  Modules::add_module_package(module, package, CHECK);
-JVM_END
-
 // Reflection support //////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jstring, JVM_GetClassName(JNIEnv *env, jclass cls))

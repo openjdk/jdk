@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -44,13 +46,15 @@ import sun.nio.ch.Interruptible;
 public interface JavaLangAccess {
 
     /**
-     * Returns a {@code Method} object that reflects the specified public
-     * member method of the given class. Returns {@code null} if the
-     * method is not defined.
+     * Returns the list of {@code Method} objects for the declared public
+     * methods of this class or interface that have the specified method name
+     * and parameter types.
      */
-    Method getMethodOrNull(Class<?> klass, String name, Class<?>... parameterTypes);
+    List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
 
-    /** Return the constant pool for a class. */
+    /**
+     * Return the constant pool for a class.
+     */
     ConstantPool getConstantPool(Class<?> klass);
 
     /**
@@ -95,7 +99,9 @@ public interface JavaLangAccess {
      */
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
-    /** Set thread's blocker field. */
+    /**
+     * Set thread's blocker field.
+     */
     void blockedOn(Thread t, Interruptible b);
 
     /**
@@ -153,11 +159,6 @@ public interface JavaLangAccess {
      * Returns a class loaded by the bootstrap class loader.
      */
     Class<?> findBootstrapClassOrNull(ClassLoader cl, String name);
-
-    /**
-     * Returns the Packages for the given class loader.
-     */
-    Stream<Package> packages(ClassLoader cl);
 
     /**
      * Define a Package of the given name and module by the given class loader.
@@ -223,14 +224,29 @@ public interface JavaLangAccess {
     void addOpens(Module m1, String pkg, Module m2);
 
     /**
-     * Updates a module m to open a package to all unnamed modules.
+     * Updates module m to open a package to all unnamed modules.
      */
     void addOpensToAllUnnamed(Module m, String pkg);
 
     /**
-     * Updates a module m to use a service.
+     * Updates module m to open all packages returned by the given iterator.
+     */
+    void addOpensToAllUnnamed(Module m, Iterator<String> packages);
+
+    /**
+     * Updates module m to use a service.
      */
     void addUses(Module m, Class<?> service);
+
+    /**
+     * Returns true if module m reflectively exports a package to other
+     */
+    boolean isReflectivelyExported(Module module, String pn, Module other);
+
+    /**
+     * Returns true if module m reflectively opens a package to other
+     */
+    boolean isReflectivelyOpened(Module module, String pn, Module other);
 
     /**
      * Returns the ServicesCatalog for the given Layer.

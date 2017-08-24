@@ -266,7 +266,6 @@ final class Exchange<T> {
         throws IOException, InterruptedException
     {
         establishExchange(connection);
-        exchImpl.setClientForRequest(requestProcessor);
         if (request.expectContinue()) {
             Log.logTrace("Sending Expect: 100-Continue");
             request.addSystemHeader("Expect", "100-Continue");

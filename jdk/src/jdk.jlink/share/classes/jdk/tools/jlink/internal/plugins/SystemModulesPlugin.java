@@ -34,6 +34,10 @@ import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -41,13 +45,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ClassFileAttributes;
 import jdk.internal.module.ClassFileConstants;
+import jdk.internal.module.IllegalAccessMaps;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleInfo.Attributes;
 import jdk.internal.module.ModuleInfoExtender;
@@ -601,6 +609,10 @@ public final class SystemModulesPlugin implements Plugin {
             // generate SystemModules::moduleResolutions
             genModuleResolutionsMethod();
 
+            // generate SystemModules::concealedPackagesToOpen and
+            // SystemModules::exportedPackagesToOpen
+            genXXXPackagesToOpenMethods();
+
             return cw;
         }
 
@@ -731,6 +743,96 @@ public final class SystemModulesPlugin implements Plugin {
             mresmv.visitInsn(ARETURN);
             mresmv.visitMaxs(0, 0);
             mresmv.visitEnd();
+        }
+
+        /**
+         * Generate SystemModules::concealedPackagesToOpen and
+         * SystemModules::exportedPackagesToOpen methods.
+         */
+        private void genXXXPackagesToOpenMethods() {
+            List<ModuleDescriptor> descriptors = moduleInfos.stream()
+                    .map(ModuleInfo::descriptor)
+                    .collect(Collectors.toList());
+            ModuleFinder finder = finderOf(descriptors);
+            IllegalAccessMaps maps = IllegalAccessMaps.generate(finder);
+            generate("concealedPackagesToOpen", maps.concealedPackagesToOpen());
+            generate("exportedPackagesToOpen", maps.exportedPackagesToOpen());
+        }
+
+        /**
+         * Generate SystemModules:XXXPackagesToOpen
+         */
+        private void generate(String methodName, Map<String, Set<String>> map) {
+            // Map<String, Set<String>> XXXPackagesToOpen()
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC+ACC_STATIC,
+                                              methodName,
+                                              "()Ljava/util/Map;",
+                                              "()Ljava/util/Map;",
+                                              null);
+            mv.visitCode();
+
+            // new Map$Entry[moduleCount]
+            pushInt(mv, map.size());
+            mv.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
+
+            int index = 0;
+            for (Map.Entry<String, Set<String>> e : map.entrySet()) {
+                String moduleName = e.getKey();
+                Set<String> packages = e.getValue();
+                int packageCount = packages.size();
+
+                mv.visitInsn(DUP);
+                pushInt(mv, index);
+                mv.visitLdcInsn(moduleName);
+
+                // use Set.of(Object[]) when there are more than 2 packages
+                // use Set.of(Object) or Set.of(Object, Object) when fewer packages
+                if (packageCount > 2) {
+                    pushInt(mv, packageCount);
+                    mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                    int i = 0;
+                    for (String pn : packages) {
+                        mv.visitInsn(DUP);
+                        pushInt(mv, i);
+                        mv.visitLdcInsn(pn);
+                        mv.visitInsn(AASTORE);
+                        i++;
+                    }
+                    mv.visitMethodInsn(INVOKESTATIC,
+                                       "java/util/Set",
+                                       "of",
+                                       "([Ljava/lang/Object;)Ljava/util/Set;",
+                                       true);
+                } else {
+                    StringBuilder sb = new StringBuilder("(");
+                    for (String pn : packages) {
+                        mv.visitLdcInsn(pn);
+                        sb.append("Ljava/lang/Object;");
+                    }
+                    sb.append(")Ljava/util/Set;");
+                    mv.visitMethodInsn(INVOKESTATIC,
+                                       "java/util/Set",
+                                       "of",
+                                       sb.toString(),
+                                       true);
+                }
+
+                String desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;";
+                mv.visitMethodInsn(INVOKESTATIC,
+                                   "java/util/Map",
+                                   "entry",
+                                   desc,
+                                   true);
+                mv.visitInsn(AASTORE);
+                index++;
+            }
+
+            // invoke Map.ofEntries(Map$Entry[])
+            mv.visitMethodInsn(INVOKESTATIC, "java/util/Map", "ofEntries",
+                    "([Ljava/util/Map$Entry;)Ljava/util/Map;", true);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
 
         public boolean isOverriddenClass(String path) {
@@ -1460,5 +1562,32 @@ public final class SystemModulesPlugin implements Plugin {
                                   "L" + className + ";");
             }
         }
+    }
+
+    static ModuleFinder finderOf(Iterable<ModuleDescriptor> descriptors) {
+        Map<String, ModuleReference> namesToReference = new HashMap<>();
+        for (ModuleDescriptor descriptor : descriptors) {
+            String name = descriptor.name();
+            URI uri = URI.create("module:/" + name);
+            ModuleReference mref = new ModuleReference(descriptor, uri) {
+                @Override
+                public ModuleReader open() {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            namesToReference.putIfAbsent(name, mref);
+        }
+
+        return new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                Objects.requireNonNull(name);
+                return Optional.ofNullable(namesToReference.get(name));
+            }
+            @Override
+            public Set<ModuleReference> findAll() {
+                return new HashSet<>(namesToReference.values());
+            }
+        };
     }
 }

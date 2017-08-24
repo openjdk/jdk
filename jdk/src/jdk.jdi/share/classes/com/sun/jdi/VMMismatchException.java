@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class VMMismatchException extends RuntimeException {
+
     private static final long serialVersionUID = 289169358790459564L;
+
     public VMMismatchException() {
         super();
     }

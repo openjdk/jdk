@@ -375,7 +375,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content li = HtmlTree.LI(contents.summaryLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
-        MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
+        MemberSummaryBuilder memberSummaryBuilder =
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
         Content liNavField = new HtmlTree(HtmlTag.LI);
         addNavSummaryLink(memberSummaryBuilder,
@@ -426,7 +426,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content li = HtmlTree.LI(contents.detailLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
-        MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
+        MemberSummaryBuilder memberSummaryBuilder =
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
         AbstractMemberWriter writerField =
                 ((AbstractMemberWriter) memberSummaryBuilder.

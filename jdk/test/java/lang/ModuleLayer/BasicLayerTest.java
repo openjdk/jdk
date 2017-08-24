@@ -1054,8 +1054,6 @@ public class BasicLayerTest {
 
     /**
      * Attempt to create a layer with a module containing a "java" package.
-     * This should only be allowed when the module is defined to the platform
-     * class loader.
      */
     @Test(dataProvider = "javaPackages")
     public void testLayerWithJavaPackage(String mn, String pn) {
@@ -1067,7 +1065,6 @@ public class BasicLayerTest {
                 .resolve(finder, ModuleFinder.of(), Set.of(mn));
         assertTrue(cf.modules().size() == 1);
 
-        ClassLoader pcl = ClassLoader.getPlatformClassLoader();
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 
         try {
@@ -1084,15 +1081,6 @@ public class BasicLayerTest {
             ModuleLayer.boot().defineModulesWithManyLoaders(cf, scl);
             assertTrue(false);
         } catch (LayerInstantiationException e) { }
-
-        // create layer with module defined to platform class loader
-        ModuleLayer layer = ModuleLayer.boot().defineModules(cf, _mn -> pcl);
-        Optional<Module> om = layer.findModule(mn);
-        assertTrue(om.isPresent());
-        Module foo = om.get();
-        assertTrue(foo.getClassLoader() == pcl);
-        assertTrue(foo.getPackages().size() == 1);
-        assertTrue(foo.getPackages().iterator().next().equals(pn));
     }
 
 
@@ -1101,8 +1089,7 @@ public class BasicLayerTest {
      */
     @Test(expectedExceptions = { LayerInstantiationException.class })
     public void testLayerWithBootLoader() {
-        ModuleDescriptor descriptor = newBuilder("m1")
-                .build();
+        ModuleDescriptor descriptor = newBuilder("m1").build();
 
         ModuleFinder finder = ModuleUtils.finderOf(descriptor);
 
@@ -1112,6 +1099,25 @@ public class BasicLayerTest {
         assertTrue(cf.modules().size() == 1);
 
         ModuleLayer.boot().defineModules(cf, mn -> null );
+    }
+
+
+    /**
+     * Attempt to create a layer with a module defined to the platform loader
+     */
+    @Test(expectedExceptions = { LayerInstantiationException.class })
+    public void testLayerWithPlatformLoader() {
+        ModuleDescriptor descriptor = newBuilder("m1").build();
+
+        ModuleFinder finder = ModuleUtils.finderOf(descriptor);
+
+        Configuration cf = ModuleLayer.boot()
+                .configuration()
+                .resolve(finder, ModuleFinder.of(), Set.of("m1"));
+        assertTrue(cf.modules().size() == 1);
+
+        ClassLoader cl = ClassLoader.getPlatformClassLoader();
+        ModuleLayer.boot().defineModules(cf, mn -> cl );
     }
 
 

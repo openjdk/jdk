@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,26 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.MonitorWaitedEvent;
 
 /**
  * Request for notification when a thread in the target VM has finished waiting on
  * a monitor object. That is, a thread is leaving Object.wait(). "
  * When an enabled MonitorWaitedRequest is satisfied, an
- * {@link com.sun.jdi.event.EventSet event set} containing a
- * {@link com.sun.jdi.event.MonitorWaitedEvent MonitorWaitedEvent}
- * will be placed on the
- * {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * {@link EventSet event set} containing a
+ * {@link MonitorWaitedEvent MonitorWaitedEvent}
+ * will be placed on the {@link EventQueue EventQueue}.
  * The collection of existing MonitorWaitedEvents is
  * managed by the {@link EventRequestManager}
  *
- * @see com.sun.jdi.event.MonitorWaitedEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see MonitorWaitedEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Swamy Venkataramanappa
