@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,87 +25,61 @@
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
-import java.util.ResourceBundle;
-import java.util.logging.Logger;
-
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.Comment;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Text;
 
 import com.sun.xml.internal.messaging.saaj.soap.SOAPDocumentImpl;
-import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
+import static com.sun.xml.internal.messaging.saaj.soap.impl.TextImpl.log;
 
-public class SOAPCommentImpl
-    extends com.sun.org.apache.xerces.internal.dom.CommentImpl
-    implements javax.xml.soap.Text, org.w3c.dom.Comment {
-
-    protected static final Logger log =
-        Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
-                         "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
-    protected static ResourceBundle rb =
-        log.getResourceBundle();
+public class SOAPCommentImpl extends TextImpl<Comment> implements Comment {
 
     public SOAPCommentImpl(SOAPDocumentImpl ownerDoc, String text) {
         super(ownerDoc, text);
     }
 
-    public String getValue() {
-        String nodeValue = getNodeValue();
-        return (nodeValue.equals("") ? null : nodeValue);
+    public SOAPCommentImpl(SOAPDocumentImpl ownerDoc, CharacterData data) {
+        super(ownerDoc, data);
     }
 
-    public void setValue(String text) {
-        setNodeValue(text);
+    @Override
+    protected Comment createN(SOAPDocumentImpl ownerDoc, String text) {
+        Comment c = ownerDoc.getDomDocument().createComment(text);
+//        ownerDoc.register(this);
+        return c;
     }
 
-
-    public void setParentElement(SOAPElement element) throws SOAPException {
-        if (element == null) {
-            log.severe("SAAJ0112.impl.no.null.to.parent.elem");
-            throw new SOAPException("Cannot pass NULL to setParentElement");
-        }
-        ((ElementImpl) element).addNode(this);
+    @Override
+    protected Comment createN(SOAPDocumentImpl ownerDoc, CharacterData data) {
+        Comment c = (Comment) data;
+        return c;
     }
 
-    public SOAPElement getParentElement() {
-        return (SOAPElement) getParentNode();
-    }
-
-    public void detachNode() {
-        org.w3c.dom.Node parent = getParentNode();
-        if (parent != null) {
-            parent.removeChild(this);
-        }
-    }
-
-    public void recycleNode() {
-        detachNode();
-        // TBD
-        //  - add this to the factory so subsequent
-        //    creations can reuse this object.
-    }
-
+    @Override
     public boolean isComment() {
         return true;
     }
 
+    @Override
     public Text splitText(int offset) throws DOMException {
         log.severe("SAAJ0113.impl.cannot.split.text.from.comment");
         throw new UnsupportedOperationException("Cannot split text from a Comment Node.");
     }
 
+    @Override
     public Text replaceWholeText(String content) throws DOMException {
         log.severe("SAAJ0114.impl.cannot.replace.wholetext.from.comment");
         throw new UnsupportedOperationException("Cannot replace Whole Text from a Comment Node.");
     }
 
+    @Override
     public String getWholeText() {
         //TODO: maybe we have to implement this in future.
         throw new UnsupportedOperationException("Not Supported");
     }
 
+    @Override
     public boolean isElementContentWhitespace() {
         //TODO: maybe we have to implement this in future.
         throw new UnsupportedOperationException("Not Supported");

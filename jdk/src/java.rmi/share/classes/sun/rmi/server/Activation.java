@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -105,7 +106,6 @@ import sun.rmi.log.LogHandler;
 import sun.rmi.log.ReliableLog;
 import sun.rmi.registry.RegistryImpl;
 import sun.rmi.runtime.NewThreadAction;
-import sun.rmi.server.UnicastServerRef;
 import sun.rmi.transport.LiveRef;
 import sun.security.provider.PolicyFile;
 import com.sun.rmi.rmid.ExecPermission;
@@ -375,6 +375,7 @@ public class Activation implements Serializable {
                 throw new AccessException(
                     "binding ActivationSystem is disallowed");
             } else {
+                RegistryImpl.checkAccess("ActivationSystem.bind");
                 super.bind(name, obj);
             }
         }
@@ -386,6 +387,7 @@ public class Activation implements Serializable {
                 throw new AccessException(
                     "unbinding ActivationSystem is disallowed");
             } else {
+                RegistryImpl.checkAccess("ActivationSystem.unbind");
                 super.unbind(name);
             }
         }
@@ -398,6 +400,7 @@ public class Activation implements Serializable {
                 throw new AccessException(
                     "binding ActivationSystem is disallowed");
             } else {
+                RegistryImpl.checkAccess("ActivationSystem.rebind");
                 super.rebind(name, obj);
             }
         }
@@ -488,6 +491,33 @@ public class Activation implements Serializable {
     }
 
 
+    /**
+     * SameHostOnlyServerRef checks that access is from a local client
+     * before the parameters are deserialized.  The unmarshalCustomCallData
+     * hook is used to check the network address of the caller
+     * with RegistryImpl.checkAccess().
+     * The kind of access is retained for an exception if one is thrown.
+     */
+    static class SameHostOnlyServerRef extends UnicastServerRef {
+        private static final long serialVersionUID = 1234L;
+        private String accessKind;      // an exception message
+
+        /**
+         * Construct a new SameHostOnlyServerRef from a LiveRef.
+         * @param lref a LiveRef
+         */
+        SameHostOnlyServerRef(LiveRef lref, String accessKind) {
+            super(lref);
+            this.accessKind = accessKind;
+        }
+
+        @Override
+        protected void unmarshalCustomCallData(ObjectInput in) throws IOException, ClassNotFoundException {
+            RegistryImpl.checkAccess(accessKind);
+            super.unmarshalCustomCallData(in);
+        }
+    }
+
     class ActivationSystemImpl
         extends RemoteServer
         implements ActivationSystem
@@ -505,7 +535,8 @@ public class Activation implements Serializable {
              * 'this' can be exported.
              */
             LiveRef lref = new LiveRef(new ObjID(4), port, null, ssf);
-            UnicastServerRef uref = new UnicastServerRef(lref);
+            UnicastServerRef uref = new SameHostOnlyServerRef(lref,
+                    "ActivationSystem.nonLocalAccess");
             ref = uref;
             uref.exportObject(this, null);
         }
@@ -514,8 +545,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownGroupException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.registerObject");
-
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
             ActivationGroupID groupID = desc.getGroupID();
             ActivationID id = new ActivationID(activatorStub);
             getGroupEntry(groupID).registerObject(id, desc, true);
@@ -526,7 +557,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownObjectException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.unregisterObject");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
             getGroupEntry(id).unregisterObject(id, true);
         }
 
@@ -534,7 +566,8 @@ public class Activation implements Serializable {
             throws ActivationException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.registerGroup");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
             checkArgs(desc, null);
 
             ActivationGroupID id = new ActivationGroupID(systemStub);
@@ -551,7 +584,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownGroupException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.activeGroup");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             getGroupEntry(id).activeGroup(group, incarnation);
             return monitor;
@@ -561,7 +595,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownGroupException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.unregisterGroup");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             // remove entry before unregister so state is updated before
             // logged
@@ -573,7 +608,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownObjectException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.setActivationDesc");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             if (!getGroupID(id).equals(desc.getGroupID())) {
                 throw new ActivationException(
@@ -587,8 +623,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownGroupException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess(
-                "ActivationSystem.setActivationGroupDesc");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             checkArgs(desc, null);
             return getGroupEntry(id).setActivationGroupDesc(id, desc, true);
@@ -598,7 +634,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownObjectException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess("ActivationSystem.getActivationDesc");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             return getGroupEntry(id).getActivationDesc(id);
         }
@@ -607,8 +644,8 @@ public class Activation implements Serializable {
             throws ActivationException, UnknownGroupException, RemoteException
         {
             checkShutdown();
-            RegistryImpl.checkAccess
-                ("ActivationSystem.getActivationGroupDesc");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             return getGroupEntry(id).desc;
         }
@@ -618,7 +655,8 @@ public class Activation implements Serializable {
          * the activation daemon and exits the activation daemon.
          */
         public void shutdown() throws AccessException {
-            RegistryImpl.checkAccess("ActivationSystem.shutdown");
+            // RegistryImpl.checkAccess() is done in the SameHostOnlyServerRef
+            // during unmarshallCustomData and is not applicable to local access.
 
             Object lock = startupLock;
             if (lock != null) {

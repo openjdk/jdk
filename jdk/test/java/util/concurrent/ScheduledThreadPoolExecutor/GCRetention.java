@@ -34,12 +34,12 @@
 /*
  * @test
  * @summary Ensure that waiting pool threads don't retain refs to tasks.
- * @library /lib/testlibrary/
  */
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -47,10 +47,8 @@ import java.util.concurrent.RunnableScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import jdk.testlibrary.Utils;
 
 public class GCRetention {
-    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     /**
      * A custom thread pool with a custom RunnableScheduledFuture, for the
@@ -80,53 +78,48 @@ public class GCRetention {
         }
     }
 
-    int countRefsCleared(WeakReference<?>[] refs) {
-        int count = 0;
-        for (WeakReference<?> ref : refs)
-            if (ref.get() == null)
-                count++;
-        return count;
+    void removeAll(ReferenceQueue<?> q, int n) throws InterruptedException {
+        for (int j = n; j--> 0; ) {
+            if (q.poll() == null) {
+                for (;;) {
+                    System.gc();
+                    if (q.remove(1000) != null)
+                        break;
+                    System.out.printf(
+                        "%d/%d unqueued references remaining%n", j, n);
+                }
+            }
+        }
+        check(q.poll() == null);
     }
 
     void test(String[] args) throws Throwable {
-        CustomPool pool = new CustomPool(10);
+        final CustomPool pool = new CustomPool(10);
         final int size = 100;
-        WeakReference<?>[] refs = new WeakReference<?>[size];
-        Future<?>[] futures = new Future<?>[size];
-        for (int i = 0; i < size; i++) {
-            final Object x = new Object();
-            refs[i] = new WeakReference<Object>(x);
-            // Create a Runnable with a strong ref to x.
-            Runnable r = new Runnable() {
-                    public void run() { System.out.println(x); }
-                };
-            // Schedule a custom task with a strong reference to r.
-            // Later tasks have earlier expiration, to ensure multiple
-            // residents of queue head.
-            futures[i] = pool.schedule(r, size*2-i, TimeUnit.MINUTES);
+        final ReferenceQueue<Object> q = new ReferenceQueue<>();
+        final List<WeakReference<?>> refs = new ArrayList<>(size);
+        final List<Future<?>> futures = new ArrayList<>(size);
+
+        // Schedule custom tasks with strong references.
+        class Task implements Runnable {
+            final Object x;
+            Task() { refs.add(new WeakReference<>(x = new Object(), q)); }
+            public void run() { System.out.println(x); }
         }
-        Thread.sleep(10);
-        for (int i = 0; i < size; i++) {
-            if (futures[i] != null) {
-                futures[i].cancel(false);
-                futures[i] = null;
-            }
-        }
+        // Give tasks added later earlier expiration, to ensure
+        // multiple residents of queue head.
+        for (int i = size; i--> 0; )
+            futures.add(pool.schedule(new Task(), i + 1, TimeUnit.MINUTES));
+        futures.forEach(future -> future.cancel(false));
+        futures.clear();
+
         pool.purge();
-        int cleared = 0;
-        for (int i = 0;
-             i < 10 && (cleared = countRefsCleared(refs)) < size;
-             i++) {
-            System.gc();
-            System.runFinalization();
-            Thread.sleep(10);
-        }
+        removeAll(q, size);
+        for (WeakReference<?> ref : refs) check(ref.get() == null);
+
         pool.shutdown();
-        pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS);
-        if (cleared < size)
-            throw new Error(String.format
-                            ("references to %d/%d tasks retained (\"leaked\")",
-                             size - cleared, size));
+        // rely on test harness to handle timeout
+        pool.awaitTermination(1L, TimeUnit.DAYS);
     }
 
     //--------------------- Infrastructure ---------------------------

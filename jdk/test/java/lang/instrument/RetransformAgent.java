@@ -34,7 +34,6 @@
  */
 
 import java.lang.instrument.*;
-import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;

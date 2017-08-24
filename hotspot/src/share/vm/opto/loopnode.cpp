@@ -1860,6 +1860,9 @@ void IdealLoopTree::dump_head( ) const {
   if (_required_safept != NULL && _required_safept->size() > 0) {
     tty->print(" req={"); _required_safept->dump_simple(); tty->print(" }");
   }
+  if (Verbose) {
+    tty->print(" body={"); _body.dump_simple(); tty->print(" }");
+  }
   tty->cr();
 }
 

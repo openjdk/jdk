@@ -67,7 +67,7 @@ import sun.util.ResourceBundleEnumeration;
  * for a complete description of the search and instantiation strategy.
  *
  * <p>
- * The following <a name="sample">example</a> shows a member of a resource
+ * The following <a id="sample">example</a> shows a member of a resource
  * bundle family with the base name "MyResources".
  * The text defines the bundle "MyResources_de",
  * the German member of the bundle family.

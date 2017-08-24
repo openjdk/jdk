@@ -26,7 +26,7 @@
  * @bug 6177524
  * @summary Test how to execute the 3 Object methods by a Proxy.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean ProxyObjectMethodsTest
  * @run build ProxyObjectMethodsTest
  * @run main ProxyObjectMethodsTest
