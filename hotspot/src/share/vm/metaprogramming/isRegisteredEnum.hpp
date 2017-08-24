@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package org.graalvm.compiler.microbenchmarks.graal;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Warmup;
+#ifndef SHARE_VM_METAPROGRAMMING_ISREGISTEREDENUM_HPP
+#define SHARE_VM_METAPROGRAMMING_ISREGISTEREDENUM_HPP
 
-@Warmup(iterations = 1)
-@Measurement(iterations = 1)
-@Fork(1)
-/**
- * This dummy class is used to verify that the JMH microbenchmarking environment is set up properly.
- */
-public class TestJMH {
+#include "memory/allocation.hpp"
+#include "metaprogramming/integralConstant.hpp"
 
-    @Benchmark
-    public void testJMH() {
-        // This method was intentionally left blank.
-    }
+// Recognize registered enum types.
+// Registration is by specializing this trait.
+//
+// This is a manual stand-in for the C++11 std::is_enum<T> type trait.
+// It's a lot of work to implement is_enum portably in C++98, so this
+// manual approach is being taken for those enum types we need to
+// distinguish.
+template<typename T>
+struct IsRegisteredEnum : public FalseType {};
 
-}
+#endif // SHARE_VM_METAPROGRAMMING_ISREGISTEREDENUM_HPP
+

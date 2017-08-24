@@ -121,9 +121,18 @@ inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     des
   return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
 }
 
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
-inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value, cmpxchg_memory_order order) {
-  jint rv;
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T rv;
   __asm__ volatile(
     " cas    [%2], %3, %0"
     : "=r" (rv)
@@ -132,28 +141,20 @@ inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     
   return rv;
 }
 
-inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-  jlong rv;
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T rv;
   __asm__ volatile(
     " casx   [%2], %3, %0"
     : "=r" (rv)
     : "0" (exchange_value), "r" (dest), "r" (compare_value)
     : "memory");
   return rv;
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
-  intptr_t rv;
-  __asm__ volatile(
-    " casx    [%2], %3, %0"
-    : "=r" (rv)
-    : "0" (exchange_value), "r" (dest), "r" (compare_value)
-    : "memory");
-  return rv;
-}
-
-inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value, cmpxchg_memory_order order) {
-  return (void*)cmpxchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest, (intptr_t)compare_value, order);
 }
 
 #endif // OS_CPU_LINUX_SPARC_VM_ATOMIC_LINUX_SPARC_INLINE_HPP

@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot;
 
 import java.util.Formatter;
-import java.util.Objects;
 
 /**
  * Mechanism for checking that the current Java runtime environment supports the minimum JVMCI API
@@ -40,10 +39,6 @@ class JVMCIVersionCheck {
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
     private static final int JVMCI8_MIN_MINOR_VERSION = 29;
 
-    // MAX_VALUE indicates that no current EA version is compatible with Graal.
-    // Note: Keep README.md in sync with the EA version support checked here.
-    private static final int JVMCI9_MIN_EA_BUILD = 176;
-
     private static void failVersionCheck(boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
         String javaHome = System.getProperty("java.home");
@@ -55,7 +50,7 @@ class JVMCIVersionCheck {
         if (System.getProperty("java.specification.version").compareTo("1.9") < 0) {
             errorMessage.format("Download the latest JVMCI JDK 8 from http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html");
         } else {
-            errorMessage.format("Download the latest JDK 9 EA from https://jdk9.java.net/download/");
+            errorMessage.format("Download the latest JDK 9 build from https://jdk9.java.net/download/");
         }
         String value = System.getenv("JVMCI_VERSION_CHECK");
         if ("warn".equals(value)) {
@@ -119,34 +114,11 @@ class JVMCIVersionCheck {
                 // Allow local builds
                 return;
             }
-            // http://openjdk.java.net/jeps/223
-            if (vmVersion.startsWith("9+")) {
-                int start = "9+".length();
-                int end = start;
-                end = start;
-                while (end < vmVersion.length() && Character.isDigit(vmVersion.charAt(end))) {
-                    end++;
-                }
-                int build;
-                try {
-                    build = Integer.parseInt(vmVersion.substring(start, end));
-                } catch (NumberFormatException e) {
-                    failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
-                                    "Cannot read JDK9 EA build number from java.vm.version property: %s.%n", vmVersion);
-                    return;
-                }
-                if (build >= JVMCI9_MIN_EA_BUILD) {
-                    return;
-                }
-                if (Objects.equals(JVMCI9_MIN_EA_BUILD, Integer.MAX_VALUE)) {
-                    failVersionCheck(exitOnFailure, "This version of Graal is not compatible with any JDK 9 Early Access build.%n");
-                } else {
-                    failVersionCheck(exitOnFailure, "The VM is an insufficiently recent EA JDK9 build for Graal: %d < %d.%n", build, JVMCI9_MIN_EA_BUILD);
-                }
+            if (vmVersion.startsWith("9-ea")) {
+                failVersionCheck(exitOnFailure, "This version of Graal is not compatible with JDK 9 Early Access builds.%n");
                 return;
             } else {
-                // Graal will be compatible with all JDK versions as of 9 GA
-                // until a JVMCI API change is made in a 9u or later release.
+                // Graal is compatible with all JDK versions as of 9 GA.
             }
         }
     }

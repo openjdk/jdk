@@ -36,6 +36,8 @@ import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.util.EconomicMap;
 
+import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyProbabilities;
+
 public final class ComputeLoopFrequenciesClosure extends ReentrantNodeIterator.NodeIteratorClosure<Double> {
 
     private static final ComputeLoopFrequenciesClosure INSTANCE = new ComputeLoopFrequenciesClosure();
@@ -75,29 +77,15 @@ public final class ComputeLoopFrequenciesClosure extends ReentrantNodeIterator.N
         for (double d : exitStates.getValues()) {
             exitProbability += d;
         }
-        exitProbability = Math.min(1D, exitProbability);
-        if (exitProbability < ControlFlowGraph.MIN_PROBABILITY) {
-            exitProbability = ControlFlowGraph.MIN_PROBABILITY;
-        }
-        assert exitProbability <= 1D && exitProbability >= 0D;
-        double loopFrequency = 1D / exitProbability;
+        exitProbability = Math.min(1.0, exitProbability);
+        exitProbability = Math.max(ControlFlowGraph.MIN_PROBABILITY, exitProbability);
+        double loopFrequency = 1.0 / exitProbability;
         loop.setLoopFrequency(loopFrequency);
 
         double adjustmentFactor = initialState * loopFrequency;
-        exitStates.replaceAll((exitNode, probability) -> multiplySaturate(probability, adjustmentFactor));
+        exitStates.replaceAll((exitNode, probability) -> multiplyProbabilities(probability, adjustmentFactor));
 
         return exitStates;
-    }
-
-    /**
-     * Multiplies a and b and saturates the result to {@link ControlFlowGraph#MAX_PROBABILITY}.
-     */
-    public static double multiplySaturate(double a, double b) {
-        double r = a * b;
-        if (r > ControlFlowGraph.MAX_PROBABILITY) {
-            return ControlFlowGraph.MAX_PROBABILITY;
-        }
-        return r;
     }
 
     /**
