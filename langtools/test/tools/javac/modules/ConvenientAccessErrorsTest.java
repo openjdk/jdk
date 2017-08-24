@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169197 8172668 8173117
+ * @bug 8169197 8172668 8173117 8175007
  * @summary Check convenient errors are produced for inaccessible classes.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -703,5 +703,45 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
         if (!expected.equals(actual)) {
             throw new Exception("Expected names not generated: " + actual);
         }
+    }
+
+    @Test
+    public void testInaccessibleInVisible(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_ma = src.resolve("ma");
+        tb.writeJavaFiles(src_ma,
+                          "module ma { exports ma; }",
+                          "package ma; class NotApi { public static class Inner { } }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        new JavacTask(tb)
+            .outdir(classes)
+            .files(findJavaFiles(src_ma))
+            .run()
+            .writeAll();
+
+        Path src_mb = src.resolve("mb");
+        tb.writeJavaFiles(src_mb,
+                          "module mb { requires ma; }",
+                          "package mb.a; public class Test { ma.NotApi.Inner i1; mb.b.NotApi.Inner i2; }",
+                          "package mb.b; class NotApi { public static class Inner { } }");
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-path", classes.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src_mb))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = Arrays.asList(
+                "Test.java:1:44: compiler.err.not.def.access.class.intf.cant.access: ma.NotApi.Inner, ma.NotApi",
+                "Test.java:1:66: compiler.err.not.def.access.class.intf.cant.access: mb.b.NotApi.Inner, mb.b.NotApi",
+                "2 errors");
+
+        if (!expected.equals(log))
+            throw new Exception("expected output not found; actual: " + log);
     }
 }

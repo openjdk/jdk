@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,21 @@
  * questions.
  */
 
+/**
+ * Defines the implementation of the HotSpot Serviceability Agent.
+ *
+ * <p> This module includes the <em>{@index jhsdb jhsdb tool}</em> tool to
+ * attach to a running Java Virtual Machine (JVM) or launch a postmortem
+ * debugger to analyze the content of a core-dump from a crashed JVM.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:</dt>
+ * <dd> {@extLink jhsdb_tool_reference jhsdb}</dd>
+ * </dl>
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.hotspot.agent {
     requires java.datatransfer;
     requires java.desktop;

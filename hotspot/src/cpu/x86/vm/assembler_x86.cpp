@@ -917,7 +917,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     break;
 
   case 0x62: // EVEX_4bytes
-    assert((UseAVX > 0), "shouldn't have EVEX prefix");
+    assert(VM_Version::supports_evex(), "shouldn't have EVEX prefix");
     assert(ip == inst+1, "no prefixes allowed");
     // no EVEX collisions, all instructions that have 0x62 opcodes
     // have EVEX versions and are subopcodes of 0x66

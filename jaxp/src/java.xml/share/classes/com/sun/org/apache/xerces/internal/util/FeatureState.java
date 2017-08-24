@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
- */
-
-/*
- * $Id: FeatureState.java 3024 2011-03-01 03:46:13Z joehw $
  */
 
 package com.sun.org.apache.xerces.internal.util;
