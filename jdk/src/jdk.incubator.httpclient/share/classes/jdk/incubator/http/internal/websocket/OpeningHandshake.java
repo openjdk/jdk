@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import jdk.incubator.http.HttpResponse.BodyHandler;
 import jdk.incubator.http.WebSocketHandshakeException;
+import jdk.incubator.http.internal.common.Pair;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -66,7 +68,6 @@ final class OpeningHandshake {
     private static final String HEADER_KEY        = "Sec-WebSocket-Key";
     private static final String HEADER_PROTOCOL   = "Sec-WebSocket-Protocol";
     private static final String HEADER_VERSION    = "Sec-WebSocket-Version";
-    private static final String VALUE_VERSION     = "13"; // WebSocket's lucky number
 
     private static final Set<String> FORBIDDEN_HEADERS;
 
@@ -106,12 +107,18 @@ final class OpeningHandshake {
         if (connectTimeout != null) {
             requestBuilder.timeout(connectTimeout);
         }
+        for (Pair<String, String> p : b.getHeaders()) {
+            if (FORBIDDEN_HEADERS.contains(p.first)) {
+                throw illegal("Illegal header: " + p.first);
+            }
+            requestBuilder.header(p.first, p.second);
+        }
         this.subprotocols = createRequestSubprotocols(b.getSubprotocols());
         if (!this.subprotocols.isEmpty()) {
             String p = this.subprotocols.stream().collect(Collectors.joining(", "));
             requestBuilder.header(HEADER_PROTOCOL, p);
         }
-        requestBuilder.header(HEADER_VERSION, VALUE_VERSION);
+        requestBuilder.header(HEADER_VERSION, "13"); // WebSocket's lucky number
         this.nonce = createNonce();
         requestBuilder.header(HEADER_KEY, this.nonce);
         // Setting request version to HTTP/1.1 forcibly, since it's not possible
@@ -133,11 +140,7 @@ final class OpeningHandshake {
             if (s.trim().isEmpty() || !isValidName(s)) {
                 throw illegal("Bad subprotocol syntax: " + s);
             }
-            if (FORBIDDEN_HEADERS.contains(s)) {
-                throw illegal("Forbidden header: " + s);
-            }
-            boolean unique = sp.add(s);
-            if (!unique) {
+            if (!sp.add(s)) {
                 throw illegal("Duplicating subprotocol: " + s);
             }
         }
@@ -176,7 +179,7 @@ final class OpeningHandshake {
 
     CompletableFuture<Result> send() {
         return client.sendAsync(this.request, BodyHandler.<Void>discard(null))
-                     .thenCompose(this::resultFrom);
+                .thenCompose(this::resultFrom);
     }
 
     /*
@@ -283,7 +286,6 @@ final class OpeningHandshake {
 
     private static String requireSingle(HttpHeaders responseHeaders,
                                         String headerName)
-            throws CheckFailedException
     {
         List<String> values = responseHeaders.allValues(headerName);
         if (values.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
-import sun.security.provider.certpath.PKIXTimestampParameters;
+import sun.security.provider.certpath.PKIXExtendedParameters;
 
 /**
  * Validator implementation built on the PKIX CertPath API. This
@@ -195,23 +195,22 @@ public final class PKIXValidator extends Validator {
                 ("null or zero-length certificate chain");
         }
 
-        // Check if 'parameter' affects 'pkixParameters'
+        // Use PKIXExtendedParameters for timestamp and variant additions
         PKIXBuilderParameters pkixParameters = null;
-        if (parameter instanceof Timestamp && plugin) {
-            try {
-                pkixParameters = new PKIXTimestampParameters(
-                        (PKIXBuilderParameters) parameterTemplate.clone(),
-                        (Timestamp) parameter);
-            } catch (InvalidAlgorithmParameterException e) {
-                // ignore exception
-            }
-        } else {
-            pkixParameters = (PKIXBuilderParameters) parameterTemplate.clone();
+        try {
+            pkixParameters = new PKIXExtendedParameters(
+                    (PKIXBuilderParameters) parameterTemplate.clone(),
+                    (parameter instanceof Timestamp) ?
+                            (Timestamp) parameter : null,
+                    variant);
+        } catch (InvalidAlgorithmParameterException e) {
+            // ignore exception
         }
 
         // add new algorithm constraints checker
         if (constraints != null) {
-            pkixParameters.addCertPathChecker(new AlgorithmChecker(constraints));
+            pkixParameters.addCertPathChecker(
+                    new AlgorithmChecker(constraints, null, variant));
         }
 
         // attach it to the PKIXBuilderParameters.

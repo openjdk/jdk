@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.lang.System.Logger;
-import java.lang.reflect.Module;
 
 /**
  * What our test provider needs to implement.
