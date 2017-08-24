@@ -20,9 +20,6 @@ grant codeBase "jrt:/java.corba" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "jrt:/jdk.incubator.httpclient" {
-};
-
 grant codeBase "jrt:/java.scripting" {
     permission java.security.AllPermission;
 };
@@ -69,17 +66,7 @@ grant codeBase "jrt:/java.sql.rowset" {
 };
 
 grant codeBase "jrt:/java.xml.bind" {
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.sun.misc";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.xml.internal.*";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.istack.internal";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.istack.internal.*";
-    permission java.lang.RuntimePermission "accessDeclaredMembers";
-    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-    permission java.util.PropertyPermission "*", "read";
+    permission java.security.AllPermission;
 };
 
 grant codeBase "jrt:/java.xml.crypto" {
@@ -104,19 +91,11 @@ grant codeBase "jrt:/java.xml.crypto" {
 };
 
 grant codeBase "jrt:/java.xml.ws" {
-    permission java.net.NetPermission
-                   "getProxySelector";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.sun.misc";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.xml.internal.*";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.istack.internal";
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.com.sun.istack.internal.*";
-    permission java.lang.RuntimePermission "accessDeclaredMembers";
-    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-    permission java.util.PropertyPermission "*", "read";
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.accessibility" {
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";
 };
 
 grant codeBase "jrt:/jdk.charsets" {
@@ -155,11 +134,19 @@ grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
 
+grant codeBase "jrt:/jdk.desktop" {
+    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.awt";
+};
+
 grant codeBase "jrt:/jdk.dynalink" {
     permission java.security.AllPermission;
 };
 
 grant codeBase "jrt:/jdk.internal.le" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.internal.vm.compiler" {
     permission java.security.AllPermission;
 };
 
@@ -198,22 +185,10 @@ grant codeBase "jrt:/jdk.zipfs" {
     permission java.util.PropertyPermission "os.name", "read";
 };
 
-grant codeBase "jrt:/jdk.accessibility" {
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";
-};
-
-grant codeBase "jrt:/jdk.desktop" {
-    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.awt";
-};
-
 // permissions needed by applications using java.desktop module
 grant {
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans";
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.beans.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.sun.java.swing.plaf.*";
     permission java.lang.RuntimePermission "accessClassInPackage.com.apple.*";
-};
-
-grant codeBase "jrt:/jdk.internal.vm.compiler" {
-    permission java.security.AllPermission;
 };

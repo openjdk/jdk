@@ -688,7 +688,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         Content li = HtmlTree.LI(contents.summaryLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
-        MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
+        MemberSummaryBuilder memberSummaryBuilder =
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.summarySet) {
             Content liNav = new HtmlTree(HtmlTag.LI);
@@ -724,7 +724,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         Content li = HtmlTree.LI(contents.detailLabel);
         li.addContent(Contents.SPACE);
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
-        MemberSummaryBuilder memberSummaryBuilder = (MemberSummaryBuilder)
+        MemberSummaryBuilder memberSummaryBuilder =
                 configuration.getBuilderFactory().getMemberSummaryBuilder(this);
         for (VisibleMemberMap.Kind kind : VisibleMemberMap.Kind.detailSet) {
             Content liNav = new HtmlTree(HtmlTag.LI);

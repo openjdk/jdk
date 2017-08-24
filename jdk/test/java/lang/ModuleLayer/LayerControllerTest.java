@@ -59,11 +59,17 @@ public class LayerControllerTest {
                 .packages(Set.of("p2"))
                 .build();
 
-        ModuleFinder finder = ModuleUtils.finderOf(descriptor1, descriptor2);
+        ModuleDescriptor descriptor3
+            = ModuleDescriptor.newModule("m3")
+                .requires("java.base")
+                .packages(Set.of("p3"))
+                .build();
+
+        ModuleFinder finder = ModuleUtils.finderOf(descriptor1, descriptor2, descriptor3);
         ModuleLayer bootLayer = ModuleLayer.boot();
 
         Configuration cf = bootLayer.configuration()
-                .resolve(finder, ModuleFinder.of(), Set.of("m1", "m2"));
+                .resolve(finder, ModuleFinder.of(), Set.of("m1", "m2", "m3"));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 
@@ -72,9 +78,10 @@ public class LayerControllerTest {
 
         ModuleLayer layer = controller.layer();
 
-        assertTrue(layer.modules().size() == 2);
+        assertTrue(layer.modules().size() == 3);
         assertTrue(layer.findModule("m1").isPresent());
         assertTrue(layer.findModule("m2").isPresent());
+        assertTrue(layer.findModule("m3").isPresent());
 
         return controller;
     }
@@ -88,18 +95,34 @@ public class LayerControllerTest {
         ModuleLayer layer = controller.layer();
         Module m1 = layer.findModule("m1").orElseThrow(RuntimeException::new);
         Module m2 = layer.findModule("m2").orElseThrow(RuntimeException::new);
+        Module m3 = layer.findModule("m3").orElseThrow(RuntimeException::new);
 
         assertFalse(m1.canRead(m2));
+        assertFalse(m1.canRead(m3));
         assertFalse(m1.isExported("p1"));
         assertFalse(m1.isOpen("p1"));
         assertFalse(m1.isExported("p1", m2));
+        assertFalse(m1.isExported("p1", m3));
         assertFalse(m1.isOpen("p1", m2));
+        assertFalse(m1.isOpen("p1", m3));
 
         assertFalse(m2.canRead(m1));
+        assertFalse(m2.canRead(m3));
         assertFalse(m2.isExported("p2"));
         assertFalse(m2.isOpen("p2"));
         assertFalse(m2.isExported("p2", m1));
+        assertFalse(m2.isExported("p2", m3));
         assertFalse(m2.isOpen("p2", m1));
+        assertFalse(m2.isOpen("p2", m3));
+
+        assertFalse(m3.canRead(m1));
+        assertFalse(m3.canRead(m2));
+        assertFalse(m3.isExported("p3"));
+        assertFalse(m3.isOpen("p3"));
+        assertFalse(m3.isExported("p3", m1));
+        assertFalse(m3.isExported("p3", m2));
+        assertFalse(m3.isOpen("p3", m1));
+        assertFalse(m3.isOpen("p3", m2));
 
         // update m1 to read m2
         assertTrue(controller.addReads(m1, m2) == controller);
@@ -111,19 +134,33 @@ public class LayerControllerTest {
         assertTrue(m1.canRead(m2));
         assertTrue(m1.canRead(m1));
 
-        // update m1 to open p1 to m2
-        assertTrue(controller.addOpens(m1, "p1", m2) == controller);
+        // update m1 to export p1 to m2
+        assertTrue(controller.addExports(m1, "p1", m2) == controller);
         assertTrue(m1.isExported("p1", m2));
-        assertTrue(m1.isOpen("p1", m2));
+        assertFalse(m1.isOpen("p1", m2));
         assertFalse(m1.isExported("p1"));
         assertFalse(m1.isOpen("p1"));
 
-        // update m2 to open p2 to m1
-        assertTrue(controller.addOpens(m2, "p2", m1) == controller);
-        assertTrue(m2.isExported("p2", m1));
-        assertTrue(m2.isOpen("p2", m1));
-        assertFalse(m2.isExported("p2"));
-        assertFalse(m2.isOpen("p2"));
+        // update m3 to open p3 to m1
+        assertTrue(controller.addExports(m3, "p3", m1) == controller);
+        assertTrue(m3.isExported("p3", m1));
+        assertFalse(m3.isOpen("p3", m1));
+        assertFalse(m3.isExported("p3"));
+        assertFalse(m3.isOpen("p3"));
+
+        // update m1 to open p1 to m3
+        assertTrue(controller.addOpens(m1, "p1", m3) == controller);
+        assertTrue(m1.isExported("p1", m3));
+        assertTrue(m1.isOpen("p1", m3));
+        assertFalse(m1.isExported("p1"));
+        assertFalse(m1.isOpen("p1"));
+
+        // update m3 to open p3 to m1
+        assertTrue(controller.addOpens(m3, "p3", m1) == controller);
+        assertTrue(m3.isExported("p3", m1));
+        assertTrue(m3.isOpen("p3", m1));
+        assertFalse(m3.isExported("p3"));
+        assertFalse(m3.isOpen("p3"));
     }
 
     /**
@@ -139,6 +176,18 @@ public class LayerControllerTest {
         // java.base is not in layer
         try {
             controller.addReads(base, m2);
+            assertTrue(false);
+        } catch (IllegalArgumentException expected) { }
+
+        // java.base is not in layer
+        try {
+            controller.addExports(base, "java.lang", m2);
+            assertTrue(false);
+        } catch (IllegalArgumentException expected) { }
+
+        // m1 does not contain java.lang
+        try {
+            controller.addExports(m1, "java.lang", m2);
             assertTrue(false);
         } catch (IllegalArgumentException expected) { }
 
@@ -173,6 +222,21 @@ public class LayerControllerTest {
 
         try {
             controller.addReads(m1, null);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
+
+        try {
+            controller.addExports(null, "p1", m2);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
+
+        try {
+            controller.addExports(m1, null, m2);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
+
+        try {
+            controller.addExports(m1, "p1", null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
 

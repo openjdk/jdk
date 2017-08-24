@@ -26,6 +26,8 @@
 /**
  * Defines the JDBC API.
  *
+ * @uses java.sql.Driver
+ *
  * @moduleGraph
  * @since 9
  */
@@ -36,6 +38,6 @@ module java.sql {
     exports java.sql;
     exports javax.sql;
     exports javax.transaction.xa;
+
     uses java.sql.Driver;
 }
-

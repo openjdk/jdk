@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,13 @@ public class AWTKeyStroke implements Serializable {
     /**
      * Constructs an {@code AWTKeyStroke} with default values.
      * The default values used are:
-     * <table border="1" summary="AWTKeyStroke default values">
+     *
+     * <table class="striped">
+     * <caption>AWTKeyStroke default values</caption>
+     * <thead>
      * <tr><th>Property</th><th>Default Value</th></tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *    <td>Key Char</td>
      *    <td>{@code KeyEvent.CHAR_UNDEFINED}</td>
@@ -108,6 +113,7 @@ public class AWTKeyStroke implements Serializable {
      *    <td>On key release?</td>
      *    <td>{@code false}</td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * {@code AWTKeyStroke}s should not be constructed

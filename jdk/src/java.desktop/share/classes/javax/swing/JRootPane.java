@@ -70,7 +70,9 @@ import sun.security.action.GetBooleanAction;
  * can be used to obtain the <code>JRootPane</code> that contains
  * a given component.
  * </blockquote>
- * <table style="float:right" border="0" summary="layout">
+ *
+ * <table class="borderless" style="float:right">
+ * <caption>Example</caption>
  * <tr>
  * <td style="text-align:center">
  * <img src="doc-files/JRootPane-2.gif"

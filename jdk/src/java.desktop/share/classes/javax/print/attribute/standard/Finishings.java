@@ -40,7 +40,8 @@ import javax.print.attribute.PrintJobAttribute;
  * for purposes of finishing.
  * <P>
  * Standard Finishings values are:
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 style="width:100%" SUMMARY="layout">
+ * <table class="borderless" style="width:100%;margin: 0px auto">
+ * <caption>Standard Finishings values</caption>
  * <TR>
  * <TD STYLE="WIDTH:10%">
  * &nbsp;
@@ -76,7 +77,8 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * The following Finishings values are more specific; they indicate a
  * corner or an edge as if the document were a portrait document:
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 style="width:100%" SUMMARY="layout">
+ * <table class="borderless" style="width:100%;margin: 0px auto">
+ * <caption>Specific Finishings values</caption>
  * <TR>
  * <TD STYLE="WIDTH:10%">
  * &nbsp;

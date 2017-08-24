@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
 import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.tools.StandardLocation;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
@@ -46,10 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Bhavesh Patel
  */
 public class ModuleSummaryBuilder extends AbstractBuilder {
-    /**
-     * The root element of the module summary XML is {@value}.
-     */
-    public static final String ROOT = "ModuleDoc";
 
     /**
      * The module being documented.
@@ -65,11 +59,6 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * The content that will be added to the module summary documentation tree.
      */
     private Content contentTree;
-
-    /**
-     * The module package being documented.
-     */
-    private PackageElement pkg;
 
     /**
      * Construct a new ModuleSummaryBuilder.
@@ -112,27 +101,20 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
             //Doclet does not support this output.
             return;
         }
-        build(layoutParser.parseXML(ROOT), contentTree);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return ROOT;
+        buildModuleDoc(contentTree);
     }
 
     /**
      * Build the module documentation.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildModuleDoc(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildModuleDoc(Content contentTree) throws DocletException {
         contentTree = moduleWriter.getModuleHeader(mdle.getSimpleName().toString());
-        buildChildren(node, contentTree);
+
+        buildContent(contentTree);
+
         moduleWriter.addModuleFooter(contentTree);
         moduleWriter.printDocument(contentTree);
         utils.copyDirectory(mdle, DocPaths.moduleSummary(mdle));
@@ -141,70 +123,72 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     /**
      * Build the content for the module doc.
      *
-     * @param node the XML element that specifies which components to document
      * @param contentTree the content tree to which the module contents
      *                    will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildContent(XMLNode node, Content contentTree) throws DocletException {
+    protected void buildContent(Content contentTree) throws DocletException {
         Content moduleContentTree = moduleWriter.getContentHeader();
-        buildChildren(node, moduleContentTree);
+
+        buildModuleDescription(moduleContentTree);
+        buildModuleTags(moduleContentTree);
+        buildSummary(moduleContentTree);
+
         moduleWriter.addModuleContent(contentTree, moduleContentTree);
     }
 
     /**
      * Build the module summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param moduleContentTree the module content tree to which the summaries will
      *                           be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    public void buildSummary(XMLNode node, Content moduleContentTree) throws DocletException {
+    protected void buildSummary(Content moduleContentTree) throws DocletException {
         Content summaryContentTree = moduleWriter.getSummaryHeader();
-        buildChildren(node, summaryContentTree);
+
+        buildPackagesSummary(summaryContentTree);
+        buildModulesSummary(summaryContentTree);
+        buildServicesSummary(summaryContentTree);
+
         moduleContentTree.addContent(moduleWriter.getSummaryTree(summaryContentTree));
     }
 
     /**
      * Build the modules summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the content tree to which the summaries will
      *                           be added
      */
-    public void buildModulesSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildModulesSummary(Content summaryContentTree) {
         moduleWriter.addModulesSummary(summaryContentTree);
     }
 
     /**
      * Build the package summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    public void buildPackagesSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildPackagesSummary(Content summaryContentTree) {
         moduleWriter.addPackagesSummary(summaryContentTree);
-        }
+    }
 
     /**
      * Build the services summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param summaryContentTree the content tree to which the summaries will be added
      */
-    public void buildServicesSummary(XMLNode node, Content summaryContentTree) {
+    protected void buildServicesSummary(Content summaryContentTree) {
         moduleWriter.addServicesSummary(summaryContentTree);
     }
 
     /**
      * Build the description for the module.
      *
-     * @param node the XML element that specifies which components to document
      * @param moduleContentTree the tree to which the module description will
      *                           be added
      */
-    public void buildModuleDescription(XMLNode node, Content moduleContentTree) {
+    protected void buildModuleDescription(Content moduleContentTree) {
         if (!configuration.nocomment) {
             moduleWriter.addModuleDescription(moduleContentTree);
         }
@@ -213,10 +197,9 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
     /**
      * Build the tags of the summary.
      *
-     * @param node the XML element that specifies which components to document
      * @param moduleContentTree the tree to which the module tags will be added
      */
-    public void buildModuleTags(XMLNode node, Content moduleContentTree) {
+    protected void buildModuleTags(Content moduleContentTree) {
         if (!configuration.nocomment) {
             moduleWriter.addModuleTags(moduleContentTree);
         }
