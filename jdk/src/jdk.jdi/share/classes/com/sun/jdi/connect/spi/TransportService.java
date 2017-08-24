@@ -43,7 +43,7 @@ import com.sun.jdi.connect.TransportTimeoutException;
  * Debug Wire Protocol (JDWP) packets over an underlying
  * communication protocol. In essence a transport service
  * implementation binds JDWP (as specified in the
- * <a href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
+ * <a href="{@docRoot}/../specs/jdwp/jdwp-spec.html">
  * JDWP specification</a>) to an underlying communication
  * protocol. A transport service implementation provides
  * a reliable JDWP packet transportation service. JDWP
@@ -166,7 +166,7 @@ public abstract class TransportService {
      * is followed by a handshake to ensure that the connection is
      * to a target VM. The handshake involves the exchange
      * of a string <i>JDWP-Handshake</i> as specified in the <a
-     * href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
+     * href="{@docRoot}/../specs/jdwp/jdwp-spec.html">
      * Java Debug Wire Protocol</a> specification.
      *
      * @param   address
@@ -315,7 +315,7 @@ public abstract class TransportService {
      * connection is indeed to a target VM. The handshake involves
      * the exchange of a string <i>JDWP-Handshake</i> as specified
      * in the <a
-     * href="../../../../../../../../../technotes/guides/jpda/jdwp-spec.html">
+     * href="{@docRoot}/../specs/jdwp/jdwp-spec.html">
      * Java Debug Wire Protocol</a> specification.
      *
      * @param   listenKey

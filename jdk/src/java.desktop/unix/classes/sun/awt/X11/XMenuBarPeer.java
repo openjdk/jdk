@@ -298,25 +298,25 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      */
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
-        Dimension screenSize = graphicsConfig.getBounds().getSize();
+        Rectangle screenBounds = getCurrentGraphicsConfiguration().getBounds();
         Rectangle res;
-        res = fitWindowBelow(globalBounds, windowSize, screenSize);
+        res = fitWindowBelow(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowAbove(globalBounds, windowSize, screenSize);
+        res = fitWindowAbove(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowRight(globalBounds, windowSize, screenSize);
+        res = fitWindowRight(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        res = fitWindowLeft(globalBounds, windowSize, screenSize);
+        res = fitWindowLeft(globalBounds, windowSize, screenBounds);
         if (res != null) {
             return res;
         }
-        return fitWindowToScreen(windowSize, screenSize);
+        return fitWindowToScreen(windowSize, screenBounds);
     }
 
     /**
@@ -503,6 +503,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * This function is called from XWindow
      * @see XWindow.handleF10onEDT()
      */
+    @SuppressWarnings("deprecation")
     void handleF10KeyPress(KeyEvent event) {
         int keyState = event.getModifiers();
         if (((keyState & InputEvent.ALT_MASK) != 0) ||

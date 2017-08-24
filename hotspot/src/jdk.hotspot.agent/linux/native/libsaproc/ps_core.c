@@ -642,6 +642,18 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
         if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
           return false;
         }
+      } else if (notep->n_type == NT_AUXV) {
+        // Get first segment from entry point
+        ELF_AUXV *auxv = (ELF_AUXV *)descdata;
+        while (auxv->a_type != AT_NULL) {
+          if (auxv->a_type == AT_ENTRY) {
+            // Set entry point address to address of dynamic section.
+            // We will adjust it in read_exec_segments().
+            ph->core->dynamic_addr = auxv->a_un.a_val;
+            break;
+          }
+          auxv++;
+        }
       }
       p = descdata + ROUNDUP(notep->n_descsz, 4);
    }
@@ -832,7 +844,13 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
 
     // from PT_DYNAMIC we want to read address of first link_map addr
     case PT_DYNAMIC: {
-      ph->core->dynamic_addr = exec_php->p_vaddr;
+      if (exec_ehdr->e_type == ET_EXEC) {
+        ph->core->dynamic_addr = exec_php->p_vaddr;
+      } else { // ET_DYN
+        // dynamic_addr has entry point of executable.
+        // Thus we should substract it.
+        ph->core->dynamic_addr += exec_php->p_vaddr - exec_ehdr->e_entry;
+      }
       print_debug("address of _DYNAMIC is 0x%lx\n", ph->core->dynamic_addr);
       break;
     }
@@ -1030,8 +1048,9 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
     goto err;
   }
 
-  if (read_elf_header(ph->core->exec_fd, &exec_ehdr) != true || exec_ehdr.e_type != ET_EXEC) {
-    print_debug("executable file is not a valid ELF ET_EXEC file\n");
+  if (read_elf_header(ph->core->exec_fd, &exec_ehdr) != true ||
+      ((exec_ehdr.e_type != ET_EXEC) && (exec_ehdr.e_type != ET_DYN))) {
+    print_debug("executable file is not a valid ELF file\n");
     goto err;
   }
 

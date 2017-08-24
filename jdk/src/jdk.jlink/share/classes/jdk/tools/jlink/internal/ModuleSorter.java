@@ -30,6 +30,8 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolModuleView;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleDescriptor.Requires.Modifier;
+
 import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.HashMap;
@@ -67,14 +69,15 @@ public final class ModuleSorter {
 
     private ModuleSorter addModule(ResourcePoolModule module) {
         addNode(module);
-        readModuleDescriptor(module).requires().stream()
-            .forEach(req -> {
-                String dm = req.name();
-                ResourcePoolModule dep = moduleView.findModule(dm)
-                    .orElseThrow(() -> new PluginException(dm + " not found"));
+        readModuleDescriptor(module).requires().forEach(req -> {
+            ResourcePoolModule dep = moduleView.findModule(req.name()).orElse(null);
+            if (dep != null) {
                 addNode(dep);
                 edges.get(module.name()).add(dep);
-            });
+            } else if (!req.modifiers().contains(Modifier.STATIC)) {
+                throw new PluginException(req.name() + " not found");
+            }
+        });
         return this;
     }
 
@@ -113,7 +116,7 @@ public final class ModuleSorter {
             return;
         }
         visited.add(node);
-        edges.get(node.name()).stream()
+        edges.get(node.name())
              .forEach(x -> visit(x, visited, done));
         done.add(node);
         result.addLast(node);

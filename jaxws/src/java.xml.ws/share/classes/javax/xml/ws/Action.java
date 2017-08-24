@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,12 +129,16 @@ public @interface Action {
     /**
      * Explicit value of the WS-Addressing {@code Action} message addressing property for the {@code input}
      * message of the operation.
+     *
+     * @return {@code Action} message addressing property for the {@code input} message
      */
     String input() default "";
 
     /**
      * Explicit value of the WS-Addressing {@code Action} message addressing property for the {@code output}
      * message of the operation.
+     *
+     * @return {@code Action} message addressing property for the {@code output} message
      */
     String output() default "";
 
@@ -143,6 +147,8 @@ public @interface Action {
      * message(s) of the operation. Each exception that is mapped to a fault and requires an explicit WS-Addressing
      * {@code Action} message addressing property, needs to be specified as a value in this property
      * using {@link FaultAction} annotation.
+     *
+     * @return {@code Action} message addressing property for the {@code fault} message(s)
      */
     FaultAction[] fault() default { };
 }
