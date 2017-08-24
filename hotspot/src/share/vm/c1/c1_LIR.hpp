@@ -613,7 +613,7 @@ class LIR_OprFact: public AllStatic {
   // Platform dependant.
   static LIR_Opr double_fpu(int reg1, int reg2 = -1 /*fnoreg*/);
 
-#ifdef __SOFTFP__
+#ifdef ARM32
   static LIR_Opr single_softfp(int reg) {
     return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
                                LIR_OprDesc::float_type           |
@@ -627,7 +627,7 @@ class LIR_OprFact: public AllStatic {
                                LIR_OprDesc::cpu_register         |
                                LIR_OprDesc::double_size);
   }
-#endif // __SOFTFP__
+#endif // ARM32
 
 #if defined(X86)
   static LIR_Opr single_xmm(int reg) {
@@ -2113,7 +2113,7 @@ class LIR_List: public CompilationResourceObj {
   void   pack64(LIR_Opr src, LIR_Opr dst) { append(new LIR_Op1(lir_pack64,   src, dst, T_LONG, lir_patch_none, NULL)); }
   void unpack64(LIR_Opr src, LIR_Opr dst) { append(new LIR_Op1(lir_unpack64, src, dst, T_LONG, lir_patch_none, NULL)); }
 
-  void null_check(LIR_Opr opr, CodeEmitInfo* info)         { append(new LIR_Op1(lir_null_check, opr, info)); }
+  void null_check(LIR_Opr opr, CodeEmitInfo* info, bool deoptimize_on_null = false);
   void throw_exception(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info) {
     append(new LIR_Op2(lir_throw, exceptionPC, exceptionOop, LIR_OprFact::illegalOpr, info));
   }

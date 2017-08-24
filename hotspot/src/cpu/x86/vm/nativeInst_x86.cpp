@@ -365,6 +365,10 @@ int NativeMovRegMem::instruction_start() const {
     NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
     return 3;
   }
+  if (instr_0 == instruction_EVEX_prefix_4bytes) {
+    assert(VM_Version::supports_evex(), "shouldn't have EVEX prefix");
+    return 4;
+  }
 
   // First check to see if we have a (prefixed or not) xor
   if (instr_0 >= instruction_prefix_wide_lo && // 0x40

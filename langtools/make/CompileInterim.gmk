@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ define SetupInterimModule
           $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)), \
       EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap \
           com/sun/tools/jdeprscan, \
-      EXCLUDE_FILES := module-info.java JavacToolProvider.java JavadocToolProvider.java, \
+      EXCLUDE_FILES := module-info.java JavacToolProvider.java \
+	  JavadocToolProvider.java Standard.java, \
       COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
       BIN := $(BUILDTOOLS_OUTPUTDIR)/override_modules/$(strip $1), \
       ADD_JAVAC_FLAGS := -Xbootclasspath/p:$$(call PathList, \
