@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,18 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
 import java.net.SocketException;
-import java.util.*;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 
 /**
@@ -54,23 +62,18 @@ public abstract class SelectorImpl
         super(sp);
         keys = new HashSet<>();
         selectedKeys = new HashSet<>();
-        if (Util.atBugLevel("1.4")) {
-            publicKeys = keys;
-            publicSelectedKeys = selectedKeys;
-        } else {
-            publicKeys = Collections.unmodifiableSet(keys);
-            publicSelectedKeys = Util.ungrowableSet(selectedKeys);
-        }
+        publicKeys = Collections.unmodifiableSet(keys);
+        publicSelectedKeys = Util.ungrowableSet(selectedKeys);
     }
 
     public Set<SelectionKey> keys() {
-        if (!isOpen() && !Util.atBugLevel("1.4"))
+        if (!isOpen())
             throw new ClosedSelectorException();
         return publicKeys;
     }
 
     public Set<SelectionKey> selectedKeys() {
-        if (!isOpen() && !Util.atBugLevel("1.4"))
+        if (!isOpen())
             throw new ClosedSelectorException();
         return publicSelectedKeys;
     }

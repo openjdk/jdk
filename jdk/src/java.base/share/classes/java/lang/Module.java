@@ -246,7 +246,6 @@ public final class Module implements AnnotatedElement {
         return null;
     }
 
-
     // --
 
     // special Module to mean "all unnamed modules"
@@ -257,16 +256,37 @@ public final class Module implements AnnotatedElement {
     private static final Module EVERYONE_MODULE = new Module(null);
     private static final Set<Module> EVERYONE_SET = Set.of(EVERYONE_MODULE);
 
+    /**
+     * The holder of data structures to support readability, exports, and
+     * service use added at runtime with the reflective APIs.
+     */
+    private static class ReflectionData {
+        /**
+         * A module (1st key) reads another module (2nd key)
+         */
+        static final WeakPairMap<Module, Module, Boolean> reads =
+            new WeakPairMap<>();
+
+        /**
+         * A module (1st key) exports or opens a package to another module
+         * (2nd key). The map value is a map of package name to a boolean
+         * that indicates if the package is opened.
+         */
+        static final WeakPairMap<Module, Module, Map<String, Boolean>> exports =
+            new WeakPairMap<>();
+
+        /**
+         * A module (1st key) uses a service (2nd key)
+         */
+        static final WeakPairMap<Module, Class<?>, Boolean> uses =
+            new WeakPairMap<>();
+    }
+
 
     // -- readability --
 
     // the modules that this module reads
     private volatile Set<Module> reads;
-
-    // additional module (2nd key) that some module (1st key) reflectively reads
-    private static final WeakPairMap<Module, Module, Boolean> reflectivelyReads
-        = new WeakPairMap<>();
-
 
     /**
      * Indicates if this module reads the given module. This method returns
@@ -300,13 +320,13 @@ public final class Module implements AnnotatedElement {
         }
 
         // check if this module reads the other module reflectively
-        if (reflectivelyReads.containsKeyPair(this, other))
+        if (ReflectionData.reads.containsKeyPair(this, other))
             return true;
 
         // if other is an unnamed module then check if this module reads
         // all unnamed modules
         if (!other.isNamed()
-            && reflectivelyReads.containsKeyPair(this, ALL_UNNAMED_MODULE))
+            && ReflectionData.reads.containsKeyPair(this, ALL_UNNAMED_MODULE))
             return true;
 
         return false;
@@ -393,7 +413,7 @@ public final class Module implements AnnotatedElement {
             }
 
             // add reflective read
-            reflectivelyReads.putIfAbsent(this, other, Boolean.TRUE);
+            ReflectionData.reads.putIfAbsent(this, other, Boolean.TRUE);
         }
     }
 
@@ -407,13 +427,6 @@ public final class Module implements AnnotatedElement {
     // the packages that are exported, can be null
     // if the value contains EVERYONE_MODULE then the package is exported to all
     private volatile Map<String, Set<Module>> exportedPackages;
-
-    // additional exports or opens added at run-time
-    // this module (1st key), other module (2nd key)
-    // (package name, open?) (value)
-    private static final WeakPairMap<Module, Module, Map<String, Boolean>>
-        reflectivelyExports = new WeakPairMap<>();
-
 
     /**
      * Returns {@code true} if this module exports the given package to at
@@ -600,7 +613,7 @@ public final class Module implements AnnotatedElement {
      */
     private boolean isReflectivelyExportedOrOpen(String pn, Module other, boolean open) {
         // exported or open to all modules
-        Map<String, Boolean> exports = reflectivelyExports.get(this, EVERYONE_MODULE);
+        Map<String, Boolean> exports = ReflectionData.exports.get(this, EVERYONE_MODULE);
         if (exports != null) {
             Boolean b = exports.get(pn);
             if (b != null) {
@@ -612,7 +625,7 @@ public final class Module implements AnnotatedElement {
         if (other != EVERYONE_MODULE) {
 
             // exported or open to other
-            exports = reflectivelyExports.get(this, other);
+            exports = ReflectionData.exports.get(this, other);
             if (exports != null) {
                 Boolean b = exports.get(pn);
                 if (b != null) {
@@ -623,7 +636,7 @@ public final class Module implements AnnotatedElement {
 
             // other is an unnamed module && exported or open to all unnamed
             if (!other.isNamed()) {
-                exports = reflectivelyExports.get(this, ALL_UNNAMED_MODULE);
+                exports = ReflectionData.exports.get(this, ALL_UNNAMED_MODULE);
                 if (exports != null) {
                     Boolean b = exports.get(pn);
                     if (b != null) {
@@ -886,8 +899,8 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        // add package name to reflectivelyExports if absent
-        Map<String, Boolean> map = reflectivelyExports
+        // add package name to exports if absent
+        Map<String, Boolean> map = ReflectionData.exports
             .computeIfAbsent(this, other,
                              (m1, m2) -> new ConcurrentHashMap<>());
         if (open) {
@@ -931,10 +944,6 @@ public final class Module implements AnnotatedElement {
 
 
     // -- services --
-
-    // additional service type (2nd key) that some module (1st key) uses
-    private static final WeakPairMap<Module, Class<?>, Boolean> reflectivelyUses
-        = new WeakPairMap<>();
 
     /**
      * If the caller's module is this module then update this module to add a
@@ -980,7 +989,7 @@ public final class Module implements AnnotatedElement {
      */
     void implAddUses(Class<?> service) {
         if (!canUse(service)) {
-            reflectivelyUses.putIfAbsent(this, service, Boolean.TRUE);
+            ReflectionData.uses.putIfAbsent(this, service, Boolean.TRUE);
         }
     }
 
@@ -1011,7 +1020,7 @@ public final class Module implements AnnotatedElement {
             return true;
 
         // uses added via addUses
-        return reflectivelyUses.containsKeyPair(this, service);
+        return ReflectionData.uses.containsKeyPair(this, service);
     }
 
 
@@ -1060,8 +1069,11 @@ public final class Module implements AnnotatedElement {
                                              Function<String, ClassLoader> clf,
                                              ModuleLayer layer)
     {
-        Map<String, Module> nameToModule = new HashMap<>();
-        Map<String, ClassLoader> moduleToLoader = new HashMap<>();
+        boolean isBootLayer = (ModuleLayer.boot() == null);
+
+        int cap = (int)(cf.modules().size() / 0.75f + 1.0f);
+        Map<String, Module> nameToModule = new HashMap<>(cap);
+        Map<String, ClassLoader> nameToLoader = new HashMap<>(cap);
 
         Set<ClassLoader> loaders = new HashSet<>();
         boolean hasPlatformModules = false;
@@ -1070,7 +1082,7 @@ public final class Module implements AnnotatedElement {
         for (ResolvedModule resolvedModule : cf.modules()) {
             String name = resolvedModule.name();
             ClassLoader loader = clf.apply(name);
-            moduleToLoader.put(name, loader);
+            nameToLoader.put(name, loader);
             if (loader == null || loader == ClassLoaders.platformClassLoader()) {
                 if (!(clf instanceof ModuleLoaderMap.Mapper)) {
                     throw new IllegalArgumentException("loader can't be 'null'"
@@ -1087,20 +1099,19 @@ public final class Module implements AnnotatedElement {
             ModuleReference mref = resolvedModule.reference();
             ModuleDescriptor descriptor = mref.descriptor();
             String name = descriptor.name();
-            URI uri = mref.location().orElse(null);
-            ClassLoader loader = moduleToLoader.get(resolvedModule.name());
+            ClassLoader loader = nameToLoader.get(name);
             Module m;
             if (loader == null && name.equals("java.base")) {
                 // java.base is already defined to the VM
                 m = Object.class.getModule();
             } else {
+                URI uri = mref.location().orElse(null);
                 m = new Module(layer, loader, descriptor, uri);
             }
             nameToModule.put(name, m);
-            moduleToLoader.put(name, loader);
         }
 
-        // setup readability and exports
+        // setup readability and exports/opens
         for (ResolvedModule resolvedModule : cf.modules()) {
             ModuleReference mref = resolvedModule.reference();
             ModuleDescriptor descriptor = mref.descriptor();
@@ -1146,7 +1157,18 @@ public final class Module implements AnnotatedElement {
             }
 
             // exports and opens
-            initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
+            if (descriptor.isOpen() || descriptor.isAutomatic()) {
+                // The VM doesn't special case open or automatic modules yet
+                // so need to export all packages
+                for (String source : descriptor.packages()) {
+                    addExportsToAll0(m, source);
+                }
+            } else if (isBootLayer && descriptor.opens().isEmpty()) {
+                // no open packages, no qualified exports to modules in parent layers
+                initExports(m, nameToModule);
+            } else {
+                initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
+            }
         }
 
         // if there are modules defined to the boot or platform class loaders
@@ -1161,7 +1183,7 @@ public final class Module implements AnnotatedElement {
                 if (!descriptor.provides().isEmpty()) {
                     String name = descriptor.name();
                     Module m = nameToModule.get(name);
-                    ClassLoader loader = moduleToLoader.get(name);
+                    ClassLoader loader = nameToLoader.get(name);
                     if (loader == null) {
                         bootCatalog.register(m);
                     } else if (loader == pcl) {
@@ -1178,7 +1200,6 @@ public final class Module implements AnnotatedElement {
 
         return nameToModule;
     }
-
 
     /**
      * Find the runtime Module corresponding to the given ResolvedModule
@@ -1201,25 +1222,55 @@ public final class Module implements AnnotatedElement {
                 .orElse(null);
     }
 
+    /**
+     * Initialize/setup a module's exports.
+     *
+     * @param m the module
+     * @param nameToModule map of module name to Module (for qualified exports)
+     */
+    private static void initExports(Module m, Map<String, Module> nameToModule) {
+        Map<String, Set<Module>> exportedPackages = new HashMap<>();
+
+        for (Exports exports : m.getDescriptor().exports()) {
+            String source = exports.source();
+            if (exports.isQualified()) {
+                // qualified exports
+                Set<Module> targets = new HashSet<>();
+                for (String target : exports.targets()) {
+                    Module m2 = nameToModule.get(target);
+                    if (m2 != null) {
+                        addExports0(m, source, m2);
+                        targets.add(m2);
+                    }
+                }
+                if (!targets.isEmpty()) {
+                    exportedPackages.put(source, targets);
+                }
+            } else {
+                // unqualified exports
+                addExportsToAll0(m, source);
+                exportedPackages.put(source, EVERYONE_SET);
+            }
+        }
+
+        if (!exportedPackages.isEmpty())
+            m.exportedPackages = exportedPackages;
+    }
 
     /**
-     * Initialize the maps of exported and open packages for module m.
+     * Initialize/setup a module's exports.
+     *
+     * @param m the module
+     * @param nameToSource map of module name to Module for modules that m reads
+     * @param nameToModule map of module name to Module for modules in the layer
+     *                     under construction
+     * @param parents the parent layers
      */
     private static void initExportsAndOpens(Module m,
                                             Map<String, Module> nameToSource,
                                             Map<String, Module> nameToModule,
                                             List<ModuleLayer> parents) {
-        // The VM doesn't special case open or automatic modules so need to
-        // export all packages
         ModuleDescriptor descriptor = m.getDescriptor();
-        if (descriptor.isOpen() || descriptor.isAutomatic()) {
-            assert descriptor.opens().isEmpty();
-            for (String source : descriptor.packages()) {
-                addExportsToAll0(m, source);
-            }
-            return;
-        }
-
         Map<String, Set<Module>> openPackages = new HashMap<>();
         Map<String, Set<Module>> exportedPackages = new HashMap<>();
 
@@ -1272,7 +1323,6 @@ public final class Module implements AnnotatedElement {
                 if (!targets.isEmpty()) {
                     exportedPackages.put(source, targets);
                 }
-
             } else {
                 // unqualified exports
                 addExportsToAll0(m, source);

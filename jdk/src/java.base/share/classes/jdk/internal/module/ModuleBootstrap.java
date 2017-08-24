@@ -40,16 +40,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
 
@@ -70,8 +74,6 @@ public final class ModuleBootstrap {
 
     private static final String JAVA_BASE = "java.base";
 
-    private static final String JAVA_SE = "java.se";
-
     // the token for "all default modules"
     private static final String ALL_DEFAULT = "ALL-DEFAULT";
 
@@ -84,12 +86,12 @@ public final class ModuleBootstrap {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
 
+    // access to java.lang/module
+    private static final JavaLangModuleAccess JLMA
+        = SharedSecrets.getJavaLangModuleAccess();
+
     // The ModulePatcher for the initial configuration
     private static final ModulePatcher patcher = initModulePatcher();
-
-    // ModuleFinders for the initial configuration
-    private static ModuleFinder unlimitedFinder;
-    private static ModuleFinder limitedFinder;
 
     /**
      * Returns the ModulePatcher for the initial configuration.
@@ -98,21 +100,38 @@ public final class ModuleBootstrap {
         return patcher;
     }
 
+    // ModuleFinders for the initial configuration
+    private static volatile ModuleFinder unlimitedFinder;
+    private static volatile ModuleFinder limitedFinder;
+
     /**
-     * Returns the ModuleFinder for the initial configuration before observability
-     * is limited by the --limit-modules command line option.
+     * Returns the ModuleFinder for the initial configuration before
+     * observability is limited by the --limit-modules command line option.
+     *
+     * @apiNote Used to support locating modules {@code java.instrument} and
+     * {@code jdk.management.agent} modules when they are loaded dynamically.
      */
     public static ModuleFinder unlimitedFinder() {
-        assert unlimitedFinder != null;
-        return unlimitedFinder;
+        ModuleFinder finder = unlimitedFinder;
+        if (finder == null) {
+            return ModuleFinder.ofSystem();
+        } else {
+            return finder;
+        }
     }
 
     /**
      * Returns the ModuleFinder for the initial configuration.
+     *
+     * @apiNote Used to support "{@code java --list-modules}".
      */
     public static ModuleFinder limitedFinder() {
-        assert limitedFinder != null;
-        return limitedFinder;
+        ModuleFinder finder = limitedFinder;
+        if (finder == null) {
+            return unlimitedFinder();
+        } else {
+            return finder;
+        }
     }
 
     /**
@@ -120,13 +139,60 @@ public final class ModuleBootstrap {
      *
      * @see java.lang.System#initPhase2()
      */
-    public static ModuleLayer boot() {
+    public static ModuleLayer boot() throws Exception {
 
-        // Step 1: Locate system modules (may be patched)
+        // Step 0: Command line options
+
+        long t0 = System.nanoTime();
+
+        ModuleFinder upgradeModulePath = finderFor("jdk.module.upgrade.path");
+        ModuleFinder appModulePath = finderFor("jdk.module.path");
+        boolean isPatched = patcher.hasPatches();
+
+        String mainModule = System.getProperty("jdk.module.main");
+        Set<String> addModules = addModules();
+        Set<String> limitModules = limitModules();
+
+        PrintStream traceOutput = null;
+        String trace = getAndRemoveProperty("jdk.module.showModuleResolution");
+        if (trace != null && Boolean.parseBoolean(trace))
+            traceOutput = System.out;
+
+
+        // Step 1: The observable system modules, either all system modules
+        // or the system modules pre-generated for the initial module (the
+        // initial module may be the unnamed module). If the system modules
+        // are pre-generated for the initial module then resolution can be
+        // skipped.
 
         long t1 = System.nanoTime();
-        ModuleFinder systemModules = ModuleFinder.ofSystem();
-        PerfCounters.systemModulesTime.addElapsedTimeFrom(t1);
+
+        SystemModules systemModules = null;
+        ModuleFinder systemModuleFinder;
+
+        boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
+        boolean needResolution = true;
+
+        if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
+            systemModules = SystemModuleFinders.systemModules(mainModule);
+            if (systemModules != null && !isPatched && (traceOutput == null)) {
+                needResolution = false;
+            }
+        }
+        if (systemModules == null) {
+            // all system modules are observable
+            systemModules = SystemModuleFinders.allSystemModules();
+        }
+        if (systemModules != null) {
+            // images build
+            systemModuleFinder = SystemModuleFinders.of(systemModules);
+        } else {
+            // exploded build or testing
+            systemModules = new ExplodedSystemModules();
+            systemModuleFinder = SystemModuleFinders.ofSystem();
+        }
+
+        Counters.add("jdk.module.boot.1.systemModulesTime", t1);
 
 
         // Step 2: Define and load java.base. This patches all classes loaded
@@ -136,7 +202,7 @@ public final class ModuleBootstrap {
 
         long t2 = System.nanoTime();
 
-        ModuleReference base = systemModules.find(JAVA_BASE).orElse(null);
+        ModuleReference base = systemModuleFinder.find(JAVA_BASE).orElse(null);
         if (base == null)
             throw new InternalError(JAVA_BASE + " not found");
         URI baseUri = base.location().orElse(null);
@@ -145,171 +211,138 @@ public final class ModuleBootstrap {
         BootLoader.loadModule(base);
         Modules.defineModule(null, base.descriptor(), baseUri);
 
-        PerfCounters.defineBaseTime.addElapsedTimeFrom(t2);
+        Counters.add("jdk.module.boot.2.defineBaseTime", t2);
 
 
         // Step 2a: If --validate-modules is specified then the VM needs to
         // start with only java.base, all other options are ignored.
 
-        String propValue = getAndRemoveProperty("jdk.module.minimumBoot");
-        if (propValue != null) {
+        if (getAndRemoveProperty("jdk.module.minimumBoot") != null) {
             return createMinimalBootLayer();
         }
 
 
-        // Step 3: Construct the module path and the set of root modules to
-        // resolve. If --limit-modules is specified then it limits the set
-        // modules that are observable.
+        // Step 3: If resolution is needed then create the module finder and
+        // the set of root modules to resolve.
 
         long t3 = System.nanoTime();
 
-        // --upgrade-module-path option specified to launcher
-        ModuleFinder upgradeModulePath
-            = createModulePathFinder("jdk.module.upgrade.path");
-        if (upgradeModulePath != null)
-            systemModules = ModuleFinder.compose(upgradeModulePath, systemModules);
+        ModuleFinder savedModuleFinder = null;
+        ModuleFinder finder;
+        Set<String> roots;
+        if (needResolution) {
 
-        // --module-path option specified to the launcher
-        ModuleFinder appModulePath = createModulePathFinder("jdk.module.path");
+            // upgraded modules override the modules in the run-time image
+            if (upgradeModulePath != null)
+                systemModuleFinder = ModuleFinder.compose(upgradeModulePath,
+                                                          systemModuleFinder);
 
-        // The module finder: [--upgrade-module-path] system [--module-path]
-        ModuleFinder finder = systemModules;
-        if (appModulePath != null)
-            finder = ModuleFinder.compose(finder, appModulePath);
-
-        // The root modules to resolve
-        Set<String> roots = new HashSet<>();
-
-        // launcher -m option to specify the main/initial module
-        String mainModule = System.getProperty("jdk.module.main");
-        if (mainModule != null)
-            roots.add(mainModule);
-
-        // additional module(s) specified by --add-modules
-        boolean addAllDefaultModules = false;
-        boolean addAllSystemModules = false;
-        boolean addAllApplicationModules = false;
-        for (String mod: getExtraAddModules()) {
-            switch (mod) {
-                case ALL_DEFAULT:
-                    addAllDefaultModules = true;
-                    break;
-                case ALL_SYSTEM:
-                    addAllSystemModules = true;
-                    break;
-                case ALL_MODULE_PATH:
-                    addAllApplicationModules = true;
-                    break;
-                default :
-                    roots.add(mod);
+            // The module finder: [--upgrade-module-path] system [--module-path]
+            if (appModulePath != null) {
+                finder = ModuleFinder.compose(systemModuleFinder, appModulePath);
+            } else {
+                finder = systemModuleFinder;
             }
-        }
 
-        // --limit-modules
-        unlimitedFinder = finder;
-        propValue = getAndRemoveProperty("jdk.module.limitmods");
-        if (propValue != null) {
-            Set<String> mods = new HashSet<>();
-            for (String mod: propValue.split(",")) {
-                mods.add(mod);
-            }
-            finder = limitFinder(finder, mods, roots);
-        }
-        limitedFinder = finder;
+            // The root modules to resolve
+            roots = new HashSet<>();
 
-        // If there is no initial module specified then assume that the initial
-        // module is the unnamed module of the application class loader. This
-        // is implemented by resolving "java.se" and all (non-java.*) modules
-        // that export an API. If "java.se" is not observable then all java.*
-        // modules are resolved. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT
-        // bit set in their ModuleResolution attribute flags are excluded from
-        // the default set of roots.
-        if (mainModule == null || addAllDefaultModules) {
-            boolean hasJava = false;
-            if (systemModules.find(JAVA_SE).isPresent()) {
-                // java.se is a system module
-                if (finder == systemModules || finder.find(JAVA_SE).isPresent()) {
-                    // java.se is observable
-                    hasJava = true;
-                    roots.add(JAVA_SE);
+            // launcher -m option to specify the main/initial module
+            if (mainModule != null)
+                roots.add(mainModule);
+
+            // additional module(s) specified by --add-modules
+            boolean addAllDefaultModules = false;
+            boolean addAllSystemModules = false;
+            boolean addAllApplicationModules = false;
+            for (String mod : addModules) {
+                switch (mod) {
+                    case ALL_DEFAULT:
+                        addAllDefaultModules = true;
+                        break;
+                    case ALL_SYSTEM:
+                        addAllSystemModules = true;
+                        break;
+                    case ALL_MODULE_PATH:
+                        addAllApplicationModules = true;
+                        break;
+                    default:
+                        roots.add(mod);
                 }
             }
 
-            for (ModuleReference mref : systemModules.findAll()) {
-                String mn = mref.descriptor().name();
-                if (hasJava && mn.startsWith("java."))
-                    continue;
-
-                if (ModuleResolution.doNotResolveByDefault(mref))
-                    continue;
-
-                // add as root if observable and exports at least one package
-                if ((finder == systemModules || finder.find(mn).isPresent())) {
-                    ModuleDescriptor descriptor = mref.descriptor();
-                    for (ModuleDescriptor.Exports e : descriptor.exports()) {
-                        if (!e.isQualified()) {
-                            roots.add(mn);
-                            break;
-                        }
-                    }
-                }
+            // --limit-modules
+            savedModuleFinder = finder;
+            if (!limitModules.isEmpty()) {
+                finder = limitFinder(finder, limitModules, roots);
             }
+
+            // If there is no initial module specified then assume that the initial
+            // module is the unnamed module of the application class loader. This
+            // is implemented by resolving "java.se" and all (non-java.*) modules
+            // that export an API. If "java.se" is not observable then all java.*
+            // modules are resolved. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT
+            // bit set in their ModuleResolution attribute flags are excluded from
+            // the default set of roots.
+            if (mainModule == null || addAllDefaultModules) {
+                roots.addAll(DefaultRoots.compute(systemModuleFinder, finder));
+            }
+
+            // If `--add-modules ALL-SYSTEM` is specified then all observable system
+            // modules will be resolved.
+            if (addAllSystemModules) {
+                ModuleFinder f = finder;  // observable modules
+                systemModuleFinder.findAll()
+                    .stream()
+                    .map(ModuleReference::descriptor)
+                    .map(ModuleDescriptor::name)
+                    .filter(mn -> f.find(mn).isPresent())  // observable
+                    .forEach(mn -> roots.add(mn));
+            }
+
+            // If `--add-modules ALL-MODULE-PATH` is specified then all observable
+            // modules on the application module path will be resolved.
+            if (appModulePath != null && addAllApplicationModules) {
+                ModuleFinder f = finder;  // observable modules
+                appModulePath.findAll()
+                    .stream()
+                    .map(ModuleReference::descriptor)
+                    .map(ModuleDescriptor::name)
+                    .filter(mn -> f.find(mn).isPresent())  // observable
+                    .forEach(mn -> roots.add(mn));
+            }
+        } else {
+            // no resolution case
+            finder = systemModuleFinder;
+            roots = null;
         }
 
-        // If `--add-modules ALL-SYSTEM` is specified then all observable system
-        // modules will be resolved.
-        if (addAllSystemModules) {
-            ModuleFinder f = finder;  // observable modules
-            systemModules.findAll()
-                .stream()
-                .map(ModuleReference::descriptor)
-                .map(ModuleDescriptor::name)
-                .filter(mn -> f.find(mn).isPresent())  // observable
-                .forEach(mn -> roots.add(mn));
-        }
-
-        // If `--add-modules ALL-MODULE-PATH` is specified then all observable
-        // modules on the application module path will be resolved.
-        if (appModulePath != null && addAllApplicationModules) {
-            ModuleFinder f = finder;  // observable modules
-            appModulePath.findAll()
-                .stream()
-                .map(ModuleReference::descriptor)
-                .map(ModuleDescriptor::name)
-                .filter(mn -> f.find(mn).isPresent())  // observable
-                .forEach(mn -> roots.add(mn));
-        }
-
-        PerfCounters.optionsAndRootsTime.addElapsedTimeFrom(t3);
-
+        Counters.add("jdk.module.boot.3.optionsAndRootsTime", t3);
 
         // Step 4: Resolve the root modules, with service binding, to create
-        // the configuration for the boot layer.
+        // the configuration for the boot layer. If resolution is not needed
+        // then create the configuration for the boot layer from the
+        // readability graph created at link time.
 
         long t4 = System.nanoTime();
 
-        // determine if post resolution checks are needed
-        boolean needPostResolutionChecks = true;
-        if (baseUri.getScheme().equals("jrt")   // toLowerCase not needed here
-                && (upgradeModulePath == null)
-                && (appModulePath == null)
-                && (patcher.isEmpty())) {
-            needPostResolutionChecks = false;
+        Configuration cf;
+        if (needResolution) {
+            cf = JLMA.resolveAndBind(finder, roots, traceOutput);
+        } else {
+            Map<String, Set<String>> map = systemModules.moduleReads();
+            cf = JLMA.newConfiguration(systemModuleFinder, map);
         }
 
-        PrintStream traceOutput = null;
-        propValue = getAndRemoveProperty("jdk.module.showModuleResolution");
-        if (propValue != null && Boolean.parseBoolean(propValue))
-            traceOutput = System.out;
+        // check that modules specified to --patch-module are resolved
+        if (isPatched) {
+            patcher.patchedModules()
+                    .stream()
+                    .filter(mn -> !cf.findModule(mn).isPresent())
+                    .forEach(mn -> warnUnknownModule(PATCH_MODULE, mn));
+        }
 
-        // run the resolver to create the configuration
-        Configuration cf = SharedSecrets.getJavaLangModuleAccess()
-                .resolveAndBind(finder,
-                                roots,
-                                needPostResolutionChecks,
-                                traceOutput);
-
-        PerfCounters.resolveTime.addElapsedTimeFrom(t4);
+        Counters.add("jdk.module.boot.4.resolveTime", t4);
 
 
         // Step 5: Map the modules in the configuration to class loaders.
@@ -326,7 +359,7 @@ public final class ModuleBootstrap {
 
         // check that all modules to be mapped to the boot loader will be
         // loaded from the runtime image
-        if (needPostResolutionChecks) {
+        if (haveModulePath) {
             for (ResolvedModule resolvedModule : cf.modules()) {
                 ModuleReference mref = resolvedModule.reference();
                 String name = mref.descriptor().name();
@@ -335,51 +368,54 @@ public final class ModuleBootstrap {
                     if (upgradeModulePath != null
                             && upgradeModulePath.find(name).isPresent())
                         fail(name + ": cannot be loaded from upgrade module path");
-                    if (!systemModules.find(name).isPresent())
+                    if (!systemModuleFinder.find(name).isPresent())
                         fail(name + ": cannot be loaded from application module path");
-                }
-            }
-
-            // check if module specified in --patch-module is present
-            for (String mn: patcher.patchedModules()) {
-                if (!cf.findModule(mn).isPresent()) {
-                    warnUnknownModule(PATCH_MODULE, mn);
                 }
             }
         }
 
         // check for split packages in the modules mapped to the built-in loaders
-        if (SystemModules.hasSplitPackages() || needPostResolutionChecks) {
+        if (systemModules.hasSplitPackages() || isPatched || haveModulePath) {
             checkSplitPackages(cf, clf);
         }
 
         // load/register the modules with the built-in class loaders
         loadModules(cf, clf);
 
-        PerfCounters.loadModulesTime.addElapsedTimeFrom(t5);
+        Counters.add("jdk.module.boot.5.loadModulesTime", t5);
 
 
         // Step 6: Define all modules to the VM
 
         long t6 = System.nanoTime();
         ModuleLayer bootLayer = ModuleLayer.empty().defineModules(cf, clf);
-        PerfCounters.layerCreateTime.addElapsedTimeFrom(t6);
+        Counters.add("jdk.module.boot.6.layerCreateTime", t6);
 
 
         // Step 7: Miscellaneous
 
         // check incubating status
-        checkIncubatingStatus(cf);
+        if (systemModules.hasIncubatorModules() || haveModulePath) {
+            checkIncubatingStatus(cf);
+        }
 
-        // --add-reads, --add-exports/--add-opens, and -illegal-access
+        // --add-reads, --add-exports/--add-opens, and --illegal-access
         long t7 = System.nanoTime();
         addExtraReads(bootLayer);
         boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
-        addIllegalAccess(bootLayer, upgradeModulePath, extraExportsOrOpens);
-        PerfCounters.adjustModulesTime.addElapsedTimeFrom(t7);
+        addIllegalAccess(upgradeModulePath, systemModules, bootLayer, extraExportsOrOpens);
+        Counters.add("jdk.module.boot.7.adjustModulesTime", t7);
+
+        // save module finders for later use
+        if (savedModuleFinder != null) {
+            unlimitedFinder = new SafeModuleFinder(savedModuleFinder);
+            if (savedModuleFinder != finder)
+                limitedFinder = new SafeModuleFinder(finder);
+        }
 
         // total time to initialize
-        PerfCounters.bootstrapTime.addElapsedTimeFrom(t1);
+        Counters.add("jdk.module.boot.totalTime", t0);
+        Counters.publish();
 
         return bootLayer;
     }
@@ -391,7 +427,6 @@ public final class ModuleBootstrap {
         Configuration cf = SharedSecrets.getJavaLangModuleAccess()
             .resolveAndBind(ModuleFinder.ofSystem(),
                             Set.of(JAVA_BASE),
-                            false,
                             null);
 
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
@@ -439,7 +474,6 @@ public final class ModuleBootstrap {
                     }
                 }
             }
-
         }
     }
 
@@ -489,7 +523,7 @@ public final class ModuleBootstrap {
      * Creates a finder from the module path that is the value of the given
      * system property and optionally patched by --patch-module
      */
-    private static ModuleFinder createModulePathFinder(String prop) {
+    private static ModuleFinder finderFor(String prop) {
         String s = System.getProperty(prop);
         if (s == null) {
             return null;
@@ -510,35 +544,48 @@ public final class ModuleBootstrap {
      */
     private static ModulePatcher initModulePatcher() {
         Map<String, List<String>> map = decode("jdk.module.patch.",
-                File.pathSeparator,
-                false);
+                                               File.pathSeparator,
+                                               false);
         return new ModulePatcher(map);
     }
 
     /**
-     * Returns the set of module names specified via --add-modules options
-     * on the command line
+     * Returns the set of module names specified by --add-module options.
      */
-    private static Set<String> getExtraAddModules() {
+    private static Set<String> addModules() {
         String prefix = "jdk.module.addmods.";
         int index = 0;
-
         // the system property is removed after decoding
         String value = getAndRemoveProperty(prefix + index);
         if (value == null) {
             return Collections.emptySet();
-        }
-
-        Set<String> modules = new HashSet<>();
-        while (value != null) {
-            for (String s : value.split(",")) {
-                if (s.length() > 0) modules.add(s);
+        } else {
+            Set<String> modules = new HashSet<>();
+            while (value != null) {
+                for (String s : value.split(",")) {
+                    if (s.length() > 0) modules.add(s);
+                }
+                index++;
+                value = getAndRemoveProperty(prefix + index);
             }
-            index++;
-            value = getAndRemoveProperty(prefix + index);
+            return modules;
         }
+    }
 
-        return modules;
+    /**
+     * Returns the set of module names specified by --limit-modules.
+     */
+    private static Set<String> limitModules() {
+        String value = getAndRemoveProperty("jdk.module.limitmods");
+        if (value == null) {
+            return Collections.emptySet();
+        } else {
+            Set<String> names = new HashSet<>();
+            for (String name : value.split(",")) {
+                if (name.length() > 0) names.add(name);
+            }
+            return names;
+        }
     }
 
     /**
@@ -676,8 +723,9 @@ public final class ModuleBootstrap {
      * Process the --illegal-access option (and its default) to open packages
      * of system modules in the boot layer to code in unnamed modules.
      */
-    private static void addIllegalAccess(ModuleLayer bootLayer,
-                                         ModuleFinder upgradeModulePath,
+    private static void addIllegalAccess(ModuleFinder upgradeModulePath,
+                                         SystemModules systemModules,
+                                         ModuleLayer bootLayer,
                                          boolean extraExportsOrOpens) {
         String value = getAndRemoveProperty("jdk.module.illegalAccess");
         IllegalAccessLogger.Mode mode = IllegalAccessLogger.Mode.ONESHOT;
@@ -702,10 +750,10 @@ public final class ModuleBootstrap {
         IllegalAccessLogger.Builder builder
             = new IllegalAccessLogger.Builder(mode, System.err);
 
-        Map<String, Set<String>> map1 = SystemModules.concealedPackagesToOpen();
-        Map<String, Set<String>> map2 = SystemModules.exportedPackagesToOpen();
+        Map<String, Set<String>> map1 = systemModules.concealedPackagesToOpen();
+        Map<String, Set<String>> map2 = systemModules.exportedPackagesToOpen();
         if (map1.isEmpty() && map2.isEmpty()) {
-            // need to generate maps when on exploded build
+            // need to generate (exploded build)
             IllegalAccessMaps maps = IllegalAccessMaps.generate(limitedFinder());
             map1 = maps.concealedPackagesToOpen();
             map2 = maps.exportedPackagesToOpen();
@@ -906,6 +954,10 @@ public final class ModuleBootstrap {
         }
     }
 
+    /**
+     * Returns an iterator that yields all elements of the first iterator
+     * followed by all the elements of the second iterator.
+     */
     static <T> Iterator<T> concat(Iterator<T> iterator1, Iterator<T> iterator2) {
         return new Iterator<T>() {
             @Override
@@ -921,23 +973,76 @@ public final class ModuleBootstrap {
         };
     }
 
-    static class PerfCounters {
+    /**
+     * Wraps a (potentially not thread safe) ModuleFinder created during startup
+     * for use after startup.
+     */
+    static class SafeModuleFinder implements ModuleFinder {
+        private final Set<ModuleReference> mrefs;
+        private volatile Map<String, ModuleReference> nameToModule;
 
-        static PerfCounter systemModulesTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.systemModulesTime");
-        static PerfCounter defineBaseTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.defineBaseTime");
-        static PerfCounter optionsAndRootsTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.optionsAndRootsTime");
-        static PerfCounter resolveTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.resolveTime");
-        static PerfCounter layerCreateTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.layerCreateTime");
-        static PerfCounter loadModulesTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.loadModulesTime");
-        static PerfCounter adjustModulesTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.adjustModulesTime");
-        static PerfCounter bootstrapTime
-            = PerfCounter.newPerfCounter("jdk.module.bootstrap.totalTime");
+        SafeModuleFinder(ModuleFinder finder) {
+            this.mrefs = Collections.unmodifiableSet(finder.findAll());
+        }
+        @Override
+        public Optional<ModuleReference> find(String name) {
+            Objects.requireNonNull(name);
+            Map<String, ModuleReference> nameToModule = this.nameToModule;
+            if (nameToModule == null) {
+                this.nameToModule = nameToModule = mrefs.stream()
+                        .collect(Collectors.toMap(m -> m.descriptor().name(),
+                                                  Function.identity()));
+            }
+            return Optional.ofNullable(nameToModule.get(name));
+        }
+        @Override
+        public Set<ModuleReference> findAll() {
+            return mrefs;
+        }
+    }
+
+    /**
+     * Counters for startup performance analysis.
+     */
+    static class Counters {
+        private static final boolean PUBLISH_COUNTERS;
+        private static final boolean PRINT_COUNTERS;
+        private static Map<String, Long> counters;
+        static {
+            String s = System.getProperty("jdk.module.boot.usePerfData");
+            if (s == null) {
+                PUBLISH_COUNTERS = false;
+                PRINT_COUNTERS = false;
+            } else {
+                PUBLISH_COUNTERS = true;
+                PRINT_COUNTERS = s.equals("debug");
+                counters = new LinkedHashMap<>();  // preserve insert order
+            }
+        }
+
+        /**
+         * Add a counter
+         */
+        static void add(String name, long start) {
+            if (PUBLISH_COUNTERS || PRINT_COUNTERS) {
+                counters.put(name, (System.nanoTime() - start));
+            }
+        }
+
+        /**
+         * Publish the counters to the instrumentation buffer or stdout.
+         */
+        static void publish() {
+            if (PUBLISH_COUNTERS || PRINT_COUNTERS) {
+                for (Map.Entry<String, Long> e : counters.entrySet()) {
+                    String name = e.getKey();
+                    long value = e.getValue();
+                    if (PUBLISH_COUNTERS)
+                        PerfCounter.newPerfCounter(name).set(value);
+                    if (PRINT_COUNTERS)
+                        System.out.println(name + " = " + value);
+                }
+            }
+        }
     }
 }

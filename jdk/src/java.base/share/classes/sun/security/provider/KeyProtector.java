@@ -35,6 +35,7 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.util.*;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.x509.AlgorithmId;
@@ -141,18 +142,10 @@ final class KeyProtector {
             passwdBytes[j++] = (byte)(password[i] >> 8);
             passwdBytes[j++] = (byte)password[i];
         }
-    }
-
-    /**
-     * Ensures that the password bytes of this key protector are
-     * set to zero when there are no more references to it.
-     */
-    @SuppressWarnings("deprecation")
-    protected void finalize() {
-        if (passwdBytes != null) {
-            Arrays.fill(passwdBytes, (byte)0x00);
-            passwdBytes = null;
-        }
+        // Use the cleaner to zero the password when no longer referenced
+        final byte[] k = this.passwdBytes;
+        CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     /*
