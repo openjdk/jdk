@@ -749,6 +749,7 @@ CXXFLAGS_JDKEXE
 CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
+MACOSX_VERSION_MAX
 MACOSX_VERSION_MIN
 CXXSTD_CXXFLAG
 JDK_ARCH_ABI_PROP_NAME
@@ -1182,6 +1183,7 @@ with_toolchain_version
 with_build_devkit
 with_jtreg
 with_abi_profile
+with_macosx_version_max
 enable_warnings_as_errors
 with_native_debug_symbols
 enable_debug_symbols
@@ -2132,6 +2134,8 @@ Optional Packages:
                           (arm-vfp-sflt,arm-vfp-hflt,arm-sflt,
                           armv5-vfp-sflt,armv6-vfp-hflt,arm64,aarch64)
                           [toolchain dependent]
+  --with-macosx-version-max
+                          error on use of newer functionality. [macosx]
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
                           internal, external, zipped) [varying]
@@ -5010,7 +5014,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
-TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.7"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
@@ -5189,7 +5193,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1496926402
+DATE_WHEN_GENERATED=1500423205
 
 ###############################################################################
 #
@@ -51461,14 +51465,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     JVM_CFLAGS="$JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     JVM_CFLAGS="$JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
         -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
-        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     JVM_CFLAGS="$JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     JVM_CFLAGS="$JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_CFLAGS="$JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -51635,18 +51643,54 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Additional macosx handling
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # Setting these parameters makes it an error to link to macosx APIs that are
-    # newer than the given OS version and makes the linked binaries compatible
-    # even if built on a newer version of the OS.
-    # The expected format is X.Y.Z
+    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
+    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
+    # JDK can be built and makes the linked binaries compatible even if built on
+    # a newer version of the OS.
     MACOSX_VERSION_MIN=10.7.0
 
 
-    # The macro takes the version with no dots, ex: 1070
+    # Setting --with-macosx-version-max=<version> makes it an error to build or
+    # link to macosx APIs that are newer than the given OS version. The expected
+    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+
+# Check whether --with-macosx-version-max was given.
+if test "${with_macosx_version_max+set}" = set; then :
+  withval=$with_macosx_version_max;
+          if echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9]\.[0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif test "x$with_macosx_version_max" = "xno"; then
+              # Use build system default
+              MACOSX_VERSION_MAX=
+          else
+              as_fn_error $? "osx version format must be nn.n.n or nn.nn.nn" "$LINENO" 5
+          fi
+
+else
+  MACOSX_VERSION_MAX=
+
+fi
+
+
+
     # Let the flags variables get resolved in make for easier override on make
-    # command line.
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    # command line. AvailabilityMacros.h versions have no dots, ex: 1070.
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    JVM_CFLAGS="$JVM_CFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+        JVM_CFLAGS="$JVM_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+    fi
   fi
 
   # Setup some hard coded includes
@@ -51772,6 +51816,12 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
     JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      JVM_LDFLAGS="$JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables
@@ -52279,14 +52329,18 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -fno-rtti -fno-exceptions -fvisibility=hidden \
         -mno-omit-leaf-frame-pointer -mstack-alignment=16 -pipe -fno-strict-aliasing \
-        -DMAC_OS_X_VERSION_MAX_ALLOWED=1070 -mmacosx-version-min=10.7.0 \
         -fno-omit-frame-pointer"
   elif test "x$OPENJDK_BUILD_OS" = xaix; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -DAIX"
-    # We may need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -qpic=large"
+    fi
   elif test "x$OPENJDK_BUILD_OS" = xbsd; then
     OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
@@ -52453,18 +52507,54 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
 
   # Additional macosx handling
   if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-    # Setting these parameters makes it an error to link to macosx APIs that are
-    # newer than the given OS version and makes the linked binaries compatible
-    # even if built on a newer version of the OS.
-    # The expected format is X.Y.Z
+    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
+    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
+    # JDK can be built and makes the linked binaries compatible even if built on
+    # a newer version of the OS.
     MACOSX_VERSION_MIN=10.7.0
 
 
-    # The macro takes the version with no dots, ex: 1070
+    # Setting --with-macosx-version-max=<version> makes it an error to build or
+    # link to macosx APIs that are newer than the given OS version. The expected
+    # format for <version> is either nn.n.n or nn.nn.nn. See /usr/include/AvailabilityMacros.h.
+
+# Check whether --with-macosx-version-max was given.
+if test "${with_macosx_version_max+set}" = set; then :
+  withval=$with_macosx_version_max;
+          if echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9]\.[0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif echo "$with_macosx_version_max" | $GREP -q "^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]\$"; then
+              MACOSX_VERSION_MAX=$with_macosx_version_max
+          elif test "x$with_macosx_version_max" = "xno"; then
+              # Use build system default
+              MACOSX_VERSION_MAX=
+          else
+              as_fn_error $? "osx version format must be nn.n.n or nn.nn.nn" "$LINENO" 5
+          fi
+
+else
+  MACOSX_VERSION_MAX=
+
+fi
+
+
+
     # Let the flags variables get resolved in make for easier override on make
-    # command line.
-    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    # command line. AvailabilityMacros.h versions have no dots, ex: 1070.
+    OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     OPENJDK_BUILD_LDFLAGS_JDK="$OPENJDK_BUILD_LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS \
+        -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
+        -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+
+    if test -n "$MACOSX_VERSION_MAX"; then
+        OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK="$OPENJDK_BUILD_COMMON_CCXXFLAGS_JDK \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+        OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS \
+            -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MAX))"
+    fi
   fi
 
   # Setup some hard coded includes
@@ -52590,6 +52680,12 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
     LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_XLC"
     OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_XLC"
+    # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
+    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
+    # so for slowdebug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -bbigtoc"
+    fi
   fi
 
   # Customize LDFLAGS for executables

@@ -62,29 +62,29 @@ import java.security.*;
  * <caption style="display:none">permission target name, what the permission allows, and associated risks</caption>
  * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
  * </thead>
  *
  * <tbody>
  * <tr>
- *   <td>setLog</td>
+ *   <th scope="row">setLog</th>
  *   <td>Setting of the logging stream</td>
  *   <td>This is a dangerous permission to grant.
  * The contents of the log may contain usernames and passwords,
  * SQL statements, and SQL data.</td>
  * </tr>
  * <tr>
- * <td>callAbort</td>
+ * <th scope="row">callAbort</th>
  *   <td>Allows the invocation of the {@code Connection} method
  *   {@code abort}</td>
  *   <td>Permits an application to terminate a physical connection to a
  *  database.</td>
  * </tr>
  * <tr>
- * <td>setSyncFactory</td>
+ * <th scope="row">setSyncFactory</th>
  *   <td>Allows the invocation of the {@code SyncFactory} methods
  *   {@code setJNDIContext} and {@code setLogger}</td>
  *   <td>Permits an application to specify the JNDI context from which the
@@ -93,7 +93,7 @@ import java.security.*;
  * </tr>
  *
  * <tr>
- * <td>setNetworkTimeout</td>
+ * <th scope="row">setNetworkTimeout</th>
  *   <td>Allows the invocation of the {@code Connection} method
  *   {@code setNetworkTimeout}</td>
  *   <td>Permits an application to specify the maximum period a
@@ -101,7 +101,7 @@ import java.security.*;
  * objects created from the <code>Connection</code>
  * will wait for the database to reply to any one request.</td>
  * <tr>
- * <td>deregisterDriver</td>
+ * <th scope="row">deregisterDriver</th>
  *   <td>Allows the invocation of the {@code DriverManager}
  * method {@code deregisterDriver}</td>
  *   <td>Permits an application to remove a JDBC driver from the list of
