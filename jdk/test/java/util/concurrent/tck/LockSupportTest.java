@@ -71,9 +71,7 @@ public class LockSupportTest extends JSR166TestCase {
             void park() {
                 LockSupport.park();
             }
-            void park(long millis) {
-                throw new UnsupportedOperationException();
-            }
+            Thread.State parkedState() { return Thread.State.WAITING; }
         },
         parkUntil() {
             void park(long millis) {
@@ -89,9 +87,7 @@ public class LockSupportTest extends JSR166TestCase {
             void park() {
                 LockSupport.park(theBlocker());
             }
-            void park(long millis) {
-                throw new UnsupportedOperationException();
-            }
+            Thread.State parkedState() { return Thread.State.WAITING; }
         },
         parkUntilBlocker() {
             void park(long millis) {
@@ -106,7 +102,10 @@ public class LockSupportTest extends JSR166TestCase {
         };
 
         void park() { park(2 * LONG_DELAY_MS); }
-        abstract void park(long millis);
+        void park(long millis) {
+            throw new UnsupportedOperationException();
+        }
+        Thread.State parkedState() { return Thread.State.TIMED_WAITING; }
 
         /** Returns a deadline to use with parkUntil. */
         long deadline(long millis) {
@@ -213,14 +212,16 @@ public class LockSupportTest extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() {
                 pleaseInterrupt.countDown();
-                do {
+                for (int tries = MAX_SPURIOUS_WAKEUPS; tries-->0; ) {
                     parkMethod.park();
-                    // park may return spuriously
-                } while (! Thread.currentThread().isInterrupted());
+                    if (Thread.interrupted())
+                        return;
+                }
+                fail("too many consecutive spurious wakeups?");
             }});
 
         await(pleaseInterrupt);
-        assertThreadStaysAlive(t);
+        assertThreadBlocks(t, parkMethod.parkedState());
         t.interrupt();
         awaitTermination(t);
     }
@@ -248,20 +249,17 @@ public class LockSupportTest extends JSR166TestCase {
     }
     public void testParkAfterInterrupt(final ParkMethod parkMethod) {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
-        final AtomicBoolean pleasePark = new AtomicBoolean(false);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws Exception {
                 pleaseInterrupt.countDown();
-                while (!pleasePark.get())
+                while (!Thread.currentThread().isInterrupted())
                     Thread.yield();
-                assertTrue(Thread.currentThread().isInterrupted());
                 parkMethod.park();
-                assertTrue(Thread.currentThread().isInterrupted());
+                assertTrue(Thread.interrupted());
             }});
 
         await(pleaseInterrupt);
         t.interrupt();
-        pleasePark.set(true);
         awaitTermination(t);
     }
 
@@ -283,13 +281,13 @@ public class LockSupportTest extends JSR166TestCase {
     public void testParkTimesOut(final ParkMethod parkMethod) {
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() {
-                for (;;) {
+                for (int tries = MAX_SPURIOUS_WAKEUPS; tries-->0; ) {
                     long startTime = System.nanoTime();
                     parkMethod.park(timeoutMillis());
-                    // park may return spuriously
                     if (millisElapsedSince(startTime) >= timeoutMillis())
                         return;
                 }
+                fail("too many consecutive spurious wakeups?");
             }});
 
         awaitTermination(t);
@@ -323,12 +321,14 @@ public class LockSupportTest extends JSR166TestCase {
             public void realRun() {
                 Thread t = Thread.currentThread();
                 started.countDown();
-                do {
+                for (int tries = MAX_SPURIOUS_WAKEUPS; tries-->0; ) {
                     assertNull(LockSupport.getBlocker(t));
                     parkMethod.park();
                     assertNull(LockSupport.getBlocker(t));
-                    // park may return spuriously
-                } while (! Thread.currentThread().isInterrupted());
+                    if (Thread.interrupted())
+                        return;
+                }
+                fail("too many consecutive spurious wakeups?");
             }});
 
         long startTime = System.nanoTime();
@@ -344,6 +344,8 @@ public class LockSupportTest extends JSR166TestCase {
                 assertNull(x);  // ok
                 if (millisElapsedSince(startTime) > LONG_DELAY_MS)
                     fail("timed out");
+                if (t.getState() == Thread.State.TERMINATED)
+                    break;
                 Thread.yield();
             }
         }
