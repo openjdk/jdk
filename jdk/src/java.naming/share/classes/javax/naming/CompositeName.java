@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ import java.util.Properties;
  *the string form of a composite name and its corresponding structural form
  *({@code CompositeName}).
  *
-<table border="1" cellpadding=3 summary="examples showing string form of composite name and its corresponding structural form (CompositeName)">
+<table class="striped"><caption style="display:none">examples showing string
+ form of composite name and its corresponding structural form (CompositeName)</caption>
 
 <tr>
 <th>String Name</th>
@@ -144,7 +145,8 @@ import java.util.Properties;
  * string forms of two composite names simply involves concatenating
  * their string forms together.
 
-<table border="1" cellpadding=3 summary="composition examples showing string names and composite names">
+<table class="striped"><caption style="display:none">composition examples
+ showing string names and composite names</caption>
 
 <tr>
 <th>String Names</th>

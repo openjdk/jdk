@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,15 @@ import javax.swing.*;
  * location in the <code>Document</code> model. The following characters can
  * be specified:
  *
- * <table border=1 summary="Valid characters and their descriptions">
+ * <table class="striped">
+ * <caption>Valid characters and their descriptions</caption>
+ * <thead>
  * <tr>
  *    <th>Character&nbsp;</th>
- *    <th><p style="text-align:left">Description</p></th>
+ *    <th>Description</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
  *    <td>#</td>
  *    <td>Any valid number, uses <code>Character.isDigit</code>.</td>
@@ -66,6 +70,7 @@ import javax.swing.*;
  * </tr>
  * <tr><td>*</td><td>Anything.</td></tr>
  * <tr><td>H</td><td>Any hex character (0-9, a-f or A-F).</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>

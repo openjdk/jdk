@@ -28,12 +28,12 @@ package jdk.internal.loader;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -53,13 +53,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.Resources;
 
 
 /**
@@ -79,8 +86,8 @@ import jdk.internal.misc.SharedSecrets;
  * loader. This allows automatic modules (for example) to link to types in the
  * unnamed module of the parent class loader.
  *
- * @see Layer#defineModulesWithOneLoader
- * @see Layer#defineModulesWithManyLoaders
+ * @see ModuleLayer#defineModulesWithOneLoader
+ * @see ModuleLayer#defineModulesWithManyLoaders
  */
 
 public final class Loader extends SecureClassLoader {
@@ -206,10 +213,10 @@ public final class Loader extends SecureClassLoader {
      * @param cf the Configuration containing at least modules to be defined to
      *           this class loader
      *
-     * @param parentLayers the parent Layers
+     * @param parentModuleLayers the parent ModuleLayers
      */
     public Loader initRemotePackageMap(Configuration cf,
-                                       List<Layer> parentLayers)
+                                       List<ModuleLayer> parentModuleLayers)
     {
         for (String name : nameToModule.keySet()) {
             ResolvedModule resolvedModule = cf.findModule(name).get();
@@ -235,8 +242,8 @@ public final class Loader extends SecureClassLoader {
                 } else {
 
                     // find the layer for the target module
-                    Layer layer = parentLayers.stream()
-                        .map(parent -> findLayer(parent, other.configuration()))
+                    ModuleLayer layer = parentModuleLayers.stream()
+                        .map(parent -> findModuleLayer(parent, other.configuration()))
                         .flatMap(Optional::stream)
                         .findAny()
                         .orElseThrow(() ->
@@ -285,8 +292,8 @@ public final class Loader extends SecureClassLoader {
      * Find the layer corresponding to the given configuration in the tree
      * of layers rooted at the given parent.
      */
-    private Optional<Layer> findLayer(Layer parent, Configuration cf) {
-        return SharedSecrets.getJavaLangReflectModuleAccess().layers(parent)
+    private Optional<ModuleLayer> findModuleLayer(ModuleLayer parent, Configuration cf) {
+        return SharedSecrets.getJavaLangAccess().layers(parent)
                 .filter(l -> l.configuration() == cf)
                 .findAny();
     }
@@ -302,7 +309,6 @@ public final class Loader extends SecureClassLoader {
 
 
     // -- resources --
-
 
     /**
      * Returns a URL to a resource of the given name in a module defined to
@@ -356,58 +362,128 @@ public final class Loader extends SecureClassLoader {
 
     @Override
     public URL findResource(String name) {
-        URL url = null;
-        String pn = ResourceHelper.getPackageName(name);
+        String pn = Resources.toPackageName(name);
         LoadedModule module = localPackageToModule.get(pn);
-        if (module != null) {
-            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
-                try {
-                    url = findResource(module.name(), name);
-                } catch (IOException ioe) {
-                    // ignore
-                }
-            }
-        } else {
-            for (ModuleReference mref : nameToModule.values()) {
-                try {
-                    url = findResource(mref.descriptor().name(), name);
-                    if (url != null)
-                        break;
-                } catch (IOException ioe) {
-                    // ignore
-                }
-            }
-        }
-        return url;
-    }
 
-    @Override
-    public Enumeration<URL> findResources(String name) throws IOException {
-        List<URL> urls = new ArrayList<>();
-        String pn = ResourceHelper.getPackageName(name);
-        LoadedModule module = localPackageToModule.get(pn);
         if (module != null) {
-            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
-                try {
-                    URL url = findResource(module.name(), name);
-                    if (url != null)
-                        urls.add(url);
-                } catch (IOException ioe) {
-                    // ignore
+            try {
+                URL url = findResource(module.name(), name);
+                if (url != null
+                    && (name.endsWith(".class")
+                        || url.toString().endsWith("/")
+                        || isOpen(module.mref(), pn))) {
+                    return url;
                 }
+            } catch (IOException ioe) {
+                // ignore
             }
+
         } else {
             for (ModuleReference mref : nameToModule.values()) {
                 try {
                     URL url = findResource(mref.descriptor().name(), name);
-                    if (url != null)
-                        urls.add(url);
+                    if (url != null) return url;
                 } catch (IOException ioe) {
                     // ignore
                 }
             }
         }
-        return Collections.enumeration(urls);
+
+        return null;
+    }
+
+    @Override
+    public Enumeration<URL> findResources(String name) throws IOException {
+        return Collections.enumeration(findResourcesAsList(name));
+    }
+
+    @Override
+    public URL getResource(String name) {
+        Objects.requireNonNull(name);
+
+        // this loader
+        URL url = findResource(name);
+        if (url != null) {
+            return url;
+        } else {
+            // parent loader
+            return parent.getResource(name);
+        }
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
+        Objects.requireNonNull(name);
+
+        // this loader
+        List<URL> urls = findResourcesAsList(name);
+
+        // parent loader
+        Enumeration<URL> e = parent.getResources(name);
+
+        // concat the URLs with the URLs returned by the parent
+        return new Enumeration<>() {
+            final Iterator<URL> iterator = urls.iterator();
+            @Override
+            public boolean hasMoreElements() {
+                return (iterator.hasNext() || e.hasMoreElements());
+            }
+            @Override
+            public URL nextElement() {
+                if (iterator.hasNext()) {
+                    return iterator.next();
+                } else {
+                    return e.nextElement();
+                }
+            }
+        };
+    }
+
+    @Override
+    public Stream<URL> resources(String name) {
+        Objects.requireNonNull(name);
+        // ordering not specified
+        int characteristics = (Spliterator.NONNULL | Spliterator.IMMUTABLE |
+                               Spliterator.SIZED | Spliterator.SUBSIZED);
+        Supplier<Spliterator<URL>> supplier = () -> {
+            try {
+                List<URL> urls = findResourcesAsList(name);
+                return Spliterators.spliterator(urls, characteristics);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
+        Stream<URL> s1 = StreamSupport.stream(supplier, characteristics, false);
+        Stream<URL> s2 = parent.resources(name);
+        return Stream.concat(s1, s2);
+    }
+
+    /**
+     * Finds the resources with the given name in this class loader.
+     */
+    private List<URL> findResourcesAsList(String name) throws IOException {
+        String pn = Resources.toPackageName(name);
+        LoadedModule module = localPackageToModule.get(pn);
+        if (module != null) {
+            URL url = findResource(module.name(), name);
+            if (url != null
+                    && (name.endsWith(".class")
+                    || url.toString().endsWith("/")
+                    || isOpen(module.mref(), pn))) {
+                return List.of(url);
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            List<URL> urls = new ArrayList<>();
+            for (ModuleReference mref : nameToModule.values()) {
+                URL url = findResource(mref.descriptor().name(), name);
+                if (url != null) {
+                    urls.add(url);
+                }
+            }
+            return urls;
+        }
     }
 
 
@@ -643,7 +719,7 @@ public final class Loader extends SecureClassLoader {
      */
     private boolean isOpen(ModuleReference mref, String pn) {
         ModuleDescriptor descriptor = mref.descriptor();
-        if (descriptor.isOpen())
+        if (descriptor.isOpen() || descriptor.isAutomatic())
             return true;
         for (ModuleDescriptor.Opens opens : descriptor.opens()) {
             String source = opens.source();
