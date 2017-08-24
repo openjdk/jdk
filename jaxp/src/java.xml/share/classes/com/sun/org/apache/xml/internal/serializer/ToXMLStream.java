@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -88,8 +88,6 @@ public final class ToXMLStream extends ToStream
 
         setOmitXMLDeclaration(xmlListener.getOmitXMLDeclaration());
 
-        m_ispreserve = xmlListener.m_ispreserve;
-        m_preserves = xmlListener.m_preserves;
         m_ispreserveSpace = xmlListener.m_ispreserveSpace;
         m_preserveSpaces = xmlListener.m_preserveSpaces;
         m_childNodeNum = xmlListener.m_childNodeNum;
@@ -201,7 +199,9 @@ public final class ToXMLStream extends ToStream
      */
     public void endDocument() throws org.xml.sax.SAXException
     {
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            flushCharactersBuffer();
+        }
         flushPending();
         if (m_doIndent && !m_isprevtext)
         {
@@ -235,11 +235,6 @@ public final class ToXMLStream extends ToStream
      */
     public void startPreserving() throws org.xml.sax.SAXException
     {
-
-        // Not sure this is really what we want.  -sb
-        m_preserves.push(true);
-
-        m_ispreserve = true;
     }
 
     /**
@@ -251,9 +246,6 @@ public final class ToXMLStream extends ToStream
      */
     public void endPreserving() throws org.xml.sax.SAXException
     {
-
-        // Not sure this is really what we want.  -sb
-        m_ispreserve = m_preserves.isEmpty() ? false : m_preserves.pop();
     }
 
     /**
@@ -273,8 +265,10 @@ public final class ToXMLStream extends ToStream
         if (isInEntityRef())
             return;
 
-        m_childNodeNum++;
-        flushCharactersBuffer();
+        if (m_doIndent) {
+            m_childNodeNum++;
+            flushCharactersBuffer();
+        }
         flushPending();
 
         if (target.equals(Result.PI_DISABLE_OUTPUT_ESCAPING))

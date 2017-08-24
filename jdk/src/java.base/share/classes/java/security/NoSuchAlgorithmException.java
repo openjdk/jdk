@@ -30,6 +30,7 @@ package java.security;
  * requested but is not available in the environment.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public class NoSuchAlgorithmException extends GeneralSecurityException {

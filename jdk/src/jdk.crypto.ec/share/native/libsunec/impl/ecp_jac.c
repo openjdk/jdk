@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -38,6 +38,7 @@
  *   Nils Larsch <nla@trustcenter.de>, and
  *   Lenka Fibikova <fibikova@exp-math.uni-essen.de>, the OpenSSL Project
  *
+ * Last Modified Date from the Original Code: May 2017
  *********************************************************************** */
 
 #include "ecp.h"
@@ -179,6 +180,15 @@ ec_GFp_pt_add_jac_aff(const mp_int *px, const mp_int *py, const mp_int *pz,
         MP_CHECKOK(group->meth->field_mul(&A, pz, &B, group->meth));
         MP_CHECKOK(group->meth->field_mul(&A, qx, &A, group->meth));
         MP_CHECKOK(group->meth->field_mul(&B, qy, &B, group->meth));
+
+        /*
+         * Additional checks for point equality and point at infinity
+         */
+        if (mp_cmp(px, &A) == 0 && mp_cmp(py, &B) == 0) {
+            /* POINT_DOUBLE(P) */
+            MP_CHECKOK(ec_GFp_pt_dbl_jac(px, py, pz, rx, ry, rz, group));
+            goto CLEANUP;
+        }
 
         /* C = A - px, D = B - py */
         MP_CHECKOK(group->meth->field_sub(&A, px, &C, group->meth));
@@ -406,7 +416,7 @@ ec_GFp_pt_mul_jac(const mp_int *n, const mp_int *px, const mp_int *py,
 mp_err
 ec_GFp_pts_mul_jac(const mp_int *k1, const mp_int *k2, const mp_int *px,
                                    const mp_int *py, mp_int *rx, mp_int *ry,
-                                   const ECGroup *group)
+                                   const ECGroup *group, int timing)
 {
         mp_err res = MP_OKAY;
         mp_int precomp[4][4][2];
@@ -430,9 +440,9 @@ ec_GFp_pts_mul_jac(const mp_int *k1, const mp_int *k2, const mp_int *px,
 
         /* if some arguments are not defined used ECPoint_mul */
         if (k1 == NULL) {
-                return ECPoint_mul(group, k2, px, py, rx, ry);
+                return ECPoint_mul(group, k2, px, py, rx, ry, timing);
         } else if ((k2 == NULL) || (px == NULL) || (py == NULL)) {
-                return ECPoint_mul(group, k1, NULL, NULL, rx, ry);
+                return ECPoint_mul(group, k1, NULL, NULL, rx, ry, timing);
         }
 
         /* initialize precomputation table */

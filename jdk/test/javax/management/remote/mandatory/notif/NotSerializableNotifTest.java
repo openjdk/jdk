@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Tests to send a not serializable notification.
  * @bug 5022196 8132003
+ * @summary Tests to send a not serializable notification.
  * @author Shanliang JIANG
- * @modules java.management.rmi
+ *
  * @run clean NotSerializableNotifTest
  * @run build NotSerializableNotifTest
  * @run main NotSerializableNotifTest

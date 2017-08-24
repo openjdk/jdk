@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Changes.an.entry.s.alias",
                 "\u00C4ndrar postalias"}, //-changealias
         {"Deletes.an.entry",
-                "Tar bort post"}, //-delete
+                "Tar bort en post"}, //-delete
         {"Exports.certificate",
                 "Exporterar certifikat"}, //-exportcert
         {"Generates.a.key.pair",
@@ -183,7 +183,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"validity.number.of.days",
                 "antal dagar f\u00F6r giltighet"}, //-validity
         {"Serial.ID.of.cert.to.revoke",
-                 "Seriellt id f\u00F6r certifikat som ska \u00E5terkallas"}, //-id
+                 "Serienummer p\u00E5 certifikat som ska \u00E5terkallas"}, //-id
         // keytool: Running part
         {"keytool.error.", "nyckelverktygsfel: "},
         {"Illegal.option.", "Otill\u00E5tet alternativ:  "},
@@ -278,7 +278,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
                 "Certifikatet har inte lagts till i nyckellagret"},
         {".Storing.ksfname.", "[Lagrar {0}]"},
         {"alias.has.no.public.key.certificate.",
-                "{0} saknar offentlig nyckel (certifikat)"},
+                "{0} saknar \u00F6ppen nyckel (certifikat)"},
         {"Cannot.derive.signature.algorithm",
                 "Kan inte h\u00E4rleda signaturalgoritm"},
         {"Alias.alias.does.not.exist",
@@ -328,7 +328,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Failed.to.parse.input", "Kunde inte tolka indata"},
         {"Empty.input", "Inga indata"},
         {"Not.X.509.certificate", "Inte ett X.509-certifikat"},
-        {"alias.has.no.public.key", "{0} saknar offentlig nyckel"},
+        {"alias.has.no.public.key", "{0} saknar \u00F6ppen nyckel"},
         {"alias.has.no.X.509.certificate", "{0} saknar X.509-certifikat"},
         {"New.certificate.self.signed.", "Nytt certifikat (sj\u00E4lvsignerat):"},
         {"Reply.has.no.certificates", "Svaret saknar certifikat"},
@@ -357,8 +357,6 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "Ange aliasnamn:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN om det \u00E4r det samma som f\u00F6r <{0}>)"},
-        {".PATTERN.printX509Cert",
-                "\u00C4gare: {0}\nUtf\u00E4rdare: {1}\nSerienummer: {2}\nGiltigt fr\u00E5n: {3}, till: {4}\nCertifikatfingeravtryck:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgoritmnamn: {7}\n\u00C4mne f\u00F6r algoritm f\u00F6r \u00F6ppen nyckel: {8} ({9,number,#})\nVersion: {10}"},
         {"What.is.your.first.and.last.name.",
                 "Vad heter du i f\u00F6r- och efternamn?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -383,7 +381,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
 
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
-        {"Signer.d.", "Signerare #%d:"},
+        {"Signer.d.", "Undertecknare %d:"},
         {"Timestamp.", "Tidsst\u00E4mpel:"},
         {"Signature.", "Signatur:"},
         {"CRLs.", "CRL:er:"},
@@ -398,7 +396,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
             "* Integriteten f\u00F6r den information som lagras i srckeystore*\n* har INTE verifierats!  Om du vill verifiera dess integritet *\n* m\u00E5ste du ange l\u00F6senordet f\u00F6r srckeystore.                *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
-                "Certifikatsvaret inneh\u00E5ller inte n\u00E5gon offentlig nyckel f\u00F6r <{0}>"},
+                "Certifikatsvaret inneh\u00E5ller inte n\u00E5gon \u00F6ppen nyckel f\u00F6r <{0}>"},
         {"Incomplete.certificate.chain.in.reply",
                 "Ofullst\u00E4ndig certifikatskedja i svaret"},
         {"Certificate.chain.in.reply.does.not.verify.",
@@ -421,15 +419,12 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Please.provide.keysize.for.secret.key.generation",
                 "Ange -keysize f\u00F6r att skapa hemlig nyckel"},
 
-        {"verified.by.s.in.s", "Verifierad av %s i %s"},
         {"warning.not.verified.make.sure.keystore.is.correct",
             "VARNING: ej verifierad. Se till att -nyckellager \u00E4r korrekt."},
 
         {"Extensions.", "Till\u00E4gg: "},
         {".Empty.value.", "(Tomt v\u00E4rde)"},
         {"Extension.Request.", "Till\u00E4ggsbeg\u00E4ran:"},
-        {"PKCS.10.Certificate.Request.Version.1.0.Subject.s.Public.Key.s.format.s.key.",
-                "PKCS #10 certifikatbeg\u00E4ran (version 1.0)\n\u00C4mne: %s\nAllm\u00E4n nyckel: %s-format %s-nyckel\n"},
         {"Unknown.keyUsage.type.", "Ok\u00E4nd keyUsage-typ: "},
         {"Unknown.extendedkeyUsage.type.", "Ok\u00E4nd extendedkeyUsage-typ: "},
         {"Unknown.AccessDescription.type.", "Ok\u00E4nd AccessDescription-typ: "},
@@ -438,7 +433,33 @@ public class Resources_sv extends java.util.ListResourceBundle {
                  "Detta till\u00E4gg kan inte markeras som kritiskt. "},
         {"Odd.number.of.hex.digits.found.", "Udda antal hex-siffror p\u00E5tr\u00E4ffades: "},
         {"Unknown.extension.type.", "Ok\u00E4nd till\u00E4ggstyp: "},
-        {"command.{0}.is.ambiguous.", "kommandot {0} \u00E4r tvetydigt:"}
+        {"command.{0}.is.ambiguous.", "kommandot {0} \u00E4r tvetydigt:"},
+
+        // 8171319: keytool should print out warnings when reading or
+        // generating cert/cert req using weak algorithms
+        {"the.certificate.request", "Certifikatbeg\u00E4ran"},
+        {"the.issuer", "Utf\u00E4rdaren"},
+        {"the.generated.certificate", "Det genererade certifikatet"},
+        {"the.generated.crl", "Den genererade listan \u00F6ver \u00E5terkallade certifikat"},
+        {"the.generated.certificate.request", "Den genererade certifikatbeg\u00E4ran"},
+        {"the.certificate", "Certifikatet"},
+        {"the.crl", "Listan \u00F6ver \u00E5terkallade certifikat"},
+        {"the.tsa.certificate", "TSA-certifikatet"},
+        {"the.input", "Indata"},
+        {"reply", "Svar"},
+        {"one.in.many", "%s %d av %d"},
+        {"alias.in.cacerts", "Utf\u00E4rdaren <%s> i cacerts"},
+        {"alias.in.keystore", "Utf\u00E4rdaren <%s>"},
+        {"with.weak", "%s (svag)"},
+        {"key.bit", "%d-bitars %s-nyckel"},
+        {"key.bit.weak", "%d-bitars %s-nyckel (svag)"},
+        {".PATTERN.printX509Cert.with.weak",
+                "\u00C4gare: {0}\nUtf\u00E4rdare: {1}\nSerienummer: {2}\nGiltigt fr\u00E5n: {3}, till: {4}\nCertifikatfingeravtryck:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgoritmnamn: {7}\nAlgoritm f\u00F6r \u00F6ppen nyckel f\u00F6r \u00E4mne: {8}\nVersion: {9}"},
+        {"PKCS.10.with.weak",
+                "PKCS #10-certifikatbeg\u00E4ran (version 1.0)\n\u00C4mne: %s\nFormat: %s\n\u00D6ppen nyckel: %s\nSignaturalgoritm: %s\n"},
+        {"verified.by.s.in.s.weak", "Verifierades av %s i %s med en %s"},
+        {"whose.sigalg.risk", "%s anv\u00E4nder signaturalgoritmen %s, vilket anses utg\u00F6ra en s\u00E4kerhetsrisk."},
+        {"whose.key.risk", "%s anv\u00E4nder en %s, vilket anses utg\u00F6ra en s\u00E4kerhetsrisk."},
     };
 
 

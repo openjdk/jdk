@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4251646
-   @summary Make sure buffer boundary convert works
+ * @bug 4251646
+ * @summary Make sure buffer boundary convert works
+ * @modules jdk.charsets
  */
 
 import java.nio.*;

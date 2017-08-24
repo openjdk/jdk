@@ -26,7 +26,7 @@
  * @bug 4848474
  * @summary Test that relation service doesn't require List params to be ArrayList
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean NonArrayListTest
  * @run build NonArrayListTest
  * @run main NonArrayListTest

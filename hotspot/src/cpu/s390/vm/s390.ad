@@ -8475,6 +8475,24 @@ instruct compL_reg_memI(iRegL dst, memory src, flagsReg cr)%{
 %}
 
 //  LONG unsigned
+// Added CmpUL for LoopPredicate.
+instruct compUL_reg_reg(flagsReg cr, iRegL op1, iRegL op2) %{
+  match(Set cr (CmpUL op1 op2));
+  size(4);
+  format %{ "CLGR    $op1,$op2\t # long" %}
+  opcode(CLGR_ZOPC);
+  ins_encode(z_rreform(op1, op2));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compUL_reg_imm32(flagsReg cr, iRegL op1, uimmL32 con) %{
+  match(Set cr (CmpUL op1 con));
+  size(6);
+  format %{ "CLGFI   $op1,$con" %}
+  opcode(CLGFI_ZOPC);
+  ins_encode(z_rilform_unsigned(op1, con));
+  ins_pipe(pipe_class_dummy);
+%}
 
 //  PTR unsigned
 
