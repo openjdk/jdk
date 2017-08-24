@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,12 @@ public final class XContentWindow extends XWindow {
 
     @Override
     public void handleExposeEvent(XEvent xev) {
+        if(parentFrame.isTargetUndecorated() &&
+           XWM.getWMID() != XWM.UNITY_COMPIZ_WM &&
+                width <= 0 && height <= 0) {
+            // WM didn't send initial ConfigureNotify, so set the bounds here
+            setContentBounds(parentFrame.getDimensions());
+        }
         if (width <= 0 || height <= 0) {
             return;
         }

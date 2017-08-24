@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -846,7 +846,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * path.
          *
          * @serialData
-         * <a name="Path2DSerialData"><!-- --></a>
+         * <a id="Path2DSerialData"><!-- --></a>
          * <ol>
          * <li>The default serializable fields.
          * There are no default serializable fields as of 1.6.
@@ -876,13 +876,18 @@ public abstract class Path2D implements Shape, Cloneable {
          * <p>
          * The following byte value constants are used in the serialized form
          * of {@code Path2D} objects:
-         * <table>
+         *
+         * <table class="striped">
+         * <caption>Constants</caption>
+         * <thead>
          * <tr>
          * <th>Constant Name</th>
          * <th>Byte Value</th>
          * <th>Followed by</th>
          * <th>Description</th>
          * </tr>
+         * </thead>
+         * <tbody>
          * <tr>
          * <td>{@code SERIAL_STORAGE_FLT_ARRAY}</td>
          * <td>0x30</td>
@@ -956,6 +961,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * <td>0x61</td>
          * <td></td>
          * <td>There are no more path segments following.</td>
+         * </tbody>
          * </table>
          *
          * @since 1.6
@@ -1605,7 +1611,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * path.
          *
          * @serialData
-         * <a name="Path2DSerialData"><!-- --></a>
+         * <a id="Path2DSerialData"><!-- --></a>
          * <ol>
          * <li>The default serializable fields.
          * There are no default serializable fields as of 1.6.
@@ -1635,13 +1641,17 @@ public abstract class Path2D implements Shape, Cloneable {
          * <p>
          * The following byte value constants are used in the serialized form
          * of {@code Path2D} objects:
-         * <table>
+         * <table class="striped">
+         * <caption>Constants</caption>
+         * <thead>
          * <tr>
          * <th>Constant Name</th>
          * <th>Byte Value</th>
          * <th>Followed by</th>
          * <th>Description</th>
          * </tr>
+         * </thead>
+         * <tbody>
          * <tr>
          * <td>{@code SERIAL_STORAGE_FLT_ARRAY}</td>
          * <td>0x30</td>
@@ -1715,6 +1725,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * <td>0x61</td>
          * <td></td>
          * <td>There are no more path segments following.</td>
+         * </tbody>
          * </table>
          *
          * @since 1.6

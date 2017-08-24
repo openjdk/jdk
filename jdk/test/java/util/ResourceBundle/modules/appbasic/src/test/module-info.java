@@ -22,7 +22,7 @@
  */
 
 module test {
-    exports jdk.test.resources to eubundles, asiabundles;
-    uses jdk.test.resources.MyResourcesProvider;
-    provides jdk.test.resources.MyResourcesProvider with jdk.test.resources.MyResourcesProviderImpl;
+    exports jdk.test.resources.spi to eubundles, asiabundles;
+    uses jdk.test.resources.spi.MyResourcesProvider;
+    provides jdk.test.resources.spi.MyResourcesProvider with jdk.test.resources.MyResourcesProviderImpl;
 }

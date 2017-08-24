@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,9 +159,9 @@ public interface SourceDataLine extends DataLine {
      * <p>
      * The number of bytes to write must represent an integral number of sample
      * frames, such that:
-     * <br>
-     * <center>{@code [ bytes written ] % [frame size in bytes ] == 0}</center>
-     * <br>
+     * <p style="text-align:center">
+     * {@code [ bytes written ] % [frame size in bytes ] == 0}
+     * <p>
      * The return value will always meet this requirement. A request to write a
      * number of bytes representing a non-integral number of sample frames
      * cannot be fulfilled and may result in an

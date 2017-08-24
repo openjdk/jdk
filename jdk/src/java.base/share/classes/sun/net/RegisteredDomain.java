@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@ import java.util.Map;
 import java.util.Set;
 
 /*
+ * WARNING: This class may contain out-of-date information. It should be
+ * updated or replaced with an appropriate implementation. See
+ * sun.security.util.RegisteredDomain for more information.
+ *
  * The naming tables listed below were gathered from publicly available data such as
  * the subdomain registration websites listed for each top-level domain by the Internet
  * Assigned Numbers Authority and the website of the Internet Corporation for Assigned Names
@@ -696,6 +700,36 @@ static {
     top3Map.put("tr", new HashSet<String>(Arrays.asList("gov.nc.tr")));
 }
 
+    /**
+     * Returns a {@code sun.security.util.RegisteredDomain} representing the
+     * registered part of the specified domain.
+     *
+     * @param domain the domain name
+     * @return a {@code sun.security.util.RegisteredDomain} or null
+     *    if the domain is unknown or not registerable
+     * @throws NullPointerException if domain is null
+     */
+    public static sun.security.util.RegisteredDomain registeredDomain(String domain) {
+        String name = getRegisteredDomain(domain);
+        if (name.equals(domain)) {
+            return null;
+        }
+        return new sun.security.util.RegisteredDomain() {
+            private String rname = name;
+            @Override
+            public String name() {
+                return rname;
+            }
+            @Override
+            public sun.security.util.RegisteredDomain.Type type() {
+                return sun.security.util.RegisteredDomain.Type.ICANN;
+            }
+            @Override
+            public String publicSuffix() {
+                return rname.substring(rname.indexOf(".") + 1);
+            }
+        };
+    }
 
     /*
      * Return the registered part of a qualified domain

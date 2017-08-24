@@ -25,7 +25,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
-import java.lang.reflect.Module;
 
 public  class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
 
