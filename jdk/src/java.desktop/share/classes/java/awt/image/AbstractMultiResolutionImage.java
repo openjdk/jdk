@@ -29,7 +29,8 @@ import java.awt.Image;
 
 /**
  * This class provides default implementations of several {@code Image} methods
- * for classes that want to implement the {@MultiResolutionImage} interface.
+ * for classes that want to implement the {@code MultiResolutionImage}
+ * interface.
  *
  * For example,
  * <pre> {@code

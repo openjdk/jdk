@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
- * @build jdk.testlibrary.SimpleSSLContext ProxyServer EchoHandler
+ * @build jdk.testlibrary.SimpleSSLContext ProxyServer
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
+ * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,trace SmokeTest
  */
@@ -165,6 +166,7 @@ public class SmokeTest {
         client = HttpClient.newBuilder()
                            .sslContext(ctx)
                            .executor(e)
+                           .version(HttpClient.Version.HTTP_1_1)
                            .sslParameters(sslparams)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
                            .build();

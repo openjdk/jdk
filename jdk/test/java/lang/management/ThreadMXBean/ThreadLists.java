@@ -26,7 +26,6 @@
  * @bug 5047639
  * @summary Check that the "java-level" APIs provide a consistent view of
  *          the thread list
- * @modules java.management
  */
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
