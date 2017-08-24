@@ -34,11 +34,10 @@
 
 package p;
 
-import java.security.ProtectionDomain;
-import java.io.InputStream;
 import java.lang.*;
-import jdk.test.lib.*;
+
 import jdk.internal.misc.Unsafe;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 
 // Test that an anonymous class that gets put in its host's package cannot define

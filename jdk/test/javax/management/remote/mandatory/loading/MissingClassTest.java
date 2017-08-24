@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 4915825 4921009 4934965 4977469 8019584
+ * @key randomness
  * @summary Tests behavior when client or server gets object of unknown class
  * @author Eamonn McManus
- * @modules java.management.rmi
+ *
  * @run clean MissingClassTest SingleClassLoader
  * @run build MissingClassTest SingleClassLoader
  * @run main MissingClassTest
- * @key randomness
  */
 
 /*

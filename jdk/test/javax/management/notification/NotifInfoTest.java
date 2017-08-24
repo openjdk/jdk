@@ -26,7 +26,7 @@
  * @bug 4506105 6303698
  * @summary NotificationBroadcasterSupport should have a ctor with MBeanNotificationInfo[]
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean NotifInfoTest
  * @run build NotifInfoTest
  * @run main NotifInfoTest

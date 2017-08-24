@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines an internal API for monitoring a HotSpot Java Virtual Machine using
+ * its shared memory instrumentation buffer
+ *
+ * @since 9
+ */
 module jdk.internal.jvmstat {
     exports sun.jvmstat.monitor to
         jdk.attach,
@@ -36,6 +42,7 @@ module jdk.internal.jvmstat {
         jdk.jstatd;
 
     uses sun.jvmstat.monitor.MonitoredHostService;
+
     provides sun.jvmstat.monitor.MonitoredHostService with
         sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService,
         sun.jvmstat.perfdata.monitor.protocol.local.MonitoredHostLocalService;

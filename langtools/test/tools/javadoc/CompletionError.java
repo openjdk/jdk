@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
  * @summary Check that CompletionFailures for missing classes are not incorrectly passed to
  *          the javadoc API clients.
  * @library /tools/lib
- * @modules jdk.javadoc com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.JavacTask toolbox.ToolBox
  * @run main CompletionError
  */
 
@@ -36,6 +38,9 @@ import java.io.File;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javadoc.Main;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class CompletionError extends Doclet
 {
@@ -48,6 +53,9 @@ public class CompletionError extends Doclet
             "   #public <T extends CompletionErrorMissing> void tm() {}#" +
             "   public String toString() { return null; }" +
             "}";
+
+    private static final String testSrc = System.getProperty("test.src");
+    private static final String testClassPath = System.getProperty("test.class.path");
 
     public static void main(String[] args) throws Exception {
         String[] templateParts = template.split("#");
@@ -75,8 +83,8 @@ public class CompletionError extends Doclet
                 tb.deleteFiles("CompletionErrorMissing.class", "CompletionErrorIntfMissing.class", "CompletionErrorExcMissing.class");
                 // run javadoc:
                 if (Main.execute("javadoc", "CompletionError", CompletionError.class.getClassLoader(),
-                                 "-classpath", ".",
-                                 System.getProperty("test.src", ".") + File.separatorChar + "CompletionError.java") != 0)
+                                 "-classpath", "." + File.pathSeparator + testClassPath,
+                                 new File(testSrc, "CompletionError.java").getPath()) != 0)
                     throw new Error();
             }
         }

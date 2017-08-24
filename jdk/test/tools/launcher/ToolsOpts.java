@@ -87,11 +87,16 @@ public class ToolsOpts extends TestHelper {
         contents.add("       }\n");
         contents.add("    }\n");
         contents.add("}\n");
-        createFile(new File(mainJava), contents);
+        String mainJavaPath = "patch-src/com/sun/tools/javac/" + mainJava;
+        File mainJavaFile = new File(mainJavaPath.replace('/', File.separatorChar));
+        mainJavaFile.getParentFile().mkdirs();
+        createFile(mainJavaFile, contents);
 
         // compile Main.java into directory to override classes in jdk.compiler
         new File("jdk.compiler").mkdir();
-        compile("-Xmodule:jdk.compiler", "-d", "jdk.compiler", mainJava);
+        compile("--patch-module", "jdk.compiler=patch-src",
+                "-d", "jdk.compiler",
+                mainJavaFile.toString());
     }
 
     static void pass(String msg) {
