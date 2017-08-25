@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.time.Instant;
 
 /**
  * This class encapsulates a Kerberos TGS-REQ that is sent from the
@@ -285,7 +286,12 @@ public class KrbTgsReq {
         throws IOException, KrbException, UnknownHostException {
         KerberosTime req_till = null;
         if (till == null) {
-            req_till = new KerberosTime(0);
+            String d = Config.getInstance().get("libdefaults", "ticket_lifetime");
+            if (d != null) {
+                req_till = new KerberosTime(Instant.now().plusSeconds(Config.duration(d)));
+            } else {
+                req_till = new KerberosTime(0); // Choose KDC maximum allowed
+            }
         } else {
             req_till = till;
         }
