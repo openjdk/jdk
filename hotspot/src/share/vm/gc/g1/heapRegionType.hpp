@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,20 +43,23 @@ private:
   // future, we'll have to increase the size of the latter and hence
   // decrease the size of the former.
   //
-  // 0000 0 [ 0] Free
+  // 00000 0 [ 0] Free
   //
-  // 0001 0 [ 2] Young Mask
-  // 0001 0 [ 2] Eden
-  // 0001 1 [ 3] Survivor
+  // 00001 0 [ 2] Young Mask
+  // 00001 0 [ 2] Eden
+  // 00001 1 [ 3] Survivor
   //
-  // 0010 0 [ 4] Humongous Mask
-  // 0100 0 [ 8] Pinned Mask
-  // 0110 0 [12] Starts Humongous
-  // 0110 1 [13] Continues Humongous
+  // 00010 0 [ 4] Humongous Mask
+  // 00100 0 [ 8] Pinned Mask
+  // 00110 0 [12] Starts Humongous
+  // 00110 1 [13] Continues Humongous
   //
-  // 1000 0 [16] Old Mask
+  // 01000 0 [16] Old Mask
   //
-  // 1100 0 [24] Archive
+  // 10000 0 [32] Archive Mask
+  // 11100 0 [56] Open Archive
+  // 11100 1 [57] Closed Archive
+  //
   typedef enum {
     FreeTag               = 0,
 
@@ -72,7 +75,18 @@ private:
     OldMask               = 16,
     OldTag                = OldMask,
 
-    ArchiveTag            = PinnedMask | OldMask
+    // Archive regions are regions with immutable content (i.e. not reclaimed, and
+    // not allocated into during regular operation). They differ in the kind of references
+    // allowed for the contained objects:
+    // - Closed archive regions form a separate self-contained (closed) object graph
+    // within the set of all of these regions. No references outside of closed
+    // archive regions are allowed.
+    // - Open archive regions have no restrictions on the references of their objects.
+    // Objects within these regions are allowed to have references to objects
+    // contained in any other kind of regions.
+    ArchiveMask           = 32,
+    OpenArchiveTag        = ArchiveMask | PinnedMask | OldMask,
+    ClosedArchiveTag      = ArchiveMask | PinnedMask | OldMask + 1
   } Tag;
 
   volatile Tag _tag;
@@ -115,7 +129,9 @@ public:
   bool is_starts_humongous()    const { return get() == StartsHumongousTag;    }
   bool is_continues_humongous() const { return get() == ContinuesHumongousTag; }
 
-  bool is_archive() const { return get() == ArchiveTag; }
+  bool is_archive()        const { return (get() & ArchiveMask) != 0; }
+  bool is_open_archive()   const { return get() == OpenArchiveTag; }
+  bool is_closed_archive() const { return get() == ClosedArchiveTag; }
 
   // is_old regions may or may not also be pinned
   bool is_old() const { return (get() & OldMask) != 0; }
@@ -138,7 +154,27 @@ public:
 
   void set_old() { set(OldTag); }
 
-  void set_archive() { set_from(ArchiveTag, FreeTag); }
+  // Change the current region type to be of an old region type if not already done so.
+  // Returns whether the region type has been changed or not.
+  bool relabel_as_old() {
+    //assert(!is_free(), "Should not try to move Free region");
+    assert(!is_humongous(), "Should not try to move Humongous region");
+    if (is_old()) {
+      return false;
+    }
+    if (is_eden()) {
+      set_from(OldTag, EdenTag);
+      return true;
+    } else if (is_free()) {
+      set_from(OldTag, FreeTag);
+      return true;
+    } else {
+      set_from(OldTag, SurvTag);
+      return true;
+    }
+  }
+  void set_open_archive()   { set_from(OpenArchiveTag, FreeTag); }
+  void set_closed_archive() { set_from(ClosedArchiveTag, FreeTag); }
 
   // Misc
 

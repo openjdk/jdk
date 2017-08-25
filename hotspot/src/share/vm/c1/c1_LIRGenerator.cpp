@@ -394,7 +394,7 @@ void LIRGenerator::do_root(Value instr) {
 void LIRGenerator::walk(Value instr) {
   InstructionMark im(compilation(), instr);
   //stop walk when encounter a root
-  if (instr->is_pinned() && instr->as_Phi() == NULL || instr->operand()->is_valid()) {
+  if ((instr->is_pinned() && instr->as_Phi() == NULL) || instr->operand()->is_valid()) {
     assert(instr->operand() != LIR_OprFact::illegalOpr || instr->as_Constant() != NULL, "this root has not yet been visited");
   } else {
     assert(instr->subst() == instr, "shouldn't have missed substitution");
@@ -1433,6 +1433,8 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
         break;
       case T_OBJECT:
         if (c->as_jobject() != other->as_jobject()) continue;
+        break;
+      default:
         break;
       }
       return _reg_for_constants.at(i);
@@ -2803,6 +2805,8 @@ void LIRGenerator::do_Base(Base* x) {
     case T_SHORT:
     case T_CHAR:
       t = T_INT;
+      break;
+    default:
       break;
     }
 

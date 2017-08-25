@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.util.jar.JarOutputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.debugger.*;
@@ -100,9 +101,9 @@ public class ClassDump extends Tool {
                 setOutputDirectory(dirName);
             }
 
-            // walk through the system dictionary
-            SystemDictionary dict = VM.getVM().getSystemDictionary();
-            dict.classesDo(new SystemDictionary.ClassVisitor() {
+            // walk through the loaded classes
+            ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+            cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                     public void visit(Klass k) {
                         if (k instanceof InstanceKlass) {
                             try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,16 +199,16 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   // determines whether we should do that.
   inline bool should_create_mdo(Method* method, CompLevel cur_level);
   // Create MDO if necessary.
-  void create_mdo(methodHandle mh, JavaThread* thread);
+  void create_mdo(const methodHandle& mh, JavaThread* thread);
   // Is method profiled enough?
   bool is_method_profiled(Method* method);
 
   double _increase_threshold_at_ratio;
 
-  bool maybe_switch_to_aot(methodHandle mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread);
+  bool maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread);
 
 protected:
-  void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
+  void print_specific(EventType type, const methodHandle& mh, const methodHandle& imh, int bci, CompLevel level);
 
   void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
   void set_start_time(jlong t) { _start_time = t;    }

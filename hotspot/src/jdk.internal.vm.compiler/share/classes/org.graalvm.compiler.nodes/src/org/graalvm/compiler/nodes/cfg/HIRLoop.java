@@ -22,9 +22,9 @@
  */
 package org.graalvm.compiler.nodes.cfg;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.nodes.LoopBeginNode;
+import org.graalvm.word.LocationIdentity;
 
 public final class HIRLoop extends Loop<Block> {
 

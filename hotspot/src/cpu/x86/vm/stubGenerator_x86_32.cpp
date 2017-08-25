@@ -1012,6 +1012,7 @@ class StubGenerator: public StubCodeGenerator {
     __ pop(rdi);
     __ pop(rsi);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ ret(0);
     return start;
@@ -1247,6 +1248,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     inc_copy_counter_np(T_LONG);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ ret(0);
     return start;
@@ -3365,6 +3367,7 @@ class StubGenerator: public StubCodeGenerator {
     __ pop(rbx);
     __ pop(rdi);
     __ pop(rsi);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -3422,6 +3425,7 @@ class StubGenerator: public StubCodeGenerator {
       __ pop(h);
       __ pop(g);
       __ pop(d);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 

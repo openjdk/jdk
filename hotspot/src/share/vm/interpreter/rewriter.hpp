@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 class Rewriter: public StackObj {
  private:
-  instanceKlassHandle _klass;
+  InstanceKlass*      _klass;
   constantPoolHandle  _pool;
   Array<Method*>*     _methods;
   GrowableArray<int>  _cp_map;
@@ -188,12 +188,12 @@ class Rewriter: public StackObj {
   }
 
   // All the work goes in here:
-  Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS);
+  Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS);
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
   void scan_method(Method* m, bool reverse, bool* invokespecial_error);
-  void rewrite_Object_init(methodHandle m, TRAPS);
+  void rewrite_Object_init(const methodHandle& m, TRAPS);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);
@@ -208,10 +208,10 @@ class Rewriter: public StackObj {
   // Revert bytecodes in case of an exception.
   void restore_bytecodes();
 
-  static methodHandle rewrite_jsrs(methodHandle m, TRAPS);
+  static methodHandle rewrite_jsrs(const methodHandle& m, TRAPS);
  public:
   // Driver routine:
-  static void rewrite(instanceKlassHandle klass, TRAPS);
+  static void rewrite(InstanceKlass* klass, TRAPS);
 };
 
 #endif // SHARE_VM_INTERPRETER_REWRITER_HPP

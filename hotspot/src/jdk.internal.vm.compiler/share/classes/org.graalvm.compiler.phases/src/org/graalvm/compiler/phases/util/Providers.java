@@ -26,7 +26,6 @@ import org.graalvm.compiler.core.common.spi.CodeGenProviders;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.nodes.spi.StampProvider;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
@@ -48,10 +47,9 @@ public class Providers implements CodeGenProviders {
     private final ForeignCallsProvider foreignCalls;
     private final Replacements replacements;
     private final StampProvider stampProvider;
-    private final NodeCostProvider nodeCostProvider;
 
     public Providers(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, ConstantFieldProvider constantFieldProvider,
-                    ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider, NodeCostProvider nodeCostProvider) {
+                    ForeignCallsProvider foreignCalls, LoweringProvider lowerer, Replacements replacements, StampProvider stampProvider) {
         this.metaAccess = metaAccess;
         this.codeCache = codeCache;
         this.constantReflection = constantReflection;
@@ -60,17 +58,16 @@ public class Providers implements CodeGenProviders {
         this.lowerer = lowerer;
         this.replacements = replacements;
         this.stampProvider = stampProvider;
-        this.nodeCostProvider = nodeCostProvider;
     }
 
     public Providers(Providers copyFrom) {
         this(copyFrom.getMetaAccess(), copyFrom.getCodeCache(), copyFrom.getConstantReflection(), copyFrom.getConstantFieldProvider(), copyFrom.getForeignCalls(), copyFrom.getLowerer(),
-                        copyFrom.getReplacements(), copyFrom.getStampProvider(), copyFrom.getNodeCostProvider());
+                        copyFrom.getReplacements(), copyFrom.getStampProvider());
     }
 
     public Providers(PhaseContext copyFrom) {
         this(copyFrom.getMetaAccess(), null, copyFrom.getConstantReflection(), copyFrom.getConstantFieldProvider(), null, copyFrom.getLowerer(), copyFrom.getReplacements(),
-                        copyFrom.getStampProvider(), copyFrom.getNodeCostProvider());
+                        copyFrom.getStampProvider());
     }
 
     @Override
@@ -109,39 +106,35 @@ public class Providers implements CodeGenProviders {
         return stampProvider;
     }
 
-    public NodeCostProvider getNodeCostProvider() {
-        return nodeCostProvider;
-    }
-
     public Providers copyWith(MetaAccessProvider substitution) {
-        return new Providers(substitution, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider);
+        return new Providers(substitution, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider);
     }
 
     public Providers copyWith(CodeCacheProvider substitution) {
-        return new Providers(metaAccess, substitution, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, substitution, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider);
     }
 
     public Providers copyWith(ConstantReflectionProvider substitution) {
-        return new Providers(metaAccess, codeCache, substitution, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, substitution, constantFieldProvider, foreignCalls, lowerer, replacements, stampProvider);
     }
 
     public Providers copyWith(ConstantFieldProvider substitution) {
-        return new Providers(metaAccess, codeCache, constantReflection, substitution, foreignCalls, lowerer, replacements, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, constantReflection, substitution, foreignCalls, lowerer, replacements, stampProvider);
     }
 
     public Providers copyWith(ForeignCallsProvider substitution) {
-        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, substitution, lowerer, replacements, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, substitution, lowerer, replacements, stampProvider);
     }
 
     public Providers copyWith(LoweringProvider substitution) {
-        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, substitution, replacements, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, substitution, replacements, stampProvider);
     }
 
     public Providers copyWith(Replacements substitution) {
-        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, substitution, stampProvider, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, substitution, stampProvider);
     }
 
     public Providers copyWith(StampProvider substitution) {
-        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, substitution, nodeCostProvider);
+        return new Providers(metaAccess, codeCache, constantReflection, constantFieldProvider, foreignCalls, lowerer, replacements, substitution);
     }
 }

@@ -28,14 +28,15 @@ import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotHostForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
+import org.graalvm.compiler.options.OptionValues;
 
 /**
  * Stub called via {@link HotSpotHostForeignCallsProvider#VERIFY_OOP}.
  */
 public class VerifyOopStub extends SnippetStub {
 
-    public VerifyOopStub(HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super("verifyOop", providers, linkage);
+    public VerifyOopStub(OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super("verifyOop", options, providers, linkage);
     }
 
     @Snippet

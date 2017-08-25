@@ -39,12 +39,12 @@ public class TestRTMSpinLoopCountOption
     private static final String DEFAULT_VALUE = "100";
 
     private TestRTMSpinLoopCountOption() {
-        super(Boolean.TRUE::booleanValue, "RTMSpinLoopCount", false, true,
+        super("RTMSpinLoopCount", false, true,
                 TestRTMSpinLoopCountOption.DEFAULT_VALUE,
                 "0", "10", "42", "1000");
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMSpinLoopCountOption().test();
+        new TestRTMSpinLoopCountOption().runTestCases();
     }
 }

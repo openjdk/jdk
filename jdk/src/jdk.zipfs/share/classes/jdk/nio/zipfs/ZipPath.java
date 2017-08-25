@@ -310,7 +310,10 @@ final class ZipPath implements Path {
 
     @Override
     public boolean startsWith(Path other) {
-        final ZipPath o = checkPath(other);
+        Objects.requireNonNull(other, "other");
+        if (!(other instanceof ZipPath))
+            return false;
+        final ZipPath o = (ZipPath)other;
         if (o.isAbsolute() != this.isAbsolute() ||
             o.path.length > this.path.length)
             return false;
@@ -327,7 +330,10 @@ final class ZipPath implements Path {
 
     @Override
     public boolean endsWith(Path other) {
-        final ZipPath o = checkPath(other);
+        Objects.requireNonNull(other, "other");
+        if (!(other instanceof ZipPath))
+            return false;
+        final ZipPath o = (ZipPath)other;
         int olast = o.path.length - 1;
         if (olast > 0 && o.path[olast] == '/')
             olast--;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1616,6 +1616,8 @@ void MacroAssembler::branch_optimized(Assembler::branch_condition cond, Label& b
   if (branch_target.is_bound()) {
     address branch_addr = target(branch_target);
     branch_optimized(cond, branch_addr);
+  } else if (branch_target.is_near()) {
+    z_brc(cond, branch_target);  // Caller assures that the target will be in range for z_brc.
   } else {
     z_brcl(cond, branch_target); // Let's hope target is in range. Otherwise, we will abort at patch time.
   }
@@ -1674,7 +1676,8 @@ void MacroAssembler::compare_and_branch_optimized(Register r1,
                                                   bool     has_sign) {
   address      branch_origin = pc();
   bool         x2_imm8       = (has_sign && Immediate::is_simm8(x2)) || (!has_sign && Immediate::is_uimm8(x2));
-  bool         is_RelAddr16  = (branch_target.is_bound() &&
+  bool         is_RelAddr16  = branch_target.is_near() ||
+                               (branch_target.is_bound() &&
                                 RelAddr::is_in_range_of_RelAddr16(target(branch_target), branch_origin));
   unsigned int casenum       = (len64?2:0)+(has_sign?0:1);
 
@@ -1744,13 +1747,21 @@ void MacroAssembler::compare_and_branch_optimized(Register r1,
                                                   Label&   branch_target,
                                                   bool     len64,
                                                   bool     has_sign) {
-  unsigned int casenum = (len64?2:0)+(has_sign?0:1);
+  unsigned int casenum = (len64 ? 2 : 0) + (has_sign ? 0 : 1);
 
   if (branch_target.is_bound()) {
     address branch_addr = target(branch_target);
     compare_and_branch_optimized(r1, r2, cond, branch_addr, len64, has_sign);
   } else {
-    {
+    if (VM_Version::has_CompareBranch() && branch_target.is_near()) {
+      switch (casenum) {
+        case 0: z_crj(  r1, r2, cond, branch_target); break;
+        case 1: z_clrj( r1, r2, cond, branch_target); break;
+        case 2: z_cgrj( r1, r2, cond, branch_target); break;
+        case 3: z_clgrj(r1, r2, cond, branch_target); break;
+        default: ShouldNotReachHere(); break;
+      }
+    } else {
       switch (casenum) {
         case 0: z_cr( r1, r2); break;
         case 1: z_clr(r1, r2); break;
@@ -2011,17 +2022,41 @@ void MacroAssembler::resize_frame_sub(Register offset, Register fp, bool load_fp
   z_stg(fp, _z_abi(callers_sp), Z_SP);
 }
 
-// Resize_frame with SP(new) = [addr].
-void MacroAssembler::resize_frame_absolute(Register addr, Register fp, bool load_fp) {
-  assert_different_registers(addr, fp, Z_SP);
-  if (load_fp) { z_lg(fp, _z_abi(callers_sp), Z_SP); }
+// Resize_frame with SP(new) = [newSP] + offset.
+//   This emitter is useful if we already have calculated a pointer
+//   into the to-be-allocated stack space, e.g. with special alignment properties,
+//   but need some additional space, e.g. for spilling.
+//   newSP    is the pre-calculated pointer. It must not be modified.
+//   fp       holds, or is filled with, the frame pointer.
+//   offset   is the additional increment which is added to addr to form the new SP.
+//            Note: specify a negative value to reserve more space!
+//   load_fp == true  only indicates that fp is not pre-filled with the frame pointer.
+//                    It does not guarantee that fp contains the frame pointer at the end.
+void MacroAssembler::resize_frame_abs_with_offset(Register newSP, Register fp, int offset, bool load_fp) {
+  assert_different_registers(newSP, fp, Z_SP);
 
-  if (addr != Z_R0) {
-    // Minimize stalls by not using Z_SP immediately after update.
-    z_stg(fp, _z_abi(callers_sp), addr);
-    z_lgr(Z_SP, addr);
+  if (load_fp) {
+    z_lg(fp, _z_abi(callers_sp), Z_SP);
+  }
+
+  add2reg(Z_SP, offset, newSP);
+  z_stg(fp, _z_abi(callers_sp), Z_SP);
+}
+
+// Resize_frame with SP(new) = [newSP].
+//   load_fp == true  only indicates that fp is not pre-filled with the frame pointer.
+//                    It does not guarantee that fp contains the frame pointer at the end.
+void MacroAssembler::resize_frame_absolute(Register newSP, Register fp, bool load_fp) {
+  assert_different_registers(newSP, fp, Z_SP);
+
+  if (load_fp) {
+    z_lg(fp, _z_abi(callers_sp), Z_SP); // need to use load/store.
+  }
+
+  z_lgr(Z_SP, newSP);
+  if (newSP != Z_R0) { // make sure we generate correct code, no matter what register newSP uses.
+    z_stg(fp, _z_abi(callers_sp), newSP);
   } else {
-    z_lgr(Z_SP, addr);
     z_stg(fp, _z_abi(callers_sp), Z_SP);
   }
 }
@@ -2029,17 +2064,12 @@ void MacroAssembler::resize_frame_absolute(Register addr, Register fp, bool load
 // Resize_frame with SP(new) = SP(old) + offset.
 void MacroAssembler::resize_frame(RegisterOrConstant offset, Register fp, bool load_fp) {
   assert_different_registers(fp, Z_SP);
-  if (load_fp) z_lg(fp, _z_abi(callers_sp), Z_SP);
 
-  if (Displacement::is_validDisp((int)_z_abi(callers_sp) + offset.constant_or_zero())) {
-    // Minimize stalls by first using, then updating Z_SP.
-    // Do that only if we have a small positive offset or if ExtImm are available.
-    z_stg(fp, Address(Z_SP, offset, _z_abi(callers_sp)));
-    add64(Z_SP, offset);
-  } else {
-    add64(Z_SP, offset);
-    z_stg(fp, _z_abi(callers_sp), Z_SP);
+  if (load_fp) {
+    z_lg(fp, _z_abi(callers_sp), Z_SP);
   }
+  add64(Z_SP, offset);
+  z_stg(fp, _z_abi(callers_sp), Z_SP);
 }
 
 void MacroAssembler::push_frame(Register bytes, Register old_sp, bool copy_sp, bool bytes_with_inverted_sign) {
@@ -2052,32 +2082,32 @@ void MacroAssembler::push_frame(Register bytes, Register old_sp, bool copy_sp, b
 #endif
   if (copy_sp) { z_lgr(old_sp, Z_SP); }
   if (bytes_with_inverted_sign) {
-    z_stg(old_sp, 0, bytes, Z_SP);
-    add2reg_with_index(Z_SP, 0, bytes, Z_SP);
+    z_agr(Z_SP, bytes);
   } else {
     z_sgr(Z_SP, bytes); // Z_sgfr sufficient, but probably not faster.
-    z_stg(old_sp, 0, Z_SP);
   }
+  z_stg(old_sp, _z_abi(callers_sp), Z_SP);
 }
 
 unsigned int MacroAssembler::push_frame(unsigned int bytes, Register scratch) {
   long offset = Assembler::align(bytes, frame::alignment_in_bytes);
+  assert(offset > 0, "should push a frame with positive size, size = %ld.", offset);
+  assert(Displacement::is_validDisp(-offset), "frame size out of range, size = %ld", offset);
 
-  if (Displacement::is_validDisp(-offset)) {
-    // Minimize stalls by first using, then updating Z_SP.
-    // Do that only if we have ExtImm available.
-    z_stg(Z_SP, -offset, Z_SP);
-    add2reg(Z_SP, -offset);
-  } else {
-    if (scratch != Z_R0 && scratch != Z_R1) {
-      z_stg(Z_SP, -offset, Z_SP);
-      add2reg(Z_SP, -offset);
-    } else {   // scratch == Z_R0 || scratch == Z_R1
-      z_lgr(scratch, Z_SP);
-      add2reg(Z_SP, -offset);
-      z_stg(scratch, 0, Z_SP);
-    }
+  // We must not write outside the current stack bounds (given by Z_SP).
+  // Thus, we have to first update Z_SP and then store the previous SP as stack linkage.
+  // We rely on Z_R0 by default to be available as scratch.
+  z_lgr(scratch, Z_SP);
+  add2reg(Z_SP, -offset);
+  z_stg(scratch, _z_abi(callers_sp), Z_SP);
+#ifdef ASSERT
+  // Just make sure nobody uses the value in the default scratch register.
+  // When another register is used, the caller might rely on it containing the frame pointer.
+  if (scratch == Z_R0) {
+    z_iihf(scratch, 0xbaadbabe);
+    z_iilf(scratch, 0xdeadbeef);
   }
+#endif
   return offset;
 }
 
@@ -2093,6 +2123,20 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 void MacroAssembler::pop_frame() {
   BLOCK_COMMENT("pop_frame:");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+}
+
+// Pop current C frame and restore return PC register (Z_R14).
+void MacroAssembler::pop_frame_restore_retPC(int frame_size_in_bytes) {
+  BLOCK_COMMENT("pop_frame_restore_retPC:");
+  int retPC_offset = _z_abi16(return_pc) + frame_size_in_bytes;
+  // If possible, pop frame by add instead of load (a penny saved is a penny got :-).
+  if (Displacement::is_validDisp(retPC_offset)) {
+    z_lg(Z_R14, retPC_offset, Z_SP);
+    add2reg(Z_SP, frame_size_in_bytes);
+  } else {
+    add2reg(Z_SP, frame_size_in_bytes);
+    restore_return_pc();
+  }
 }
 
 void MacroAssembler::call_VM_leaf_base(address entry_point, bool allow_relocation) {
@@ -2741,11 +2785,11 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
   BLOCK_COMMENT("lookup_interface_method {");
 
   // Load start of itable entries into itable_entry_addr.
-  z_llgf(vtable_len, Address(recv_klass, InstanceKlass::vtable_length_offset()));
+  z_llgf(vtable_len, Address(recv_klass, Klass::vtable_length_offset()));
   z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(InstanceKlass::vtable_start_offset());
+  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
 
   add2reg_with_index(itable_entry_addr,
                      vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(),
@@ -3474,6 +3518,17 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 // Purpose: record the previous value if it is not null.
 // All non-tmps are preserved.
 //------------------------------------------------------
+// Note: Rpre_val needs special attention.
+//   The flag pre_val_needed indicated that the caller of this emitter function
+//   relies on Rpre_val containing the correct value, that is:
+//     either the value it contained on entry to this code segment
+//     or the value that was loaded into the register from (Robj+offset).
+//
+//   Independent from this requirement, the contents of Rpre_val must survive
+//   the push_frame() operation. push_frame() uses Z_R0_scratch by default
+//   to temporarily remember the frame pointer.
+//   If Rpre_val is assigned Z_R0_scratch by the caller, code must be emitted to
+//   save it's value.
 void MacroAssembler::g1_write_barrier_pre(Register           Robj,
                                           RegisterOrConstant offset,
                                           Register           Rpre_val,      // Ideally, this is a non-volatile register.
@@ -3487,6 +3542,16 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
   const int buffer_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf());
   const int index_offset  = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index());
   assert_different_registers(Rtmp1, Rtmp2, Z_R0_scratch); // None of the Rtmp<i> must be Z_R0!!
+  assert_different_registers(Robj, Z_R0_scratch);         // Used for addressing. Furthermore, push_frame destroys Z_R0!!
+  assert_different_registers(Rval, Z_R0_scratch);         // push_frame destroys Z_R0!!
+
+#ifdef ASSERT
+  // make sure the register is not Z_R0. Used for addressing. Furthermore, would be destroyed by push_frame.
+  if (offset.is_register() && offset.as_register()->encoding() == 0) {
+    tty->print_cr("Roffset(g1_write_barrier_pre)  = %%r%d", offset.as_register()->encoding());
+    assert(false, "bad register for offset");
+  }
+#endif
 
   BLOCK_COMMENT("g1_write_barrier_pre {");
 
@@ -3500,7 +3565,10 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
   }
   z_bre(filtered); // Activity indicator is zero, so there is no marking going on currently.
 
-  // Do we need to load the previous value into Rpre_val?
+  assert(Rpre_val != noreg, "must have a real register");
+
+
+  // If an object is given, we need to load the previous value into Rpre_val.
   if (Robj != noreg) {
     // Load the previous value...
     Register ixReg = offset.is_register() ? offset.register_or_noreg() : Z_R0;
@@ -3510,9 +3578,9 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
       z_lg(Rpre_val, offset.constant_or_zero(), ixReg, Robj);
     }
   }
-  assert(Rpre_val != noreg, "must have a real register");
 
   // Is the previous value NULL?
+  // If so, we don't need to record it and we're done.
   // Note: pre_val is loaded, decompressed and stored (directly or via runtime call).
   //       Register contents is preserved across runtime call if caller requests to do so.
   z_ltgr(Rpre_val, Rpre_val);
@@ -3529,6 +3597,7 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
   // only if index > 0. Otherwise, we need runtime to handle.
   // (The index field is typed as size_t.)
   Register Rbuffer = Rtmp1, Rindex = Rtmp2;
+  assert_different_registers(Rbuffer, Rindex, Rpre_val);
 
   z_lg(Rbuffer, buffer_offset, Z_thread);
 
@@ -3547,16 +3616,8 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
 
   bind(callRuntime);
 
-  // Save Rpre_val (result) over runtime call.
-  // Requires Rtmp1, Rtmp2, or Rpre_val to be non-volatile.
-  Register Rpre_save = Rpre_val;
-  if (pre_val_needed && Rpre_val->is_volatile()) {
-    guarantee(!Rtmp1->is_volatile() || !Rtmp2->is_volatile(), "oops!");
-    Rpre_save = !Rtmp1->is_volatile() ? Rtmp1 : Rtmp2;
-  }
-  lgr_if_needed(Rpre_save, Rpre_val);
-
-  // Preserve inputs by spilling them into the top frame.
+  // Save some registers (inputs and result) over runtime call
+  // by spilling them into the top frame.
   if (Robj != noreg && Robj->is_volatile()) {
     z_stg(Robj, Robj->encoding()*BytesPerWord, Z_SP);
   }
@@ -3568,11 +3629,20 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
     z_stg(Rval, Rval->encoding()*BytesPerWord, Z_SP);
   }
 
+  // Save Rpre_val (result) over runtime call.
+  Register Rpre_save = Rpre_val;
+  if ((Rpre_val == Z_R0_scratch) || (pre_val_needed && Rpre_val->is_volatile())) {
+    guarantee(!Rtmp1->is_volatile() || !Rtmp2->is_volatile(), "oops!");
+    Rpre_save = !Rtmp1->is_volatile() ? Rtmp1 : Rtmp2;
+  }
+  lgr_if_needed(Rpre_save, Rpre_val);
+
   // Push frame to protect top frame with return pc and spilled register values.
   save_return_pc();
-  push_frame_abi160(0); // Will use Z_R0 as tmp on old CPUs.
+  push_frame_abi160(0); // Will use Z_R0 as tmp.
 
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_val, Z_thread);
+  // Rpre_val may be destroyed by push_frame().
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_save, Z_thread);
 
   pop_frame();
   restore_return_pc();
@@ -3588,9 +3658,9 @@ void MacroAssembler::g1_write_barrier_pre(Register           Robj,
   if (Rval != noreg && Rval->is_volatile()) {
     z_lg(Rval, Rval->encoding()*BytesPerWord, Z_SP);
   }
-
-  // Restore Rpre_val (result) after runtime call.
-  lgr_if_needed(Rpre_val, Rpre_save);
+  if (pre_val_needed && Rpre_val->is_volatile()) {
+    lgr_if_needed(Rpre_val, Rpre_save);
+  }
 
   bind(filtered);
   BLOCK_COMMENT("} g1_write_barrier_pre");
@@ -3643,7 +3713,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   // calculate address of card
   load_const_optimized(Rbase, (address)bs->byte_map_base);        // Card table base.
   z_srlg(Rcard_addr, Rstore_addr, CardTableModRefBS::card_shift); // Index into card table.
-  add2reg_with_index(Rcard_addr, 0, Rcard_addr, Rbase);           // Explicit calculation needed for cli.
+  z_algr(Rcard_addr, Rbase);                                      // Explicit calculation needed for cli.
   Rbase = noreg; // end of lifetime
 
   // Filter young.
@@ -3687,6 +3757,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
 
   // TODO: do we need a frame? Introduced to be on the safe side.
   bool needs_frame = true;
+  lgr_if_needed(Rcard_addr, Rcard_addr_x); // copy back asap. push_frame will destroy Z_R0_scratch!
 
   // VM call need frame to access(write) O register.
   if (needs_frame) {
@@ -3695,7 +3766,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   }
 
   // Save the live input values.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr_x, Z_thread);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, Z_thread);
 
   if (needs_frame) {
     pop_frame();
@@ -4051,7 +4122,12 @@ void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) 
 void MacroAssembler::store_klass_gap(Register s, Register d) {
   if (UseCompressedClassPointers) {
     assert(s != d, "not enough registers");
-    z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
+    // Support s = noreg.
+    if (s != noreg) {
+      z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
+    } else {
+      z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
+    }
   }
 }
 
@@ -5927,8 +6003,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  * @param len   register containing number of bytes
  * @param table register pointing to CRC table
  */
-void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register len, Register table,
-                                           Register data, bool invertCRC) {
+void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register len, Register table, Register data) {
   assert_different_registers(crc, buf, len, table, data);
 
   Label L_mainLoop, L_done;
@@ -5938,19 +6013,11 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
   z_ltr(len, len);
   z_brnh(L_done);
 
-  if (invertCRC) {
-    not_(crc, noreg, false); // ~c
-  }
-
   bind(L_mainLoop);
     z_llgc(data, Address(buf, (intptr_t)0));// Current byte of input buffer (zero extended). Avoids garbage in upper half of register.
     add2reg(buf, mainLoop_stepping);        // Advance buffer position.
     update_byte_crc32(crc, data, table);
     z_brct(len, L_mainLoop);                // Iterate.
-
-  if (invertCRC) {
-    not_(crc, noreg, false); // ~c
-  }
 
   bind(L_done);
 }
@@ -5968,6 +6035,7 @@ void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register tab
   //         c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ \
   //             crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
   // #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
+  // Pre-calculate (constant) column offsets, use columns 4..7 for big-endian.
   const int ix0 = 4*(4*CRC32_COLUMN_SIZE);
   const int ix1 = 5*(4*CRC32_COLUMN_SIZE);
   const int ix2 = 6*(4*CRC32_COLUMN_SIZE);
@@ -5986,17 +6054,12 @@ void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register tab
   rotate_then_insert(t1, t0, 56-2, 63-2, 2-16, true);  // ((c >> 16) & 0xff) << 2
   rotate_then_insert(t0, t0, 56-2, 63-2, 2-24, true);  // ((c >> 24) & 0xff) << 2
 
-  // Load pre-calculated table values.
-  // Use columns 4..7 for big-endian.
-  z_ly(t3, Address(table, t3, (intptr_t)ix0));
+  // XOR indexed table values to calculate updated crc.
   z_ly(t2, Address(table, t2, (intptr_t)ix1));
-  z_ly(t1, Address(table, t1, (intptr_t)ix2));
   z_ly(t0, Address(table, t0, (intptr_t)ix3));
-
-  // Calculate new crc from table values.
-  z_xr(t2, t3);
-  z_xr(t0, t1);
-  z_xr(t0, t2);  // Now crc contains the final checksum value.
+  z_xy(t2, Address(table, t3, (intptr_t)ix0));
+  z_xy(t0, Address(table, t1, (intptr_t)ix2));
+  z_xr(t0, t2);           // Now t0 contains the updated CRC value.
   lgr_if_needed(crc, t0);
 }
 
@@ -6009,7 +6072,8 @@ void MacroAssembler::update_1word_crc32(Register crc, Register buf, Register tab
  * uses Z_R10..Z_R13 as work register. Must be saved/restored by caller!
  */
 void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3) {
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_mainLoop, L_tail;
@@ -6024,7 +6088,9 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
   // The situation itself is detected and handled correctly by the conditional branches
   // following aghi(len, -stepping) and aghi(len, +stepping).
 
-  not_(crc, noreg, false);             // 1s complement of crc
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 
 #if 0
   {
@@ -6039,7 +6105,7 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
     rotate_then_insert(ctr, ctr, 62, 63, 0, true); // TODO: should set cc
     z_sgfr(len, ctr);                  // Remaining len after alignment.
 
-    update_byteLoop_crc32(crc, buf, ctr, table, data, false);
+    update_byteLoop_crc32(crc, buf, ctr, table, data);
   }
 #endif
 
@@ -6047,21 +6113,23 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
   z_srag(ctr, len, log_stepping);
   z_brnh(L_tail);
 
-  z_lrvr(crc, crc);             // Revert byte order because we are dealing with big-endian data.
+  z_lrvr(crc, crc);          // Revert byte order because we are dealing with big-endian data.
   rotate_then_insert(len, len, 64-log_stepping, 63, 0, true); // #bytes for tailLoop
 
   BIND(L_mainLoop);
     update_1word_crc32(crc, buf, table, 0, 0, crc, t1, t2, t3);
     update_1word_crc32(crc, buf, table, 4, mainLoop_stepping, crc, t1, t2, t3);
-    z_brct(ctr, L_mainLoop);    // Iterate.
+    z_brct(ctr, L_mainLoop); // Iterate.
 
-  z_lrvr(crc, crc);        // Revert byte order back to original.
+  z_lrvr(crc, crc);          // Revert byte order back to original.
 
   // Process last few (<8) bytes of buffer.
   BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, data, false);
+  update_byteLoop_crc32(crc, buf, len, table, data);
 
-  not_(crc, noreg, false); // 1s complement of crc
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 }
 
 /**
@@ -6073,7 +6141,8 @@ void MacroAssembler::kernel_crc32_2word(Register crc, Register buf, Register len
  * uses Z_R10..Z_R13 as work register. Must be saved/restored by caller!
  */
 void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3) {
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
   Label L_mainLoop, L_tail;
@@ -6087,7 +6156,9 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
   // The situation itself is detected and handled correctly by the conditional branches
   // following aghi(len, -stepping) and aghi(len, +stepping).
 
-  not_(crc, noreg, false); // 1s complement of crc
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 
   // Check for short (<4 bytes) buffer.
   z_srag(ctr, len, log_stepping);
@@ -6099,13 +6170,16 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
   BIND(L_mainLoop);
     update_1word_crc32(crc, buf, table, 0, mainLoop_stepping, crc, t1, t2, t3);
     z_brct(ctr, L_mainLoop); // Iterate.
+
   z_lrvr(crc, crc);          // Revert byte order back to original.
 
   // Process last few (<8) bytes of buffer.
   BIND(L_tail);
-  update_byteLoop_crc32(crc, buf, len, table, data, false);
+  update_byteLoop_crc32(crc, buf, len, table, data);
 
-  not_(crc, noreg, false); // 1s complement of crc
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 }
 
 /**
@@ -6115,22 +6189,51 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
  * @param table register pointing to CRC table
  */
 void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
-                                        Register t0,  Register t1,  Register t2,  Register t3) {
+                                        Register t0,  Register t1,  Register t2,  Register t3,
+                                        bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
   Register data = t0;
 
-  update_byteLoop_crc32(crc, buf, len, table, data, true);
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
+
+  update_byteLoop_crc32(crc, buf, len, table, data);
+
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 }
 
-void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp) {
+void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp,
+                                             bool invertCRC) {
   assert_different_registers(crc, buf, len, table, tmp);
 
-  not_(crc, noreg, false); // ~c
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 
   z_llgc(tmp, Address(buf, (intptr_t)0));  // Current byte of input buffer (zero extended). Avoids garbage in upper half of register.
   update_byte_crc32(crc, tmp, table);
 
-  not_(crc, noreg, false); // ~c
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
+}
+
+void MacroAssembler::kernel_crc32_singleByteReg(Register crc, Register val, Register table,
+                                                bool invertCRC) {
+  assert_different_registers(crc, val, table);
+
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
+
+  update_byte_crc32(crc, val, table);
+
+  if (invertCRC) {
+    not_(crc, noreg, false);           // 1s complement of crc
+  }
 }
 
 //
@@ -6583,11 +6686,12 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
 
   BLOCK_COMMENT("verify_oop {");
   Register tmp = Z_R0;
-  unsigned int nbytes_save = 6 *8;
+  unsigned int nbytes_save = 5*BytesPerWord;
   address entry = StubRoutines::verify_oop_subroutine_entry_address();
+
   save_return_pc();
   push_frame_abi160(nbytes_save);
-  z_stmg(Z_R0, Z_R5, 160, Z_SP);
+  z_stmg(Z_R1, Z_R5, frame::z_abi_160_size, Z_SP);
 
   z_lgr(Z_ARG2, oop);
   load_const(Z_ARG1, (address) msg);
@@ -6595,10 +6699,10 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   z_lg(Z_R1, 0, Z_R1);
   call_c(Z_R1);
 
-  z_lmg(Z_R0, Z_R5, 160, Z_SP);
+  z_lmg(Z_R1, Z_R5, frame::z_abi_160_size, Z_SP);
   pop_frame();
-
   restore_return_pc();
+
   BLOCK_COMMENT("} verify_oop ");
 }
 
@@ -6620,8 +6724,8 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   // Setup arguments.
   load_const(Z_ARG1, (void*) stop_types[type%stop_end]);
   load_const(Z_ARG2, (void*) msg);
-  get_PC(Z_R14); // Following code pushes a frame without entering a new function. Use current pc as return address.
-  save_return_pc();    // Saves return pc Z_R14.
+  get_PC(Z_R14);     // Following code pushes a frame without entering a new function. Use current pc as return address.
+  save_return_pc();  // Saves return pc Z_R14.
   push_frame_abi160(0);
   call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
   // The plain disassembler does not recognize illtrap. It instead displays

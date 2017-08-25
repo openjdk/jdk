@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -159,7 +159,6 @@ static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
 }
 
 static void pd_conjoint_oops_atomic(oop* from, oop* to, size_t count) {
-  assert(!UseCompressedOops, "foo!");
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   _Copy_conjoint_jlongs_atomic((jlong*)from, (jlong*)to, count);
 }

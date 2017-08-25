@@ -22,11 +22,10 @@
  */
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_200;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_200;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_256;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -40,10 +39,11 @@ import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
+import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 
-@NodeInfo(allowedUsageTypes = {InputType.Memory}, cycles = CYCLES_200, size = SIZE_200)
+@NodeInfo(allowedUsageTypes = {InputType.Memory}, cycles = CYCLES_256, size = SIZE_64)
 public final class UnsafeArrayCopyNode extends ArrayRangeWriteNode implements Lowerable, MemoryCheckpoint.Single, MemoryAccess {
 
     public static final NodeClass<UnsafeArrayCopyNode> TYPE = NodeClass.create(UnsafeArrayCopyNode.class);

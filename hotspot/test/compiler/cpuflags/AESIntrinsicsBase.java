@@ -24,15 +24,9 @@
 package compiler.cpuflags;
 
 import compiler.codegen.aes.TestAESMain;
-import compiler.cpuflags.predicate.AESSupportPredicate;
-import jdk.test.lib.cli.CommandLineOptionTest;
-
 import java.util.Arrays;
-import java.util.function.BooleanSupplier;
 
-public abstract class AESIntrinsicsBase extends CommandLineOptionTest {
-    public static final BooleanSupplier AES_SUPPORTED_PREDICATE
-            = new AESSupportPredicate();
+public abstract class AESIntrinsicsBase {
     public static final String CIPHER_INTRINSIC = "com\\.sun\\.crypto\\"
             + ".provider\\.CipherBlockChaining::"
             + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+\\(intrinsic[,\\)]";
@@ -49,10 +43,6 @@ public abstract class AESIntrinsicsBase extends CommandLineOptionTest {
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
             "-Xbatch", "-XX:CompileThresholdScaling=0.01", "-DcheckOutput=true", "-Dmode=CBC",
             TestAESMain.class.getName(), "100", "1000"};
-
-    protected AESIntrinsicsBase(BooleanSupplier predicate) {
-        super(predicate);
-    }
 
     /**
      * Prepares command for TestAESMain execution.

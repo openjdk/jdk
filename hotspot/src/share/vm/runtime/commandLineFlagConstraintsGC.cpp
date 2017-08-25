@@ -33,6 +33,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 
 #if INCLUDE_ALL_GCS
@@ -607,7 +608,7 @@ Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose) {
 }
 
 Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
-  size_t aligned_max = (size_t)align_size_down(max_uintx/2, Metaspace::reserve_alignment_words());
+  size_t aligned_max = align_down(max_uintx/2, Metaspace::reserve_alignment_words());
   if (value > aligned_max) {
     CommandLineError::print(verbose,
                             "InitialBootClassLoaderMetaspaceSize (" SIZE_FORMAT ") must be "
@@ -618,7 +619,7 @@ Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool
   return Flag::SUCCESS;
 }
 
-// To avoid an overflow by 'align_size_up(value, alignment)'.
+// To avoid an overflow by 'align_up(value, alignment)'.
 static Flag::Error MaxSizeForAlignment(const char* name, size_t value, size_t alignment, bool verbose) {
   size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
   if (value > aligned_max) {

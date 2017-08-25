@@ -1,0 +1,38 @@
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+
+exclude org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyCallNode.*
+exclude org.graalvm.compiler.hotspot.replacements.AESCryptSubstitutions.*
+exclude org.graalvm.compiler.hotspot.replacements.CipherBlockChainingSubstitutions.crypt(Ljava/lang/Object;[BII[BILjava/lang/Object;ZZ)V
+exclude org.graalvm.compiler.hotspot.stubs.StubUtil.printf(.*).*
+exclude org.graalvm.compiler.hotspot.stubs.StubUtil.decipher(J)V
+exclude org.graalvm.compiler.hotspot.stubs.StubUtil.fatal(.*).*
+#
+exclude org.graalvm.compiler.replacements.nodes.ArrayEqualsNode.equals(.*).*
+exclude org.graalvm.compiler.replacements.Log.print.*
+exclude org.graalvm.compiler.replacements.ReplacementsUtil.*
+exclude org.graalvm.compiler.replacements.SnippetCounter.*
+exclude org.graalvm.compiler.replacements.SnippetCounterNode.*
+#
+exclude org.graalvm.compiler.nodes.java.NewArrayNode.newUninitializedArray(Ljava/lang/Class;I)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newUninitializedArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.java.DynamicNewArrayNode.newArray(Ljava/lang/Class;ILjdk/vm/ci/meta/JavaKind;)Ljava/lang/Object;
+exclude org.graalvm.compiler.nodes.PiNode.piCastNonNull(Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;

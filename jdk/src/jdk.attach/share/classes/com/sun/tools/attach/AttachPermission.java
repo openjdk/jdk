@@ -28,7 +28,7 @@ package com.sun.tools.attach;
 /**
  * When a {@link java.lang.SecurityManager SecurityManager} set, this
  * is the permission which will be checked when code invokes {@link
- * VirtualMachine#attach VirtalMachine.attach} to attach to a target virtual
+ * VirtualMachine#attach VirtualMachine.attach} to attach to a target virtual
  * machine.
  * This permission is also checked when an {@link
  * com.sun.tools.attach.spi.AttachProvider AttachProvider} is created.

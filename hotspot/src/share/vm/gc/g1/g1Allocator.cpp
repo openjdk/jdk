@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "utilities/align.hpp"
 
 G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
   G1Allocator(heap),
@@ -110,9 +110,6 @@ void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_inf
   // want either way so no reason to check explicitly for either
   // condition.
   _retained_old_gc_alloc_region = old_gc_alloc_region(context)->release();
-  if (_retained_old_gc_alloc_region != NULL) {
-    _retained_old_gc_alloc_region->record_retained_region();
-  }
 }
 
 void G1DefaultAllocator::abandon_gc_alloc_regions() {
@@ -333,11 +330,15 @@ void G1DefaultPLABAllocator::waste(size_t& wasted, size_t& undo_wasted) {
   }
 }
 
-G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h) {
+bool G1ArchiveAllocator::_archive_check_enabled = false;
+G1ArchiveRegionMap G1ArchiveAllocator::_closed_archive_region_map;
+G1ArchiveRegionMap G1ArchiveAllocator::_open_archive_region_map;
+
+G1ArchiveAllocator* G1ArchiveAllocator::create_allocator(G1CollectedHeap* g1h, bool open) {
   // Create the archive allocator, and also enable archive object checking
   // in mark-sweep, since we will be creating archive regions.
-  G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h);
-  G1MarkSweep::enable_archive_object_check();
+  G1ArchiveAllocator* result =  new G1ArchiveAllocator(g1h, open);
+  enable_archive_object_check();
   return result;
 }
 
@@ -350,7 +351,11 @@ bool G1ArchiveAllocator::alloc_new_region() {
     return false;
   }
   assert(hr->is_empty(), "expected empty region (index %u)", hr->hrm_index());
-  hr->set_archive();
+  if (_open) {
+    hr->set_open_archive();
+  } else {
+    hr->set_closed_archive();
+  }
   _g1h->old_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);
@@ -362,7 +367,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Tell mark-sweep that objects in this region are not to be marked.
-  G1MarkSweep::set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), true);
+  set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), _open);
 
   // Since we've modified the old set, call update_sizes.
   _g1h->g1mm()->update_sizes();
@@ -426,7 +431,7 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
                                           size_t end_alignment_in_bytes) {
   assert((end_alignment_in_bytes >> LogHeapWordSize) < HeapRegion::min_region_size_in_words(),
          "alignment " SIZE_FORMAT " too large", end_alignment_in_bytes);
-  assert(is_size_aligned(end_alignment_in_bytes, HeapWordSize),
+  assert(is_aligned(end_alignment_in_bytes, HeapWordSize),
          "alignment " SIZE_FORMAT " is not HeapWord (%u) aligned", end_alignment_in_bytes, HeapWordSize);
 
   // If we've allocated nothing, simply return.
@@ -437,7 +442,7 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
   // If an end alignment was requested, insert filler objects.
   if (end_alignment_in_bytes != 0) {
     HeapWord* currtop = _allocation_region->top();
-    HeapWord* newtop = (HeapWord*)align_ptr_up(currtop, end_alignment_in_bytes);
+    HeapWord* newtop = align_up(currtop, end_alignment_in_bytes);
     size_t fill_size = pointer_delta(newtop, currtop);
     if (fill_size != 0) {
       if (fill_size < CollectedHeap::min_fill_size()) {
@@ -446,8 +451,8 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
         // region boundary because the max supported alignment is smaller than the min
         // region size, and because the allocation code never leaves space smaller than
         // the min_fill_size at the top of the current allocation region.
-        newtop = (HeapWord*)align_ptr_up(currtop + CollectedHeap::min_fill_size(),
-                                         end_alignment_in_bytes);
+        newtop = align_up(currtop + CollectedHeap::min_fill_size(),
+                          end_alignment_in_bytes);
         fill_size = pointer_delta(newtop, currtop);
       }
       HeapWord* fill = archive_mem_allocate(fill_size);

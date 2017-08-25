@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread
 #define method_(field_name) in_bytes(Method::field_name ## _offset()), R19_method
 
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
+  virtual void check_and_handle_popframe(Register scratch_reg);
+  virtual void check_and_handle_earlyret(Register scratch_reg);
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);
@@ -79,6 +79,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Label *is_null = NULL);
 
+  // load cpool->resolved_klass_at(index)
+  void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);
+
   void load_receiver(Register Rparam_count, Register Rrecv_dst);
 
   // helpers for expression stack
@@ -96,8 +99,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void push_2ptrs(Register first, Register second);
 
-  void push_l_pop_d(Register l = R17_tos, FloatRegister d = F15_ftos);
-  void push_d_pop_l(FloatRegister d = F15_ftos, Register l = R17_tos);
+  void move_l_to_d(Register l = R17_tos, FloatRegister d = F15_ftos);
+  void move_d_to_l(FloatRegister d = F15_ftos, Register l = R17_tos);
 
   void pop (TosState state);           // transition vtos -> state
   void push(TosState state);           // transition state -> vtos

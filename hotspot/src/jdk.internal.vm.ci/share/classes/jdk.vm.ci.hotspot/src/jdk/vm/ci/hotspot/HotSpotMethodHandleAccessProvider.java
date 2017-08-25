@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
         static final ResolvedJavaType lambdaFormType;
         static final ResolvedJavaField methodHandleFormField;
         static final ResolvedJavaField lambdaFormVmentryField;
-        static final HotSpotResolvedJavaField memberNameVmtargetField;
+        static final ResolvedJavaField methodField;
+        static final HotSpotResolvedJavaField vmtargetField;
 
         /**
          * Search for an instance field with the given name in a class.
@@ -88,7 +89,10 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
                 lambdaFormType = resolveType("java.lang.invoke.LambdaForm");
                 methodHandleFormField = findFieldInClass(methodHandleType, "form", lambdaFormType);
                 lambdaFormVmentryField = findFieldInClass(lambdaFormType, "vmentry", memberNameType);
-                memberNameVmtargetField = (HotSpotResolvedJavaField) findFieldInClass(memberNameType, "vmtarget", resolveType(long.class));
+                ResolvedJavaType methodType = resolveType("java.lang.invoke.ResolvedMethodName");
+                methodField = findFieldInClass(memberNameType, "method", methodType);
+                vmtargetField = (HotSpotResolvedJavaField) findFieldInClass(methodType, "vmtarget", resolveType(HotSpotJVMCIRuntime.getHostWordKind().toJavaClass()));
+
             } catch (Throwable ex) {
                 throw new JVMCIError(ex);
             }
@@ -139,24 +143,30 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             memberName = constantReflection.readFieldValue(LazyInitialization.lambdaFormVmentryField, lambdaForm);
             assert memberName.isNonNull();
         }
-        return getTargetMethod(memberName);
+        JavaConstant method = constantReflection.readFieldValue(LazyInitialization.methodField, memberName);
+        return getTargetMethod(method);
     }
 
     @Override
     public ResolvedJavaMethod resolveLinkToTarget(JavaConstant memberName) {
-        return getTargetMethod(memberName);
-    }
-
-    /**
-     * Returns the {@link ResolvedJavaMethod} for the vmtarget of a java.lang.invoke.MemberName.
-     */
-    private static ResolvedJavaMethod getTargetMethod(JavaConstant memberName) {
         if (memberName.isNull()) {
             return null;
         }
+        JavaConstant method = constantReflection.readFieldValue(LazyInitialization.methodField, memberName);
+        return getTargetMethod(method);
+    }
 
-        Object object = ((HotSpotObjectConstantImpl) memberName).object();
-        /* Read the ResolvedJavaMethod from the injected field MemberName.vmtarget */
-        return compilerToVM().getResolvedJavaMethod(object, LazyInitialization.memberNameVmtargetField.offset());
+    /**
+     * Returns the {@link ResolvedJavaMethod} for the method of a java.lang.invoke.MemberName.
+     */
+    private static ResolvedJavaMethod getTargetMethod(JavaConstant method) {
+        if (method == null) {
+            // If readFieldValue returns NULL the type was wrong
+            throw new IllegalArgumentException("unexpected type for memberName");
+        }
+
+        Object object = ((HotSpotObjectConstantImpl) method).object();
+        /* Read the ResolvedJavaMethod from the injected field MemberName.method.vmtarget */
+        return compilerToVM().getResolvedJavaMethod(object, LazyInitialization.vmtargetField.offset());
     }
 }

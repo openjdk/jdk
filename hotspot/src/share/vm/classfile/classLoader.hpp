@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public:
   ClassPathEntry* next() const {
     return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
   }
+  virtual ~ClassPathEntry() {}
   void set_next(ClassPathEntry* next) {
     // may have unlocked readers, so ensure visibility.
     OrderAccess::release_store_ptr(&_next, next);
@@ -82,6 +83,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
   ClassPathDirEntry(const char* dir);
+  virtual ~ClassPathDirEntry() {}
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
@@ -120,7 +122,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append);
-  ~ClassPathZipEntry();
+  virtual ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
   u1* open_versioned_entry(const char* name, jint* filesize, TRAPS) NOT_CDS_RETURN_(NULL);
   ClassFileStream* open_stream(const char* name, TRAPS);
@@ -143,7 +145,7 @@ public:
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const { return _jimage; }
   ClassPathImageEntry(JImageFile* jimage, const char* name);
-  ~ClassPathImageEntry();
+  virtual ~ClassPathImageEntry();
   ClassFileStream* open_stream(const char* name, TRAPS);
 
   // Debugging
@@ -371,7 +373,7 @@ class ClassLoader: AllStatic {
                                                 const char* const file_name, TRAPS);
 
   // Load individual .class file
-  static instanceKlassHandle load_class(Symbol* class_name, bool search_append_only, TRAPS);
+  static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.
@@ -395,6 +397,7 @@ class ClassLoader: AllStatic {
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
+    assert(n >= 0 && n < _num_entries, "sanity");
     if (n == 0) {
       assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
       return ClassLoader::_jrt_entry;
@@ -411,6 +414,10 @@ class ClassLoader: AllStatic {
       }
       return e;
     }
+  }
+
+  static int number_of_classpath_entries() {
+    return _num_entries;
   }
 
   static bool is_in_patch_mod_entries(Symbol* module_name);

@@ -108,7 +108,7 @@ class ElfFile: public CHeapObj<mtInternal> {
 
  private:
   // sanity check, if the file is a real elf file
-  bool is_elf_file(Elf_Ehdr&);
+  static bool is_elf_file(Elf_Ehdr&);
 
   // load string tables from the elf file
   bool load_tables();
@@ -132,7 +132,7 @@ protected:
   // Returns false if the elf file requires an executable stack, the stack flag
   // is not set at all, or if the file can not be read.
   // On systems other than linux it always returns false.
-  bool specifies_noexecstack() NOT_LINUX({ return false; });
+  static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
  protected:
     ElfFile*         m_next;

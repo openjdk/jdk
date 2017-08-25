@@ -38,12 +38,12 @@ package javax.transaction.xa;
 public interface Xid {
 
     /**
-     * Maximum number of bytes returned by getGtrid.
+     * Maximum number of bytes returned by {@link #getGlobalTransactionId }.
      */
     final static int MAXGTRIDSIZE = 64;
 
     /**
-     * Maximum number of bytes returned by getBqual.
+     * Maximum number of bytes returned by {@link #getBranchQualifier }.
      */
     final static int MAXBQUALSIZE = 64;
 

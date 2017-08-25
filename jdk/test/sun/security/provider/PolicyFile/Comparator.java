@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import javax.security.auth.x500.X500Principal;
 import sun.security.provider.PolicyFile;
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.NTUserPrincipal;
-import com.sun.security.auth.SolarisPrincipal;
 
 public class Comparator {
 
@@ -88,7 +87,7 @@ public class Comparator {
                                 new X500Principal("cn=x500") };
 
     private static final Principal[] badP = new Principal[] {
-                                new SolarisPrincipal("bad") };
+                                new UnixPrincipal("bad") };
 
     public static class PCompare1 implements Principal {
 

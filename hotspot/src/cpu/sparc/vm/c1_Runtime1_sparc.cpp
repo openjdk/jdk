@@ -35,6 +35,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
@@ -251,7 +252,7 @@ void Runtime1::initialize_pd() {
   // SP -> ---------------
   //
   int i;
-  int sp_offset = round_to(frame::register_save_words, 2); //  start doubleword aligned
+  int sp_offset = align_up((int)frame::register_save_words, 2); //  start doubleword aligned
 
   // only G int registers are saved explicitly; others are found in register windows
   for (i = 0; i < FrameMap::nof_cpu_regs; i++) {
@@ -272,7 +273,7 @@ void Runtime1::initialize_pd() {
   // this should match assembler::total_frame_size_in_bytes, which
   // isn't callable from this context.  It's checked by an assert when
   // it's used though.
-  frame_size_in_bytes = align_size_up(sp_offset * wordSize, 8);
+  frame_size_in_bytes = align_up(sp_offset * wordSize, 8);
 }
 
 
@@ -930,11 +931,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         Label not_already_dirty, restart, refill, young_card;
 
-#ifdef _LP64
         __ srlx(addr, CardTableModRefBS::card_shift, addr);
-#else
-        __ srl(addr, CardTableModRefBS::card_shift, addr);
-#endif
 
         AddressLiteral rs(byte_map_base);
         __ set(rs, cardtable);         // cardtable := <card table base>

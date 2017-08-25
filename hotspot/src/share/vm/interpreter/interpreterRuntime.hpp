@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ class InterpreterRuntime: AllStatic {
   static ConstantPoolCacheEntry* cache_entry_at(JavaThread *thread, int i)  { return method(thread)->constants()->cache()->entry_at(i); }
   static ConstantPoolCacheEntry* cache_entry(JavaThread *thread)            { return cache_entry_at(thread, Bytes::get_native_u2(bcp(thread) + 1)); }
   static void      note_trap_inner(JavaThread* thread, int reason,
-                                   methodHandle trap_method, int trap_bci, TRAPS);
+                                   const methodHandle& trap_method, int trap_bci, TRAPS);
   static void      note_trap(JavaThread *thread, int reason, TRAPS);
 #ifdef CC_INTERP
   // Profile traps in C++ interpreter.

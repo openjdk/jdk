@@ -22,13 +22,10 @@
  */
 package org.graalvm.compiler.lir;
 
-import org.graalvm.compiler.common.PermanentBailoutException;
-import org.graalvm.compiler.lir.phases.LIRSuites;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
-import org.graalvm.compiler.options.StableOptionValue;
 
 /**
  * Restarts the {@link LIR low-level} compilation with a modified configuration.
@@ -40,7 +37,7 @@ public abstract class BailoutAndRestartBackendException extends PermanentBailout
     public static class Options {
         // @formatter:off
         @Option(help = "Unlock backend restart feature.", type = OptionType.Debug)
-        public static final StableOptionValue<Boolean> LIRUnlockBackendRestart = new StableOptionValue<>(false);
+        public static final OptionKey<Boolean> LIRUnlockBackendRestart = new OptionKey<>(false);
         // @formatter:on
     }
 
@@ -53,21 +50,4 @@ public abstract class BailoutAndRestartBackendException extends PermanentBailout
     public BailoutAndRestartBackendException(Throwable cause, String msg) {
         super(cause, msg);
     }
-
-    /** Returns {@code true} if the low-level compilation should be restarted. */
-    public abstract boolean shouldRestart();
-
-    /**
-     * Returns an {@link OverrideScope} to change {@link OptionValue OptionValues} or {@code null}
-     * if no changes are required.
-     */
-    public abstract OverrideScope getOverrideScope();
-
-    /**
-     * Updates the {@link LIRSuites} used by the low-level compiler. Note that {@link LIRSuites} are
-     * usually shared, so a modified input parameter will affect other compilations. In case only
-     * the current compilation should be altered, create a copy using {@link LIRSuites#copy()}.
-     */
-    public abstract LIRSuites updateLIRSuites(LIRSuites lirSuites);
-
 }
