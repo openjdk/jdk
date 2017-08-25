@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ ciObject::ciObject(oop o) {
   if (ciObjectFactory::is_initialized()) {
     _handle = JNIHandles::make_local(o);
   } else {
-    _handle = JNIHandles::make_global(o);
+    Handle obj(Thread::current(), o);
+    _handle = JNIHandles::make_global(obj);
   }
   _klass = NULL;
   init_flags_from(o);

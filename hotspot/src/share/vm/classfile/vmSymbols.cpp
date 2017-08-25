@@ -26,7 +26,9 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -179,6 +181,15 @@ void vmSymbols::symbols_do(SymbolClosure* f) {
   }
   for (int i = 0; i < T_VOID+1; i++) {
     f->do_symbol(&_type_signatures[i]);
+  }
+}
+
+void vmSymbols::metaspace_pointers_do(MetaspaceClosure *it) {
+  for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
+    it->push(&_symbols[index]);
+  }
+  for (int i = 0; i < T_VOID+1; i++) {
+    it->push(&_type_signatures[i]);
   }
 }
 
@@ -395,6 +406,21 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
     return false;
   default:
     return true;
+  }
+}
+
+// Some intrinsics produce different results if they are not pinned
+bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_counterTime:
+#endif
+  case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_nanoTime:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -891,6 +917,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;
   case F_RNY:fname = "native synchronized "; break;
+  default:   break;
   }
   const char* kptr = strrchr(kname, '/');
   if (kptr != NULL)  kname = kptr + 1;
@@ -988,6 +1015,8 @@ void vmIntrinsics::verify_method(ID actual_id, Method* m) {
       declared_id = match_method_with_klass(m, vmSymbols::java_lang_Math());
       if (declared_id == actual_id)  return; // acceptable alias
       break;
+    default:
+        break;
     }
   }
 

@@ -2740,8 +2740,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         // set already but no need to check.
         __ cbz(rscratch1, next);
 
-        __ andr(rscratch1, tmp, TypeEntries::type_unknown);
-        __ cbnz(rscratch1, next); // already unknown. Nothing to do anymore.
+        __ tbnz(tmp, exact_log2(TypeEntries::type_unknown), next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
           __ cbz(rscratch2, none);
@@ -2761,8 +2760,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
 
         __ ldr(tmp, mdo_addr);
-        __ andr(rscratch1, tmp, TypeEntries::type_unknown);
-        __ cbnz(rscratch1, next); // already unknown. Nothing to do anymore.
+        __ tbnz(tmp, exact_log2(TypeEntries::type_unknown), next); // already unknown. Nothing to do anymore.
       }
 
       // different than before. Cannot keep accurate profile.
@@ -2812,8 +2810,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
 
         __ ldr(tmp, mdo_addr);
-        __ andr(rscratch1, tmp, TypeEntries::type_unknown);
-        __ cbnz(rscratch1, next); // already unknown. Nothing to do anymore.
+        __ tbnz(tmp, exact_log2(TypeEntries::type_unknown), next); // already unknown. Nothing to do anymore.
 
         __ orr(tmp, tmp, TypeEntries::type_unknown);
         __ str(tmp, mdo_addr);

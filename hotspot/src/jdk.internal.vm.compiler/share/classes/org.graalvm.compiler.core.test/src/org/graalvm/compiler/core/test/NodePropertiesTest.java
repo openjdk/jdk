@@ -22,11 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -35,13 +31,14 @@ import org.graalvm.compiler.java.ComputeLoopFrequenciesClosure;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.spi.NodeCostProvider;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase.CustomCanonicalizer;
 import org.graalvm.compiler.phases.contract.NodeCostUtil;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class NodePropertiesTest extends GraalCompilerTest {
 
@@ -58,9 +55,11 @@ public class NodePropertiesTest extends GraalCompilerTest {
             x = 2;
             sideEffect = null;
         }
+        int b = 4;
         sideEffect = null;
+        int c = b % 5;
         // can shift
-        return a * x * 4;
+        return a * x * c;
     }
 
     public static int test2Snippet(int a) {
@@ -74,7 +73,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         }
         sideEffect = null;
         // cannot shift
-        return a * x * 3;
+        return a * x * 41;
     }
 
     public static final int ITERATIONS_LOOP_1 = 128;
@@ -145,9 +144,8 @@ public class NodePropertiesTest extends GraalCompilerTest {
     }
 
     public static int arrayStoreTest(int a) {
-        String s = String.valueOf(a);
-        array[2] = s;
-        return s.length();
+        array[2] = a;
+        return a;
     }
 
     public static int fieldLoad(int a) {
@@ -162,10 +160,10 @@ public class NodePropertiesTest extends GraalCompilerTest {
     @Test
     public void testCanonicalizationExample() {
         HighTierContext htc = getDefaultHighTierContext();
-        ImprovementSavingCanonicalizer c1 = new ImprovementSavingCanonicalizer(htc.getNodeCostProvider());
+        ImprovementSavingCanonicalizer c1 = new ImprovementSavingCanonicalizer();
         StructuredGraph g1 = parseForCompile(getResolvedJavaMethod("test1Snippet"));
         new CanonicalizerPhase(c1).apply(g1, htc);
-        ImprovementSavingCanonicalizer c2 = new ImprovementSavingCanonicalizer(htc.getNodeCostProvider());
+        ImprovementSavingCanonicalizer c2 = new ImprovementSavingCanonicalizer();
         StructuredGraph g2 = parseForCompile(getResolvedJavaMethod("test2Snippet"));
         new CanonicalizerPhase(c2).apply(g2, htc);
         Assert.assertTrue(c1.savedCycles > c2.savedCycles);
@@ -197,7 +195,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testDifferentLoopFaster --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testDifferentLoopFaster --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
         Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
@@ -215,7 +213,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testSameLoopMoreIterationsCostlier --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testSameLoopMoreIterationsCostlier --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
         Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
@@ -232,7 +230,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test testDifferentLoopsInnerOuter --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
+        g1.getDebug().log("Test testDifferentLoopsInnerOuter --> 1.Graph cycles:%f size:%f vs. 2.Graph cycles:%f size:%f\n", gc1.finalCycles, gc1.finalSize, gc2.finalCycles, gc2.finalSize);
         Assert.assertTrue(gc2.finalSize > gc1.finalSize);
     }
 
@@ -247,9 +245,9 @@ public class NodePropertiesTest extends GraalCompilerTest {
         GraphCostPhase gc2 = new GraphCostPhase();
         gc1.apply(g1, htc);
         gc2.apply(g2, htc);
-        Debug.log("Test Graph Cost --> 1.Graph cost:%f vs. 2.Graph cost:%f\n", gc1.finalCycles, gc2.finalCycles);
+        g1.getDebug().log("Test Graph Cost --> 1.Graph cost:%f vs. 2.Graph cost:%f\n", gc1.finalCycles, gc2.finalCycles);
         Assert.assertTrue(gc2.finalCycles > gc1.finalCycles);
-        Assert.assertTrue(gc2.finalSize == gc1.finalSize + 1/* mul has 3 const input */);
+        Assert.assertTrue(gc2.finalSize == gc1.finalSize);
     }
 
     @Test
@@ -268,7 +266,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(35, gc1.finalCycles, 25);
+        Assert.assertEquals(15, gc1.finalCycles, 25);
     }
 
     @Test
@@ -278,7 +276,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(50, gc1.finalCycles, 25);
+        Assert.assertEquals(15, gc1.finalCycles, 25);
     }
 
     @Test
@@ -288,7 +286,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(30, gc1.finalCycles, 25);
+        Assert.assertEquals(15, gc1.finalCycles, 25);
     }
 
     @Test
@@ -298,16 +296,11 @@ public class NodePropertiesTest extends GraalCompilerTest {
         new CanonicalizerPhase().apply(g1, htc);
         GraphCostPhase gc1 = new GraphCostPhase();
         gc1.apply(g1, htc);
-        Assert.assertEquals(120, gc1.finalCycles, 25);
+        Assert.assertEquals(15, gc1.finalCycles, 25);
     }
 
     static class ImprovementSavingCanonicalizer extends CustomCanonicalizer {
         private int savedCycles;
-        private final NodeCostProvider nodeCostProvider;
-
-        ImprovementSavingCanonicalizer(NodeCostProvider nodeCostProvider) {
-            this.nodeCostProvider = nodeCostProvider;
-        }
 
         @Override
         public void simplify(Node node, SimplifierTool tool) {
@@ -316,7 +309,7 @@ public class NodePropertiesTest extends GraalCompilerTest {
                 Canonicalizable.Binary<ValueNode> bc = (Canonicalizable.Binary<ValueNode>) node;
                 Node canonicalized = bc.canonical(tool, bc.getX(), bc.getY());
                 if (canonicalized != node) {
-                    savedCycles += nodeCostProvider.getEstimatedCPUCycles(node) - nodeCostProvider.getEstimatedCPUCycles(canonicalized);
+                    savedCycles += node.estimatedNodeCycles().value - canonicalized.estimatedNodeCycles().value;
                 }
             }
         }
@@ -328,8 +321,8 @@ public class NodePropertiesTest extends GraalCompilerTest {
 
         @Override
         protected void run(StructuredGraph graph, PhaseContext context) {
-            finalCycles = NodeCostUtil.computeGraphCycles(graph, context.getNodeCostProvider(), true);
-            finalSize = NodeCostUtil.computeGraphSize(graph, context.getNodeCostProvider());
+            finalCycles = NodeCostUtil.computeGraphCycles(graph, true);
+            finalSize = NodeCostUtil.computeGraphSize(graph);
         }
 
     }

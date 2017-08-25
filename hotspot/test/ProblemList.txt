@@ -40,14 +40,19 @@
 
 # :hotspot_compiler
 
+compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8180324 generic-all
 compiler/startup/SmallCodeCacheStartup.java 8134286 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 compiler/types/correctness/CorrectnessTest.java 8066173 generic-all
 compiler/types/correctness/OffTest.java 8066173 generic-all
+
+# aot test intermittently failing in jprt 8175791
+compiler/aot/DeoptimizationTest.java 8175791 windows-all
 
 #############################################################################
 
@@ -56,6 +61,9 @@ compiler/types/correctness/OffTest.java 8066173 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
+gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
+gc/stress/gclocker/TestGCLockerWithG1.java 8179226 generic-all
+gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8177765 generic-all
 
 #############################################################################
 
@@ -64,7 +72,6 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 # This test is disabled since it will stress NMT and timeout during normal testing
 runtime/NMT/MallocStressTest.java 8166548 generic-all
-runtime/SharedArchiveFile/BootAppendTests.java 8179103 generic-all
 runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################
@@ -74,6 +81,11 @@ runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 serviceability/jdwp/AllModulesCommandTest.java 8170541 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
 serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook/MAAClassFileLoadHook.java 8173936 generic-all
+serviceability/sa/JhsdbThreadInfoTest.java 8184042 macosx-all
+serviceability/sa/TestInstanceKlassSize.java 8184042 macosx-all
+serviceability/sa/TestInstanceKlassSizeForInterface.java 8184042 macosx-all
+serviceability/sa/TestPrintMdo.java 8184042 macosx-all
+serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 8184042 macosx-all
 
 #############################################################################
 

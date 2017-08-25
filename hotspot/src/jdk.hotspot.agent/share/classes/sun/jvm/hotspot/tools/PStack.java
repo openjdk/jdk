@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,10 @@ public class PStack extends Tool {
                out.print("----------------- ");
                out.print(th);
                out.println(" -----------------");
+               JavaThread jthread = (JavaThread) proxyToThread.get(th);
+               if (jthread != null) {
+                  jthread.printThreadInfoOn(out);
+               }
                while (f != null) {
                   ClosestSymbol sym = f.closestSymbolToPC();
                   Address pc = f.pc();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,18 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * and those seven fields omit much of the information in Method.
  * @author jrose
  */
+/*non-public*/ final class ResolvedMethodName {
+    //@Injected JVM_Method* vmtarget;
+    //@Injected Class<?>    vmholder;
+};
+
 /*non-public*/ final class MemberName implements Member, Cloneable {
-    private Class<?> clazz;       // class in which the method is defined
+    private Class<?> clazz;       // class in which the member is defined
     private String   name;        // may be null if not yet materialized
     private Object   type;        // may be null if not yet materialized
     private int      flags;       // modifier bits; see reflect.Modifier
-    //@Injected JVM_Method* vmtarget;
-    //@Injected int         vmindex;
+    private ResolvedMethodName method;    // cached resolved method information
+    //@Injected intptr_t       vmindex;   // vtable index or offset of resolved member
     Object   resolution;  // if null, this guy is resolved
 
     /** Return the declaring class of this member.

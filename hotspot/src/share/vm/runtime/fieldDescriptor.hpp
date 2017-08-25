@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
     reinitialize(ik, index);
   }
   Symbol* name() const {
-    return field()->name(_cp);
+    return field()->name(_cp());
   }
   Symbol* signature() const {
-    return field()->signature(_cp);
+    return field()->signature(_cp());
   }
   InstanceKlass* field_holder()   const    { return _cp->pool_holder(); }
   ConstantPool* constants()       const    { return _cp(); }

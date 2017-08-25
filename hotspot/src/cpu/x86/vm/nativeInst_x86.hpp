@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -715,8 +715,8 @@ inline bool NativeInstruction::is_safepoint_poll() {
   if (((ubyte_at(0) & NativeTstRegMem::instruction_rex_prefix_mask) == NativeTstRegMem::instruction_rex_prefix &&
        ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl &&
        (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) ||
-      ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-      (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) {
+      (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+       (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg)) {
     NOT_JVMCI(assert(Assembler::is_polling_page_far(), "unexpected poll encoding");)
     return true;
   }

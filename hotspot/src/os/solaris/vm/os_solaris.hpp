@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,6 @@ class Solaris {
   static int (*get_libjsig_version)();
   static void save_preinstalled_handler(int, struct sigaction&);
   static void check_signal_handler(int sig);
-  // For overridable signals
-  static int _SIGasync;                      // user-overridable ASYNC_SIGNAL
-  static void set_SIGasync(int newsig) { _SIGasync = newsig; }
 
   typedef int (*pthread_setname_np_func_t)(pthread_t, const char*);
   static pthread_setname_np_func_t _pthread_setname_np;
@@ -120,7 +117,6 @@ class Solaris {
   // Large Page Support--ISM.
   static bool largepage_range(char* addr, size_t size);
 
-  static int SIGasync() { return _SIGasync; }
   static address handler_start, handler_end; // start and end pc of thr_sighndlrinfo
 
   static bool valid_stack_address(Thread* thread, address sp);
@@ -263,7 +259,6 @@ class Solaris {
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
-  static sigset_t* allowdebug_blocked_signals();
 
   // %%% Following should be promoted to os.hpp:
   // Trace number of created threads

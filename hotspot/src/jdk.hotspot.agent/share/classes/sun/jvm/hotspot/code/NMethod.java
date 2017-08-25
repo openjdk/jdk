@@ -71,7 +71,7 @@ public class NMethod extends CompiledMethod {
       stack.  An not_entrant method can be removed when there is no
       more activations, i.e., when the _stack_traversal_mark is less than
       current sweep traversal index. */
-  private static CIntegerField stackTraversalMarkField;
+  private static JLongField stackTraversalMarkField;
 
   private static CIntegerField compLevelField;
 
@@ -105,7 +105,7 @@ public class NMethod extends CompiledMethod {
     verifiedEntryPointField     = type.getAddressField("_verified_entry_point");
     osrEntryPointField          = type.getAddressField("_osr_entry_point");
     lockCountField              = type.getJIntField("_lock_count");
-    stackTraversalMarkField     = type.getCIntegerField("_stack_traversal_mark");
+    stackTraversalMarkField     = type.getJLongField("_stack_traversal_mark");
     compLevelField              = type.getCIntegerField("_comp_level");
     pcDescSize = db.lookupType("PcDesc").getSize();
   }

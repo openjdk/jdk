@@ -22,16 +22,16 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
+import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static org.graalvm.compiler.lir.LIRValueUtil.asConstant;
 import static org.graalvm.compiler.lir.LIRValueUtil.isConstantValue;
 import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.alloc.lsra.Interval;
 import org.graalvm.compiler.lir.alloc.lsra.LinearScan;
@@ -44,8 +44,8 @@ import jdk.vm.ci.meta.Value;
 
 class SSALinearScanResolveDataFlowPhase extends LinearScanResolveDataFlowPhase {
 
-    private static final DebugCounter numPhiResolutionMoves = Debug.counter("SSA LSRA[numPhiResolutionMoves]");
-    private static final DebugCounter numStackToStackMoves = Debug.counter("SSA LSRA[numStackToStackMoves]");
+    private static final CounterKey numPhiResolutionMoves = DebugContext.counter("SSA LSRA[numPhiResolutionMoves]");
+    private static final CounterKey numStackToStackMoves = DebugContext.counter("SSA LSRA[numStackToStackMoves]");
 
     SSALinearScanResolveDataFlowPhase(LinearScan allocator) {
         super(allocator);
@@ -60,7 +60,7 @@ class SSALinearScanResolveDataFlowPhase extends LinearScanResolveDataFlowPhase {
             int fromBlockLastInstructionId = allocator.getLastLirInstructionId(fromBlock) + 1;
 
             AbstractBlockBase<?> phiOutBlock = midBlock != null ? midBlock : fromBlock;
-            List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(phiOutBlock);
+            ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(phiOutBlock);
             int phiOutIdx = SSAUtil.phiOutIndex(allocator.getLIR(), phiOutBlock);
             int phiOutId = midBlock != null ? fromBlockLastInstructionId : instructions.get(phiOutIdx).id();
             assert phiOutId >= 0;
@@ -72,17 +72,18 @@ class SSALinearScanResolveDataFlowPhase extends LinearScanResolveDataFlowPhase {
                     assert !isRegister(phiOut) : "phiOut is a register: " + phiOut;
                     assert !isRegister(phiIn) : "phiIn is a register: " + phiIn;
                     Interval toInterval = allocator.splitChildAtOpId(allocator.intervalFor(phiIn), toBlockFirstInstructionId, LIRInstruction.OperandMode.DEF);
+                    DebugContext debug = allocator.getDebug();
                     if (isConstantValue(phiOut)) {
-                        numPhiResolutionMoves.increment();
+                        numPhiResolutionMoves.increment(debug);
                         moveResolver.addMapping(asConstant(phiOut), toInterval);
                     } else {
                         Interval fromInterval = allocator.splitChildAtOpId(allocator.intervalFor(phiOut), phiOutId, LIRInstruction.OperandMode.DEF);
                         if (fromInterval != toInterval && !fromInterval.location().equals(toInterval.location())) {
-                            numPhiResolutionMoves.increment();
+                            numPhiResolutionMoves.increment(debug);
                             if (!(isStackSlotValue(toInterval.location()) && isStackSlotValue(fromInterval.location()))) {
                                 moveResolver.addMapping(fromInterval, toInterval);
                             } else {
-                                numStackToStackMoves.increment();
+                                numStackToStackMoves.increment(debug);
                                 moveResolver.addMapping(fromInterval, toInterval);
                             }
                         }

@@ -31,7 +31,7 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import org.graalvm.compiler.asm.Label;
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
@@ -110,6 +110,8 @@ public class AMD64ControlFlow {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            boolean isNegated = false;
+            int jccPos = masm.position();
             /*
              * The strategy for emitting jumps is: If either trueDestination or falseDestination is
              * the successor block, assume the block scheduler did the correct thing and jcc to the
@@ -120,15 +122,18 @@ public class AMD64ControlFlow {
              */
             if (crb.isSuccessorEdge(trueDestination)) {
                 jcc(masm, true, falseDestination);
+                isNegated = true;
             } else if (crb.isSuccessorEdge(falseDestination)) {
                 jcc(masm, false, trueDestination);
             } else if (trueDestinationProbability < 0.5) {
                 jcc(masm, true, falseDestination);
                 masm.jmp(trueDestination.label());
+                isNegated = true;
             } else {
                 jcc(masm, false, trueDestination);
                 masm.jmp(falseDestination.label());
             }
+            crb.recordBranch(jccPos, isNegated);
         }
 
         protected void jcc(AMD64MacroAssembler masm, boolean negate, LabelRef target) {

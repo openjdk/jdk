@@ -27,7 +27,7 @@ import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import java.util.ArrayList;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -82,7 +82,8 @@ public final class HotSpotZapRegistersPhase extends PostAllocationOptimizationPh
     @SuppressWarnings("try")
     private static void processBlock(DiagnosticLIRGeneratorTool diagnosticLirGenTool, HotSpotLIRGenerationResult res, LIR lir, LIRInsertionBuffer buffer, AbstractBlockBase<?> block,
                     boolean zapRegisters, boolean zapStack) {
-        try (Indent indent = Debug.logAndIndent("Process block %s", block)) {
+        DebugContext debug = lir.getDebug();
+        try (Indent indent = debug.logAndIndent("Process block %s", block)) {
             ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             buffer.init(instructions);
             for (int index = 0; index < instructions.size(); index++) {
@@ -100,7 +101,7 @@ public final class HotSpotZapRegistersPhase extends PostAllocationOptimizationPh
                         SaveRegistersOp old = res.getCalleeSaveInfo().put(state, zap);
                         assert old == null : "Already another SaveRegisterOp registered! " + old;
                         buffer.append(index + 1, (LIRInstruction) zap);
-                        Debug.log("Insert ZapRegister after %s", inst);
+                        debug.log("Insert ZapRegister after %s", inst);
                     }
                 }
             }

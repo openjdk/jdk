@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
-inline jlong Atomic::load (volatile jlong* src) {
+inline jlong Atomic::load (const volatile jlong* src) {
   assert(((intx)src & (sizeof(jlong)-1)) == 0, "Atomic load jlong mis-aligned");
 #ifdef AARCH64
   return *src;

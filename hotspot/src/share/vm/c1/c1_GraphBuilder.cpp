@@ -347,6 +347,9 @@ void BlockListBuilder::set_leaders() {
         current = NULL;
         break;
       }
+
+      default:
+        break;
     }
   }
 }
@@ -1488,6 +1491,8 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
       x = append(new LogicOp(Bytecodes::_iand, x, mask));
       break;
     }
+    default:
+      break;
   }
 
   // Check to see whether we are inlining. If so, Return
@@ -1540,13 +1545,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
         ciMethod* caller = state()->scope()->method();
         ciMethodData* md = caller->method_data_or_null();
         ciProfileData* data = md->bci_to_data(invoke_bci);
-        if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
-          bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
-          // May not be true in case of an inlined call through a method handle intrinsic.
-          if (has_return) {
-            profile_return_type(x, method(), caller, invoke_bci);
-          }
-        }
+        profile_return_type(x, method(), caller, invoke_bci);
       }
     }
     Goto* goto_callee = new Goto(continuation(), false);
@@ -1853,6 +1852,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     case Bytecodes::_invokehandle:
       code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
       break;
+    default:
+      break;
     }
   } else {
     if (bc_raw == Bytecodes::_invokehandle) {
@@ -1999,12 +2000,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // check if we could do inlining
   if (!PatchALot && Inline && target->is_loaded() &&
-      (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
+      (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
       && !patch_for_appendix) {
     // callee is known => check if we have static binding
     if (code == Bytecodes::_invokestatic  ||
         code == Bytecodes::_invokespecial ||
-        code == Bytecodes::_invokevirtual && target->is_final_method() ||
+        (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
       ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
       // static binding => check if callee is ok
@@ -4311,6 +4312,8 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 #endif // INCLUDE_TRACE
 
+  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);
+
   if (!compilation()->directive()->PrintInliningOption) {
     return;
   }
@@ -4364,7 +4367,10 @@ void GraphBuilder::profile_return_type(Value ret, ciMethod* callee, ciMethod* m,
   ciMethodData* md = m->method_data_or_null();
   ciProfileData* data = md->bci_to_data(invoke_bci);
   if (data != NULL && (data->is_CallTypeData() || data->is_VirtualCallTypeData())) {
-    append(new ProfileReturnType(m , invoke_bci, callee, ret));
+    bool has_return = data->is_CallTypeData() ? ((ciCallTypeData*)data)->has_return() : ((ciVirtualCallTypeData*)data)->has_return();
+    if (has_return) {
+      append(new ProfileReturnType(m , invoke_bci, callee, ret));
+    }
   }
 }
 

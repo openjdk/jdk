@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.memory;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -31,13 +31,14 @@ import org.graalvm.compiler.nodes.DeoptimizingFixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
+import org.graalvm.word.LocationIdentity;
 
 /**
  * Accesses a value at an memory address specified by an {@linkplain #address address}. The access
  * does not include a null check on the object.
  */
 @NodeInfo
-public abstract class FixedAccessNode extends DeoptimizingFixedWithNextNode implements Access {
+public abstract class FixedAccessNode extends DeoptimizingFixedWithNextNode implements Access, IterableNodeType {
     public static final NodeClass<FixedAccessNode> TYPE = NodeClass.create(FixedAccessNode.class);
 
     @OptionalInput(InputType.Guard) protected GuardingNode guard;

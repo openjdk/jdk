@@ -76,7 +76,7 @@ public abstract class BinaryOpLogicNode extends LogicNode implements LIRLowerabl
     @SuppressWarnings("deprecation")
     public LogicNode maybeCommuteInputs() {
         assert this instanceof BinaryCommutative;
-        if (!y.isConstant() && x.getId() > y.getId()) {
+        if (!y.isConstant() && (x.isConstant() || x.getId() > y.getId())) {
             ValueNode tmp = x;
             x = y;
             y = tmp;
@@ -91,9 +91,9 @@ public abstract class BinaryOpLogicNode extends LogicNode implements LIRLowerabl
         return this;
     }
 
-    public abstract Stamp getSucceedingStampForX(boolean negated);
+    public abstract Stamp getSucceedingStampForX(boolean negated, Stamp xStamp, Stamp yStamp);
 
-    public abstract Stamp getSucceedingStampForY(boolean negated);
+    public abstract Stamp getSucceedingStampForY(boolean negated, Stamp xStamp, Stamp yStamp);
 
     public abstract TriState tryFold(Stamp xStamp, Stamp yStamp);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,8 @@ void LIR_Op2::verify() const {
       assert(in_opr1()->is_valid() && in_opr2()->is_valid(), "must be valid");
       break;
 
+    default:
+      break;
     }
   }
 #endif
@@ -394,6 +396,8 @@ void LIR_Op1::verify() const {
     break;
   case lir_return:
     assert(in_opr()->is_register() || in_opr()->is_illegal(), "must be");
+    break;
+  default:
     break;
   }
 }

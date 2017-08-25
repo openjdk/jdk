@@ -71,11 +71,11 @@ public abstract class Edges extends Fields {
         return (NodeList<Node>) UNSAFE.getObject(node, offset);
     }
 
-    private static void putNodeUnsafe(Node node, long offset, Node value) {
+    public static void putNodeUnsafe(Node node, long offset, Node value) {
         UNSAFE.putObject(node, offset, value);
     }
 
-    private static void putNodeListUnsafe(Node node, long offset, NodeList<?> value) {
+    public static void putNodeListUnsafe(Node node, long offset, NodeList<?> value) {
         UNSAFE.putObject(node, offset, value);
     }
 

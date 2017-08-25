@@ -34,7 +34,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #ifdef ASSERT
 #include "memory/guardedMemory.hpp"
@@ -60,6 +60,7 @@
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 
@@ -70,7 +71,7 @@ OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
 volatile int32_t* os::_mem_serialize_page = NULL;
 uintptr_t         os::_serialize_page_mask = 0;
-long              os::_rand_seed          = 1;
+volatile unsigned int os::_rand_seed      = 1;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
 size_t            os::_page_sizes[os::page_sizes_max];
@@ -291,9 +292,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
       default: {
         // Dispatch the signal to java
         HandleMark hm(THREAD);
-        Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_misc_Signal(), THREAD);
-        KlassHandle klass (THREAD, k);
-        if (klass.not_null()) {
+        Klass* klass = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_misc_Signal(), THREAD);
+        if (klass != NULL) {
           JavaValue result(T_VOID);
           JavaCallArguments args;
           args.push_int(sig);
@@ -338,23 +338,22 @@ void os::init_before_ergo() {
   // We need to adapt the configured number of stack protection pages given
   // in 4K pages to the actual os page size. We must do this before setting
   // up minimal stack sizes etc. in os::init_2().
-  JavaThread::set_stack_red_zone_size     (align_size_up(StackRedPages      * 4 * K, vm_page_size()));
-  JavaThread::set_stack_yellow_zone_size  (align_size_up(StackYellowPages   * 4 * K, vm_page_size()));
-  JavaThread::set_stack_reserved_zone_size(align_size_up(StackReservedPages * 4 * K, vm_page_size()));
-  JavaThread::set_stack_shadow_zone_size  (align_size_up(StackShadowPages   * 4 * K, vm_page_size()));
+  JavaThread::set_stack_red_zone_size     (align_up(StackRedPages      * 4 * K, vm_page_size()));
+  JavaThread::set_stack_yellow_zone_size  (align_up(StackYellowPages   * 4 * K, vm_page_size()));
+  JavaThread::set_stack_reserved_zone_size(align_up(StackReservedPages * 4 * K, vm_page_size()));
+  JavaThread::set_stack_shadow_zone_size  (align_up(StackShadowPages   * 4 * K, vm_page_size()));
 
   // VM version initialization identifies some characteristics of the
   // platform that are used during ergonomic decisions.
   VM_Version::init_before_ergo();
 }
 
-void os::signal_init() {
+void os::signal_init(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    EXCEPTION_MARK;
     Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
-    instanceKlassHandle klass (THREAD, k);
-    instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
 
     const char thread_name[] = "Signal Dispatcher";
     Handle string = java_lang_String::create_from_str(thread_name, CHECK);
@@ -363,14 +362,14 @@ void os::signal_init() {
     Handle thread_group (THREAD, Universe::system_thread_group());
     JavaValue result(T_VOID);
     JavaCalls::call_special(&result, thread_oop,
-                           klass,
+                           ik,
                            vmSymbols::object_initializer_name(),
                            vmSymbols::threadgroup_string_void_signature(),
                            thread_group,
                            string,
                            CHECK);
 
-    KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
+    Klass* group = SystemDictionary::ThreadGroup_klass();
     JavaCalls::call_special(&result,
                             thread_group,
                             group,
@@ -575,21 +574,10 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
-#ifdef ASSERT
-  // checking for the WatcherThread and crash_protection first
-  // since os::malloc can be called when the libjvm.{dll,so} is
-  // first loaded and we don't have a thread yet.
-  // try to find the thread after we see that the watcher thread
-  // exists and has crash protection.
-  WatcherThread *wt = WatcherThread::watcher_thread();
-  if (wt != NULL && wt->has_crash_protection()) {
-    Thread* thread = Thread::current_or_null();
-    if (thread == wt) {
-      assert(!wt->has_crash_protection(),
-          "Can't malloc with crash protection from WatcherThread");
-    }
-  }
-#endif
+  // Since os::malloc can be called when the libjvm.{dll,so} is
+  // first loaded and we don't have a thread yet we must accept NULL also here.
+  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+         "malloc() not allowed when crash protection is set");
 
   if (size == 0) {
     // return a valid pointer if size is zero
@@ -650,6 +638,12 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
+  if (size == 0) {
+    // return a valid pointer if size is zero
+    // if NULL is returned the calling functions assume out of memory.
+    size = 1;
+  }
+
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
@@ -670,9 +664,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // NMT support
   void* membase = MemTracker::malloc_base(memblock);
   verify_memory(membase);
-  if (size == 0) {
-    return NULL;
-  }
   // always move the block
   void* ptr = os::malloc(size, memflags, stack);
   if (PrintMalloc && tty != NULL) {
@@ -721,12 +712,12 @@ void  os::free(void *memblock) {
 #endif
 }
 
-void os::init_random(long initval) {
+void os::init_random(unsigned int initval) {
   _rand_seed = initval;
 }
 
 
-long os::random() {
+static int random_helper(unsigned int rand_seed) {
   /* standard, well-known linear congruential random generator with
    * next_rand = (16807*seed) mod (2**31-1)
    * see
@@ -735,14 +726,14 @@ long os::random() {
    * (2) "Two Fast Implementations of the 'Minimal Standard' Random
    *     Number Generator", David G. Carta, Comm. ACM 33, 1 (Jan 1990), pp. 87-88.
   */
-  const long a = 16807;
-  const unsigned long m = 2147483647;
-  const long q = m / a;        assert(q == 127773, "weird math");
-  const long r = m % a;        assert(r == 2836, "weird math");
+  const unsigned int a = 16807;
+  const unsigned int m = 2147483647;
+  const int q = m / a;        assert(q == 127773, "weird math");
+  const int r = m % a;        assert(r == 2836, "weird math");
 
   // compute az=2^31p+q
-  unsigned long lo = a * (long)(_rand_seed & 0xFFFF);
-  unsigned long hi = a * (long)((unsigned long)_rand_seed >> 16);
+  unsigned int lo = a * (rand_seed & 0xFFFF);
+  unsigned int hi = a * (rand_seed >> 16);
   lo += (hi & 0x7FFF) << 16;
 
   // if q overflowed, ignore the overflow and increment q
@@ -757,7 +748,18 @@ long os::random() {
     lo &= m;
     ++lo;
   }
-  return (_rand_seed = lo);
+  return lo;
+}
+
+int os::random() {
+  // Make updating the random seed thread safe.
+  while (true) {
+    unsigned int seed = _rand_seed;
+    int rand = random_helper(seed);
+    if (Atomic::cmpxchg(rand, &_rand_seed, seed) == seed) {
+      return rand;
+    }
+  }
 }
 
 // The INITIALIZED state is distinguished from the SUSPENDED state because the
@@ -1129,39 +1131,6 @@ bool os::is_first_C_frame(frame* fr) {
 #endif
 }
 
-#ifdef ASSERT
-extern "C" void test_random() {
-  const double m = 2147483647;
-  double mean = 0.0, variance = 0.0, t;
-  long reps = 10000;
-  unsigned long seed = 1;
-
-  tty->print_cr("seed %ld for %ld repeats...", seed, reps);
-  os::init_random(seed);
-  long num;
-  for (int k = 0; k < reps; k++) {
-    num = os::random();
-    double u = (double)num / m;
-    assert(u >= 0.0 && u <= 1.0, "bad random number!");
-
-    // calculate mean and variance of the random sequence
-    mean += u;
-    variance += (u*u);
-  }
-  mean /= reps;
-  variance /= (reps - 1);
-
-  assert(num == 1043618065, "bad seed");
-  tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-  tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-  const double eps = 0.0001;
-  t = fabsd(mean - 0.5018);
-  assert(t < eps, "bad mean");
-  t = (variance - 0.3355) < 0.0 ? -(variance - 0.3355) : variance - 0.3355;
-  assert(t < eps, "bad variance");
-}
-#endif
-
 
 // Set up the boot classpath.
 
@@ -1365,7 +1334,7 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
     for (size_t i = 0; _page_sizes[i] != 0; ++i) {
       const size_t page_size = _page_sizes[i];
       if (page_size <= max_page_size) {
-        if (!must_be_aligned || is_size_aligned(region_size, page_size)) {
+        if (!must_be_aligned || is_aligned(region_size, page_size)) {
           return page_size;
         }
       }
@@ -1511,7 +1480,7 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count) {
   LogTarget(Info, pagesize) log;
   if (log.is_enabled()) {
-    LogStreamCHeap out(log);
+    LogStream out(log);
 
     out.print("%s: ", str);
     for (int i = 0; i < count; ++i) {

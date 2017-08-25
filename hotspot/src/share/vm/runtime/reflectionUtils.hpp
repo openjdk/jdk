@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@
 
 class KlassStream VALUE_OBJ_CLASS_SPEC {
  protected:
-  instanceKlassHandle _klass;           // current klass/interface iterated over
-  instanceKlassHandle _base_klass;      // initial klass/interface to iterate over
+  InstanceKlass*      _klass;           // current klass/interface iterated over
+  InstanceKlass*      _base_klass;      // initial klass/interface to iterate over
   Array<Klass*>*      _interfaces;      // transitive interfaces for initial class
   int                 _interface_index; // current interface being processed
   bool                _local_only;      // process initial class/interface only
@@ -60,7 +60,7 @@ class KlassStream VALUE_OBJ_CLASS_SPEC {
 
  public:
   // constructor
-  KlassStream(instanceKlassHandle klass, bool local_only, bool classes_only, bool walk_defaults);
+  KlassStream(InstanceKlass* klass, bool local_only, bool classes_only, bool walk_defaults);
 
   // testing
   bool eos();
@@ -69,7 +69,7 @@ class KlassStream VALUE_OBJ_CLASS_SPEC {
   virtual void next() = 0;
 
   // accessors
-  instanceKlassHandle klass() const { return _klass; }
+  InstanceKlass* klass() const      { return _klass; }
   int index() const                 { return _index; }
   bool base_class_search_defaults() const { return _base_class_search_defaults; }
   void base_class_search_defaults(bool b) { _base_class_search_defaults = b; }
@@ -97,7 +97,7 @@ class MethodStream : public KlassStream {
     }
   }
  public:
-  MethodStream(instanceKlassHandle klass, bool local_only, bool classes_only)
+  MethodStream(InstanceKlass* klass, bool local_only, bool classes_only)
     : KlassStream(klass, local_only, classes_only, true) {
     _index = length();
     next();
@@ -125,7 +125,7 @@ class FieldStream : public KlassStream {
   fieldDescriptor _fd_buf;
 
  public:
-  FieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
+  FieldStream(InstanceKlass* klass, bool local_only, bool classes_only)
     : KlassStream(klass, local_only, classes_only, false) {
     _index = length();
     next();
@@ -152,7 +152,7 @@ class FieldStream : public KlassStream {
   // bridge to a heavier API:
   fieldDescriptor& field_descriptor() const {
     fieldDescriptor& field = const_cast<fieldDescriptor&>(_fd_buf);
-    field.reinitialize(_klass(), _index);
+    field.reinitialize(_klass, _index);
     return field;
   }
 };
@@ -196,12 +196,6 @@ class FilteredFieldsMap : AllStatic {
     }
     return nflds;
   }
-  // Enhance Class Redefinition Support
-  static void classes_do(KlassClosure* f) {
-    for (int i = 0; i < _filtered_fields->length(); i++) {
-      f->do_klass(_filtered_fields->at(i)->klass());
-    }
-  }
 };
 
 
@@ -222,15 +216,15 @@ class FilteredFieldStream : public FieldStream {
   bool has_filtered_field() { return (_filtered_fields_count > 0); }
 
  public:
-  FilteredFieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
+  FilteredFieldStream(InstanceKlass* klass, bool local_only, bool classes_only)
     : FieldStream(klass, local_only, classes_only) {
-    _filtered_fields_count = FilteredFieldsMap::filtered_fields_count((Klass*)klass(), local_only);
+    _filtered_fields_count = FilteredFieldsMap::filtered_fields_count(klass, local_only);
   }
   int field_count();
   void next() {
     _index -= 1;
     if (has_filtered_field()) {
-      while (_index >=0 && FilteredFieldsMap::is_filtered_field((Klass*)_klass(), offset())) {
+      while (_index >=0 && FilteredFieldsMap::is_filtered_field((Klass*)_klass, offset())) {
         _index -= 1;
       }
     }

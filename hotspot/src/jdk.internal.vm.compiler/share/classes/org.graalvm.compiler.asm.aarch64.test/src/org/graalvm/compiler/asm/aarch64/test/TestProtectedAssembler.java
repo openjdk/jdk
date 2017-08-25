@@ -226,12 +226,12 @@ class TestProtectedAssembler extends AArch64Assembler {
     }
 
     @Override
-    protected void adds(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
+    public void adds(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
         super.adds(size, dst, src1, src2, shiftType, imm);
     }
 
     @Override
-    protected void subs(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
+    public void subs(int size, Register dst, Register src1, Register src2, ShiftType shiftType, int imm) {
         super.subs(size, dst, src1, src2, shiftType, imm);
     }
 
@@ -261,7 +261,7 @@ class TestProtectedAssembler extends AArch64Assembler {
     }
 
     @Override
-    protected void subs(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
+    public void subs(int size, Register dst, Register src1, Register src2, ExtendType extendType, int shiftAmt) {
         super.subs(size, dst, src1, src2, extendType, shiftAmt);
     }
 
@@ -336,7 +336,7 @@ class TestProtectedAssembler extends AArch64Assembler {
     }
 
     @Override
-    protected void rbit(int size, Register dst, Register src) {
+    public void rbit(int size, Register dst, Register src) {
         super.rbit(size, dst, src);
     }
 

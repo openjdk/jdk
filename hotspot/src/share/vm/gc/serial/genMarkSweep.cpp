@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,11 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) tm_m("Reference Processing", gc_timer());
 
     ref_processor()->setup_policy(clear_all_softrefs);
+    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_q());
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
-        &is_alive, &keep_alive, &follow_stack_closure, NULL, _gc_timer);
+        &is_alive, &keep_alive, &follow_stack_closure, NULL, &pt);
+    pt.print_all_references();
     gc_tracer()->report_gc_reference_stats(stats);
   }
 
@@ -223,7 +225,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(&is_alive);
+    bool purged_class = SystemDictionary::do_unloading(&is_alive, gc_timer());
 
     // Unload nmethods.
     CodeCache::do_unloading(&is_alive, purged_class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
@@ -34,6 +36,7 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/statSampler.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Prefix of performance data file.
@@ -89,17 +92,15 @@ void PerfMemory::initialize() {
     // initialization already performed
     return;
 
-  size_t capacity = align_size_up(PerfDataMemorySize,
-                                  os::vm_allocation_granularity());
+  size_t capacity = align_up(PerfDataMemorySize,
+                             os::vm_allocation_granularity());
 
-  if (PerfTraceMemOps) {
-    tty->print("PerfDataMemorySize = " SIZE_FORMAT ","
-               " os::vm_allocation_granularity = %d,"
-               " adjusted size = " SIZE_FORMAT "\n",
-               PerfDataMemorySize,
-               os::vm_allocation_granularity(),
-               capacity);
-  }
+  log_debug(perf, memops)("PerfDataMemorySize = " SIZE_FORMAT ","
+                          " os::vm_allocation_granularity = %d,"
+                          " adjusted size = " SIZE_FORMAT "\n",
+                          PerfDataMemorySize,
+                          os::vm_allocation_granularity(),
+                          capacity);
 
   // allocate PerfData memory region
   create_memory_region(capacity);
@@ -124,12 +125,10 @@ void PerfMemory::initialize() {
 
     // the PerfMemory region was created as expected.
 
-    if (PerfTraceMemOps) {
-      tty->print("PerfMemory created: address = " INTPTR_FORMAT ","
-                 " size = " SIZE_FORMAT "\n",
-                 p2i(_start),
-                 _capacity);
-    }
+    log_debug(perf, memops)("PerfMemory created: address = " INTPTR_FORMAT ","
+                            " size = " SIZE_FORMAT "\n",
+                            p2i(_start),
+                            _capacity);
 
     _prologue = (PerfDataPrologue *)_start;
     _end = _start + _capacity;

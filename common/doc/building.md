@@ -648,19 +648,6 @@ Hotspot.
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
 
-### libelf
-
-libelf from the [elfutils project](http://sourceware.org/elfutils) is required
-when building the AOT feature of Hotspot.
-
-  * To install on an apt-based Linux, try running `sudo apt-get install
-    libelf-dev`.
-  * To install on an rpm-based Linux, try running `sudo yum install
-    elfutils-libelf-devel`.
-
-Use `--with-libelf=<path>` if `configure` does not properly locate your libelf
-files.
-
 ## Other Tooling Requirements
 
 ### GNU Make
@@ -813,7 +800,6 @@ features, use `bash configure --help=short` instead.)
   * `--with-x=<path>` - Set the path to [X11](#x11)
   * `--with-alsa=<path>` - Set the path to [ALSA](#alsa)
   * `--with-libffi=<path>` - Set the path to [libffi](#libffi)
-  * `--with-libelf=<path>` - Set the path to [libelf](#libelf)
   * `--with-jtreg=<path>` - Set the path to JTReg. See [Running Tests](
     #running-tests)
 

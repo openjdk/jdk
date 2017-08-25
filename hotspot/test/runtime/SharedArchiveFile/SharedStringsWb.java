@@ -38,6 +38,11 @@ public class SharedStringsWb {
         String s = "<init>";
         String internedS = s.intern();
 
+        // Check that it's a valid string
+        if (s.getClass() != String.class || !(s instanceof String)) {
+            throw new RuntimeException("Shared string is not a valid String: FAIL");
+        }
+
         if (wb.isShared(internedS)) {
             System.out.println("Found shared string, result: PASS");
         } else {

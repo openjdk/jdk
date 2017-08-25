@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,6 +377,7 @@ public class WhiteBox {
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
   public native boolean metaspaceShouldConcurrentCollect();
+  public native long metaspaceReserveAlignment();
 
   // Don't use these methods directly
   // Use sun.hotspot.gc.GC class instead.
@@ -389,6 +390,39 @@ public class WhiteBox {
 
   // Force Full GC
   public native void fullGC();
+
+  // Returns true if the current GC supports control of its concurrent
+  // phase via requestConcurrentGCPhase().  If false, a request will
+  // always fail.
+  public native boolean supportsConcurrentGCPhaseControl();
+
+  // Returns an array of concurrent phase names provided by this
+  // collector.  These are the names recognized by
+  // requestConcurrentGCPhase().
+  public native String[] getConcurrentGCPhases();
+
+  // Attempt to put the collector into the indicated concurrent phase,
+  // and attempt to remain in that state until a new request is made.
+  //
+  // Returns immediately if already in the requested phase.
+  // Otherwise, waits until the phase is reached.
+  //
+  // Throws IllegalStateException if unsupported by the current collector.
+  // Throws NullPointerException if phase is null.
+  // Throws IllegalArgumentException if phase is not valid for the current collector.
+  public void requestConcurrentGCPhase(String phase) {
+    if (!supportsConcurrentGCPhaseControl()) {
+      throw new IllegalStateException("Concurrent GC phase control not supported");
+    } else if (phase == null) {
+      throw new NullPointerException("null phase");
+    } else if (!requestConcurrentGCPhase0(phase)) {
+      throw new IllegalArgumentException("Unknown concurrent GC phase: " + phase);
+    }
+  }
+
+  // Helper for requestConcurrentGCPhase().  Returns true if request
+  // succeeded, false if the phase is invalid.
+  private native boolean requestConcurrentGCPhase0(String phase);
 
   // Method tries to start concurrent mark cycle.
   // It returns false if CM Thread is always in concurrent cycle.
@@ -449,13 +483,12 @@ public class WhiteBox {
   }
 
   // Jigsaw
-  public native void DefineModule(Object module, String version, String location,
-                                  Object[] packages);
+  public native void DefineModule(Object module, boolean is_open, String version,
+                                  String location, Object[] packages);
   public native void AddModuleExports(Object from_module, String pkg, Object to_module);
   public native void AddReadsModule(Object from_module, Object source_module);
   public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
   public native void AddModuleExportsToAll(Object module, String pkg);
-  public native Object GetModuleByPackageName(Object ldr, String pkg);
 
   public native int getOffsetForName0(String name);
   public int getOffsetForName(String name) throws Exception {
@@ -486,10 +519,12 @@ public class WhiteBox {
   // Safepoint Checking
   public native void assertMatchingSafepointCalls(boolean mutexSafepointValue, boolean attemptedNoSafepointValue);
 
-  // Sharing
+  // Sharing & archiving
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
+  public native boolean isCDSIncludedInVmBuild();
+  public native Object  getResolvedReferences(Class<?> c);
 
   // Compiler Directive
   public native int addCompilerDirective(String compDirect);

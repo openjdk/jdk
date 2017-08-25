@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -410,7 +411,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -437,14 +438,14 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     }
   }
 
-  if (sig == os::Solaris::SIGasync()) {
+  if (sig == ASYNC_SIGNAL) {
     if(thread || vmthread){
       OSThread::SR_handler(t, uc);
       return true;
     } else if (os::Solaris::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
-      // If os::Solaris::SIGasync not chained, and this is a non-vm and
+      // If ASYNC_SIGNAL not chained, and this is a non-vm and
       // non-java thread
       return true;
     }
@@ -635,7 +636,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     bool pc_is_near_addr =
       (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
     bool instr_spans_page_boundary =
-      (align_size_down((intptr_t) pc ^ (intptr_t) addr,
+      (align_down((intptr_t) pc ^ (intptr_t) addr,
                        (intptr_t) page_size) > 0);
 
     if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
@@ -647,8 +648,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
         // Make memory rwx and retry
-        address page_start =
-          (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
+        address page_start = align_down(addr, page_size);
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,11 +314,11 @@ public:
   // Call this from the compiler at convenient points, to poll for _should_block.
   static void maybe_block();
 
-  enum {
+  enum CompilerActivity {
     // Flags for toggling compiler activity
-    stop_compilation    = 0,
-    run_compilation     = 1,
-    shutdown_compilaton = 2
+    stop_compilation     = 0,
+    run_compilation      = 1,
+    shutdown_compilation = 2
   };
 
   static jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
@@ -332,11 +332,11 @@ public:
   static void disable_compilation_forever() {
     UseCompiler               = false;
     AlwaysCompileLoopMethods  = false;
-    Atomic::xchg(shutdown_compilaton, &_should_compile_new_jobs);
+    Atomic::xchg(shutdown_compilation, &_should_compile_new_jobs);
   }
 
   static bool is_compilation_disabled_forever() {
-    return _should_compile_new_jobs == shutdown_compilaton;
+    return _should_compile_new_jobs == shutdown_compilation;
   }
   static void handle_full_code_cache(int code_blob_type);
   // Ensures that warning is only printed once.

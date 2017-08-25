@@ -75,8 +75,8 @@ public class ClassCastBytecodeExceptionTest extends BytecodeExceptionTest {
     }
 
     @Override
-    protected void registerPlugin(InvocationPlugins plugins) {
-        plugins.register(new InvocationPlugin() {
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        invocationPlugins.register(new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode obj, ValueNode classNode) {
                 ResolvedJavaType type = b.getConstantReflection().asJavaType(classNode.asConstant());
@@ -86,6 +86,7 @@ public class ClassCastBytecodeExceptionTest extends BytecodeExceptionTest {
                 return throwBytecodeException(b, ClassCastException.class, obj, hubConst);
             }
         }, Exceptions.class, "throwClassCast", Object.class, Class.class);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     @Parameter(0) public Object object;
