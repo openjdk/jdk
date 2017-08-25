@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class PatchModuleTest {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              "mods/java.naming");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=mods/java.naming",

@@ -95,11 +95,6 @@ public:
     return _tagset->is_level(_level);
   }
 
-  // Creates a log stream from the information stored in this instance.
-  // Callers need a ResourceMark on the stack.
-  outputStream* stream() {
-    return create_log_stream(_level, _tagset);;
-  }
 };
 
 #endif // SHARE_VM_LOGGING_LOGHANDLE_HPP

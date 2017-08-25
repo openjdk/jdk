@@ -365,8 +365,11 @@ class GraphKit : public Phase {
   // Throw an uncommon trap if a given value is __not__ null.
   // Return the value cast to null, and be clever about dominating checks.
   Node* null_assert(Node* value, BasicType type = T_OBJECT) {
-    return null_check_common(value, type, true);
+    return null_check_common(value, type, true, NULL, _gvn.type(value)->speculative_always_null());
   }
+
+  // Check if value is null and abort if it is
+  Node* must_be_not_null(Node* value, bool do_replace_in_map);
 
   // Null check oop.  Return null-path control into (*null_control).
   // Return a cast-not-null node which depends on the not-null control.
@@ -394,7 +397,7 @@ class GraphKit : public Phase {
   }
 
   // record type from profiling with the type system
-  Node* record_profile_for_speculation(Node* n, ciKlass* exact_kls, bool maybe_null);
+  Node* record_profile_for_speculation(Node* n, ciKlass* exact_kls, ProfilePtrKind ptr_kind);
   void record_profiled_arguments_for_speculation(ciMethod* dest_method, Bytecodes::Code bc);
   void record_profiled_parameters_for_speculation();
   void record_profiled_return_for_speculation();

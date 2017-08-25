@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ConditionAnchorNode;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -47,6 +48,7 @@ import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -69,8 +71,8 @@ import jdk.vm.ci.code.TargetDescription;
  */
 public abstract class InstanceOfSnippetsTemplates extends AbstractTemplates {
 
-    public InstanceOfSnippetsTemplates(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-        super(providers, snippetReflection, target);
+    public InstanceOfSnippetsTemplates(OptionValues options, Iterable<DebugHandlersFactory> factories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+        super(options, factories, providers, snippetReflection, target);
     }
 
     /**
@@ -93,7 +95,7 @@ public abstract class InstanceOfSnippetsTemplates extends AbstractTemplates {
                 replacer.replaceUsingInstantiation();
             } else {
                 Arguments args = makeArguments(replacer, tool);
-                template(args).instantiate(providers.getMetaAccess(), instanceOf, replacer, tool, args);
+                template(instanceOf.getDebug(), args).instantiate(providers.getMetaAccess(), instanceOf, replacer, tool, args);
             }
         }
 

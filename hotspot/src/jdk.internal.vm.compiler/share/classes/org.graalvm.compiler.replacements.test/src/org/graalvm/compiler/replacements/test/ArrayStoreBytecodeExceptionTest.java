@@ -51,13 +51,14 @@ public class ArrayStoreBytecodeExceptionTest extends BytecodeExceptionTest {
     }
 
     @Override
-    protected void registerPlugin(InvocationPlugins plugins) {
-        plugins.register(new InvocationPlugin() {
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
+        invocationPlugins.register(new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode obj) {
                 return throwBytecodeException(b, ArrayStoreException.class, obj);
             }
         }, Exceptions.class, "throwArrayStore", Object.class);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     public static void arrayStoreSnippet(Object obj) {

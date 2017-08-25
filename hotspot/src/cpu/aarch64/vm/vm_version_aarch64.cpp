@@ -137,6 +137,8 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 3*dcache_line);
   if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes))
     FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3*dcache_line);
+  if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance))
+    FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, 3*dcache_line);
 
   if (PrefetchCopyIntervalInBytes != -1 &&
        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
@@ -144,6 +146,12 @@ void VM_Version::get_processor_features() {
     PrefetchCopyIntervalInBytes &= ~7;
     if (PrefetchCopyIntervalInBytes >= 32768)
       PrefetchCopyIntervalInBytes = 32760;
+  }
+
+  if (SoftwarePrefetchHintDistance != -1 &&
+       (SoftwarePrefetchHintDistance & 7)) {
+    warning("SoftwarePrefetchHintDistance must be -1, or a multiple of 8");
+    SoftwarePrefetchHintDistance &= ~7;
   }
 
   unsigned long auxv = getauxval(AT_HWCAP);

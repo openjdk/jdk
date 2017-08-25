@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2168,7 +2168,7 @@ run:
         ConstantPool* constants = istate->method()->constants();
         if (!constants->tag_at(index).is_unresolved_klass()) {
           // Make sure klass is initialized and doesn't have a finalizer
-          Klass* entry = constants->slot_at(index).get_klass();
+          Klass* entry = constants->resolved_klass_at(index);
           InstanceKlass* ik = InstanceKlass::cast(entry);
           if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
             size_t obj_size = ik->size_helper();
@@ -2268,7 +2268,7 @@ run:
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
-            Klass* klassOf = (Klass*) METHOD->constants()->slot_at(index).get_klass();
+            Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
             // Check for compatibilty. This check must not GC!!
@@ -2303,7 +2303,7 @@ run:
             if (METHOD->constants()->tag_at(index).is_unresolved_klass()) {
               CALL_VM(InterpreterRuntime::quicken_io_cc(THREAD), handle_exception);
             }
-            Klass* klassOf = (Klass*) METHOD->constants()->slot_at(index).get_klass();
+            Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
             // Check for compatibilty. This check must not GC!!
@@ -2790,7 +2790,7 @@ run:
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 
-    except_oop = THREAD->vm_result();
+    except_oop = Handle(THREAD, THREAD->vm_result());
     THREAD->set_vm_result(NULL);
     if (continuation_bci >= 0) {
       // Place exception on top of stack
@@ -2994,7 +2994,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::throw_illegal_monitor_state_exception(THREAD));
             }
             assert(THREAD->has_pending_exception(), "Lost our exception!");
-            illegal_state_oop = THREAD->pending_exception();
+            illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
             THREAD->clear_pending_exception();
           }
         }
@@ -3011,7 +3011,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::throw_illegal_monitor_state_exception(THREAD));
             }
             assert(THREAD->has_pending_exception(), "Lost our exception!");
-            illegal_state_oop = THREAD->pending_exception();
+            illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
             THREAD->clear_pending_exception();
           }
         } else {
@@ -3028,7 +3028,7 @@ run:
           if (rcvr == NULL) {
             if (!suppress_error) {
               VM_JAVA_ERROR_NO_JUMP(vmSymbols::java_lang_NullPointerException(), "", note_nullCheck_trap);
-              illegal_state_oop = THREAD->pending_exception();
+              illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
           } else if (UseHeavyMonitors) {
@@ -3038,7 +3038,7 @@ run:
               CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
             }
             if (THREAD->has_pending_exception()) {
-              if (!suppress_error) illegal_state_oop = THREAD->pending_exception();
+              if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
           } else {
@@ -3059,7 +3059,7 @@ run:
                     CALL_VM_NOCHECK(InterpreterRuntime::monitorexit(THREAD, base));
                   }
                   if (THREAD->has_pending_exception()) {
-                    if (!suppress_error) illegal_state_oop = THREAD->pending_exception();
+                    if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
                     THREAD->clear_pending_exception();
                   }
                 }

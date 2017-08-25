@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ m4_include([lib-ffi.m4])
 m4_include([lib-freetype.m4])
 m4_include([lib-std.m4])
 m4_include([lib-x11.m4])
-m4_include([lib-elf.m4])
 
 ################################################################################
 # Determine which libraries are needed for this configuration
@@ -91,7 +90,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
   LIB_SETUP_SOLARIS_STLPORT
-  LIB_SETUP_LIBELF
 ])
 
 ################################################################################

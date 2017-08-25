@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,6 +464,9 @@ static const char* native_arch_name() {
 #endif
 #if  defined(LIBARCH_ppc64) || defined(LIBARCH_ppc64le)
   res = "powerpc:common64";
+#endif
+#ifdef LIBARCH_arm
+  res = "arm";
 #endif
 #ifdef LIBARCH_aarch64
   res = "aarch64";

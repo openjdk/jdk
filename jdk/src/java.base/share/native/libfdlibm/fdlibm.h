@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #ifdef __NEWVALID       /* special setup for Sun test regime */
 #if defined(i386) || defined(i486) || \
     defined(intel) || defined(x86) || defined(arm) || \
-    defined(i86pc) || defined(_M_IA64) || defined(ia64)
+    defined(i86pc) || defined(ia64)
 #define _LITTLE_ENDIAN
 #endif
 #endif

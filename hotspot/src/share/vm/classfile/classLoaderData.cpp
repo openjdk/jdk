@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,6 +49,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -57,6 +58,7 @@
 #include "code/codeCache.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -97,6 +99,28 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _next(NULL), _dependencies(dependencies),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
+
+  // A ClassLoaderData created solely for an anonymous class should never have a
+  // ModuleEntryTable or PackageEntryTable created for it. The defining package
+  // and module for an anonymous class will be found in its host class.
+  if (!is_anonymous) {
+    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
+    if (h_class_loader.is_null()) {
+      // Create unnamed module for boot loader
+      _unnamed_module = ModuleEntry::create_boot_unnamed_module(this);
+    } else {
+      // Create unnamed module for all other loaders
+      _unnamed_module = ModuleEntry::create_unnamed_module(this);
+    }
+  } else {
+    _unnamed_module = NULL;
+  }
+
+  if (!is_anonymous) {
+    _dictionary = create_dictionary();
+  } else {
+    _dictionary = NULL;
+  }
   TRACE_INIT_ID(this);
 }
 
@@ -247,16 +271,15 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
 void ClassLoaderData::methods_do(void f(Method*)) {
   // Lock-free access requires load_ptr_acquire
   for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
-    if (k->is_instance_klass()) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
   }
 }
 
 void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
-  // Lock to avoid classes being modified/added/removed during iteration
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+  // Lock-free access requires load_ptr_acquire
+  for (Klass* k = load_ptr_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
     if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
       klass_closure->do_klass(k);
@@ -276,11 +299,14 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
 
 void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
+  if (_unnamed_module != NULL) {
+    f(_unnamed_module);
+  }
   if (_modules != NULL) {
     for (int i = 0; i < _modules->table_size(); i++) {
       for (ModuleEntry* entry = _modules->bucket(i);
-                              entry != NULL;
-                              entry = entry->next()) {
+           entry != NULL;
+           entry = entry->next()) {
         f(entry);
       }
     }
@@ -288,13 +314,12 @@ void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
 }
 
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
-  // Lock-free access requires load_ptr_acquire
-  PackageEntryTable* packages = load_ptr_acquire(&_packages);
-  if (packages != NULL) {
-    for (int i = 0; i < packages->table_size(); i++) {
-      for (PackageEntry* entry = packages->bucket(i);
-                              entry != NULL;
-                              entry = entry->next()) {
+  assert_locked_or_safepoint(Module_lock);
+  if (_packages != NULL) {
+    for (int i = 0; i < _packages->table_size(); i++) {
+      for (PackageEntry* entry = _packages->bucket(i);
+           entry != NULL;
+           entry = entry->next()) {
         f(entry);
       }
     }
@@ -432,10 +457,85 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
   }
 }
 
+// Class iterator used by the compiler.  It gets some number of classes at
+// a safepoint to decay invocation counters on the methods.
+class ClassLoaderDataGraphKlassIteratorStatic {
+  ClassLoaderData* _current_loader_data;
+  Klass*           _current_class_entry;
+ public:
+
+  ClassLoaderDataGraphKlassIteratorStatic() : _current_loader_data(NULL), _current_class_entry(NULL) {}
+
+  InstanceKlass* try_get_next_class() {
+    assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+    int max_classes = InstanceKlass::number_of_instance_classes();
+    assert(max_classes > 0, "should not be called with no instance classes");
+    for (int i = 0; i < max_classes; ) {
+
+      if (_current_class_entry != NULL) {
+        Klass* k = _current_class_entry;
+        _current_class_entry = _current_class_entry->next_link();
+
+        if (k->is_instance_klass()) {
+          InstanceKlass* ik = InstanceKlass::cast(k);
+          i++;  // count all instance classes found
+          // Not yet loaded classes are counted in max_classes
+          // but only return loaded classes.
+          if (ik->is_loaded()) {
+            return ik;
+          }
+        }
+      } else {
+        // Go to next CLD
+        if (_current_loader_data != NULL) {
+          _current_loader_data = _current_loader_data->next();
+        }
+        // Start at the beginning
+        if (_current_loader_data == NULL) {
+          _current_loader_data = ClassLoaderDataGraph::_head;
+        }
+
+        _current_class_entry = _current_loader_data->klasses();
+      }
+    }
+    // Should never be reached unless all instance classes have failed or are not fully loaded.
+    // Caller handles NULL.
+    return NULL;
+  }
+
+  // If the current class for the static iterator is a class being unloaded or
+  // deallocated, adjust the current class.
+  void adjust_saved_class(ClassLoaderData* cld) {
+    if (_current_loader_data == cld) {
+      _current_loader_data = cld->next();
+      if (_current_loader_data != NULL) {
+        _current_class_entry = _current_loader_data->klasses();
+      }  // else try_get_next_class will start at the head
+    }
+  }
+
+  void adjust_saved_class(Klass* klass) {
+    if (_current_class_entry == klass) {
+      _current_class_entry = klass->next_link();
+    }
+  }
+};
+
+static ClassLoaderDataGraphKlassIteratorStatic static_klass_iterator;
+
+InstanceKlass* ClassLoaderDataGraph::try_get_next_class() {
+  return static_klass_iterator.try_get_next_class();
+}
+
+
 // Remove a klass from the _klasses list for scratch_class during redefinition
 // or parsed class in the case of an error.
 void ClassLoaderData::remove_class(Klass* scratch_class) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
+
+  // Adjust global class iterator.
+  static_klass_iterator.adjust_saved_class(scratch_class);
+
   Klass* prev = NULL;
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     if (k == scratch_class) {
@@ -459,37 +559,25 @@ void ClassLoaderData::unload() {
   // Tell serviceability tools these classes are unloading
   classes_do(InstanceKlass::notify_unload_class);
 
-  if (log_is_enabled(Debug, class, loader, data)) {
+  LogTarget(Debug, class, loader, data) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* log = Log(class, loader, data)::debug_stream();
-    log->print(": unload loader data " INTPTR_FORMAT, p2i(this));
-    log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
+    LogStream ls(lt);
+    ls.print(": unload loader data " INTPTR_FORMAT, p2i(this));
+    ls.print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
                loader_name());
     if (is_anonymous()) {
-      log->print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
+      ls.print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
     }
-    log->cr();
+    ls.cr();
   }
 
   // In some rare cases items added to this list will not be freed elsewhere.
   // To keep it simple, just free everything in it here.
   free_deallocate_list();
-}
 
-PackageEntryTable* ClassLoaderData::packages() {
-  // Lazily create the package entry table at first request.
-  // Lock-free access requires load_ptr_acquire.
-  PackageEntryTable* packages = load_ptr_acquire(&_packages);
-  if (packages == NULL) {
-    MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
-    // Check if _packages got allocated while we were waiting for this lock.
-    if ((packages = _packages) == NULL) {
-      packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
-      // Ensure _packages is stable, since it is examined without a lock
-      OrderAccess::release_store_ptr(&_packages, packages);
-    }
-  }
-  return packages;
+  // Clean up global class iterator for compiler
+  static_klass_iterator.adjust_saved_class(this);
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
@@ -501,10 +589,6 @@ ModuleEntryTable* ClassLoaderData::modules() {
     // Check if _modules got allocated while we were waiting for this lock.
     if ((modules = _modules) == NULL) {
       modules = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
-      // Each loader has one unnamed module entry. Create it before
-      // any classes, loaded by this loader, are defined in case
-      // they end up being defined in loader's unnamed module.
-      modules->create_unnamed_module(this);
 
       {
         MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
@@ -516,6 +600,45 @@ ModuleEntryTable* ClassLoaderData::modules() {
   return modules;
 }
 
+const int _boot_loader_dictionary_size    = 1009;
+const int _default_loader_dictionary_size = 107;
+const int _prime_array_size         = 8;                       // array of primes for system dictionary size
+const int _average_depth_goal       = 3;                       // goal for lookup length
+const int _primelist[_prime_array_size] = {107, 1009, 2017, 4049, 5051, 10103, 20201, 40423};
+
+// Calculate a "good" dictionary size based
+// on predicted or current loaded classes count.
+static int calculate_dictionary_size(int classcount) {
+  int newsize = _primelist[0];
+  if (classcount > 0 && !DumpSharedSpaces) {
+    int index = 0;
+    int desiredsize = classcount/_average_depth_goal;
+    for (newsize = _primelist[index]; index < _prime_array_size -1;
+         newsize = _primelist[++index]) {
+      if (desiredsize <=  newsize) {
+        break;
+      }
+    }
+  }
+  return newsize;
+}
+
+Dictionary* ClassLoaderData::create_dictionary() {
+  assert(!is_anonymous(), "anonymous class loader data do not have a dictionary");
+  int size;
+  if (_the_null_class_loader_data == NULL) {
+    size = _boot_loader_dictionary_size;
+  } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
+    size = 1;  // there's only one class in relection class loader and no initiated classes
+  } else if (is_system_class_loader_data()) {
+    size = calculate_dictionary_size(PredictedLoadedClassCount);
+  } else {
+    size = _default_loader_dictionary_size;
+  }
+  return new Dictionary(this, size);
+}
+
+// Unloading support
 oop ClassLoaderData::keep_alive_object() const {
   assert_locked_or_safepoint(_metaspace_lock);
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
@@ -528,7 +651,6 @@ bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
 
   return alive;
 }
-
 
 ClassLoaderData::~ClassLoaderData() {
   // Release C heap structures for all the classes.
@@ -546,6 +668,18 @@ ClassLoaderData::~ClassLoaderData() {
     // Destroy the table itself
     delete _modules;
     _modules = NULL;
+  }
+
+  // Release C heap allocated hashtable for the dictionary
+  if (_dictionary != NULL) {
+    // Destroy the table itself
+    delete _dictionary;
+    _dictionary = NULL;
+  }
+
+  if (_unnamed_module != NULL) {
+    _unnamed_module->delete_unnamed_module();
+    _unnamed_module = NULL;
   }
 
   // release the metaspace
@@ -586,14 +720,12 @@ bool ClassLoaderData::is_platform_class_loader_data() const {
 // (boot, application/system or platform) class loaders. Note, the
 // builtin loaders are not freed by a GC.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
-  Handle classLoaderHandle = class_loader();
   return (is_the_null_class_loader_data() ||
-          SystemDictionary::is_system_class_loader(classLoaderHandle) ||
-          SystemDictionary::is_platform_class_loader(classLoaderHandle));
+          SystemDictionary::is_system_class_loader(class_loader()) ||
+          SystemDictionary::is_platform_class_loader(class_loader()));
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
-  assert(!DumpSharedSpaces, "wrong metaspace!");
   // If the metaspace has not been allocated, create a new one.  Might want
   // to create smaller arena for Reflection class loaders also.
   // The reason for the delayed allocation is because some class loaders are
@@ -686,7 +818,8 @@ void ClassLoaderData::free_deallocate_list() {
 // These anonymous class loaders are to contain classes used for JSR292
 ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(oop loader, TRAPS) {
   // Add a new class loader data to the graph.
-  return ClassLoaderDataGraph::add(loader, true, THREAD);
+  Handle lh(THREAD, loader);
+  return ClassLoaderDataGraph::add(lh, true, THREAD);
 }
 
 const char* ClassLoaderData::loader_name() {
@@ -802,9 +935,11 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
     cld->set_next(next);
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
     if (exchanged == next) {
-      if (log_is_enabled(Debug, class, loader, data)) {
+      LogTarget(Debug, class, loader, data) lt;
+      if (lt.is_enabled()) {
        PauseNoSafepointVerifier pnsv(&no_safepoints); // Need safe points for JavaCalls::call_virtual
-       log_creation(loader, cld, CHECK_NULL);
+       LogStream ls(lt);
+       print_creation(&ls, loader, cld, CHECK_NULL);
       }
       return cld;
     }
@@ -812,13 +947,13 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
   } while (true);
 }
 
-void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRAPS) {
+void ClassLoaderDataGraph::print_creation(outputStream* out, Handle loader, ClassLoaderData* cld, TRAPS) {
   Handle string;
   if (loader.not_null()) {
     // Include the result of loader.toString() in the output. This allows
     // the user of the log to identify the class loader instance.
     JavaValue result(T_OBJECT);
-    KlassHandle spec_klass(THREAD, SystemDictionary::ClassLoader_klass());
+    Klass* spec_klass = SystemDictionary::ClassLoader_klass();
     JavaCalls::call_virtual(&result,
                             loader,
                             spec_klass,
@@ -826,20 +961,19 @@ void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRA
                             vmSymbols::void_string_signature(),
                             CHECK);
     assert(result.get_type() == T_OBJECT, "just checking");
-    string = (oop)result.get_jobject();
+    string = Handle(THREAD, (oop)result.get_jobject());
   }
 
   ResourceMark rm;
-  outputStream* log = Log(class, loader, data)::debug_stream();
-  log->print("create class loader data " INTPTR_FORMAT, p2i(cld));
-  log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
+  out->print("create class loader data " INTPTR_FORMAT, p2i(cld));
+  out->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
              cld->loader_name());
 
   if (string.not_null()) {
-    log->print(": ");
-    java_lang_String::print(string(), log);
+    out->print(": ");
+    java_lang_String::print(string(), out);
   }
-  log->cr();
+  out->cr();
 }
 
 
@@ -970,6 +1104,56 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   }
 }
 
+#define FOR_ALL_DICTIONARY(X) for (ClassLoaderData* X = _head; X != NULL; X = X->next()) \
+                                if (X->dictionary() != NULL)
+
+// Walk classes in the loaded class dictionaries in various forms.
+// Only walks the classes defined in this class loader.
+void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->classes_do(f);
+  }
+}
+
+// Only walks the classes defined in this class loader.
+void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->classes_do(f, CHECK);
+  }
+}
+
+// Walks all entries in the dictionary including entries initiated by this class loader.
+void ClassLoaderDataGraph::dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->all_entries_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::verify_dictionary() {
+  FOR_ALL_DICTIONARY(cld) {
+    cld->dictionary()->verify();
+  }
+}
+
+void ClassLoaderDataGraph::print_dictionary(outputStream* st) {
+  FOR_ALL_DICTIONARY(cld) {
+    st->print("Dictionary for ");
+    cld->print_value_on(st);
+    st->cr();
+    cld->dictionary()->print_on(st);
+    st->cr();
+  }
+}
+
+void ClassLoaderDataGraph::print_dictionary_statistics(outputStream* st) {
+  FOR_ALL_DICTIONARY(cld) {
+    ResourceMark rm;
+    stringStream tempst;
+    tempst.print("System Dictionary for %s", cld->loader_name());
+    cld->dictionary()->print_table_statistics(st, tempst.as_string());
+  }
+}
+
 GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   assert(_head == NULL || _saved_head != NULL, "remember_new_clds(true) not called?");
 
@@ -980,12 +1164,12 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   while (curr != _saved_head) {
     if (!curr->claimed()) {
       array->push(curr);
-
-      if (log_is_enabled(Debug, class, loader, data)) {
-        outputStream* log = Log(class, loader, data)::debug_stream();
-        log->print("found new CLD: ");
-        curr->print_value_on(log);
-        log->cr();
+      LogTarget(Debug, class, loader, data) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print("found new CLD: ");
+        curr->print_value_on(&ls);
+        ls.cr();
       }
     }
 
@@ -1070,15 +1254,20 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   }
 
   if (seen_dead_loader) {
-    // Walk a ModuleEntry's reads and a PackageEntry's exports lists
-    // to determine if there are modules on those lists that are now
-    // dead and should be removed.  A module's life cycle is equivalent
-    // to its defining class loader's life cycle.  Since a module is
-    // considered dead if its class loader is dead, these walks must
-    // occur after each class loader's aliveness is determined.
     data = _head;
     while (data != NULL) {
-      if (data->packages_defined()) {
+      // Remove entries in the dictionary of live class loader that have
+      // initiated loading classes in a dead class loader.
+      if (data->dictionary() != NULL) {
+        data->dictionary()->do_unloading();
+      }
+      // Walk a ModuleEntry's reads, and a PackageEntry's exports
+      // lists to determine if there are modules on those lists that are now
+      // dead and should be removed.  A module's life cycle is equivalent
+      // to its defining class loader's life cycle.  Since a module is
+      // considered dead if its class loader is dead, these walks must
+      // occur after each class loader's aliveness is determined.
+      if (data->packages() != NULL) {
         data->packages()->purge_all_package_exports();
       }
       if (data->modules_defined()) {
@@ -1123,37 +1312,6 @@ void ClassLoaderDataGraph::post_class_unload_events() {
     Tracing::on_unloading_classes();
   }
 #endif
-}
-
-// CDS support
-
-// Global metaspaces for writing information to the shared archive.  When
-// application CDS is supported, we may need one per metaspace, so this
-// sort of looks like it.
-Metaspace* ClassLoaderData::_ro_metaspace = NULL;
-Metaspace* ClassLoaderData::_rw_metaspace = NULL;
-static bool _shared_metaspaces_initialized = false;
-
-// Initialize shared metaspaces (change to call from somewhere not lazily)
-void ClassLoaderData::initialize_shared_metaspaces() {
-  assert(DumpSharedSpaces, "only use this for dumping shared spaces");
-  assert(this == ClassLoaderData::the_null_class_loader_data(),
-         "only supported for null loader data for now");
-  assert (!_shared_metaspaces_initialized, "only initialize once");
-  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  _ro_metaspace = new Metaspace(_metaspace_lock, Metaspace::ROMetaspaceType);
-  _rw_metaspace = new Metaspace(_metaspace_lock, Metaspace::ReadWriteMetaspaceType);
-  _shared_metaspaces_initialized = true;
-}
-
-Metaspace* ClassLoaderData::ro_metaspace() {
-  assert(_ro_metaspace != NULL, "should already be initialized");
-  return _ro_metaspace;
-}
-
-Metaspace* ClassLoaderData::rw_metaspace() {
-  assert(_rw_metaspace != NULL, "should already be initialized");
-  return _rw_metaspace;
 }
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
@@ -1242,10 +1400,19 @@ void ClassLoaderDataGraph::dump_on(outputStream * const out) {
 
 void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
-    out->print("NULL class_loader");
+    out->print("NULL class loader");
   } else {
     out->print("class loader " INTPTR_FORMAT " ", p2i(this));
     class_loader()->print_value_on(out);
+  }
+}
+
+void ClassLoaderData::print_on(outputStream* out) const {
+  if (class_loader() == NULL) {
+    out->print("NULL class loader");
+  } else {
+    out->print("class loader " INTPTR_FORMAT " ", p2i(this));
+    class_loader()->print_on(out);
   }
 }
 

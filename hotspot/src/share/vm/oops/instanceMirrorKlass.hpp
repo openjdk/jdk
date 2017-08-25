@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,15 +82,13 @@ class InstanceMirrorKlass: public InstanceKlass {
   int compute_static_oop_field_count(oop obj);
 
   // Given a Klass return the size of the instance
-  int instance_size(KlassHandle k);
+  int instance_size(Klass* k);
 
   // allocation
-  instanceOop allocate_instance(KlassHandle k, TRAPS);
+  instanceOop allocate_instance(Klass* k, TRAPS);
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);

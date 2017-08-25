@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -121,24 +122,26 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     // not set) and when StackWalker::getCallerClass is called
     if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
       if (method->is_hidden()) {
-        if (log_is_enabled(Debug, stackwalk)) {
+        LogTarget(Debug, stackwalk) lt;
+        if (lt.is_enabled()) {
           ResourceMark rm(THREAD);
-          outputStream* st = Log(stackwalk)::debug_stream();
-          st->print("  hidden method: ");
-          method->print_short_name(st);
-          st->cr();
+          LogStream ls(lt);
+          ls.print("  hidden method: ");
+          method->print_short_name(&ls);
+          ls.cr();
         }
         continue;
       }
     }
 
     int index = end_index++;
-    if (log_is_enabled(Debug, stackwalk)) {
+    LogTarget(Debug, stackwalk) lt;
+    if (lt.is_enabled()) {
       ResourceMark rm(THREAD);
-      outputStream* st = Log(stackwalk)::debug_stream();
-      st->print("  %d: frame method: ", index);
-      method->print_short_name(st);
-      st->print_cr(" bci=%d", stream.bci());
+      LogStream ls(lt);
+      ls.print("  %d: frame method: ", index);
+      method->print_short_name(&ls);
+      ls.print_cr(" bci=%d", stream.bci());
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
@@ -167,7 +170,7 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
                                  const methodHandle& method, TRAPS) {
   if (_need_method_info) {
     Handle stackFrame(THREAD, frames_array->obj_at(index));
-    fill_stackframe(stackFrame, method);
+    fill_stackframe(stackFrame, method, CHECK);
   } else {
     frames_array->obj_at_put(index, method->method_holder()->java_mirror());
   }
@@ -179,7 +182,7 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
 oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values,
                                                     int i, BasicType type, TRAPS) {
   Klass* k = SystemDictionary::resolve_or_null(vmSymbols::java_lang_LiveStackFrameInfo(), CHECK_NULL);
-  instanceKlassHandle ik (THREAD, k);
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
@@ -270,15 +273,15 @@ objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorIn
 }
 
 // Fill StackFrameInfo with declaringClass and bci and initialize memberName
-void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method) {
+void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method, TRAPS) {
   java_lang_StackFrameInfo::set_declaringClass(stackFrame(), method->method_holder()->java_mirror());
-  java_lang_StackFrameInfo::set_method_and_bci(stackFrame(), method, bci());
+  java_lang_StackFrameInfo::set_method_and_bci(stackFrame, method, bci(), THREAD);
 }
 
 // Fill LiveStackFrameInfo with locals, monitors, and expressions
 void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
                                            const methodHandle& method, TRAPS) {
-  fill_stackframe(stackFrame, method);
+  fill_stackframe(stackFrame, method, CHECK);
   if (_jvf != NULL) {
     StackValueCollection* locals = _jvf->locals();
     StackValueCollection* expressions = _jvf->expressions();
@@ -364,12 +367,13 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
         break;
       }
 
-      if (log_is_enabled(Debug, stackwalk)) {
+      LogTarget(Debug, stackwalk) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        outputStream* st = Log(stackwalk)::debug_stream();
-        st->print("  skip ");
-        stream.method()->print_short_name(st);
-        st->cr();
+        LogStream ls(lt);
+        ls.print("  skip ");
+        stream.method()->print_short_name(&ls);
+        ls.cr();
       }
       stream.next();
     }
@@ -377,12 +381,13 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
-      if (log_is_enabled(Debug, stackwalk)) {
+      LogTarget(Debug, stackwalk) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        outputStream* st = Log(stackwalk)::debug_stream();
-        st->print("  skip ");
-        stream.method()->print_short_name(st);
-        st->cr();
+        LogStream ls(lt);
+        ls.print("  skip ");
+        stream.method()->print_short_name(&ls);
+        ls.cr();
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SPARCArithmetic {
         public static final SizeEstimate SIZE = SizeEstimate.create(5);
 
         @Opcode private final FloatConvert opcode;
-        @Def({REG, HINT}) protected Value result;
+        @Def({REG, HINT}) protected AllocatableValue result;
         @Use({REG}) protected Value x;
 
         public enum FloatConvert {
@@ -81,7 +81,7 @@ public class SPARCArithmetic {
             D2L
         }
 
-        public FloatConvertOp(FloatConvert opcode, Value x, Value result) {
+        public FloatConvertOp(FloatConvert opcode, Value x, AllocatableValue result) {
             super(TYPE, SIZE);
             this.opcode = opcode;
             this.x = x;
@@ -138,11 +138,11 @@ public class SPARCArithmetic {
         public static final SizeEstimate SIZE = SizeEstimate.create(4);
 
         @Opcode private final Rem opcode;
-        @Def({REG}) protected Value result;
+        @Def({REG}) protected AllocatableValue result;
         @Alive({REG, CONST}) protected Value x;
         @Alive({REG, CONST}) protected Value y;
-        @Temp({REG}) protected Value scratch1;
-        @Temp({REG}) protected Value scratch2;
+        @Temp({REG}) protected AllocatableValue scratch1;
+        @Temp({REG}) protected AllocatableValue scratch2;
         @State protected LIRFrameState state;
 
         public enum Rem {
@@ -150,7 +150,7 @@ public class SPARCArithmetic {
             LUREM
         }
 
-        public RemOp(Rem opcode, Value result, Value x, Value y, Value scratch1, Value scratch2, LIRFrameState state) {
+        public RemOp(Rem opcode, AllocatableValue result, Value x, Value y, AllocatableValue scratch1, AllocatableValue scratch2, LIRFrameState state) {
             super(TYPE, SIZE);
             this.opcode = opcode;
             this.result = result;
@@ -170,7 +170,9 @@ public class SPARCArithmetic {
                 assert !y.equals(scratch1);
                 switch (opcode) {
                     case LUREM:
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(x, XWORD), crb.asIntConst(y), asRegister(scratch1, XWORD));
                         masm.mulx(asRegister(scratch1, XWORD), crb.asIntConst(y), asRegister(scratch2, XWORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);
@@ -192,7 +194,9 @@ public class SPARCArithmetic {
                         }
                         assert !asRegister(xLeft, XWORD).equals(asRegister(scratch1, XWORD));
                         assert !asRegister(y, XWORD).equals(asRegister(scratch1, XWORD));
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(xLeft, XWORD), asRegister(y, XWORD), asRegister(scratch1, XWORD));
                         masm.mulx(asRegister(scratch1, XWORD), asRegister(y, XWORD), asRegister(scratch1, XWORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);
@@ -203,7 +207,9 @@ public class SPARCArithmetic {
                         assert !asRegister(result, WORD).equals(asRegister(scratch2, WORD));
                         masm.srl(asRegister(x, WORD), 0, asRegister(scratch1, WORD));
                         masm.srl(asRegister(y, WORD), 0, asRegister(result, WORD));
-                        crb.recordImplicitException(masm.position(), state);
+                        if (state != null) {
+                            crb.recordImplicitException(masm.position(), state);
+                        }
                         masm.udivx(asRegister(scratch1, WORD), asRegister(result, WORD), asRegister(scratch2, WORD));
                         masm.mulx(asRegister(scratch2, WORD), asRegister(result, WORD), asRegister(result, WORD));
                         getDelayedControlTransfer().emitControlTransfer(crb, masm);
@@ -221,11 +227,11 @@ public class SPARCArithmetic {
     public static final class SPARCIMulccOp extends SPARCLIRInstruction {
         public static final LIRInstructionClass<SPARCIMulccOp> TYPE = LIRInstructionClass.create(SPARCIMulccOp.class);
         public static final SizeEstimate SIZE = SizeEstimate.create(10);
-        @Def({REG}) protected Value result;
-        @Alive({REG}) protected Value x;
-        @Alive({REG}) protected Value y;
+        @Def({REG}) protected AllocatableValue result;
+        @Alive({REG}) protected AllocatableValue x;
+        @Alive({REG}) protected AllocatableValue y;
 
-        public SPARCIMulccOp(Value result, Value x, Value y) {
+        public SPARCIMulccOp(AllocatableValue result, AllocatableValue x, AllocatableValue y) {
             super(TYPE, SIZE);
             this.result = result;
             this.x = x;
@@ -258,13 +264,13 @@ public class SPARCArithmetic {
         public static final LIRInstructionClass<SPARCLMulccOp> TYPE = LIRInstructionClass.create(SPARCLMulccOp.class);
         public static final SizeEstimate SIZE = SizeEstimate.create(13);
 
-        @Def({REG}) protected Value result;
-        @Alive({REG}) protected Value x;
-        @Alive({REG}) protected Value y;
-        @Temp({REG}) protected Value scratch1;
-        @Temp({REG}) protected Value scratch2;
+        @Def({REG}) protected AllocatableValue result;
+        @Alive({REG}) protected AllocatableValue x;
+        @Alive({REG}) protected AllocatableValue y;
+        @Temp({REG}) protected AllocatableValue scratch1;
+        @Temp({REG}) protected AllocatableValue scratch2;
 
-        public SPARCLMulccOp(Value result, Value x, Value y, LIRGeneratorTool gen) {
+        public SPARCLMulccOp(AllocatableValue result, AllocatableValue x, AllocatableValue y, LIRGeneratorTool gen) {
             super(TYPE, SIZE);
             this.result = result;
             this.x = x;

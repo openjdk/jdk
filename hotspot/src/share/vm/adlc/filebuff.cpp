@@ -67,7 +67,7 @@ FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(arc
 //------------------------------~FileBuff--------------------------------------
 // Nuke the FileBuff
 FileBuff::~FileBuff() {
-  delete _bigbuf;
+  delete[] _bigbuf;
 }
 
 //------------------------------get_line----------------------------------------

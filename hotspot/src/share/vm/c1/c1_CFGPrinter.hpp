@@ -39,16 +39,51 @@ class Interval;
 typedef GrowableArray<Interval*> IntervalList;
 
 class CFGPrinter : public AllStatic {
-private:
-  static CFGPrinterOutput* _output;
 public:
-  static CFGPrinterOutput* output() { assert(_output != NULL, ""); return _output; }
-
-
   static void print_compilation(Compilation* compilation);
   static void print_cfg(BlockList* blocks, const char* name, bool do_print_HIR, bool do_print_LIR);
   static void print_cfg(IR* blocks, const char* name, bool do_print_HIR, bool do_print_LIR);
   static void print_intervals(IntervalList* intervals, const char* name);
+};
+
+class CFGPrinterOutput : public CHeapObj<mtCompiler> {
+ private:
+  outputStream* _output;
+
+  Compilation*  _compilation;
+  bool _do_print_HIR;
+  bool _do_print_LIR;
+
+  class PrintBlockClosure: public BlockClosure {
+    void block_do(BlockBegin* block) { if (block != NULL) Compilation::current()->cfg_printer_output()->print_block(block); }
+  };
+
+  outputStream* output() { assert(_output != NULL, ""); return _output; }
+
+  void inc_indent();
+  void dec_indent();
+  void print(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  void print_begin(const char* tag);
+  void print_end(const char* tag);
+
+  char* method_name(ciMethod* method, bool short_name = false);
+
+ public:
+  CFGPrinterOutput(Compilation* compilation);
+
+  void set_print_flags(bool do_print_HIR, bool do_print_LIR) { _do_print_HIR = do_print_HIR; _do_print_LIR = do_print_LIR; }
+
+  void print_compilation();
+  void print_intervals(IntervalList* intervals, const char* name);
+
+  void print_state(BlockBegin* block);
+  void print_operand(Value instr);
+  void print_HIR(Value instr);
+  void print_HIR(BlockBegin* block);
+  void print_LIR(BlockBegin* block);
+  void print_block(BlockBegin* block);
+  void print_cfg(BlockList* blocks, const char* name);
+  void print_cfg(IR* blocks, const char* name);
 };
 
 #endif

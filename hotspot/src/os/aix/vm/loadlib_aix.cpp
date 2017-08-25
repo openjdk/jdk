@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,10 +30,6 @@
 // See:
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp
 //      ?topic=/com.ibm.aix.basetechref/doc/basetrf1/loadquery.htm
-
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
 
 #include "loadlib_aix.hpp"
 #include "misc_aix.hpp"

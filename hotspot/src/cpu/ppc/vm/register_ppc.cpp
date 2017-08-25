@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,17 @@ const char* VectorSRegisterImpl::name() const {
     "VSR0",  "VSR1",  "VSR2",  "VSR3",  "VSR4",  "VSR5",  "VSR6",  "VSR7",
     "VSR8",  "VSR9",  "VSR10", "VSR11", "VSR12", "VSR13", "VSR14", "VSR15",
     "VSR16", "VSR17", "VSR18", "VSR19", "VSR20", "VSR21", "VSR22", "VSR23",
-    "VSR24", "VSR25", "VSR26", "VSR27", "VSR28", "VSR29", "VSR30", "VSR31"
+    "VSR24", "VSR25", "VSR26", "VSR27", "VSR28", "VSR29", "VSR30", "VSR31",
+    "VSR32", "VSR33", "VSR34", "VSR35", "VSR36", "VSR37", "VSR38", "VSR39",
+    "VSR40", "VSR41", "VSR42", "VSR43", "VSR44", "VSR45", "VSR46", "VSR47",
+    "VSR48", "VSR49", "VSR50", "VSR51", "VSR52", "VSR53", "VSR54", "VSR55",
+    "VSR56", "VSR57", "VSR58", "VSR59", "VSR60", "VSR61", "VSR62", "VSR63"
   };
   return is_valid() ? names[encoding()] : "vsnoreg";
 }
 
+// Method to convert a VectorRegister to a Vector-Scalar Register (VectorSRegister)
+VectorSRegister VectorRegisterImpl::to_vsr() const {
+  if (this == vnoreg) { return vsnoregi; }
+  return as_VectorSRegister(encoding() + 32);
+}

@@ -29,8 +29,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.RedundantMoveElimination;
@@ -38,7 +38,7 @@ import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64MultiStackMove;
 import org.graalvm.compiler.lir.amd64.AMD64Move.AMD64StackMove;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
-import org.graalvm.compiler.options.NestedBooleanOptionValue;
+import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionType;
 
@@ -58,18 +58,19 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
     public static class Options {
         // @formatter:off
         @Option(help = "", type = OptionType.Debug)
-        public static final NestedBooleanOptionValue LIROptStackMoveOptimizer = new NestedBooleanOptionValue(LIROptimization, true);
+        public static final NestedBooleanOptionKey LIROptStackMoveOptimizer = new NestedBooleanOptionKey(LIROptimization, true);
         // @formatter:on
     }
 
-    private static final DebugCounter eliminatedBackup = Debug.counter("StackMoveOptimizer[EliminatedScratchBackupRestore]");
+    private static final CounterKey eliminatedBackup = DebugContext.counter("StackMoveOptimizer[EliminatedScratchBackupRestore]");
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, PostAllocationOptimizationContext context) {
         LIR lir = lirGenRes.getLIR();
+        DebugContext debug = lir.getDebug();
         for (AbstractBlockBase<?> block : lir.getControlFlowGraph().getBlocks()) {
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
-            new Closure().process(instructions);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            new Closure().process(debug, instructions);
         }
     }
 
@@ -83,7 +84,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
         private AllocatableValue slot;
         private boolean removed = false;
 
-        public void process(List<LIRInstruction> instructions) {
+        public void process(DebugContext debug, List<LIRInstruction> instructions) {
             for (int i = 0; i < instructions.size(); i++) {
                 LIRInstruction inst = instructions.get(i);
 
@@ -92,7 +93,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
 
                     if (reg != null && !reg.equals(move.getScratchRegister())) {
                         // end of trace & start of new
-                        replaceStackMoves(instructions);
+                        replaceStackMoves(debug, instructions);
                     }
 
                     // lazy initialize
@@ -114,7 +115,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
 
                 } else if (begin != NONE) {
                     // end of trace
-                    replaceStackMoves(instructions);
+                    replaceStackMoves(debug, instructions);
                 }
             }
             // remove instructions
@@ -124,7 +125,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
 
         }
 
-        private void replaceStackMoves(List<LIRInstruction> instructions) {
+        private void replaceStackMoves(DebugContext debug, List<LIRInstruction> instructions) {
             int size = dst.size();
             if (size > 1) {
                 AMD64MultiStackMove multiMove = new AMD64MultiStackMove(dst.toArray(new AllocatableValue[size]), src.toArray(new AllocatableValue[size]), reg, slot);
@@ -134,7 +135,7 @@ public class StackMoveOptimizationPhase extends PostAllocationOptimizationPhase 
                 Collections.fill(instructions.subList(begin + 1, begin + size), null);
                 // removed
                 removed = true;
-                eliminatedBackup.add(size - 1);
+                eliminatedBackup.add(debug, size - 1);
             }
             // reset
             dst.clear();

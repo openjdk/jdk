@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ class SlowSignatureHandler
   }
 
  public:
-  SlowSignatureHandler(methodHandle method, address from, intptr_t* to)
+  SlowSignatureHandler(const methodHandle& method, address from, intptr_t* to)
     : NativeSignatureIterator(method)
   {
     _from = from;
@@ -461,7 +461,7 @@ class SlowSignatureHandler
   }
 
  public:
-  SlowSignatureHandler(methodHandle method, address from, intptr_t* to)
+  SlowSignatureHandler(const methodHandle& method, address from, intptr_t* to)
     : NativeSignatureIterator(method)
   {
     _from = from;

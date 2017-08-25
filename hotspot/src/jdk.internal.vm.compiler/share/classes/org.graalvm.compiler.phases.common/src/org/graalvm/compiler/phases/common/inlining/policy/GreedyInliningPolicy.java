@@ -31,18 +31,19 @@ import static org.graalvm.compiler.core.common.GraalOptions.TrivialInliningSize;
 
 import java.util.Map;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.inlining.walker.MethodInvocation;
 
 public class GreedyInliningPolicy extends AbstractInliningPolicy {
 
-    private static final DebugCounter inliningStoppedByMaxDesiredSizeCounter = Debug.counter("InliningStoppedByMaxDesiredSize");
+    private static final CounterKey inliningStoppedByMaxDesiredSizeCounter = DebugContext.counter("InliningStoppedByMaxDesiredSize");
 
     public GreedyInliningPolicy(Map<Invoke, Double> hints) {
         super(hints);
@@ -50,9 +51,10 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
 
     @Override
     public boolean continueInlining(StructuredGraph currentGraph) {
-        if (InliningUtil.getNodeCount(currentGraph) >= MaximumDesiredSize.getValue()) {
-            InliningUtil.logInliningDecision("inlining is cut off by MaximumDesiredSize");
-            inliningStoppedByMaxDesiredSizeCounter.increment();
+        if (InliningUtil.getNodeCount(currentGraph) >= MaximumDesiredSize.getValue(currentGraph.getOptions())) {
+            DebugContext debug = currentGraph.getDebug();
+            InliningUtil.logInliningDecision(debug, "inlining is cut off by MaximumDesiredSize");
+            inliningStoppedByMaxDesiredSizeCounter.increment(debug);
             return false;
         }
         return true;
@@ -62,10 +64,11 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
     public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
 
         final InlineInfo info = invocation.callee();
+        OptionValues options = info.graph().getOptions();
         final double probability = invocation.probability();
         final double relevance = invocation.relevance();
 
-        if (InlineEverything.getValue()) {
+        if (InlineEverything.getValue(options)) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "inline everything");
             return true;
         }
@@ -84,13 +87,13 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
         int nodes = info.determineNodeCount();
         int lowLevelGraphSize = previousLowLevelGraphSize(info);
 
-        if (SmallCompiledLowLevelGraphSize.getValue() > 0 && lowLevelGraphSize > SmallCompiledLowLevelGraphSize.getValue() * inliningBonus) {
+        if (SmallCompiledLowLevelGraphSize.getValue(options) > 0 && lowLevelGraphSize > SmallCompiledLowLevelGraphSize.getValue(options) * inliningBonus) {
             InliningUtil.logNotInlinedMethod(info, inliningDepth, "too large previous low-level graph (low-level-nodes: %d, relevance=%f, probability=%f, bonus=%f, nodes=%d)", lowLevelGraphSize,
                             relevance, probability, inliningBonus, nodes);
             return false;
         }
 
-        if (nodes < TrivialInliningSize.getValue() * inliningBonus) {
+        if (nodes < TrivialInliningSize.getValue(options) * inliningBonus) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "trivial (relevance=%f, probability=%f, bonus=%f, nodes=%d)", relevance, probability, inliningBonus, nodes);
             return true;
         }
@@ -102,13 +105,13 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
          * queued in the compilation queue concurrently)
          */
         double invokes = determineInvokeProbability(info);
-        if (LimitInlinedInvokes.getValue() > 0 && fullyProcessed && invokes > LimitInlinedInvokes.getValue() * inliningBonus) {
+        if (LimitInlinedInvokes.getValue(options) > 0 && fullyProcessed && invokes > LimitInlinedInvokes.getValue(options) * inliningBonus) {
             InliningUtil.logNotInlinedMethod(info, inliningDepth, "callee invoke probability is too high (invokeP=%f, relevance=%f, probability=%f, bonus=%f, nodes=%d)", invokes, relevance,
                             probability, inliningBonus, nodes);
             return false;
         }
 
-        double maximumNodes = computeMaximumSize(relevance, (int) (MaximumInliningSize.getValue() * inliningBonus));
+        double maximumNodes = computeMaximumSize(relevance, (int) (MaximumInliningSize.getValue(options) * inliningBonus));
         if (nodes <= maximumNodes) {
             InliningUtil.logInlinedMethod(info, inliningDepth, fullyProcessed, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d <= %f)", relevance, probability, inliningBonus,
                             nodes, maximumNodes);

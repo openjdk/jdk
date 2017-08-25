@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class QuickSort : AllStatic {
 
  private:
   template<class T>
-  static void swap(T* array, int x, int y) {
+  static void swap(T* array, size_t x, size_t y) {
     T tmp = array[x];
     array[x] = array[y];
     array[y] = tmp;
@@ -46,19 +46,19 @@ class QuickSort : AllStatic {
   //     array[first] <= array[middle] <= array[last]
   // A side effect of this is that arrays of length <= 3 are sorted.
   template<class T, class C>
-  static int find_pivot(T* array, int length, C comparator) {
+  static size_t find_pivot(T* array, size_t length, C comparator) {
     assert(length > 1, "length of array must be > 0");
 
-    int middle_index = length / 2;
-    int last_index = length - 1;
+    size_t middle_index = length / 2;
+    size_t last_index = length - 1;
 
-    if (comparator(array[0], array[middle_index]) == 1) {
+    if (comparator(array[0], array[middle_index]) > 0) {
       swap(array, 0, middle_index);
     }
-    if (comparator(array[0], array[last_index]) == 1) {
+    if (comparator(array[0], array[last_index]) > 0) {
       swap(array, 0, last_index);
     }
-    if (comparator(array[middle_index], array[last_index]) == 1) {
+    if (comparator(array[middle_index], array[last_index]) > 0) {
       swap(array, middle_index, last_index);
     }
     // Now the value in the middle of the array is the median
@@ -66,19 +66,19 @@ class QuickSort : AllStatic {
     return middle_index;
   }
 
-  template<class T, class C, bool idempotent>
-  static int partition(T* array, int pivot, int length, C comparator) {
-    int left_index = -1;
-    int right_index = length;
+  template<bool idempotent, class T, class C>
+  static size_t partition(T* array, size_t pivot, size_t length, C comparator) {
+    size_t left_index = 0;
+    size_t right_index = length - 1;
     T pivot_val = array[pivot];
 
-    while (true) {
-      do {
-        left_index++;
-      } while (comparator(array[left_index], pivot_val) == -1);
-      do {
-        right_index--;
-      } while (comparator(array[right_index], pivot_val) == 1);
+    for ( ; true; ++left_index, --right_index) {
+      for ( ; comparator(array[left_index], pivot_val) < 0; ++left_index) {
+        assert(left_index < length, "reached end of partition");
+      }
+      for ( ; comparator(array[right_index], pivot_val) > 0; --right_index) {
+        assert(right_index > 0, "reached start of partition");
+      }
 
       if (left_index < right_index) {
         if (!idempotent || comparator(array[left_index], array[right_index]) != 0) {
@@ -93,20 +93,20 @@ class QuickSort : AllStatic {
     return 0;
   }
 
-  template<class T, class C, bool idempotent>
-  static void inner_sort(T* array, int length, C comparator) {
+  template<bool idempotent, class T, class C>
+  static void inner_sort(T* array, size_t length, C comparator) {
     if (length < 2) {
       return;
     }
-    int pivot = find_pivot(array, length, comparator);
+    size_t pivot = find_pivot(array, length, comparator);
     if (length < 4) {
       // arrays up to length 3 will be sorted after finding the pivot
       return;
     }
-    int split = partition<T, C, idempotent>(array, pivot, length, comparator);
-    int first_part_length = split + 1;
-    inner_sort<T, C, idempotent>(array, first_part_length, comparator);
-    inner_sort<T, C, idempotent>(&array[first_part_length], length - first_part_length, comparator);
+    size_t split = partition<idempotent>(array, pivot, length, comparator);
+    size_t first_part_length = split + 1;
+    inner_sort<idempotent>(array, first_part_length, comparator);
+    inner_sort<idempotent>(&array[first_part_length], length - first_part_length, comparator);
   }
 
  public:
@@ -116,12 +116,12 @@ class QuickSort : AllStatic {
   // calls to the comparator, so the performance
   // impact depends on the comparator.
   template<class T, class C>
-  static void sort(T* array, int length, C comparator, bool idempotent) {
+  static void sort(T* array, size_t length, C comparator, bool idempotent) {
     // Switch "idempotent" from function paramter to template parameter
     if (idempotent) {
-      inner_sort<T, C, true>(array, length, comparator);
+      inner_sort<true>(array, length, comparator);
     } else {
-      inner_sort<T, C, false>(array, length, comparator);
+      inner_sort<false>(array, length, comparator);
     }
   }
 };

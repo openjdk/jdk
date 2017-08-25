@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,72 +172,8 @@ void PlaceholderTable::find_and_remove(int index, unsigned int hash,
   }
 
 PlaceholderTable::PlaceholderTable(int table_size)
-    : TwoOopHashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
+    : Hashtable<Symbol*, mtClass>(table_size, sizeof(PlaceholderEntry)) {
 }
-
-
-void PlaceholderTable::classes_do(KlassClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (PlaceholderEntry* probe = bucket(index);
-                           probe != NULL;
-                           probe = probe->next()) {
-      probe->classes_do(f);
-    }
-  }
-}
-
-
-void PlaceholderEntry::classes_do(KlassClosure* closure) {
-  assert(klassname() != NULL, "should have a non-null klass");
-  if (_instanceKlass != NULL) {
-    closure->do_klass(instance_klass());
-  }
-}
-
-// do all entries in the placeholder table
-void PlaceholderTable::entries_do(void f(Symbol*)) {
-  for (int index = 0; index < table_size(); index++) {
-    for (PlaceholderEntry* probe = bucket(index);
-                           probe != NULL;
-                           probe = probe->next()) {
-      f(probe->klassname());
-    }
-  }
-}
-
-
-#ifndef PRODUCT
-// Note, doesn't append a cr
-void PlaceholderEntry::print() const {
-  klassname()->print_value();
-  if (loader_data() != NULL) {
-    tty->print(", loader ");
-    loader_data()->print_value();
-  }
-  if (supername() != NULL) {
-    tty->print(", supername ");
-    supername()->print_value();
-  }
-  if (definer() != NULL) {
-    tty->print(", definer ");
-    definer()->print_value();
-  }
-  if (instance_klass() != NULL) {
-    tty->print(", InstanceKlass ");
-    instance_klass()->print_value();
-  }
-  tty->print("\n");
-  tty->print("loadInstanceThreadQ threads:");
-  loadInstanceThreadQ()->printActionQ();
-  tty->print("\n");
-  tty->print("superThreadQ threads:");
-  superThreadQ()->printActionQ();
-  tty->print("\n");
-  tty->print("defineThreadQ threads:");
-  defineThreadQ()->printActionQ();
-  tty->print("\n");
-}
-#endif
 
 void PlaceholderEntry::verify() const {
   guarantee(loader_data() != NULL, "Must have been setup.");
@@ -249,32 +185,52 @@ void PlaceholderEntry::verify() const {
 }
 
 void PlaceholderTable::verify() {
-  int element_count = 0;
+  verify_table<PlaceholderEntry>("Placeholder Table");
+}
+
+
+// Note, doesn't append a cr
+// Can't call this print_on because HashtableEntry doesn't initialize its vptr
+// and print_on is a virtual function so the vptr call crashes.
+void PlaceholderEntry::print_entry(outputStream* st) const {
+  klassname()->print_value_on(st);
+  if (loader_data() != NULL) {
+    st->print(", loader ");
+    loader_data()->print_value_on(st);
+  }
+  if (supername() != NULL) {
+    st->print(", supername ");
+    supername()->print_value_on(st);
+  }
+  if (definer() != NULL) {
+    st->print(", definer ");
+    definer()->print_value_on(st);
+  }
+  if (instance_klass() != NULL) {
+    st->print(", InstanceKlass ");
+    instance_klass()->print_value_on(st);
+  }
+  st->cr();
+  st->print("loadInstanceThreadQ threads:");
+  loadInstanceThreadQ()->print_action_queue(st);
+  st->cr();
+  st->print("superThreadQ threads:");
+  superThreadQ()->print_action_queue(st);
+  st->cr();
+  st->print("defineThreadQ threads:");
+  defineThreadQ()->print_action_queue(st);
+  st->cr();
+}
+
+void PlaceholderTable::print_on(outputStream* st) const {
+  st->print_cr("Placeholder table (table_size=%d, placeholders=%d)",
+                table_size(), number_of_entries());
   for (int pindex = 0; pindex < table_size(); pindex++) {
     for (PlaceholderEntry* probe = bucket(pindex);
                            probe != NULL;
                            probe = probe->next()) {
-      probe->verify();
-      element_count++;  // both klasses and place holders count
-    }
-  }
-  guarantee(number_of_entries() == element_count,
-            "Verify of system dictionary failed");
-}
-
-
-#ifndef PRODUCT
-void PlaceholderTable::print() {
-  for (int pindex = 0; pindex < table_size(); pindex++) {
-    for (PlaceholderEntry* probe = bucket(pindex);
-                           probe != NULL;
-                           probe = probe->next()) {
-      if (Verbose) tty->print("%4d: ", pindex);
-      tty->print(" place holder ");
-
-      probe->print();
-      tty->cr();
+      st->print("%4d: placeholder ", pindex);
+      probe->print_entry(st);
     }
   }
 }
-#endif

@@ -67,7 +67,7 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
                 return forX;
             }
             if (c == -1) {
-                return new NegateNode(forX);
+                return NegateNode.create(forX);
             }
             long abs = Math.abs(c);
             if (CodeUtil.isPowerOf2(abs) && forX.stamp() instanceof IntegerStamp) {
@@ -83,7 +83,7 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
                 }
                 RightShiftNode shift = new RightShiftNode(dividend, ConstantNode.forInt(log2));
                 if (c < 0) {
-                    return new NegateNode(shift);
+                    return NegateNode.create(shift);
                 }
                 return shift;
             }
@@ -96,7 +96,9 @@ public class SignedDivNode extends IntegerDivRemNode implements LIRLowerable {
                 SignedRemNode integerRemNode = (SignedRemNode) integerSubNode.getY();
                 if (integerSubNode.stamp().isCompatible(this.stamp()) && integerRemNode.stamp().isCompatible(this.stamp()) && integerSubNode.getX() == integerRemNode.getX() &&
                                 forY == integerRemNode.getY()) {
-                    return new SignedDivNode(integerSubNode.getX(), forY);
+                    SignedDivNode sd = new SignedDivNode(integerSubNode.getX(), forY);
+                    sd.stateBefore = this.stateBefore;
+                    return sd;
                 }
             }
         }

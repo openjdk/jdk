@@ -70,7 +70,7 @@ public class DeoptimizeDirectiveTest extends GraalCompilerTest {
         Result actual;
         try {
             actual = new Result(code.executeVarargs(), null);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             actual = new Result(null, e);
         }
 
@@ -90,5 +90,32 @@ public class DeoptimizeDirectiveTest extends GraalCompilerTest {
         ResolvedJavaMethod method = getResolvedJavaMethod("deoptimizeSnippet");
         boolean valid = testDeoptimizeCheckValid(method);
         Assert.assertTrue("code should still be valid", valid);
+    }
+
+    public static int zeroBranchProbabilitySnippet(boolean flag) {
+        if (GraalDirectives.injectBranchProbability(0, flag)) {
+            GraalDirectives.controlFlowAnchor(); // prevent removal of the if
+            return 1;
+        } else {
+            GraalDirectives.controlFlowAnchor(); // prevent removal of the if
+            return 2;
+        }
+    }
+
+    @Test
+    public void testZeroBranchProbability() {
+        ResolvedJavaMethod method = getResolvedJavaMethod("zeroBranchProbabilitySnippet");
+        Result expected = executeExpected(method, null, true);
+
+        InstalledCode code = getCode(method);
+        Result actual;
+        try {
+            actual = new Result(code.executeVarargs(true), null);
+        } catch (Exception e) {
+            actual = new Result(null, e);
+        }
+
+        assertEquals(expected, actual);
+        assertFalse("code should be invalidated", code.isValid());
     }
 }

@@ -51,7 +51,7 @@ public final class AMD64HotSpotLoadConfigValueOp extends AMD64LIRInstruction {
 
     @Override
     public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-        if (GeneratePIC.getValue()) {
+        if (GeneratePIC.getValue(crb.getOptions())) {
             AMD64Kind kind = (AMD64Kind) result.getPlatformKind();
             Register reg = asRegister(result);
             AMD64Address placeholder = masm.getPlaceholder(-1);

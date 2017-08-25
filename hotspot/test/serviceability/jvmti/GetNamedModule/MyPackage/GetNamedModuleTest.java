@@ -26,7 +26,6 @@ package MyPackage;
 /**
  * @test
  * @summary Verifies the JVMTI GetNamedModule API
- * @modules jdk.jdi
  * @compile GetNamedModuleTest.java
  * @run main/othervm/native -agentlib:GetNamedModuleTest MyPackage.GetNamedModuleTest
  */

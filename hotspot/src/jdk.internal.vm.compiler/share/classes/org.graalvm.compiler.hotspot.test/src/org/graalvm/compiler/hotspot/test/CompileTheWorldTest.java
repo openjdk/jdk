@@ -22,14 +22,16 @@
  */
 package org.graalvm.compiler.hotspot.test;
 
-import static org.graalvm.compiler.core.GraalCompilerOptions.ExitVMOnException;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
+import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 
-import org.junit.Test;
-
+import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
-import org.graalvm.compiler.hotspot.CompileTheWorld;
-import org.graalvm.compiler.hotspot.CompileTheWorld.Config;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.util.EconomicMap;
+import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
@@ -41,11 +43,15 @@ public class CompileTheWorldTest extends GraalCompilerTest {
 
     @Test
     public void testJDK() throws Throwable {
-        boolean originalSetting = ExitVMOnException.getValue();
+        ExceptionAction originalBailoutAction = CompilationBailoutAction.getValue(getInitialOptions());
+        ExceptionAction originalFailureAction = CompilationFailureAction.getValue(getInitialOptions());
         // Compile a couple classes in rt.jar
         HotSpotJVMCIRuntimeProvider runtime = HotSpotJVMCIRuntime.runtime();
-        System.setProperty(CompileTheWorld.LIMITMODS_PROPERTY_NAME, "java.base");
-        new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, new Config("Inline=false"), 1, 5, null, null, true).compile();
-        assert ExitVMOnException.getValue() == originalSetting;
+        System.setProperty("CompileTheWorld.LimitModules", "java.base");
+        OptionValues initialOptions = getInitialOptions();
+        EconomicMap<OptionKey<?>, Object> compilationOptions = CompileTheWorld.parseOptions("Inline=false");
+        new CompileTheWorld(runtime, (HotSpotGraalCompiler) runtime.getCompiler(), CompileTheWorld.SUN_BOOT_CLASS_PATH, 1, 5, null, null, false, initialOptions, compilationOptions).compile();
+        assert CompilationBailoutAction.getValue(initialOptions) == originalBailoutAction;
+        assert CompilationFailureAction.getValue(initialOptions) == originalFailureAction;
     }
 }

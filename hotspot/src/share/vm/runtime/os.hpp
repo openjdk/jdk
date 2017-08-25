@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #endif
 
 class AgentLibrary;
+class frame;
 
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
@@ -731,7 +732,7 @@ class os: AllStatic {
   static struct hostent* get_host_by_name(char* name);
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
-  static void  signal_init();
+  static void  signal_init(TRAPS);
   static void  signal_init_pd();
   static void  signal_notify(int signal_number);
   static void* signal(int signal_number, void* handler);
@@ -743,8 +744,8 @@ class os: AllStatic {
   static int   sigexitnum_pd();
 
   // random number generation
-  static long random();                    // return 32bit pseudorandom number
-  static void init_random(long initval);   // initialize random sequence
+  static int random();                     // return 32bit pseudorandom number
+  static void init_random(unsigned int initval);    // initialize random sequence
 
   // Structured OS Exception support
   static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
@@ -956,7 +957,7 @@ class os: AllStatic {
 
 
  protected:
-  static long _rand_seed;                     // seed for random number generator
+  static volatile unsigned int _rand_seed;    // seed for random number generator
   static int _processor_count;                // number of processors
   static int _initial_active_processor_count; // number of active processors during initialization.
 
