@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,17 +40,10 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 public class TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
         extends TestPrintPreciseRTMLockingStatisticsBase {
-    private TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
 
     @Override
     protected void verifyOptionValues() throws Throwable {
@@ -87,6 +80,6 @@ public class TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
 
     public static void main(String args[]) throws Throwable {
         new TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig()
-                .test();
+                .runTestCases();
     }
 }

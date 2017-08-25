@@ -22,8 +22,11 @@
  */
 package org.graalvm.compiler.nodes.java;
 
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
+
 import java.lang.reflect.Modifier;
 
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -56,6 +59,7 @@ public class DynamicNewInstanceNode extends AbstractNewObjectNode implements Can
     protected DynamicNewInstanceNode(NodeClass<? extends DynamicNewInstanceNode> c, ValueNode clazz, boolean fillContents, FrameState stateBefore) {
         super(c, StampFactory.objectNonNull(), fillContents, stateBefore);
         this.clazz = clazz;
+        assert ((ObjectStamp) clazz.stamp()).nonNull();
     }
 
     public ValueNode getInstanceType() {
@@ -65,6 +69,11 @@ public class DynamicNewInstanceNode extends AbstractNewObjectNode implements Can
     @Override
     public Node canonical(CanonicalizerTool tool) {
         if (clazz.isConstant()) {
+            if (GeneratePIC.getValue(tool.getOptions())) {
+                // Can't fold for AOT, because the resulting NewInstanceNode will be missing its
+                // InitializeKlassNode.
+                return this;
+            }
             ResolvedJavaType type = tool.getConstantReflection().asJavaType(clazz.asConstant());
             if (type != null && type.isInitialized() && !throwsInstantiationException(type, tool.getMetaAccess())) {
                 return createNewInstanceNode(type);

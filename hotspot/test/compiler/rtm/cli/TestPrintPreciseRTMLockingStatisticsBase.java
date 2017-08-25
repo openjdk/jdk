@@ -27,15 +27,12 @@ import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 
-import java.util.function.BooleanSupplier;
-
 public abstract class TestPrintPreciseRTMLockingStatisticsBase
         extends RTMGenericCommandLineOptionTest {
     protected static final String DEFAULT_VALUE = "false";
 
-    protected TestPrintPreciseRTMLockingStatisticsBase(
-            BooleanSupplier predicate) {
-        super(predicate, "PrintPreciseRTMLockingStatistics", true, false,
+    protected TestPrintPreciseRTMLockingStatisticsBase() {
+        super("PrintPreciseRTMLockingStatistics", true, false,
                 TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE);
     }
 

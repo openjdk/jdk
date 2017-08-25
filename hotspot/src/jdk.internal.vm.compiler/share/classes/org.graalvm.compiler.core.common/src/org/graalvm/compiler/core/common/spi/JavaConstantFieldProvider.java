@@ -24,7 +24,7 @@ package org.graalvm.compiler.core.common.spi;
 
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionKey;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
@@ -39,7 +39,7 @@ public abstract class JavaConstantFieldProvider implements ConstantFieldProvider
 
     static class Options {
         @Option(help = "Determines whether to treat final fields with default values as constant.")//
-        public static final OptionValue<Boolean> TrustFinalDefaultFields = new OptionValue<>(true);
+        public static final OptionKey<Boolean> TrustFinalDefaultFields = new OptionKey<>(true);
     }
 
     protected JavaConstantFieldProvider(MetaAccessProvider metaAccess) {
@@ -93,7 +93,7 @@ public abstract class JavaConstantFieldProvider implements ConstantFieldProvider
 
     @SuppressWarnings("unused")
     protected boolean isFinalFieldValueConstant(ResolvedJavaField field, JavaConstant value, ConstantFieldTool<?> tool) {
-        return !value.isDefaultForKind() || Options.TrustFinalDefaultFields.getValue();
+        return !value.isDefaultForKind() || Options.TrustFinalDefaultFields.getValue(tool.getOptions());
     }
 
     @SuppressWarnings("unused")
@@ -104,7 +104,7 @@ public abstract class JavaConstantFieldProvider implements ConstantFieldProvider
         if (isWellKnownImplicitStableField(field)) {
             return true;
         }
-        if (field == stringHashField) {
+        if (field.equals(stringHashField)) {
             return true;
         }
         return false;

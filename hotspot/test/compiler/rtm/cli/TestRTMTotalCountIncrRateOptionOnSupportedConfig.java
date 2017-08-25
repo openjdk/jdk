@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -50,11 +50,11 @@ public class TestRTMTotalCountIncrRateOptionOnSupportedConfig
                 /* correct values */
                 new String[] { "1", "2", "128", "1024" },
                 /* incorrect values */
-                new String[] { "-1", "0", "3", "42" },
+                new String[] { "3", "5", "7", "42" },
                 RTMGenericCommandLineOptionTest.RTM_COUNT_INCR_WARNING);
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMTotalCountIncrRateOptionOnSupportedConfig().test();
+        new TestRTMTotalCountIncrRateOptionOnSupportedConfig().runTestCases();
     }
 }

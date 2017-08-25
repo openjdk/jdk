@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,20 +107,28 @@ public:
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL fieldName
   static VMStructEntry localHotSpotVMStructs[];
+  // The function to get localHotSpotVMStructs length
+  static size_t localHotSpotVMStructsLength();
 
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMTypeEntry   localHotSpotVMTypes[];
+  // The function to get localHotSpotVMTypes length
+  static size_t localHotSpotVMTypesLength();
 
   // Table of integer constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMIntConstantEntry localHotSpotVMIntConstants[];
+  // The function to get localHotSpotVMIntConstants length
+  static size_t localHotSpotVMIntConstantsLength();
 
   // Table of long constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMLongConstantEntry localHotSpotVMLongConstants[];
+  // The function to get localHotSpotVMIntConstants length
+  static size_t localHotSpotVMLongConstantsLength();
 
   /**
    * Table of addresses.

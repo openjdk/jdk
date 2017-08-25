@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ class Klass : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  protected:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to Klass::metaspace_pointers_do().
+
   // note: put frequently-used fields together at start of klass structure
   // for better cache behavior (may not make much of a difference but sure won't hurt)
   enum { _primary_super_limit = 8 };
@@ -366,7 +369,7 @@ protected:
   static int layout_helper_log2_element_size(jint lh) {
     assert(lh < (jint)_lh_neutral_value, "must be array");
     int l2esz = (lh >> _lh_log2_element_size_shift) & _lh_log2_element_size_mask;
-    assert(l2esz <= LogBitsPerLong,
+    assert(l2esz <= LogBytesPerLong,
            "sanity. l2esz: 0x%x for lh: 0x%x", (uint)l2esz, (uint)lh);
     return l2esz;
   }
@@ -399,7 +402,7 @@ protected:
 #endif
 
   // vtables
-  klassVtable* vtable() const;
+  klassVtable vtable() const;
   int vtable_length() const { return _vtable_len; }
 
   // subclass check
@@ -563,6 +566,8 @@ protected:
   void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
   bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
   void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
+  bool is_shared() const                { return access_flags().is_shared_class(); } // shadows MetaspaceObj::is_shared)()
+  void set_is_shared()                  { _access_flags.set_is_shared_class(); }
 
   bool is_cloneable() const;
   void set_is_cloneable();
@@ -595,6 +600,9 @@ protected:
   // garbage collection support
   void oops_do(OopClosure* cl);
 
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return ClassType; }
+
   // Iff the class loader (or mirror for anonymous classes) is alive the
   // Klass is considered alive.
   // The is_alive closure passed in depends on the Garbage Collector used.
@@ -607,8 +615,6 @@ protected:
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  virtual int  oop_ms_adjust_pointers(oop obj) = 0;
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;

@@ -22,12 +22,7 @@
  */
 package org.graalvm.compiler.core.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.BeginNode;
@@ -39,16 +34,23 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.printer.GraalDebugHandlersFactory;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class SimpleCFGTest extends GraalCompilerTest {
 
     private static void dumpGraph(final StructuredGraph graph) {
-        Debug.dump(Debug.BASIC_LOG_LEVEL, graph, "Graph");
+        DebugContext debug = graph.getDebug();
+        debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
     }
 
     @Test
     public void testImplies() {
-        StructuredGraph graph = new StructuredGraph(AllowAssumptions.YES, INVALID_COMPILATION_ID);
+        OptionValues options = getInitialOptions();
+        DebugContext debug = DebugContext.create(options, new GraalDebugHandlersFactory(getSnippetReflection()));
+        StructuredGraph graph = new StructuredGraph.Builder(options, debug, AllowAssumptions.YES).build();
 
         EndNode trueEnd = graph.add(new EndNode());
         EndNode falseEnd = graph.add(new EndNode());
@@ -109,7 +111,13 @@ public class SimpleCFGTest extends GraalCompilerTest {
     }
 
     public static void assertDominatedSize(Block block, int size) {
-        Assert.assertEquals("number of dominated blocks of " + block, size, block.getDominated().size());
+        int count = 0;
+        Block domChild = block.getFirstDominated();
+        while (domChild != null) {
+            count++;
+            domChild = domChild.getDominatedSibling();
+        }
+        Assert.assertEquals("number of dominated blocks of " + block, size, count);
     }
 
     public static void assertPostdominator(Block block, Block expectedPostdominator) {

@@ -27,6 +27,7 @@
 #include "classfile/defaultMethods.hpp"
 #include "classfile/symbolTable.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -433,11 +434,11 @@ class MethodFamily : public ResourceObj {
     } else if (num_defaults > 1) {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
-      if (log_is_enabled(Debug, defaultmethods)) {
-        ResourceMark rm;
-        outputStream* logstream = Log(defaultmethods)::debug_stream();
-        _exception_message->print_value_on(logstream);
-        logstream->cr();
+      LogTarget(Debug, defaultmethods) lt;
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        _exception_message->print_value_on(&ls);
+        ls.cr();
       }
     }
   }
@@ -658,15 +659,16 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
     super = super->java_super();
   }
 
-  if (log_is_enabled(Debug, defaultmethods)) {
-    log_debug(defaultmethods)("Slots that need filling:");
+  LogTarget(Debug, defaultmethods) lt;
+  if (lt.is_enabled()) {
+    lt.print("Slots that need filling:");
     ResourceMark rm;
-    outputStream* logstream = Log(defaultmethods)::debug_stream();
-    streamIndentor si(logstream);
+    LogStream ls(lt);
+    streamIndentor si(&ls);
     for (int i = 0; i < slots->length(); ++i) {
-      logstream->indent();
-      slots->at(i)->print_on(logstream);
-      logstream->cr();
+      ls.indent();
+      slots->at(i)->print_on(&ls);
+      ls.cr();
     }
   }
 
@@ -792,12 +794,14 @@ void DefaultMethods::generate_default_methods(
   KeepAliveVisitor loadKeepAlive(&keepAlive);
   loadKeepAlive.run(klass);
 
-  if (log_is_enabled(Debug, defaultmethods)) {
+  LogTarget(Debug, defaultmethods) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    log_debug(defaultmethods)("%s %s requires default method processing",
-                              klass->is_interface() ? "Interface" : "Class",
-                              klass->name()->as_klass_external_name());
-    PrintHierarchy printer(Log(defaultmethods)::debug_stream());
+    lt.print("%s %s requires default method processing",
+             klass->is_interface() ? "Interface" : "Class",
+             klass->name()->as_klass_external_name());
+    LogStream ls(lt);
+    PrintHierarchy printer(&ls);
     printer.run(klass);
   }
 
@@ -806,12 +810,13 @@ void DefaultMethods::generate_default_methods(
 
   for (int i = 0; i < empty_slots->length(); ++i) {
     EmptyVtableSlot* slot = empty_slots->at(i);
-    if (log_is_enabled(Debug, defaultmethods)) {
-      outputStream* logstream = Log(defaultmethods)::debug_stream();
-      streamIndentor si(logstream, 2);
-      logstream->indent().print("Looking for default methods for slot ");
-      slot->print_on(logstream);
-      logstream->cr();
+    LogTarget(Debug, defaultmethods) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      streamIndentor si(&ls, 2);
+      ls.indent().print("Looking for default methods for slot ");
+      slot->print_on(&ls);
+      ls.cr();
     }
     generate_erased_defaults(klass, empty_slots, slot, CHECK);
   }
@@ -911,16 +916,17 @@ static void create_defaults_and_exceptions(
       MethodFamily* method = slot->get_binding();
       BytecodeBuffer buffer;
 
-      if (log_is_enabled(Debug, defaultmethods)) {
+      LogTarget(Debug, defaultmethods) lt;
+      if (lt.is_enabled()) {
         ResourceMark rm(THREAD);
-        outputStream* logstream = Log(defaultmethods)::debug_stream();
-        logstream->print("for slot: ");
-        slot->print_on(logstream);
-        logstream->cr();
+        LogStream ls(lt);
+        ls.print("for slot: ");
+        slot->print_on(&ls);
+        ls.cr();
         if (method->has_target()) {
-          method->print_selected(logstream, 1);
+          method->print_selected(&ls, 1);
         } else if (method->throws_exception()) {
-          method->print_exception(logstream, 1);
+          method->print_exception(&ls, 1);
         }
       }
 

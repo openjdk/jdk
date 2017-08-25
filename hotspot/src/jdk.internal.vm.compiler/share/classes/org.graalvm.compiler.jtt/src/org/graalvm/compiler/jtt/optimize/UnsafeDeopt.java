@@ -22,44 +22,30 @@
  */
 package org.graalvm.compiler.jtt.optimize;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-
-import org.junit.Test;
-import org.junit.internal.AssumptionViolatedException;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Test;
+import org.junit.internal.AssumptionViolatedException;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import sun.misc.Unsafe;
 
 public class UnsafeDeopt extends JTTTest {
-    private static final Unsafe unsafe;
-
-    static {
-        try {
-            final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            unsafe = (Unsafe) unsafeField.get(null);
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
 
     public static int readWriteReadUnsafe(long addr, int m) {
-        int original = unsafe.getInt(addr);
+        int original = UNSAFE.getInt(addr);
         if (original != 0) {
             return -m;
         }
-        unsafe.putInt(addr, m);
+        UNSAFE.putInt(addr, m);
         if (m > 10) {
             if (m > 20) {
                 GraalDirectives.deoptimize();
             }
-            unsafe.putInt(addr + 4, m);
+            UNSAFE.putInt(addr + 4, m);
         }
-        return unsafe.getInt(addr);
+        return UNSAFE.getInt(addr);
     }
 
     public static int readWriteReadByteBuffer(ByteBuffer buffer, int m) {
@@ -78,13 +64,13 @@ public class UnsafeDeopt extends JTTTest {
     }
 
     public long createBuffer() {
-        long addr = unsafe.allocateMemory(32);
-        unsafe.setMemory(addr, 32, (byte) 0);
+        long addr = UNSAFE.allocateMemory(32);
+        UNSAFE.setMemory(addr, 32, (byte) 0);
         return addr;
     }
 
     public void disposeBuffer(long addr) {
-        unsafe.freeMemory(addr);
+        UNSAFE.freeMemory(addr);
     }
 
     @Test

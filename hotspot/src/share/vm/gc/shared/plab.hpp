@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,10 @@ class PLABStats : public CHeapObj<mtGC> {
 
   virtual void log_plab_allocation();
   virtual void log_sizing(size_t calculated, size_t net_desired);
+
+  // helper for adjust_desired_plab_sz().
+  virtual size_t compute_desired_plab_sz();
+
  public:
   PLABStats(const char* description, size_t desired_net_plab_sz_, unsigned wt) :
     _description(description),
@@ -197,7 +201,7 @@ class PLABStats : public CHeapObj<mtGC> {
 
   // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
   // updates _desired_plab_sz and clears sensor accumulators.
-  virtual void adjust_desired_plab_sz();
+  void adjust_desired_plab_sz();
 
   inline void add_allocated(size_t v);
 

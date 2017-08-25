@@ -31,12 +31,18 @@
 int**  G1FromCardCache::_cache = NULL;
 uint   G1FromCardCache::_max_regions = 0;
 size_t G1FromCardCache::_static_mem_size = 0;
+#ifdef ASSERT
+uint   G1FromCardCache::_max_workers = 0;
+#endif
 
 void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_num_regions) {
   guarantee(max_num_regions > 0, "Heap size must be valid");
   guarantee(_cache == NULL, "Should not call this multiple times");
 
   _max_regions = max_num_regions;
+#ifdef ASSERT
+  _max_workers = num_par_rem_sets;
+#endif
   _cache = Padded2DArray<int, mtGC>::create_unfreeable(_max_regions,
                                                        num_par_rem_sets,
                                                        &_static_mem_size);

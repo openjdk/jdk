@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ void MallocHeader::release() const {
 }
 
 bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
-  size_t* bucket_idx, size_t* pos_idx) const {
-  bool ret =  MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx);
+  size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const {
+  bool ret = MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
 
   // Something went wrong, could be OOM or overflow malloc site table.
   // We want to keep tracking data under OOM circumstance, so transition to

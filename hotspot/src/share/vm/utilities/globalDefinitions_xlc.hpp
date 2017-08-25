@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -105,15 +105,6 @@ typedef uint8_t  jubyte;
 typedef uint16_t jushort;
 typedef uint32_t juint;
 typedef uint64_t julong;
-
-
-//----------------------------------------------------------------------------------------------------
-// Debugging
-
-#define DEBUG_EXCEPTION ::abort();
-
-extern "C" void breakpoint();
-#define BREAKPOINT ::breakpoint()
 
 // checking for nanness
 #ifdef AIX

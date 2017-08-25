@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.calc;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp.Shr;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -44,6 +45,17 @@ public final class RightShiftNode extends ShiftNode<Shr> {
         super(TYPE, ArithmeticOpTable::getShr, x, y);
     }
 
+    public static ValueNode create(ValueNode x, ValueNode y) {
+        ArithmeticOpTable.ShiftOp<Shr> op = ArithmeticOpTable.forStamp(x.stamp()).getShr();
+        Stamp stamp = op.foldStamp(x.stamp(), (IntegerStamp) y.stamp());
+        ValueNode value = ShiftNode.canonical(op, stamp, x, y);
+        if (value != null) {
+            return value;
+        }
+
+        return canonical(null, op, stamp, x, y);
+    }
+
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         ValueNode ret = super.canonical(tool, forX, forY);
@@ -51,6 +63,11 @@ public final class RightShiftNode extends ShiftNode<Shr> {
             return ret;
         }
 
+        return canonical(this, getArithmeticOp(), stamp(), forX, forY);
+    }
+
+    private static ValueNode canonical(RightShiftNode rightShiftNode, ArithmeticOpTable.ShiftOp<Shr> op, Stamp stamp, ValueNode forX, ValueNode forY) {
+        RightShiftNode self = rightShiftNode;
         if (forX.stamp() instanceof IntegerStamp && ((IntegerStamp) forX.stamp()).isPositive()) {
             return new UnsignedRightShiftNode(forX, forY);
         }
@@ -58,7 +75,7 @@ public final class RightShiftNode extends ShiftNode<Shr> {
         if (forY.isConstant()) {
             int amount = forY.asJavaConstant().asInt();
             int originalAmout = amount;
-            int mask = getShiftAmountMask();
+            int mask = op.getShiftAmountMask(stamp);
             amount &= mask;
             if (amount == 0) {
                 return forX;
@@ -74,10 +91,10 @@ public final class RightShiftNode extends ShiftNode<Shr> {
                             IntegerStamp istamp = (IntegerStamp) other.getX().stamp();
 
                             if (istamp.isPositive()) {
-                                return ConstantNode.forIntegerKind(getStackKind(), 0);
+                                return ConstantNode.forIntegerKind(stamp.getStackKind(), 0);
                             }
                             if (istamp.isStrictlyNegative()) {
-                                return ConstantNode.forIntegerKind(getStackKind(), -1L);
+                                return ConstantNode.forIntegerKind(stamp.getStackKind(), -1L);
                             }
 
                             /*
@@ -95,7 +112,10 @@ public final class RightShiftNode extends ShiftNode<Shr> {
                 return new RightShiftNode(forX, ConstantNode.forInt(amount));
             }
         }
-        return this;
+        if (self == null) {
+            self = new RightShiftNode(forX, forY);
+        }
+        return self;
     }
 
     @Override

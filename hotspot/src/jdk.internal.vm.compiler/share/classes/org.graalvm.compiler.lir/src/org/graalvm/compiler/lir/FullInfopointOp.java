@@ -45,7 +45,7 @@ public final class FullInfopointOp extends LIRInstruction {
 
     @Override
     public void emitCode(CompilationResultBuilder crb) {
-        crb.asm.ensureUniquePC();
         crb.recordInfopoint(crb.asm.position(), state, reason);
+        crb.asm.ensureUniquePC();
     }
 }

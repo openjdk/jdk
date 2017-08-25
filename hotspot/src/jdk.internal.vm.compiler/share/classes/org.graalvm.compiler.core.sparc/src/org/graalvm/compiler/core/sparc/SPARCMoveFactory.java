@@ -91,21 +91,33 @@ public class SPARCMoveFactory implements MoveFactory {
     }
 
     @Override
-    public boolean canInlineConstant(JavaConstant c) {
-        switch (c.getJavaKind()) {
-            case Boolean:
-            case Byte:
-            case Char:
-            case Short:
-            case Int:
-                return SPARCAssembler.isSimm13(c.asInt());
-            case Long:
-                return SPARCAssembler.isSimm13(c.asLong());
-            case Object:
-                return c.isNull();
-            default:
-                return false;
+    public LIRInstruction createStackLoad(AllocatableValue result, Constant input) {
+        if (input instanceof DataPointerConstant) {
+            throw GraalError.shouldNotReachHere("unsupported constant for stack load: " + input);
         }
+        return createLoad(result, input);
+    }
+
+    @Override
+    public boolean canInlineConstant(Constant con) {
+        if (con instanceof JavaConstant) {
+            JavaConstant c = (JavaConstant) con;
+            switch (c.getJavaKind()) {
+                case Boolean:
+                case Byte:
+                case Char:
+                case Short:
+                case Int:
+                    return SPARCAssembler.isSimm13(c.asInt());
+                case Long:
+                    return SPARCAssembler.isSimm13(c.asLong());
+                case Object:
+                    return c.isNull();
+                default:
+                    return false;
+            }
+        }
+        return false;
     }
 
     @Override

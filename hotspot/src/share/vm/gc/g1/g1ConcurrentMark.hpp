@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,74 @@
 #define SHARE_VM_GC_G1_G1CONCURRENTMARK_HPP
 
 #include "classfile/javaClasses.hpp"
+#include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
 
 class G1CollectedHeap;
-class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
 class ConcurrentGCTimer;
 class G1OldTracer;
 class G1SurvivorRegions;
-typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
+
+#ifdef _MSC_VER
+#pragma warning(push)
+// warning C4522: multiple assignment operators specified
+#pragma warning(disable:4522)
+#endif
+
+// This is a container class for either an oop or a continuation address for
+// mark stack entries. Both are pushed onto the mark stack.
+class G1TaskQueueEntry VALUE_OBJ_CLASS_SPEC {
+private:
+  void* _holder;
+
+  static const uintptr_t ArraySliceBit = 1;
+
+  G1TaskQueueEntry(oop obj) : _holder(obj) {
+    assert(_holder != NULL, "Not allowed to set NULL task queue element");
+  }
+  G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
+public:
+  G1TaskQueueEntry(const G1TaskQueueEntry& other) { _holder = other._holder; }
+  G1TaskQueueEntry() : _holder(NULL) { }
+
+  static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
+  static G1TaskQueueEntry from_oop(oop obj) { return G1TaskQueueEntry(obj); }
+
+  G1TaskQueueEntry& operator=(const G1TaskQueueEntry& t) {
+    _holder = t._holder;
+    return *this;
+  }
+
+  volatile G1TaskQueueEntry& operator=(const volatile G1TaskQueueEntry& t) volatile {
+    _holder = t._holder;
+    return *this;
+  }
+
+  oop obj() const {
+    assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
+    return (oop)_holder;
+  }
+
+  HeapWord* slice() const {
+    assert(is_array_slice(), "Trying to read oop " PTR_FORMAT " as array slice", p2i(_holder));
+    return (HeapWord*)((uintptr_t)_holder & ~ArraySliceBit);
+  }
+
+  bool is_oop() const { return !is_array_slice(); }
+  bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
+  bool is_null() const { return _holder == NULL; }
+};
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
 // Closure used by CM during concurrent reference discovery
@@ -53,97 +108,6 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
   G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
 
   bool do_object_b(oop obj);
-};
-
-// A generic CM bit map.  This is essentially a wrapper around the BitMap
-// class, with one bit per (1<<_shifter) HeapWords.
-
-class G1CMBitMapRO VALUE_OBJ_CLASS_SPEC {
- protected:
-  HeapWord*  _bmStartWord; // base address of range covered by map
-  size_t     _bmWordSize;  // map size (in #HeapWords covered)
-  const int  _shifter;     // map to char or bit
-  BitMapView _bm;          // the bit map itself
-
- public:
-  // constructor
-  G1CMBitMapRO(int shifter);
-
-  // inquiries
-  HeapWord* startWord()   const { return _bmStartWord; }
-  // the following is one past the last word in space
-  HeapWord* endWord()     const { return _bmStartWord + _bmWordSize; }
-
-  // read marks
-
-  bool isMarked(HeapWord* addr) const {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    return _bm.at(heapWordToOffset(addr));
-  }
-
-  // iteration
-  inline bool iterate(BitMapClosure* cl, MemRegion mr);
-
-  // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextMarkedWordAddress(const HeapWord* addr,
-                                     const HeapWord* limit = NULL) const;
-
-  // conversion utilities
-  HeapWord* offsetToHeapWord(size_t offset) const {
-    return _bmStartWord + (offset << _shifter);
-  }
-  size_t heapWordToOffset(const HeapWord* addr) const {
-    return pointer_delta(addr, _bmStartWord) >> _shifter;
-  }
-
-  // The argument addr should be the start address of a valid object
-  inline HeapWord* nextObject(HeapWord* addr);
-
-  void print_on_error(outputStream* st, const char* prefix) const;
-
-  // debugging
-  NOT_PRODUCT(bool covers(MemRegion rs) const;)
-};
-
-class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
- private:
-  G1CMBitMap* _bm;
- public:
-  G1CMBitMapMappingChangedListener() : _bm(NULL) {}
-
-  void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
-
-  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
-};
-
-class G1CMBitMap : public G1CMBitMapRO {
- private:
-  G1CMBitMapMappingChangedListener _listener;
-
- public:
-  static size_t compute_size(size_t heap_size);
-  // Returns the amount of bytes on the heap between two marks in the bitmap.
-  static size_t mark_distance();
-  // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
-  // mark bitmap corresponds to. This is the same as the mark distance above.
-  static size_t heap_map_factor() {
-    return mark_distance();
-  }
-
-  G1CMBitMap() : G1CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
-
-  // Initializes the underlying BitMap to cover the given area.
-  void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
-
-  // Write marks.
-  inline void mark(HeapWord* addr);
-  inline void clear(HeapWord* addr);
-  inline bool parMark(HeapWord* addr);
-
-  void clear_range(MemRegion mr);
 };
 
 // Represents the overflow mark stack used by concurrent marking.
@@ -165,48 +129,44 @@ class G1CMBitMap : public G1CMBitMapRO {
 // list connecting all empty chunks.
 class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
 public:
-  // Number of oops that can fit in a single chunk.
-  static const size_t OopsPerChunk = 1024 - 1 /* One reference for the next pointer */;
+  // Number of TaskQueueEntries that can fit in a single chunk.
+  static const size_t EntriesPerChunk = 1024 - 1 /* One reference for the next pointer */;
 private:
-  struct OopChunk {
-    OopChunk* next;
-    oop data[OopsPerChunk];
+  struct TaskQueueEntryChunk {
+    TaskQueueEntryChunk* next;
+    G1TaskQueueEntry data[EntriesPerChunk];
   };
 
-  size_t _max_chunk_capacity;    // Maximum number of OopChunk elements on the stack.
+  size_t _max_chunk_capacity;    // Maximum number of TaskQueueEntryChunk elements on the stack.
 
-  OopChunk* _base;               // Bottom address of allocated memory area.
-  size_t _chunk_capacity;        // Current maximum number of OopChunk elements.
+  TaskQueueEntryChunk* _base;    // Bottom address of allocated memory area.
+  size_t _chunk_capacity;        // Current maximum number of TaskQueueEntryChunk elements.
 
   char _pad0[DEFAULT_CACHE_LINE_SIZE];
-  OopChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*)];
-  OopChunk* volatile _chunk_list; // List of chunks currently containing data.
+  TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(OopChunk*) - sizeof(size_t)];
+  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   volatile size_t _hwm;          // High water mark within the reserved space.
   char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
 
   // Allocate a new chunk from the reserved memory, using the high water mark. Returns
   // NULL if out of memory.
-  OopChunk* allocate_new_chunk();
-
-  volatile bool _out_of_memory;
+  TaskQueueEntryChunk* allocate_new_chunk();
 
   // Atomically add the given chunk to the list.
-  void add_chunk_to_list(OopChunk* volatile* list, OopChunk* elem);
+  void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns NULL if the
   // list is empty.
-  OopChunk* remove_chunk_from_list(OopChunk* volatile* list);
+  TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
 
-  void add_chunk_to_chunk_list(OopChunk* elem);
-  void add_chunk_to_free_list(OopChunk* elem);
+  void add_chunk_to_chunk_list(TaskQueueEntryChunk* elem);
+  void add_chunk_to_free_list(TaskQueueEntryChunk* elem);
 
-  OopChunk* remove_chunk_from_chunk_list();
-  OopChunk* remove_chunk_from_free_list();
-
-  bool  _should_expand;
+  TaskQueueEntryChunk* remove_chunk_from_chunk_list();
+  TaskQueueEntryChunk* remove_chunk_from_free_list();
 
   // Resizes the mark stack to the given new capacity. Releases any previous
   // memory if successful.
@@ -222,17 +182,17 @@ private:
   // Allocate and initialize the mark stack with the given number of oops.
   bool initialize(size_t initial_capacity, size_t max_capacity);
 
-  // Pushes the given buffer containing at most OopsPerChunk elements on the mark
-  // stack. If less than OopsPerChunk elements are to be pushed, the array must
+  // Pushes the given buffer containing at most EntriesPerChunk elements on the mark
+  // stack. If less than EntriesPerChunk elements are to be pushed, the array must
   // be terminated with a NULL.
   // Returns whether the buffer contents were successfully pushed to the global mark
   // stack.
-  bool par_push_chunk(oop* buffer);
+  bool par_push_chunk(G1TaskQueueEntry* buffer);
 
   // Pops a chunk from this mark stack, copying them into the given buffer. This
-  // chunk may contain up to OopsPerChunk elements. If there are less, the last
+  // chunk may contain up to EntriesPerChunk elements. If there are less, the last
   // element in the array is a NULL pointer.
-  bool par_pop_chunk(oop* buffer);
+  bool par_pop_chunk(G1TaskQueueEntry* buffer);
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
@@ -240,18 +200,12 @@ private:
 
   size_t capacity() const  { return _chunk_capacity; }
 
-  bool is_out_of_memory() const { return _out_of_memory; }
-  void clear_out_of_memory() { _out_of_memory = false; }
-
-  bool should_expand() const { return _should_expand; }
-  void set_should_expand(bool value) { _should_expand = value; }
-
   // Expand the stack, typically in response to an overflow condition
   void expand();
 
   // Return the approximate number of oops on this mark stack. Racy due to
   // unsynchronized access to _chunks_in_chunk_list.
-  size_t size() const { return _chunks_in_chunk_list * OopsPerChunk; }
+  size_t size() const { return _chunks_in_chunk_list * EntriesPerChunk; }
 
   void set_empty();
 
@@ -351,7 +305,7 @@ protected:
   // Concurrent marking support structures
   G1CMBitMap              _markBitMap1;
   G1CMBitMap              _markBitMap2;
-  G1CMBitMapRO*           _prevMarkBitMap; // Completed mark bitmap
+  G1CMBitMap*             _prevMarkBitMap; // Completed mark bitmap
   G1CMBitMap*             _nextMarkBitMap; // Under-construction mark bitmap
 
   // Heap bounds
@@ -432,7 +386,7 @@ protected:
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
-  void reset_marking_state(bool clear_overflow = true);
+  void reset_marking_state();
 
   // We do this after we're done with marking so that the marking data
   // structures are initialized to a sensible and predictable state.
@@ -531,19 +485,18 @@ public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
-  bool mark_stack_push(oop* arr) {
+  bool mark_stack_push(G1TaskQueueEntry* arr) {
     if (!_global_mark_stack.par_push_chunk(arr)) {
       set_has_overflown();
       return false;
     }
     return true;
   }
-  bool mark_stack_pop(oop* arr) {
+  bool mark_stack_pop(G1TaskQueueEntry* arr) {
     return _global_mark_stack.par_pop_chunk(arr);
   }
   size_t mark_stack_size()                { return _global_mark_stack.size(); }
   size_t partial_mark_stack_size_target() { return _global_mark_stack.capacity()/3; }
-  bool mark_stack_overflow()              { return _global_mark_stack.is_out_of_memory(); }
   bool mark_stack_empty()                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
@@ -573,7 +526,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, oop& obj);
+  bool try_stealing(uint worker_id, int* hash_seed, G1TaskQueueEntry& task_entry);
 
   G1ConcurrentMark(G1CollectedHeap* g1h,
                    G1RegionToSpaceMapper* prev_bitmap_storage,
@@ -582,8 +535,8 @@ public:
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
 
-  G1CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
-  G1CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
+  const G1CMBitMap* const prevMarkBitMap() const { return _prevMarkBitMap; }
+  G1CMBitMap* nextMarkBitMap() const { return _nextMarkBitMap; }
 
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW
@@ -592,16 +545,6 @@ public:
 
   // Calculates the number of GC threads to be used in a concurrent phase.
   uint calc_parallel_marking_threads();
-
-  // The following three are interaction between CM and
-  // G1CollectedHeap
-
-  // This notifies CM that a root during initial-mark needs to be
-  // grayed. It is MT-safe. hr is the region that
-  // contains the object and it's passed optionally from callers who
-  // might already have it (no point in recalculating it).
-  inline void grayRoot(oop obj,
-                       HeapRegion* hr = NULL);
 
   // Prepare internal data structures for the next mark cycle. This includes clearing
   // the next mark bitmap and some internal data structures. This method is intended
@@ -669,8 +612,9 @@ public:
 
   void print_on_error(outputStream* st) const;
 
-  // Attempts to mark the given object on the next mark bitmap.
-  inline bool par_mark(oop obj);
+  // Mark the given object on the next bitmap if it is below nTAMS.
+  inline bool mark_in_next_bitmap(HeapRegion* const hr, oop const obj);
+  inline bool mark_in_next_bitmap(oop const obj);
 
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {
@@ -828,7 +772,7 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_object(oop obj);
+  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
 public:
   // Apply the closure on the given area of the objArray. Return the number of words
   // scanned.
@@ -893,10 +837,10 @@ public:
   inline void deal_with_reference(oop obj);
 
   // It scans an object and visits its children.
-  inline void scan_object(oop obj);
+  inline void scan_task_entry(G1TaskQueueEntry task_entry);
 
   // It pushes an object on the local queue.
-  inline void push(oop obj);
+  inline void push(G1TaskQueueEntry task_entry);
 
   // Move entries to the global stack.
   void move_entries_to_global_stack();

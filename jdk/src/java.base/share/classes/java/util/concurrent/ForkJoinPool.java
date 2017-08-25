@@ -113,21 +113,21 @@ import java.util.concurrent.locks.LockSupport;
  * <caption>Summary of task execution methods</caption>
  *  <tr>
  *    <td></td>
- *    <td style="text-align:center"> <b>Call from non-fork/join clients</b></td>
- *    <td style="text-align:center"> <b>Call from within fork/join computations</b></td>
+ *    <th scope="col"> Call from non-fork/join clients</th>
+ *    <th scope="col"> Call from within fork/join computations</th>
  *  </tr>
  *  <tr>
- *    <td> <b>Arrange async execution</b></td>
+ *    <th scope="row" style="text-align:left"> Arrange async execution</th>
  *    <td> {@link #execute(ForkJoinTask)}</td>
  *    <td> {@link ForkJoinTask#fork}</td>
  *  </tr>
  *  <tr>
- *    <td> <b>Await and obtain result</b></td>
+ *    <th scope="row" style="text-align:left"> Await and obtain result</th>
  *    <td> {@link #invoke(ForkJoinTask)}</td>
  *    <td> {@link ForkJoinTask#invoke}</td>
  *  </tr>
  *  <tr>
- *    <td> <b>Arrange exec and obtain Future</b></td>
+ *    <th scope="row" style="text-align:left"> Arrange exec and obtain Future</th>
  *    <td> {@link #submit(ForkJoinTask)}</td>
  *    <td> {@link ForkJoinTask#fork} (ForkJoinTasks <em>are</em> Futures)</td>
  *  </tr>

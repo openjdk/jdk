@@ -83,7 +83,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ load_klass(rcvr_klass, Z_ARG1);
 
   // Set method (in case of interpreted method), and destination address.
-  int entry_offset = in_bytes(InstanceKlass::vtable_start_offset()) +
+  int entry_offset = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index * vtableEntry::size_in_bytes();
 
 #ifndef PRODUCT
@@ -96,8 +96,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     //                  worst case             actual size
     padding_bytes += __ load_const_size() - __ load_const_optimized_rtn_len(vtable_idx, vtable_index*vtableEntry::size_in_bytes(), true);
 
-    assert(Immediate::is_uimm12(in_bytes(InstanceKlass::vtable_length_offset())), "disp to large");
-    __ z_cl(vtable_idx, in_bytes(InstanceKlass::vtable_length_offset()), rcvr_klass);
+    assert(Immediate::is_uimm12(in_bytes(Klass::vtable_length_offset())), "disp to large");
+    __ z_cl(vtable_idx, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
     __ z_brl(L);
     __ z_lghi(Z_ARG3, vtable_index);  // Debug code, don't optimize.
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), Z_ARG1, Z_ARG3, false);
@@ -187,11 +187,11 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   __ load_klass(rcvr_klass, Z_ARG1);
 
   // Load start of itable entries into itable_entry.
-  __ z_llgf(vtable_len, Address(rcvr_klass, InstanceKlass::vtable_length_offset()));
+  __ z_llgf(vtable_len, Address(rcvr_klass, Klass::vtable_length_offset()));
   __ z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(InstanceKlass::vtable_start_offset());
+  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
   // Count unused bytes.
   start_pc = __ pc();
   __ add2reg_with_index(itable_entry_addr, vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(), rcvr_klass, vtable_len);

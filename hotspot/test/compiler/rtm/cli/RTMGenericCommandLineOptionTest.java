@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,17 @@ import java.util.function.BooleanSupplier;
 /**
  * Base for all RTM-related CLI tests.
  */
-public abstract class RTMGenericCommandLineOptionTest
-        extends CommandLineOptionTest {
+public abstract class RTMGenericCommandLineOptionTest {
+
     protected static final String RTM_INSTR_ERROR
             = "RTM instructions are not available on this CPU";
     protected static final String RTM_UNSUPPORTED_VM_ERROR
             = "RTM locking optimization is not supported in this VM";
-    protected static final String RTM_ABORT_RATIO_WARNING
-            = "RTMAbortRatio must be in the range 0 to 100, resetting it to 50";
     protected static final String RTM_FOR_STACK_LOCKS_WARNING
             = "UseRTMForStackLocks flag should be off when UseRTMLocking "
             + "flag is off";
     protected static final String RTM_COUNT_INCR_WARNING
-            = "RTMTotalCountIncrRate must be a power of 2, resetting it to 64";
+            = "must be a power of 2, resetting it to 64";
     protected static final String RTM_BIASED_LOCKING_WARNING
             = "Biased locking is not supported with RTM locking; "
             + "ignoring UseBiasedLocking flag";
@@ -66,17 +64,15 @@ public abstract class RTMGenericCommandLineOptionTest
      * Test constructed using this ctor will be started on any cpu regardless
      * it's architecture and supported/unsupported features.
      *
-     * @param predicate predicate responsible for test's preconditions check
      * @param optionName name of option to be tested
      * @param isBoolean {@code true} if option is binary
      * @param isExperimental {@code true} if option is experimental
      * @param defaultValue default value of tested option
      * @param optionValues different option values
      */
-    public RTMGenericCommandLineOptionTest(BooleanSupplier predicate,
+    public RTMGenericCommandLineOptionTest(
             String optionName, boolean isBoolean, boolean isExperimental,
             String defaultValue, String... optionValues) {
-        super(predicate);
         this.optionName = optionName;
         this.isExperimental = isExperimental;
         this.isBoolean = isBoolean;
@@ -88,7 +84,6 @@ public abstract class RTMGenericCommandLineOptionTest
                 getExperimentalOptionErrorMessage(optionName);
     }
 
-    @Override
     public void runTestCases() throws Throwable {
         if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
             if (Platform.isServer()) {
