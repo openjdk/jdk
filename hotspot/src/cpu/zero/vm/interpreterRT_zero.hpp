@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ class SignatureHandlerGeneratorBase : public NativeSignatureIterator {
   ffi_cif* _cif;
 
  protected:
-  SignatureHandlerGeneratorBase(methodHandle method, ffi_cif *cif)
+  SignatureHandlerGeneratorBase(const methodHandle& method, ffi_cif *cif)
     : NativeSignatureIterator(method), _cif(cif) {
     _cif->nargs = 0;
   }
@@ -96,7 +96,7 @@ class SignatureHandlerGenerator : public SignatureHandlerGeneratorBase {
   CodeBuffer* _cb;
 
  public:
-  SignatureHandlerGenerator(methodHandle method, CodeBuffer* buffer)
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer)
     : SignatureHandlerGeneratorBase(method, (ffi_cif *) buffer->insts_end()),
       _cb(buffer) {
     _cb->set_insts_end((address) (cif() + 1));
@@ -115,7 +115,7 @@ class SlowSignatureHandlerGenerator : public SignatureHandlerGeneratorBase {
   intptr_t *_dst;
 
  public:
-  SlowSignatureHandlerGenerator(methodHandle method, intptr_t* buf)
+  SlowSignatureHandlerGenerator(const methodHandle& method, intptr_t* buf)
     : SignatureHandlerGeneratorBase(method, (ffi_cif *) buf) {
     _dst = (intptr_t *) (cif() + 1);
   }

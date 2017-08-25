@@ -27,6 +27,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inline functions of BarrierSet, which de-virtualize certain
 // performance-critical calls when the barrier is the most common
@@ -73,8 +74,8 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // interface, so it is "exactly precise" (if i may be allowed the adverbial
   // redundancy for emphasis) and does not include narrow oop slots not
   // included in the original write interval.
-  HeapWord* aligned_start = (HeapWord*)align_size_down((uintptr_t)start, HeapWordSize);
-  HeapWord* aligned_end   = (HeapWord*)align_size_up  ((uintptr_t)end,   HeapWordSize);
+  HeapWord* aligned_start = align_down(start, HeapWordSize);
+  HeapWord* aligned_end   = align_up  (end,   HeapWordSize);
   // If compressed oops were not being used, these should already be aligned
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");

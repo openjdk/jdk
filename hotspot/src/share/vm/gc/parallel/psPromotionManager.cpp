@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
@@ -155,7 +156,8 @@ PSPromotionManager::print_taskqueue_stats() {
   }
   Log(gc, task, stats) log;
   ResourceMark rm;
-  outputStream* out = log.trace_stream();
+  LogStream ls(log.trace());
+  outputStream* out = &ls;
   out->print_cr("== GC Tasks Stats, GC %3d",
                 ParallelScavengeHeap::heap()->total_collections());
 
@@ -315,7 +317,7 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
         process_popped_location_depth(p);
       }
     }
-  } while (totally_drain && !tq->taskqueue_empty() || !tq->overflow_empty());
+  } while ((totally_drain && !tq->taskqueue_empty()) || !tq->overflow_empty());
 
   assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
   assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");

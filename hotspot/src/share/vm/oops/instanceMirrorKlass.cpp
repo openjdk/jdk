@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,23 +39,21 @@
 
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
-int InstanceMirrorKlass::instance_size(KlassHandle k) {
-  if (k() != NULL && k->is_instance_klass()) {
-    return align_object_size(size_helper() + InstanceKlass::cast(k())->static_field_size());
+int InstanceMirrorKlass::instance_size(Klass* k) {
+  if (k != NULL && k->is_instance_klass()) {
+    return align_object_size(size_helper() + InstanceKlass::cast(k)->static_field_size());
   }
   return size_helper();
 }
 
-instanceOop InstanceMirrorKlass::allocate_instance(KlassHandle k, TRAPS) {
+instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, TRAPS) {
   // Query before forming handle.
   int size = instance_size(k);
-  KlassHandle h_k(THREAD, this);
-
   assert(size > 0, "total object size must be positive: %d", size);
 
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.
-  return (instanceOop)CollectedHeap::class_allocate(h_k, size, CHECK_NULL);
+  return (instanceOop)CollectedHeap::class_allocate(this, size, CHECK_NULL);
 }
 
 int InstanceMirrorKlass::oop_size(oop obj) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ void MemProfiler::do_trace() {
   fprintf(_log_fp, "%6.1f,%5d,%5d," UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",",
           os::elapsedTime(),
           Threads::number_of_threads(),
-          SystemDictionary::number_of_classes(),
+          InstanceKlass::number_of_instance_classes(),
           Universe::heap()->used() / K,
           Universe::heap()->capacity() / K);
 

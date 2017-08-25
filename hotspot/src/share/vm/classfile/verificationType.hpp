@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     TRAPS) const;
 
  public:
-  static bool resolve_and_check_assignability(instanceKlassHandle klass, Symbol* name,
+  static bool resolve_and_check_assignability(InstanceKlass* klass, Symbol* name,
                                               Symbol* from_name, bool from_field_is_protected,
                                               bool from_is_array, bool from_is_object,
                                               TRAPS);

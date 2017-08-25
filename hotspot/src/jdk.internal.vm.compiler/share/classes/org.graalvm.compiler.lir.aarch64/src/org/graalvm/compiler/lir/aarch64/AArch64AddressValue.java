@@ -46,20 +46,20 @@ public final class AArch64AddressValue extends CompositeValue {
 
     @Component({OperandFlag.REG, OperandFlag.ILLEGAL}) protected AllocatableValue base;
     @Component({OperandFlag.REG, OperandFlag.ILLEGAL}) protected AllocatableValue offset;
-    private final int immediate;
+    private final int displacement;
 
     /**
      * Whether register offset should be scaled or not.
      */
-    private final boolean scaled;
+    private final int scaleFactor;
     private final AddressingMode addressingMode;
 
-    public AArch64AddressValue(ValueKind<?> kind, AllocatableValue base, AllocatableValue offset, int immediate, boolean scaled, AddressingMode addressingMode) {
+    public AArch64AddressValue(ValueKind<?> kind, AllocatableValue base, AllocatableValue offset, int displacement, int scaleFactor, AddressingMode addressingMode) {
         super(kind);
         this.base = base;
         this.offset = offset;
-        this.immediate = immediate;
-        this.scaled = scaled;
+        this.displacement = displacement;
+        this.scaleFactor = scaleFactor;
         this.addressingMode = addressingMode;
     }
 
@@ -79,12 +79,16 @@ public final class AArch64AddressValue extends CompositeValue {
         return offset;
     }
 
-    public int getImmediate() {
-        return immediate;
+    public int getDisplacement() {
+        return displacement;
     }
 
     public boolean isScaled() {
-        return scaled;
+        return scaleFactor != 1;
+    }
+
+    public int getScaleFactor() {
+        return scaleFactor;
     }
 
     public AddressingMode getAddressingMode() {
@@ -95,7 +99,7 @@ public final class AArch64AddressValue extends CompositeValue {
         Register baseReg = toRegister(base);
         Register offsetReg = toRegister(offset);
         AArch64Assembler.ExtendType extendType = addressingMode == AddressingMode.EXTENDED_REGISTER_OFFSET ? ExtendType.SXTW : null;
-        return AArch64Address.createAddress(addressingMode, baseReg, offsetReg, immediate, scaled, extendType);
+        return AArch64Address.createAddress(addressingMode, baseReg, offsetReg, displacement / scaleFactor, isScaled(), extendType);
     }
 
     @Override
@@ -103,7 +107,7 @@ public final class AArch64AddressValue extends CompositeValue {
         AllocatableValue newBase = (AllocatableValue) proc.doValue(inst, base, mode, flags);
         AllocatableValue newOffset = (AllocatableValue) proc.doValue(inst, offset, mode, flags);
         if (!base.identityEquals(newBase) || !offset.identityEquals(newOffset)) {
-            return new AArch64AddressValue(getValueKind(), newBase, newOffset, immediate, scaled, addressingMode);
+            return new AArch64AddressValue(getValueKind(), newBase, newOffset, displacement, scaleFactor, addressingMode);
         }
         return this;
     }

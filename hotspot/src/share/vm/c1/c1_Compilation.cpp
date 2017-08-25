@@ -563,6 +563,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _interpreter_frame_size(0)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
+, _cfg_printer_output(NULL)
 #endif // PRODUCT
 {
   PhaseTraceTime timeit(_t_compile);
@@ -570,6 +571,11 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
   _env->set_compiler_data(this);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
+#ifndef PRODUCT
+  if (PrintCFGToFile) {
+    _cfg_printer_output = new CFGPrinterOutput(this);
+  }
+#endif
   compile_method();
   if (bailed_out()) {
     _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);

@@ -27,11 +27,6 @@ import static jdk.vm.ci.meta.MetaUtil.getSimpleName;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaKind;
 
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Add;
@@ -52,6 +47,10 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Abs;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Neg;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Not;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.UnaryOp.Sqrt;
+import org.graalvm.util.CollectionsUtil;
+
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaKind;
 
 /**
  * Information about arithmetic operations.
@@ -94,12 +93,6 @@ public final class ArithmeticOpTable {
     }
 
     public static final ArithmeticOpTable EMPTY = new ArithmeticOpTable(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
-
-    public ArithmeticOpTable(UnaryOp<Neg> neg, BinaryOp<Add> add, BinaryOp<Sub> sub, BinaryOp<Mul> mul, BinaryOp<Div> div, BinaryOp<Rem> rem, UnaryOp<Not> not, BinaryOp<And> and, BinaryOp<Or> or,
-                    BinaryOp<Xor> xor, ShiftOp<Shl> shl, ShiftOp<Shr> shr, ShiftOp<UShr> ushr, UnaryOp<Abs> abs, UnaryOp<Sqrt> sqrt, IntegerConvertOp<ZeroExtend> zeroExtend,
-                    IntegerConvertOp<SignExtend> signExtend, IntegerConvertOp<Narrow> narrow, FloatConvertOp... floatConvert) {
-        this(neg, add, sub, mul, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow, Stream.of(floatConvert));
-    }
 
     public interface ArithmeticOpWrapper {
 
@@ -147,14 +140,13 @@ public final class ArithmeticOpTable {
         IntegerConvertOp<SignExtend> signExtend = wrapIfNonNull(wrapper::wrapIntegerConvertOp, inner.getSignExtend());
         IntegerConvertOp<Narrow> narrow = wrapIfNonNull(wrapper::wrapIntegerConvertOp, inner.getNarrow());
 
-        Stream<FloatConvertOp> floatConvert = Stream.of(inner.floatConvert).filter(Objects::nonNull).map(wrapper::wrapFloatConvertOp);
-
+        FloatConvertOp[] floatConvert = CollectionsUtil.filterAndMapToArray(inner.floatConvert, Objects::nonNull, wrapper::wrapFloatConvertOp, FloatConvertOp[]::new);
         return new ArithmeticOpTable(neg, add, sub, mul, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow, floatConvert);
     }
 
-    private ArithmeticOpTable(UnaryOp<Neg> neg, BinaryOp<Add> add, BinaryOp<Sub> sub, BinaryOp<Mul> mul, BinaryOp<Div> div, BinaryOp<Rem> rem, UnaryOp<Not> not, BinaryOp<And> and, BinaryOp<Or> or,
+    protected ArithmeticOpTable(UnaryOp<Neg> neg, BinaryOp<Add> add, BinaryOp<Sub> sub, BinaryOp<Mul> mul, BinaryOp<Div> div, BinaryOp<Rem> rem, UnaryOp<Not> not, BinaryOp<And> and, BinaryOp<Or> or,
                     BinaryOp<Xor> xor, ShiftOp<Shl> shl, ShiftOp<Shr> shr, ShiftOp<UShr> ushr, UnaryOp<Abs> abs, UnaryOp<Sqrt> sqrt, IntegerConvertOp<ZeroExtend> zeroExtend,
-                    IntegerConvertOp<SignExtend> signExtend, IntegerConvertOp<Narrow> narrow, Stream<FloatConvertOp> floatConvert) {
+                    IntegerConvertOp<SignExtend> signExtend, IntegerConvertOp<Narrow> narrow, FloatConvertOp... floatConvert) {
         this.neg = neg;
         this.add = add;
         this.sub = sub;
@@ -174,7 +166,9 @@ public final class ArithmeticOpTable {
         this.signExtend = signExtend;
         this.narrow = narrow;
         this.floatConvert = new FloatConvertOp[FloatConvert.values().length];
-        floatConvert.forEach(op -> this.floatConvert[op.getFloatConvert().ordinal()] = op);
+        for (FloatConvertOp op : floatConvert) {
+            this.floatConvert[op.getFloatConvert().ordinal()] = op;
+        }
 
         this.hash = Objects.hash(neg, add, sub, mul, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow);
     }
@@ -318,7 +312,7 @@ public final class ArithmeticOpTable {
     }
 
     public static String toString(Op... ops) {
-        return Arrays.asList(ops).stream().map(o -> o == null ? "null" : o.operator + "{" + getSimpleName(o.getClass(), false) + "}").collect(Collectors.joining(","));
+        return CollectionsUtil.mapAndJoin(ops, o -> o == null ? "null" : o.operator + "{" + getSimpleName(o.getClass(), false) + "}", ",");
     }
 
     private boolean opsEquals(ArithmeticOpTable that) {
@@ -742,6 +736,11 @@ public final class ArithmeticOpTable {
             protected Narrow() {
                 super("Narrow");
             }
+
+            @Override
+            public Stamp invertStamp(int inputBits, int resultBits, Stamp outStamp) {
+                return null;
+            }
         }
 
         protected IntegerConvertOp(String op) {
@@ -755,5 +754,10 @@ public final class ArithmeticOpTable {
         public IntegerConvertOp<T> unwrap() {
             return this;
         }
+
+        /**
+         * Computes the stamp of the input for the given output stamp.
+         */
+        public abstract Stamp invertStamp(int inputBits, int resultBits, Stamp outStamp);
     }
 }

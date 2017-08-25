@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class ConstantPoolCache extends Metadata {
     elementSize    = elType.getSize();
     length         = new CIntField(type.getCIntegerField("_length"), 0);
     intSize        = VM.getVM().getObjectHeap().getIntSize();
+    resolvedReferences = type.getAddressField("_resolved_references");
+    referenceMap   = type.getAddressField("_reference_map");
   }
 
   public ConstantPoolCache(Address addr) {
@@ -65,7 +67,8 @@ public class ConstantPoolCache extends Metadata {
   private static long elementSize;
   private static CIntField length;
   private static long intSize;
-
+  private static AddressField  resolvedReferences;
+  private static AddressField  referenceMap;
 
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
 
@@ -100,4 +103,18 @@ public class ConstantPoolCache extends Metadata {
         entry.iterateFields(visitor);
       }
     }
+
+  public Oop getResolvedReferences() {
+    Address handle = resolvedReferences.getValue(getAddress());
+    if (handle != null) {
+      // Load through the handle
+      OopHandle refs = handle.getOopHandleAt(0);
+      return VM.getVM().getObjectHeap().newOop(refs);
+    }
+    return null;
+  }
+
+  public U2Array referenceMap() {
+    return new U2Array(referenceMap.getValue(getAddress()));
+  }
 };

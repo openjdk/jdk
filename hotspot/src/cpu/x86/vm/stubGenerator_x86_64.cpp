@@ -402,6 +402,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addptr(rsp, -rsp_after_call_off * wordSize);
 
     // return
+    __ vzeroupper();
     __ pop(rbp);
     __ ret(0);
 
@@ -1554,6 +1555,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1643,6 +1645,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1652,6 +1655,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1746,6 +1750,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1771,6 +1776,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ generate_fill(t, aligned, to, value, count, rax, xmm0);
 
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
     return start;
@@ -1847,6 +1853,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1856,6 +1863,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -1945,6 +1953,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
+    __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2030,6 +2039,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -2043,6 +2053,7 @@ class StubGenerator: public StubCodeGenerator {
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -2120,6 +2131,7 @@ class StubGenerator: public StubCodeGenerator {
       restore_arg_regs();
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
+      __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
     }
@@ -2137,6 +2149,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
     }
+    __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2203,6 +2216,7 @@ class StubGenerator: public StubCodeGenerator {
       restore_arg_regs();
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
+      __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
     }
@@ -2220,6 +2234,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
     }
+    __ vzeroupper();
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -3774,7 +3789,7 @@ class StubGenerator: public StubCodeGenerator {
         buf, state, ofs, limit, rsp, multi_block, shuf_mask);
     }
     __ addptr(rsp, 4 * wordSize);
-
+    __ vzeroupper();
     __ leave();
     __ ret(0);
     return start;
@@ -3808,6 +3823,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
     buf, state, ofs, limit, rsp, multi_block, shuf_mask);
 
+    __ vzeroupper();
     __ leave();
     __ ret(0);
     return start;
@@ -4281,7 +4297,6 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_exit);
     __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
     __ movdqu(Address(state, 0), xmm_temp6);   // store the result
-
     __ leave();
     __ ret(0);
     return start;
@@ -4321,6 +4336,7 @@ class StubGenerator: public StubCodeGenerator {
     __ kernel_crc32(crc, buf, len, table, tmp);
 
     __ movl(rax, crc);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -4380,6 +4396,7 @@ class StubGenerator: public StubCodeGenerator {
       __ pop(z);
       __ pop(y);
 #endif
+      __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
 
@@ -4494,6 +4511,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
 
+    __ vzeroupper();
     __ leave();
     __ ret(0);
 
@@ -4618,7 +4636,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-      __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+    __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);

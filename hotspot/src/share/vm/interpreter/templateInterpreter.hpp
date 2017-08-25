@@ -119,7 +119,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   static EntryPoint _return_entry[number_of_return_entries];    // entry points to return to from a call
   static EntryPoint _earlyret_entry;                            // entry point to return early from a call
   static EntryPoint _deopt_entry[number_of_deopt_entries];      // entry points to return to from a deoptimization
-  static EntryPoint _continuation_entry;
   static EntryPoint _safept_entry;
 
   static address _invoke_return_entry[number_of_return_addrs];           // for invokestatic, invokespecial, invokevirtual return entries
@@ -158,7 +157,6 @@ class TemplateInterpreter: public AbstractInterpreter {
 #ifndef PRODUCT
   static address    trace_code    (TosState state)              { return _trace_code.entry(state); }
 #endif // !PRODUCT
-  static address    continuation  (TosState state)              { return _continuation_entry.entry(state); }
   static address*   dispatch_table(TosState state)              { return _active_table.table_for(state); }
   static address*   dispatch_table()                            { return _active_table.table_for(); }
   static int        distance_from_dispatch_table(TosState state){ return _active_table.distance_from(state); }

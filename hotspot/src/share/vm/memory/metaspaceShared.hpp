@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,57 +31,9 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resourceHash.hpp"
 
-#define DEFAULT_VTBL_LIST_SIZE          (17)  // number of entries in the shared space vtable list.
-#define DEFAULT_VTBL_VIRTUALS_COUNT     (200) // maximum number of virtual functions
-// If virtual functions are added to Metadata,
-// this number needs to be increased.  Also,
-// SharedMiscCodeSize will need to be increased.
-// The following 2 sizes were based on
-// MetaspaceShared::generate_vtable_methods()
-#define DEFAULT_VTBL_METHOD_SIZE        (16)  // conservative size of the mov1 and jmp instructions
-// for the x64 platform
-#define DEFAULT_VTBL_COMMON_CODE_SIZE   (1*K) // conservative size of the "common_code" for the x64 platform
-
-#define DEFAULT_SHARED_READ_WRITE_SIZE  (NOT_LP64(6*M) LP64_ONLY(10*M))
-#define MIN_SHARED_READ_WRITE_SIZE      (NOT_LP64(6*M) LP64_ONLY(10*M))
-
-#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(6*M) LP64_ONLY(10*M))
-#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(6*M) LP64_ONLY(10*M))
-
-// the MIN_SHARED_MISC_DATA_SIZE and MIN_SHARED_MISC_CODE_SIZE estimates are based on
-// the sizes required for dumping the archive using the default classlist. The sizes
-// are multiplied by 1.5 for a safety margin.
-
-#define DEFAULT_SHARED_MISC_DATA_SIZE   (NOT_LP64(2*M) LP64_ONLY(4*M))
-#define MIN_SHARED_MISC_DATA_SIZE       (NOT_LP64(1*M) LP64_ONLY(1200*K))
-
-#define DEFAULT_SHARED_MISC_CODE_SIZE   (120*K)
-#define MIN_SHARED_MISC_CODE_SIZE       (NOT_LP64(63*K) LP64_ONLY(69*K))
-#define DEFAULT_COMBINED_SIZE           (DEFAULT_SHARED_READ_WRITE_SIZE+DEFAULT_SHARED_READ_ONLY_SIZE+DEFAULT_SHARED_MISC_DATA_SIZE+DEFAULT_SHARED_MISC_CODE_SIZE)
-
-// the max size is the MAX size (ie. 0x7FFFFFFF) - the total size of
-// the other 3 sections - page size (to avoid overflow in case the final
-// size will get aligned up on page size)
-#define SHARED_PAGE                     ((size_t)os::vm_page_size())
 #define MAX_SHARED_DELTA                (0x7FFFFFFF)
-#define MAX_SHARED_READ_WRITE_SIZE      (MAX_SHARED_DELTA-(MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_DATA_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
-#define MAX_SHARED_READ_ONLY_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_MISC_DATA_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
-#define MAX_SHARED_MISC_DATA_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
-#define MAX_SHARED_MISC_CODE_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_DATA_SIZE)-SHARED_PAGE)
-
-#define LargeSharedArchiveSize          (300*M)
-#define HugeSharedArchiveSize           (800*M)
-#define ReadOnlyRegionPercentage        0.4
-#define ReadWriteRegionPercentage       0.55
-#define MiscDataRegionPercentage        0.03
-#define MiscCodeRegionPercentage        0.02
-#define LargeThresholdClassCount        5000
-#define HugeThresholdClassCount         40000
-
-#define SET_ESTIMATED_SIZE(type, region)                              \
-  Shared ##region## Size  = FLAG_IS_DEFAULT(Shared ##region## Size) ? \
-    (uintx)(type ## SharedArchiveSize *  region ## RegionPercentage) : Shared ## region ## Size
 
 class FileMapInfo;
 
@@ -94,97 +46,113 @@ public:
   CompactHashtableStats string;
 };
 
-class SharedMiscRegion VALUE_OBJ_CLASS_SPEC {
-private:
-  VirtualSpace _vs;
-  char* _alloc_top;
-  SharedSpaceType _space_type;
-
-public:
-  void initialize(ReservedSpace rs, size_t committed_byte_size,  SharedSpaceType space_type);
-  VirtualSpace* virtual_space() {
-    return &_vs;
-  }
-  char* low() const {
-    return _vs.low();
-  }
-  char* alloc_top() const {
-    return _alloc_top;
-  }
-  char* alloc(size_t num_bytes) NOT_CDS_RETURN_(NULL);
-};
-
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
 
   // CDS support
-  static ReservedSpace* _shared_rs;
+  static ReservedSpace _shared_rs;
+  static VirtualSpace _shared_vs;
   static int _max_alignment;
   static MetaspaceSharedStats _stats;
-  static bool _link_classes_made_progress;
-  static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
+  static bool _open_archive_heap_region_mapped;
   static address _cds_i2i_entry_code_buffers;
   static size_t  _cds_i2i_entry_code_buffers_size;
-
-  // Used only during dumping.
-  static SharedMiscRegion _md;
-  static SharedMiscRegion _mc;
-  static SharedMiscRegion _od;
+  static size_t  _core_spaces_size;
  public:
   enum {
-    vtbl_list_size         = DEFAULT_VTBL_LIST_SIZE,
-    num_virtuals           = DEFAULT_VTBL_VIRTUALS_COUNT,
-    vtbl_method_size       = DEFAULT_VTBL_METHOD_SIZE,
-    vtbl_common_code_size  = DEFAULT_VTBL_COMMON_CODE_SIZE
-  };
-
-  enum {
-    ro = 0,  // read-only shared space in the heap
+    // core archive spaces
+    mc = 0,  // miscellaneous code for method trampolines
     rw = 1,  // read-write shared space in the heap
-    md = 2,  // miscellaneous data for initializing tables, etc.
-    mc = 3,  // miscellaneous code - vtable replacement.
-    max_strings = 2, // max number of string regions in string space
-    num_non_strings = 4, // number of non-string regions
-    first_string = num_non_strings, // index of first string region
-    // The optional data region is the last region.
+    ro = 2,  // read-only shared space in the heap
+    md = 3,  // miscellaneous data for initializing tables, etc.
+    num_core_spaces = 4, // number of non-string regions
+
+    // optional mapped spaces
     // Currently it only contains class file data.
-    od = max_strings + num_non_strings,
-    n_regions = od + 1 // total number of regions
+    od = num_core_spaces,
+    num_non_heap_spaces = od + 1,
+
+    // mapped java heap regions
+    first_string = od + 1, // index of first string region
+    max_strings = 2, // max number of string regions in string space
+    first_open_archive_heap_region = first_string + max_strings,
+    max_open_archive_heap_region = 2,
+
+    last_valid_region = first_open_archive_heap_region + max_open_archive_heap_region - 1,
+    n_regions =  last_valid_region + 1 // total number of regions
   };
-
-  // Accessor functions to save shared space created for metadata, which has
-  // extra space allocated at the end for miscellaneous data and code.
-  static void set_max_alignment(int alignment) {
-    CDS_ONLY(_max_alignment = alignment);
-  }
-
-  static int max_alignment() {
-    CDS_ONLY(return _max_alignment);
-    NOT_CDS(return 0);
-  }
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
-  static int preload_and_dump(const char * class_list_path,
-                              GrowableArray<Klass*>* class_promote_order,
-                              TRAPS) NOT_CDS_RETURN_(0);
+  static int preload_classes(const char * class_list_path,
+                             TRAPS) NOT_CDS_RETURN_(0);
 
-  static ReservedSpace* shared_rs() {
-    CDS_ONLY(return _shared_rs);
-    NOT_CDS(return NULL);
+#if INCLUDE_CDS_JAVA_HEAP
+ private:
+  static bool obj_equals(oop const& p1, oop const& p2) {
+    return p1 == p2;
+  }
+  static unsigned obj_hash(oop const& p) {
+    unsigned hash = (unsigned)((uintptr_t)&p);
+    return hash ^ (hash >> LogMinObjAlignment);
+  }
+  typedef ResourceHashtable<oop, oop,
+      MetaspaceShared::obj_hash, MetaspaceShared::obj_equals> ArchivedObjectCache;
+  static ArchivedObjectCache* _archive_object_cache;
+
+ public:
+  static ArchivedObjectCache* archive_object_cache() {
+    return _archive_object_cache;
+  }
+  static oop archive_heap_object(oop obj, Thread* THREAD);
+  static void archive_resolved_constants(Thread* THREAD);
+#endif
+  static bool is_heap_object_archiving_allowed() {
+    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
+    NOT_CDS_JAVA_HEAP(return false;)
+  }
+  static void create_archive_object_cache() {
+    CDS_JAVA_HEAP_ONLY(_archive_object_cache = new ArchivedObjectCache(););
+  }
+  static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void dump_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive) NOT_CDS_JAVA_HEAP_RETURN;
+  static void set_open_archive_heap_region_mapped() {
+    CDS_JAVA_HEAP_ONLY(_open_archive_heap_region_mapped = true);
+    NOT_CDS_JAVA_HEAP_RETURN;
+  }
+  static bool open_archive_heap_region_mapped() {
+    CDS_JAVA_HEAP_ONLY(return _open_archive_heap_region_mapped);
+    NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
 
-  static void initialize_shared_rs(ReservedSpace* rs) NOT_CDS_RETURN;
+  static ReservedSpace* shared_rs() {
+    CDS_ONLY(return &_shared_rs);
+    NOT_CDS(return NULL);
+  }
+  static void commit_shared_space_to(char* newtop) NOT_CDS_RETURN;
+  static size_t core_spaces_size() {
+    return _core_spaces_size;
+  }
+  static void initialize_shared_rs() NOT_CDS_RETURN;
+
+  // Delta of this object from the bottom of the archive.
+  static uintx object_delta(void* obj) {
+    assert(DumpSharedSpaces, "supported only for dumping");
+    assert(shared_rs()->contains(obj), "must be");
+    address base_address = address(shared_rs()->base());
+    uintx delta = address(obj) - base_address;
+    return delta;
+  }
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
   }
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
-  static void fixup_shared_string_regions() NOT_CDS_RETURN;
 
   // Return true if given address is in the mapped shared space.
   static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
@@ -192,18 +160,37 @@ class MetaspaceShared : AllStatic {
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
-  static bool is_string_region(int idx) NOT_CDS_RETURN_(false);
+  static bool is_heap_region(int idx) {
+    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_string &&
+                               idx < MetaspaceShared::first_open_archive_heap_region +
+                                     MetaspaceShared::max_open_archive_heap_region));
+    NOT_CDS_JAVA_HEAP_RETURN_(false);
+  }
+  static bool is_string_region(int idx) {
+    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_string &&
+                               idx < MetaspaceShared::first_string + MetaspaceShared::max_strings));
+    NOT_CDS_JAVA_HEAP_RETURN_(false);
+  }
+  static bool is_open_archive_heap_region(int idx) {
+    CDS_JAVA_HEAP_ONLY(return (idx >= MetaspaceShared::first_open_archive_heap_region &&
+                               idx < MetaspaceShared::first_open_archive_heap_region +
+                                     MetaspaceShared::max_open_archive_heap_region));
+    NOT_CDS_JAVA_HEAP_RETURN_(false);
+  }
+  static bool is_in_trampoline_frame(address addr) NOT_CDS_RETURN_(false);
 
-  static void generate_vtable_methods(void** vtbl_list,
-                                      void** vtable,
-                                      char** md_top, char* md_end,
-                                      char** mc_top, char* mc_end);
-  static void serialize(SerializeClosure* sc, GrowableArray<MemRegion> *string_space,
-                        size_t* space_size);
+  static void allocate_cpp_vtable_clones();
+  static intptr_t* clone_cpp_vtables(intptr_t* p);
+  static void zero_cpp_vtable_clones_for_writing();
+  static void patch_cpp_vtable_pointers();
+  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
+  static void serialize(SerializeClosure* sc);
 
   static MetaspaceSharedStats* stats() {
     return &_stats;
   }
+
+  static void report_out_of_space(const char* name, size_t needed_bytes);
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private if
@@ -218,18 +205,24 @@ class MetaspaceShared : AllStatic {
   static void print_shared_spaces();
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
-  static void link_one_shared_class(Klass* obj, TRAPS);
-  static void check_one_shared_class(Klass* obj);
-  static void check_shared_class_loader_type(Klass* obj);
   static void link_and_cleanup_shared_classes(TRAPS);
+  static void check_shared_class_loader_type(Klass* obj);
 
-  static int count_class(const char* classlist_file);
-  static void estimate_regions_size() NOT_CDS_RETURN;
+  // Allocate a block of memory from the "mc", "ro", or "rw" regions.
+  static char* misc_code_space_alloc(size_t num_bytes);
+  static char* read_only_space_alloc(size_t num_bytes);
 
-  // Allocate a block of memory from the "mc", "md", or "od" regions.
-  static char* misc_code_space_alloc(size_t num_bytes) {  return _mc.alloc(num_bytes); }
-  static char* misc_data_space_alloc(size_t num_bytes) {  return _md.alloc(num_bytes); }
-  static char* optional_data_space_alloc(size_t num_bytes) { return _od.alloc(num_bytes); }
+  template <typename T>
+  static Array<T>* new_ro_array(int length) {
+#if INCLUDE_CDS
+    size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
+    Array<T>* array = (Array<T>*)read_only_space_alloc(byte_size);
+    array->initialize(length);
+    return array;
+#else
+    return NULL;
+#endif
+  }
 
   static address cds_i2i_entry_code_buffers(size_t total_size);
 
@@ -239,18 +232,6 @@ class MetaspaceShared : AllStatic {
   static size_t cds_i2i_entry_code_buffers_size() {
     return _cds_i2i_entry_code_buffers_size;
   }
-
-  static SharedMiscRegion* misc_code_region() {
-    assert(DumpSharedSpaces, "used during dumping only");
-    return &_mc;
-  }
-  static SharedMiscRegion* misc_data_region() {
-    assert(DumpSharedSpaces, "used during dumping only");
-    return &_md;
-  }
-  static SharedMiscRegion* optional_data_region() {
-    assert(DumpSharedSpaces, "used during dumping only");
-    return &_od;
-  }
+  static void relocate_klass_ptr(oop o);
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

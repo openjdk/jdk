@@ -22,9 +22,13 @@
  */
 package org.graalvm.compiler.word;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.SignedWord;
+import org.graalvm.word.UnsignedWord;
+import org.graalvm.word.WordBase;
 
 /**
  * Medium-level memory access for Objects. Similarly to the readXxx and writeXxx methods defined for
@@ -37,8 +41,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -52,8 +56,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -67,8 +71,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -82,8 +86,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -97,8 +101,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -112,8 +116,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -127,8 +131,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -142,8 +146,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -152,13 +156,13 @@ public final class BarrieredAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_BARRIERED)
-    public static native Word readWord(Object object, WordBase offset, LocationIdentity locationIdentity);
+    public static native <T extends WordBase> T readWord(Object object, WordBase offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -255,7 +259,7 @@ public final class BarrieredAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_BARRIERED)
-    public static native Word readWord(Object object, int offset, LocationIdentity locationIdentity);
+    public static native <T extends WordBase> T readWord(Object object, int offset, LocationIdentity locationIdentity);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
@@ -271,8 +275,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -286,8 +290,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -301,8 +305,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -316,8 +320,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -331,8 +335,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -346,8 +350,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -361,8 +365,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -376,8 +380,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -391,8 +395,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -505,8 +509,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -519,8 +523,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -533,8 +537,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -547,8 +551,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -561,8 +565,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -575,8 +579,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -589,8 +593,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -603,8 +607,8 @@ public final class BarrieredAccess {
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -612,13 +616,13 @@ public final class BarrieredAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_BARRIERED)
-    public static native Word readWord(Object object, WordBase offset);
+    public static native <T extends WordBase> T readWord(Object object, WordBase offset);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -706,7 +710,7 @@ public final class BarrieredAccess {
      * @return the result of the memory access
      */
     @Operation(opcode = Opcode.READ_BARRIERED)
-    public static native Word readWord(Object object, int offset);
+    public static native <T extends WordBase> T readWord(Object object, int offset);
 
     /**
      * Reads the memory at address {@code (object + offset)}. The offset is in bytes.
@@ -721,8 +725,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -735,8 +739,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -749,8 +753,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -763,8 +767,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -777,8 +781,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -791,8 +795,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -805,8 +809,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -819,8 +823,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access
@@ -833,8 +837,8 @@ public final class BarrieredAccess {
     /**
      * Writes the memory at address {@code (object + offset)}. The offset is in bytes.
      * <p>
-     * The offset is always treated as a {@link Signed} value. However, the static type is
-     * {@link WordBase} to avoid the frequent casts of {@link Unsigned} values (where the caller
+     * The offset is always treated as a {@link SignedWord} value. However, the static type is
+     * {@link WordBase} to avoid the frequent casts of {@link UnsignedWord} values (where the caller
      * knows that the highest-order bit of the unsigned value is never used).
      *
      * @param object the base object for the memory access

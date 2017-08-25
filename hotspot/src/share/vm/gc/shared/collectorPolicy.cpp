@@ -40,6 +40,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // CollectorPolicy methods
@@ -50,7 +51,6 @@ CollectorPolicy::CollectorPolicy() :
     _initial_heap_byte_size(InitialHeapSize),
     _max_heap_byte_size(MaxHeapSize),
     _min_heap_byte_size(Arguments::min_heap_size()),
-    _size_policy(NULL),
     _should_clear_all_soft_refs(false),
     _all_soft_refs_clear(false)
 {}
@@ -105,9 +105,9 @@ void CollectorPolicy::initialize_flags() {
   }
 
   // User inputs from -Xmx and -Xms must be aligned
-  _min_heap_byte_size = align_size_up(_min_heap_byte_size, _heap_alignment);
-  size_t aligned_initial_heap_size = align_size_up(InitialHeapSize, _heap_alignment);
-  size_t aligned_max_heap_size = align_size_up(MaxHeapSize, _heap_alignment);
+  _min_heap_byte_size = align_up(_min_heap_byte_size, _heap_alignment);
+  size_t aligned_initial_heap_size = align_up(InitialHeapSize, _heap_alignment);
+  size_t aligned_max_heap_size = align_up(MaxHeapSize, _heap_alignment);
 
   // Write back to flags if the values changed
   if (aligned_initial_heap_size != InitialHeapSize) {
@@ -133,7 +133,7 @@ void CollectorPolicy::initialize_flags() {
   _initial_heap_byte_size = InitialHeapSize;
   _max_heap_byte_size = MaxHeapSize;
 
-  FLAG_SET_ERGO(size_t, MinHeapDeltaBytes, align_size_up(MinHeapDeltaBytes, _space_alignment));
+  FLAG_SET_ERGO(size_t, MinHeapDeltaBytes, align_up(MinHeapDeltaBytes, _space_alignment));
 
   DEBUG_ONLY(CollectorPolicy::assert_flags();)
 }
@@ -156,12 +156,6 @@ CardTableRS* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
 }
 
 void CollectorPolicy::cleared_all_soft_refs() {
-  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
-  // have been cleared in the last collection but if the gc overhear
-  // limit continues to be near, SoftRefs should still be cleared.
-  if (size_policy() != NULL) {
-    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
-  }
   _all_soft_refs_clear = true;
 }
 
@@ -194,11 +188,12 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _max_old_size(0),
     _gen_alignment(0),
     _young_gen_spec(NULL),
-    _old_gen_spec(NULL)
+    _old_gen_spec(NULL),
+    _size_policy(NULL)
 {}
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
-  return align_size_down_bounded(base_size / (NewRatio + 1), _gen_alignment);
+  return align_down_bounded(base_size / (NewRatio + 1), _gen_alignment);
 }
 
 size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
@@ -219,13 +214,24 @@ void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                         GCTimeRatio);
 }
 
+void GenCollectorPolicy::cleared_all_soft_refs() {
+  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
+  // have been cleared in the last collection but if the gc overhear
+  // limit continues to be near, SoftRefs should still be cleared.
+  if (size_policy() != NULL) {
+    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
+  }
+
+  CollectorPolicy::cleared_all_soft_refs();
+}
+
 size_t GenCollectorPolicy::young_gen_size_lower_bound() {
   // The young generation must be aligned and have room for eden + two survivors
-  return align_size_up(3 * _space_alignment, _gen_alignment);
+  return align_up(3 * _space_alignment, _gen_alignment);
 }
 
 size_t GenCollectorPolicy::old_gen_size_lower_bound() {
-  return align_size_up(_space_alignment, _gen_alignment);
+  return align_up(_space_alignment, _gen_alignment);
 }
 
 #ifdef ASSERT
@@ -287,7 +293,7 @@ void GenCollectorPolicy::initialize_flags() {
 
   // Make sure the heap is large enough for two generations
   size_t smallest_new_size = young_gen_size_lower_bound();
-  size_t smallest_heap_size = align_size_up(smallest_new_size + old_gen_size_lower_bound(),
+  size_t smallest_heap_size = align_up(smallest_new_size + old_gen_size_lower_bound(),
                                            _heap_alignment);
   if (MaxHeapSize < smallest_heap_size) {
     FLAG_SET_ERGO(size_t, MaxHeapSize, smallest_heap_size);
@@ -311,7 +317,7 @@ void GenCollectorPolicy::initialize_flags() {
   // Now take the actual NewSize into account. We will silently increase NewSize
   // if the user specified a smaller or unaligned value.
   size_t bounded_new_size = bound_minus_alignment(NewSize, MaxHeapSize);
-  bounded_new_size = MAX2(smallest_new_size, (size_t)align_size_down(bounded_new_size, _gen_alignment));
+  bounded_new_size = MAX2(smallest_new_size, align_down(bounded_new_size, _gen_alignment));
   if (bounded_new_size != NewSize) {
     FLAG_SET_ERGO(size_t, NewSize, bounded_new_size);
   }
@@ -334,8 +340,8 @@ void GenCollectorPolicy::initialize_flags() {
       }
     } else if (MaxNewSize < _initial_young_size) {
       FLAG_SET_ERGO(size_t, MaxNewSize, _initial_young_size);
-    } else if (!is_size_aligned(MaxNewSize, _gen_alignment)) {
-      FLAG_SET_ERGO(size_t, MaxNewSize, align_size_down(MaxNewSize, _gen_alignment));
+    } else if (!is_aligned(MaxNewSize, _gen_alignment)) {
+      FLAG_SET_ERGO(size_t, MaxNewSize, align_down(MaxNewSize, _gen_alignment));
     }
     _max_young_size = MaxNewSize;
   }
@@ -359,8 +365,8 @@ void GenCollectorPolicy::initialize_flags() {
   if (OldSize < old_gen_size_lower_bound()) {
     FLAG_SET_ERGO(size_t, OldSize, old_gen_size_lower_bound());
   }
-  if (!is_size_aligned(OldSize, _gen_alignment)) {
-    FLAG_SET_ERGO(size_t, OldSize, align_size_down(OldSize, _gen_alignment));
+  if (!is_aligned(OldSize, _gen_alignment)) {
+    FLAG_SET_ERGO(size_t, OldSize, align_down(OldSize, _gen_alignment));
   }
 
   if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(MaxHeapSize)) {
@@ -370,7 +376,7 @@ void GenCollectorPolicy::initialize_flags() {
     assert(NewRatio > 0, "NewRatio should have been set up earlier");
     size_t calculated_heapsize = (OldSize / NewRatio) * (NewRatio + 1);
 
-    calculated_heapsize = align_size_up(calculated_heapsize, _heap_alignment);
+    calculated_heapsize = align_up(calculated_heapsize, _heap_alignment);
     FLAG_SET_ERGO(size_t, MaxHeapSize, calculated_heapsize);
     _max_heap_byte_size = MaxHeapSize;
     FLAG_SET_ERGO(size_t, InitialHeapSize, calculated_heapsize);
@@ -384,7 +390,7 @@ void GenCollectorPolicy::initialize_flags() {
       // exceed it. Adjust New/OldSize as necessary.
       size_t calculated_size = NewSize + OldSize;
       double shrink_factor = (double) MaxHeapSize / calculated_size;
-      size_t smaller_new_size = align_size_down((size_t)(NewSize * shrink_factor), _gen_alignment);
+      size_t smaller_new_size = align_down((size_t)(NewSize * shrink_factor), _gen_alignment);
       FLAG_SET_ERGO(size_t, NewSize, MAX2(young_gen_size_lower_bound(), smaller_new_size));
       _initial_young_size = NewSize;
 
@@ -394,7 +400,7 @@ void GenCollectorPolicy::initialize_flags() {
       // is a multiple of _gen_alignment.
       FLAG_SET_ERGO(size_t, OldSize, MaxHeapSize - NewSize);
     } else {
-      FLAG_SET_ERGO(size_t, MaxHeapSize, align_size_up(NewSize + OldSize, _heap_alignment));
+      FLAG_SET_ERGO(size_t, MaxHeapSize, align_up(NewSize + OldSize, _heap_alignment));
       _max_heap_byte_size = MaxHeapSize;
     }
   }

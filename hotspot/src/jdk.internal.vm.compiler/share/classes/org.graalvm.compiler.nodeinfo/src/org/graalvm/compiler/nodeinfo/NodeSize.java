@@ -47,31 +47,65 @@ public enum NodeSize {
      */
     SIZE_IGNORED(0),
     /**
-     * Nodes that do not require any code to be generated in order to be "executed", e.g. a phi
+     * Nodes that do not require any code to be generated in order to be "executed", e.g. a pinode
      * node.
      */
     SIZE_0(0),
     SIZE_1(1),
     SIZE_2(2),
-    SIZE_3(3),
     SIZE_4(4),
-    SIZE_6(6),
     SIZE_8(8),
-    SIZE_10(10),
-    SIZE_15(15),
-    SIZE_20(20),
-    SIZE_30(30),
-    SIZE_40(40),
-    SIZE_50(50),
-    SIZE_80(80),
-    SIZE_100(100),
-    SIZE_200(200);
+    SIZE_16(16),
+    SIZE_32(32),
+    SIZE_64(64),
+    SIZE_128(128),
+    SIZE_256(256),
+    SIZE_512(512),
+    SIZE_1024(1024);
 
-    public final int estimatedCodeSize;
+    public final int value;
 
-    NodeSize(int estimatedCodeSize) {
-        this.estimatedCodeSize = estimatedCodeSize;
+    NodeSize(int value) {
+        this.value = value;
     }
 
     public static final int IGNORE_SIZE_CONTRACT_FACTOR = 0xFFFF;
+
+    public static NodeSize compute(NodeSize base, int opCount) {
+        assert opCount >= 0;
+        if (opCount == 0) {
+            return SIZE_0;
+        }
+        assert base.ordinal() > SIZE_0.ordinal();
+        int log2 = log2(base.value * opCount);
+        NodeSize[] values = values();
+        for (int i = base.ordinal(); i < values.length; i++) {
+            if (log2(values[i].value) == log2) {
+                return values[i];
+            }
+        }
+        return SIZE_1024;
+    }
+
+    public static NodeSize compute(int rawValue) {
+        assert rawValue >= 0;
+        if (rawValue == 0) {
+            return SIZE_0;
+        }
+        assert rawValue > 0;
+        NodeSize[] values = values();
+        for (int i = SIZE_0.ordinal(); i < values.length - 1; i++) {
+            if (values[i].value >= rawValue && rawValue <= values[i + 1].value) {
+                int r1 = values[i].value;
+                int r2 = values[i + 1].value;
+                int diff = r2 - r1;
+                return rawValue - r1 > diff / 2 ? values[i + 1] : values[i];
+            }
+        }
+        return SIZE_1024;
+    }
+
+    private static int log2(int val) {
+        return (Integer.SIZE - 1) - Integer.numberOfLeadingZeros(val);
+    }
 }

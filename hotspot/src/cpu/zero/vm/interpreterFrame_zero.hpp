@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
+#include "utilities/align.hpp"
 
 #ifdef CC_INTERP
 // |  ...               |
@@ -57,8 +58,8 @@ class InterpreterFrame : public ZeroFrame {
  protected:
   enum Layout {
     istate_off = jf_header_words +
-      (align_size_up_(sizeof(BytecodeInterpreter),
-                      wordSize) >> LogBytesPerWord) - 1,
+      (align_up_(sizeof(BytecodeInterpreter),
+                 wordSize) >> LogBytesPerWord) - 1,
     header_words
   };
 

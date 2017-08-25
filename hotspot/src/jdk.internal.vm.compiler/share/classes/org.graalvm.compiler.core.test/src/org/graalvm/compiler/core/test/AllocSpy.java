@@ -71,6 +71,7 @@ public final class AllocSpy implements AutoCloseable {
             field.setAccessible(true);
             enabled = field.get(null) != null;
         } catch (Exception e) {
+        } catch (LinkageError e) {
         }
         ENABLED = enabled;
         if (ENABLED) {

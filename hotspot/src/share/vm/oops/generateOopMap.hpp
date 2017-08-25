@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/bitMap.hpp"
 
 // Forward definition
 class GenerateOopMap;
@@ -360,12 +361,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   }
   int           gc_points                   () const                          { return _gc_points; }
   int           bb_count                    () const                          { return _bb_count; }
-  void          set_bbmark_bit              (int bci) {
-    _bb_hdr_bits.at_put(bci, true);
-  }
-  void          clear_bbmark_bit            (int bci) {
-    _bb_hdr_bits.at_put(bci, false);
-  }
+  void          set_bbmark_bit              (int bci);
   BasicBlock *  get_basic_block_at          (int bci) const;
   BasicBlock *  get_basic_block_containing  (int bci) const;
   void          interp_bb                   (BasicBlock *bb);

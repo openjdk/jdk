@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 int AbstractInterpreter::BasicType_as_index(BasicType type) {
@@ -66,23 +67,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   }
   assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
   return i;
-}
-
-// These should never be compiled since the interpreter will prefer
-// the compiled version to the intrinsic version.
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  switch (method_kind(m)) {
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    :
-      return false;
-    default:
-      return true;
-  }
 }
 
 // How much stack a method activation needs in words.
@@ -125,7 +109,7 @@ int AbstractInterpreter::size_activation(int max_stack,
          tempcount*Interpreter::stackElementWords + extra_args;
 
 #ifdef AARCH64
-  size = round_to(size, StackAlignmentInBytes/BytesPerWord);
+  size = align_up(size, StackAlignmentInBytes/BytesPerWord);
 #endif // AARCH64
 
   return size;
@@ -206,7 +190,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   }
   if (caller->is_interpreted_frame()) {
     intptr_t* locals_base = (locals - method->max_locals()*Interpreter::stackElementWords + 1);
-    locals_base = (intptr_t*)round_down((intptr_t)locals_base, StackAlignmentInBytes);
+    locals_base = align_down(locals_base, StackAlignmentInBytes);
     assert(interpreter_frame->sender_sp() <= locals_base, "interpreter-to-interpreter frame chaining");
 
   } else if (caller->is_compiled_frame()) {
@@ -234,10 +218,17 @@ void AbstractInterpreter::layout_activation(Method* method,
 #ifdef AARCH64
   interpreter_frame->interpreter_frame_set_stack_top(stack_top);
 
+  // We have to add extra reserved slots to max_stack. There are 3 users of the extra slots,
+  // none of which are at the same time, so we just need to make sure there is enough room
+  // for the biggest user:
+  //   -reserved slot for exception handler
+  //   -reserved slots for JSR292. Method::extra_stack_entries() is the size.
+  //   -3 reserved slots so get_method_counters() can save some registers before call_VM().
+  int max_stack = method->constMethod()->max_stack() + MAX2(3, Method::extra_stack_entries());
   intptr_t* extended_sp = (intptr_t*) monbot  -
-    (method->max_stack() + 1) * Interpreter::stackElementWords - // +1 is reserved slot for exception handler
+    (max_stack * Interpreter::stackElementWords) -
     popframe_extra_args;
-  extended_sp = (intptr_t*)round_down((intptr_t)extended_sp, StackAlignmentInBytes);
+  extended_sp = align_down(extended_sp, StackAlignmentInBytes);
   interpreter_frame->interpreter_frame_set_extended_sp(extended_sp);
 #else
   interpreter_frame->interpreter_frame_set_last_sp(stack_top);
@@ -249,7 +240,7 @@ void AbstractInterpreter::layout_activation(Method* method,
 
 #ifdef AARCH64
   if (caller->is_interpreted_frame()) {
-    intptr_t* sender_sp = (intptr_t*)round_down((intptr_t)caller->interpreter_frame_tos_address(), StackAlignmentInBytes);
+    intptr_t* sender_sp = align_down(caller->interpreter_frame_tos_address(), StackAlignmentInBytes);
     interpreter_frame->set_interpreter_frame_sender_sp(sender_sp);
 
   } else {

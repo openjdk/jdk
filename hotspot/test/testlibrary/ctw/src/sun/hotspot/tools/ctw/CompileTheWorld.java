@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -73,21 +74,31 @@ public class CompileTheWorld {
             ExecutorService executor = createExecutor();
             long start = System.currentTimeMillis();
             try {
-                String path;
-                for (int i = 0, n = paths.length; i < n
-                        && !PathHandler.isFinished(); ++i) {
-                    path = paths[i];
-                    PathHandler.create(path, executor).process();
-                }
+                Arrays.stream(paths)
+                      .map(PathHandler::create)
+                      .flatMap(List::stream)
+                      .forEach(p -> {
+                          try {
+                              p.process(executor);
+                          } finally {
+                              p.close();
+                          }
+                        });
             } finally {
                 await(executor);
             }
             CompileTheWorld.OUT.printf("Done (%d classes, %d methods, %d ms)%n",
-                    PathHandler.getClassCount(),
+                    PathHandler.getProcessedClassCount(),
                     Compiler.getMethodCount(),
                     System.currentTimeMillis() - start);
             passed = true;
+        } catch (Throwable t){
+            t.printStackTrace(ERR);
         } finally {
+            try {
+                OUT.close();
+            } catch (Throwable ignore) {
+            }
             // <clinit> might have started new threads
             System.exit(passed ? 0 : 1);
         }

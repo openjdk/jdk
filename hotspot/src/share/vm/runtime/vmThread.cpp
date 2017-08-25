@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -40,6 +42,7 @@
 #include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Dummy VM operation to act as first element in our circular double-linked list
@@ -204,6 +207,7 @@ VMThread*         VMThread::_vm_thread          = NULL;
 VM_Operation*     VMThread::_cur_vm_operation   = NULL;
 VMOperationQueue* VMThread::_vm_queue           = NULL;
 PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = NULL;
+const char*       VMThread::_no_op_reason       = NULL;
 
 
 void VMThread::create() {
@@ -273,6 +277,7 @@ void VMThread::run() {
   }
 
   // 4526887 let VM thread exit at Safepoint
+  _no_op_reason = "Halt";
   SafepointSynchronize::begin();
 
   if (VerifyBeforeExit) {
@@ -380,6 +385,25 @@ void VMThread::evaluate_operation(VM_Operation* op) {
   }
 }
 
+bool VMThread::no_op_safepoint_needed(bool check_time) {
+  if (SafepointALot) {
+    _no_op_reason = "SafepointALot";
+    return true;
+  }
+  if (!SafepointSynchronize::is_cleanup_needed()) {
+    return false;
+  }
+  if (check_time) {
+    long interval = SafepointSynchronize::last_non_safepoint_interval();
+    bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
+                             (interval > GuaranteedSafepointInterval);
+    if (!max_time_exceeded) {
+      return false;
+    }
+  }
+  _no_op_reason = "Cleanup";
+  return true;
+}
 
 void VMThread::loop() {
   assert(_cur_vm_operation == NULL, "no current one should be executing");
@@ -412,14 +436,13 @@ void VMThread::loop() {
                                       GuaranteedSafepointInterval);
 
         // Support for self destruction
-        if ((SelfDestructTimer != 0) && !is_error_reported() &&
+        if ((SelfDestructTimer != 0) && !VMError::is_error_reported() &&
             (os::elapsedTime() > (double)SelfDestructTimer * 60.0)) {
           tty->print_cr("VM self-destructed");
           exit(-1);
         }
 
-        if (timedout && (SafepointALot ||
-                         SafepointSynchronize::is_cleanup_needed())) {
+        if (timedout && VMThread::no_op_safepoint_needed(false)) {
           MutexUnlockerEx mul(VMOperationQueue_lock,
                               Mutex::_no_safepoint_check_flag);
           // Force a safepoint since we have not had one for at least
@@ -463,6 +486,7 @@ void VMThread::loop() {
       // If we are at a safepoint we will evaluate all the operations that
       // follow that also require a safepoint
       if (_cur_vm_operation->evaluate_at_safepoint()) {
+        log_debug(vmthread)("Evaluating safepoint VM operation: %s", _cur_vm_operation->name());
 
         _vm_queue->set_drain_list(safepoint_ops); // ensure ops can be scanned
 
@@ -474,6 +498,7 @@ void VMThread::loop() {
           _cur_vm_operation = safepoint_ops;
           if (_cur_vm_operation != NULL) {
             do {
+              log_debug(vmthread)("Evaluating coalesced safepoint VM operation: %s", _cur_vm_operation->name());
               // evaluate_operation deletes the op object so we have
               // to grab the next op now
               VM_Operation* next = _cur_vm_operation->next();
@@ -511,6 +536,7 @@ void VMThread::loop() {
         SafepointSynchronize::end();
 
       } else {  // not a safepoint operation
+        log_debug(vmthread)("Evaluating non-safepoint VM operation: %s", _cur_vm_operation->name());
         if (TraceLongCompiles) {
           elapsedTimer t;
           t.start();
@@ -542,14 +568,10 @@ void VMThread::loop() {
     //
     // We want to make sure that we get to a safepoint regularly.
     //
-    if (SafepointALot || SafepointSynchronize::is_cleanup_needed()) {
-      long interval          = SafepointSynchronize::last_non_safepoint_interval();
-      bool max_time_exceeded = GuaranteedSafepointInterval != 0 && (interval > GuaranteedSafepointInterval);
-      if (SafepointALot || max_time_exceeded) {
-        HandleMark hm(VMThread::vm_thread());
-        SafepointSynchronize::begin();
-        SafepointSynchronize::end();
-      }
+    if (VMThread::no_op_safepoint_needed(true)) {
+      HandleMark hm(VMThread::vm_thread());
+      SafepointSynchronize::begin();
+      SafepointSynchronize::end();
     }
   }
 }
@@ -590,8 +612,9 @@ void VMThread::execute(VM_Operation* op) {
     // to be queued up during a safepoint synchronization.
     {
       VMOperationQueue_lock->lock_without_safepoint_check();
+      log_debug(vmthread)("Adding VM operation: %s", op->name());
       bool ok = _vm_queue->add(op);
-    op->set_timestamp(os::javaTimeMillis());
+      op->set_timestamp(os::javaTimeMillis());
       VMOperationQueue_lock->notify();
       VMOperationQueue_lock->unlock();
       // VM_Operation got skipped
