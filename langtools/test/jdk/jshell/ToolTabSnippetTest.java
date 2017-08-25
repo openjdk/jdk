@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @bug 8177076
+ * @bug 8177076 8185426
  * @modules
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
+ *     jdk.jshell/jdk.internal.jshell.tool
  *     jdk.jshell/jdk.internal.jshell.tool.resources:open
  *     jdk.jshell/jdk.jshell:open
  * @library /tools/lib
@@ -42,10 +43,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 
+import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
 import org.testng.annotations.Test;
 
 @Test
@@ -188,6 +191,39 @@ public class ToolTabSnippetTest extends UITesting {
             //no crash:
             inputSink.write("\u0003new Stringbuil\011");
             waitOutput(out, "\u0005new Stringbuil\u0007");
+        });
+    }
+
+    public void testCleaningCompletionTODO() throws Exception {
+        doRunTest((inputSink, out) -> {
+            CountDownLatch testCompleteComputationStarted = new CountDownLatch(1);
+            CountDownLatch testCompleteComputationContinue = new CountDownLatch(1);
+            ConsoleIOContextTestSupport.IMPL = new ConsoleIOContextTestSupport() {
+                @Override
+                protected void willComputeCompletionCallback() {
+                    if (testCompleteComputationStarted != null) {
+                        testCompleteComputationStarted.countDown();
+                    }
+                    if (testCompleteComputationContinue != null) {
+                        try {
+                            testCompleteComputationContinue.await();
+                        } catch (InterruptedException ex) {
+                            throw new IllegalStateException(ex);
+                        }
+                    }
+                }
+            };
+            //-> <tab>
+            inputSink.write("\011");
+            testCompleteComputationStarted.await();
+            //-> <tab><tab>
+            inputSink.write("\011\011");
+            testCompleteComputationContinue.countDown();
+            waitOutput(out, "\u0005");
+            //-> <tab>
+            inputSink.write("\011");
+            waitOutput(out, "\u0005");
+            ConsoleIOContextTestSupport.IMPL = null;
         });
     }
 
