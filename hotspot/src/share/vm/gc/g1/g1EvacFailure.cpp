@@ -35,7 +35,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 
-class UpdateRSetDeferred : public OopsInHeapRegionClosure {
+class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
   G1CollectedHeap* _g1;
   DirtyCardQueue *_dcq;
@@ -48,14 +48,20 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
   template <class T> void do_oop_work(T* p) {
-    assert(_from->is_in_reserved(p), "paranoia");
-    assert(!_from->is_survivor(), "Unexpected evac failure in survivor region");
+    assert(_g1->heap_region_containing(p)->is_in_reserved(p), "paranoia");
+    assert(!_g1->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
 
-    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p))) {
-      size_t card_index = _ct_bs->index_for(p);
-      if (_ct_bs->mark_card_deferred(card_index)) {
-        _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
-      }
+    T const o = oopDesc::load_heap_oop(p);
+    if (oopDesc::is_null(o)) {
+      return;
+    }
+
+    if (HeapRegion::is_in_same_region(p, oopDesc::decode_heap_oop(o))) {
+      return;
+    }
+    size_t card_index = _ct_bs->index_for(p);
+    if (_ct_bs->mark_card_deferred(card_index)) {
+      _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
     }
   }
 };
@@ -66,14 +72,14 @@ private:
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
-  OopsInHeapRegionClosure *_update_rset_cl;
+  UpdateRSetDeferred* _update_rset_cl;
   bool _during_initial_mark;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
-                                 OopsInHeapRegionClosure* update_rset_cl,
+                                 UpdateRSetDeferred* update_rset_cl,
                                  bool during_initial_mark,
                                  uint worker_id) :
     _g1(G1CollectedHeap::heap()),
@@ -118,7 +124,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->grayRoot(obj, _hr);
+        _cm->mark_in_next_bitmap(_hr, obj);
       }
       size_t obj_size = obj->size();
 
@@ -207,7 +213,6 @@ public:
                                         &_update_rset_cl,
                                         during_initial_mark,
                                         _worker_id);
-    _update_rset_cl.set_region(hr);
     hr->object_iterate(&rspc);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
@@ -216,14 +221,14 @@ public:
   }
 
   bool doHeapRegion(HeapRegion *hr) {
-    bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
-    bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
-
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
+        bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
+        bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
+
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
         _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
@@ -234,9 +239,7 @@ public:
 
         hr->rem_set()->clean_strong_code_roots(hr);
 
-        hr->note_self_forwarding_removal_end(during_initial_mark,
-                                             during_conc_mark,
-                                             live_bytes);
+        hr->note_self_forwarding_removal_end(live_bytes);
       }
     }
     return false;

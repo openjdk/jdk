@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,25 +415,29 @@ bool PSScavenge::invoke_no_policy() {
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
+      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_q());
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
         stats = reference_processor()->process_discovered_references(
           &_is_alive_closure, &keep_alive, &evac_followers, &task_executor,
-          &_gc_timer);
+          &pt);
       } else {
         stats = reference_processor()->process_discovered_references(
-          &_is_alive_closure, &keep_alive, &evac_followers, NULL, &_gc_timer);
+          &_is_alive_closure, &keep_alive, &evac_followers, NULL, &pt);
       }
 
       _gc_tracer.report_gc_reference_stats(stats);
+      pt.print_all_references();
 
       // Enqueue reference objects discovered during scavenge.
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
-        reference_processor()->enqueue_discovered_references(&task_executor);
+        reference_processor()->enqueue_discovered_references(&task_executor, &pt);
       } else {
-        reference_processor()->enqueue_discovered_references(NULL);
+        reference_processor()->enqueue_discovered_references(NULL, &pt);
       }
+
+      pt.print_enqueue_phase();
     }
 
     {

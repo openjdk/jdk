@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -35,6 +36,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -53,8 +55,9 @@ public class AArch64FloatArithmeticSnippets extends SnippetTemplate.AbstractTemp
     private final SnippetTemplate.SnippetInfo drem;
     private final SnippetTemplate.SnippetInfo frem;
 
-    public AArch64FloatArithmeticSnippets(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-        super(providers, snippetReflection, target);
+    public AArch64FloatArithmeticSnippets(OptionValues options, Iterable<DebugHandlersFactory> factories, Providers providers, SnippetReflectionProvider snippetReflection,
+                    TargetDescription target) {
+        super(options, factories, providers, snippetReflection, target);
         drem = snippet(AArch64FloatArithmeticSnippets.class, "dremSnippet");
         frem = snippet(AArch64FloatArithmeticSnippets.class, "fremSnippet");
     }
@@ -71,7 +74,7 @@ public class AArch64FloatArithmeticSnippets extends SnippetTemplate.AbstractTemp
         Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
         args.add("x", node.getX());
         args.add("y", node.getY());
-        template(args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, tool, args);
+        template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, tool, args);
     }
 
     @Snippet

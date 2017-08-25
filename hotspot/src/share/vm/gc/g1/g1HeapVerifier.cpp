@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
@@ -36,6 +35,8 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -66,7 +67,8 @@ public:
           log.error("  Mark word: " PTR_FORMAT, p2i(obj->mark()));
         }
         ResourceMark rm;
-        obj->print_on(log.error_stream());
+        LogStream ls(log.error());
+        obj->print_on(&ls);
         _failures = true;
       }
     }
@@ -232,29 +234,62 @@ public:
 };
 
 class VerifyArchiveOopClosure: public OopClosure {
+  HeapRegion* _hr;
 public:
-  VerifyArchiveOopClosure(HeapRegion *hr) { }
+  VerifyArchiveOopClosure(HeapRegion *hr)
+    : _hr(hr) { }
   void do_oop(narrowOop *p) { do_oop_work(p); }
   void do_oop(      oop *p) { do_oop_work(p); }
 
   template <class T> void do_oop_work(T *p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    guarantee(obj == NULL || G1MarkSweep::in_archive_range(obj),
-              "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
-              p2i(p), p2i(obj));
+
+    if (_hr->is_open_archive()) {
+      guarantee(obj == NULL || G1ArchiveAllocator::is_archive_object(obj),
+                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
+                p2i(p), p2i(obj));
+    } else {
+      assert(_hr->is_closed_archive(), "should be closed archive region");
+      guarantee(obj == NULL || G1ArchiveAllocator::is_closed_archive_object(obj),
+                "Archive object at " PTR_FORMAT " references a non-archive object at " PTR_FORMAT,
+                p2i(p), p2i(obj));
+    }
   }
 };
 
-class VerifyArchiveRegionClosure: public ObjectClosure {
+class VerifyObjectInArchiveRegionClosure: public ObjectClosure {
+  HeapRegion* _hr;
 public:
-  VerifyArchiveRegionClosure(HeapRegion *hr) { }
+  VerifyObjectInArchiveRegionClosure(HeapRegion *hr, bool verbose)
+    : _hr(hr) { }
   // Verify that all object pointers are to archive regions.
   void do_object(oop o) {
-    VerifyArchiveOopClosure checkOop(NULL);
+    VerifyArchiveOopClosure checkOop(_hr);
     assert(o != NULL, "Should not be here for NULL oops");
     o->oop_iterate_no_header(&checkOop);
   }
 };
+
+// Should be only used at CDS dump time
+class VerifyArchivePointerRegionClosure: public HeapRegionClosure {
+private:
+  G1CollectedHeap* _g1h;
+public:
+  VerifyArchivePointerRegionClosure(G1CollectedHeap* g1h) { }
+  virtual bool doHeapRegion(HeapRegion* r) {
+   if (r->is_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
+      r->object_iterate(&verify_oop_pointers);
+    }
+    return false;
+  }
+};
+
+void G1HeapVerifier::verify_archive_regions() {
+  G1CollectedHeap*  g1h = G1CollectedHeap::heap();
+  VerifyArchivePointerRegionClosure cl(NULL);
+  g1h->heap_region_iterate(&cl);
+}
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
@@ -277,12 +312,15 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     // For archive regions, verify there are no heap pointers to
     // non-pinned regions. For all others, verify liveness info.
-    if (r->is_archive()) {
-      VerifyArchiveRegionClosure verify_oop_pointers(r);
+    if (r->is_closed_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
       r->object_iterate(&verify_oop_pointers);
       return true;
-    }
-    if (!r->is_continues_humongous()) {
+    } else if (r->is_open_archive()) {
+      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
+      r->object_iterate(&verify_open_archive_oop);
+      return true;
+    } else if (!r->is_continues_humongous()) {
       bool failures = false;
       r->verify(_vo, &failures);
       if (failures) {
@@ -408,7 +446,8 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     // print_extended_on() instead of print_on().
     Log(gc, verify) log;
     ResourceMark rm;
-    _g1h->print_extended_on(log.error_stream());
+    LogStream ls(log.error());
+    _g1h->print_extended_on(&ls);
   }
   guarantee(!failures, "there should not have been any failures");
 }
@@ -504,7 +543,6 @@ void G1HeapVerifier::prepare_for_verify() {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     _g1h->ensure_parsability(false);
   }
-  _g1h->g1_rem_set()->prepare_for_verify();
 }
 
 double G1HeapVerifier::verify(bool guard, const char* msg) {
@@ -596,11 +634,11 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   _g1h->collection_set()->iterate(&cl);
 }
 
-bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,
+bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, const G1CMBitMap* const bitmap,
                                                HeapWord* tams, HeapWord* end) {
   guarantee(tams <= end,
             "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
-  HeapWord* result = bitmap->getNextMarkedWordAddress(tams, end);
+  HeapWord* result = bitmap->get_next_marked_addr(tams, end);
   if (result < end) {
     log_error(gc, verify)("## wrong marked address on %s bitmap: " PTR_FORMAT, bitmap_name, p2i(result));
     log_error(gc, verify)("## %s tams: " PTR_FORMAT " end: " PTR_FORMAT, bitmap_name, p2i(tams), p2i(end));
@@ -610,10 +648,9 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMa
 }
 
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  G1CMBitMapRO* prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
-  G1CMBitMapRO* next_bitmap = (G1CMBitMapRO*) _g1h->concurrent_mark()->nextMarkBitMap();
+  const G1CMBitMap* const prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
+  const G1CMBitMap* const next_bitmap = _g1h->concurrent_mark()->nextMarkBitMap();
 
-  HeapWord* bottom = hr->bottom();
   HeapWord* ptams  = hr->prev_top_at_mark_start();
   HeapWord* ntams  = hr->next_top_at_mark_start();
   HeapWord* end    = hr->end();

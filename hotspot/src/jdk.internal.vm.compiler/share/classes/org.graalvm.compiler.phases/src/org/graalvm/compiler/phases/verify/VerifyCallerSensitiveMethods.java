@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.phases.verify;
 
-import static org.graalvm.compiler.core.common.util.Util.Java8OrEarlier;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
 import java.lang.annotation.Annotation;
 

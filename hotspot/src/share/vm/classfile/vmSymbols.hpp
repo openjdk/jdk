@@ -288,11 +288,13 @@
   template(java_lang_invoke_VarHandle,                "java/lang/invoke/VarHandle")               \
   template(java_lang_invoke_MethodType,               "java/lang/invoke/MethodType")              \
   template(java_lang_invoke_MethodType_signature,     "Ljava/lang/invoke/MethodType;")            \
+  template(java_lang_invoke_ResolvedMethodName_signature, "Ljava/lang/invoke/ResolvedMethodName;")\
   template(java_lang_invoke_MemberName_signature,     "Ljava/lang/invoke/MemberName;")            \
   template(java_lang_invoke_LambdaForm_signature,     "Ljava/lang/invoke/LambdaForm;")            \
   template(java_lang_invoke_MethodHandle_signature,   "Ljava/lang/invoke/MethodHandle;")          \
   /* internal classes known only to the JVM: */                                                   \
   template(java_lang_invoke_MemberName,               "java/lang/invoke/MemberName")              \
+  template(java_lang_invoke_ResolvedMethodName,       "java/lang/invoke/ResolvedMethodName")      \
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext, "java/lang/invoke/MethodHandleNatives$CallSiteContext") \
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
@@ -413,8 +415,8 @@
   template(values_name,                               "values")                                   \
   template(receiver_name,                             "receiver")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
-  template(next_target_name,                          "next_target")                              \
-  template(vmloader_name,                             "vmloader")                                 \
+  template(vmholder_name,                             "vmholder")                                 \
+  template(method_name,                               "method")                                   \
   template(vmindex_name,                              "vmindex")                                  \
   template(vmcount_name,                              "vmcount")                                  \
   template(vmentry_name,                              "vmentry")                                  \
@@ -1509,6 +1511,7 @@ class vmSymbols: AllStatic {
 
   // Sharing support
   static void symbols_do(SymbolClosure* f);
+  static void metaspace_pointers_do(MetaspaceClosure *it);
   static void serialize(SerializeClosure* soc);
 
   static Symbol* type_signature(BasicType t) {
@@ -1630,6 +1633,7 @@ public:
 
   static bool preserves_state(vmIntrinsics::ID id);
   static bool can_trap(vmIntrinsics::ID id);
+  static bool should_be_pinned(vmIntrinsics::ID id);
 
   // (2) Information needed by the C2 compiler.
 

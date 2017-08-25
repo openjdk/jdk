@@ -22,23 +22,25 @@
  */
 package org.graalvm.compiler.printer;
 
-import static org.graalvm.compiler.core.common.util.Util.JAVA_SPECIFICATION_VERSION;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.core.common.util.ModuleAPI;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugContext.Scope;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
@@ -50,13 +52,13 @@ interface GraphPrinter extends Closeable {
      * Starts a new group of graphs with the given name, short name and method byte code index (BCI)
      * as properties.
      */
-    void beginGroup(String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException;
+    void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) throws IOException;
 
     /**
      * Prints an entire {@link Graph} with the specified title, optionally using short names for
      * nodes.
      */
-    void print(Graph graph, String title, Map<Object, Object> properties) throws IOException;
+    void print(DebugContext debug, Graph graph, Map<Object, Object> properties, int id, String format, Object... args) throws IOException;
 
     SnippetReflectionProvider getSnippetReflectionProvider();
 
@@ -76,12 +78,12 @@ interface GraphPrinter extends Closeable {
     /**
      * {@code jdk.vm.ci} module.
      */
-    Object JVMCI_MODULE = JAVA_SPECIFICATION_VERSION < 9 ? null : ModuleAPI.getModule.invoke(Services.class);
+    Object JVMCI_MODULE = JDK9Method.JAVA_SPECIFICATION_VERSION < 9 ? null : JDK9Method.getModule.invoke(Services.class);
 
     /**
      * Classes whose {@link #toString()} method does not run any untrusted code.
      */
-    Set<Class<?>> TRUSTED_CLASSES = new HashSet<>(Arrays.asList(
+    List<Class<?>> TRUSTED_CLASSES = Arrays.asList(
                     String.class,
                     Class.class,
                     Boolean.class,
@@ -91,7 +93,7 @@ interface GraphPrinter extends Closeable {
                     Integer.class,
                     Float.class,
                     Long.class,
-                    Double.class));
+                    Double.class);
     int MAX_CONSTANT_TO_STRING_LENGTH = 50;
 
     /**
@@ -102,14 +104,14 @@ interface GraphPrinter extends Closeable {
         if (TRUSTED_CLASSES.contains(c)) {
             return true;
         }
-        if (JAVA_SPECIFICATION_VERSION < 9) {
+        if (JDK9Method.JAVA_SPECIFICATION_VERSION < 9) {
             if (c.getClassLoader() == Services.class.getClassLoader()) {
                 // Loaded by the JVMCI class loader
                 return true;
             }
         } else {
-            Object module = ModuleAPI.getModule.invoke(c);
-            if (JVMCI_MODULE == module || (Boolean) ModuleAPI.isExportedTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
+            Object module = JDK9Method.getModule.invoke(c);
+            if (JVMCI_MODULE == module || (Boolean) JDK9Method.isOpenTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
                 // Can access non-statically-exported package in JVMCI
                 return true;
             }
@@ -142,6 +144,32 @@ interface GraphPrinter extends Closeable {
         }
     }
 
+    /**
+     * Replaces all {@link JavaType} elements in {@code args} with the result of
+     * {@link JavaType#getUnqualifiedName()}.
+     *
+     * @return a copy of {@code args} with the above mentioned substitutions or {@code args} if no
+     *         substitutions were performed
+     */
+    default Object[] simplifyClassArgs(Object... args) {
+        Object[] res = args;
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof JavaType) {
+                if (args == res) {
+                    res = new Object[args.length];
+                    for (int a = 0; a < i; a++) {
+                        res[a] = args[a];
+                    }
+                }
+                res[i] = ((JavaType) arg).getUnqualifiedName();
+            } else {
+                res[i] = arg;
+            }
+        }
+        return res;
+    }
+
     static String truncate(String s) {
         if (s.length() > MAX_CONSTANT_TO_STRING_LENGTH) {
             return s.substring(0, MAX_CONSTANT_TO_STRING_LENGTH - 3) + "...";
@@ -158,7 +186,7 @@ interface GraphPrinter extends Closeable {
         } else if (isToStringTrusted(c)) {
             return value.toString();
         }
-        return MetaUtil.getSimpleName(c, true) + "@" + System.identityHashCode(value);
+        return MetaUtil.getSimpleName(c, true) + "@" + Integer.toHexString(System.identityHashCode(value));
 
     }
 
@@ -181,5 +209,24 @@ interface GraphPrinter extends Closeable {
             }
         }
         return buf.append('}').toString();
+    }
+
+    @SuppressWarnings("try")
+    static StructuredGraph.ScheduleResult getScheduleOrNull(Graph graph) {
+        if (graph instanceof StructuredGraph) {
+            StructuredGraph sgraph = (StructuredGraph) graph;
+            StructuredGraph.ScheduleResult scheduleResult = sgraph.getLastSchedule();
+            if (scheduleResult == null) {
+                DebugContext debug = graph.getDebug();
+                try (Scope scope = debug.disable()) {
+                    SchedulePhase schedule = new SchedulePhase(graph.getOptions());
+                    schedule.apply(sgraph);
+                    scheduleResult = sgraph.getLastSchedule();
+                } catch (Throwable t) {
+                }
+            }
+            return scheduleResult;
+        }
+        return null;
     }
 }

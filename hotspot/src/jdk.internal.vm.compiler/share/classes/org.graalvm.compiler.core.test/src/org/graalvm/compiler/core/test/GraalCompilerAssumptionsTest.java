@@ -65,7 +65,7 @@ public abstract class GraalCompilerAssumptionsTest extends GraalCompilerTest {
         checkGraph(expectedAssumption, graph);
 
         CompilationResult compilationResult = compile(javaMethod, graph);
-        final InstalledCode installedCode = getBackend().createDefaultInstalledCode(javaMethod, compilationResult);
+        final InstalledCode installedCode = getBackend().createDefaultInstalledCode(graph.getDebug(), javaMethod, compilationResult);
         assertTrue(installedCode.isValid());
         if (classToLoad != null) {
             String fullName = getClass().getName() + "$" + classToLoad;

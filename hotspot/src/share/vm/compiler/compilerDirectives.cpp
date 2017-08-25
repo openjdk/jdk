@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ CompilerDirectives* CompilerDirectives::next() {
   return _next;
 }
 
-bool CompilerDirectives::match(methodHandle method) {
+bool CompilerDirectives::match(const methodHandle& method) {
   if (is_default_directive()) {
     return true;
   }
@@ -232,7 +232,7 @@ DirectiveSet::~DirectiveSet() {
 // - Need to free copy after use
 // - Requires a modified bit so we don't overwrite options that is set by directives
 
-DirectiveSet* DirectiveSet::compilecommand_compatibility_init(methodHandle method) {
+DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method) {
   // Early bail out - checking all options is expensive - we rely on them not being used
   // Only set a flag if it has not been modified and value changes.
   // Only copy set if a flag needs to be set
@@ -307,7 +307,7 @@ CompilerDirectives* DirectiveSet::directive() {
   return _directive;
 }
 
-bool DirectiveSet::matches_inline(methodHandle method, int inline_action) {
+bool DirectiveSet::matches_inline(const methodHandle& method, int inline_action) {
   if (_inlinematchers != NULL) {
     if (_inlinematchers->match(method, inline_action)) {
       return true;
@@ -384,7 +384,7 @@ void DirectiveSet::print_inline(outputStream* st) {
   }
 }
 
-bool DirectiveSet::is_intrinsic_disabled(methodHandle method) {
+bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
@@ -543,7 +543,7 @@ void DirectivesStack::release(CompilerDirectives* dir) {
   }
 }
 
-DirectiveSet* DirectivesStack::getMatchingDirective(methodHandle method, AbstractCompiler *comp) {
+DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp) {
   assert(_depth > 0, "Must never be empty");
 
   DirectiveSet* match = NULL;

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metachunk.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
@@ -42,7 +43,7 @@ size_t Metachunk::object_alignment() {
 }
 
 size_t Metachunk::overhead() {
-  return align_size_up(sizeof(Metachunk), object_alignment()) / BytesPerWord;
+  return align_up(sizeof(Metachunk), object_alignment()) / BytesPerWord;
 }
 
 // Metachunk methods

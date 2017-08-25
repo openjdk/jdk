@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
@@ -63,6 +64,7 @@ public class Klass extends Metadata implements ClassConstants {
     nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
     nextLink     = new MetadataField(type.getAddressField("_next_link"), 0);
     vtableLen    = new CIntField(type.getCIntegerField("_vtable_len"), 0);
+    classLoaderData = type.getAddressField("_class_loader_data");
 
     LH_INSTANCE_SLOW_PATH_BIT  = db.lookupIntConstant("Klass::_lh_instance_slow_path_bit").intValue();
     LH_LOG2_ELEMENT_SIZE_SHIFT = db.lookupIntConstant("Klass::_lh_log2_element_size_shift").intValue();
@@ -96,6 +98,7 @@ public class Klass extends Metadata implements ClassConstants {
   private static MetadataField  nextLink;
   private static sun.jvm.hotspot.types.Field traceIDField;
   private static CIntField vtableLen;
+  private static AddressField classLoaderData;
 
   private Address getValue(AddressField field) {
     return addr.getAddressAt(field.getOffset());
@@ -110,7 +113,7 @@ public class Klass extends Metadata implements ClassConstants {
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }
   public int      getLayoutHelper()     { return (int)           layoutHelper.getValue(this); }
-  public Symbol   getName()             { return getSymbol(name); }
+  public Symbol   getName()             { return            getSymbol(name); }
   public long     getAccessFlags()      { return            accessFlags.getValue(this);  }
   // Convenience routine
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
@@ -118,6 +121,9 @@ public class Klass extends Metadata implements ClassConstants {
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
   public Klass    getNextLinkKlass()    { return (Klass)    nextLink.getValue(this);  }
   public long     getVtableLen()        { return            vtableLen.getValue(this); }
+
+  public ClassLoaderData getClassLoaderData() { return ClassLoaderData.instantiateWrapperFor(classLoaderData.getValue(getAddress())); }
+  public Oop             getClassLoader()     { return   getClassLoaderData().getClassLoader(); }
 
   public long traceID() {
     if (traceIDField == null) return 0;

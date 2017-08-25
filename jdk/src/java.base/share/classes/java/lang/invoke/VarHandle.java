@@ -2014,12 +2014,7 @@ public abstract class VarHandle {
     private static final long VFORM_OFFSET;
 
     static {
-        try {
-            VFORM_OFFSET = UNSAFE.objectFieldOffset(VarHandle.class.getDeclaredField("vform"));
-        }
-        catch (ReflectiveOperationException e) {
-            throw newInternalError(e);
-        }
+        VFORM_OFFSET = UNSAFE.objectFieldOffset(VarHandle.class, "vform");
 
         // The VarHandleGuards must be initialized to ensure correct
         // compilation of the guard methods

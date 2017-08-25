@@ -83,8 +83,6 @@ RPM_LIST := \
     libXdmcp libXdmcp-devel \
     libXau libXau-devel \
     libgcc \
-    elfutils elfutils-libs elfutils-devel \
-    elfutils-libelf elfutils-libelf-devel \
     zlib zlib-devel \
     libffi libffi-devel
 

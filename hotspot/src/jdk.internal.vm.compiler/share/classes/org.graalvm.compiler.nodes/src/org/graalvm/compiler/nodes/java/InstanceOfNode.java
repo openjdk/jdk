@@ -23,8 +23,8 @@
 package org.graalvm.compiler.nodes.java;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Anchor;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_15;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_15;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -52,7 +52,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * The {@code InstanceOfNode} represents an instanceof test.
  */
-@NodeInfo(cycles = CYCLES_15, size = SIZE_15)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8)
 public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtualizable {
     public static final NodeClass<InstanceOfNode> TYPE = NodeClass.create(InstanceOfNode.class);
 

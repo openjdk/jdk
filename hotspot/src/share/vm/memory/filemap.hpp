@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 #ifndef SHARE_VM_MEMORY_FILEMAP_HPP
 #define SHARE_VM_MEMORY_FILEMAP_HPP
 
+#include "classfile/classLoader.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/universe.hpp"
+#include "utilities/align.hpp"
 
 // Layout of the file:
 //  header: dump of archive instance plus versioning info, datestamp, etc.
@@ -39,24 +42,33 @@
 
 static const int JVM_IDENT_MAX = 256;
 
-class Metaspace;
-
 class SharedClassPathEntry VALUE_OBJ_CLASS_SPEC {
-public:
-  const char *_name;
+protected:
+  bool   _is_dir;
   time_t _timestamp;          // jar/jimage timestamp,  0 if is directory or other
   long   _filesize;           // jar/jimage file size, -1 if is directory, -2 if other
+  Array<char>* _name;
+  Array<u1>*   _manifest;
+
+public:
+  void init(const char* name, TRAPS);
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  bool validate();
 
   // The _timestamp only gets set for jar files and "modules" jimage.
   bool is_jar_or_bootimage() {
     return _timestamp != 0;
   }
-  bool is_dir() {
-    return _filesize == -1;
+  bool is_dir() { return _is_dir; }
+  bool is_jrt() { return ClassLoader::is_jrt(name()); }
+  time_t timestamp() const { return _timestamp; }
+  long   filesize()  const { return _filesize; }
+  const char* name() const { return _name->data(); }
+  const char* manifest() const {
+    return (_manifest == NULL) ? NULL : (const char*)_manifest->data();
   }
-
-  bool is_jrt() {
-    return ClassLoader::is_jrt(_name);
+  int manifest_size() const {
+    return (_manifest == NULL) ? 0 : _manifest->length();
   }
 };
 
@@ -65,7 +77,7 @@ private:
   friend class ManifestStream;
   enum {
     _invalid_version = -1,
-    _current_version = 2
+    _current_version = 3
   };
 
   bool  _file_open;
@@ -73,7 +85,7 @@ private:
   size_t  _file_offset;
 
 private:
-  static SharedClassPathEntry* _classpath_entry_table;
+  static Array<u8>*            _classpath_entry_table;
   static int                   _classpath_entry_table_size;
   static size_t                _classpath_entry_size;
   static bool                  _validating_classpath_entry_table;
@@ -107,8 +119,11 @@ public:
     int     _narrow_klass_shift;      // save narrow klass base and shift
     address _narrow_klass_base;
     char*   _misc_data_patching_start;
+    char*   _read_only_tables_start;
     address _cds_i2i_entry_code_buffers;
     size_t  _cds_i2i_entry_code_buffers_size;
+    size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
+                                      // (mc, md, ro, rw and od).
 
     struct space_info {
       int    _crc;           // crc checksum of the current space
@@ -118,7 +133,6 @@ public:
         intx   _offset;      // offset from the compressed oop encoding base, only used
                              // by string space
       } _addr;
-      size_t _capacity;      // for validity checking
       size_t _used;          // for setting space top on read
       bool   _read_only;     // read only space?
       bool   _allow_exec;    // executable code in space?
@@ -155,7 +169,7 @@ public:
     // loading failures during runtime.
     int _classpath_entry_table_size;
     size_t _classpath_entry_size;
-    SharedClassPathEntry* _classpath_entry_table;
+    Array<u8>* _classpath_entry_table;
 
     char* region_addr(int idx);
 
@@ -174,6 +188,7 @@ public:
   bool  init_from_file(int fd);
   void  align_file_position();
   bool  validate_header_impl();
+  static void metaspace_pointers_do(MetaspaceClosure* it);
 
 public:
   FileMapInfo();
@@ -192,10 +207,11 @@ public:
   uintx  max_heap_size()              { return _header->_max_heap_size; }
   address narrow_klass_base() const   { return _header->_narrow_klass_base; }
   int     narrow_klass_shift() const  { return _header->_narrow_klass_shift; }
-  size_t space_capacity(int i)        { return _header->_space[i]._capacity; }
   struct FileMapHeader* header()      { return _header; }
   char* misc_data_patching_start()            { return _header->_misc_data_patching_start; }
   void set_misc_data_patching_start(char* p)  { _header->_misc_data_patching_start = p; }
+  char* read_only_tables_start()              { return _header->_read_only_tables_start; }
+  void set_read_only_tables_start(char* p)    { _header->_read_only_tables_start = p; }
 
   address cds_i2i_entry_code_buffers() {
     return _header->_cds_i2i_entry_code_buffers;
@@ -209,6 +225,8 @@ public:
   void set_cds_i2i_entry_code_buffers_size(size_t s) {
     _header->_cds_i2i_entry_code_buffers_size = s;
   }
+  void set_core_spaces_size(size_t s)    {  _header->_core_spaces_size = s; }
+  size_t core_spaces_size()              { return _header->_core_spaces_size; }
 
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)
@@ -222,18 +240,16 @@ public:
   bool  open_for_read();
   void  open_for_write();
   void  write_header();
-  void  write_space(int i, Metaspace* space, bool read_only);
   void  write_region(int region, char* base, size_t size,
-                     size_t capacity, bool read_only, bool allow_exec);
-  void  write_string_regions(GrowableArray<MemRegion> *regions);
+                     bool read_only, bool allow_exec);
+  size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
+                                    int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
   char* map_region(int i);
-  bool  map_string_regions();
-  bool  verify_string_regions();
-  void  fixup_string_regions();
+  void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  unmap_region(int i);
-  void  dealloc_string_regions();
   bool  verify_region_checksum(int i);
   void  close();
   bool  is_open() { return _file_open; }
@@ -252,29 +268,6 @@ public:
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
 
-  // The ro+rw+md+mc spaces size
-  static size_t core_spaces_size() {
-    return align_size_up((SharedReadOnlySize + SharedReadWriteSize +
-                          SharedMiscDataSize + SharedMiscCodeSize),
-                          os::vm_allocation_granularity());
-  }
-
-  // The estimated optional space size.
-  //
-  // Currently the optional space only has archived class bytes.
-  // The core_spaces_size is the size of all class metadata, which is a good
-  // estimate of the total class bytes to be archived. Only the portion
-  // containing data is written out to the archive and mapped at runtime.
-  // There is no memory waste due to unused portion in optional space.
-  static size_t optional_space_size() {
-    return core_spaces_size();
-  }
-
-  // Total shared_spaces size includes the ro, rw, md, mc and od spaces
-  static size_t shared_spaces_size() {
-    return core_spaces_size() + optional_space_size();
-  }
-
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
 
@@ -285,18 +278,25 @@ public:
     if (index < 0) {
       return NULL;
     }
-    char* p = (char*)_classpath_entry_table;
+    assert(index < _classpath_entry_table_size, "sanity");
+    char* p = (char*)_classpath_entry_table->data();
     p += _classpath_entry_size * index;
     return (SharedClassPathEntry*)p;
   }
   static const char* shared_classpath_name(int index) {
     assert(index >= 0, "Sanity");
-    return shared_classpath(index)->_name;
+    return shared_classpath(index)->name();
   }
 
   static int get_number_of_share_classpaths() {
     return _classpath_entry_table_size;
   }
+
+ private:
+  bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
+                      bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  verify_mapped_heap_regions(int first, int num) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

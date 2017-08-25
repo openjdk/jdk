@@ -70,7 +70,33 @@ public class StringConcatFactoryInvariants {
         String methodName = "foo";
         MethodType mt = MethodType.methodType(String.class, String.class, int.class);
         String recipe = "" + TAG_ARG + TAG_ARG + TAG_CONST;
-        String[] constants = new String[]{"bar"};
+        Object[][] constants = new Object[][] {
+                new String[] { "bar" },
+                new Integer[] { 1 },
+                new Short[] { 2 },
+                new Long[] { 3L },
+                new Boolean[] { true },
+                new Character[] { 'a' },
+                new Byte[] { -128 },
+                new Class[] { String.class },
+                new MethodHandle[] { MethodHandles.constant(String.class, "constant") },
+                new MethodType[] { MethodType.methodType(String.class) }
+        };
+        // The string representation that should end up if the corresponding
+        // Object[] in constants is used as an argument to makeConcatWithConstants
+        String[] constantString = new String[] {
+                "bar",
+                "1",
+                "2",
+                "3",
+                "true",
+                "a",
+                "-128",
+                "class java.lang.String",
+                "MethodHandle()String",
+                "()String"
+        };
+
 
         final int LIMIT = 200;
 
@@ -109,8 +135,10 @@ public class StringConcatFactoryInvariants {
         }
 
         {
-            CallSite cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, constants);
-            test("foo42bar", (String) cs.getTarget().invokeExact("foo", 42));
+            for (int i = 0; i < constants.length; i++) {
+                CallSite cs = StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, constants[i]);
+                test("foo42".concat(constantString[i]), (String) cs.getTarget().invokeExact("foo", 42));
+            }
         }
 
         // Simple factory, check for nulls:
@@ -124,20 +152,27 @@ public class StringConcatFactoryInvariants {
                 () -> StringConcatFactory.makeConcat(lookup, methodName, null));
 
         // Advanced factory, check for nulls:
-        failNPE("Lookup is null",
-                () -> StringConcatFactory.makeConcatWithConstants(null, methodName, mt, recipe, constants));
+        for (int i = 0; i < constants.length; i++) {
+            final Object[] consts = constants[i];
 
-        failNPE("Method name is null",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, null, mt, recipe, constants));
+            failNPE("Lookup is null",
+                    () -> StringConcatFactory.makeConcatWithConstants(null, methodName, mt, recipe, consts));
 
-        failNPE("MethodType is null",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, null, recipe, constants));
+            failNPE("Method name is null",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, null, mt, recipe, consts));
 
-        failNPE("Recipe is null",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, null, constants));
+            failNPE("MethodType is null",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, null, recipe, consts));
+
+            failNPE("Recipe is null",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, null, consts));
+        }
 
         failNPE("Constants vararg is null",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, null));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, (Object[]) null));
+
+        failNPE("Constant argument is null",
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mt, recipe, new Object[] { null }));
 
         // Simple factory, check for return type
         fail("Return type: void",
@@ -159,23 +194,26 @@ public class StringConcatFactoryInvariants {
                 () -> StringConcatFactory.makeConcat(lookup, methodName, MethodType.methodType(Serializable.class, String.class, int.class)));
 
         // Advanced factory, check for return types
-        fail("Return type: void",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(void.class, String.class, int.class), recipe, constants));
+        for (int i = 0; i < constants.length; i++) {
+            final Object[] consts = constants[i];
+            fail("Return type: void",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(void.class, String.class, int.class), recipe, consts));
 
-        fail("Return type: int",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(int.class, String.class, int.class), recipe, constants));
+            fail("Return type: int",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(int.class, String.class, int.class), recipe, consts));
 
-        fail("Return type: StringBuilder",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(StringBuilder.class, String.class, int.class), recipe, constants));
+            fail("Return type: StringBuilder",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(StringBuilder.class, String.class, int.class), recipe, consts));
 
-        ok("Return type: Object",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(Object.class, String.class, int.class), recipe, constants));
+            ok("Return type: Object",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(Object.class, String.class, int.class), recipe, consts));
 
-        ok("Return type: CharSequence",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(CharSequence.class, String.class, int.class), recipe, constants));
+            ok("Return type: CharSequence",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(CharSequence.class, String.class, int.class), recipe, consts));
 
-        ok("Return type: Serializable",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(Serializable.class, String.class, int.class), recipe, constants));
+            ok("Return type: Serializable",
+                    () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(Serializable.class, String.class, int.class), recipe, consts));
+        }
 
         // Simple factory: check for dynamic arguments overflow
         ok("Dynamic arguments is under limit",
@@ -189,13 +227,13 @@ public class StringConcatFactoryInvariants {
 
         // Advanced factory: check for dynamic arguments overflow
         ok("Dynamic arguments is under limit",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtUnderThreshold, recipeUnderThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtUnderThreshold, recipeUnderThreshold, constants[0]));
 
         ok("Dynamic arguments is at the limit",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, constants[0]));
 
         fail("Dynamic arguments is over the limit",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtOverThreshold, recipeOverThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtOverThreshold, recipeOverThreshold, constants[0]));
 
         // Advanced factory: check for mismatched recipe and Constants
         ok("Static arguments and recipe match",
@@ -206,17 +244,17 @@ public class StringConcatFactoryInvariants {
 
         // Advanced factory: check for mismatched recipe and dynamic arguments
         fail("Dynamic arguments and recipe mismatch",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeUnderThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeUnderThreshold, constants[0]));
 
         ok("Dynamic arguments and recipe match",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeThreshold, constants[0]));
 
         fail("Dynamic arguments and recipe mismatch",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeOverThreshold, constants));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, mtThreshold, recipeOverThreshold, constants[0]));
 
         // Test passing array as constant
         {
-            String[] arg = {"boo", "bar"};
+            Object[] arg = {"boo", "bar"};
 
             CallSite cs1 = StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(String.class, int.class), "" + TAG_ARG + TAG_CONST + TAG_CONST, arg);
             test("42boobar", (String) cs1.getTarget().invokeExact(42));
@@ -227,7 +265,7 @@ public class StringConcatFactoryInvariants {
                 () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(String.class, int.class), "" + TAG_ARG + TAG_CONST, "foo"));
 
         failNPE("Cannot pass null constants",
-                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(String.class, int.class), "" + TAG_ARG + TAG_CONST, new String[]{null}));
+                () -> StringConcatFactory.makeConcatWithConstants(lookup, methodName, MethodType.methodType(String.class, int.class), "" + TAG_ARG + TAG_CONST, new Object[]{null}));
 
         // Simple factory: test empty arguments
         ok("Ok to pass empty arguments",

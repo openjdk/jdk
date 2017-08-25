@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ StackValueCollection* compiledVFrame::locals() const {
         break;
       case T_OBJECT:
         {
-          Handle obj((oop)val->value().l);
+          Handle obj(Thread::current(), (oop)val->value().l);
           result->set_obj_at(val->index(), obj);
         }
         break;
@@ -227,7 +227,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
       // Put klass for scalar replaced object.
       ScopeValue* kv = ((ObjectValue *)ov)->klass();
       assert(kv->is_constant_oop(), "klass should be oop constant for scalar replaced object");
-      Handle k(((ConstantOopReadValue*)kv)->value()());
+      Handle k(Thread::current(), ((ConstantOopReadValue*)kv)->value()());
       assert(java_lang_Class::is_instance(k()), "must be");
       result->push(new MonitorInfo(k(), resolve_monitor_lock(mv->basic_lock()),
                                    mv->eliminated(), true));

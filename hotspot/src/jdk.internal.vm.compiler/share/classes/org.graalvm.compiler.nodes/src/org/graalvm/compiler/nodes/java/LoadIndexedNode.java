@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.java;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
+import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
@@ -84,13 +85,24 @@ public class LoadIndexedNode extends AccessIndexedNode implements Virtualizable,
         if (kind == JavaKind.Object && type != null && type.isArray()) {
             return StampFactory.object(TypeReference.createTrusted(assumptions, type.getComponentType()));
         } else {
-            return StampFactory.forKind(kind);
+            JavaKind preciseKind = determinePreciseArrayElementType(array, kind);
+            return StampFactory.forKind(preciseKind);
         }
+    }
+
+    private static JavaKind determinePreciseArrayElementType(ValueNode array, JavaKind kind) {
+        if (kind == JavaKind.Byte) {
+            ResolvedJavaType javaType = ((ObjectStamp) array.stamp()).type();
+            if (javaType != null && javaType.isArray() && javaType.getComponentType() != null && javaType.getComponentType().getJavaKind() == JavaKind.Boolean) {
+                return JavaKind.Boolean;
+            }
+        }
+        return kind;
     }
 
     @Override
     public boolean inferStamp() {
-        return updateStamp(createStamp(graph().getAssumptions(), array(), elementKind()));
+        return updateStamp(stamp.improveWith(createStamp(graph().getAssumptions(), array(), elementKind())));
     }
 
     @Override
@@ -101,7 +113,13 @@ public class LoadIndexedNode extends AccessIndexedNode implements Virtualizable,
             ValueNode indexValue = tool.getAlias(index());
             int idx = indexValue.isConstant() ? indexValue.asJavaConstant().asInt() : -1;
             if (idx >= 0 && idx < virtual.entryCount()) {
-                tool.replaceWith(tool.getEntry(virtual, idx));
+                ValueNode entry = tool.getEntry(virtual, idx);
+                if (stamp.isCompatible(entry.stamp())) {
+                    tool.replaceWith(entry);
+                } else {
+                    assert stamp().getStackKind() == JavaKind.Int && (entry.stamp().getStackKind() == JavaKind.Long || entry.getStackKind() == JavaKind.Double ||
+                                    entry.getStackKind() == JavaKind.Illegal) : "Can only allow different stack kind two slot marker writes on one stot fields.";
+                }
             }
         }
     }

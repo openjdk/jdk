@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +62,14 @@ class oopFactory: AllStatic {
 
   static typeArrayOop    new_typeArray(BasicType type, int length, TRAPS);
   static typeArrayOop    new_typeArray_nozero(BasicType type, int length, TRAPS);
-  static typeArrayOop    new_metaDataArray(int length, TRAPS);
+  static typeArrayOop    new_symbolArray(int length, TRAPS);
 
   // Regular object arrays
   static objArrayOop     new_objArray(Klass* klass, int length, TRAPS);
+
+  // Helpers that return handles
+  static objArrayHandle  new_objArray_handle(Klass* klass, int length, TRAPS);
+  static typeArrayHandle new_byteArray_handle(int length, TRAPS);
 };
 
 #endif // SHARE_VM_MEMORY_OOPFACTORY_HPP
