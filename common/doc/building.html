@@ -58,7 +58,6 @@
 <li><a href="#x11">X11</a></li>
 <li><a href="#alsa">ALSA</a></li>
 <li><a href="#libffi">libffi</a></li>
-<li><a href="#libelf">libelf</a></li>
 </ul></li>
 <li><a href="#other-tooling-requirements">Other Tooling Requirements</a><ul>
 <li><a href="#gnu-make">GNU Make</a></li>
@@ -469,13 +468,6 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libffi-devel</code>.</li>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code> does not properly locate your libffi files.</p>
-<h3 id="libelf">libelf</h3>
-<p>libelf from the <a href="http://sourceware.org/elfutils">elfutils project</a> is required when building the AOT feature of Hotspot.</p>
-<ul>
-<li>To install on an apt-based Linux, try running <code>sudo apt-get install libelf-dev</code>.</li>
-<li>To install on an rpm-based Linux, try running <code>sudo yum install elfutils-libelf-devel</code>.</li>
-</ul>
-<p>Use <code>--with-libelf=&lt;path&gt;</code> if <code>configure</code> does not properly locate your libelf files.</p>
 <h2 id="other-tooling-requirements">Other Tooling Requirements</h2>
 <h3 id="gnu-make">GNU Make</h3>
 <p>OpenJDK requires <a href="http://www.gnu.org/software/make">GNU Make</a>. No other flavors of make are supported.</p>
@@ -537,7 +529,6 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <li><code>--with-x=&lt;path&gt;</code> - Set the path to <a href="#x11">X11</a></li>
 <li><code>--with-alsa=&lt;path&gt;</code> - Set the path to <a href="#alsa">ALSA</a></li>
 <li><code>--with-libffi=&lt;path&gt;</code> - Set the path to <a href="#libffi">libffi</a></li>
-<li><code>--with-libelf=&lt;path&gt;</code> - Set the path to <a href="#libelf">libelf</a></li>
 <li><code>--with-jtreg=&lt;path&gt;</code> - Set the path to JTReg. See <a href="#running-tests">Running Tests</a></li>
 </ul>
 <p>Certain third-party libraries used by OpenJDK (libjpeg, giflib, libpng, lcms and zlib) are included in the OpenJDK repository. The default behavior of the OpenJDK build is to use this version of these libraries, but they might be replaced by an external version. To do so, specify <code>system</code> as the <code>&lt;source&gt;</code> option in these arguments. (The default is <code>bundled</code>).</p>
