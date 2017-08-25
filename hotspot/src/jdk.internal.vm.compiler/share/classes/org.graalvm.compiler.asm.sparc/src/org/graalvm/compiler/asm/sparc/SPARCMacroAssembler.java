@@ -81,6 +81,10 @@ public class SPARCMacroAssembler extends SPARCAssembler {
         nop();  // delay slot
     }
 
+    public void bz(Label l) {
+        BPCC.emit(this, Xcc, ConditionFlag.Zero, NOT_ANNUL, PREDICT_NOT_TAKEN, l);
+    }
+
     @Override
     protected final void patchJumpTarget(int branch, int branchTarget) {
         final int disp = (branchTarget - branch) / 4;

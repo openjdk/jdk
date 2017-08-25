@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,9 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/formatBuffer.hpp"
 
 RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
   _thread         = thread;
@@ -1071,16 +1073,6 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
   return r;
 }
 
-
-oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
-  if(reg->is_reg()) {
-    // If it is passed in a register, it got spilled in the stub frame.
-    return (oop *)reg_map->location(reg);
-  } else {
-    int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
-    return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
-  }
-}
 
 BasicLock* frame::get_native_monitor() {
   nmethod* nm = (nmethod*)_cb;

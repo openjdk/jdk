@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -245,7 +245,7 @@ JVM_handle_linux_signal(int sig,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run).
-  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -504,6 +504,14 @@ JVM_handle_linux_signal(int sig,
   sigemptyset(&newset);
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
+
+  // Hand down correct pc for SIGILL, SIGFPE. pc from context
+  // usually points to the instruction after the failing instruction.
+  // Note: this should be combined with the trap_pc handling above,
+  // because it handles the same issue.
+  if (sig == SIGILL || sig == SIGFPE) {
+    pc = (address) info->si_addr;
+  }
 
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 

@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
@@ -43,6 +42,7 @@ import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.common.inlining.policy.InlineMethodSubstitutionsPolicy;
@@ -65,7 +65,12 @@ public class EdgesTest extends GraalCompilerTest {
 
     }
 
-    StructuredGraph graph = new StructuredGraph(AllowAssumptions.NO, INVALID_COMPILATION_ID);
+    protected StructuredGraph createGraph() {
+        OptionValues options = getInitialOptions();
+        return new StructuredGraph.Builder(options, getDebugContext(options)).build();
+    }
+
+    StructuredGraph graph = createGraph();
     TestNode node;
     ConstantNode i1;
     ConstantNode i2;

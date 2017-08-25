@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.replacements.amd64;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_5;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.calc.FloatConvert;
@@ -42,7 +42,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
  * of the {@link FloatConvertNode} which, on AMD64 needs a {@link AMD64FloatConvertNode} plus some
  * fixup code that handles the corner cases that differ between AMD64 and Java.
  */
-@NodeInfo(cycles = CYCLES_5, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_1)
 public final class AMD64FloatConvertNode extends UnaryArithmeticNode<FloatConvertOp> implements ArithmeticLIRLowerable {
     public static final NodeClass<AMD64FloatConvertNode> TYPE = NodeClass.create(AMD64FloatConvertNode.class);
 

@@ -932,10 +932,35 @@ define SetupNativeCompilationBody
       endif
     endif
 
+    # Unfortunately the @-file trick does not work reliably when using clang.
+    # Clang does not propagate the @-file parameter to the ld sub process, but
+    # instead puts the full content on the command line. At least the llvm ld
+    # does not even support an @-file.
+    #
+    # When linking a large amount of object files, we risk hitting the limit
+    # of the command line length even on posix systems if the path length of
+    # the output dir is very long due to our use of absolute paths. To
+    # mitigate this, use paths relative to the output dir when linking over
+    # 500 files with clang and the output dir path is deep.
+    ifneq ($$(word 500, $$($1_ALL_OBJS)), )
+      ifeq ($$(TOOLCHAIN_TYPE), clang)
+        # There is no strlen function in make, but checking path depth is a
+        # reasonable approximation.
+        ifneq ($$(word 10, $$(subst /, ,$$(OUTPUT_ROOT))), )
+          $1_LINK_OBJS_RELATIVE := true
+          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUT_ROOT)/%, %, $$($1_ALL_OBJS))
+        endif
+      endif
+    endif
+
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
         $$($1_VARDEPS_FILE)
                 ifneq ($$($1_OBJ_FILE_LIST), )
-		  $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+                  ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+		    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+                  else
+		    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+                  endif
                 endif
                 # Keep as much as possible on one execution line for best performance
                 # on Windows
@@ -951,6 +976,7 @@ define SetupNativeCompilationBody
 		  $$($1_STRIP_CMD)
                 else
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUT_ROOT) ; ) \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
 		      $$($1_EXTRA_LIBS)) ; \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) 
     }
   }
 #endif // ASSERT
-  Handle obj = HotSpotObjectConstantImpl::object(constant);
+  Handle obj(THREAD, HotSpotObjectConstantImpl::object(constant));
   jobject value = JNIHandles::make_local(obj());
   MacroAssembler::patch_oop(pc, (address)obj());
   int oop_index = _oop_recorder->find_index(value);

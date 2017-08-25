@@ -123,8 +123,6 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
-    elf)
-      PKGHANDLER_COMMAND="sudo apt-get install libelf-dev" ;;
   esac
 }
 
@@ -144,8 +142,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
-    elf)
-      PKGHANDLER_COMMAND="sudo yum install elfutils-libelf-devel" ;;
   esac
 }
 

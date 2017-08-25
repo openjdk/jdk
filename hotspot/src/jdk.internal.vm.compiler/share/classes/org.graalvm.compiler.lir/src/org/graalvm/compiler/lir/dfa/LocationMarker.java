@@ -24,13 +24,13 @@ package org.graalvm.compiler.lir.dfa;
 
 import static jdk.vm.ci.code.ValueUtil.isIllegal;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.InstructionStateProcedure;
 import org.graalvm.compiler.lir.LIR;
@@ -102,9 +102,10 @@ public abstract class LocationMarker<S extends ValueSet<S>> {
     @SuppressWarnings("try")
     private void processBlock(AbstractBlockBase<?> block, UniqueWorkList worklist) {
         if (updateOutBlock(block)) {
-            try (Indent indent = Debug.logAndIndent("handle block %s", block)) {
+            DebugContext debug = lir.getDebug();
+            try (Indent indent = debug.logAndIndent("handle block %s", block)) {
                 currentSet = liveOutMap.get(block).copy();
-                List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
                 for (int i = instructions.size() - 1; i >= 0; i--) {
                     LIRInstruction inst = instructions.get(i);
                     processInstructionBottomUp(inst);
@@ -128,7 +129,8 @@ public abstract class LocationMarker<S extends ValueSet<S>> {
      */
     @SuppressWarnings("try")
     private void processInstructionBottomUp(LIRInstruction op) {
-        try (Indent indent = Debug.logAndIndent("handle op %d, %s", op.id(), op)) {
+        DebugContext debug = lir.getDebug();
+        try (Indent indent = debug.logAndIndent("handle op %d, %s", op.id(), op)) {
             // kills
 
             op.visitEachTemp(defConsumer);
@@ -162,8 +164,9 @@ public abstract class LocationMarker<S extends ValueSet<S>> {
         public void visitValue(Value operand, OperandMode mode, EnumSet<OperandFlag> flags) {
             if (shouldProcessValue(operand)) {
                 // no need to insert values and derived reference
-                if (Debug.isLogEnabled()) {
-                    Debug.log("set operand: %s", operand);
+                DebugContext debug = lir.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log("set operand: %s", operand);
                 }
                 currentSet.put(operand);
             }
@@ -174,8 +177,9 @@ public abstract class LocationMarker<S extends ValueSet<S>> {
         @Override
         public void visitValue(Value operand, OperandMode mode, EnumSet<OperandFlag> flags) {
             if (shouldProcessValue(operand)) {
-                if (Debug.isLogEnabled()) {
-                    Debug.log("clear operand: %s", operand);
+                DebugContext debug = lir.getDebug();
+                if (debug.isLogEnabled()) {
+                    debug.log("clear operand: %s", operand);
                 }
                 currentSet.remove(operand);
             } else {

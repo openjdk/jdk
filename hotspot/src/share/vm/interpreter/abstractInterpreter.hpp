@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,11 @@ class AbstractInterpreter: AllStatic {
 
 
   // Method activation
-  static MethodKind method_kind(methodHandle m);
+  static MethodKind method_kind(const methodHandle& m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
-  static address    entry_for_method(methodHandle m)            { return entry_for_kind(method_kind(m)); }
+  static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
 
-  static address entry_for_cds_method(methodHandle m) {
+  static address entry_for_cds_method(const methodHandle& m) {
     MethodKind k = method_kind(m);
     assert(0 <= k && k < number_of_method_entries, "illegal kind");
     return _cds_entry_table[k];
@@ -150,7 +150,26 @@ class AbstractInterpreter: AllStatic {
 
   static void       print_method_kind(MethodKind kind)          PRODUCT_RETURN;
 
-  static bool       can_be_compiled(methodHandle m);
+  // These should never be compiled since the interpreter will prefer
+  // the compiled version to the intrinsic version.
+  static bool       can_be_compiled(const methodHandle& m) {
+    switch (m->intrinsic_id()) {
+      case vmIntrinsics::_dsin  : // fall thru
+      case vmIntrinsics::_dcos  : // fall thru
+      case vmIntrinsics::_dtan  : // fall thru
+      case vmIntrinsics::_dabs  : // fall thru
+      case vmIntrinsics::_dsqrt : // fall thru
+      case vmIntrinsics::_dlog  : // fall thru
+      case vmIntrinsics::_dlog10: // fall thru
+      case vmIntrinsics::_dpow  : // fall thru
+      case vmIntrinsics::_dexp  : // fall thru
+      case vmIntrinsics::_fmaD  : // fall thru
+      case vmIntrinsics::_fmaF  : // fall thru
+        return false;
+      default:
+        return true;
+    }
+  }
 
   // Runtime support
 
@@ -249,7 +268,7 @@ class AbstractInterpreter: AllStatic {
     return (oop*) slot_addr;
   }
   static jint* int_addr_in_slot(intptr_t* slot_addr) {
-    if ((int) sizeof(jint) < wordSize && !Bytes::is_Java_byte_ordering_different())
+    if ((int) sizeof(jint) < wordSize && !Endian::is_Java_byte_ordering_different())
       // big-endian LP64
       return (jint*)(slot_addr + 1) - 1;
     else

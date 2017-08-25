@@ -29,6 +29,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/icache.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -623,10 +624,8 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
 }
 
 csize_t CodeBuffer::total_relocation_size() const {
-  csize_t lsize = copy_relocations_to(NULL);  // dry run only
-  csize_t csize = total_content_size();
-  csize_t total = RelocIterator::locs_and_index_size(csize, lsize);
-  return (csize_t) align_size_up(total, HeapWordSize);
+  csize_t total = copy_relocations_to(NULL);  // dry run only
+  return (csize_t) align_up(total, HeapWordSize);
 }
 
 csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const {
@@ -726,13 +725,6 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
   //
   buf_offset = copy_relocations_to(buf, buf_limit, false);
 
-  // Account for index:
-  if (buf != NULL) {
-    RelocIterator::create_index(dest->relocation_begin(),
-                                buf_offset / sizeof(relocInfo),
-                                dest->relocation_end());
-  }
-
   return buf_offset;
 }
 
@@ -757,7 +749,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   dest_blob->set_strings(_code_strings);
 
   // Done moving code bytes; were they the right size?
-  assert(round_to(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
+  assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
 
   // Flush generated code
   ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
@@ -778,7 +770,7 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
     CodeSection* dest_cs = dest->code_section(n);
     assert(cs->size() == dest_cs->size(), "sanity");
     csize_t usize = dest_cs->size();
-    csize_t wsize = align_size_up(usize, HeapWordSize);
+    csize_t wsize = align_up(usize, HeapWordSize);
     assert(dest_cs->start() + wsize <= dest_end, "no overflow");
     // Copy the code as aligned machine words.
     // This may also include an uninitialized partial word at the end.

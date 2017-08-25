@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,50 +95,6 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
                 "Nom utilisateur Kerberos [{0}] : "},
         {"Kerberos.password.for.username.",
                 "Mot de passe Kerberos pour {0} : "},
-
-        /***    EVERYTHING BELOW IS DEPRECATED  ***/
-
-        // com.sun.security.auth.PolicyFile
-        {".error.parsing.", ": erreur d'analyse "},
-        {"COLON", ": "},
-        {".error.adding.Permission.", ": erreur d'ajout de droit "},
-        {"SPACE", " "},
-        {".error.adding.Entry.", ": erreur d'ajout d'entr\u00E9e "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"attempt.to.add.a.Permission.to.a.readonly.PermissionCollection",
-            "tentative d'ajout de droit \u00E0 un ensemble de droits en lecture seule"},
-
-        // com.sun.security.auth.PolicyParser
-        {"expected.keystore.type", "type de fichier de cl\u00E9s attendu"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "impossible de sp\u00E9cifier le principal avec une classe g\u00E9n\u00E9rique sans nom g\u00E9n\u00E9rique"},
-        {"expected.codeBase.or.SignedBy", "codeBase ou SignedBy attendu"},
-        {"only.Principal.based.grant.entries.permitted",
-                "seules les entr\u00E9es bas\u00E9es sur Principal sont autoris\u00E9es"},
-        {"expected.permission.entry", "entr\u00E9e de droit attendue"},
-        {"number.", "nombre "},
-        {"expected.expect.read.end.of.file.",
-                "attendu {0}, lecture de fin de fichier"},
-        {"expected.read.end.of.file", "attendu ';', lecture de fin de fichier"},
-        {"line.", "ligne "},
-        {".expected.", ": attendu '"},
-        {".found.", "', trouv\u00E9 '"},
-        {"QUOTE", "'"},
-
-        // SolarisPrincipals
-        {"SolarisNumericGroupPrincipal.Primary.Group.",
-                "SolarisNumericGroupPrincipal [groupe principal] : "},
-        {"SolarisNumericGroupPrincipal.Supplementary.Group.",
-                "SolarisNumericGroupPrincipal [groupe suppl\u00E9mentaire] : "},
-        {"SolarisNumericUserPrincipal.",
-                "SolarisNumericUserPrincipal : "},
-        {"SolarisPrincipal.", "SolarisPrincipal : "},
-        // provided.null.name is the NullPointerException message when a
-        // developer incorrectly passes a null name to the constructor of
-        // subclasses of java.security.Principal
-        {"provided.null.name", "nom NULL fourni"}
-
     };
 
     /**

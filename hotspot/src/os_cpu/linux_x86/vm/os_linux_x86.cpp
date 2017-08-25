@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -73,7 +74,9 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
+#ifndef AMD64
 # include <fpu_control.h>
+#endif
 
 #ifdef AMD64
 #define REG_SP REG_RSP
@@ -280,7 +283,7 @@ JVM_handle_linux_signal(int sig,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -532,7 +535,7 @@ JVM_handle_linux_signal(int sig,
     bool pc_is_near_addr =
       (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
     bool instr_spans_page_boundary =
-      (align_size_down((intptr_t) pc ^ (intptr_t) addr,
+      (align_down((intptr_t) pc ^ (intptr_t) addr,
                        (intptr_t) page_size) > 0);
 
     if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
@@ -544,8 +547,7 @@ JVM_handle_linux_signal(int sig,
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
         // Set memory to RWX and retry
-        address page_start =
-          (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
+        address page_start = align_down(addr, page_size);
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 

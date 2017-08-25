@@ -22,21 +22,21 @@
  */
 package org.graalvm.compiler.core.match;
 
-import static org.graalvm.compiler.debug.GraalDebugConfig.Options.LogVerbose;
+import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.match.MatchPattern.Result;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.Equivalence;
 
 /**
  * Container for state captured during a match.
@@ -49,7 +49,7 @@ public class MatchContext {
 
     private final MatchStatement rule;
 
-    private Map<String, NamedNode> namedNodes;
+    private EconomicMap<String, NamedNode> namedNodes;
 
     private ArrayList<Node> consumed;
 
@@ -85,7 +85,7 @@ public class MatchContext {
 
     public Result captureNamedValue(String name, Class<? extends Node> type, Node value) {
         if (namedNodes == null) {
-            namedNodes = new HashMap<>(2);
+            namedNodes = EconomicMap.create(Equivalence.DEFAULT);
         }
         NamedNode current = namedNodes.get(name);
         if (current == null) {
@@ -109,11 +109,12 @@ public class MatchContext {
                 // don't interfere with this match.
                 continue;
             } else if ((consumed == null || !consumed.contains(node)) && node != root) {
-                if (LogVerbose.getValue()) {
-                    Debug.log("unexpected node %s", node);
+                if (LogVerbose.getValue(root.getOptions())) {
+                    DebugContext debug = root.getDebug();
+                    debug.log("unexpected node %s", node);
                     for (int j = startIndex; j <= endIndex; j++) {
                         Node theNode = nodes.get(j);
-                        Debug.log("%s(%s) %1s", (consumed != null && consumed.contains(theNode) || theNode == root) ? "*" : " ", theNode.getUsageCount(), theNode);
+                        debug.log("%s(%s) %1s", (consumed != null && consumed.contains(theNode) || theNode == root) ? "*" : " ", theNode.getUsageCount(), theNode);
                     }
                 }
                 return Result.notSafe(node, rule.getPattern());
@@ -130,9 +131,10 @@ public class MatchContext {
      */
     public void setResult(ComplexMatchResult result) {
         ComplexMatchValue value = new ComplexMatchValue(result);
-        if (Debug.isLogEnabled()) {
-            Debug.log("matched %s %s", rule.getName(), rule.getPattern());
-            Debug.log("with nodes %s", rule.formatMatch(root));
+        DebugContext debug = root.getDebug();
+        if (debug.isLogEnabled()) {
+            debug.log("matched %s %s", rule.getName(), rule.getPattern());
+            debug.log("with nodes %s", rule.formatMatch(root));
         }
         if (consumed != null) {
             for (Node node : consumed) {
@@ -151,7 +153,7 @@ public class MatchContext {
      * @return Result.OK if the node can be safely consumed.
      */
     public Result consume(Node node) {
-        assert node.getUsageCount() <= 1 : "should have already been checked";
+        assert MatchPattern.isSingleValueUser(node) : "should have already been checked";
 
         // Check NOT_IN_BLOCK first since that usually implies ALREADY_USED
         int index = nodes.indexOf(node);

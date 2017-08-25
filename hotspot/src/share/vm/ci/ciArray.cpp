@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,8 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
       ciObject* box = env->get_object(elem);
       return ciConstant(T_OBJECT, box);
     }
+  default:
+    break;
   }
   assert(ary->is_typeArray(), "");
   typeArrayOop tary = (typeArrayOop) ary;

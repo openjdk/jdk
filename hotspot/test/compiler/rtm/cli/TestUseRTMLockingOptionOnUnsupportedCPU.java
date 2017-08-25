@@ -29,7 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires (!vm.rtm.cpu) & (vm.flavor == "server" & !vm.emulatedClient)
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -40,24 +40,13 @@
 
 package compiler.rtm.cli;
 
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
 
-public class TestUseRTMLockingOptionOnUnsupportedCPU
-        extends CommandLineOptionTest {
+public class TestUseRTMLockingOptionOnUnsupportedCPU {
     private static final String DEFAULT_VALUE = "false";
 
-    private TestUseRTMLockingOptionOnUnsupportedCPU() {
-        super(new AndPredicate(new NotPredicate(new SupportedCPU()),
-                new SupportedVM()));
-    }
-
-    @Override
     public void runTestCases() throws Throwable {
         String unrecongnizedOption
                 = CommandLineOptionTest.getUnrecognizedOptionErrorMessage(
@@ -107,6 +96,6 @@ public class TestUseRTMLockingOptionOnUnsupportedCPU
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestUseRTMLockingOptionOnUnsupportedCPU().test();
+        new TestUseRTMLockingOptionOnUnsupportedCPU().runTestCases();
     }
 }

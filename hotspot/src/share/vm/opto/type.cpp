@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 Dict* Type::_shared_type_dict = NULL;
 
 // Array which maps compiler types to Basic Types
-Type::TypeInfo Type::_type_info[Type::lastype] = {
+const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "bad",           false, Node::NotAMachineReg, relocInfo::none          },  // Bad
   { Control,         T_ILLEGAL,    "control",       false, 0,                    relocInfo::none          },  // Control
   { Bottom,          T_VOID,       "top",           false, 0,                    relocInfo::none          },  // Top
@@ -269,9 +269,10 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
       // Invalid ciConstant returned due to OutOfMemoryError in the CI
       assert(Compile::current()->env()->failing(), "otherwise should not see this");
       return NULL;
+    default:
+      // Fall through to failure
+      return NULL;
   }
-  // Fall through to failure
-  return NULL;
 }
 
 static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool is_unsigned) {
@@ -279,12 +280,14 @@ static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool
   switch (conbt) {
     case T_BOOLEAN: conbt = T_BYTE;   break;
     case T_ARRAY:   conbt = T_OBJECT; break;
+    default:                          break;
   }
   switch (loadbt) {
     case T_BOOLEAN:   loadbt = T_BYTE;   break;
     case T_NARROWOOP: loadbt = T_OBJECT; break;
     case T_ARRAY:     loadbt = T_OBJECT; break;
     case T_ADDRESS:   loadbt = T_OBJECT; break;
+    default:                             break;
   }
   if (conbt == loadbt) {
     if (is_unsigned && conbt == T_BYTE) {
@@ -1048,10 +1051,11 @@ bool Type::empty(void) const {
   case FloatBot:
   case DoubleBot:
     return false;  // never a singleton, therefore never empty
-  }
 
-  ShouldNotReachHere();
-  return false;
+  default:
+    ShouldNotReachHere();
+    return false;
+  }
 }
 
 //------------------------------dump_stats-------------------------------------
@@ -2531,7 +2535,8 @@ const Type* TypePtr::cleanup_speculative() const {
   const TypeOopPtr* spec_oopptr = speculative()->isa_oopptr();
   // If the speculative may be null and is an inexact klass then it
   // doesn't help
-  if (speculative()->maybe_null() && (spec_oopptr == NULL || !spec_oopptr->klass_is_exact())) {
+  if (speculative() != TypePtr::NULL_PTR && speculative()->maybe_null() &&
+      (spec_oopptr == NULL || !spec_oopptr->klass_is_exact())) {
     return no_spec;
   }
   return this;
@@ -2660,6 +2665,14 @@ bool TypePtr::speculative_maybe_null() const {
   return true;
 }
 
+bool TypePtr::speculative_always_null() const {
+  if (_speculative != NULL) {
+    const TypePtr* speculative = _speculative->join(this)->is_ptr();
+    return speculative == TypePtr::NULL_PTR;
+  }
+  return false;
+}
+
 /**
  * Same as TypePtr::speculative_type() but return the klass only if
  * the speculative tells us is not null
@@ -2684,6 +2697,9 @@ bool TypePtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
   if (exact_kls == NULL) {
     return false;
   }
+  if (speculative() == TypePtr::NULL_PTR) {
+    return false;
+  }
   // no speculative type or non exact speculative type?
   if (speculative_type() == NULL) {
     return true;
@@ -2703,21 +2719,32 @@ bool TypePtr::would_improve_type(ciKlass* exact_kls, int inline_depth) const {
  * Check whether new profiling would improve ptr (= tells us it is non
  * null)
  *
- * @param   maybe_null true if profiling tells the ptr may be null
+ * @param   ptr_kind always null or not null?
  *
  * @return  true if ptr profile is valuable
  */
-bool TypePtr::would_improve_ptr(bool maybe_null) const {
+bool TypePtr::would_improve_ptr(ProfilePtrKind ptr_kind) const {
   // profiling doesn't tell us anything useful
-  if (maybe_null) {
+  if (ptr_kind != ProfileAlwaysNull && ptr_kind != ProfileNeverNull) {
     return false;
   }
-  // We already know this is not be null
+  // We already know this is not null
   if (!this->maybe_null()) {
     return false;
   }
   // We already know the speculative type cannot be null
   if (!speculative_maybe_null()) {
+    return false;
+  }
+  // We already know this is always null
+  if (this == TypePtr::NULL_PTR) {
+    return false;
+  }
+  // We already know the speculative type is always null
+  if (speculative_always_null()) {
+    return false;
+  }
+  if (ptr_kind == ProfileAlwaysNull && speculative() != NULL && speculative()->isa_oopptr()) {
     return false;
   }
   return true;
@@ -3941,6 +3968,8 @@ void TypeInstPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
     break;
+  default:
+    break;
   }
 
   if( _offset ) {               // Dump offset, if any
@@ -4057,6 +4086,9 @@ static jint max_array_length(BasicType etype) {
     case T_ILLEGAL:
     case T_VOID:
       etype = T_BYTE;           // will produce conservatively high value
+      break;
+    default:
+      break;
     }
     cache = res = arrayOopDesc::max_array_length(etype);
   }
@@ -4406,6 +4438,8 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   case NotNull:
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
+    break;
+  default:
     break;
   }
 
@@ -5171,6 +5205,8 @@ void TypeKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
   case AnyNull:
     st->print(":%s", ptr_msg[_ptr]);
     if( _klass_is_exact ) st->print(":exact");
+    break;
+  default:
     break;
   }
 

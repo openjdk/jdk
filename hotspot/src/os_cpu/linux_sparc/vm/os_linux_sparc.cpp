@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,15 +55,9 @@
 
 // Linux/Sparc has rather obscure naming of registers in sigcontext
 // different between 32 and 64 bits
-#ifdef _LP64
 #define SIG_PC(x) ((x)->sigc_regs.tpc)
 #define SIG_NPC(x) ((x)->sigc_regs.tnpc)
 #define SIG_REGS(x) ((x)->sigc_regs)
-#else
-#define SIG_PC(x) ((x)->si_regs.pc)
-#define SIG_NPC(x) ((x)->si_regs.npc)
-#define SIG_REGS(x) ((x)->si_regs)
-#endif
 
 // those are to reference registers in sigcontext
 enum {
@@ -387,7 +381,7 @@ inline static bool checkPollingPage(address pc, address fault, address* stub) {
   return false;
 }
 
-inline static bool checkByteBuffer(address pc, address npc, address* stub) {
+inline static bool checkByteBuffer(address pc, address npc, JavaThread * thread, address* stub) {
   // BugId 4454115: A read from a MappedByteBuffer can fault
   // here if the underlying file has been truncated.
   // Do not crash the VM in such a case.
@@ -499,7 +493,7 @@ JVM_handle_linux_signal(int sig,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -579,7 +573,7 @@ JVM_handle_linux_signal(int sig,
           break;
         }
 
-        if ((sig == SIGBUS) && checkByteBuffer(pc, npc, &stub)) {
+        if ((sig == SIGBUS) && checkByteBuffer(pc, npc, thread, &stub)) {
           break;
         }
 
@@ -661,21 +655,7 @@ void os::Linux::set_fpu_control_word(int fpu) {
 }
 
 bool os::is_allocatable(size_t bytes) {
-#ifdef _LP64
   return true;
-#else
-  if (bytes < 2 * G) {
-    return true;
-  }
-
-  char* addr = reserve_memory(bytes, NULL);
-
-  if (addr != NULL) {
-    release_memory(addr, bytes);
-  }
-
-  return addr != NULL;
-#endif // _LP64
 }
 
 ///////////////////////////////////////////////////////////////////////////////

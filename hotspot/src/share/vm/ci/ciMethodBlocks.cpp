@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,6 +244,9 @@ void ciMethodBlocks::do_analysis() {
         if (s.next_bci() < limit_bci) {
           (void) make_block_at(s.next_bci());
         }
+        break;
+
+      default:
         break;
     }
   }

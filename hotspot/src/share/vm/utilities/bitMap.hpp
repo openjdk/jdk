@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_UTILITIES_BITMAP_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 
 // Forward decl;
 class BitMapClosure;
@@ -189,10 +190,10 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // Align bit index up or down to the next bitmap word boundary, or check
   // alignment.
   static idx_t word_align_up(idx_t bit) {
-    return align_size_up(bit, BitsPerWord);
+    return align_up(bit, BitsPerWord);
   }
   static idx_t word_align_down(idx_t bit) {
-    return align_size_down(bit, BitsPerWord);
+    return align_down(bit, BitsPerWord);
   }
   static bool is_word_aligned(idx_t bit) {
     return word_align_up(bit) == bit;
@@ -247,15 +248,6 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   // Looking for 1's and 0's at indices equal to or greater than "l_index",
   // stopping if none has been found before "r_index", and returning
   // "r_index" (which must be at most "size") in that case.
-  idx_t get_next_one_offset_inline (idx_t l_index, idx_t r_index) const;
-  idx_t get_next_zero_offset_inline(idx_t l_index, idx_t r_index) const;
-
-  // Like "get_next_one_offset_inline", except requires that "r_index" is
-  // aligned to bitsizeof(bm_word_t).
-  idx_t get_next_one_offset_inline_aligned_right(idx_t l_index,
-                                                        idx_t r_index) const;
-
-  // Non-inline versionsof the above.
   idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
   idx_t get_next_zero_offset(idx_t l_index, idx_t r_index) const;
 
@@ -265,6 +257,10 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   idx_t get_next_zero_offset(idx_t offset) const {
     return get_next_zero_offset(offset, size());
   }
+
+  // Like "get_next_one_offset", except requires that "r_index" is
+  // aligned to bitsizeof(bm_word_t).
+  idx_t get_next_one_offset_aligned_right(idx_t l_index, idx_t r_index) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
@@ -357,10 +353,13 @@ class CHeapBitMap : public BitMap {
   CHeapBitMap(const CHeapBitMap&);
   CHeapBitMap& operator=(const CHeapBitMap&);
 
+  // NMT memory type
+  MEMFLAGS _flags;
+
  public:
-  CHeapBitMap() : BitMap(NULL, 0) {}
+  CHeapBitMap(MEMFLAGS flags = mtInternal) : BitMap(NULL, 0), _flags(flags) {}
   // Clears the bitmap memory.
-  CHeapBitMap(idx_t size_in_bits);
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal);
   ~CHeapBitMap();
 
   // Resize the backing bitmap memory.

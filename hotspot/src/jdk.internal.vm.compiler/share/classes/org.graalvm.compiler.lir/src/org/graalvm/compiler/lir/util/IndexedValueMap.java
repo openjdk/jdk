@@ -49,8 +49,12 @@ public final class IndexedValueMap {
             }
             break;
         }
-        values = new Value[limit];
-        System.arraycopy(other.values, 0, values, 0, values.length);
+        if (limit == 0) {
+            values = Value.NO_VALUES;
+        } else {
+            values = new Value[limit];
+            System.arraycopy(other.values, 0, values, 0, values.length);
+        }
     }
 
     public Value get(int index) {
@@ -63,7 +67,9 @@ public final class IndexedValueMap {
                 return;
             }
             Value[] newValues = new Value[index + 1];
-            System.arraycopy(values, 0, newValues, 0, values.length);
+            if (values.length > 0) {
+                System.arraycopy(values, 0, newValues, 0, values.length);
+            }
             values = newValues;
             values[index] = value;
         } else {

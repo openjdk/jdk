@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // A space is an abstraction for the "storage units" backing
@@ -154,7 +155,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Test whether p is double-aligned
   static bool is_aligned(void* p) {
-    return ((intptr_t)p & (sizeof(double)-1)) == 0;
+    return ::is_aligned(p, sizeof(double));
   }
 
   // Size computations.  Sizes are in bytes.
@@ -445,6 +446,9 @@ public:
 
   // Return a size with adjustments as required of the space.
   virtual size_t adjust_object_size_v(size_t size) const { return size; }
+
+  void set_first_dead(HeapWord* value) { _first_dead = value; }
+  void set_end_of_live(HeapWord* value) { _end_of_live = value; }
 
 protected:
   // Used during compaction.

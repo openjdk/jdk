@@ -68,6 +68,11 @@ public abstract class AccessMonitorNode extends AbstractMemoryCheckpoint impleme
         return object;
     }
 
+    public void setObject(ValueNode lockedObject) {
+        updateUsages(this.object, lockedObject);
+        this.object = lockedObject;
+    }
+
     public MonitorIdNode getMonitorId() {
         return monitorId;
     }

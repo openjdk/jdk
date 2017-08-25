@@ -41,6 +41,7 @@
 #include "runtime/fprofiler.hpp"
 #include "runtime/mutex.hpp"
 #include "services/management.hpp"
+#include "utilities/macros.hpp"
 
 void G1RootProcessor::worker_has_discovered_all_strong_classes() {
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");

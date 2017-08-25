@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -Xint ReservedStackTest
- * @run main/othervm -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
+ * @run main/othervm -XX:MaxInlineLevel=2 -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
 
 /* The exclusion of java.util.concurrent.locks.AbstractOwnableSynchronizer.setExclusiveOwnerThread()
@@ -112,6 +111,8 @@
 
 import java.util.concurrent.locks.ReentrantLock;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ReservedStackTest {
 
@@ -159,6 +160,7 @@ public class ReservedStackTest {
             } catch (StackOverflowError e) {
                 soe = e;
                 stackOverflowErrorReceived = true;
+                throw e;
             }
         }
 
@@ -192,20 +194,10 @@ public class ReservedStackTest {
             decounter = deframe;
             test.initialize();
             recursiveCall();
-            System.out.println("Framework got StackOverflowError at frame = " + counter);
-            System.out.println("Test started execution at frame = " + (counter - deframe));
             String result = test.getResult();
             // The feature is not fully implemented on all platforms,
             // corruptions are still possible.
-            boolean supportedPlatform =
-                Platform.isAix() ||
-                (Platform.isLinux() &&
-                  (Platform.isPPC() || Platform.isS390x() || Platform.isX64() ||
-                   Platform.isX86() || Platform.isAArch64())) ||
-                Platform.isOSX() ||
-                Platform.isSolaris();
-            if (supportedPlatform && !result.contains("PASSED")) {
-                System.out.println(result);
+            if (isSupportedPlatform && !result.contains("PASSED")) {
                 throw new Error(result);
             } else {
                 // Either the test passed or this platform is not supported.
@@ -237,8 +229,64 @@ public class ReservedStackTest {
         }
     }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 1000; i++) {
+    private static boolean isAlwaysSupportedPlatform() {
+        // Note: To date Aarch64 is the only platform that we don't statically
+        // know if it supports the reserved stack area. This is because the
+        // open Aarch64 port supports it and the Oracle arm64 port does not.
+        return Platform.isAix() ||
+            (Platform.isLinux() &&
+             (Platform.isPPC() || Platform.isS390x() || Platform.isX64() ||
+              Platform.isX86())) ||
+            Platform.isOSX() ||
+            Platform.isSolaris();
+    }
+
+    private static boolean isNeverSupportedPlatform() {
+        return !isAlwaysSupportedPlatform() && !Platform.isAArch64();
+    }
+
+    private static boolean isSupportedPlatform;
+
+    private static void initIsSupportedPlatform() throws Exception {
+        // In order to dynamicaly determine if the platform supports the reserved
+        // stack area, run with -XX:StackReservedPages=1 and see if we get the
+        // expected warning message for platforms that don't support it.
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:StackReservedPages=1", "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        System.out.println("StackReservedPages=1 log: [" + output.getOutput() + "]");
+        if (output.getExitValue() != 0) {
+            String msg = "Could not launch with -XX:StackReservedPages=1: exit " + output.getExitValue();
+            System.err.println("FAILED: " + msg);
+            throw new RuntimeException(msg);
+        }
+
+        isSupportedPlatform = true;
+        String matchStr = "Reserved Stack Area not supported on this platform";
+        int match_idx = output.getOutput().indexOf(matchStr);
+        if (match_idx >= 0) {
+            isSupportedPlatform = false;
+        }
+
+        // Do a sanity check. Some platforms we know are always supported. Make sure
+        // we didn't determine that one of those platforms is not supported.
+        if (!isSupportedPlatform && isAlwaysSupportedPlatform()) {
+            String msg  = "This platform should be supported: " + Platform.getOsArch();
+            System.err.println("FAILED: " +  msg);
+            throw new RuntimeException(msg);
+        }
+
+        // And some platforms we know are never supported. Make sure
+        // we didn't determine that one of those platforms is supported.
+        if (isSupportedPlatform && isNeverSupportedPlatform()) {
+            String msg  = "This platform should not be supported: " + Platform.getOsArch();
+            System.err.println("FAILED: " +  msg);
+            throw new RuntimeException(msg);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        initIsSupportedPlatform();
+        for (int i = 0; i < 100; i++) {
             // Each iteration has to be executed by a new thread. The test
             // relies on the random size area pushed by the VM at the beginning
             // of the stack of each Java thread it creates.

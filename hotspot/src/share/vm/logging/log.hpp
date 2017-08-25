@@ -105,10 +105,6 @@ class LogMessageBuffer;
 //
 #define LogTarget(level, ...) LogTargetImpl<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
 
-// Forward declaration to decouple this file from the outputStream API.
-class outputStream;
-outputStream* create_log_stream(LogLevelType level, LogTagSet* tagset);
-
 template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
 class LogTargetImpl;
 
@@ -173,9 +169,6 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
   static bool is_##name() { \
     return is_level(LogLevel::level); \
   } \
-  static outputStream* name##_stream() { \
-    return create_log_stream(LogLevel::level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()); \
-  } \
   static LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>* name() { \
     return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)NULL; \
   }
@@ -204,9 +197,6 @@ public:
     va_end(args);
   }
 
-  static outputStream* stream() {
-    return create_log_stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset());
-  }
 };
 
 #endif // SHARE_VM_LOGGING_LOG_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -40,6 +41,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -59,12 +61,12 @@ unsigned int CodeBlob::align_code_offset(int offset) {
 // This must be consistent with the CodeBlob constructor's layout actions.
 unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   unsigned int size = header_size;
-  size += round_to(cb->total_relocation_size(), oopSize);
+  size += align_up(cb->total_relocation_size(), oopSize);
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
-  size += round_to(cb->total_content_size(), oopSize);
-  size += round_to(cb->total_oop_size(), oopSize);
-  size += round_to(cb->total_metadata_size(), oopSize);
+  size += align_up(cb->total_content_size(), oopSize);
+  size += align_up(cb->total_oop_size(), oopSize);
+  size += align_up(cb->total_metadata_size(), oopSize);
   return size;
 }
 
@@ -86,9 +88,9 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _content_begin(layout.content_begin()),
   _type(type)
 {
-  assert(layout.size()        == round_to(layout.size(),        oopSize), "unaligned size");
-  assert(layout.header_size() == round_to(layout.header_size(), oopSize), "unaligned size");
-  assert(layout.relocation_size() == round_to(layout.relocation_size(), oopSize), "unaligned size");
+  assert(is_aligned(layout.size(),            oopSize), "unaligned size");
+  assert(is_aligned(layout.header_size(),     oopSize), "unaligned size");
+  assert(is_aligned(layout.relocation_size(), oopSize), "unaligned size");
   assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
@@ -113,8 +115,8 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _content_begin(layout.content_begin()),
   _type(type)
 {
-  assert(_size        == round_to(_size,        oopSize), "unaligned size");
-  assert(_header_size == round_to(_header_size, oopSize), "unaligned size");
+  assert(is_aligned(_size,        oopSize), "unaligned size");
+  assert(is_aligned(_header_size, oopSize), "unaligned size");
   assert(_data_offset <= _size, "codeBlob is too small");
   assert(layout.code_end() == layout.content_end(), "must be the same - see code_end()");
 
@@ -130,15 +132,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
 RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size)
   : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
 {
-  assert(locs_size   == round_to(locs_size,   oopSize), "unaligned size");
-  assert(!UseRelocIndex, "no space allocated for reloc index yet");
-
-  // Note: If UseRelocIndex is enabled, there needs to be (at least) one
-  //       extra word for the relocation information, containing the reloc
-  //       index table length. Unfortunately, the reloc index table imple-
-  //       mentation is not easily understandable and thus it is not clear
-  //       what exactly the format is supposed to be. For now, we just turn
-  //       off the use of this table (gri 7/6/2000).
+  assert(is_aligned(locs_size, oopSize), "unaligned size");
 }
 
 
@@ -209,7 +203,6 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
 }
 
 void CodeBlob::print_code() {
-  HandleMark hm;
   ResourceMark m;
   Disassembler::decode(this, tty);
 }
@@ -229,7 +222,7 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   unsigned int size = sizeof(BufferBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
-  size += round_to(buffer_size, oopSize);
+  size += align_up(buffer_size, oopSize);
   assert(name != NULL, "must provide a name");
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -312,7 +305,7 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   unsigned int size = sizeof(MethodHandlesAdapterBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
-  size += round_to(buffer_size, oopSize);
+  size += align_up(buffer_size, oopSize);
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) MethodHandlesAdapterBlob(size);
