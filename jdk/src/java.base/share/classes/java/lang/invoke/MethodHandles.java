@@ -131,7 +131,7 @@ public class MethodHandles {
      * It can only be used to create method handles to public members of
      * public classes in packages that are exported unconditionally.
      * <p>
-     * As a matter of pure convention, the {@linkplain Lookup#lookupClass lookup class}
+     * As a matter of pure convention, the {@linkplain Lookup#lookupClass() lookup class}
      * of this lookup object will be {@link java.lang.Object}.
      *
      * @apiNote The use of Object is conventional, and because the lookup modes are
@@ -259,10 +259,10 @@ public class MethodHandles {
      * Therefore, method handle access
      * restrictions must be enforced when a method handle is created.
      * The caller class against which those restrictions are enforced
-     * is known as the {@linkplain #lookupClass lookup class}.
+     * is known as the {@linkplain #lookupClass() lookup class}.
      * <p>
      * A lookup class which needs to create method handles will call
-     * {@link MethodHandles#lookup MethodHandles.lookup} to create a factory for itself.
+     * {@link MethodHandles#lookup() MethodHandles.lookup} to create a factory for itself.
      * When the {@code Lookup} factory object is created, the identity of the lookup class is
      * determined, and securely stored in the {@code Lookup} object.
      * The lookup class (or its delegates) may then use factory methods
@@ -776,7 +776,7 @@ public class MethodHandles {
         /**
          * Creates a lookup on the specified new lookup class.
          * The resulting object will report the specified
-         * class as its own {@link #lookupClass lookupClass}.
+         * class as its own {@link #lookupClass() lookupClass}.
          * <p>
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
@@ -4602,7 +4602,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>At this point, every non-init function parameter list is effectively identical to the internal parameter
      * list {@code (V... A...)}, but some lists may be shorter. For every non-init function with a short parameter list,
      * pad out the end of the list.
-     * <li>Argument lists are padded out by {@linkplain #dropArgumentsToMatch dropping unused trailing arguments}.
+     * <li>Argument lists are padded out by {@linkplain #dropArgumentsToMatch(MethodHandle, int, List, int) dropping unused trailing arguments}.
      * </ol>
      * <p>
      * <em>Final observations.</em><ol type="a">
@@ -4697,7 +4697,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
      * Note that the parameter type lists {@code (V...)} and {@code (A...)} have been expanded
      * to their full length, even though individual clause functions may neglect to take them all.
-     * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch}.
+     * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}.
      *
      * @apiNote Example:
      * <blockquote><pre>{@code
