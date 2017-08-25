@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Assembler.InstructionCounter;
@@ -80,7 +80,7 @@ public class HotSpotInstructionProfiling extends PostAllocationOptimizationPhase
         }
 
         public void doBlock(AbstractBlockBase<?> block) {
-            List<LIRInstruction> instructions = lir.getLIRforBlock(block);
+            ArrayList<LIRInstruction> instructions = lir.getLIRforBlock(block);
             assert instructions.size() >= 2 : "Malformed block: " + block + ", " + instructions;
             assert instructions.get(instructions.size() - 1) instanceof BlockEndOp : "Not a BlockEndOp: " + instructions.get(instructions.size() - 1);
             assert !(instructions.get(instructions.size() - 2) instanceof BlockEndOp) : "Is a BlockEndOp: " + instructions.get(instructions.size() - 2);

@@ -34,10 +34,6 @@ class Bytes: AllStatic {
 
   // can I count on address always being a pointer to an unsigned char? Yes
 
-  // Returns true, if the byte ordering used by Java is different from the nativ byte ordering
-  // of the underlying machine. For example, true for Intel x86, False, for Solaris on Sparc.
-  static inline bool is_Java_byte_ordering_different() { return false; }
-
   // Thus, a swap between native and Java ordering is always a no-op:
   static inline u2   swap_u2(u2 x)  { return x; }
   static inline u4   swap_u4(u4 x)  { return x; }

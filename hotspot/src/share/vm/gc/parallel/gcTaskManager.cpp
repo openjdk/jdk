@@ -28,6 +28,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/workerManager.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -437,13 +438,12 @@ void GCTaskManager::initialize() {
 
     Log(gc, task, thread) log;
     if (log.is_trace()) {
-      ResourceMark rm;
-      outputStream* out = log.trace_stream();
-      out->print("GCTaskManager::initialize: distribution:");
+      LogStream ls(log.trace());
+      ls.print("GCTaskManager::initialize: distribution:");
       for (uint t = 0; t < workers(); t += 1) {
-        out->print("  %u", _processor_assignment[t]);
+        ls.print("  %u", _processor_assignment[t]);
       }
-      out->cr();
+      ls.cr();
     }
   }
   reset_busy_workers();

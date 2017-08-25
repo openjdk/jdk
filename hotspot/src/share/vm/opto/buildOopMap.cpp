@@ -34,6 +34,7 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/align.hpp"
 
 // The functions in this file builds OopMaps after all scheduling is done.
 //
@@ -566,7 +567,7 @@ void Compile::BuildOopMaps() {
   Arena *A = Thread::current()->resource_area();
   Block_List worklist;          // Worklist of pending blocks
 
-  int max_reg_ints = round_to(max_reg, BitsPerInt)>>LogBitsPerInt;
+  int max_reg_ints = align_up(max_reg, BitsPerInt)>>LogBitsPerInt;
   Dict *safehash = NULL;        // Used for assert only
   // Compute a backwards liveness per register.  Needs a bitarray of
   // #blocks x (#registers, rounded up to ints)

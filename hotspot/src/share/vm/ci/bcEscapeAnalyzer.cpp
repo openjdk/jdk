@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "ci/ciStreams.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 
@@ -218,7 +219,7 @@ bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
   bool modified = false;
   int l = offset / HeapWordSize;
-  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  int h = align_up(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
   if (l > ARG_OFFSET_MAX)
     l = ARG_OFFSET_MAX;
   if (h > ARG_OFFSET_MAX+1)
@@ -236,7 +237,7 @@ void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) 
   }
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
   int l = offset / HeapWordSize;
-  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  int h = align_up(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
   if (l > ARG_OFFSET_MAX)
     l = ARG_OFFSET_MAX;
   if (h > ARG_OFFSET_MAX+1)
@@ -264,6 +265,8 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
       break;
     case Bytecodes::_invokehandle:
       code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
+      break;
+    default:
       break;
     }
   }
@@ -300,11 +303,11 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   // determine actual method (use CHA if necessary)
   ciMethod* inline_target = NULL;
   if (target->is_loaded() && klass->is_loaded()
-      && (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
+      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
       && target->is_loaded()) {
     if (code == Bytecodes::_invokestatic
         || code == Bytecodes::_invokespecial
-        || code == Bytecodes::_invokevirtual && target->is_final_method()) {
+        || (code == Bytecodes::_invokevirtual && target->is_final_method())) {
       inline_target = target;
     } else {
       inline_target = target->find_monomorphic_target(calling_klass, callee_holder, actual_recv);
@@ -341,7 +344,8 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
     // record dependencies if at least one parameter retained stack-allocatable
     if (must_record_dependencies) {
-      if (code == Bytecodes::_invokeinterface || code == Bytecodes::_invokevirtual && !target->is_final_method()) {
+      if (code == Bytecodes::_invokeinterface ||
+          (code == Bytecodes::_invokevirtual && !target->is_final_method())) {
         _dependencies.append(actual_recv);
         _dependencies.append(inline_target);
       }

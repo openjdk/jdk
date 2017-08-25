@@ -21,236 +21,219 @@
  * questions.
  */
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
+import java.nio.file.StandardCopyOption;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
-import java.io.IOException;
+import java.io.File;
+import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
-import java.util.ArrayList;
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
-import org.testng.annotations.BeforeTest;
+import java.lang.module.ModuleDescriptor.Builder;
+import jdk.internal.module.ModuleInfoWriter;
+import java.util.stream.Stream;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-/**
+/*
  * @test
- * @bug 8151654
+ * @bug 8151654 8183310
+ * @summary Test default callback handler with all possible modular option.
  * @library /lib/testlibrary /test/lib
- * @library /java/security/modules
- * @build jdk.test.lib.compiler.CompilerUtils JarUtils
- * @summary Test custom JAAS callback handler with all possible modular option.
- * @run testng JaasModularDefaultHandlerTest
+ * @modules java.base/jdk.internal.module
+ * @build JarUtils
+ * @build TestCallbackHandler TestLoginModule JaasClientWithDefaultHandler
+ * @run main JaasModularDefaultHandlerTest
  */
-public class JaasModularDefaultHandlerTest extends ModularTest {
+public class JaasModularDefaultHandlerTest {
 
-    private static final Path S_SRC = SRC.resolve("TestCallbackHandler.java");
-    private static final String MODULAR = "M";
-    private static final String S_PKG = "handler";
-    private static final String S_JAR_NAME = S_PKG + JAR_EXTN;
-    private static final String MS_JAR_NAME = MODULAR + S_PKG + JAR_EXTN;
-    private static final String HANDLER = S_PKG + ".TestCallbackHandler";
-
-    private static final Path C_SRC
-            = SRC.resolve("JaasClientWithDefaultHandler.java");
-    private static final Path CL_SRC = SRC.resolve("TestLoginModule.java");
-    private static final String C_PKG = "login";
-    private static final String C_JAR_NAME = C_PKG + JAR_EXTN;
-    private static final String MCN_JAR_NAME
-            = MODULAR + C_PKG + "NoMUse" + JAR_EXTN;
-    private static final String MC_JAR_NAME = MODULAR + C_PKG + JAR_EXTN;
-
-    private static final Path BUILD_DIR = Paths.get(".").resolve("build");
-    private static final Path COMPILE_DIR = BUILD_DIR.resolve("bin");
-    private static final Path S_BUILD_DIR = COMPILE_DIR.resolve(S_PKG);
-    private static final Path C_BLD_DIR = COMPILE_DIR.resolve(C_PKG);
-    private static final Path M_BASE_PATH = BUILD_DIR.resolve("mbase");
-    private static final Path ARTIFACTS_DIR = BUILD_DIR.resolve("artifacts");
-
-    private static final Path S_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(S_PKG);
-    private static final Path S_JAR = S_ARTIFACTS_DIR.resolve(S_JAR_NAME);
-    private static final Path MS_JAR = S_ARTIFACTS_DIR.resolve(MS_JAR_NAME);
-
-    private static final Path C_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(C_PKG);
-    private static final Path C_JAR = C_ARTIFACTS_DIR.resolve(C_JAR_NAME);
-    private static final Path MC_JAR = C_ARTIFACTS_DIR.resolve(MC_JAR_NAME);
-    private static final Path MCN_JAR = C_ARTIFACTS_DIR.resolve(MCN_JAR_NAME);
-
-    private static final String MAIN = C_PKG + ".JaasClientWithDefaultHandler";
-    private static final List<String> M_REQUIRED = Arrays.asList("java.base",
-            "jdk.security.auth");
-
-    private static final String CLASS_NOT_FOUND_MSG
-            = "java.lang.ClassNotFoundException: handler.TestCallbackHandler";
-    private static final String NO_FAILURE = null;
+    private static final Path SRC = Paths.get(System.getProperty("test.src"));
+    private static final Path TEST_CLASSES
+            = Paths.get(System.getProperty("test.classes"));
+    private static final Path ARTIFACT_DIR = Paths.get("jars");
+    private static final String PS = File.pathSeparator;
+    private static final String H_TYPE = "handler.TestCallbackHandler";
+    private static final String C_TYPE = "login.JaasClientWithDefaultHandler";
 
     /**
-     * Generates Test specific input parameters.
+     * Here is the naming convention followed for each jar.
+     * h.jar   - Unnamed handler jar.
+     * mh.jar  - Modular handler jar.
+     * c.jar   - Unnamed client jar.
+     * mc.jar  - Modular client jar.
+     * amc.jar - Modular client used for automatic handler jar.
      */
-    @Override
-    public Object[][] getTestInput() {
+    private static final Path H_JAR = artifact("h.jar");
+    private static final Path MH_JAR = artifact("mh.jar");
+    private static final Path C_JAR = artifact("c.jar");
+    private static final Path MC_JAR = artifact("mc.jar");
+    private static final Path AMC_JAR = artifact("amc.jar");
 
-        List<List<Object>> params = new ArrayList<>();
-        String[] args = new String[]{HANDLER};
-        // PARAMETER ORDERS -
-        // Client Module Type, Service Module Type,
-        // Service META Descriptor Required,
-        // Expected Failure message, Client arguments
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.EXPLICIT,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.AUTO,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.UNNAMED,
-                false, NO_FAILURE, args));
+    private final String unnH;
+    private final String modH;
+    private final String unnC;
+    private final String modC;
+    private final String autoMC;
+    // Common set of VM arguments used in all test cases
+    private final List<String> commonArgs;
 
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.EXPLICIT,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.AUTO,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.UNNAMED,
-                false, NO_FAILURE, args));
+    public JaasModularDefaultHandlerTest() {
 
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.EXPLICIT,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.AUTO,
-                false, NO_FAILURE, args));
-        params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.UNNAMED,
-                false, NO_FAILURE, args));
-        return params.stream().map(p -> p.toArray()).toArray(Object[][]::new);
+        List<String> argList = new LinkedList<>();
+        argList.add("-Djava.security.auth.login.config="
+                + toAbsPath(SRC.resolve("jaas.conf")));
+        commonArgs = Collections.unmodifiableList(argList);
+
+        // Based on Testcase, select unnamed/modular jar files to use.
+        unnH = toAbsPath(H_JAR);
+        modH = toAbsPath(MH_JAR);
+        unnC = toAbsPath(C_JAR);
+        modC = toAbsPath(MC_JAR);
+        autoMC = toAbsPath(AMC_JAR);
+    }
+
+    /*
+     * Test cases are based on the following logic,
+     * for (clientType : {"NAMED", "AUTOMATIC", "UNNAMED"}) {
+     *     for (handlerType : {"NAMED", "AUTOMATIC", "UNNAMED"}) {
+     *         Create and run java command for each possible case
+     *     }
+     * }
+     */
+    public static void main(String[] args) throws Exception {
+
+        // Generates unnamed and modular jars.
+        setUp();
+        JaasModularDefaultHandlerTest jt = new JaasModularDefaultHandlerTest();
+        jt.process();
+    }
+
+    private void process() throws Exception {
+
+        // Case: NAMED-NAMED, NAMED-AUTOMATIC, NAMED-UNNAMED
+        System.out.println("Case: Modular Client and Modular Handler");
+        execute(String.format("--module-path %s%s%s -m mc/%s %s",
+                modC, PS, modH, C_TYPE, H_TYPE));
+        System.out.println("Case: Modular Client and automatic Handler");
+        execute(String.format("--module-path %s%s%s --add-modules=h -m mc/%s %s",
+                autoMC, PS, unnH, C_TYPE, H_TYPE));
+        System.out.println("Case: Modular Client and unnamed Handler");
+        execute(String.format("--module-path %s -cp %s -m mc/%s %s", autoMC,
+                unnH, C_TYPE, H_TYPE));
+
+        // Case: AUTOMATIC-NAMED, AUTOMATIC-AUTOMATIC, AUTOMATIC-UNNAMED
+        System.out.println("Case: Automatic Client and modular Handler");
+        execute(String.format("--module-path %s%s%s --add-modules=mh -m c/%s %s",
+                unnC, PS, modH, C_TYPE, H_TYPE));
+        System.out.println("Case: Automatic Client and automatic Handler");
+        execute(String.format("--module-path %s%s%s --add-modules=h -m c/%s %s",
+                unnC, PS, unnH, C_TYPE, H_TYPE));
+        System.out.println("Case: Automatic Client and unnamed Handler");
+        execute(String.format("--module-path %s -cp %s -m c/%s %s", unnC,
+                unnH, C_TYPE, H_TYPE));
+
+        // Case: UNNAMED-NAMED, UNNAMED-AUTOMATIC, UNNAMED-UNNAMED
+        System.out.println("Case: Unnamed Client and modular Handler");
+        execute(String.format("-cp %s --module-path %s --add-modules=mh %s %s",
+                unnC, modH, C_TYPE, H_TYPE));
+        System.out.println("Case: Unnamed Client and automatic Handler");
+        execute(String.format("-cp %s --module-path %s --add-modules=h %s %s",
+                unnC, unnH, C_TYPE, H_TYPE));
+        System.out.println("Case: Unnamed Client and unnamed Handler");
+        execute(String.format("-cp %s%s%s %s %s", unnC, PS, unnH, C_TYPE,
+                H_TYPE));
+
+        // Case: unnamed jars in --module-path and modular jars in -cp.
+        System.out.println("Case: Unnamed Client and Handler in modulepath");
+        execute(String.format("--module-path %s%s%s --add-modules=h -m c/%s %s",
+                unnC, PS, unnH, C_TYPE, H_TYPE));
+        System.out.println("Case: Modular Client and Provider in classpath");
+        execute(String.format("-cp %s%s%s %s %s",
+                modC, PS, modH, C_TYPE, H_TYPE));
     }
 
     /**
-     * Pre-compile and generate the artifacts required to run this test before
-     * running each test cases.
+     * Execute with command arguments and process the result.
      */
-    @BeforeTest
-    public void buildArtifacts() {
+    private void execute(String args) throws Exception {
 
-        boolean done = true;
-        try {
-            done = CompilerUtils.compile(S_SRC, S_BUILD_DIR);
-            // Generate modular/regular handler jars.
-            generateJar(true, MODULE_TYPE.EXPLICIT, MS_JAR, S_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.UNNAMED, S_JAR, S_BUILD_DIR, false);
-            // Compile client source codes.
-            done &= CompilerUtils.compile(C_SRC, C_BLD_DIR);
-            done &= CompilerUtils.compile(CL_SRC, C_BLD_DIR);
-            // Generate modular client jar with explicit dependency
-            generateJar(false, MODULE_TYPE.EXPLICIT, MC_JAR, C_BLD_DIR, true);
-            // Generate modular client jar without any dependency
-            generateJar(false, MODULE_TYPE.EXPLICIT, MCN_JAR, C_BLD_DIR, false);
-            // Generate regular client jar
-            generateJar(false, MODULE_TYPE.UNNAMED, C_JAR, C_BLD_DIR, false);
-            System.out.format("%nArtifacts generated successfully? %s", done);
-            if (!done) {
-                throw new RuntimeException("Artifact generation failed");
+        String[] safeArgs = Stream.concat(commonArgs.stream(),
+                Stream.of(args.split("\\s+"))).filter(s -> {
+            if (s.contains(" ")) {
+                throw new RuntimeException("No spaces in args");
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Generate modular/regular jar based on module type for this test.
-     */
-    private void generateJar(boolean isService, MODULE_TYPE moduleType,
-            Path jar, Path compilePath, boolean depends) throws IOException {
-
-        ModuleDescriptor mDescriptor = null;
-        if (isService) {
-            mDescriptor = generateModuleDescriptor(isService, moduleType, S_PKG,
-                    S_PKG, null, null, null, M_REQUIRED, depends);
+            return !s.isEmpty();
+        }).toArray(String[]::new);
+        OutputAnalyzer out = ProcessTools.executeTestJvm(safeArgs);
+        // Handle response.
+        if (out.getExitValue() != 0) {
+            System.out.printf("OUTPUT: %s", out.getOutput());
+            throw new RuntimeException("FAIL: Unknown failure occured.");
         } else {
-            mDescriptor = generateModuleDescriptor(isService, moduleType, C_PKG,
-                    C_PKG, null, null, S_PKG, M_REQUIRED, depends);
-        }
-        generateJar(mDescriptor, jar, compilePath);
-    }
-
-    /**
-     * Holds Logic for the test client. This method will get called with each
-     * test parameter.
-     */
-    @Override
-    public OutputAnalyzer executeTestClient(MODULE_TYPE cModuleType,
-            Path cJarPath, MODULE_TYPE sModuletype, Path sJarPath,
-            String... args) throws Exception {
-
-        OutputAnalyzer output = null;
-        try {
-            // For automated/explicit module types, copy the corresponding
-            // jars to module base folder, which will be considered as
-            // module base path during execution.
-            if (!(cModuleType == MODULE_TYPE.UNNAMED
-                    && sModuletype == MODULE_TYPE.UNNAMED)) {
-                copyJarsToModuleBase(cModuleType, cJarPath, M_BASE_PATH);
-                copyJarsToModuleBase(sModuletype, sJarPath, M_BASE_PATH);
-            }
-
-            System.out.format("%nExecuting java client with required"
-                    + " custom service in class/module path.");
-            String mName = getModuleName(cModuleType, cJarPath, C_PKG);
-            Path cmBasePath = (cModuleType != MODULE_TYPE.UNNAMED
-                    || sModuletype != MODULE_TYPE.UNNAMED) ? M_BASE_PATH : null;
-            String cPath = buildClassPath(cModuleType, cJarPath, sModuletype,
-                    sJarPath);
-            Map<String, String> vmArgs = getVMArgs(sModuletype, cModuleType,
-                    getModuleName(sModuletype, sJarPath, S_PKG));
-            output = ProcessTools.executeTestJava(
-                    getJavaCommand(cmBasePath, cPath, mName, MAIN, vmArgs,
-                            args)).outputTo(System.out).errorTo(System.out);
-        } finally {
-            // Clean module path to hold required jars for next run.
-            cleanModuleBasePath(M_BASE_PATH);
-        }
-        return output;
-    }
-
-    /**
-     * Decide the pre-generated client/service jar path for each test case
-     * based on client/service module type.
-     */
-    @Override
-    public Path findJarPath(boolean depends, MODULE_TYPE moduleType,
-            boolean addMetaDesc, boolean dependsOnServiceModule) {
-        if (depends) {
-            if (moduleType == MODULE_TYPE.EXPLICIT) {
-                return MS_JAR;
-            } else {
-                return S_JAR;
-            }
-        } else {
-            // Choose corresponding client jar using dependent module
-            if (moduleType == MODULE_TYPE.EXPLICIT) {
-                if (dependsOnServiceModule) {
-                    return MC_JAR;
-                } else {
-                    return MCN_JAR;
-                }
-            } else {
-                return C_JAR;
-            }
+            System.out.println("Passed.");
         }
     }
 
     /**
-     * VM argument required for the test.
+     * Creates Unnamed/modular jar files for TestClient and TestClassLoader.
      */
-    private Map<String, String> getVMArgs(MODULE_TYPE sModuletype,
-            MODULE_TYPE cModuleType, String addModName) throws IOException {
-        final Map<String, String> vmArgs = new LinkedHashMap<>();
-        vmArgs.put("-Duser.language=", "en");
-        vmArgs.put("-Duser.region=", "US");
-        vmArgs.put("-Djava.security.auth.login.config=", SRC.resolve(
-                "jaas.conf").toFile().getCanonicalPath());
-        if (addModName != null
-                && !(cModuleType == MODULE_TYPE.EXPLICIT
-                && sModuletype == MODULE_TYPE.EXPLICIT)) {
-            vmArgs.put("--add-modules=", addModName);
+    private static void setUp() throws Exception {
+
+        if (ARTIFACT_DIR.toFile().exists()) {
+            System.out.println("Skipping setup: Artifacts already exists.");
+            return;
         }
-        return vmArgs;
+        // Generate unnamed handler jar file.
+        JarUtils.createJarFile(H_JAR, TEST_CLASSES,
+                "handler/TestCallbackHandler.class");
+        // Generate unnamed client jar file.
+        JarUtils.createJarFile(C_JAR, TEST_CLASSES,
+                "login/TestLoginModule.class",
+                "login/JaasClientWithDefaultHandler.class");
+
+        Builder mBuilder = ModuleDescriptor.newModule("mh");
+        // Modular jar exports package to let the handler type accessible.
+        generateJar(H_JAR, MH_JAR, mBuilder.exports("handler").build());
+
+        mBuilder = ModuleDescriptor.newModule("mc").exports("login")
+                .requires("jdk.security.auth");
+        // Generate modular client jar file to use automatic handler jar.
+        generateJar(C_JAR, AMC_JAR, mBuilder.build());
+        // Generate modular client jar file to use modular handler jar.
+        generateJar(C_JAR, MC_JAR, mBuilder.requires("mh").build());
     }
 
+    /**
+     * Update Unnamed jars and include module descriptor files.
+     */
+    private static void generateJar(Path sjar, Path djar,
+            ModuleDescriptor mDesc) throws Exception {
+
+        Files.copy(sjar, djar, StandardCopyOption.REPLACE_EXISTING);
+        Path dir = Files.createTempDirectory("tmp");
+        if (mDesc != null) {
+            Path mi = dir.resolve("module-info.class");
+            try (OutputStream out = Files.newOutputStream(mi)) {
+                ModuleInfoWriter.write(mDesc, out);
+            }
+            System.out.format("Added 'module-info.class' in '%s'%n", djar);
+        }
+        JarUtils.updateJarFile(djar, dir);
+    }
+
+    /**
+     * Look for file path in generated jars.
+     */
+    private static Path artifact(String file) {
+        return ARTIFACT_DIR.resolve(file);
+    }
+
+    /**
+     * Convert to absolute file path.
+     */
+    private static String toAbsPath(Path path) {
+        return path.toFile().getAbsolutePath();
+    }
 }

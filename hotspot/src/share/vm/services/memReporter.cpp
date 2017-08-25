@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,16 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
-void MemReporterBase::print_malloc(size_t amount, size_t count) const {
+void MemReporterBase::print_malloc(size_t amount, size_t count, MEMFLAGS flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
-  out->print("(malloc=" SIZE_FORMAT "%s",
-    amount_in_current_scale(amount), scale);
+  if (flag != mtNone) {
+    out->print("(malloc=" SIZE_FORMAT "%s type=%s",
+      amount_in_current_scale(amount), scale, NMTUtil::flag_to_name(flag));
+  } else {
+    out->print("(malloc=" SIZE_FORMAT "%s",
+      amount_in_current_scale(amount), scale);
+  }
 
   if (count > 0) {
     out->print(" #" SIZE_FORMAT "", count);
@@ -200,7 +205,10 @@ void MemDetailReporter::report_malloc_sites() {
     const NativeCallStack* stack = malloc_site->call_stack();
     stack->print_on(out);
     out->print("%29s", " ");
-    print_malloc(malloc_site->size(), malloc_site->count());
+    MEMFLAGS flag = malloc_site->flags();
+    assert((flag >= 0 && flag < (int)mt_number_of_types) && flag != mtNone,
+      "Must have a valid memory type");
+    print_malloc(malloc_site->size(), malloc_site->count(),flag);
     out->print_cr("\n");
   }
 }
@@ -304,11 +312,16 @@ void MemSummaryDiffReporter::report_diff() {
 }
 
 void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t current_count,
-    size_t early_amount, size_t early_count) const {
+    size_t early_amount, size_t early_count, MEMFLAGS flags) const {
   const char* scale = current_scale();
   outputStream* out = output();
 
   out->print("malloc=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
+  // Report type only if it is valid
+  if (flags != mtNone) {
+    out->print(" type=%s", NMTUtil::flag_to_name(flags));
+  }
+
   long amount_diff = diff_in_current_scale(current_amount, early_amount);
   if (amount_diff != 0) {
     out->print(" %+ld%s", amount_diff, scale);
@@ -437,7 +450,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag, const MallocMem
         diff_in_current_scale(current_malloc_amount, early_malloc_amount) != 0) {
       out->print("%28s(", " ");
       print_malloc_diff(current_malloc_amount, (flag == mtChunk) ? 0 : current_malloc->malloc_count(),
-        early_malloc_amount, early_malloc->malloc_count());
+        early_malloc_amount, early_malloc->malloc_count(), mtNone);
       out->print_cr(")");
     }
 
@@ -485,8 +498,8 @@ void MemDetailDiffReporter::report_diff() {
 }
 
 void MemDetailDiffReporter::diff_malloc_sites() const {
-  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site);
-  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site);
+  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
 
   const MallocSite* early_site   = early_itr.next();
   const MallocSite* current_site = current_itr.next();
@@ -549,22 +562,23 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
 
 void MemDetailDiffReporter::new_malloc_site(const MallocSite* malloc_site) const {
   diff_malloc_site(malloc_site->call_stack(), malloc_site->size(), malloc_site->count(),
-    0, 0);
+    0, 0, malloc_site->flags());
 }
 
 void MemDetailDiffReporter::old_malloc_site(const MallocSite* malloc_site) const {
   diff_malloc_site(malloc_site->call_stack(), 0, 0, malloc_site->size(),
-    malloc_site->count());
+    malloc_site->count(), malloc_site->flags());
 }
 
 void MemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
   const MallocSite* current)  const {
+  assert(early->flags() == current->flags(), "Must be the same memory type");
   diff_malloc_site(current->call_stack(), current->size(), current->count(),
-    early->size(), early->count());
+    early->size(), early->count(), early->flags());
 }
 
 void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_t current_size,
-  size_t current_count, size_t early_size, size_t early_count) const {
+  size_t current_count, size_t early_size, size_t early_count, MEMFLAGS flags) const {
   outputStream* out = output();
 
   assert(stack != NULL, "NULL stack");
@@ -576,7 +590,7 @@ void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_
   stack->print_on(out);
   out->print("%28s (", " ");
   print_malloc_diff(current_size, current_count,
-    early_size, early_count);
+    early_size, early_count, flags);
 
   out->print_cr(")\n");
 }

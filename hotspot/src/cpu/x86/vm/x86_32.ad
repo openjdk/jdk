@@ -290,7 +290,7 @@ static int pre_call_resets_size() {
   if (C->in_24_bit_fp_mode()) {
     size += 6; // fldcw
   }
-  if (C->max_vector_size() > 16) {
+  if (VM_Version::supports_vzeroupper()) {
     size += 3; // vzeroupper
   }
   return size;
@@ -329,7 +329,7 @@ bool SafePointNode::needs_polling_address_input() {
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
   current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 1;      // skip call opcode byte
-  return round_to(current_offset, alignment_required()) - current_offset;
+  return align_up(current_offset, alignment_required()) - current_offset;
 }
 
 // The address of the call instruction needs to be 4-byte aligned to
@@ -338,7 +338,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
   current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 5;      // skip MOV instruction
   current_offset += 1;      // skip call opcode byte
-  return round_to(current_offset, alignment_required()) - current_offset;
+  return align_up(current_offset, alignment_required()) - current_offset;
 }
 
 // EMIT_RM()
@@ -1884,7 +1884,6 @@ encode %{
     }
   %}
 
-
   enc_class pre_call_resets %{
     // If method sets FPU control word restore it here
     debug_only(int off0 = cbuf.insts_size());
@@ -1892,12 +1891,10 @@ encode %{
       MacroAssembler _masm(&cbuf);
       __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
     }
-    if (ra_->C->max_vector_size() > 16) {
-      // Clear upper bits of YMM registers when current compiled code uses
-      // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
-      __ vzeroupper();
-    }
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    MacroAssembler _masm(&cbuf);
+    __ vzeroupper();
     debug_only(int off1 = cbuf.insts_size());
     assert(off1 - off0 == pre_call_resets_size(), "correct size prediction");
   %}
@@ -3278,7 +3275,7 @@ frame %{
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 1 +
-              round_to((Compile::current()->in_preserve_stack_slots() +
+              align_up((Compile::current()->in_preserve_stack_slots() +
                         Compile::current()->fixed_slots()),
                        stack_alignment_in_slots()));
 
@@ -13222,7 +13219,7 @@ instruct CallLeafNoFPDirect(method meth) %{
   ins_cost(300);
   format %{ "CALL_LEAF_NOFP,runtime " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode(Java_To_Runtime(meth));
+  ins_encode(pre_call_resets, Java_To_Runtime(meth));
   ins_pipe( pipe_slow );
 %}
 

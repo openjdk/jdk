@@ -22,30 +22,27 @@
  */
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static jdk.vm.ci.aarch64.AArch64.lr;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 import static jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig.fp;
 import static jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig.inlineCacheRegister;
 import static jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig.metaspaceMethodRegister;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 
 import org.graalvm.compiler.core.aarch64.AArch64NodeLIRBuilder;
 import org.graalvm.compiler.core.aarch64.AArch64NodeMatchRules;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
 import org.graalvm.compiler.hotspot.HotSpotNodeLIRBuilder;
-import org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotDirectCallTargetNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotIndirectCallTargetNode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.aarch64.AArch64BreakpointOp;
-import org.graalvm.compiler.lir.aarch64.AArch64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -70,7 +67,6 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.meta.ValueKind;
 
 /**
  * LIR generator specialized for AArch64 HotSpot.
@@ -174,24 +170,10 @@ public class AArch64HotSpotNodeLIRBuilder extends AArch64NodeLIRBuilder implemen
     @Override
     public void visitFullInfopointNode(FullInfopointNode i) {
         if (i.getState() != null && i.getState().bci == BytecodeFrame.AFTER_BCI) {
-            Debug.log("Ignoring InfopointNode for AFTER_BCI");
+            i.getDebug().log("Ignoring InfopointNode for AFTER_BCI");
         } else {
             super.visitFullInfopointNode(i);
         }
-    }
-
-    @Override
-    public void visitDirectCompareAndSwap(DirectCompareAndSwapNode x) {
-        AllocatableValue address = gen.asAllocatable(operand(x.getAddress()));
-        AllocatableValue cmpValue = gen.asAllocatable(operand(x.expectedValue()));
-        AllocatableValue newValue = gen.asAllocatable(operand(x.newValue()));
-        ValueKind<?> kind = cmpValue.getValueKind();
-        assert kind.equals(newValue.getValueKind());
-
-        Variable result = gen.newVariable(newValue.getValueKind());
-        Variable scratch = gen.newVariable(LIRKind.value(AArch64Kind.DWORD));
-        append(new CompareAndSwapOp(result, cmpValue, newValue, address, scratch));
-        setResult(x, result);
     }
 
     @Override

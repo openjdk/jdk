@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,14 +610,10 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   int elements = (data_size() + extra_data_size()) / sizeof(intptr_t);
   out->print(" data %d", elements);
   for (int i = 0; i < elements; i++) {
-    // We could use INTPTR_FORMAT here but that's a zero justified
+    // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
-    // harder.
-#ifdef _LP64
-    out->print(" 0x%" FORMAT64_MODIFIER "x", data()[i]);
-#else
-    out->print(" 0x%x", data()[i]);
-#endif
+    // harder. data()'s element type is intptr_t.
+    out->print(" " INTPTRNZ_FORMAT, data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those

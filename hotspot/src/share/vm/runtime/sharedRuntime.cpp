@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
@@ -482,7 +483,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
-  nmethod* nm = (blob != NULL) ? blob->as_nmethod_or_null() : NULL;
+  CompiledMethod* nm = (blob != NULL) ? blob->as_compiled_method_or_null() : NULL;
   if (nm != NULL) {
     // Set flag if return address is a method handle call site.
     thread->set_is_method_handle_return(nm->is_method_handle_return(return_address));
@@ -505,13 +506,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       return nm->exception_begin();
     }
   }
-
-#if INCLUDE_AOT
-  if (UseAOT && blob->is_aot()) {
-    // AOT Compiled code
-    return AOTLoader::exception_begin(thread, blob, return_address);
-  }
-#endif
 
   // Entry code
   if (StubRoutines::returns_to_call_stub(return_address)) {
@@ -675,7 +669,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     do {
       bool skip_scope_increment = false;
       // exception handler lookup
-      KlassHandle ek (THREAD, exception->klass());
+      Klass* ek = exception->klass();
       methodHandle mh(THREAD, sd->method());
       handler_bci = Method::fast_exception_handler_bci_for(mh, ek, bci, THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -1135,6 +1129,8 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
                                               : Bytecodes::_invokevirtual;
           }
           break;
+        default:
+          break;
       }
     }
   } else {
@@ -1185,7 +1181,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
   if (has_receiver) {
     assert(receiver.not_null(), "should have thrown exception");
-    KlassHandle receiver_klass(THREAD, receiver->klass());
+    Klass* receiver_klass = receiver->klass();
     Klass* rk = NULL;
     if (attached_method.not_null()) {
       // In case there's resolved method attached, use its holder during the check.
@@ -1195,16 +1191,16 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
       constantPoolHandle constants(THREAD, caller->constants());
       rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
     }
-    KlassHandle static_receiver_klass(THREAD, rk);
+    Klass* static_receiver_klass = rk;
     methodHandle callee = callinfo.selected_method();
-    assert(receiver_klass->is_subtype_of(static_receiver_klass()),
+    assert(receiver_klass->is_subtype_of(static_receiver_klass),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->is_instance_klass()) {
-      if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
+      if (InstanceKlass::cast(receiver_klass)->is_not_initialized()) {
         tty->print_cr("ERROR: Klass not yet initialized!!");
-        receiver_klass()->print();
+        receiver_klass->print();
       }
-      assert(!InstanceKlass::cast(receiver_klass())->is_not_initialized(), "receiver_klass must be initialized");
+      assert(!InstanceKlass::cast(receiver_klass)->is_not_initialized(), "receiver_klass must be initialized");
     }
   }
 #endif
@@ -1363,8 +1359,8 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   if (is_virtual) {
     assert(receiver.not_null() || invoke_code == Bytecodes::_invokehandle, "sanity check");
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
-    KlassHandle h_klass(THREAD, invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass());
-    CompiledIC::compute_monomorphic_entry(callee_method, h_klass,
+    Klass* klass = invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass();
+    CompiledIC::compute_monomorphic_entry(callee_method, klass,
                      is_optimized, static_bound, is_nmethod, virtual_call_info,
                      CHECK_(methodHandle()));
   } else {
@@ -1385,7 +1381,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee == NULL || callee->is_in_use() && (callee_method->code() == callee))) {
+        (callee == NULL || (callee->is_in_use() && callee_method->code() == callee))) {
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
       if (dest_entry_point != 0) {
@@ -1625,7 +1621,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
         // and now we have (or had) a compiled entry. We correct the IC
         // by using a new icBuffer.
         CompiledICInfo info;
-        KlassHandle receiver_klass(THREAD, receiver()->klass());
+        Klass* receiver_klass = receiver()->klass();
         inline_cache->compute_monomorphic_entry(callee_method,
                                                 receiver_klass,
                                                 inline_cache->is_optimized(),
@@ -2891,9 +2887,11 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
 
   // Install the generated code.
   if (nm != NULL) {
+    const char *msg = method->is_static() ? "(static)" : "";
+    CompileTask::print_ul(nm, msg);
     if (PrintCompilation) {
       ttyLocker ttyl;
-      CompileTask::print(tty, nm, method->is_static() ? "(static)" : "");
+      CompileTask::print(tty, nm, msg);
     }
     nm->post_compiled_method_load_event();
   }
@@ -3113,8 +3111,8 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
 
 void CDSAdapterHandlerEntry::init() {
   assert(DumpSharedSpaces, "used during dump time only");
-  _c2i_entry_trampoline = (address)MetaspaceShared::misc_data_space_alloc(SharedRuntime::trampoline_size());
-  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_data_space_alloc(sizeof(AdapterHandlerEntry*));
+  _c2i_entry_trampoline = (address)MetaspaceShared::misc_code_space_alloc(SharedRuntime::trampoline_size());
+  _adapter_trampoline = (AdapterHandlerEntry**)MetaspaceShared::misc_code_space_alloc(sizeof(AdapterHandlerEntry*));
 };
 
 #endif // INCLUDE_CDS
@@ -3130,11 +3128,14 @@ void AdapterHandlerLibrary::print_statistics() {
 
 JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
   assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
+  if (thread->stack_reserved_zone_disabled()) {
   thread->enable_stack_reserved_zone();
+  }
   thread->set_reserved_stack_activation(thread->stack_base());
 JRT_END
 
 frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
+  ResourceMark rm(thread);
   frame activation;
   CompiledMethod* nm = NULL;
   int count = 1;
@@ -3143,17 +3144,28 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
 
   while (true) {
     Method* method = NULL;
+    bool found = false;
     if (fr.is_interpreted_frame()) {
       method = fr.interpreter_frame_method();
+      if (method != NULL && method->has_reserved_stack_access()) {
+        found = true;
+      }
     } else {
       CodeBlob* cb = fr.cb();
       if (cb != NULL && cb->is_compiled()) {
         nm = cb->as_compiled_method();
         method = nm->method();
+        // scope_desc_near() must be used, instead of scope_desc_at() because on
+        // SPARC, the pcDesc can be on the delay slot after the call instruction.
+        for (ScopeDesc *sd = nm->scope_desc_near(fr.pc()); sd != NULL; sd = sd->sender()) {
+          method = sd->method();
+          if (method != NULL && method->has_reserved_stack_access()) {
+            found = true;
       }
     }
-    if ((method != NULL) && method->has_reserved_stack_access()) {
-      ResourceMark rm(thread);
+      }
+    }
+    if (found) {
       activation = fr;
       warning("Potentially dangerous stack overflow in "
               "ReservedStackAccess annotated method %s [%d]",
@@ -3172,4 +3184,3 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
   }
   return activation;
 }
-

@@ -29,6 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -43,14 +44,10 @@ import compiler.testlibrary.rtm.AbortProvoker;
 import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.List;
 
@@ -58,10 +55,7 @@ import java.util.List;
  * Test verifies that RTMLockingThreshold option actually affects how soon
  * method will be deoptimized on low abort ratio.
  */
-public class TestRTMLockingThreshold extends CommandLineOptionTest {
-    private TestRTMLockingThreshold() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
+public class TestRTMLockingThreshold {
 
     /**
      * We use non-zero abort threshold to avoid abort related to
@@ -70,7 +64,6 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
      */
     private static final int MIN_ABORT_THRESHOLD = 10;
 
-    @Override
     protected void runTestCases() throws Throwable {
         verifyLockingThreshold(0, false);
         verifyLockingThreshold(100, false);
@@ -183,6 +176,6 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestRTMLockingThreshold().test();
+        new TestRTMLockingThreshold().runTestCases();
     }
 }

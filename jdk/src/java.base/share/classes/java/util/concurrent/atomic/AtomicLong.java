@@ -73,16 +73,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * are unresolved cyclic startup dependencies.
      */
     private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-    private static final long VALUE;
-
-    static {
-        try {
-            VALUE = U.objectFieldOffset
-                (AtomicLong.class.getDeclaredField("value"));
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final long VALUE = U.objectFieldOffset(AtomicLong.class, "value");
 
     private volatile long value;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
-  _low_boundary(NULL), _high_boundary(NULL), _committed(), _page_size(0), _special(false),
-  _dirty(), _executable(false) {
+  _low_boundary(NULL), _high_boundary(NULL), _committed(mtGC), _page_size(0), _special(false),
+  _dirty(mtGC), _executable(false) {
   initialize_with_page_size(rs, used_size, page_size);
 }
 
@@ -44,13 +45,13 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
   vmassert(_low_boundary == NULL, "VirtualSpace already initialized");
   vmassert(page_size > 0, "Page size must be non-zero.");
 
-  guarantee(is_ptr_aligned(rs.base(), page_size),
+  guarantee(is_aligned(rs.base(), page_size),
             "Reserved space base " PTR_FORMAT " is not aligned to requested page size " SIZE_FORMAT, p2i(rs.base()), page_size);
-  guarantee(is_size_aligned(used_size, os::vm_page_size()),
+  guarantee(is_aligned(used_size, os::vm_page_size()),
             "Given used reserved space size needs to be OS page size aligned (%d bytes) but is " SIZE_FORMAT, os::vm_page_size(), used_size);
   guarantee(used_size <= rs.size(),
             "Used size of reserved space " SIZE_FORMAT " bytes is smaller than reservation at " SIZE_FORMAT " bytes", used_size, rs.size());
-  guarantee(is_size_aligned(rs.size(), page_size),
+  guarantee(is_aligned(rs.size(), page_size),
             "Expected that the virtual space is size aligned, but " SIZE_FORMAT " is not aligned to page size " SIZE_FORMAT, rs.size(), page_size);
 
   _low_boundary  = rs.base();
@@ -141,7 +142,7 @@ void G1PageBasedVirtualSpace::commit_preferred_pages(size_t start, size_t num_pa
 void G1PageBasedVirtualSpace::commit_tail() {
   vmassert(_tail_size > 0, "The size of the tail area must be > 0 when reaching here");
 
-  char* const aligned_end_address = (char*)align_ptr_down(_high_boundary, _page_size);
+  char* const aligned_end_address = align_down(_high_boundary, _page_size);
   os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), _executable,
                             err_msg("Failed to commit tail area from " PTR_FORMAT " to " PTR_FORMAT " of length " SIZE_FORMAT ".",
                             p2i(aligned_end_address), p2i(_high_boundary), _tail_size));

@@ -24,6 +24,7 @@
 package org.graalvm.compiler.hotspot.aarch64;
 
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -34,6 +35,7 @@ import org.graalvm.compiler.nodes.calc.FixedBinaryNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.aarch64.AArch64FloatArithmeticSnippets;
 import org.graalvm.compiler.replacements.aarch64.AArch64IntegerArithmeticSnippets;
 
@@ -52,10 +54,10 @@ public class AArch64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvid
     }
 
     @Override
-    public void initialize(HotSpotProviders providers, GraalHotSpotVMConfig config) {
-        integerArithmeticSnippets = new AArch64IntegerArithmeticSnippets(providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
-        floatArithmeticSnippets = new AArch64FloatArithmeticSnippets(providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
-        super.initialize(providers, config);
+    public void initialize(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, GraalHotSpotVMConfig config) {
+        integerArithmeticSnippets = new AArch64IntegerArithmeticSnippets(options, factories, providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
+        floatArithmeticSnippets = new AArch64FloatArithmeticSnippets(options, factories, providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
+        super.initialize(options, factories, providers, config);
     }
 
     @Override

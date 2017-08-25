@@ -22,28 +22,25 @@
  */
 package org.graalvm.compiler.hotspot.sparc;
 
-import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static jdk.vm.ci.sparc.SPARC.g5;
 import static jdk.vm.ci.sparc.SPARC.o7;
+import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.gen.DebugInfoBuilder;
 import org.graalvm.compiler.core.sparc.SPARCNodeLIRBuilder;
 import org.graalvm.compiler.core.sparc.SPARCNodeMatchRules;
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.hotspot.HotSpotDebugInfoBuilder;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerator;
 import org.graalvm.compiler.hotspot.HotSpotLockStack;
 import org.graalvm.compiler.hotspot.HotSpotNodeLIRBuilder;
-import org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotDirectCallTargetNode;
 import org.graalvm.compiler.hotspot.nodes.HotSpotIndirectCallTargetNode;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.lir.sparc.SPARCBreakpointOp;
-import org.graalvm.compiler.lir.sparc.SPARCMove.CompareAndSwapOp;
 import org.graalvm.compiler.nodes.BreakpointNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
@@ -88,18 +85,6 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     public void visitSafepointNode(SafepointNode i) {
         LIRFrameState info = state(i);
         append(new SPARCHotSpotSafepointOp(info, getGen().config, gen));
-    }
-
-    @Override
-    public void visitDirectCompareAndSwap(DirectCompareAndSwapNode x) {
-        AllocatableValue address = gen.asAllocatable(operand(x.getAddress()));
-        AllocatableValue cmpValue = gen.asAllocatable(operand(x.expectedValue()));
-        AllocatableValue newValue = gen.asAllocatable(operand(x.newValue()));
-        assert cmpValue.getValueKind().equals(newValue.getValueKind());
-
-        Variable result = gen.newVariable(newValue.getValueKind());
-        append(new CompareAndSwapOp(result, address, cmpValue, newValue));
-        setResult(x, result);
     }
 
     @Override
@@ -164,7 +149,7 @@ public class SPARCHotSpotNodeLIRBuilder extends SPARCNodeLIRBuilder implements H
     @Override
     public void visitFullInfopointNode(FullInfopointNode i) {
         if (i.getState() != null && i.getState().bci == BytecodeFrame.AFTER_BCI) {
-            Debug.log("Ignoring InfopointNode for AFTER_BCI");
+            i.getDebug().log("Ignoring InfopointNode for AFTER_BCI");
         } else {
             super.visitFullInfopointNode(i);
         }

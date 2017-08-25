@@ -22,24 +22,25 @@
  */
 package org.graalvm.compiler.hotspot.stubs;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.SAFEPOINT;
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.REEXECUTABLE;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
-import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
+import static org.graalvm.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
-import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.nodes.CStringConstant;
 import org.graalvm.compiler.word.Word;
 
@@ -50,8 +51,8 @@ import jdk.vm.ci.code.Register;
  */
 public class CreateExceptionStub extends SnippetStub {
 
-    protected CreateExceptionStub(String snippetMethodName, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
-        super(snippetMethodName, providers, linkage);
+    protected CreateExceptionStub(String snippetMethodName, OptionValues options, HotSpotProviders providers, HotSpotForeignCallLinkage linkage) {
+        super(snippetMethodName, options, providers, linkage);
     }
 
     @Fold

@@ -105,6 +105,7 @@ public abstract class NodePredicates {
             return !a.apply(n);
         }
 
+        @Override
         public NodePredicate negate() {
             return a;
         }
@@ -148,6 +149,7 @@ public abstract class NodePredicates {
             return this;
         }
 
+        @Override
         public NodePredicate negate() {
             return new NegativeTypePredicate(this);
         }
@@ -183,6 +185,7 @@ public abstract class NodePredicates {
             return this;
         }
 
+        @Override
         public NodePredicate negate() {
             return new PositiveTypePredicate(this);
         }

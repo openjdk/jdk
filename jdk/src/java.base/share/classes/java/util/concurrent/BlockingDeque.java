@@ -56,66 +56,66 @@ import java.util.NoSuchElementException;
  * <table class="plain">
  * <caption>Summary of BlockingDeque methods</caption>
  *  <tr>
- *    <td style="text-align:center" COLSPAN = 5> <b>First Element (Head)</b></td>
+ *    <th id="First" colspan="5"> First Element (Head)</th>
  *  </tr>
  *  <tr>
  *    <td></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Special value</em></td>
- *    <td style="text-align:center"><em>Blocks</em></td>
- *    <td style="text-align:center"><em>Times out</em></td>
+ *    <th id="FThrow" style="font-weight:normal; font-style: italic">Throws exception</th>
+ *    <th id="FValue" style="font-weight:normal; font-style: italic">Special value</th>
+ *    <th id="FBlock" style="font-weight:normal; font-style: italic">Blocks</th>
+ *    <th id="FTimes" style="font-weight:normal; font-style: italic">Times out</th>
  *  </tr>
  *  <tr>
- *    <td><b>Insert</b></td>
- *    <td>{@link #addFirst(Object) addFirst(e)}</td>
- *    <td>{@link #offerFirst(Object) offerFirst(e)}</td>
- *    <td>{@link #putFirst(Object) putFirst(e)}</td>
- *    <td>{@link #offerFirst(Object, long, TimeUnit) offerFirst(e, time, unit)}</td>
+ *    <th id="FInsert" style="text-align:left">Insert</th>
+ *    <td headers="First FInsert FThrow">{@link #addFirst(Object) addFirst(e)}</td>
+ *    <td headers="First FInsert FValue">{@link #offerFirst(Object) offerFirst(e)}</td>
+ *    <td headers="First FInsert FBlock">{@link #putFirst(Object) putFirst(e)}</td>
+ *    <td headers="First FInsert FTimes">{@link #offerFirst(Object, long, TimeUnit) offerFirst(e, time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Remove</b></td>
- *    <td>{@link #removeFirst() removeFirst()}</td>
- *    <td>{@link #pollFirst() pollFirst()}</td>
- *    <td>{@link #takeFirst() takeFirst()}</td>
- *    <td>{@link #pollFirst(long, TimeUnit) pollFirst(time, unit)}</td>
+ *    <th id="FRemove" style="text-align:left">Remove</th>
+ *    <td headers="First FRemove FThrow">{@link #removeFirst() removeFirst()}</td>
+ *    <td headers="First FRemove FValue">{@link #pollFirst() pollFirst()}</td>
+ *    <td headers="First FRemove FBlock">{@link #takeFirst() takeFirst()}</td>
+ *    <td headers="First FRemove FTimes">{@link #pollFirst(long, TimeUnit) pollFirst(time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Examine</b></td>
- *    <td>{@link #getFirst() getFirst()}</td>
- *    <td>{@link #peekFirst() peekFirst()}</td>
- *    <td><em>not applicable</em></td>
- *    <td><em>not applicable</em></td>
+ *    <th id="FExamine" style="text-align:left">Examine</th>
+ *    <td headers="First FExamine FThrow">{@link #getFirst() getFirst()}</td>
+ *    <td headers="First FExamine FValue">{@link #peekFirst() peekFirst()}</td>
+ *    <td headers="First FExamine FBlock" style="font-style:italic">not applicable</td>
+ *    <td headers="First FExamine FTimes" style="font-style:italic">not applicable</td>
  *  </tr>
  *  <tr>
- *    <td style="text-align:center" COLSPAN = 5> <b>Last Element (Tail)</b></td>
+ *    <th id="Last" colspan="5"> Last Element (Tail)</th>
  *  </tr>
  *  <tr>
  *    <td></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Special value</em></td>
- *    <td style="text-align:center"><em>Blocks</em></td>
- *    <td style="text-align:center"><em>Times out</em></td>
+ *    <th id="LThrow" style="font-weight:normal; font-style: italic">Throws exception</th>
+ *    <th id="LValue" style="font-weight:normal; font-style: italic">Special value</th>
+ *    <th id="LBlock" style="font-weight:normal; font-style: italic">Blocks</th>
+ *    <th id="LTimes" style="font-weight:normal; font-style: italic">Times out</th>
  *  </tr>
  *  <tr>
- *    <td><b>Insert</b></td>
- *    <td>{@link #addLast(Object) addLast(e)}</td>
- *    <td>{@link #offerLast(Object) offerLast(e)}</td>
- *    <td>{@link #putLast(Object) putLast(e)}</td>
- *    <td>{@link #offerLast(Object, long, TimeUnit) offerLast(e, time, unit)}</td>
+ *    <th id="LInsert" style="text-align:left">Insert</th>
+ *    <td headers="Last LInsert LThrow">{@link #addLast(Object) addLast(e)}</td>
+ *    <td headers="Last LInsert LValue">{@link #offerLast(Object) offerLast(e)}</td>
+ *    <td headers="Last LInsert LBlock">{@link #putLast(Object) putLast(e)}</td>
+ *    <td headers="Last LInsert LTimes">{@link #offerLast(Object, long, TimeUnit) offerLast(e, time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Remove</b></td>
- *    <td>{@link #removeLast() removeLast()}</td>
- *    <td>{@link #pollLast() pollLast()}</td>
- *    <td>{@link #takeLast() takeLast()}</td>
- *    <td>{@link #pollLast(long, TimeUnit) pollLast(time, unit)}</td>
+ *    <th id="LRemove" style="text-align:left">Remove</th>
+ *    <td headers="Last LRemove LThrow">{@link #removeLast() removeLast()}</td>
+ *    <td headers="Last LRemove LValue">{@link #pollLast() pollLast()}</td>
+ *    <td headers="Last LRemove LBlock">{@link #takeLast() takeLast()}</td>
+ *    <td headers="Last LRemove LTimes">{@link #pollLast(long, TimeUnit) pollLast(time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Examine</b></td>
- *    <td>{@link #getLast() getLast()}</td>
- *    <td>{@link #peekLast() peekLast()}</td>
- *    <td><em>not applicable</em></td>
- *    <td><em>not applicable</em></td>
+ *    <th id="LExamine" style="text-align:left">Examine</th>
+ *    <td headers="Last LExamine LThrow">{@link #getLast() getLast()}</td>
+ *    <td headers="Last LExamine LValue">{@link #peekLast() peekLast()}</td>
+ *    <td headers="Last LExamine LBlock" style="font-style:italic">not applicable</td>
+ *    <td headers="Last LExamine LTimes" style="font-style:italic">not applicable</td>
  *  </tr>
  * </table>
  *
@@ -131,57 +131,52 @@ import java.util.NoSuchElementException;
  * <table class="plain">
  * <caption>Comparison of BlockingQueue and BlockingDeque methods</caption>
  *  <tr>
- *    <td style="text-align:center"> <b>{@code BlockingQueue} Method</b></td>
- *    <td style="text-align:center"> <b>Equivalent {@code BlockingDeque} Method</b></td>
+ *    <td></td>
+ *    <th id="BQueue"> {@code BlockingQueue} Method</th>
+ *    <th id="BDeque"> Equivalent {@code BlockingDeque} Method</th>
  *  </tr>
  *  <tr>
- *    <td style="text-align:center" COLSPAN = 2> <b>Insert</b></td>
+ *    <th id="Insert" rowspan="4" style="text-align:left; vertical-align:top">Insert</th>
+ *    <th id="add" style="font-weight:normal; text-align:left">{@link #add(Object) add(e)}</th>
+ *    <td headers="Insert BDeque add">{@link #addLast(Object) addLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #add(Object) add(e)}</td>
- *    <td>{@link #addLast(Object) addLast(e)}</td>
+ *    <th id="offer1" style="font-weight:normal; text-align:left">{@link #offer(Object) offer(e)}</th>
+ *    <td headers="Insert BDeque offer1">{@link #offerLast(Object) offerLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #offer(Object) offer(e)}</td>
- *    <td>{@link #offerLast(Object) offerLast(e)}</td>
+ *    <th id="put" style="font-weight:normal; text-align:left">{@link #put(Object) put(e)}</th>
+ *    <td headers="Insert BDeque put">{@link #putLast(Object) putLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #put(Object) put(e)}</td>
- *    <td>{@link #putLast(Object) putLast(e)}</td>
+ *    <th id="offer2" style="font-weight:normal; text-align:left">{@link #offer(Object, long, TimeUnit) offer(e, time, unit)}</th>
+ *    <td headers="Insert BDeque offer2">{@link #offerLast(Object, long, TimeUnit) offerLast(e, time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #offer(Object, long, TimeUnit) offer(e, time, unit)}</td>
- *    <td>{@link #offerLast(Object, long, TimeUnit) offerLast(e, time, unit)}</td>
+ *    <th id="Remove" rowspan="4" style="text-align:left; vertical-align:top">Remove</th>
+ *    <th id="remove" style="font-weight:normal; text-align:left">{@link #remove() remove()}</th>
+ *    <td headers="Remove BDeque remove">{@link #removeFirst() removeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td style="text-align:center" COLSPAN = 2> <b>Remove</b></td>
+ *    <th id="poll1" style="font-weight:normal; text-align:left">{@link #poll() poll()}</th>
+ *    <td headers="Remove BDeque poll1">{@link #pollFirst() pollFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #remove() remove()}</td>
- *    <td>{@link #removeFirst() removeFirst()}</td>
+ *    <th id="take" style="font-weight:normal; text-align:left">{@link #take() take()}</th>
+ *    <td headers="Remove BDeque take">{@link #takeFirst() takeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #poll() poll()}</td>
- *    <td>{@link #pollFirst() pollFirst()}</td>
+ *    <th id="poll2" style="font-weight:normal; text-align:left">{@link #poll(long, TimeUnit) poll(time, unit)}</th>
+ *    <td headers="Remove BDeque poll2">{@link #pollFirst(long, TimeUnit) pollFirst(time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #take() take()}</td>
- *    <td>{@link #takeFirst() takeFirst()}</td>
+ *    <th id="Examine" rowspan="2" style="text-align:left; vertical-align:top">Examine</th>
+ *    <th id="element" style="font-weight:normal; text-align:left">{@link #element() element()}</th>
+ *    <td headers="Examine BDeque element">{@link #getFirst() getFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #poll(long, TimeUnit) poll(time, unit)}</td>
- *    <td>{@link #pollFirst(long, TimeUnit) pollFirst(time, unit)}</td>
- *  </tr>
- *  <tr>
- *    <td style="text-align:center" COLSPAN = 2> <b>Examine</b></td>
- *  </tr>
- *  <tr>
- *    <td>{@link #element() element()}</td>
- *    <td>{@link #getFirst() getFirst()}</td>
- *  </tr>
- *  <tr>
- *    <td>{@link #peek() peek()}</td>
- *    <td>{@link #peekFirst() peekFirst()}</td>
+ *    <th id="peek" style="font-weight:normal; text-align:left">{@link #peek() peek()}</th>
+ *    <td headers="Examine BDeque peek">{@link #peekFirst() peekFirst()}</td>
  *  </tr>
  * </table>
  *

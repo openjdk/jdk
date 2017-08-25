@@ -35,56 +35,6 @@ import jdk.vm.ci.meta.Value;
  */
 final class FixedInterval extends IntervalHint {
 
-    static final class FixedList {
-
-        public FixedInterval fixed;
-
-        FixedList(FixedInterval fixed) {
-            this.fixed = fixed;
-        }
-
-        /**
-         * Gets the fixed list.
-         */
-        public FixedInterval getFixed() {
-            return fixed;
-        }
-
-        /**
-         * Sets the fixed list.
-         */
-        public void setFixed(FixedInterval list) {
-            fixed = list;
-        }
-
-        /**
-         * Adds an interval to a list sorted by {@linkplain FixedInterval#currentFrom() current
-         * from} positions.
-         *
-         * @param interval the interval to add
-         */
-        public void addToListSortedByCurrentFromPositions(FixedInterval interval) {
-            FixedInterval list = getFixed();
-            FixedInterval prev = null;
-            FixedInterval cur = list;
-            while (cur.currentFrom() < interval.currentFrom()) {
-                prev = cur;
-                cur = cur.next;
-            }
-            FixedInterval result = list;
-            if (prev == null) {
-                // add to head of list
-                result = interval;
-            } else {
-                // add before 'cur'
-                prev.next = interval;
-            }
-            interval.next = cur;
-            setFixed(result);
-        }
-
-    }
-
     /**
      * The fixed operand of this interval.
      */

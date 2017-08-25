@@ -27,6 +27,7 @@
 
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/arrayOop.hpp"
+#include "utilities/align.hpp"
 
 // An objArrayOop is an array containing oops.
 // Evaluating "String arg[10]" will create an objArrayOop.
@@ -62,7 +63,7 @@ private:
     if (HeapWordsPerOop > 0) {
       old_res = length * HeapWordsPerOop;
     } else {
-      old_res = align_size_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
+      old_res = align_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
     }
     assert(res == old_res, "Inconsistency between old and new.");
 #endif  // ASSERT

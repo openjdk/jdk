@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public:
   // Empty constructor, we'll initialize it with the initialize() method.
   HeapRegionManager() : _regions(), _heap_mapper(NULL), _num_committed(0),
                     _next_bitmap_mapper(NULL), _prev_bitmap_mapper(NULL), _bot_mapper(NULL),
-                    _allocated_heapregions_length(0), _available_map(),
+                    _allocated_heapregions_length(0), _available_map(mtGC),
                     _free_list("Free list", new MasterFreeRegionListMtSafeChecker())
   { }
 
@@ -240,7 +240,7 @@ public:
   // terminating the iteration early if doHeapRegion() returns true.
   void iterate(HeapRegionClosure* blk) const;
 
-  void par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer, bool concurrent) const;
+  void par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer) const;
 
   // Uncommit up to num_regions_to_remove regions that are completely free.
   // Return the actual number of uncommitted regions.

@@ -22,13 +22,7 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.Snippet;
-import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.core.common.LocationIdentity;
-import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.NamedLocationIdentity;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -37,33 +31,23 @@ import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.replacements.ReplacementsImpl;
-import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.compiler.word.ObjectAccess;
-import org.graalvm.compiler.word.Pointer;
-import org.graalvm.compiler.word.Word;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.WordFactory;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Tests for the {@link Pointer} read and write operations.
  */
-public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
+public class ObjectAccessTest extends SnippetsTest {
 
     private static final LocationIdentity ID = NamedLocationIdentity.mutable("ObjectAccessTestID");
     private static final JavaKind[] KINDS = new JavaKind[]{JavaKind.Byte, JavaKind.Char, JavaKind.Short, JavaKind.Int, JavaKind.Long, JavaKind.Float, JavaKind.Double, JavaKind.Object};
-    private final ReplacementsImpl installer;
-
-    public ObjectAccessTest() {
-        installer = (ReplacementsImpl) getReplacements();
-    }
-
-    @Override
-    protected StructuredGraph parseEager(ResolvedJavaMethod m, AllowAssumptions allowAssumptions, CompilationIdentifier compilationId) {
-        return installer.makeGraph(m, null, null);
-    }
 
     @Test
     public void testRead1() {
@@ -158,7 +142,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static byte readByte2(Object o, int offset) {
-        return ObjectAccess.readByte(o, Word.signed(offset), ID);
+        return ObjectAccess.readByte(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -173,7 +157,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeByte2(Object o, int offset, byte value) {
-        ObjectAccess.writeByte(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeByte(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -188,7 +172,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static char readChar2(Object o, int offset) {
-        return ObjectAccess.readChar(o, Word.signed(offset), ID);
+        return ObjectAccess.readChar(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -203,7 +187,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeChar2(Object o, int offset, char value) {
-        ObjectAccess.writeChar(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeChar(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -218,7 +202,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static short readShort2(Object o, int offset) {
-        return ObjectAccess.readShort(o, Word.signed(offset), ID);
+        return ObjectAccess.readShort(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -233,7 +217,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeShort2(Object o, int offset, short value) {
-        ObjectAccess.writeShort(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeShort(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -248,7 +232,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static int readInt2(Object o, int offset) {
-        return ObjectAccess.readInt(o, Word.signed(offset), ID);
+        return ObjectAccess.readInt(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -263,7 +247,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeInt2(Object o, int offset, int value) {
-        ObjectAccess.writeInt(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeInt(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -278,7 +262,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static long readLong2(Object o, int offset) {
-        return ObjectAccess.readLong(o, Word.signed(offset), ID);
+        return ObjectAccess.readLong(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -293,7 +277,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeLong2(Object o, int offset, long value) {
-        ObjectAccess.writeLong(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeLong(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -308,7 +292,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static float readFloat2(Object o, int offset) {
-        return ObjectAccess.readFloat(o, Word.signed(offset), ID);
+        return ObjectAccess.readFloat(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -323,7 +307,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeFloat2(Object o, int offset, float value) {
-        ObjectAccess.writeFloat(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeFloat(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -338,7 +322,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static double readDouble2(Object o, int offset) {
-        return ObjectAccess.readDouble(o, Word.signed(offset), ID);
+        return ObjectAccess.readDouble(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -353,7 +337,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeDouble2(Object o, int offset, double value) {
-        ObjectAccess.writeDouble(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeDouble(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet
@@ -368,7 +352,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static Object readObject2(Object o, int offset) {
-        return ObjectAccess.readObject(o, Word.signed(offset), ID);
+        return ObjectAccess.readObject(o, WordFactory.signed(offset), ID);
     }
 
     @Snippet
@@ -383,7 +367,7 @@ public class ObjectAccessTest extends GraalCompilerTest implements Snippets {
 
     @Snippet
     public static void writeObject2(Object o, int offset, Object value) {
-        ObjectAccess.writeObject(o, Word.signed(offset), value, ID);
+        ObjectAccess.writeObject(o, WordFactory.signed(offset), value, ID);
     }
 
     @Snippet

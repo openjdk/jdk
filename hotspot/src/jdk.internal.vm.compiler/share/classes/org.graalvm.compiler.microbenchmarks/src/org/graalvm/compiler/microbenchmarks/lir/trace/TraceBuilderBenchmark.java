@@ -44,12 +44,12 @@ public class TraceBuilderBenchmark extends GraalBenchmark {
 
     @Benchmark
     public TraceBuilderResult uniDirectionalTraceBuilder(State s) {
-        return UniDirectionalTraceBuilder.computeTraces(s.cfg.getStartBlock(), s.cfg.getBlocks(), TraceBuilderPhase.getTrivialTracePredicate(s.getLIR()));
+        return UniDirectionalTraceBuilder.computeTraces(s.getLIR().getDebug(), s.cfg.getStartBlock(), s.cfg.getBlocks(), TraceBuilderPhase.getTrivialTracePredicate(s.getLIR()));
     }
 
     @Benchmark
     public TraceBuilderResult biDirectionalTraceBuilder(State s) {
-        return BiDirectionalTraceBuilder.computeTraces(s.cfg.getStartBlock(), s.cfg.getBlocks(), TraceBuilderPhase.getTrivialTracePredicate(s.getLIR()));
+        return BiDirectionalTraceBuilder.computeTraces(s.getLIR().getDebug(), s.cfg.getStartBlock(), s.cfg.getBlocks(), TraceBuilderPhase.getTrivialTracePredicate(s.getLIR()));
     }
 
 }

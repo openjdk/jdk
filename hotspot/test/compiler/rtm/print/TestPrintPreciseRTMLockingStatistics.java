@@ -31,6 +31,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -46,13 +47,8 @@ import compiler.testlibrary.rtm.AbortProvoker;
 import compiler.testlibrary.rtm.AbortType;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedOS;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -64,13 +60,8 @@ import java.util.List;
  * -XX:+PrintPreciseRTMLockingStatistics locking statistics contains sane
  * total locks and aborts count as well as for specific abort types.
  */
-public class TestPrintPreciseRTMLockingStatistics
-        extends CommandLineOptionTest {
-    private TestPrintPreciseRTMLockingStatistics() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
-    }
+public class TestPrintPreciseRTMLockingStatistics {
 
-    @Override
     public void runTestCases() throws Throwable {
         verifyNoStatistics();
         verifyStatistics();
@@ -147,6 +138,6 @@ public class TestPrintPreciseRTMLockingStatistics
     }
 
     public static void main(String args[]) throws Throwable {
-        new TestPrintPreciseRTMLockingStatistics().test();
+        new TestPrintPreciseRTMLockingStatistics().runTestCases();
     }
 }

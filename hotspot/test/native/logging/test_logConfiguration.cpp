@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvm.h"
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
@@ -362,7 +363,8 @@ TEST_VM_F(LogConfigurationTest, subscribe) {
 
   LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
 
-  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, log.error_stream());
+  LogStream ls(log.error());
+  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, &ls);
   ASSERT_EQ(1, Test_logconfiguration_subscribe_triggered);
 
   LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));

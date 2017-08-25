@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
 #define SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
 
+#include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 
 // The Concurrent Mark GC Thread triggers the parallel G1CMConcurrentMarkingTasks
@@ -49,6 +50,9 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   };
 
   volatile State _state;
+
+  // WhiteBox testing support.
+  ConcurrentGCPhaseManager::Stack _phase_manager_stack;
 
   void sleepBeforeNextCycle();
   void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
@@ -83,6 +87,14 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // as the CM thread might take some time to wake up before noticing
   // that started() is set and set in_progress().
   bool during_cycle()      { return !idle(); }
+
+  // WhiteBox testing support.
+  const char* const* concurrent_phases() const;
+  bool request_concurrent_phase(const char* phase);
+
+  ConcurrentGCPhaseManager::Stack* phase_manager_stack() {
+    return &_phase_manager_stack;
+  }
 };
 
 #endif // SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP

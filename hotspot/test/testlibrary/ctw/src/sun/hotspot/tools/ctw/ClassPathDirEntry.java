@@ -23,94 +23,73 @@
 
 package sun.hotspot.tools.ctw;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Set;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.concurrent.Executor;
 
-import java.io.*;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 /**
  * Handler for dirs containing classes to compile.
  */
-public class ClassPathDirEntry extends PathHandler {
+public class ClassPathDirEntry extends PathHandler.PathEntry {
+    private final int rootLength;
 
-    private final int rootLength = root.toString().length();
+    public ClassPathDirEntry(Path root) {
+        super(root);
+        if (!Files.exists(root)) {
+            throw new Error(root + " dir does not exist");
+        }
+        rootLength = root.toString()
+                         .length();
+    }
 
-    public ClassPathDirEntry(Path root, Executor executor) {
-        super(root, executor);
+    @Override
+    protected Stream<String> classes() {
         try {
-            URL url = root.toUri().toURL();
-            setLoader(new URLClassLoader(new URL[]{url}));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            return Files.walk(root, Integer.MAX_VALUE, FileVisitOption.FOLLOW_LINKS)
+                        .filter(p -> Utils.isClassFile(p.toString()))
+                        .map(this::pathToClassName);
+        } catch (IOException e) {
+            throw new Error("can not traverse " + root + " : " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void process() {
-        CompileTheWorld.OUT.println("# dir: " + root);
-        if (!Files.exists(root)) {
-            return;
-        }
-        try {
-            Files.walkFileTree(root, EnumSet.of(FileVisitOption.FOLLOW_LINKS),
-                    Integer.MAX_VALUE, new CompileFileVisitor());
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+    protected String description() {
+        return "# dir: " + root;
     }
 
-    private void processFile(Path file) {
-        if (Utils.isClassFile(file.toString())) {
-            processClass(pathToClassName(file));
+    @Override
+    protected byte[] findByteCode(String classname) {
+        Path path = root;
+        for (String c : Utils.classNameToFileName(classname).split("/")) {
+            path = path.resolve(c);
+        }
+        if (!path.toFile()
+                 .exists()) {
+            return null;
+        }
+        try {
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            e.printStackTrace(CompileTheWorld.ERR);
+            return null;
         }
     }
 
     private String pathToClassName(Path file) {
         String fileString;
         if (root == file) {
-            fileString = file.normalize().toString();
+            fileString = file.normalize()
+                             .toString();
         } else {
-            fileString = file.normalize().toString().substring(rootLength + 1);
+            fileString = file.normalize()
+                             .toString()
+                             .substring(rootLength + 1);
         }
         return Utils.fileNameToClassName(fileString);
-    }
-
-    private class CompileFileVisitor extends SimpleFileVisitor<Path> {
-
-        private final Set<Path> ready = new HashSet<>();
-
-        @Override
-        public FileVisitResult preVisitDirectory(Path dir,
-                BasicFileAttributes attrs) throws IOException {
-            if (ready.contains(dir)) {
-                return FileVisitResult.SKIP_SUBTREE;
-            }
-            ready.add(dir);
-            return super.preVisitDirectory(dir, attrs);
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path file,
-                BasicFileAttributes attrs) throws IOException {
-            if (!ready.contains(file)) {
-                processFile(file);
-            }
-            return isFinished() ? FileVisitResult.TERMINATE
-                    : FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path file,
-                IOException exc) throws IOException {
-            return FileVisitResult.CONTINUE;
-        }
     }
 }
 

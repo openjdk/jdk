@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,17 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvm.h"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
-#include "prims/methodHandles.hpp"
 
 //
 //
@@ -237,6 +238,8 @@ void RetTable::compute_ret_table(const methodHandle& method) {
       case Bytecodes::_jsr_w:
         add_jsr(i.next_bci(), i.dest_w());
         break;
+      default:
+        break;
     }
   }
 }
@@ -430,11 +433,17 @@ void GenerateOopMap::mark_bbheaders_and_count_gc_points() {
         assert(!fellThrough, "should not happen");
         bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), NULL);
         break;
+      default:
+        break;
     }
 
     if (possible_gc_point(&bcs))
       _gc_points++;
   }
+}
+
+void GenerateOopMap::set_bbmark_bit(int bci) {
+  _bb_hdr_bits.at_put(bci, true);
 }
 
 void GenerateOopMap::reachable_basicblock(GenerateOopMap *c, int bci, int *data) {
@@ -484,6 +493,8 @@ void GenerateOopMap::mark_reachable_code() {
           case Bytecodes::_jsr_w:
             assert(!fell_through, "should not happen");
             reachable_basicblock(this, bci + Bytecodes::length_for(bytecode), &change);
+            break;
+          default:
             break;
         }
         if (fell_through) {
@@ -1183,6 +1194,9 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
         return;
       }
       break;
+
+    default:
+      break;
   }
 
   if (_has_exceptions) {
@@ -1251,10 +1265,10 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
   ResourceMark rm;
-  outputStream* out = Log(monitormismatch)::info_stream();
-  out->print("Monitor mismatch in method ");
-  method()->print_short_name(out);
-  out->print_cr(": %s", msg);
+  LogStream ls(Log(monitormismatch)::info());
+  ls.print("Monitor mismatch in method ");
+  method()->print_short_name(&ls);
+  ls.print_cr(": %s", msg);
 }
 
 void GenerateOopMap::print_states(outputStream *os,
@@ -1268,24 +1282,38 @@ void GenerateOopMap::print_states(outputStream *os,
 void GenerateOopMap::print_current_state(outputStream   *os,
                                          BytecodeStream *currentBC,
                                          bool            detailed) {
-
   if (detailed) {
     os->print("     %4d vars     = ", currentBC->bci());
     print_states(os, vars(), _max_locals);
     os->print("    %s", Bytecodes::name(currentBC->code()));
-    switch(currentBC->code()) {
-      case Bytecodes::_invokevirtual:
-      case Bytecodes::_invokespecial:
-      case Bytecodes::_invokestatic:
-      case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokeinterface:
-        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
-        ConstantPool* cp      = method()->constants();
-        int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
-        int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-        Symbol* signature     = cp->symbol_at(signatureIdx);
-        os->print("%s", signature->as_C_string());
+  } else {
+    os->print("    %4d  vars = '%s' ", currentBC->bci(),  state_vec_to_string(vars(), _max_locals));
+    os->print("     stack = '%s' ", state_vec_to_string(stack(), _stack_top));
+    if (_monitor_top != bad_monitors) {
+      os->print("  monitors = '%s'  \t%s", state_vec_to_string(monitors(), _monitor_top), Bytecodes::name(currentBC->code()));
+    } else {
+      os->print("  [bad monitor stack]");
     }
+  }
+
+  switch(currentBC->code()) {
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokedynamic:
+    case Bytecodes::_invokeinterface: {
+      int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
+      ConstantPool* cp      = method()->constants();
+      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
+      int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
+      Symbol* signature     = cp->symbol_at(signatureIdx);
+      os->print("%s", signature->as_C_string());
+    }
+    default:
+      break;
+  }
+
+  if (detailed) {
     os->cr();
     os->print("          stack    = ");
     print_states(os, stack(), _stack_top);
@@ -1296,30 +1324,9 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     } else {
       os->print("          [bad monitor stack]");
     }
-    os->cr();
-  } else {
-    os->print("    %4d  vars = '%s' ", currentBC->bci(),  state_vec_to_string(vars(), _max_locals));
-    os->print("     stack = '%s' ", state_vec_to_string(stack(), _stack_top));
-    if (_monitor_top != bad_monitors) {
-      os->print("  monitors = '%s'  \t%s", state_vec_to_string(monitors(), _monitor_top), Bytecodes::name(currentBC->code()));
-    } else {
-      os->print("  [bad monitor stack]");
-    }
-    switch(currentBC->code()) {
-      case Bytecodes::_invokevirtual:
-      case Bytecodes::_invokespecial:
-      case Bytecodes::_invokestatic:
-      case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokeinterface:
-        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
-        ConstantPool* cp      = method()->constants();
-        int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
-        int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-        Symbol* signature     = cp->symbol_at(signatureIdx);
-        os->print("%s", signature->as_C_string());
-    }
-    os->cr();
   }
+
+  os->cr();
 }
 
 // Sets the current state to be the state after executing the
@@ -2472,8 +2479,9 @@ bool GenerateOopMap::is_astore(BytecodeStream *itr, int *index) {
     case Bytecodes::_astore:
       *index = itr->get_index();
       return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 bool GenerateOopMap::is_aload(BytecodeStream *itr, int *index) {
@@ -2489,8 +2497,10 @@ bool GenerateOopMap::is_aload(BytecodeStream *itr, int *index) {
     case Bytecodes::_aload:
       *index = itr->get_index();
       return true;
+
+    default:
+      return false;
   }
-  return false;
 }
 
 
