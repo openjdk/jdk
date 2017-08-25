@@ -80,7 +80,7 @@ class vframeStreamForte : public vframeStreamCommon {
 };
 
 
-static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm);
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, CompiledMethod* nm);
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
                                               frame* fr,
                                               Method** method_p,
@@ -144,9 +144,9 @@ void vframeStreamForte::forte_next() {
 }
 
 // Determine if 'fr' is a decipherable compiled frame. We are already
-// assured that fr is for a java nmethod.
+// assured that fr is for a java compiled method.
 
-static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm) {
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, CompiledMethod* nm) {
   assert(nm->is_java_method(), "invariant");
 
   if (thread->has_last_Java_frame() && thread->last_Java_pc() == fr->pc()) {
@@ -161,7 +161,7 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmetho
     }
   }
 
-  // We're at some random pc in the nmethod so search for the PcDesc
+  // We're at some random pc in the compiled method so search for the PcDesc
   // whose pc is greater than the current PC.  It's done this way
   // because the extra PcDescs that are recorded for improved debug
   // info record the end of the region covered by the ScopeDesc
@@ -299,7 +299,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
                                     Method** method_p,
                                     int* bci_p) {
 
-  // It is possible that for a frame containing an nmethod
+  // It is possible that for a frame containing a compiled method
   // we can capture the method but no bci. If we get no
   // bci the frame isn't walkable but the method is usable.
   // Therefore we init the returned Method* to NULL so the
@@ -360,9 +360,9 @@ static bool find_initial_Java_frame(JavaThread* thread,
       return false;
     }
 
-    if (candidate.cb()->is_nmethod()) {
+    if (candidate.cb()->is_compiled()) {
 
-      nmethod* nm = (nmethod*) candidate.cb();
+      CompiledMethod* nm = candidate.cb()->as_compiled_method();
       *method_p = nm->method();
 
       // If the frame is not decipherable, then the value of -1

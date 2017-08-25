@@ -28,8 +28,8 @@ import static org.graalvm.compiler.core.common.GraalOptions.MinimumPeelProbabili
 
 import java.util.List;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -37,33 +37,41 @@ import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.MergeNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.VirtualState;
 import org.graalvm.compiler.nodes.VirtualState.VirtualClosure;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.nodes.debug.ControlFlowAnchorNode;
 import org.graalvm.compiler.nodes.java.TypeSwitchNode;
 import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
-import org.graalvm.compiler.options.OptionValue;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.MetaAccessProvider;
 
 public class DefaultLoopPolicies implements LoopPolicies {
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Integer> LoopUnswitchMaxIncrease = new OptionValue<>(500);
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Integer> LoopUnswitchTrivial = new OptionValue<>(10);
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Double> LoopUnswitchFrequencyBoost = new OptionValue<>(10.0);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchMaxIncrease = new OptionKey<>(500);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> LoopUnswitchTrivial = new OptionKey<>(10);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Double> LoopUnswitchFrequencyBoost = new OptionKey<>(10.0);
 
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Integer> FullUnrollMaxNodes = new OptionValue<>(300);
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Integer> FullUnrollMaxIterations = new OptionValue<>(600);
-    @Option(help = "", type = OptionType.Expert) public static final OptionValue<Integer> ExactFullUnrollMaxNodes = new OptionValue<>(1200);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxNodes = new OptionKey<>(300);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> FullUnrollMaxIterations = new OptionKey<>(600);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactFullUnrollMaxNodes = new OptionKey<>(1200);
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> ExactPartialUnrollMaxNodes = new OptionKey<>(200);
+
+    @Option(help = "", type = OptionType.Expert) public static final OptionKey<Integer> UnrollMaxIterations = new OptionKey<>(16);
 
     @Override
     public boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess) {
         LoopBeginNode loopBegin = loop.loopBegin();
         double entryProbability = cfg.blockFor(loopBegin.forwardEnd()).probability();
-        if (entryProbability > MinimumPeelProbability.getValue() && loop.size() + loopBegin.graph().getNodeCount() < MaximumDesiredSize.getValue()) {
+        OptionValues options = cfg.graph.getOptions();
+        if (entryProbability > MinimumPeelProbability.getValue(options) && loop.size() + loopBegin.graph().getNodeCount() < MaximumDesiredSize.getValue(options)) {
             // check whether we're allowed to peel this loop
             return loop.canDuplicateLoop();
         } else {
@@ -76,14 +84,57 @@ public class DefaultLoopPolicies implements LoopPolicies {
         if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
             return false;
         }
+        OptionValues options = loop.entryPoint().getOptions();
         CountedLoopInfo counted = loop.counted();
         long maxTrips = counted.constantMaxTripCount();
-        int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? ExactFullUnrollMaxNodes.getValue() : FullUnrollMaxNodes.getValue();
-        maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue() - loop.loopBegin().graph().getNodeCount()));
+        int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? ExactFullUnrollMaxNodes.getValue(options) : FullUnrollMaxNodes.getValue(options);
+        maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
-        if (maxTrips <= FullUnrollMaxIterations.getValue() && size * (maxTrips - 1) <= maxNodes) {
+        if (maxTrips <= FullUnrollMaxIterations.getValue(options) && size * (maxTrips - 1) <= maxNodes) {
             // check whether we're allowed to unroll this loop
             return loop.canDuplicateLoop();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean shouldPartiallyUnroll(LoopEx loop) {
+        if (!loop.isCounted()) {
+            return false;
+        }
+        OptionValues options = loop.entryPoint().getOptions();
+        LoopBeginNode loopBegin = loop.loopBegin();
+        int maxNodes = ExactPartialUnrollMaxNodes.getValue(options);
+        maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
+        int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
+        int unrollFactor = loopBegin.getUnrollFactor();
+        if (unrollFactor == 1) {
+            double loopFrequency = loopBegin.loopFrequency();
+            if (loopBegin.isSimpleLoop() && loopFrequency < 5.0) {
+                return false;
+            }
+            loopBegin.setLoopOrigFrequency(loopFrequency);
+        }
+        int maxUnroll = UnrollMaxIterations.getValue(options);
+        // Now correct size for the next unroll. UnrollMaxIterations == 1 means perform the
+        // pre/main/post transformation but don't actually unroll the main loop.
+        size += size;
+        if (maxUnroll == 1 && loopBegin.isSimpleLoop() || size <= maxNodes && unrollFactor < maxUnroll) {
+            // Will the next unroll fit?
+            if ((int) loopBegin.loopOrigFrequency() < (unrollFactor * 2)) {
+                return false;
+            }
+            // Check whether we're allowed to unroll this loop
+            for (Node node : loop.inside().nodes()) {
+                if (node instanceof ControlFlowAnchorNode) {
+                    return false;
+                }
+                if (node instanceof InvokeNode) {
+                    return false;
+                }
+            }
+            return true;
         } else {
             return false;
         }
@@ -96,7 +147,8 @@ public class DefaultLoopPolicies implements LoopPolicies {
         if (loopFrequency <= 1.0) {
             return false;
         }
-        return loopBegin.unswitches() <= LoopMaxUnswitch.getValue();
+        OptionValues options = loop.entryPoint().getOptions();
+        return loopBegin.unswitches() <= LoopMaxUnswitch.getValue(options);
     }
 
     private static final class CountingClosure implements VirtualClosure {
@@ -109,13 +161,15 @@ public class DefaultLoopPolicies implements LoopPolicies {
     }
 
     private static class IsolatedInitialization {
-        static final DebugCounter UNSWITCH_SPLIT_WITH_PHIS = Debug.counter("UnswitchSplitWithPhis");
+        static final CounterKey UNSWITCH_SPLIT_WITH_PHIS = DebugContext.counter("UnswitchSplitWithPhis");
     }
 
     @Override
     public boolean shouldUnswitch(LoopEx loop, List<ControlSplitNode> controlSplits) {
         int phis = 0;
-        NodeBitMap branchNodes = loop.loopBegin().graph().createNodeBitMap();
+        StructuredGraph graph = loop.loopBegin().graph();
+        DebugContext debug = graph.getDebug();
+        NodeBitMap branchNodes = graph.createNodeBitMap();
         for (ControlSplitNode controlSplit : controlSplits) {
             for (Node successor : controlSplit.successors()) {
                 AbstractBeginNode branch = (AbstractBeginNode) successor;
@@ -124,7 +178,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             }
             Block postDomBlock = loop.loopsData().getCFG().blockFor(controlSplit).getPostdominator();
             if (postDomBlock != null) {
-                IsolatedInitialization.UNSWITCH_SPLIT_WITH_PHIS.increment();
+                IsolatedInitialization.UNSWITCH_SPLIT_WITH_PHIS.increment(debug);
                 phis += ((MergeNode) postDomBlock.getBeginNode()).phis().count();
             }
         }
@@ -132,10 +186,11 @@ public class DefaultLoopPolicies implements LoopPolicies {
 
         CountingClosure stateNodesCount = new CountingClosure();
         double loopFrequency = loop.loopBegin().loopFrequency();
-        int maxDiff = LoopUnswitchTrivial.getValue() + (int) (LoopUnswitchFrequencyBoost.getValue() * (loopFrequency - 1.0 + phis));
+        OptionValues options = loop.loopBegin().getOptions();
+        int maxDiff = LoopUnswitchTrivial.getValue(options) + (int) (LoopUnswitchFrequencyBoost.getValue(options) * (loopFrequency - 1.0 + phis));
 
-        maxDiff = Math.min(maxDiff, LoopUnswitchMaxIncrease.getValue());
-        int remainingGraphSpace = MaximumDesiredSize.getValue() - loop.loopBegin().graph().getNodeCount();
+        maxDiff = Math.min(maxDiff, LoopUnswitchMaxIncrease.getValue(options));
+        int remainingGraphSpace = MaximumDesiredSize.getValue(options) - graph.getNodeCount();
         maxDiff = Math.min(maxDiff, remainingGraphSpace);
 
         loop.loopBegin().stateAfter().applyToVirtual(stateNodesCount);
@@ -156,7 +211,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             actualDiff = actualDiff * copies;
         }
 
-        Debug.log("shouldUnswitch(%s, %s) : delta=%d (%.2f%% inside of branches), max=%d, f=%.2f, phis=%d -> %b", loop, controlSplits, actualDiff, (double) (inBranchTotal) / loopTotal * 100, maxDiff,
+        debug.log("shouldUnswitch(%s, %s) : delta=%d (%.2f%% inside of branches), max=%d, f=%.2f, phis=%d -> %b", loop, controlSplits, actualDiff, (double) (inBranchTotal) / loopTotal * 100, maxDiff,
                         loopFrequency, phis, actualDiff <= maxDiff);
         if (actualDiff <= maxDiff) {
             // check whether we're allowed to unswitch this loop

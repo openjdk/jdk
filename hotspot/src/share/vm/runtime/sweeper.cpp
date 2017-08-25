@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/atomic.hpp"
@@ -51,7 +53,7 @@ class SweeperRecord {
  public:
   int traversal;
   int compile_id;
-  long traversal_mark;
+  jlong traversal_mark;
   int state;
   const char* kind;
   address vep;
@@ -60,7 +62,7 @@ class SweeperRecord {
 
   void print() {
       tty->print_cr("traversal = %d compile_id = %d %s uep = " PTR_FORMAT " vep = "
-                    PTR_FORMAT " state = %d traversal_mark %ld line = %d",
+                    PTR_FORMAT " state = %d traversal_mark "JLONG_FORMAT" line = %d",
                     traversal,
                     compile_id,
                     kind == NULL ? "" : kind,
@@ -112,7 +114,7 @@ void NMethodSweeper::report_events() {
 void NMethodSweeper::record_sweep(CompiledMethod* nm, int line) {
   if (_records != NULL) {
     _records[_sweep_index].traversal = _traversals;
-    _records[_sweep_index].traversal_mark = nm->is_nmethod() ? ((nmethod*)nm)->_stack_traversal_mark : 0;
+    _records[_sweep_index].traversal_mark = nm->is_nmethod() ? ((nmethod*)nm)->stack_traversal_mark() : 0;
     _records[_sweep_index].compile_id = nm->compile_id();
     _records[_sweep_index].kind = nm->compile_kind();
     _records[_sweep_index].state = nm->get_state();
@@ -199,11 +201,18 @@ bool NMethodSweeper::wait_for_stack_scanning() {
   * safepoint.
   */
 void NMethodSweeper::mark_active_nmethods() {
+  CodeBlobClosure* cl = prepare_mark_active_nmethods();
+  if (cl != NULL) {
+    Threads::nmethods_do(cl);
+  }
+}
+
+CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be executed at a safepoint");
   // If we do not want to reclaim not-entrant or zombie methods there is no need
   // to scan stacks
   if (!MethodFlushing) {
-    return;
+    return NULL;
   }
 
   // Increase time so that we can estimate when to invoke the sweeper again.
@@ -231,14 +240,13 @@ void NMethodSweeper::mark_active_nmethods() {
     if (PrintMethodFlushing) {
       tty->print_cr("### Sweep: stack traversal %ld", _traversals);
     }
-    Threads::nmethods_do(&mark_activation_closure);
+    return &mark_activation_closure;
 
   } else {
     // Only set hotness counter
-    Threads::nmethods_do(&set_hotness_closure);
+    return &set_hotness_closure;
   }
 
-  OrderAccess::storestore();
 }
 
 /**
@@ -403,6 +411,8 @@ void NMethodSweeper::sweep_code_cache() {
   ResourceMark rm;
   Ticks sweep_start_counter = Ticks::now();
 
+  log_debug(codecache, sweep, start)("CodeCache flushing");
+
   int flushed_count                = 0;
   int zombified_count              = 0;
   int flushed_c2_count     = 0;
@@ -500,6 +510,11 @@ void NMethodSweeper::sweep_code_cache() {
   }
 #endif
 
+  Log(codecache, sweep) log;
+  if (log.is_debug()) {
+    LogStream ls(log.debug());
+    CodeCache::print_summary(&ls, false);
+  }
   log_sweep("finished");
 
   // Sweeper is the only case where memory is released, check here if it
@@ -513,6 +528,7 @@ void NMethodSweeper::sweep_code_cache() {
   // cache. As a result, 'freed_memory' > 0 to restart the compiler.
   if (!CompileBroker::should_compile_new_jobs() && (freed_memory > 0)) {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
+    log.debug("restart compiler");
     log_sweep("restart_compiler");
   }
 }

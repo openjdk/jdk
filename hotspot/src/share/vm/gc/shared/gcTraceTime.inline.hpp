@@ -30,7 +30,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/logStream.hpp"
 #include "memory/universe.hpp"
 #include "prims/jni_md.h"
 #include "utilities/ticks.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1359,7 +1359,7 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   if (C->env()->dtrace_alloc_probes() ||
-      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc())) {
+      (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc())) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;
@@ -2664,7 +2664,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque1   ||
                n->Opcode() == Op_Opaque2   ||
-               n->Opcode() == Op_Opaque3, "unknown node type in macro list");
+               n->Opcode() == Op_Opaque3   ||
+               n->Opcode() == Op_Opaque4, "unknown node type in macro list");
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2729,6 +2730,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
+      } else if (n->Opcode() == Op_Opaque4) {
+        _igvn.replace_node(n, n->in(2));
+        success = true;
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;

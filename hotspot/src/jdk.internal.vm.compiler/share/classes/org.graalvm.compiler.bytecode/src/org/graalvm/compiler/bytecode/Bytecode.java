@@ -63,6 +63,11 @@ public interface Bytecode {
 
     ExceptionHandler[] getExceptionHandlers();
 
+    /**
+     * Gets the {@link BytecodeProvider} from which this object was acquired.
+     */
+    BytecodeProvider getOrigin();
+
     static String toLocation(Bytecode bytecode, int bci) {
         return appendLocation(new StringBuilder(), bytecode, bci).toString();
     }

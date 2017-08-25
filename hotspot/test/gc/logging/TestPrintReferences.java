@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,31 +31,73 @@
  *          java.management
  */
 
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestPrintReferences {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb_enabled =
-      ProcessTools.createJavaProcessBuilder("-Xlog:gc+ref=debug", "-Xmx10M", GCTest.class.getName());
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
+                                                                      "-XX:+UseG1GC",
+                                                                      "-Xmx10M",
+                                                                      GCTest.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
-    String countRegex = "[0-9]+ refs";
+    String indent_4 = "    ";
+    String indent_6 = "      ";
+    String indent_8 = "        ";
+    String gcLogTimeRegex = ".* GC\\([0-9]+\\) ";
+    String countRegex = "[0-9]+";
     String timeRegex = "[0-9]+[.,][0-9]+ms";
+    String totalRegex = gcLogTimeRegex + indent_4 + "Reference Processing: " + timeRegex + "\n";
+    String balanceRegex = gcLogTimeRegex + indent_8 + "Balance queues: " + timeRegex + "\n";
+    String softRefRegex = gcLogTimeRegex + indent_6 + "SoftReference: " + timeRegex + "\n";
+    String weakRefRegex = gcLogTimeRegex + indent_6 + "WeakReference: " + timeRegex + "\n";
+    String finalRefRegex = gcLogTimeRegex + indent_6 + "FinalReference: " + timeRegex + "\n";
+    String phantomRefRegex = gcLogTimeRegex + indent_6 + "PhantomReference: " + timeRegex + "\n";
+    String refDetailRegex = gcLogTimeRegex + indent_8 + "Phase2: " + timeRegex + "\n" +
+                            gcLogTimeRegex + indent_8 + "Phase3: " + timeRegex + "\n" +
+                            gcLogTimeRegex + indent_8 + "Discovered: " + countRegex + "\n" +
+                            gcLogTimeRegex + indent_8 + "Cleared: " + countRegex + "\n";
+    String softRefDetailRegex = gcLogTimeRegex + indent_8 + "Phase1: " + timeRegex + "\n" + refDetailRegex;
+    String enqueueRegex = gcLogTimeRegex + indent_4 + "Reference Enqueuing: " + timeRegex + "\n";
+    String enqueueDetailRegex = gcLogTimeRegex + indent_6 + "Reference Counts:  Soft: " + countRegex +
+                                "  Weak: " + countRegex + "  Final: " + countRegex + "  Phantom: " + countRegex + "\n";
 
-    output.shouldMatch(".* GC\\([0-9]+\\) SoftReference " + timeRegex + "\n" +
-                       ".* GC\\([0-9]+\\) WeakReference " + timeRegex + "\n" +
-                       ".* GC\\([0-9]+\\) FinalReference " + timeRegex + "\n" +
-                       ".* GC\\([0-9]+\\) PhantomReference " + timeRegex + "\n" +
-                       ".* GC\\([0-9]+\\) JNI Weak Reference " + timeRegex + "\n" +
-                       ".* GC\\([0-9]+\\) Ref Counts: Soft: [0-9]+ Weak: [0-9]+ Final: [0-9]+ Phantom: [0-9]+\n");
+    output.shouldMatch(/* Total Reference processing time */
+                       totalRegex +
+                       /* SoftReference processing */
+                       softRefRegex + balanceRegex + softRefDetailRegex +
+                       /* WeakReference processing */
+                       weakRefRegex + balanceRegex + refDetailRegex +
+                       /* FinalReference processing */
+                       finalRefRegex + balanceRegex + refDetailRegex +
+                       /* PhantomReference processing */
+                       phantomRefRegex + balanceRegex + refDetailRegex +
+                       /* Total Enqueuing time */
+                       enqueueRegex +
+                         /* Enqueued Stats */
+                       enqueueDetailRegex
+                       );
 
     output.shouldHaveExitValue(0);
   }
 
   static class GCTest {
+    static final int M = 1024 * 1024;
+
     public static void main(String [] args) {
-      System.gc();
+
+      ArrayList arrSoftRefs = new ArrayList();
+
+      // Populate to triger GC and then Reference related logs will be printed.
+      for (int i = 0; i < 10; i++) {
+        byte[] tmp = new byte[M];
+
+        arrSoftRefs.add(new SoftReference(tmp));
+      }
     }
   }
 }

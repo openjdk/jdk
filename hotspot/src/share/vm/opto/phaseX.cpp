@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,7 @@ void NodeHash::operator=(const NodeHash& nh) {
   // Unlock all nodes upon replacement of table.
   if (&nh == this)  return;
   if (_table != (Node**)badAddress)  clear();
-  memcpy(this, &nh, sizeof(*this));
+  memcpy((void*)this, (void*)&nh, sizeof(*this));
   // Do not increment hash_lock counts again.
   // Instead, be sure we never again use the source table.
   ((NodeHash*)&nh)->_table = (Node**)badAddress;
@@ -694,6 +694,7 @@ ConNode* PhaseTransform::makecon(const Type *t) {
   case Type::Top:  return (ConNode*) C->top();
   case Type::Int:  return intcon( t->is_int()->get_con() );
   case Type::Long: return longcon( t->is_long()->get_con() );
+  default:         break;
   }
   if (t->is_zero_type())
     return zerocon(t->basic_type());
@@ -1674,6 +1675,8 @@ static bool ccp_type_widens(const Type* t, const Type* t0) {
     break;
   case Type::Long:
     assert(t0->isa_long()->_widen <= t->isa_long()->_widen, "widen increases");
+    break;
+  default:
     break;
   }
   return true;

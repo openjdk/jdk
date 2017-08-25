@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@ public class PatchModule2Dirs {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source1, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source1, "--patch-module=java.naming"),
              "mods/java.naming");
 
         ClassFileInstaller.writeClassToDisk("java/beans/Encoder",
-             InMemoryJavaCompiler.compile("java.beans.Encoder", source2, "-Xmodule:java.desktop"),
+             InMemoryJavaCompiler.compile("java.beans.Encoder", source2, "--patch-module=java.desktop"),
              "mods2/java.desktop");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(

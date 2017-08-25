@@ -35,9 +35,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
-import org.graalvm.compiler.nodes.GuardNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
@@ -86,11 +84,6 @@ public final class ValueAnchorNode extends FixedWithNextNode implements LIRLower
             FixedAccessNode currentNext = (FixedAccessNode) next();
             if (currentNext.getGuard() == anchored) {
                 GraphUtil.removeFixedWithUnusedInputs(this);
-                return;
-            } else if (currentNext.getGuard() == null && anchored instanceof GuardNode && ((GuardNode) anchored).getCondition() instanceof IsNullNode) {
-                // coalesce null check guards into subsequent read/write
-                currentNext.setGuard((GuardingNode) anchored);
-                tool.addToWorkList(next());
                 return;
             }
         }

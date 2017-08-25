@@ -32,7 +32,8 @@ import java.util.Set;
 
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
-import org.graalvm.compiler.debug.GraalDebugConfig.Options;
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
@@ -49,7 +50,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -70,9 +74,9 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      */
     public IdealGraphPrinter(OutputStream stream, boolean tryToSchedule, SnippetReflectionProvider snippetReflection) {
         super(stream);
+        this.snippetReflection = snippetReflection;
         this.begin();
         this.tryToSchedule = tryToSchedule;
-        this.snippetReflection = snippetReflection;
     }
 
     @Override
@@ -85,7 +89,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * as properties.
      */
     @Override
-    public void beginGroup(String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) {
+    public void beginGroup(DebugContext debug, String name, String shortName, ResolvedJavaMethod method, int bci, Map<Object, Object> properties) {
         beginGroup();
         beginProperties();
         printProperty("name", name);
@@ -107,17 +111,19 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
      * nodes.
      */
     @Override
-    public void print(Graph graph, String title, Map<Object, Object> properties) {
+    public void print(DebugContext debug, Graph graph, Map<Object, Object> properties, int id, String format, Object... args) {
+        String title = id + ": " + String.format(format, simplifyClassArgs(args));
         beginGraph(title);
-        Set<Node> noBlockNodes = Node.newSet();
+        EconomicSet<Node> noBlockNodes = EconomicSet.create(Equivalence.IDENTITY);
         ScheduleResult schedule = null;
         if (graph instanceof StructuredGraph) {
             StructuredGraph structuredGraph = (StructuredGraph) graph;
             schedule = structuredGraph.getLastSchedule();
             if (schedule == null && tryToSchedule) {
-                if (Options.PrintIdealGraphSchedule.getValue()) {
+                OptionValues options = graph.getOptions();
+                if (DebugOptions.PrintGraphWithSchedule.getValue(options)) {
                     try {
-                        SchedulePhase schedulePhase = new SchedulePhase();
+                        SchedulePhase schedulePhase = new SchedulePhase(options);
                         schedulePhase.apply(structuredGraph);
                         schedule = structuredGraph.getLastSchedule();
                     } catch (Throwable t) {
@@ -158,7 +164,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         flush();
     }
 
-    private List<Edge> printNodes(Graph graph, NodeMap<Block> nodeToBlock, Set<Node> noBlockNodes) {
+    private List<Edge> printNodes(Graph graph, NodeMap<Block> nodeToBlock, EconomicSet<Node> noBlockNodes) {
         ArrayList<Edge> edges = new ArrayList<>();
 
         NodeMap<Set<Entry<String, Integer>>> colors = graph.createNodeMap();
@@ -224,6 +230,13 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
                 printProperty("hasPredecessor", "true");
             }
 
+            try {
+                printProperty("NodeCost-Size", node.estimatedNodeSize().toString());
+                printProperty("NodeCost-Cycles", node.estimatedNodeCycles().toString());
+            } catch (Throwable t) {
+                props.put("node-cost-exception", t.getMessage());
+            }
+
             for (Entry<Object, Object> entry : props.entrySet()) {
                 String key = entry.getKey().toString();
                 Object value = entry.getValue();
@@ -287,7 +300,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         endSuccessors();
         beginBlockNodes();
 
-        Set<Node> nodes = Node.newSet();
+        EconomicSet<Node> nodes = EconomicSet.create(Equivalence.IDENTITY);
 
         if (nodeToBlock != null) {
             for (Node n : graph.getNodes()) {
@@ -308,7 +321,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
                 }
             }
 
-            Set<Node> snapshot = Node.newSet(nodes);
+            EconomicSet<Node> snapshot = EconomicSet.create(Equivalence.IDENTITY, nodes);
             // add all framestates and phis to their blocks
             for (Node node : snapshot) {
                 if (node instanceof StateSplit && ((StateSplit) node).stateAfter() != null) {
@@ -329,7 +342,7 @@ public class IdealGraphPrinter extends BasicIdealGraphPrinter implements GraphPr
         endBlock();
     }
 
-    private void printNoBlock(Set<Node> noBlockNodes) {
+    private void printNoBlock(EconomicSet<Node> noBlockNodes) {
         if (!noBlockNodes.isEmpty()) {
             beginBlock("noBlock");
             beginBlockNodes();

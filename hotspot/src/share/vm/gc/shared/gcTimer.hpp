@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ class GCPhase {
 
 class PhasesStack {
  public:
-  // Set to 5, since Reference processing needs it.
-  static const int PHASE_LEVELS = 5;
+  // Set to 6, since Reference processing needs it.
+  static const int PHASE_LEVELS = 6;
 
  private:
   int _phase_indices[PHASE_LEVELS];

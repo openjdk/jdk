@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,9 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
   // If ideal reg doesn't exist we've got a bad schedule happening
   // that is forcing us to spill something that isn't spillable.
   // Bail rather than abort
-  int ireg = def->ideal_reg();
+  uint ireg = def->ideal_reg();
   if (ireg == 0 || ireg == Op_RegFlags) {
-    assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %d, spill_type: %s",
+    assert(false, "attempted to spill a non-spillable item: %d: %s <- %d: %s, ireg = %u, spill_type: %s",
            def->_idx, def->Name(), use->_idx, use->Name(), ireg,
            MachSpillCopyNode::spill_type(spill_type));
     C->record_method_not_compilable("attempted to spill a non-spillable item");
@@ -80,9 +80,9 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
   int num_regs = RegMask::num_registers(ireg);
   bool is_vect = RegMask::is_vector(ireg);
   if( w_mask->overlap( *o_mask ) && // Overlap AND
-      ((num_regs == 1) // Single use or aligned
-        ||  is_vect    // or vector
-        || !is_vect && o_mask->is_aligned_pairs()) ) {
+      (num_regs == 1  // Single use or aligned
+        || is_vect    // or vector
+        || (!is_vect && o_mask->is_aligned_pairs())) ) {
     assert(!is_vect || o_mask->is_aligned_sets(num_regs), "vectors are aligned");
     // Don't come here for mis-aligned doubles
     w_o_mask = w_mask;
@@ -1033,7 +1033,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if( !umask.is_AllStack() &&
                 (int)umask.Size() <= lrgs(useidx).num_regs() &&
                 (!def->rematerialize() ||
-                 !is_vect && umask.is_misaligned_pair())) {
+                 (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure
               // SPLIT - NO DEF - NO CISC SPILL
               maxlrg = split_USE(MachSpillCopyNode::Bound, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
@@ -1184,11 +1184,11 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // Grab UP info for DEF
         const RegMask &dmask = n->out_RegMask();
         bool defup = dmask.is_UP();
-        int ireg = n->ideal_reg();
+        uint ireg = n->ideal_reg();
         bool is_vect = RegMask::is_vector(ireg);
         // Only split at Def if this is a HRP block or bound (and spilled once)
         if( !n->rematerialize() &&
-            (((dmask.is_bound(ireg) || !is_vect && dmask.is_misaligned_pair()) &&
+            (((dmask.is_bound(ireg) || (!is_vect && dmask.is_misaligned_pair())) &&
               (deflrg._direct_conflict || deflrg._must_spill)) ||
              // Check for LRG being up in a register and we are inside a high
              // pressure area.  Spill it down immediately.

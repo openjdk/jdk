@@ -29,7 +29,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
 import org.graalvm.compiler.debug.GraalError;
@@ -49,8 +48,24 @@ import org.graalvm.compiler.nodes.calc.UnsignedRightShiftNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.address.AddressNode.Address;
+import org.graalvm.word.ComparableWord;
+import org.graalvm.word.LocationIdentity;
+import org.graalvm.word.Pointer;
+import org.graalvm.word.SignedWord;
+import org.graalvm.word.UnsignedWord;
+import org.graalvm.word.WordBase;
+import org.graalvm.word.WordFactory;
 
-public abstract class Word implements Signed, Unsigned, Pointer {
+public abstract class Word extends WordFactory implements SignedWord, UnsignedWord, Pointer {
+
+    static {
+        assert WordFactory.boxFactory == null : "BoxFactory must be initialized only once.";
+        WordFactory.boxFactory = new BoxFactoryImpl();
+    }
+
+    public static void ensureInitialized() {
+        /* Calling this method ensures that the static initializer has been executed. */
+    }
 
     /**
      * Links a method to a canonical operation represented by an {@link Opcode} val.
@@ -71,113 +86,49 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     /**
      * The canonical {@link Operation} represented by a method in the {@link Word} class.
      */
-    // @formatter:off
-     public enum Opcode {
-         NODE_CLASS,
-         COMPARISON,
-         NOT,
-         READ_POINTER,
-         READ_OBJECT,
-         READ_BARRIERED,
-         READ_HEAP,
-         WRITE_POINTER,
-         WRITE_OBJECT,
-         WRITE_BARRIERED,
-         INITIALIZE,
-         ZERO,
-         FROM_UNSIGNED,
-         FROM_SIGNED,
-         FROM_ADDRESS,
-         OBJECT_TO_TRACKED,
-         OBJECT_TO_UNTRACKED,
-         TO_OBJECT,
-         TO_RAW_VALUE,
+    public enum Opcode {
+        NODE_CLASS,
+        COMPARISON,
+        IS_NULL,
+        IS_NON_NULL,
+        NOT,
+        READ_POINTER,
+        READ_OBJECT,
+        READ_BARRIERED,
+        READ_HEAP,
+        WRITE_POINTER,
+        WRITE_OBJECT,
+        WRITE_BARRIERED,
+        CAS_POINTER,
+        INITIALIZE,
+        FROM_ADDRESS,
+        OBJECT_TO_TRACKED,
+        OBJECT_TO_UNTRACKED,
+        TO_OBJECT,
+        TO_OBJECT_NON_NULL,
+        TO_RAW_VALUE,
     }
-     // @formatter:on
+
+    public static class BoxFactoryImpl implements BoxFactory {
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T extends WordBase> T box(long val) {
+            return (T) HostedWord.boxLong(val);
+        }
+    }
 
     /*
-     * Outside users should use the different signed() and unsigned() methods to ensure proper
+     * Outside users must use the different signed() and unsigned() methods to ensure proper
      * expansion of 32-bit values on 64-bit systems.
      */
-    private static Word box(long val) {
-        return HostedWord.boxLong(val);
+    @SuppressWarnings("unchecked")
+    private static <T extends WordBase> T box(long val) {
+        return (T) HostedWord.boxLong(val);
     }
 
     protected abstract long unbox();
 
     private static Word intParam(int val) {
-        return box(val);
-    }
-
-    /**
-     * The constant 0, i.e., the word with no bits set. There is no difference between a signed and
-     * unsigned zero.
-     *
-     * @return the constant 0.
-     */
-    @Operation(opcode = Opcode.ZERO)
-    public static Word zero() {
-        return box(0L);
-    }
-
-    /**
-     * Unsafe conversion from a Java long value to a Word. The parameter is treated as an unsigned
-     * 64-bit value (in contrast to the semantics of a Java long).
-     *
-     * @param val a 64 bit unsigned value
-     * @return the value cast to Word
-     */
-    @Operation(opcode = Opcode.FROM_UNSIGNED)
-    public static Word unsigned(long val) {
-        return box(val);
-    }
-
-    /**
-     * Unsafe conversion from a Java long value to a {@link PointerBase pointer}. The parameter is
-     * treated as an unsigned 64-bit value (in contrast to the semantics of a Java long).
-     *
-     * @param val a 64 bit unsigned value
-     * @return the value cast to PointerBase
-     */
-    @Operation(opcode = Opcode.FROM_UNSIGNED)
-    @SuppressWarnings("unchecked")
-    public static <T extends PointerBase> T pointer(long val) {
-        return (T) box(val);
-    }
-
-    /**
-     * Unsafe conversion from a Java int value to a Word. The parameter is treated as an unsigned
-     * 32-bit value (in contrast to the semantics of a Java int).
-     *
-     * @param val a 32 bit unsigned value
-     * @return the value cast to Word
-     */
-    @Operation(opcode = Opcode.FROM_UNSIGNED)
-    public static Word unsigned(int val) {
-        return box(val & 0xffffffffL);
-    }
-
-    /**
-     * Unsafe conversion from a Java long value to a Word. The parameter is treated as a signed
-     * 64-bit value (unchanged semantics of a Java long).
-     *
-     * @param val a 64 bit signed value
-     * @return the value cast to Word
-     */
-    @Operation(opcode = Opcode.FROM_SIGNED)
-    public static Word signed(long val) {
-        return box(val);
-    }
-
-    /**
-     * Unsafe conversion from a Java int value to a Word. The parameter is treated as a signed
-     * 32-bit value (unchanged semantics of a Java int).
-     *
-     * @param val a 32 bit signed value
-     * @return the value cast to Word
-     */
-    @Operation(opcode = Opcode.FROM_SIGNED)
-    public static Word signed(int val) {
         return box(val);
     }
 
@@ -194,7 +145,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
      * deal with derived references, this may work correctly, or result in a compiler error.
      */
     @Operation(opcode = Opcode.OBJECT_TO_TRACKED)
-    public static native Pointer objectToTrackedPointer(Object val);
+    public static native Word objectToTrackedPointer(Object val);
 
     /**
      * Convert an {@link Object} to a {@link Pointer}, dropping the reference information. If the
@@ -209,24 +160,28 @@ public abstract class Word implements Signed, Unsigned, Pointer {
      * {@link #objectToTrackedPointer(Object)} instead.
      */
     @Operation(opcode = Opcode.OBJECT_TO_UNTRACKED)
-    public static native Pointer objectToUntrackedPointer(Object val);
+    public static native Word objectToUntrackedPointer(Object val);
 
     @Operation(opcode = Opcode.FROM_ADDRESS)
-    public static native Pointer fromAddress(Address address);
+    public static native Word fromAddress(Address address);
 
     @Override
     @Operation(opcode = Opcode.TO_OBJECT)
     public native Object toObject();
 
     @Override
+    @Operation(opcode = Opcode.TO_OBJECT_NON_NULL)
+    public native Object toObjectNonNull();
+
+    @Override
     @Operation(node = AddNode.class)
-    public Word add(Signed val) {
+    public Word add(SignedWord val) {
         return add((Word) val);
     }
 
     @Override
     @Operation(node = AddNode.class)
-    public Word add(Unsigned val) {
+    public Word add(UnsignedWord val) {
         return add((Word) val);
     }
 
@@ -243,13 +198,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = SubNode.class)
-    public Word subtract(Signed val) {
+    public Word subtract(SignedWord val) {
         return subtract((Word) val);
     }
 
     @Override
     @Operation(node = SubNode.class)
-    public Word subtract(Unsigned val) {
+    public Word subtract(UnsignedWord val) {
         return subtract((Word) val);
     }
 
@@ -266,13 +221,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = MulNode.class)
-    public Word multiply(Signed val) {
+    public Word multiply(SignedWord val) {
         return multiply((Word) val);
     }
 
     @Override
     @Operation(node = MulNode.class)
-    public Word multiply(Unsigned val) {
+    public Word multiply(UnsignedWord val) {
         return multiply((Word) val);
     }
 
@@ -289,7 +244,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = SignedDivNode.class)
-    public Word signedDivide(Signed val) {
+    public Word signedDivide(SignedWord val) {
         return signedDivide((Word) val);
     }
 
@@ -306,7 +261,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = UnsignedDivNode.class)
-    public Word unsignedDivide(Unsigned val) {
+    public Word unsignedDivide(UnsignedWord val) {
         return unsignedDivide((Word) val);
     }
 
@@ -323,7 +278,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = SignedRemNode.class)
-    public Word signedRemainder(Signed val) {
+    public Word signedRemainder(SignedWord val) {
         return signedRemainder((Word) val);
     }
 
@@ -340,7 +295,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = UnsignedRemNode.class)
-    public Word unsignedRemainder(Unsigned val) {
+    public Word unsignedRemainder(UnsignedWord val) {
         return unsignedRemainder((Word) val);
     }
 
@@ -357,7 +312,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = LeftShiftNode.class, rightOperandIsInt = true)
-    public Word shiftLeft(Unsigned val) {
+    public Word shiftLeft(UnsignedWord val) {
         return shiftLeft((Word) val);
     }
 
@@ -374,7 +329,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = RightShiftNode.class, rightOperandIsInt = true)
-    public Word signedShiftRight(Unsigned val) {
+    public Word signedShiftRight(UnsignedWord val) {
         return signedShiftRight((Word) val);
     }
 
@@ -391,7 +346,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = UnsignedRightShiftNode.class, rightOperandIsInt = true)
-    public Word unsignedShiftRight(Unsigned val) {
+    public Word unsignedShiftRight(UnsignedWord val) {
         return unsignedShiftRight((Word) val);
     }
 
@@ -408,13 +363,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = AndNode.class)
-    public Word and(Signed val) {
+    public Word and(SignedWord val) {
         return and((Word) val);
     }
 
     @Override
     @Operation(node = AndNode.class)
-    public Word and(Unsigned val) {
+    public Word and(UnsignedWord val) {
         return and((Word) val);
     }
 
@@ -431,13 +386,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = OrNode.class)
-    public Word or(Signed val) {
+    public Word or(SignedWord val) {
         return or((Word) val);
     }
 
     @Override
     @Operation(node = OrNode.class)
-    public Word or(Unsigned val) {
+    public Word or(UnsignedWord val) {
         return or((Word) val);
     }
 
@@ -454,13 +409,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(node = XorNode.class)
-    public Word xor(Signed val) {
+    public Word xor(SignedWord val) {
         return xor((Word) val);
     }
 
     @Override
     @Operation(node = XorNode.class)
-    public Word xor(Unsigned val) {
+    public Word xor(UnsignedWord val) {
         return xor((Word) val);
     }
 
@@ -482,6 +437,18 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     }
 
     @Override
+    @Operation(opcode = Opcode.IS_NULL)
+    public boolean isNull() {
+        return equal(WordFactory.zero());
+    }
+
+    @Override
+    @Operation(opcode = Opcode.IS_NON_NULL)
+    public boolean isNonNull() {
+        return notEqual(WordFactory.zero());
+    }
+
+    @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
     public boolean equal(ComparableWord val) {
         return equal((Word) val);
@@ -489,13 +456,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
-    public boolean equal(Signed val) {
+    public boolean equal(SignedWord val) {
         return equal((Word) val);
     }
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.EQ)
-    public boolean equal(Unsigned val) {
+    public boolean equal(UnsignedWord val) {
         return equal((Word) val);
     }
 
@@ -518,13 +485,13 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.NE)
-    public boolean notEqual(Signed val) {
+    public boolean notEqual(SignedWord val) {
         return notEqual((Word) val);
     }
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.NE)
-    public boolean notEqual(Unsigned val) {
+    public boolean notEqual(UnsignedWord val) {
         return notEqual((Word) val);
     }
 
@@ -541,7 +508,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.LT)
-    public boolean lessThan(Signed val) {
+    public boolean lessThan(SignedWord val) {
         return lessThan((Word) val);
     }
 
@@ -558,7 +525,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.LE)
-    public boolean lessOrEqual(Signed val) {
+    public boolean lessOrEqual(SignedWord val) {
         return lessOrEqual((Word) val);
     }
 
@@ -575,7 +542,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.GT)
-    public boolean greaterThan(Signed val) {
+    public boolean greaterThan(SignedWord val) {
         return greaterThan((Word) val);
     }
 
@@ -592,7 +559,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.GE)
-    public boolean greaterOrEqual(Signed val) {
+    public boolean greaterOrEqual(SignedWord val) {
         return greaterOrEqual((Word) val);
     }
 
@@ -609,7 +576,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.BT)
-    public boolean belowThan(Unsigned val) {
+    public boolean belowThan(UnsignedWord val) {
         return belowThan((Word) val);
     }
 
@@ -626,7 +593,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.BE)
-    public boolean belowOrEqual(Unsigned val) {
+    public boolean belowOrEqual(UnsignedWord val) {
         return belowOrEqual((Word) val);
     }
 
@@ -643,7 +610,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.AT)
-    public boolean aboveThan(Unsigned val) {
+    public boolean aboveThan(UnsignedWord val) {
         return aboveThan((Word) val);
     }
 
@@ -660,7 +627,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.COMPARISON, condition = Condition.AE)
-    public boolean aboveOrEqual(Unsigned val) {
+    public boolean aboveOrEqual(UnsignedWord val) {
         return aboveOrEqual((Word) val);
     }
 
@@ -719,7 +686,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
-    public Word readWord(WordBase offset, LocationIdentity locationIdentity) {
+    public <T extends WordBase> T readWord(WordBase offset, LocationIdentity locationIdentity) {
         return box(UNSAFE.getAddress(add((Word) offset).unbox()));
     }
 
@@ -771,7 +738,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
-    public Word readWord(int offset, LocationIdentity locationIdentity) {
+    public <T extends WordBase> T readWord(int offset, LocationIdentity locationIdentity) {
         return readWord(signed(offset), locationIdentity);
     }
 
@@ -943,7 +910,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
-    public Word readWord(WordBase offset) {
+    public <T extends WordBase> T readWord(WordBase offset) {
         return box(UNSAFE.getAddress(add((Word) offset).unbox()));
     }
 
@@ -951,7 +918,6 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     @Operation(opcode = Opcode.READ_POINTER)
     public native Object readObject(WordBase offset);
 
-    @Override
     @Operation(opcode = Opcode.READ_HEAP)
     public native Object readObject(WordBase offset, BarrierType barrierType);
 
@@ -999,7 +965,7 @@ public abstract class Word implements Signed, Unsigned, Pointer {
 
     @Override
     @Operation(opcode = Opcode.READ_POINTER)
-    public Word readWord(int offset) {
+    public <T extends WordBase> T readWord(int offset) {
         return readWord(signed(offset));
     }
 
@@ -1009,7 +975,6 @@ public abstract class Word implements Signed, Unsigned, Pointer {
         return readObject(signed(offset));
     }
 
-    @Override
     @Operation(opcode = Opcode.READ_HEAP)
     public Object readObject(int offset, BarrierType barrierType) {
         return readObject(signed(offset), barrierType);
@@ -1055,6 +1020,44 @@ public abstract class Word implements Signed, Unsigned, Pointer {
     @Operation(opcode = Opcode.WRITE_POINTER)
     public void writeDouble(WordBase offset, double val) {
         UNSAFE.putDouble(add((Word) offset).unbox(), val);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native int compareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native long compareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native <T extends WordBase> T compareAndSwapWord(WordBase offset, T expectedValue, T newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native Object compareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapInt(WordBase offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapInt(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapLong(WordBase offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapLong(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public native boolean logicCompareAndSwapWord(WordBase offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity);
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapObject(WordBase offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return UNSAFE.compareAndSwapObject(this.toObject(), ((Word) offset).unbox(), expectedValue, newValue);
     }
 
     @Override
@@ -1121,6 +1124,61 @@ public abstract class Word implements Signed, Unsigned, Pointer {
         writeObject(signed(offset), val);
     }
 
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public int compareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapInt(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public long compareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapLong(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public <T extends WordBase> T compareAndSwapWord(int offset, T expectedValue, T newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public Object compareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return compareAndSwapObject(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapInt(int offset, int expectedValue, int newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapInt(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapLong(int offset, long expectedValue, long newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapLong(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapWord(int offset, WordBase expectedValue, WordBase newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapWord(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    @Override
+    @Operation(opcode = Opcode.CAS_POINTER)
+    public boolean logicCompareAndSwapObject(int offset, Object expectedValue, Object newValue, LocationIdentity locationIdentity) {
+        return logicCompareAndSwapObject(signed(offset), expectedValue, newValue, locationIdentity);
+    }
+
+    /**
+     * This is deprecated because of the easy to mistype name collision between {@link #equals} and
+     * the other equals routines like {@link #equal(Word)}. In general you should never be
+     * statically calling this method for Word types.
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     @Override
     public final boolean equals(Object obj) {
         throw GraalError.shouldNotReachHere("equals must not be called on words");

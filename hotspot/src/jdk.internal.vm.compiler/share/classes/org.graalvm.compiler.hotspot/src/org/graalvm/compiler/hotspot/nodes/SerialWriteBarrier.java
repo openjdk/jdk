@@ -23,13 +23,13 @@
 package org.graalvm.compiler.hotspot.nodes;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_3;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
 
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 
-@NodeInfo(cycles = CYCLES_8, size = SIZE_3)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_4)
 public class SerialWriteBarrier extends ObjectWriteBarrier {
 
     public static final NodeClass<SerialWriteBarrier> TYPE = NodeClass.create(SerialWriteBarrier.class);

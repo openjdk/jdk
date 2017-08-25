@@ -2201,6 +2201,8 @@ public:
   INSN(fdiv, 1, 0, 0b111111);
   INSN(fmul, 1, 0, 0b110111);
   INSN(fsub, 0, 1, 0b110101);
+  INSN(fmla, 0, 0, 0b110011);
+  INSN(fmls, 0, 1, 0b110011);
 
 #undef INSN
 

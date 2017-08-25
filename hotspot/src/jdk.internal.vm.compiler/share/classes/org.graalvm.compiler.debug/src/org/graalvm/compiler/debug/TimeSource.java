@@ -22,14 +22,12 @@
  */
 package org.graalvm.compiler.debug;
 
-import java.lang.management.ThreadMXBean;
-
 /**
  * A consistent source of timing data that should be used by all facilities in the debug package.
  */
 public class TimeSource {
     private static final boolean USING_BEAN;
-    private static final ThreadMXBean threadMXBean;
+    private static final java.lang.management.ThreadMXBean threadMXBean;
 
     static {
         threadMXBean = Management.getThreadMXBean();

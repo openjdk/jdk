@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -912,7 +912,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   if( m ) return m;
 
   if (n->is_ConstraintCast()) {
-    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(this);
+    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(&_igvn, this);
     // ConstraintCastNode::dominating_cast() uses node control input to determine domination.
     // Node control inputs don't necessarily agree with loop control info (due to
     // transformations happened in between), thus additional dominance check is needed
@@ -1910,7 +1910,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   }
   BoolNode* bl = iff->in(1)->as_Bool();
   Node* cmp = bl->in(1);
-  if (!cmp || cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU) {
+  if (!cmp || (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU)) {
     return 0;
   }
   // Must have an invariant operand

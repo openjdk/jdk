@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
     // If obj == NULL, then ObjectMonitor is raw which doesn't count.
   }
 
-  Handle h(obj);
+  Handle h(Thread::current(), obj);
   return h;
 }
 
@@ -607,12 +607,11 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
 }
 
 Handle ThreadStackTrace::allocate_fill_stack_trace_element_array(TRAPS) {
-  Klass* k = SystemDictionary::StackTraceElement_klass();
-  assert(k != NULL, "must be loaded in 1.4+");
-  instanceKlassHandle ik(THREAD, k);
+  InstanceKlass* ik = SystemDictionary::StackTraceElement_klass();
+  assert(ik != NULL, "must be loaded in 1.4+");
 
   // Allocate an array of java/lang/StackTraceElement object
-  objArrayOop ste = oopFactory::new_objArray(ik(), _depth, CHECK_NH);
+  objArrayOop ste = oopFactory::new_objArray(ik, _depth, CHECK_NH);
   objArrayHandle backtrace(THREAD, ste);
   for (int j = 0; j < _depth; j++) {
     StackFrameInfo* frame = _frames->at(j);

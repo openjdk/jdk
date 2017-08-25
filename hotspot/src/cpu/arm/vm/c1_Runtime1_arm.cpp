@@ -37,6 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
@@ -250,7 +251,7 @@ static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers 
 
   __ sub(SP, SP, (reg_save_size - 2) * wordSize);
 
-  for (int i = 0; i < round_down(number_of_saved_gprs, 2); i += 2) {
+  for (int i = 0; i < align_down((int)number_of_saved_gprs, 2); i += 2) {
     __ stp(as_Register(i), as_Register(i+1), Address(SP, (R0_offset + i) * wordSize));
   }
 

@@ -29,7 +29,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"

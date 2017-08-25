@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 #ifdef TIERED
 // Print an event.
-void AdvancedThresholdPolicy::print_specific(EventType type, methodHandle mh, methodHandle imh,
+void AdvancedThresholdPolicy::print_specific(EventType type, const methodHandle& mh, const methodHandle& imh,
                                              int bci, CompLevel level) {
   tty->print(" rate=");
   if (mh->prev_time() == 0) tty->print("n/a");
@@ -339,7 +339,7 @@ bool AdvancedThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
+void AdvancedThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
   if (mh->is_native() ||
       mh->is_abstract() ||
       mh->is_accessor() ||
@@ -400,7 +400,8 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, Method* method, CompLevel
     next_level = CompLevel_simple;
   } else {
     switch(cur_level) {
-    case CompLevel_aot: {
+      default: break;
+      case CompLevel_aot: {
       // If we were at full profile level, would we switch to full opt?
       if (common(p, method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
         next_level = CompLevel_full_optimization;
@@ -545,7 +546,7 @@ void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, Co
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
 }
 
-bool AdvancedThresholdPolicy::maybe_switch_to_aot(methodHandle mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
+bool AdvancedThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
   if (UseAOT && !delay_compilation_during_startup()) {
     if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
       // If the current level is full profile or interpreter and we're switching to any other level,

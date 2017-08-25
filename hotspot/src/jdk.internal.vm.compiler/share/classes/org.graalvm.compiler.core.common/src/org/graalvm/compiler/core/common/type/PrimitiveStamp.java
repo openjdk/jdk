@@ -54,7 +54,15 @@ public abstract class PrimitiveStamp extends ArithmeticStamp {
 
     @Override
     public Constant readConstant(MemoryAccessProvider provider, Constant base, long displacement) {
-        return provider.readPrimitiveConstant(getStackKind(), base, displacement, getBits());
+        try {
+            return provider.readPrimitiveConstant(getStackKind(), base, displacement, getBits());
+        } catch (IllegalArgumentException e) {
+            /*
+             * It's possible that the base and displacement aren't valid together so simply return
+             * null.
+             */
+            return null;
+        }
     }
 
     @Override

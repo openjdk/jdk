@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,7 +387,7 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
 
-    if (pc != NULL && sp != NULL && fp != NULL) {
+    if (pc != NULL) {
       if (count == 2 && lastpc == pc) {
         // Skip it -- StackWalk64() may return the same PC
         // (but different SP) on the first try.
@@ -399,8 +399,6 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
         st->cr();
       }
       lastpc = pc;
-    } else {
-      break;
     }
 
     PVOID p = WindowsDbgHelp::SymFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);

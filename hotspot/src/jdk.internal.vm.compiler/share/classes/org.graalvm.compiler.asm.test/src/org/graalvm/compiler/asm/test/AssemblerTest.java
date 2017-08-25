@@ -26,20 +26,18 @@ import static org.graalvm.compiler.core.common.CompilationRequestIdentifier.asCo
 
 import java.lang.reflect.Method;
 
-import org.junit.Assert;
-
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.code.DisassemblerProvider;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.compiler.test.GraalTest;
+import org.junit.Assert;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -62,6 +60,14 @@ public abstract class AssemblerTest extends GraalTest {
         byte[] generateCode(CompilationResult compResult, TargetDescription target, RegisterConfig registerConfig, CallingConvention cc);
     }
 
+    /**
+     * Gets the initial option values provided by the Graal runtime. These are option values
+     * typically parsed from the command line.
+     */
+    public static OptionValues getInitialOptions() {
+        return Graal.getRequiredCapability(OptionValues.class);
+    }
+
     public AssemblerTest() {
         JVMCIBackend providers = JVMCI.getRuntime().getHostJVMCIBackend();
         this.metaAccess = providers.getMetaAccess();
@@ -76,10 +82,13 @@ public abstract class AssemblerTest extends GraalTest {
     @SuppressWarnings("try")
     protected InstalledCode assembleMethod(Method m, CodeGenTest test) {
         ResolvedJavaMethod method = getMetaAccess().lookupJavaMethod(m);
-        try (Scope s = Debug.scope("assembleMethod", method, codeCache)) {
+        OptionValues options = getInitialOptions();
+        DebugContext debug = getDebugContext(options);
+        try (DebugContext.Scope s = debug.scope("assembleMethod", method, codeCache)) {
             RegisterConfig registerConfig = codeCache.getRegisterConfig();
             CompilationIdentifier compilationId = backend.getCompilationIdentifier(method);
-            CallingConvention cc = backend.newLIRGenerationResult(compilationId, null, null, new StructuredGraph(method, AllowAssumptions.NO, compilationId), null).getCallingConvention();
+            StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
+            CallingConvention cc = backend.newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
 
             CompilationResult compResult = new CompilationResult();
             byte[] targetCode = test.generateCode(compResult, codeCache.getTarget(), registerConfig, cc);
@@ -87,7 +96,7 @@ public abstract class AssemblerTest extends GraalTest {
             compResult.setTotalFrameSize(0);
             compResult.close();
 
-            InstalledCode code = backend.addInstalledCode(method, asCompilationRequest(compilationId), compResult);
+            InstalledCode code = backend.addInstalledCode(debug, method, asCompilationRequest(compilationId), compResult);
 
             for (DisassemblerProvider dis : GraalServices.load(DisassemblerProvider.class)) {
                 String disasm1 = dis.disassembleCompiledCode(codeCache, compResult);
@@ -97,7 +106,7 @@ public abstract class AssemblerTest extends GraalTest {
             }
             return code;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

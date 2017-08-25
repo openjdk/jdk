@@ -24,14 +24,17 @@ package org.graalvm.compiler.jtt.hotspot;
 
 import java.util.ArrayList;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import org.graalvm.compiler.core.common.util.ArraySet;
 import org.graalvm.compiler.jtt.JTTTest;
 
 // @formatter:off
 public class Test6186134 extends JTTTest {
+
+    @SuppressWarnings("serial")
+    public static final class MyArrayList<E> extends ArrayList<E> {
+
+    }
 
     public static class TestClass {
 
@@ -45,8 +48,8 @@ public class Test6186134 extends JTTTest {
             return num-- > 0;
         }
 
-        public ArrayList<?> test1() {
-            ArrayList<Object> res = new ArrayList<>();
+        public MyArrayList<?> test1() {
+            MyArrayList<Object> res = new MyArrayList<>();
             int maxResults = Integer.MAX_VALUE;
             int n = 0;
             boolean more = more();
@@ -68,12 +71,6 @@ public class Test6186134 extends JTTTest {
             }
         }
         return 0;
-    }
-
-    @Before
-    public void setUp() {
-        /* Ensure that ArrayList is _not_ a leaf class (otherwise code installation may fail due to a failed leaf type dependency). */
-        UNSAFE.ensureClassInitialized(ArraySet.class);
     }
 
     @Test

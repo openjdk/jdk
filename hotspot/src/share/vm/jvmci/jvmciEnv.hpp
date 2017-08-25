@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,20 +79,18 @@ public:
   // The CI treats a klass as loaded if it is consistently defined in
   // another loader, even if it hasn't yet been loaded in all loaders
   // that could potentially see it via delegation.
-  static KlassHandle get_klass_by_name(KlassHandle accessing_klass,
-                             Symbol* klass_name,
-                             bool require_local);
+  static Klass* get_klass_by_name(Klass* accessing_klass, Symbol* klass_name, bool require_local);
 
   // Constant pool access.
-  static KlassHandle   get_klass_by_index(const constantPoolHandle& cpool,
-                                int klass_index,
-                                bool& is_accessible,
-                                KlassHandle loading_klass);
-  static void   get_field_by_index(instanceKlassHandle loading_klass, fieldDescriptor& fd,
-                                int field_index);
+  static Klass* get_klass_by_index(const constantPoolHandle& cpool,
+                                   int klass_index,
+                                   bool& is_accessible,
+                                   Klass* loading_klass);
+  static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
+                                   int field_index);
   static methodHandle  get_method_by_index(const constantPoolHandle& cpool,
-                                 int method_index, Bytecodes::Code bc,
-                                 instanceKlassHandle loading_klass);
+                                    int method_index, Bytecodes::Code bc,
+                                    InstanceKlass* loading_klass);
 
   JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter);
 
@@ -110,26 +108,26 @@ private:
   bool  _jvmti_can_post_on_exceptions;
 
   // Implementation methods for loading and constant pool access.
-  static KlassHandle get_klass_by_name_impl(KlassHandle& accessing_klass,
+  static Klass* get_klass_by_name_impl(Klass* accessing_klass,
                                   const constantPoolHandle& cpool,
                                   Symbol* klass_name,
                                   bool require_local);
-  static KlassHandle   get_klass_by_index_impl(const constantPoolHandle& cpool,
+  static Klass* get_klass_by_index_impl(const constantPoolHandle& cpool,
                                      int klass_index,
                                      bool& is_accessible,
-                                     KlassHandle loading_klass);
-  static void   get_field_by_index_impl(instanceKlassHandle loading_klass, fieldDescriptor& fd,
+                                     Klass* loading_klass);
+  static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
                                      int field_index);
   static methodHandle  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
-                                      instanceKlassHandle loading_klass);
+                                      InstanceKlass* loading_klass);
 
   // Helper methods
-  static bool       check_klass_accessibility(KlassHandle accessing_klass, KlassHandle resolved_klass);
-  static methodHandle  lookup_method(instanceKlassHandle  accessor,
-                           KlassHandle     holder,
-                           Symbol*         name,
-                           Symbol*         sig,
+  static bool       check_klass_accessibility(Klass* accessing_klass, Klass* resolved_klass);
+  static methodHandle  lookup_method(InstanceKlass*  accessor,
+                           Klass*         holder,
+                           Symbol*        name,
+                           Symbol*        sig,
                            Bytecodes::Code bc,
                            constantTag     tag);
 
@@ -180,7 +178,7 @@ public:
   // InstanceKlass*.  This is needed since the holder of a method in
   // the bytecodes could be an array type.  Basically this converts
   // array types into java/lang/Object and other types stay as they are.
-  static instanceKlassHandle get_instance_klass_for_declared_method_holder(KlassHandle klass);
+  static InstanceKlass* get_instance_klass_for_declared_method_holder(Klass* klass);
 };
 
 #endif // SHARE_VM_JVMCI_JVMCIENV_HPP

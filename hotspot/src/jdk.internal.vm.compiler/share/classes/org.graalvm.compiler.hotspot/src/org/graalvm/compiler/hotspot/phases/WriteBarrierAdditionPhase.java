@@ -35,8 +35,8 @@ import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWriteNode;
+import org.graalvm.compiler.nodes.java.AbstractCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
-import org.graalvm.compiler.nodes.java.LoweredCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
 import org.graalvm.compiler.nodes.memory.ReadNode;
@@ -63,8 +63,8 @@ public class WriteBarrierAdditionPhase extends Phase {
             } else if (n instanceof LoweredAtomicReadAndWriteNode) {
                 LoweredAtomicReadAndWriteNode loweredAtomicReadAndWriteNode = (LoweredAtomicReadAndWriteNode) n;
                 addAtomicReadWriteNodeBarriers(loweredAtomicReadAndWriteNode, graph);
-            } else if (n instanceof LoweredCompareAndSwapNode) {
-                addCASBarriers((LoweredCompareAndSwapNode) n, graph);
+            } else if (n instanceof AbstractCompareAndSwapNode) {
+                addCASBarriers((AbstractCompareAndSwapNode) n, graph);
             } else if (n instanceof ArrayRangeWriteNode) {
                 ArrayRangeWriteNode node = (ArrayRangeWriteNode) n;
                 if (node.isObjectArray()) {
@@ -116,7 +116,7 @@ public class WriteBarrierAdditionPhase extends Phase {
             case PRECISE:
                 boolean precise = barrierType == BarrierType.PRECISE;
                 if (config.useG1GC) {
-                    if (!node.isInitialization()) {
+                    if (!node.getLocationIdentity().isInit()) {
                         addG1PreWriteBarrier(node, node.getAddress(), null, true, node.getNullCheck(), graph);
                     }
                     addG1PostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
@@ -150,7 +150,7 @@ public class WriteBarrierAdditionPhase extends Phase {
         }
     }
 
-    private void addCASBarriers(LoweredCompareAndSwapNode node, StructuredGraph graph) {
+    private void addCASBarriers(AbstractCompareAndSwapNode node, StructuredGraph graph) {
         BarrierType barrierType = node.getBarrierType();
         switch (barrierType) {
             case NONE:

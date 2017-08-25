@@ -39,6 +39,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/arguments_ext.hpp"
@@ -52,6 +53,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
@@ -147,8 +149,8 @@ static bool match_option(const JavaVMOption *option, const char* name) {
 static bool match_option(const JavaVMOption* option, const char** names, const char** tail,
   bool tail_allowed) {
   for (/* empty */; *names != NULL; ++names) {
-    if (match_option(option, *names, tail)) {
-      if (**tail == '\0' || tail_allowed && **tail == ':') {
+  if (match_option(option, *names, tail)) {
+      if (**tail == '\0' || (tail_allowed && **tail == ':')) {
         return true;
       }
     }
@@ -317,7 +319,7 @@ void Arguments::init_version_specific_system_properties() {
  *               Add a deprecation warning for an option (or alias) by adding an entry in the
  *               "special_jvm_flags" table and setting the "deprecated_in" field.
  *               Often an option "deprecated" in one major release will
- *               be made "obsolete" in the next. In this case the entry should also have it's
+ *               be made "obsolete" in the next. In this case the entry should also have its
  *               "obsolete_in" field set.
  *
  *     OBSOLETE: An option that has been removed (and deleted from globals.hpp), but is still accepted
@@ -376,10 +378,13 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
@@ -416,6 +421,7 @@ static AliasedFlag const aliased_jvm_flags[] = {
 // NOTE: A compatibility request will be necessary for each alias to be removed.
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "PrintCompressedOopsMode",   LogLevel::Info,  true,  LOG_TAGS(gc, heap, coops) },
+  { "PrintSharedSpaces",         LogLevel::Info,  true,  LOG_TAGS(cds) },
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(class, load) },
   { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(class, preorder) },
@@ -642,10 +648,9 @@ bool Arguments::atojulong(const char *s, julong* result) {
   }
 }
 
-Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size) {
+Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size, julong max_size) {
   if (size < min_size) return arg_too_small;
-  // Check that size will fit in a size_t (only relevant on 32-bit)
-  if (size > max_uintx) return arg_too_big;
+  if (size > max_size) return arg_too_big;
   return arg_in_range;
 }
 
@@ -735,6 +740,9 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
   } else if (result->is_size_t()) {
     size_t size_t_v = (size_t) v;
     return CommandLineFlags::size_tAtPut(result, &size_t_v, origin) == Flag::SUCCESS;
+  } else if (result->is_double()) {
+    double double_v = (double) v;
+    return CommandLineFlags::doubleAtPut(result, &double_v, origin) == Flag::SUCCESS;
   } else {
     return false;
   }
@@ -1295,7 +1303,7 @@ void Arguments::check_unsupported_dumping_properties() {
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array with index less than the info_idx,
   // vm will exit with an error message. Otherwise, it will print an informational message if
-  // PrintSharedSpaces is enabled.
+  // -Xlog:cds is enabled.
   uint info_idx = 1;
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
@@ -1305,10 +1313,8 @@ void Arguments::check_unsupported_dumping_properties() {
           vm_exit_during_initialization(
             "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
         } else {
-          if (PrintSharedSpaces) {
-            tty->print_cr(
-              "Info: the %s option is ignored when dumping the shared archive", unsupported_options[i]);
-          }
+          log_info(cds)("Info: the %s option is ignored when dumping the shared archive",
+                        unsupported_options[i]);
         }
       }
     }
@@ -1553,8 +1559,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 
   set_parnew_gc_flags();
 
-  size_t max_heap = align_size_down(MaxHeapSize,
-                                    CardTableRS::ct_max_alignment_constraint());
+  size_t max_heap = align_down(MaxHeapSize,
+                               CardTableRS::ct_max_alignment_constraint());
 
   // Now make adjustments for CMS
   intx   tenuring_default = (intx)6;
@@ -1565,7 +1571,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   const size_t preferred_max_new_size_unaligned =
     MIN2(max_heap/(NewRatio+1), ScaleForWordSize(young_gen_per_worker * ParallelGCThreads));
   size_t preferred_max_new_size =
-    align_size_up(preferred_max_new_size_unaligned, os::vm_page_size());
+    align_up(preferred_max_new_size_unaligned, os::vm_page_size());
 
   // Unless explicitly requested otherwise, size young gen
   // for "short" pauses ~ CMSYoungGenPerWorker*ParallelGCThreads
@@ -1679,8 +1685,8 @@ size_t Arguments::max_heap_for_compressed_oops() {
   // keeping alignment constraints of the heap. To guarantee the latter, as the
   // NULL page is located before the heap, we pad the NULL page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
-  size_t displacement_due_to_null_page = align_size_up_(os::vm_page_size(),
-                                                        _conservative_max_heap_alignment);
+  size_t displacement_due_to_null_page = align_up((size_t)os::vm_page_size(),
+                                                  _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
   NOT_LP64(ShouldNotReachHere(); return 0);
@@ -2589,27 +2595,35 @@ bool Arguments::create_property(const char* prop_name, const char* prop_value, P
 }
 
 bool Arguments::create_numbered_property(const char* prop_base_name, const char* prop_value, unsigned int count) {
-  // Make sure count is < 1,000. Otherwise, memory allocation will be too small.
-  if (count < 1000) {
-    size_t prop_len = strlen(prop_base_name) + strlen(prop_value) + 5;
+  const unsigned int props_count_limit = 1000;
+  const int max_digits = 3;
+  const int extra_symbols_count = 3; // includes '.', '=', '\0'
+
+  // Make sure count is < props_count_limit. Otherwise, memory allocation will be too small.
+  if (count < props_count_limit) {
+    size_t prop_len = strlen(prop_base_name) + strlen(prop_value) + max_digits + extra_symbols_count;
     char* property = AllocateHeap(prop_len, mtArguments);
     int ret = jio_snprintf(property, prop_len, "%s.%d=%s", prop_base_name, count, prop_value);
     if (ret < 0 || ret >= (int)prop_len) {
       FreeHeap(property);
+      jio_fprintf(defaultStream::error_stream(), "Failed to create property %s.%d=%s\n", prop_base_name, count, prop_value);
       return false;
     }
     bool added = add_property(property, UnwriteableProperty, InternalProperty);
     FreeHeap(property);
     return added;
   }
+
+  jio_fprintf(defaultStream::error_stream(), "Property count limit exceeded: %s, limit=%d\n", prop_base_name, props_count_limit);
   return false;
 }
 
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
-                                                  julong min_size) {
+                                                  julong min_size,
+                                                  julong max_size) {
   if (!atojulong(s, long_arg)) return arg_unreadable;
-  return check_memory_size(*long_arg, min_size);
+  return check_memory_size(*long_arg, min_size, max_size);
 }
 
 // Parse JavaVMInitArgs structure
@@ -2737,6 +2751,55 @@ int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_
       return JNI_ENOMEM;
     }
   }
+  return JNI_OK;
+}
+
+// Parse -Xss memory string parameter and convert to ThreadStackSize in K.
+jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize) {
+  // The min and max sizes match the values in globals.hpp, but scaled
+  // with K. The values have been chosen so that alignment with page
+  // size doesn't change the max value, which makes the conversions
+  // back and forth between Xss value and ThreadStackSize value easier.
+  // The values have also been chosen to fit inside a 32-bit signed type.
+  const julong min_ThreadStackSize = 0;
+  const julong max_ThreadStackSize = 1 * M;
+
+  const julong min_size = min_ThreadStackSize * K;
+  const julong max_size = max_ThreadStackSize * K;
+
+  assert(is_aligned(max_size, os::vm_page_size()), "Implementation assumption");
+
+  julong size = 0;
+  ArgsRange errcode = parse_memory_size(tail, &size, min_size, max_size);
+  if (errcode != arg_in_range) {
+    bool silent = (option == NULL); // Allow testing to silence error messages
+    if (!silent) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Invalid thread stack size: %s\n", option->optionString);
+      describe_range_error(errcode);
+    }
+    return JNI_EINVAL;
+  }
+
+  // Internally track ThreadStackSize in units of 1024 bytes.
+  const julong size_aligned = align_up(size, K);
+  assert(size <= size_aligned,
+         "Overflow: " JULONG_FORMAT " " JULONG_FORMAT,
+         size, size_aligned);
+
+  const julong size_in_K = size_aligned / K;
+  assert(size_in_K < (julong)max_intx,
+         "size_in_K doesn't fit in the type of ThreadStackSize: " JULONG_FORMAT,
+         size_in_K);
+
+  // Check that code expanding ThreadStackSize to a page aligned number of bytes won't overflow.
+  const julong max_expanded = align_up(size_in_K * K, os::vm_page_size());
+  assert(max_expanded < max_uintx && max_expanded >= size_in_K,
+         "Expansion overflowed: " JULONG_FORMAT " " JULONG_FORMAT,
+         max_expanded, size_in_K);
+
+  *out_ThreadStackSize = (intx)size_in_K;
+
   return JNI_OK;
 }
 
@@ -3003,29 +3066,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     // -Xss
     } else if (match_option(option, "-Xss", &tail)) {
-      julong long_ThreadStackSize = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_ThreadStackSize, 1000);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid thread stack size: %s\n", option->optionString);
-        describe_range_error(errcode);
+      intx value = 0;
+      jint err = parse_xss(option, tail, &value);
+      if (err != JNI_OK) {
+        return err;
+      }
+      if (FLAG_SET_CMDLINE(intx, ThreadStackSize, value) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-      // Internally track ThreadStackSize in units of 1024 bytes.
-      if (FLAG_SET_CMDLINE(intx, ThreadStackSize,
-                       round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads, -Xusealtsigs
-    } else if (match_option(option, "-Xoss", &tail) ||
-               match_option(option, "-Xsqnopause") ||
-               match_option(option, "-Xoptimize") ||
-               match_option(option, "-Xboundthreads") ||
-               match_option(option, "-Xusealtsigs")) {
-      // All these options are deprecated in JDK 9 and will be removed in a future release
-      char version[256];
-      JDK_Version::jdk(9).to_string(version, sizeof(version));
-      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
       julong long_CodeCacheExpansionSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
@@ -4208,7 +4256,7 @@ bool Arguments::handle_deprecated_print_gc_flags() {
     const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
 
     LogTarget(Error, logging) target;
-    LogStreamCHeap errstream(target);
+    LogStream errstream(target);
     return LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, &errstream);
   } else if (PrintGC || PrintGCDetails) {
     LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
@@ -4392,10 +4440,11 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) || PrintSharedSpaces) {
+  if ((UseSharedSpaces && FLAG_IS_CMDLINE(UseSharedSpaces)) ||
+      log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
-    FLAG_SET_DEFAULT(PrintSharedSpaces, false);
+    LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(cds));
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
@@ -4412,6 +4461,16 @@ jint Arguments::apply_ergo() {
 #endif
 
   set_shared_spaces_flags();
+
+#if defined(SPARC)
+  // BIS instructions require 'membar' instruction regardless of the number
+  // of CPUs because in virtualized/container environments which might use only 1
+  // CPU, BIS instructions may produce incorrect results.
+
+  if (FLAG_IS_DEFAULT(AssumeMP)) {
+    FLAG_SET_DEFAULT(AssumeMP, true);
+  }
+#endif
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

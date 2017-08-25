@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
-  product(intx, UseAVX, 2,                                                  \
+  product(intx, UseAVX, 3,                                                  \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
                                                                             \
@@ -160,25 +160,31 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseRTMDeopt, false,                                         \
           "Perform deopt and recompilation based on RTM abort ratio")       \
                                                                             \
-  product(uintx, RTMRetryCount, 5,                                          \
+  product(int, RTMRetryCount, 5,                                            \
           "Number of RTM retries on lock abort or busy")                    \
-          range(0, max_uintx)                                               \
+          range(0, max_jint)                                                \
                                                                             \
-  experimental(intx, RTMSpinLoopCount, 100,                                 \
+  experimental(int, RTMSpinLoopCount, 100,                                  \
           "Spin count for lock to become free before RTM retry")            \
+          range(0, max_jint)                                                \
                                                                             \
-  experimental(intx, RTMAbortThreshold, 1000,                               \
+  experimental(int, RTMAbortThreshold, 1000,                                \
           "Calculate abort ratio after this number of aborts")              \
+          range(0, max_jint)                                                \
                                                                             \
-  experimental(intx, RTMLockingThreshold, 10000,                            \
+  experimental(int, RTMLockingThreshold, 10000,                             \
           "Lock count at which to do RTM lock eliding without "             \
           "abort ratio calculation")                                        \
+          range(0, max_jint)                                                \
                                                                             \
-  experimental(intx, RTMAbortRatio, 50,                                     \
+  experimental(int, RTMAbortRatio, 50,                                      \
           "Lock abort ratio at which to stop use RTM lock eliding")         \
+          range(0, 100) /* natural range */                                 \
                                                                             \
-  experimental(intx, RTMTotalCountIncrRate, 64,                             \
+  experimental(int, RTMTotalCountIncrRate, 64,                              \
           "Increment total RTM attempted lock count once every n times")    \
+          range(1, max_jint)                                                \
+          constraint(RTMTotalCountIncrRateConstraintFunc,AfterErgo)         \
                                                                             \
   experimental(intx, RTMLockingCalculationDelay, 0,                         \
           "Number of milliseconds to wait before start calculating aborts " \

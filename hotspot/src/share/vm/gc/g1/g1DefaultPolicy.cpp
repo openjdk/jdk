@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
-G1DefaultPolicy::G1DefaultPolicy() :
+G1DefaultPolicy::G1DefaultPolicy(STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
   _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
@@ -63,7 +63,7 @@ G1DefaultPolicy::G1DefaultPolicy() :
   _initial_mark_to_mixed(),
   _collection_set(NULL),
   _g1(NULL),
-  _phase_times(new G1GCPhaseTimes(ParallelGCThreads)),
+  _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
   _survivors_age_table(true),

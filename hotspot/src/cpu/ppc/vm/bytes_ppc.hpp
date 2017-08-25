@@ -37,10 +37,6 @@ class Bytes: AllStatic {
 
 #if defined(VM_LITTLE_ENDIAN)
 
-  // Returns true, if the byte ordering used by Java is different from the native byte ordering
-  // of the underlying machine. For example, true for Intel x86, False, for Solaris on Sparc.
-  static inline bool is_Java_byte_ordering_different() { return true; }
-
   // Forward declarations of the compiler-dependent implementation
   static inline u2 swap_u2(u2 x);
   static inline u4 swap_u4(u4 x);
@@ -154,10 +150,6 @@ class Bytes: AllStatic {
   static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, swap_u8(x)); }
 
 #else // !defined(VM_LITTLE_ENDIAN)
-
-  // Returns true, if the byte ordering used by Java is different from the nativ byte ordering
-  // of the underlying machine. For example, true for Intel x86, False, for Solaris on Sparc.
-  static inline bool is_Java_byte_ordering_different() { return false; }
 
   // Thus, a swap between native and Java ordering is always a no-op:
   static inline u2   swap_u2(u2 x)  { return x; }

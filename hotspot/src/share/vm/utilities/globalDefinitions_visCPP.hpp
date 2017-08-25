@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ typedef signed   int ssize_t;
 #endif
 #endif
 
-//----------------------------------------------------------------------------------------------------
 // Additional Java basic types
 
 typedef unsigned char    jubyte;
@@ -116,38 +115,22 @@ typedef unsigned short   jushort;
 typedef unsigned int     juint;
 typedef unsigned __int64 julong;
 
-
-//----------------------------------------------------------------------------------------------------
 // Non-standard stdlib-like stuff:
 inline int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1,s2); }
 inline int strncasecmp(const char *s1, const char *s2, size_t n) {
   return _strnicmp(s1,s2,n);
 }
 
-
-//----------------------------------------------------------------------------------------------------
-// Debugging
-
-#if _WIN64
-extern "C" void breakpoint();
-#define BREAKPOINT ::breakpoint()
-#else
-#define BREAKPOINT __asm { int 3 }
-#endif
-
-//----------------------------------------------------------------------------------------------------
 // Checking for nanness
 
 inline int g_isnan(jfloat  f)                    { return _isnan(f); }
 inline int g_isnan(jdouble f)                    { return _isnan(f); }
 
-//----------------------------------------------------------------------------------------------------
 // Checking for finiteness
 
 inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
-//----------------------------------------------------------------------------------------------------
 // Miscellaneous
 
 // Visual Studio 2005 deprecates POSIX names - use ISO C++ names instead
