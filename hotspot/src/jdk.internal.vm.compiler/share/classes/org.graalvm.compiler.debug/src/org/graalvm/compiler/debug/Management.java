@@ -24,12 +24,6 @@ package org.graalvm.compiler.debug;
 
 import static java.lang.Thread.currentThread;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-
-import javax.management.ObjectName;
-
 public class Management {
 
     private static final com.sun.management.ThreadMXBean threadMXBean = Management.initThreadMXBean();
@@ -46,20 +40,20 @@ public class Management {
 
     private static com.sun.management.ThreadMXBean initThreadMXBean() {
         try {
-            return (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
+            return (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
         } catch (Error err) {
             return new UnimplementedBean();
         }
     }
 
-    public static ThreadMXBean getThreadMXBean() {
+    public static java.lang.management.ThreadMXBean getThreadMXBean() {
         return threadMXBean;
     }
 
-    private static class UnimplementedBean implements ThreadMXBean, com.sun.management.ThreadMXBean {
+    private static class UnimplementedBean implements java.lang.management.ThreadMXBean, com.sun.management.ThreadMXBean {
 
         @Override
-        public ObjectName getObjectName() {
+        public javax.management.ObjectName getObjectName() {
             return null;
         }
 
@@ -123,22 +117,22 @@ public class Management {
         }
 
         @Override
-        public ThreadInfo getThreadInfo(long id) {
+        public java.lang.management.ThreadInfo getThreadInfo(long id) {
             return null;
         }
 
         @Override
-        public ThreadInfo[] getThreadInfo(long[] ids) {
+        public java.lang.management.ThreadInfo[] getThreadInfo(long[] ids) {
             return null;
         }
 
         @Override
-        public ThreadInfo getThreadInfo(long id, int maxDepth) {
+        public java.lang.management.ThreadInfo getThreadInfo(long id, int maxDepth) {
             return null;
         }
 
         @Override
-        public ThreadInfo[] getThreadInfo(long[] ids, int maxDepth) {
+        public java.lang.management.ThreadInfo[] getThreadInfo(long[] ids, int maxDepth) {
             return null;
         }
 
@@ -220,12 +214,12 @@ public class Management {
         }
 
         @Override
-        public ThreadInfo[] getThreadInfo(long[] ids, boolean lockedMonitors, boolean lockedSynchronizers) {
+        public java.lang.management.ThreadInfo[] getThreadInfo(long[] ids, boolean lockedMonitors, boolean lockedSynchronizers) {
             return null;
         }
 
         @Override
-        public ThreadInfo[] dumpAllThreads(boolean lockedMonitors, boolean lockedSynchronizers) {
+        public java.lang.management.ThreadInfo[] dumpAllThreads(boolean lockedMonitors, boolean lockedSynchronizers) {
             return null;
         }
     }

@@ -126,8 +126,8 @@ ICStub* InlineCacheBuffer::new_ic_stub() {
     // We do this by forcing a safepoint
     EXCEPTION_MARK;
 
-    VM_ForceSafepoint vfs;
-    VMThread::execute(&vfs);
+    VM_ICBufferFull ibf;
+    VMThread::execute(&ibf);
     // We could potential get an async. exception at this point.
     // In that case we will rethrow it to ourselvs.
     if (HAS_PENDING_EXCEPTION) {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ class StubGenerator: public StubCodeGenerator {
       // Restore frame pointer.
       __ z_lg(r_entryframe_fp, _z_abi(callers_sp), Z_SP);
       // Pop frame. Done here to minimize stalls.
-      __ z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+      __ pop_frame();
 
       // Reload some volatile registers which we've spilled before the call
       // to frame manager / native entry.
@@ -563,6 +563,9 @@ class StubGenerator: public StubCodeGenerator {
   address generate_throw_exception(const char* name, address runtime_entry,
                                    bool restore_saved_exception_pc,
                                    Register arg1 = noreg, Register arg2 = noreg) {
+    assert_different_registers(arg1, Z_R0_scratch);  // would be destroyed by push_frame()
+    assert_different_registers(arg2, Z_R0_scratch);  // would be destroyed by push_frame()
+
     int insts_size = 256;
     int locs_size  = 0;
     CodeBuffer      code(name, insts_size, locs_size);
@@ -622,26 +625,6 @@ class StubGenerator: public StubCodeGenerator {
 #else
 #define __ (Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #endif
-
-  //----------------------------------------------------------------------
-  // The following routine generates a subroutine to throw an asynchronous
-  // UnknownError when an unsafe access gets a fault that could not be
-  // reasonably prevented by the programmer. (Example: SIGBUS/OBJERR.)
-  //
-  // Arguments:
-  //   trapping PC: ??
-  //
-  // Results:
-  //   Posts an asynchronous exception, skips the trapping instruction.
-  //
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    {
-      address start = __ pc();
-      __ unimplemented("StubRoutines::handler_for_unsafe_access", 86);
-      return start;
-    }
-  }
 
   // Support for uint StubRoutine::zarch::partial_subtype_check(Klass
   // sub, Klass super);
@@ -713,11 +696,13 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCTLogging:
-        // With G1, don't generate the call if we statically know that the target in uninitialized.
+        // With G1, don't generate the call if we statically know that the target is uninitialized.
         if (!dest_uninitialized) {
           // Is marking active?
           Label filtered;
-          Register Rtmp1 = Z_R0;
+          assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
+          assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
+          Register Rtmp1 = Z_R0_scratch;
           const int active_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
                                              SATBMarkQueue::byte_offset_of_active());
           if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
@@ -728,11 +713,11 @@ class StubGenerator: public StubCodeGenerator {
           }
           __ z_bre(filtered); // Activity indicator is zero, so there is no marking going on currently.
 
-          // __ push_frame_abi160(0);
+          // __ push_frame_abi160(0);  // implicitly done in save_live_registers()
           (void) RegisterSaver::save_live_registers(_masm, RegisterSaver::arg_registers);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), addr, count);
           (void) RegisterSaver::restore_live_registers(_masm, RegisterSaver::arg_registers);
-          // __ pop_frame();
+          // __ pop_frame();  // implicitly done in restore_live_registers()
 
           __ bind(filtered);
         }
@@ -759,16 +744,18 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           if (branchToEnd) {
-            // __ push_frame_abi160(0);
+            assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
+            assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
+            // __ push_frame_abi160(0);  // implicitly done in save_live_registers()
             (void) RegisterSaver::save_live_registers(_masm, RegisterSaver::arg_registers);
             __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
             (void) RegisterSaver::restore_live_registers(_masm, RegisterSaver::arg_registers);
-            // __ pop_frame();
+            // __ pop_frame();   // implicitly done in restore_live_registers()
           } else {
             // Tail call: call c and return to stub caller.
             address entry_point = CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post);
-            if (Z_ARG1 != addr) __ z_lgr(Z_ARG1, addr);
-            if (Z_ARG2 != count) __ z_lgr(Z_ARG2, count);
+            __ lgr_if_needed(Z_ARG1, addr);
+            __ lgr_if_needed(Z_ARG2, count);
             __ load_const(Z_R1, entry_point);
             __ z_br(Z_R1); // Branch without linking, callee will return to stub caller.
           }
@@ -1696,8 +1683,8 @@ class StubGenerator: public StubCodeGenerator {
   //   src    must designate an even/odd register pair, holding the address/length of the original message
 
   // Helper function which generates code to
-  //  - load the function code in register fCode (== Z_R0)
-  //  - load the data block length (depends on cipher function) in register srclen if requested.
+  //  - load the function code in register fCode (== Z_R0).
+  //  - load the data block length (depends on cipher function) into register srclen if requested.
   //  - is_decipher switches between cipher/decipher function codes
   //  - set_len requests (if true) loading the data block length in register srclen
   void generate_load_AES_fCode(Register keylen, Register fCode, Register srclen, bool is_decipher) {
@@ -1708,12 +1695,13 @@ class StubGenerator: public StubCodeGenerator {
       bool  identical_dataBlk_len =  (VM_Version::Cipher::_AES128_dataBlk == VM_Version::Cipher::_AES192_dataBlk)
                                   && (VM_Version::Cipher::_AES128_dataBlk == VM_Version::Cipher::_AES256_dataBlk);
       // Expanded key length is 44/52/60 * 4 bytes for AES-128/AES-192/AES-256.
-      __ z_cghi(keylen, 52);
-      __ z_lghi(fCode, VM_Version::Cipher::_AES256 + mode);
+      __ z_cghi(keylen, 52); // Check only once at the beginning. keylen and fCode may share the same register.
+
+      __ z_lghi(fCode, VM_Version::Cipher::_AES128 + mode);
       if (!identical_dataBlk_len) {
-        __ z_lghi(srclen, VM_Version::Cipher::_AES256_dataBlk);
+        __ z_lghi(srclen, VM_Version::Cipher::_AES128_dataBlk);
       }
-      __ z_brh(fCode_set);  // keyLen >  52: AES256
+      __ z_brl(fCode_set);  // keyLen <  52: AES128
 
       __ z_lghi(fCode, VM_Version::Cipher::_AES192 + mode);
       if (!identical_dataBlk_len) {
@@ -1721,11 +1709,12 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ z_bre(fCode_set);  // keyLen == 52: AES192
 
-      __ z_lghi(fCode, VM_Version::Cipher::_AES128 + mode);
+      __ z_lghi(fCode, VM_Version::Cipher::_AES256 + mode);
       if (!identical_dataBlk_len) {
-        __ z_lghi(srclen, VM_Version::Cipher::_AES128_dataBlk);
+        __ z_lghi(srclen, VM_Version::Cipher::_AES256_dataBlk);
       }
-      // __ z_brl(fCode_set);  // keyLen <  52: AES128           // fallthru
+      // __ z_brh(fCode_set);  // keyLen <  52: AES128           // fallthru
+
       __ bind(fCode_set);
       if (identical_dataBlk_len) {
         __ z_lghi(srclen, VM_Version::Cipher::_AES128_dataBlk);
@@ -1735,6 +1724,54 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Push a parameter block for the cipher/decipher instruction on the stack.
+  // Layout of the additional stack space allocated for AES_cipherBlockChaining:
+  //
+  //   |        |
+  //   +--------+ <-- SP before expansion
+  //   |        |
+  //   :        :  alignment loss, 0..(AES_parmBlk_align-8) bytes
+  //   |        |
+  //   +--------+
+  //   |        |
+  //   :        :  space for parameter block, size VM_Version::Cipher::_AES*_parmBlk_C
+  //   |        |
+  //   +--------+ <-- parmBlk, octoword-aligned, start of parameter block
+  //   |        |
+  //   :        :  additional stack space for spills etc., size AES_parmBlk_addspace, DW @ Z_SP not usable!!!
+  //   |        |
+  //   +--------+ <-- Z_SP after expansion
+
+  void generate_push_Block(int dataBlk_len, int parmBlk_len, int crypto_fCode,
+                           Register parmBlk, Register keylen, Register fCode, Register cv, Register key) {
+    const int AES_parmBlk_align    = 32;  // octoword alignment.
+    const int AES_parmBlk_addspace = 24;  // Must be sufficiently large to hold all spilled registers
+                                          // (currently 2) PLUS 1 DW for the frame pointer.
+
+    const int cv_len     = dataBlk_len;
+    const int key_len    = parmBlk_len - cv_len;
+    // This len must be known at JIT compile time. Only then are we able to recalc the SP before resize.
+    // We buy this knowledge by wasting some (up to AES_parmBlk_align) bytes of stack space.
+    const int resize_len = cv_len + key_len + AES_parmBlk_align + AES_parmBlk_addspace;
+
+    // Use parmBlk as temp reg here to hold the frame pointer.
+    __ resize_frame(-resize_len, parmBlk, true);
+
+    // calculate parmBlk address from updated (resized) SP.
+    __ add2reg(parmBlk, resize_len - (cv_len + key_len), Z_SP);
+    __ z_nill(parmBlk, (~(AES_parmBlk_align-1)) & 0xffff); // Align parameter block.
+
+    // There is room for stuff in the range [parmBlk-AES_parmBlk_addspace+8, parmBlk).
+    __ z_stg(keylen,  -8, parmBlk);                        // Spill keylen for later use.
+
+    // calculate (SP before resize) from updated SP.
+    __ add2reg(keylen, resize_len, Z_SP);                  // keylen holds prev SP for now.
+    __ z_stg(keylen, -16, parmBlk);                        // Spill prev SP for easy revert.
+
+    __ z_mvc(0,      cv_len-1,  parmBlk, 0, cv);     // Copy cv.
+    __ z_mvc(cv_len, key_len-1, parmBlk, 0, key);    // Copy key.
+    __ z_lghi(fCode, crypto_fCode);
+  }
+
   // NOTE:
   //   Before returning, the stub has to copy the chaining value from
   //   the parmBlk, where it was updated by the crypto instruction, back
@@ -1743,17 +1780,14 @@ class StubGenerator: public StubCodeGenerator {
   //   the key length across the KMC instruction. We do so by spilling it to the stack,
   //   just preceding the parmBlk (at (parmBlk - 8)).
   void generate_push_parmBlk(Register keylen, Register fCode, Register parmBlk, Register key, Register cv, bool is_decipher) {
-    const int AES_parmBlk_align    = 32;
-    const int AES_parmBlk_addspace = AES_parmBlk_align; // Must be multiple of AES_parmblk_align.
-    int       cv_len, key_len;
     int       mode = is_decipher ? VM_Version::CipherMode::decipher : VM_Version::CipherMode::cipher;
     Label     parmBlk_128, parmBlk_192, parmBlk_256, parmBlk_set;
 
     BLOCK_COMMENT("push parmBlk {");
     if (VM_Version::has_Crypto_AES()   ) { __ z_cghi(keylen, 52); }
-    if (VM_Version::has_Crypto_AES256()) { __ z_brh(parmBlk_256); }  // keyLen >  52: AES256
-    if (VM_Version::has_Crypto_AES192()) { __ z_bre(parmBlk_192); }  // keyLen == 52: AES192
     if (VM_Version::has_Crypto_AES128()) { __ z_brl(parmBlk_128); }  // keyLen <  52: AES128
+    if (VM_Version::has_Crypto_AES192()) { __ z_bre(parmBlk_192); }  // keyLen == 52: AES192
+    if (VM_Version::has_Crypto_AES256()) { __ z_brh(parmBlk_256); }  // keyLen >  52: AES256
 
     // Security net: requested AES function not available on this CPU.
     // NOTE:
@@ -1762,71 +1796,35 @@ class StubGenerator: public StubCodeGenerator {
     //   at all, we have at least AES-128.
     __ stop_static("AES key strength not supported by CPU. Use -XX:-UseAES as remedy.", 0);
 
-    if (VM_Version::has_Crypto_AES128()) {
-      __ bind(parmBlk_128);
-      cv_len  = VM_Version::Cipher::_AES128_dataBlk;
-      key_len = VM_Version::Cipher::_AES128_parmBlk_C - cv_len;
-      __ z_lay(parmBlk, -(VM_Version::Cipher::_AES128_parmBlk_C+AES_parmBlk_align)+(AES_parmBlk_align-1), Z_SP);
-      __ z_nill(parmBlk, (~(AES_parmBlk_align-1)) & 0xffff);  // align parameter block
-
-      // Resize the frame to accommodate for the aligned parameter block and other stuff.
-      // There is room for stuff in the range [parmBlk-AES_parmBlk_addspace, parmBlk).
-      __ z_stg(keylen, -8, parmBlk);                   // Spill keylen for later use.
-      __ z_stg(Z_SP,  -16, parmBlk);                   // Spill SP for easy revert.
-      __ z_aghi(parmBlk, -AES_parmBlk_addspace);       // Additional space for keylen, etc..
-      __ resize_frame_absolute(parmBlk, keylen, true); // Resize frame with parmBlk being the new SP.
-      __ z_aghi(parmBlk,  AES_parmBlk_addspace);       // Restore parameter block address.
-
-      __ z_mvc(0,      cv_len-1,  parmBlk, 0, cv);     // Copy cv.
-      __ z_mvc(cv_len, key_len-1, parmBlk, 0, key);    // Copy key.
-      __ z_lghi(fCode, VM_Version::Cipher::_AES128 + mode);
-      if (VM_Version::has_Crypto_AES192() || VM_Version::has_Crypto_AES256()) {
+    if (VM_Version::has_Crypto_AES256()) {
+      __ bind(parmBlk_256);
+      generate_push_Block(VM_Version::Cipher::_AES256_dataBlk,
+                          VM_Version::Cipher::_AES256_parmBlk_C,
+                          VM_Version::Cipher::_AES256 + mode,
+                          parmBlk, keylen, fCode, cv, key);
+      if (VM_Version::has_Crypto_AES128() || VM_Version::has_Crypto_AES192()) {
         __ z_bru(parmBlk_set);  // Fallthru otherwise.
       }
     }
 
     if (VM_Version::has_Crypto_AES192()) {
       __ bind(parmBlk_192);
-      cv_len  = VM_Version::Cipher::_AES192_dataBlk;
-      key_len = VM_Version::Cipher::_AES192_parmBlk_C - cv_len;
-      __ z_lay(parmBlk, -(VM_Version::Cipher::_AES192_parmBlk_C+AES_parmBlk_align)+(AES_parmBlk_align-1), Z_SP);
-      __ z_nill(parmBlk, (~(AES_parmBlk_align-1)) & 0xffff);  // Align parameter block.
-
-      // Resize the frame to accommodate for the aligned parameter block and other stuff.
-      // There is room for stuff in the range [parmBlk-AES_parmBlk_addspace, parmBlk).
-      __ z_stg(keylen, -8, parmBlk);                   // Spill keylen for later use.
-      __ z_stg(Z_SP,  -16, parmBlk);                   // Spill SP for easy revert.
-      __ z_aghi(parmBlk, -AES_parmBlk_addspace);       // Additional space for keylen, etc..
-      __ resize_frame_absolute(parmBlk, keylen, true); // Resize frame with parmBlk being the new SP.
-      __ z_aghi(parmBlk, AES_parmBlk_addspace);        // Restore parameter block address.
-
-      __ z_mvc(0,      cv_len-1,  parmBlk, 0, cv);     // Copy cv.
-      __ z_mvc(cv_len, key_len-1, parmBlk, 0, key);    // Copy key.
-      __ z_lghi(fCode,    VM_Version::Cipher::_AES192 + mode);
-      if (VM_Version::has_Crypto_AES256()) {
+      generate_push_Block(VM_Version::Cipher::_AES192_dataBlk,
+                          VM_Version::Cipher::_AES192_parmBlk_C,
+                          VM_Version::Cipher::_AES192 + mode,
+                          parmBlk, keylen, fCode, cv, key);
+      if (VM_Version::has_Crypto_AES128()) {
         __ z_bru(parmBlk_set);  // Fallthru otherwise.
       }
     }
 
-    if (VM_Version::has_Crypto_AES256()) {
-      __ bind(parmBlk_256);
-      cv_len  = VM_Version::Cipher::_AES256_dataBlk;
-      key_len = VM_Version::Cipher::_AES256_parmBlk_C - cv_len;
-      __ z_lay(parmBlk, -(VM_Version::Cipher::_AES256_parmBlk_C+AES_parmBlk_align)+(AES_parmBlk_align-1), Z_SP);
-      __ z_nill(parmBlk, (~(AES_parmBlk_align-1)) & 0xffff);  // Align parameter block.
-
-      // Resize the frame to accommodate for the aligned parameter block and other stuff.
-      // There is room for stuff in the range [parmBlk-AES_parmBlk_addspace, parmBlk).
-      __ z_stg(keylen, -8, parmBlk);                   // Spill keylen for later use.
-      __ z_stg(Z_SP,  -16, parmBlk);                   // Spill SP for easy revert.
-      __ z_aghi(parmBlk, -AES_parmBlk_addspace);       // Additional space for keylen, etc..
-      __ resize_frame_absolute(parmBlk, keylen, true); // Resize frame with parmBlk being the new SP.
-      __ z_aghi(parmBlk,  AES_parmBlk_addspace);       // Restore parameter block address.
-
-      __ z_mvc(0,      cv_len-1,  parmBlk, 0, cv);     // Copy cv.
-      __ z_mvc(cv_len, key_len-1, parmBlk, 0, key);    // Copy key.
-      __ z_lghi(fCode, VM_Version::Cipher::_AES256 + mode);
-      // __ z_bru(parmBlk_set);  // fallthru
+    if (VM_Version::has_Crypto_AES128()) {
+      __ bind(parmBlk_128);
+      generate_push_Block(VM_Version::Cipher::_AES128_dataBlk,
+                          VM_Version::Cipher::_AES128_parmBlk_C,
+                          VM_Version::Cipher::_AES128 + mode,
+                          parmBlk, keylen, fCode, cv, key);
+      // Fallthru
     }
 
     __ bind(parmBlk_set);
@@ -1882,41 +1880,49 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ bind(parmBlk_set);
     }
-    __ z_lg(Z_SP, -16, parmBlk); // Revert resize_frame_absolute.
+    __ z_lg(Z_SP, -16, parmBlk); // Revert resize_frame_absolute. Z_SP saved by push_parmBlk.
     BLOCK_COMMENT("} pop parmBlk");
   }
 
-  // Compute AES encrypt function.
-  address generate_AES_encryptBlock(const char* name) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
-
+  // Compute AES encrypt/decrypt function.
+  void generate_AES_cipherBlock(bool is_decipher) {
+    // Incoming arguments.
     Register       from    = Z_ARG1; // source byte array
     Register       to      = Z_ARG2; // destination byte array
     Register       key     = Z_ARG3; // expanded key array
 
     const Register keylen  = Z_R0;   // Temporarily (until fCode is set) holds the expanded key array length.
+
+    // Register definitions as required by KM instruction.
     const Register fCode   = Z_R0;   // crypto function code
     const Register parmBlk = Z_R1;   // parameter block address (points to crypto key)
-    const Register src     = Z_ARG1; // is Z_R2
-    const Register srclen  = Z_ARG2; // Overwrites destination address.
-    const Register dst     = Z_ARG3; // Overwrites expanded key address.
+    const Register src     = Z_ARG1; // Must be even reg (KM requirement).
+    const Register srclen  = Z_ARG2; // Must be odd reg and pair with src. Overwrites destination address.
+    const Register dst     = Z_ARG3; // Must be even reg (KM requirement). Overwrites expanded key address.
 
     // Read key len of expanded key (in 4-byte words).
     __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
     // Copy arguments to registers as required by crypto instruction.
     __ z_lgr(parmBlk, key);          // crypto key (in T_INT array).
-    // __ z_lgr(src, from);          // Copy not needed, src/from are identical.
-    __ z_lgr(dst, to);               // Copy destination address to even register.
+    __ lgr_if_needed(src, from);     // Copy src address. Will not emit, src/from are identical.
+    __ z_lgr(dst, to);               // Copy dst address, even register required.
 
-    // Construct function code in Z_R0, data block length in Z_ARG2.
-    generate_load_AES_fCode(keylen, fCode, srclen, false);
+    // Construct function code into fCode(Z_R0), data block length into srclen(Z_ARG2).
+    generate_load_AES_fCode(keylen, fCode, srclen, is_decipher);
 
-    __ km(dst, src);          // Cipher the message.
+    __ km(dst, src);                 // Cipher the message.
 
     __ z_br(Z_R14);
+  }
+
+  // Compute AES encrypt function.
+  address generate_AES_encryptBlock(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    generate_AES_cipherBlock(false);
 
     return __ addr_at(start_off);
   }
@@ -1925,33 +1931,9 @@ class StubGenerator: public StubCodeGenerator {
   address generate_AES_decryptBlock(const char* name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    Register       from    = Z_ARG1; // source byte array
-    Register       to      = Z_ARG2; // destination byte array
-    Register       key     = Z_ARG3; // expanded key array, not preset at entry!!!
-
-    const Register keylen  = Z_R0;   // Temporarily (until fCode is set) holds the expanded key array length.
-    const Register fCode   = Z_R0;   // crypto function code
-    const Register parmBlk = Z_R1;   // parameter block address (points to crypto key)
-    const Register src     = Z_ARG1; // is Z_R2
-    const Register srclen  = Z_ARG2; // Overwrites destination address.
-    const Register dst     = Z_ARG3; // Overwrites key address.
-
-    // Read key len of expanded key (in 4-byte words).
-    __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    // Copy arguments to registers as required by crypto instruction.
-    __ z_lgr(parmBlk, key);     // Copy crypto key address.
-    // __ z_lgr(src, from);     // Copy not needed, src/from are identical.
-    __ z_lgr(dst, to);          // Copy destination address to even register.
-
-    // Construct function code in Z_R0, data block length in Z_ARG2.
-    generate_load_AES_fCode(keylen, fCode, srclen, true);
-
-    __ km(dst, src);          // Cipher the message.
-
-    __ z_br(Z_R14);
+    generate_AES_cipherBlock(true);
 
     return __ addr_at(start_off);
   }
@@ -1969,10 +1951,7 @@ class StubGenerator: public StubCodeGenerator {
   // We align the parameter block to the next available octoword.
   //
   // Compute chained AES encrypt function.
-  address generate_cipherBlockChaining_AES_encrypt(const char* name) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+  void generate_AES_cipherBlockChaining(bool is_decipher) {
 
     Register       from    = Z_ARG1; // source byte array (clear text)
     Register       to      = Z_ARG2; // destination byte array (ciphered)
@@ -1992,20 +1971,29 @@ class StubGenerator: public StubCodeGenerator {
     __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
     // Construct parm block address in parmBlk (== Z_R1), copy cv and key to parm block.
-    // Construct function code in Z_R0.
-    generate_push_parmBlk(keylen, fCode, parmBlk, key, cv, false);
+    // Construct function code in fCode (Z_R0).
+    generate_push_parmBlk(keylen, fCode, parmBlk, key, cv, is_decipher);
 
     // Prepare other registers for instruction.
-    // __ z_lgr(src, from);     // Not needed, registers are the same.
+    __ lgr_if_needed(src, from);     // Copy src address. Will not emit, src/from are identical.
     __ z_lgr(dst, to);
-    __ z_llgfr(srclen, msglen); // We pass the offsets as ints, not as longs as required.
+    __ z_llgfr(srclen, msglen);      // We pass the offsets as ints, not as longs as required.
 
-    __ kmc(dst, src);           // Cipher the message.
+    __ kmc(dst, src);                // Cipher the message.
 
     generate_pop_parmBlk(keylen, parmBlk, key, cv);
 
-    __ z_llgfr(Z_RET, msglen);  // We pass the offsets as ints, not as longs as required.
+    __ z_llgfr(Z_RET, msglen);       // We pass the offsets as ints, not as longs as required.
     __ z_br(Z_R14);
+  }
+
+  // Compute chained AES encrypt function.
+  address generate_cipherBlockChaining_AES_encrypt(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    generate_AES_cipherBlockChaining(false);
 
     return __ addr_at(start_off);
   }
@@ -2016,38 +2004,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    Register       from    = Z_ARG1; // source byte array (ciphered)
-    Register       to      = Z_ARG2; // destination byte array (clear text)
-    Register       key     = Z_ARG3; // expanded key array, not preset at entry!!!
-    Register       cv      = Z_ARG4; // chaining value
-    const Register msglen  = Z_ARG5; // Total length of the msg to be encrypted. Value must be returned
-                                     // in Z_RET upon completion of this stub.
-
-    const Register keylen  = Z_R0;   // Expanded key length, as read from key array. Temp only.
-    const Register fCode   = Z_R0;   // crypto function code
-    const Register parmBlk = Z_R1;   // parameter block address (points to crypto key)
-    const Register src     = Z_ARG1; // is Z_R2
-    const Register srclen  = Z_ARG2; // Overwrites destination address.
-    const Register dst     = Z_ARG3; // Overwrites key address.
-
-    // Read key len of expanded key (in 4-byte words).
-    __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-    // Construct parm block address in parmBlk (== Z_R1), copy cv and key to parm block.
-    // Construct function code in Z_R0.
-    generate_push_parmBlk(keylen, fCode, parmBlk, key, cv, true);
-
-    // Prepare other registers for instruction.
-    // __ z_lgr(src, from);     // Not needed, registers are the same.
-    __ z_lgr(dst, to);
-    __ z_llgfr(srclen, msglen); // We pass the offsets as ints, not as longs as required.
-
-    __ kmc(dst, src);           // Decipher the message.
-
-    generate_pop_parmBlk(keylen, parmBlk, key, cv);
-
-    __ z_llgfr(Z_RET, msglen);  // We pass the offsets as ints, not as longs as required.
-    __ z_br(Z_R14);
+    generate_AES_cipherBlockChaining(true);
 
     return __ addr_at(start_off);
   }
@@ -2330,26 +2287,25 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
-
-  // Arguments:
-  //   Z_ARG1  - int   crc
-  //   Z_ARG2  - byte* buf
-  //   Z_ARG3  - int   length (of buffer)
-  //
-  // Result:
-  //   Z_RET   - int   crc result
-  //
-  // Compute CRC32 function.
-  address generate_CRC32_updateBytes(const char* name) {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   Z_ARG1    - int   crc
+   *   Z_ARG2    - byte* buf
+   *   Z_ARG3    - int   length (of buffer)
+   *
+   * Result:
+   *   Z_RET     - int   crc result
+   **/
+  // Compute CRC function (generic, for all polynomials).
+  void generate_CRC_updateBytes(const char* name, Register table, bool invertCRC) {
 
     // arguments to kernel_crc32:
     Register       crc     = Z_ARG1;  // Current checksum, preset by caller or result from previous call, int.
     Register       data    = Z_ARG2;  // source byte array
     Register       dataLen = Z_ARG3;  // #bytes to process, int
-    Register       table   = Z_ARG4;  // crc table address
+//    Register       table   = Z_ARG4;  // crc table address. Preloaded and passed in by caller.
     const Register t0      = Z_R10;   // work reg for kernel* emitters
     const Register t1      = Z_R11;   // work reg for kernel* emitters
     const Register t2      = Z_R12;   // work reg for kernel* emitters
@@ -2361,16 +2317,50 @@ class StubGenerator: public StubCodeGenerator {
     // Crc used as int.
     __ z_llgfr(dataLen, dataLen);
 
-    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
-
     __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
     __ z_stmg(Z_R10, Z_R13, 1*8, Z_SP);  // Spill regs 10..11 to make them available as work registers.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3);
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, invertCRC);
     __ z_lmg(Z_R10, Z_R13, 1*8, Z_SP);   // Spill regs 10..11 back from stack.
     __ resize_frame(+(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
 
     __ z_llgfr(Z_RET, crc);  // Updated crc is function result. No copying required, just zero upper 32 bits.
     __ z_br(Z_R14);          // Result already in Z_RET == Z_ARG1.
+  }
+
+
+  // Compute CRC32 function.
+  address generate_CRC32_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", name);
+
+    BLOCK_COMMENT("CRC32_updateBytes {");
+    Register       table   = Z_ARG4;  // crc32 table address.
+    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
+
+    generate_CRC_updateBytes(name, table, true);
+    BLOCK_COMMENT("} CRC32_updateBytes");
+
+    return __ addr_at(start_off);
+  }
+
+
+  // Compute CRC32C function.
+  address generate_CRC32C_updateBytes(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
+
+    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", name);
+
+    BLOCK_COMMENT("CRC32C_updateBytes {");
+    Register       table   = Z_ARG4;  // crc32c table address.
+    StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
+
+    generate_CRC_updateBytes(name, table, false);
+    BLOCK_COMMENT("} CRC32C_updateBytes");
 
     return __ addr_at(start_off);
   }
@@ -2441,9 +2431,13 @@ class StubGenerator: public StubCodeGenerator {
     // Entry points that are platform specific.
 
     if (UseCRC32Intrinsics) {
-      // We have no CRC32 table on z/Architecture.
-      StubRoutines::_crc_table_adr    = (address)StubRoutines::zarch::_crc_table;
-      StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes("CRC32_updateBytes");
+      StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
+      StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes("CRC32_updateBytes");
+    }
+
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
+      StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes("CRC32C_updateBytes");
     }
 
     // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
@@ -2460,8 +2454,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
-
-    StubRoutines::zarch::_handler_for_unsafe_access_entry  =  generate_handler_for_unsafe_access();
 
     // Support for verify_oop (must happen after universe_init).
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop_subroutine();

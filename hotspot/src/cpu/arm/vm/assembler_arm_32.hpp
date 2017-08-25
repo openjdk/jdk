@@ -578,6 +578,11 @@ class Assembler : public AbstractAssembler  {
   F(bl, 0xb)
 #undef F
 
+  void udf(int imm_16) {
+    assert((imm_16 >> 16) == 0, "encoding constraint");
+    emit_int32(0xe7f000f0 | (imm_16 & 0xfff0) << 8 | (imm_16 & 0xf));
+  }
+
   // ARMv7 instructions
 
 #define F(mnemonic, wt) \

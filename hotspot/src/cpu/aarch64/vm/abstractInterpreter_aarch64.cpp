@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
@@ -51,27 +52,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers,
          "index out of bounds");
   return i;
-}
-
-// These should never be compiled since the interpreter will prefer
-// the compiled version to the intrinsic version.
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  switch (method_kind(m)) {
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : // fall thru
-    case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     : // fall thru
-    case Interpreter::java_lang_math_fmaD    : // fall thru
-    case Interpreter::java_lang_math_fmaF    :
-      return false;
-    default:
-      return true;
-  }
 }
 
 // How much stack a method activation needs in words.
@@ -121,7 +101,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 
   // On AArch64 we always keep the stack pointer 16-aligned, so we
   // must round up here.
-  size = round_to(size, 2);
+  size = align_up(size, 2);
 
   return size;
 }

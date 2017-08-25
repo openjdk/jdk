@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ class G1ParScanThreadState;
 
 class G1RootClosures : public CHeapObj<mtGC> {
 public:
-  // Closures to process raw oops in the root set.
+  virtual ~G1RootClosures() {}
+
+// Closures to process raw oops in the root set.
   virtual OopClosure* weak_oops() = 0;
   virtual OopClosure* strong_oops() = 0;
 

@@ -1253,73 +1253,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifdef ASSERT
 };
 
-inline bool PSParallelCompact::is_marked(oop obj) {
-  return mark_bitmap()->is_marked(obj);
-}
-
-inline double PSParallelCompact::normal_distribution(double density) {
-  assert(_dwl_initialized, "uninitialized");
-  const double squared_term = (density - _dwl_mean) / _dwl_std_dev;
-  return _dwl_first_term * exp(-0.5 * squared_term * squared_term);
-}
-
-inline bool
-PSParallelCompact::dead_space_crosses_boundary(const RegionData* region,
-                                               idx_t bit)
-{
-  assert(bit > 0, "cannot call this for the first bit/region");
-  assert(_summary_data.region_to_addr(region) == _mark_bitmap.bit_to_addr(bit),
-         "sanity check");
-
-  // Dead space crosses the boundary if (1) a partial object does not extend
-  // onto the region, (2) an object does not start at the beginning of the
-  // region, and (3) an object does not end at the end of the prior region.
-  return region->partial_obj_size() == 0 &&
-    !_mark_bitmap.is_obj_beg(bit) &&
-    !_mark_bitmap.is_obj_end(bit - 1);
-}
-
-inline bool
-PSParallelCompact::is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return p >= beg_addr && p < end_addr;
-}
-
-inline bool
-PSParallelCompact::is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return is_in((HeapWord*)p, beg_addr, end_addr);
-}
-
-inline MutableSpace* PSParallelCompact::space(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].space();
-}
-
-inline HeapWord* PSParallelCompact::new_top(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].new_top();
-}
-
-inline HeapWord* PSParallelCompact::dense_prefix(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].dense_prefix();
-}
-
-inline ObjectStartArray* PSParallelCompact::start_array(SpaceId id) {
-  assert(id < last_space_id, "id out of range");
-  return _space_info[id].start_array();
-}
-
-#ifdef ASSERT
-inline void
-PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* new_addr)
-{
-  assert(old_addr >= new_addr || space_id(old_addr) != space_id(new_addr),
-         "must move left or to a different space");
-  assert(is_object_aligned((intptr_t)old_addr) && is_object_aligned((intptr_t)new_addr),
-         "checking alignment");
-}
-#endif // ASSERT
-
 class MoveAndUpdateClosure: public ParMarkBitMapClosure {
  public:
   inline MoveAndUpdateClosure(ParMarkBitMap* bitmap, ParCompactionManager* cm,
@@ -1389,13 +1322,7 @@ class UpdateOnlyClosure: public ParMarkBitMapClosure {
 
 class FillClosure: public ParMarkBitMapClosure {
  public:
-  FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
-    ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
-    _start_array(PSParallelCompact::start_array(space_id))
-  {
-    assert(space_id == PSParallelCompact::old_space_id,
-           "cannot use FillClosure in the young gen");
-  }
+  FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id);
 
   virtual IterationStatus do_addr(HeapWord* addr, size_t size);
 

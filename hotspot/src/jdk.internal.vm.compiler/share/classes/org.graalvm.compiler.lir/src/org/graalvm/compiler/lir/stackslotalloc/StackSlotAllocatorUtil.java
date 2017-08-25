@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.lir.stackslotalloc;
 
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.DebugCounter;
+import org.graalvm.compiler.debug.CounterKey;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.VirtualStackSlot;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 
@@ -38,16 +38,16 @@ public final class StackSlotAllocatorUtil {
     /**
      * The number of allocated stack slots.
      */
-    public static DebugCounter allocatedSlots = Debug.counter("StackSlotAllocator[allocatedSlots]");
+    public static CounterKey allocatedSlots = DebugContext.counter("StackSlotAllocator[allocatedSlots]");
     /**
      * The number of reused stack slots.
      */
-    public static DebugCounter reusedSlots = Debug.counter("StackSlotAllocator[reusedSlots]");
+    public static CounterKey reusedSlots = DebugContext.counter("StackSlotAllocator[reusedSlots]");
     /**
      * The size (in bytes) required for all allocated stack slots. Note that this number corresponds
      * to the actual frame size and might include alignment.
      */
-    public static DebugCounter allocatedFramesize = Debug.counter("StackSlotAllocator[AllocatedFramesize]");
+    public static CounterKey allocatedFramesize = DebugContext.counter("StackSlotAllocator[AllocatedFramesize]");
     /** The size (in bytes) required for all virtual stack slots. */
-    public static DebugCounter virtualFramesize = Debug.counter("StackSlotAllocator[VirtualFramesize]");
+    public static CounterKey virtualFramesize = DebugContext.counter("StackSlotAllocator[VirtualFramesize]");
 }

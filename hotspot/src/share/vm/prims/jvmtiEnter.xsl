@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ const bool JvmtiUtil::has_event_capability(jvmtiEvent event_type, const jvmtiCap
 </xsl:text>
     </xsl:if>
   </xsl:for-each>
-  <xsl:text>  }
+  <xsl:text>  default: break; }
   // if it does not have a capability it is required
   return JNI_TRUE;
 }
@@ -1232,14 +1232,14 @@ static jvmtiError JNICALL
   <xsl:param name="name"/>
   <xsl:text> </xsl:text>
   <xsl:value-of select="$name"/>
-  <xsl:text>=" INT64_FORMAT "</xsl:text>
+  <xsl:text>=" JLONG_FORMAT "</xsl:text>
 </xsl:template>
 
 <xsl:template match="jlong" mode="traceInFormat">
   <xsl:param name="name"/>
   <xsl:text> </xsl:text>
   <xsl:value-of select="$name"/>
-  <xsl:text>=" INT64_FORMAT "</xsl:text>
+  <xsl:text>=" JLONG_FORMAT "</xsl:text>
 </xsl:template>
 
 <xsl:template match="size_t" mode="traceInFormat">

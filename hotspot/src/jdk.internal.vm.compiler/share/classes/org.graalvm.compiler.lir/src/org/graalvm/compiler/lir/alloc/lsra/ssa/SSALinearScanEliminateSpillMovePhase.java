@@ -22,11 +22,11 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
-import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.lir.LIRValueUtil.isStackSlotValue;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.StandardOp.LabelOp;
@@ -82,8 +82,9 @@ public class SSALinearScanEliminateSpillMovePhase extends LinearScanEliminateSpi
         if (!block.getSuccessors()[0].equals(intStartBlock)) {
             return false;
         }
-        try (Indent indet = Debug.indent()) {
-            Debug.log("Is a move (%s) to phi interval %s", move, toInterval);
+        DebugContext debug = allocator.getDebug();
+        try (Indent indent = debug.indent()) {
+            debug.log("Is a move (%s) to phi interval %s", move, toInterval);
         }
         return true;
     }

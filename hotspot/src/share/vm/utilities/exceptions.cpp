@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
@@ -53,11 +54,12 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 }
 
 void ThreadShadow::clear_pending_exception() {
-  if (_pending_exception != NULL && log_is_enabled(Debug, exceptions)) {
+  LogTarget(Debug, exceptions) lt;
+  if (_pending_exception != NULL && lt.is_enabled()) {
     ResourceMark rm;
-    outputStream* logst = Log(exceptions)::debug_stream();
-    logst->print("Thread::clear_pending_exception: cleared exception:");
-    _pending_exception->print_on(logst);
+    LogStream ls(lt);
+    ls.print("Thread::clear_pending_exception: cleared exception:");
+    _pending_exception->print_on(&ls);
   }
   _pending_exception = NULL;
   _exception_file    = NULL;
@@ -129,7 +131,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, S
 // therefore the exception oop should be in the oopmap.
 void Exceptions::_throw_oop(Thread* thread, const char* file, int line, oop exception) {
   assert(exception != NULL, "exception should not be NULL");
-  Handle h_exception = Handle(thread, exception);
+  Handle h_exception(thread, exception);
   _throw(thread, file, line, h_exception);
 }
 
@@ -265,11 +267,10 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
   Handle h_exception;
 
   // Resolve exception klass
-  Klass* ik = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
-  instanceKlassHandle klass(thread, ik);
+  InstanceKlass* klass = InstanceKlass::cast(SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread));
 
   if (!thread->has_pending_exception()) {
-    assert(klass.not_null(), "klass must exist");
+    assert(klass != NULL, "klass must exist");
     // We are about to create an instance - so make sure that klass is initialized
     klass->initialize(thread);
     if (!thread->has_pending_exception()) {
@@ -496,7 +497,7 @@ void Exceptions::debug_check_abort(Handle exception, const char* message) {
 void Exceptions::debug_check_abort_helper(Handle exception, const char* message) {
   ResourceMark rm;
   if (message == NULL && exception->is_a(SystemDictionary::Throwable_klass())) {
-    oop msg = java_lang_Throwable::message(exception);
+    oop msg = java_lang_Throwable::message(exception());
     if (msg != NULL) {
       message = java_lang_String::as_utf8_string(msg);
     }

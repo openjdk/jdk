@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/gcTrace.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -113,7 +114,7 @@ bool G1ParScanThreadState::verify_ref(oop* ref) const {
   if (has_partial_array_mask(ref)) {
     // Must be in the collection set--it's already been copied.
     oop p = clear_partial_array_mask(ref);
-    assert(_g1h->obj_in_cs(p),
+    assert(_g1h->is_in_cset(p),
            "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   } else {
     oop p = oopDesc::load_decode_heap_oop(ref);
@@ -336,16 +337,6 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   return _states[worker_id];
 }
 
-void G1ParScanThreadStateSet::add_cards_scanned(uint worker_id, size_t cards_scanned) {
-  assert(worker_id < _n_workers, "out of bounds access");
-  _cards_scanned[worker_id] += cards_scanned;
-}
-
-size_t G1ParScanThreadStateSet::total_cards_scanned() const {
-  assert(_flushed, "thread local state from the per thread states should have been flushed");
-  return _total_cards_scanned;
-}
-
 const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   return _surviving_young_words_total;
@@ -353,7 +344,6 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
 
 void G1ParScanThreadStateSet::flush() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
-  assert(_total_cards_scanned == 0, "should have been cleared");
 
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
@@ -361,8 +351,6 @@ void G1ParScanThreadStateSet::flush() {
     if (pss == NULL) {
       continue;
     }
-
-    _total_cards_scanned += _cards_scanned[worker_index];
 
     pss->flush(_surviving_young_words_total);
     delete pss;
@@ -372,7 +360,7 @@ void G1ParScanThreadStateSet::flush() {
 }
 
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
-  assert(_g1h->obj_in_cs(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
+  assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_atomic(old);
   if (forward_ptr == NULL) {
@@ -394,7 +382,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
     // Forward-to-self failed. Either someone else managed to allocate
     // space for this object (old != forward_ptr) or they beat us in
     // self-forwarding it (old == forward_ptr).
-    assert(old == forward_ptr || !_g1h->obj_in_cs(forward_ptr),
+    assert(old == forward_ptr || !_g1h->is_in_cset(forward_ptr),
            "Object " PTR_FORMAT " forwarded to: " PTR_FORMAT " "
            "should not be in the CSet",
            p2i(old), p2i(forward_ptr));

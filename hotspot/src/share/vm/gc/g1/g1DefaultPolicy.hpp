@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class G1Analytics;
 class G1SurvivorRegions;
 class G1YoungGenSizer;
 class GCPolicyCounters;
+class STWGCTimer;
 
 class G1DefaultPolicy: public G1Policy {
  private:
@@ -264,7 +265,7 @@ private:
   void abort_time_to_mixed_tracking();
 public:
 
-  G1DefaultPolicy();
+  G1DefaultPolicy(STWGCTimer* gc_timer);
 
   virtual ~G1DefaultPolicy();
 

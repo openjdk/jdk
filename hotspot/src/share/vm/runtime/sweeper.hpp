@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ class WhiteBox;
 
 #include "code/codeCache.hpp"
 #include "utilities/ticks.hpp"
+
+class CodeBlobClosure;
 
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
@@ -114,6 +116,7 @@ class NMethodSweeper : public AllStatic {
 #endif
 
   static void mark_active_nmethods();      // Invoked at the end of each safepoint
+  static CodeBlobClosure* prepare_mark_active_nmethods();
   static void sweeper_loop();
   static void notify(int code_blob_type);  // Possibly start the sweeper thread.
   static void force_sweep();

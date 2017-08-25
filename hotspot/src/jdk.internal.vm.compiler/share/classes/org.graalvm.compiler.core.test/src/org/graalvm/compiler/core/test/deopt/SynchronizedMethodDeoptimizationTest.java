@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.core.test.deopt;
 
+import org.junit.Assume;
 import org.junit.Test;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
@@ -44,6 +45,9 @@ public class SynchronizedMethodDeoptimizationTest extends GraalCompilerTest {
 
     @Test
     public void test1() {
+        // https://bugs.openjdk.java.net/browse/JDK-8182755
+        Assume.assumeTrue(Java8OrEarlier);
+
         test("testMethodSynchronized", "test");
         test("testMethodSynchronized", (Object) null);
     }

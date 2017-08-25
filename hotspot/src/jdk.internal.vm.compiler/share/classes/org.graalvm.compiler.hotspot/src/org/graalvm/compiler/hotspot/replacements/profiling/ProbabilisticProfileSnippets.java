@@ -31,6 +31,7 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
@@ -46,6 +47,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -113,8 +115,8 @@ public class ProbabilisticProfileSnippets implements Snippets {
         private final SnippetInfo profileBackedgeWithProbability = snippet(ProbabilisticProfileSnippets.class, "profileBackedgeWithProbability");
         private final SnippetInfo profileConditionalBackedgeWithProbability = snippet(ProbabilisticProfileSnippets.class, "profileConditionalBackedgeWithProbability");
 
-        public Templates(HotSpotProviders providers, TargetDescription target) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
         }
 
         public void lower(ProfileNode profileNode, LoweringTool tool) {
@@ -140,7 +142,7 @@ public class ProbabilisticProfileSnippets implements Snippets {
                 args.add("bci", bci);
                 args.add("targetBci", targetBci);
 
-                SnippetTemplate template = template(args);
+                SnippetTemplate template = template(graph.getDebug(), args);
                 template.instantiate(providers.getMetaAccess(), profileNode, DEFAULT_REPLACER, args);
             } else if (profileNode instanceof ProfileInvokeNode) {
                 ProfileInvokeNode profileInvokeNode = (ProfileInvokeNode) profileNode;
@@ -150,7 +152,7 @@ public class ProbabilisticProfileSnippets implements Snippets {
                 args.add("random", profileInvokeNode.getRandom());
                 args.addConst("freqLog", profileInvokeNode.getNotificationFreqLog());
                 args.addConst("probLog", profileInvokeNode.getProbabilityLog());
-                SnippetTemplate template = template(args);
+                SnippetTemplate template = template(graph.getDebug(), args);
                 template.instantiate(providers.getMetaAccess(), profileNode, DEFAULT_REPLACER, args);
             } else {
                 throw new GraalError("Unsupported profile node type: " + profileNode);

@@ -30,6 +30,8 @@ import org.graalvm.compiler.graph.Graph.NodeEvent;
 import org.graalvm.compiler.graph.Graph.NodeEventListener;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Node.IndirectCanonicalization;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicSet;
 
 /**
  * A simple {@link NodeEventListener} implementation that accumulates event nodes in a
@@ -37,14 +39,14 @@ import org.graalvm.compiler.graph.Node.IndirectCanonicalization;
  */
 public class HashSetNodeEventListener implements NodeEventListener {
 
-    private final Set<Node> nodes;
+    private final EconomicSet<Node> nodes;
     private final Set<NodeEvent> filter;
 
     /**
      * Creates a {@link NodeEventListener} that collects nodes from all events.
      */
     public HashSetNodeEventListener() {
-        this.nodes = Node.newSet();
+        this.nodes = EconomicSet.create(Equivalence.IDENTITY);
         this.filter = EnumSet.allOf(NodeEvent.class);
     }
 
@@ -53,7 +55,7 @@ public class HashSetNodeEventListener implements NodeEventListener {
      * filter.
      */
     public HashSetNodeEventListener(Set<NodeEvent> filter) {
-        this.nodes = Node.newSet();
+        this.nodes = EconomicSet.create(Equivalence.IDENTITY);
         this.filter = filter;
     }
 
@@ -80,7 +82,7 @@ public class HashSetNodeEventListener implements NodeEventListener {
     /**
      * Gets the set being used to accumulate the nodes communicated to this listener.
      */
-    public Set<Node> getNodes() {
+    public EconomicSet<Node> getNodes() {
         return nodes;
     }
 }

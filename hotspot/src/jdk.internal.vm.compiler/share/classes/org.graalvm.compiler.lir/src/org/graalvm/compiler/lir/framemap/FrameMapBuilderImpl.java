@@ -31,7 +31,7 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.InstructionValueConsumer;
 import org.graalvm.compiler.lir.LIR;
@@ -118,7 +118,8 @@ public class FrameMapBuilderImpl extends FrameMapBuilderTool {
     @Override
     @SuppressWarnings("try")
     public FrameMap buildFrameMap(LIRGenerationResult res) {
-        if (Debug.isEnabled()) {
+        DebugContext debug = res.getLIR().getDebug();
+        if (debug.areScopesEnabled()) {
             verifyStackSlotAllocation(res);
         }
         for (CallingConvention cc : calls) {

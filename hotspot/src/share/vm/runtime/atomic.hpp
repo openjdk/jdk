@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_ATOMIC_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 enum cmpxchg_memory_order {
@@ -72,7 +73,7 @@ class Atomic : AllStatic {
   inline static void store_ptr(void*    store_value, volatile void*     dest);
 
   // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong load(volatile jlong* src);
+  inline static jlong load(const volatile jlong* src);
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
@@ -81,8 +82,6 @@ class Atomic : AllStatic {
   inline static size_t   add    (size_t   add_value, volatile size_t*   dest);
   inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
   inline static void*    add_ptr(intptr_t add_value, volatile void*     dest);
-  // See comment above about using jlong atomics on 32-bit platforms
-  inline static jlong    add    (jlong    add_value, volatile jlong*    dest);
 
   // Atomically increment location. inc*() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
@@ -155,7 +154,7 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest,
                              jbyte compare_value, cmpxchg_memory_order order) {
   STATIC_ASSERT(sizeof(jbyte) == 1);
   volatile jint* dest_int =
-      static_cast<volatile jint*>(align_ptr_down(dest, sizeof(jint)));
+      reinterpret_cast<volatile jint*>(align_down(dest, sizeof(jint)));
   size_t offset = pointer_delta(dest, dest_int, 1);
   jint cur = *dest_int;
   jbyte* cur_as_bytes = reinterpret_cast<jbyte*>(&cur);
@@ -197,16 +196,6 @@ inline unsigned Atomic::cmpxchg(unsigned int exchange_value,
   assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
   return (unsigned int)Atomic::cmpxchg((jint)exchange_value, (volatile jint*)dest,
                                        (jint)compare_value, order);
-}
-
-inline jlong Atomic::add(jlong    add_value, volatile jlong*    dest) {
-  jlong old = load(dest);
-  jlong new_value = old + add_value;
-  while (old != cmpxchg(new_value, dest, old)) {
-    old = load(dest);
-    new_value = old + add_value;
-  }
-  return old;
 }
 
 inline jshort Atomic::add(jshort add_value, volatile jshort* dest) {

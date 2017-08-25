@@ -203,18 +203,19 @@ public class Utils {
      * Converts the filename to classname.
      *
      * @param filename filename to convert
-     * @return corresponding classname.
+     * @return corresponding classname
      * @throws AssertionError if filename isn't valid filename for class file -
      *                        {@link #isClassFile(String)}
      */
     public static String fileNameToClassName(String filename) {
         assert isClassFile(filename);
-        // workaround for the class naming in jimage : /<module>/<class_name>
         final char nameSeparator = '/';
-        int nameStart = filename.charAt(0) == nameSeparator
-                ? filename.indexOf(nameSeparator, 1) + 1
-                : 0;
-        return filename.substring(nameStart, filename.length() - CLASSFILE_EXT.length())
+        return filename.substring(0, filename.length() - CLASSFILE_EXT.length())
                        .replace(nameSeparator, '.');
+    }
+
+    public static String classNameToFileName(String classname) {
+        return classname.replace('.', '/')
+                        .concat(CLASSFILE_EXT);
     }
 }

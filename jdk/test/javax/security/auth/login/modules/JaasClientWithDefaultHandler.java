@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package login;
 import java.security.Principal;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import com.sun.security.auth.UnixPrincipal;
+import com.sun.security.auth.UserPrincipal;
 
 public class JaasClientWithDefaultHandler {
 
@@ -61,13 +61,13 @@ public class JaasClientWithDefaultHandler {
             return;
         }
         for (Principal p : loginContext.getSubject().getPrincipals()) {
-            if (p instanceof UnixPrincipal
+            if (p instanceof UserPrincipal
                     && USER_NAME.equals(p.getName())) {
                 //Proper principal was found, return.
                 return;
             }
         }
-        throw new RuntimeException("Test failed. UnixPrincipal "
+        throw new RuntimeException("Test failed. UserPrincipal "
                 + USER_NAME + " expected.");
     }
 

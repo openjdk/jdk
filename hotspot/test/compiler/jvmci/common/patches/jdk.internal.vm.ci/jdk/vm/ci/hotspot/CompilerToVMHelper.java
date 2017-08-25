@@ -215,8 +215,8 @@ public class CompilerToVMHelper {
         return CTVM.getLocalVariableTableStart((HotSpotResolvedJavaMethodImpl)method);
     }
 
-    public static void doNotInlineOrCompile(HotSpotResolvedJavaMethod method) {
-        CTVM.doNotInlineOrCompile((HotSpotResolvedJavaMethodImpl)method);
+    public static void setNotInlineableOrCompileable(HotSpotResolvedJavaMethod method) {
+        CTVM.setNotInlineableOrCompileable((HotSpotResolvedJavaMethodImpl)method);
     }
 
     public static void reprofile(HotSpotResolvedJavaMethod method) {

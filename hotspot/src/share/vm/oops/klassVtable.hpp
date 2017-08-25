@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@
 
 class vtableEntry;
 
-class klassVtable : public ResourceObj {
-  KlassHandle  _klass;            // my klass
+class klassVtable VALUE_OBJ_CLASS_SPEC {
+  Klass*       _klass;            // my klass
   int          _tableOffset;      // offset of start of vtable data within klass
   int          _length;           // length of vtable (number of entries)
 #ifndef PRODUCT
@@ -57,13 +57,13 @@ class klassVtable : public ResourceObj {
   };
 
  public:
-  klassVtable(KlassHandle h_klass, void* base, int length) : _klass(h_klass) {
-    _tableOffset = (address)base - (address)h_klass(); _length = length;
+  klassVtable(Klass* klass, void* base, int length) : _klass(klass) {
+    _tableOffset = (address)base - (address)klass; _length = length;
   }
 
   // accessors
-  vtableEntry* table() const      { return (vtableEntry*)(address(_klass()) + _tableOffset); }
-  KlassHandle klass() const       { return _klass;  }
+  vtableEntry* table() const      { return (vtableEntry*)(address(_klass) + _tableOffset); }
+  Klass* klass() const            { return _klass;  }
   int length() const              { return _length; }
   inline Method* method_at(int i) const;
   inline Method* unchecked_method_at(int i) const;
@@ -125,10 +125,10 @@ class klassVtable : public ResourceObj {
 
  private:
   void copy_vtable_to(vtableEntry* start);
-  int  initialize_from_super(KlassHandle super);
+  int  initialize_from_super(Klass* super);
   int  index_of(Method* m, int len) const; // same as index_of, but search only up to len
   void put_method_at(Method* m, int index);
-  static bool needs_new_vtable_entry(methodHandle m,
+  static bool needs_new_vtable_entry(const methodHandle& m,
                                      const Klass* super,
                                      Handle classloader,
                                      Symbol* classname,
@@ -136,8 +136,8 @@ class klassVtable : public ResourceObj {
                                      u2 major_version,
                                      TRAPS);
 
-  bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
- InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method, int vtable_index,
+  bool update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
+ InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, const methodHandle& target_method, int vtable_index,
                                          Handle target_loader, Symbol* target_classname, Thread* THREAD);
 
   // support for miranda methods
@@ -196,6 +196,7 @@ class vtableEntry VALUE_OBJ_CLASS_SPEC {
 
   static int method_offset_in_bytes() { return offset_of(vtableEntry, _method); }
   Method* method() const    { return _method; }
+  Method** method_addr()    { return &_method; }
 
  private:
   Method* _method;
@@ -236,6 +237,7 @@ class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
   int      _offset;
  public:
   Klass* interface_klass() const { return _interface; }
+  Klass**interface_klass_addr()  { return &_interface; }
   int      offset() const          { return _offset; }
 
   static itableMethodEntry* method_entry(Klass* k, int offset) { return (itableMethodEntry*)(((address)k) + offset); }
@@ -258,6 +260,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 
  public:
   Method* method() const { return _method; }
+  Method**method_addr() { return &_method; }
 
   void clear()             { _method = NULL; }
 
@@ -288,16 +291,16 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 //    -- vtable for interface 2 ---
 //    ...
 //
-class klassItable : public ResourceObj {
+class klassItable VALUE_OBJ_CLASS_SPEC {
  private:
-  instanceKlassHandle  _klass;             // my klass
+  InstanceKlass*       _klass;             // my klass
   int                  _table_offset;      // offset of start of itable data within klass (in words)
   int                  _size_offset_table; // size of offset table (in itableOffset entries)
   int                  _size_method_table; // size of methodtable (in itableMethodEntry entries)
 
-  void initialize_itable_for_interface(int method_table_offset, KlassHandle interf_h, bool checkconstraints, TRAPS);
+  void initialize_itable_for_interface(int method_table_offset, Klass* interf_h, bool checkconstraints, TRAPS);
  public:
-  klassItable(instanceKlassHandle klass);
+  klassItable(InstanceKlass* klass);
 
   itableOffsetEntry* offset_entry(int i) { assert(0 <= i && i <= _size_offset_table, "index out of bounds");
                                            return &((itableOffsetEntry*)vtable_start())[i]; }
@@ -309,9 +312,6 @@ class klassItable : public ResourceObj {
 
   // Initialization
   void initialize_itable(bool checkconstraints, TRAPS);
-
-  // Updates
-  void initialize_with_method(Method* m);
 
 #if INCLUDE_JVMTI
   // RedefineClasses() API support:
@@ -329,7 +329,7 @@ class klassItable : public ResourceObj {
   static int assign_itable_indices_for_interface(Klass* klass);
   static int method_count_for_interface(Klass* klass);
   static int compute_itable_size(Array<Klass*>* transitive_interfaces);
-  static void setup_itable_offset_table(instanceKlassHandle klass);
+  static void setup_itable_offset_table(InstanceKlass* klass);
 
   // Resolving of method to index
   static Method* method_for_itable_index(Klass* klass, int itable_index);
@@ -337,7 +337,7 @@ class klassItable : public ResourceObj {
   // Debugging/Statistics
   static void print_statistics() PRODUCT_RETURN;
  private:
-  intptr_t* vtable_start() const { return ((intptr_t*)_klass()) + _table_offset; }
+  intptr_t* vtable_start() const { return ((intptr_t*)_klass) + _table_offset; }
   intptr_t* method_start() const { return vtable_start() + _size_offset_table * itableOffsetEntry::size(); }
 
   // Helper methods

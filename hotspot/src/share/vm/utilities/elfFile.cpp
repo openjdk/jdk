@@ -242,32 +242,45 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 }
 
 #ifdef LINUX
-bool ElfFile::specifies_noexecstack() {
-  Elf_Phdr phdr;
-  if (!m_file)  return true;
+bool ElfFile::specifies_noexecstack(const char* filepath) {
+  // Returns true if the elf file is marked NOT to require an executable stack,
+  // or if the file could not be opened.
+  // Returns false if the elf file requires an executable stack, the stack flag
+  // is not set at all, or if the file can not be read.
+  if (filepath == NULL) return true;
 
-  if (!fseek(m_file, m_elfHdr.e_phoff, SEEK_SET)) {
-    for (int index = 0; index < m_elfHdr.e_phnum; index ++) {
-      if (fread((void*)&phdr, sizeof(Elf_Phdr), 1, m_file) != 1) {
-        m_status = NullDecoder::file_invalid;
-        return false;
+  FILE* file = fopen(filepath, "r");
+  if (file == NULL)  return true;
+
+  // AARCH64 defaults to noexecstack. All others default to execstack.
+#ifdef AARCH64
+  bool result = true;
+#else
+  bool result = false;
+#endif
+
+  // Read file header
+  Elf_Ehdr head;
+  if (fread(&head, sizeof(Elf_Ehdr), 1, file) == 1 &&
+      is_elf_file(head) &&
+      fseek(file, head.e_phoff, SEEK_SET) == 0) {
+
+    // Read program header table
+    Elf_Phdr phdr;
+    for (int index = 0; index < head.e_phnum; index ++) {
+      if (fread((void*)&phdr, sizeof(Elf_Phdr), 1, file) != 1) {
+        result = false;
+        break;
       }
       if (phdr.p_type == PT_GNU_STACK) {
-        if (phdr.p_flags == (PF_R | PF_W))  {
-          return true;
-        } else {
-          return false;
-        }
+        result = (phdr.p_flags == (PF_R | PF_W));
+        break;
       }
     }
   }
-// AARCH64 defaults to noexecstack. All others default to execstack.
-#ifdef AARCH64
-  return true;
-#else
-  return false;
-#endif
+  fclose(file);
+  return result;
 }
-#endif
+#endif // LINUX
 
 #endif // !_WINDOWS && !__APPLE__

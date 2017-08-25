@@ -25,7 +25,9 @@
 #ifndef SHARE_VM_UTILITIES_STACK_INLINE_HPP
 #define SHARE_VM_UTILITIES_STACK_INLINE_HPP
 
+#include "utilities/align.hpp"
 #include "utilities/stack.hpp"
+#include "utilities/copy.hpp"
 
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
@@ -92,7 +94,7 @@ size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
   const size_t ptr_sz = sizeof(E*);
   assert(elem_sz % ptr_sz == 0 || ptr_sz % elem_sz == 0, "bad element size");
   if (elem_sz < ptr_sz) {
-    return align_size_up(seg_size * elem_sz, ptr_sz) / elem_sz;
+    return align_up(seg_size * elem_sz, ptr_sz) / elem_sz;
   }
   return seg_size;
 }
@@ -100,7 +102,7 @@ size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
 template <class E, MEMFLAGS F>
 size_t Stack<E, F>::link_offset() const
 {
-  return align_size_up(this->_seg_size * sizeof(E), sizeof(E*));
+  return align_up(this->_seg_size * sizeof(E), sizeof(E*));
 }
 
 template <class E, MEMFLAGS F>
@@ -232,11 +234,7 @@ void Stack<E, F>::zap_segment(E* seg, bool zap_link_field) const
 {
   if (!ZapStackSegments) return;
   const size_t zap_bytes = segment_bytes() - (zap_link_field ? 0 : sizeof(E*));
-  uint32_t* cur = (uint32_t*)seg;
-  const uint32_t* end = cur + zap_bytes / sizeof(uint32_t);
-  while (cur < end) {
-    *cur++ = 0xfadfaded;
-  }
+  Copy::fill_to_bytes(seg, zap_bytes, badStackSegVal);
 }
 #endif
 

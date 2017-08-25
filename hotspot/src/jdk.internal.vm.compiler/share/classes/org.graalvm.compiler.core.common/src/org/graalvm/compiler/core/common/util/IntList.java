@@ -31,6 +31,8 @@ import java.util.Arrays;
  */
 public final class IntList {
 
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     private int[] array;
     private int size;
 
@@ -80,9 +82,13 @@ public final class IntList {
      */
     public static IntList copy(IntList other, int startIndex, int length, int initialCapacity) {
         assert initialCapacity >= length : "initialCapacity < length";
-        int[] array = new int[initialCapacity];
-        System.arraycopy(other.array, startIndex, array, 0, length);
-        return new IntList(array, length);
+        if (initialCapacity == 0) {
+            return new IntList(EMPTY_INT_ARRAY, 0);
+        } else {
+            int[] array = new int[initialCapacity];
+            System.arraycopy(other.array, startIndex, array, 0, length);
+            return new IntList(array, length);
+        }
     }
 
     public int size() {

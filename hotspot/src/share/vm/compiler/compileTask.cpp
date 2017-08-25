@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 
 CompileTask*  CompileTask::_task_free_list = NULL;
@@ -86,9 +88,10 @@ void CompileTask::initialize(int compile_id,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
 
+  Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
-  _method_holder = JNIHandles::make_global(method->method_holder()->klass_holder());
+  _method_holder = JNIHandles::make_global(Handle(thread, method->method_holder()->klass_holder()));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -115,7 +118,7 @@ void CompileTask::initialize(int compile_id,
       } else {
         _hot_method = hot_method();
         // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_global(hot_method->method_holder()->klass_holder());
+        _hot_method_holder = JNIHandles::make_global(Handle(thread, hot_method->method_holder()->klass_holder()));
       }
     }
   }
@@ -424,4 +427,31 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
   st->cr();
 }
 
+void CompileTask::print_ul(const char* msg){
+  LogTarget(Debug, jit, compilation) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print(&ls, msg, /* short form */ true, /* cr */ true);
+  }
+}
+
+void CompileTask::print_ul(const nmethod* nm, const char* msg) {
+  LogTarget(Debug, jit, compilation) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_impl(&ls, nm->method(), nm->compile_id(),
+               nm->comp_level(), nm->is_osr_method(),
+               nm->is_osr_method() ? nm->osr_entry_bci() : -1,
+               /*is_blocking*/ false,
+               msg, /* short form */ true, /* cr */ true);
+  }
+}
+
+void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg) {
+  LogTarget(Debug, jit, inlining) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_inlining_inner(&ls, method, inline_level, bci, msg);
+  }
+}
 
