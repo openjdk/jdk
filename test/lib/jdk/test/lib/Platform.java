@@ -274,4 +274,18 @@ public class Platform {
                       .matcher(osArch)
                       .matches();
     }
+
+    /**
+     * Returns file extension of shared library, e.g. "so" on linux, "dll" on windows.
+     * @return file extension
+     */
+    public static String sharedLibraryExt() {
+        if (isWindows()) {
+            return "dll";
+        } else if (isOSX()) {
+            return "dylib";
+        } else {
+            return "so";
+        }
+    }
 }
