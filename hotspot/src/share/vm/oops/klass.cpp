@@ -31,6 +31,8 @@
 #include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -162,13 +164,12 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
 }
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
-                             MetaspaceObj::ClassType, THREAD);
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 // "Normal" instantiation is preceeded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
-// The constructor is also used from init_self_patching_vtbl_list,
+// The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 // Need to set the _java_mirror field explicitly to not hit an assert that the field
 // should be NULL before setting it.
@@ -264,7 +265,6 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
   }
 
   if (secondary_supers() == NULL) {
-    KlassHandle this_kh (THREAD, this);
 
     // Now compute the list of secondary supertypes.
     // Secondaries can occasionally be on the super chain,
@@ -286,7 +286,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
 
     GrowableArray<Klass*>* primaries = new GrowableArray<Klass*>(extras);
 
-    for (p = this_kh->super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
+    for (p = super(); !(p == NULL || p->can_be_primary_super()); p = p->super()) {
       int i;                    // Scan for overflow primaries being duplicates of 2nd'arys
 
       // This happens frequently for very deeply nested arrays: the
@@ -324,7 +324,7 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
     }
   #endif
 
-    this_kh->set_secondary_supers(s2);
+    set_secondary_supers(s2);
   }
 }
 
@@ -486,6 +486,29 @@ void Klass::oops_do(OopClosure* cl) {
   cl->do_oop(&_java_mirror);
 }
 
+void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
+  if (log_is_enabled(Trace, cds)) {
+    ResourceMark rm;
+    log_trace(cds)("Iter(Klass): %p (%s)", this, external_name());
+  }
+
+  it->push(&_name);
+  it->push(&_secondary_super_cache);
+  it->push(&_secondary_supers);
+  for (int i = 0; i < _primary_super_limit; i++) {
+    it->push(&_primary_supers[i]);
+  }
+  it->push(&_super);
+  it->push(&_subklass);
+  it->push(&_next_sibling);
+  it->push(&_next_link);
+
+  vtableEntry* vt = start_of_vtable();
+  for (int i=0; i<vtable_length(); i++) {
+    it->push(vt[i].method_addr());
+  }
+}
+
 void Klass::remove_unshareable_info() {
   assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
   TRACE_REMOVE_ID(this);
@@ -498,9 +521,12 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(NULL);
+  set_is_shared();
 }
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  assert(is_klass(), "ensure C++ vtable is restored");
+  assert(is_shared(), "must be set");
   TRACE_RESTORE_ID(this);
 
   // If an exception happened during CDS restore, some of these fields may already be
@@ -519,7 +545,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    Handle loader = loader_data->class_loader();
+    Handle loader(THREAD, loader_data->class_loader());
     ModuleEntry* module_entry = NULL;
     Klass* k = this;
     if (k->is_objArray_klass()) {
@@ -533,7 +559,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
       module_entry = ModuleEntryTable::javabase_moduleEntry();
     }
     // Obtain java.lang.Module, if available
-    Handle module_handle(THREAD, ((module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL));
+    Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, CHECK);
   }
 }
@@ -696,8 +722,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
-klassVtable* Klass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
+klassVtable Klass::vtable() const {
+  return klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 vtableEntry* Klass::start_of_vtable() const {

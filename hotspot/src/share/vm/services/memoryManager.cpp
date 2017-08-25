@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       signature = vmSymbols::createMemoryManager_signature();
     }
 
-    instanceKlassHandle ik(THREAD, k);
+    InstanceKlass* ik = InstanceKlass::cast(k);
 
     JavaCalls::call_static(&result,
                            ik,

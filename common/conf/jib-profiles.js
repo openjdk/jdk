@@ -237,7 +237,7 @@ var getJibProfilesCommon = function (input, data) {
 
     // These are the base setttings for all the main build profiles.
     common.main_profile_base = {
-        dependencies: ["boot_jdk", "gnumake", "jtreg"],
+        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib"],
         default_make_targets: ["product-bundles", "test-bundles"],
         configure_args: concat(["--enable-jtreg-failure-handler"],
                                versionArgs(input, common))
@@ -590,7 +590,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test-jprt": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -600,7 +600,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk" ],
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
             labels: "test",
             environment: {
                 "JT_JAVA": common.boot_jdk_home
@@ -619,7 +619,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             src: "src.conf",
-            dependencies: [ "jtreg", "gnumake", "boot_jdk", testedProfile + ".jdk",
+            dependencies: [ "jtreg", "gnumake", "boot_jdk", "jib", testedProfile + ".jdk",
                 testedProfile + ".test", "src.full"
             ],
             work_dir: input.get("src.full", "install_path") + "/test",
@@ -974,7 +974,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b07",
+            build_number: "b08",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",
@@ -1023,7 +1023,25 @@ var getJibProfilesDependencies = function (input, common) {
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"
         },
+        // This adds java jib as a dependency for the test artifacts resolver
+        jib: {
+            organization: "com.oracle.java.jib",
+            ext: "zip",
+            classifier: "distribution",
+            revision: "3.0-SNAPSHOT",
+            environment_name: "JIB_JAR",
+            environment_value: input.get("jib", "install_path")
+                + "/jib-3.0-SNAPSHOT-distribution/lib/jib-3.0-SNAPSHOT.jar"
+       }
     };
+
+    // Need to add a value for the Visual Studio tools variable to make
+    // jaot be able to pick up the Visual Studio linker in testing.
+    if (input.target_os == "windows") {
+        dependencies.devkit.environment = {
+            VS120COMNTOOLS: input.get("devkit", "install_path") + "/Common7/Tools"
+        };
+    }
 
     return dependencies;
 };

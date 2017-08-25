@@ -34,6 +34,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -747,7 +748,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   assert_different_registers(tmp, R0, R1, R2, R3, R4, R5, R6, R7, Rsender_sp, Rparams);
 
   if (comp_args_on_stack) {
-    __ sub_slow(SP, SP, round_to(comp_args_on_stack * VMRegImpl::stack_slot_size, StackAlignmentInBytes));
+    __ sub_slow(SP, SP, align_up(comp_args_on_stack * VMRegImpl::stack_slot_size, StackAlignmentInBytes));
   }
 
   for (int i = 0; i < total_args_passed; i++) {
@@ -870,7 +871,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
 #ifdef AARCH64
 
-  int extraspace = round_to(total_args_passed * Interpreter::stackElementSize, StackAlignmentInBytes);
+  int extraspace = align_up(total_args_passed * Interpreter::stackElementSize, StackAlignmentInBytes);
   if (extraspace) {
     __ sub(SP, SP, extraspace);
   }
@@ -1023,7 +1024,7 @@ static int reg2offset_out(VMReg r) {
 
 
 static void verify_oop_args(MacroAssembler* masm,
-                            methodHandle method,
+                            const methodHandle& method,
                             const BasicType* sig_bt,
                             const VMRegPair* regs) {
   Register temp_reg = Rmethod;  // not part of any compiled calling seq
@@ -1044,7 +1045,7 @@ static void verify_oop_args(MacroAssembler* masm,
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
-                                 methodHandle method,
+                                 const methodHandle& method,
                                  const BasicType* sig_bt,
                                  const VMRegPair* regs) {
   verify_oop_args(masm, method, sig_bt, regs);
@@ -1181,7 +1182,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   stack_slots += 2 * VMRegImpl::slots_per_word;
 
   // Calculate the final stack size taking account of alignment
-  stack_slots = round_to(stack_slots, StackAlignmentInBytes / VMRegImpl::stack_slot_size);
+  stack_slots = align_up(stack_slots, StackAlignmentInBytes / VMRegImpl::stack_slot_size);
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
   int lock_slot_fp_offset = stack_size - 2 * wordSize -
     lock_slot_offset * VMRegImpl::stack_slot_size;
@@ -1851,7 +1852,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {
   int extra_locals_size = (callee_locals - callee_parameters) * Interpreter::stackElementWords;
 #ifdef AARCH64
-  extra_locals_size = round_to(extra_locals_size, StackAlignmentInBytes/BytesPerWord);
+  extra_locals_size = align_up(extra_locals_size, StackAlignmentInBytes/BytesPerWord);
 #endif // AARCH64
   return extra_locals_size;
 }

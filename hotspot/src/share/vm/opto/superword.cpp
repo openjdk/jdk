@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,6 +299,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
     bool small_basic_type = false;
+    bool flag_small_bt = false;
     for (uint i = 0; i < lpt()->_body.size(); i++) {
       if (ignored_loop_nodes[i] != -1) continue;
 
@@ -325,13 +326,16 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
             //       buckets for vectors on logicals as these were legacy.
             small_basic_type = true;
             break;
+
+          default:
+            break;
           }
         }
       }
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::max_vector_size(bt);
+         int cur_max_vector = Matcher::max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -345,10 +349,36 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       // Map the maximal common vector
       if (VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
-        if (cur_max_vector < max_vector) {
+        if (cur_max_vector < max_vector && !flag_small_bt) {
           max_vector = cur_max_vector;
-        }
+        } else if (cur_max_vector > max_vector && UseSubwordForMaxVector) {
+          // Analyse subword in the loop to set maximum vector size to take advantage of full vector width for subword types.
+          // Here we analyze if narrowing is likely to happen and if it is we set vector size more aggressively.
+          // We check for possibility of narrowing by looking through chain operations using subword types.
+          if (is_subword_type(bt)) {
+            uint start, end;
+            VectorNode::vector_operands(n, &start, &end);
 
+            for (uint j = start; j < end; j++) {
+              Node* in = n->in(j);
+              // Don't propagate through a memory
+              if (!in->is_Mem() && in_bb(in) && in->bottom_type()->basic_type() == T_INT) {
+                bool same_type = true;
+                for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
+                  Node *use = in->fast_out(k);
+                  if (!in_bb(use) && use->bottom_type()->basic_type() != bt) {
+                    same_type = false;
+                    break;
+                  }
+                }
+                if (same_type) {
+                  max_vector = cur_max_vector;
+                  flag_small_bt = true;
+                }
+              }
+            }
+          }
+        }
         // We only process post loops on predicated targets where we want to
         // mask map the loop to a single iteration
         if (post_loop_allowed) {
@@ -752,13 +782,13 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
       SWPointer p(s, this, NULL, false);
-      if (cmp_ct.at(j) >  max_ct ||
-          cmp_ct.at(j) == max_ct &&
-            (vw >  max_vw ||
-             vw == max_vw &&
-              (data_size(s) <  min_size ||
-               data_size(s) == min_size &&
-                 (p.offset_in_bytes() < min_iv_offset)))) {
+      if ( cmp_ct.at(j) >  max_ct ||
+          (cmp_ct.at(j) == max_ct &&
+            ( vw >  max_vw ||
+             (vw == max_vw &&
+              ( data_size(s) <  min_size ||
+               (data_size(s) == min_size &&
+                p.offset_in_bytes() < min_iv_offset)))))) {
         max_ct = cmp_ct.at(j);
         max_vw = vw;
         max_idx = j;
@@ -775,13 +805,13 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
         SWPointer p(s, this, NULL, false);
-        if (cmp_ct.at(j) >  max_ct ||
-            cmp_ct.at(j) == max_ct &&
-              (vw >  max_vw ||
-               vw == max_vw &&
-                (data_size(s) <  min_size ||
-                 data_size(s) == min_size &&
-                   (p.offset_in_bytes() < min_iv_offset)))) {
+        if ( cmp_ct.at(j) >  max_ct ||
+            (cmp_ct.at(j) == max_ct &&
+              ( vw >  max_vw ||
+               (vw == max_vw &&
+                ( data_size(s) <  min_size ||
+                 (data_size(s) == min_size &&
+                  p.offset_in_bytes() < min_iv_offset)))))) {
           max_ct = cmp_ct.at(j);
           max_vw = vw;
           max_idx = j;
@@ -925,7 +955,7 @@ void SuperWord::dependence_graph() {
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _block.length(); i++ ) {
     Node *n = _block.at(i);
-    if (n->is_Mem() || n->is_Phi() && n->bottom_type() == Type::MEMORY) {
+    if (n->is_Mem() || (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
       _dg.make_node(n);
     }
   }
@@ -1745,8 +1775,8 @@ bool CMoveKit::test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk) {
   Node_List* in1_pk = _sw->my_pack(in1);
   Node_List* in2_pk = _sw->my_pack(in2);
 
-  if (in1_pk != NULL && in1_pk->size() != cmpd_pk->size()
-    || in2_pk != NULL && in2_pk->size() != cmpd_pk->size() ) {
+  if (  (in1_pk != NULL && in1_pk->size() != cmpd_pk->size())
+     || (in2_pk != NULL && in2_pk->size() != cmpd_pk->size()) ) {
     return false;
   }
 
@@ -2324,6 +2354,13 @@ void SuperWord::output() {
         const TypeVect* vt = TypeVect::make(bt, vlen);
         vn = new CMoveVDNode(cc, src1, src2, vt);
         NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created new CMove node %d: ", vn->_idx); vn->dump();})
+      } else if (opc == Op_FmaD || opc == Op_FmaF) {
+        // Promote operands to vector
+        Node* in1 = vector_opd(p, 1);
+        Node* in2 = vector_opd(p, 2);
+        Node* in3 = vector_opd(p, 3);
+        vn = VectorNode::make(opc, in1, in2, in3, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         if (do_reserve_copy()) {
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: ShouldNotReachHere, exiting SuperWord");})
@@ -2358,7 +2395,7 @@ void SuperWord::output() {
         }
       }
 
-      if (vlen_in_bytes > max_vlen_in_bytes) {
+      if (vlen_in_bytes >= max_vlen_in_bytes && vlen > max_vlen) {
         max_vlen = vlen;
         max_vlen_in_bytes = vlen_in_bytes;
       }
@@ -3162,7 +3199,15 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   if (align_to_ref_p.invar() != NULL) {
     // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* aref     = new URShiftINode(align_to_ref_p.invar(), log2_elt);
+    Node* invar = align_to_ref_p.invar();
+    if (_igvn.type(invar)->isa_long()) {
+      // Computations are done % (vector width/element size) so it's
+      // safe to simply convert invar to an int and loose the upper 32
+      // bit half.
+      invar = new ConvL2INode(invar);
+      _igvn.register_new_node_with_optimizer(invar);
+    }
+    Node* aref = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
     if (align_to_ref_p.negate_invar()) {
@@ -3607,12 +3652,10 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
         n = n->in(1);
       }
     }
-    if (n->bottom_type()->isa_int()) {
-      _negate_invar = negate;
-      _invar = n;
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-      return true;
-    }
+    _negate_invar = negate;
+    _invar = n;
+    NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+    return true;
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
@@ -4031,7 +4074,7 @@ DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
     _next_idx = 0;
     _end_idx  = _n->outcnt();
     _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || _n->is_Phi() && _n->bottom_type() == Type::MEMORY) {
+  } else if (_n->is_Mem() || (_n->is_Phi() && _n->bottom_type() == Type::MEMORY)) {
     _next_idx = 0;
     _end_idx  = 0;
     _dep_next = dg.dep(_n)->out_head();

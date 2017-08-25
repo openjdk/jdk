@@ -27,33 +27,52 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.Executor;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Handler for dirs containing jar-files with classes to compile.
  */
-public class ClassPathJarInDirEntry extends PathHandler {
-
-    public ClassPathJarInDirEntry(Path root, Executor executor) {
-        super(root, executor);
+public class ClassPathJarInDirEntry {
+    public static List<PathHandler> create(Path path) {
+        Objects.requireNonNull(path);
+        if (!Files.exists(path)) {
+            throw new Error(path + " directory not found");
+        }
+        try {
+            return Stream.concat(
+                    Stream.of(new PathHandler(new JarInDirEntry(path))),
+                    Files.list(path)
+                         .filter(p -> p.getFileName().toString().endsWith(".jar"))
+                         .map(ClassPathJarEntry::new)
+                         .map(PathHandler::new))
+                         .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new Error("can not read " + path + " directory : " + e.getMessage(), e);
+        }
     }
 
-    @Override
-    public void process() {
-        CompileTheWorld.OUT.println("# jar_in_dir: " + root);
-        if (!Files.exists(root)) {
-            return;
+    // dummy path handler, used just to print description before real handlers.
+    private static class JarInDirEntry extends PathHandler.PathEntry {
+        private JarInDirEntry(Path root) {
+            super(root);
         }
-        try (DirectoryStream<Path> ds
-                = Files.newDirectoryStream(root, "*.jar")) {
-            for (Path p : ds) {
-                new ClassPathJarEntry(p, executor).process();
-                if (isFinished()) {
-                    return;
-                }
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+
+        @Override
+        protected byte[] findByteCode(String name) {
+            return null;
+        }
+
+        @Override
+        protected Stream<String> classes() {
+            return Stream.empty();
+        }
+
+        @Override
+        protected String description() {
+            return "# jar_in_dir: " + root;
         }
     }
 }

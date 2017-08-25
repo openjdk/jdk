@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class CompilationPolicy : public CHeapObj<mtCompiler> {
   static bool               _in_vm_startup;
 
   // m must be compiled before executing it
-  static bool must_be_compiled(methodHandle m, int comp_level = CompLevel_all);
+  static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
 
 public:
   static  void set_in_vm_startup(bool in_vm_startup) { _in_vm_startup = in_vm_startup; }
@@ -54,12 +54,12 @@ public:
 
   // If m must_be_compiled then request a compilation from the CompileBroker.
   // This supports the -Xcomp option.
-  static void compile_if_required(methodHandle m, TRAPS);
+  static void compile_if_required(const methodHandle& m, TRAPS);
 
   // m is allowed to be compiled
-  static bool can_be_compiled(methodHandle m, int comp_level = CompLevel_all);
+  static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_all);
   // m is allowed to be osr compiled
-  static bool can_be_osr_compiled(methodHandle m, int comp_level = CompLevel_all);
+  static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_all);
   static bool is_compilation_enabled();
   static void set_policy(CompilationPolicy* policy) { _policy = policy; }
   static CompilationPolicy* policy()                { return _policy; }

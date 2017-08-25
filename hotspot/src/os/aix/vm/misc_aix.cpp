@@ -24,6 +24,7 @@
 
 #include "misc_aix.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 
 #include <pthread.h>
 #include <unistd.h>
@@ -53,7 +54,7 @@ bool MiscUtils::is_readable_pointer(const void* p) {
   if (!CanUseSafeFetch32()) {
     return true;
   }
-  int* const aligned = (int*) align_size_down((intptr_t)p, 4);
+  int* const aligned = (int*) align_down(p, 4);
   int cafebabe = 0xcafebabe;
   int deadbeef = 0xdeadbeef;
   return (SafeFetch32(aligned, cafebabe) != cafebabe) ||

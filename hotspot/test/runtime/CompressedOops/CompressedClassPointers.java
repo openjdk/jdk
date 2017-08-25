@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,9 @@ public class CompressedClassPointers {
             "-XX:+VerifyBeforeGC",
             "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        if (output.firstMatch("Shared spaces are not supported in this VM") != null) {
+            return;
+        }
         try {
           output.shouldContain("Loading classes to share");
           output.shouldHaveExitValue(0);

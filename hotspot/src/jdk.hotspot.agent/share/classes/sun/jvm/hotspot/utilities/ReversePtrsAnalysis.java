@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -113,8 +114,8 @@ public class ReversePtrsAnalysis {
                      new RootVisitor("Weak global JNI handle root"));
 
     // Do Java-level static fields
-    SystemDictionary sysDict = VM.getVM().getSystemDictionary();
-    sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+    ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+    cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
 
             public void visit(Klass k) {
                 if (k instanceof InstanceKlass) {

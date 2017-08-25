@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,10 @@ void G1StringDedup::oops_do(OopClosure* keep_alive) {
   unlink_or_oops_do(NULL, keep_alive, true /* allow_resize_and_rehash */);
 }
 
-void G1StringDedup::unlink(BoolObjectClosure* is_alive) {
+void G1StringDedup::parallel_unlink(G1StringDedupUnlinkOrOopsDoClosure* unlink, uint worker_id) {
   assert(is_enabled(), "String deduplication not enabled");
-  // Don't allow a potential resize or rehash during unlink, as the unlink
-  // operation itself might remove enough entries to invalidate such a decision.
-  unlink_or_oops_do(is_alive, NULL, false /* allow_resize_and_rehash */);
+  G1StringDedupQueue::unlink_or_oops_do(unlink);
+  G1StringDedupTable::unlink_or_oops_do(unlink, worker_id);
 }
 
 //

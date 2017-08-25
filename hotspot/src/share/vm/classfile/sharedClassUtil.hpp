@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,7 @@ public:
   }
 
   static void update_shared_classpath(ClassPathEntry *cpe,
-                                      SharedClassPathEntry* ent,
-                                      time_t timestamp,
-                                      long filesize, TRAPS) {
-    ent->_timestamp = timestamp;
-    ent->_filesize  = filesize;
-  }
-
+                                      SharedClassPathEntry* ent, TRAPS) {}
   static void initialize(TRAPS) {}
 
   inline static bool is_shared_boot_class(Klass* klass) {

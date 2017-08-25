@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.lir.sparc;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.sparc.SPARC.g0;
+import static jdk.vm.ci.sparc.SPARCKind.WORD;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.BPCC;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.ANNUL;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Annul.NOT_ANNUL;
@@ -32,9 +35,6 @@ import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.Equal;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.Less;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.NotEqual;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.sparc.SPARC.g0;
-import static jdk.vm.ci.sparc.SPARCKind.WORD;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -49,8 +49,8 @@ import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.sparc.SPARCKind;
 import sun.misc.Unsafe;
 
@@ -66,17 +66,17 @@ public final class SPARCArrayEqualsOp extends SPARCLIRInstruction {
     private final int arrayBaseOffset;
     private final int arrayIndexScale;
 
-    @Def({REG}) protected Value resultValue;
-    @Alive({REG}) protected Value array1Value;
-    @Alive({REG}) protected Value array2Value;
-    @Alive({REG}) protected Value lengthValue;
-    @Temp({REG}) protected Value temp1;
-    @Temp({REG}) protected Value temp2;
-    @Temp({REG}) protected Value temp3;
-    @Temp({REG}) protected Value temp4;
-    @Temp({REG}) protected Value temp5;
+    @Def({REG}) protected AllocatableValue resultValue;
+    @Alive({REG}) protected AllocatableValue array1Value;
+    @Alive({REG}) protected AllocatableValue array2Value;
+    @Alive({REG}) protected AllocatableValue lengthValue;
+    @Temp({REG}) protected AllocatableValue temp1;
+    @Temp({REG}) protected AllocatableValue temp2;
+    @Temp({REG}) protected AllocatableValue temp3;
+    @Temp({REG}) protected AllocatableValue temp4;
+    @Temp({REG}) protected AllocatableValue temp5;
 
-    public SPARCArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, Value result, Value array1, Value array2, Value length) {
+    public SPARCArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, AllocatableValue result, AllocatableValue array1, AllocatableValue array2, AllocatableValue length) {
         super(TYPE, SIZE);
         this.kind = kind;
 

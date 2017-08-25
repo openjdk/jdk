@@ -28,6 +28,7 @@
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inlined causes circular inclusion with thread.hpp
 ZeroStack::ZeroStack()
@@ -39,7 +40,7 @@ int ZeroStack::suggest_size(Thread *thread) const {
   assert(needs_setup(), "already set up");
   int abi_available = abi_stack_available(thread);
   assert(abi_available >= 0, "available abi stack must be >= 0");
-  return align_size_down(abi_available / 2, wordSize);
+  return align_down(abi_available / 2, wordSize);
 }
 
 void ZeroStack::handle_overflow(TRAPS) {

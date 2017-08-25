@@ -24,7 +24,8 @@
  */
 
 package java.io;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import jdk.internal.misc.Unsafe;
 
 /**
  * A <code>BufferedInputStream</code> adds
@@ -61,22 +62,27 @@ class BufferedInputStream extends FilterInputStream {
     private static int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
     /**
+     * As this class is used early during bootstrap, it's motivated to use
+     * Unsafe.compareAndSetObject instead of AtomicReferenceFieldUpdater
+     * (or VarHandles) to reduce dependencies and improve startup time.
+     */
+    private static final Unsafe U = Unsafe.getUnsafe();
+
+    private static final long BUF_OFFSET
+            = U.objectFieldOffset(BufferedInputStream.class, "buf");
+
+    /**
      * The internal buffer array where the data is stored. When necessary,
      * it may be replaced by another array of
      * a different size.
      */
-    protected volatile byte buf[];
-
-    /**
-     * Atomic updater to provide compareAndSet for buf. This is
-     * necessary because closes can be asynchronous. We use nullness
-     * of buf[] as primary indicator that this stream is closed. (The
-     * "in" field is also nulled out on close.)
+    /*
+     * We null this out with a CAS on close(), which is necessary since
+     * closes can be asynchronous. We use nullness of buf[] as primary
+     * indicator that this stream is closed. (The "in" field is also
+     * nulled out on close.)
      */
-    private static final
-        AtomicReferenceFieldUpdater<BufferedInputStream, byte[]> bufUpdater =
-        AtomicReferenceFieldUpdater.newUpdater
-        (BufferedInputStream.class,  byte[].class, "buf");
+    protected volatile byte[] buf;
 
     /**
      * The index one greater than the index of the last valid byte in
@@ -230,9 +236,9 @@ class BufferedInputStream extends FilterInputStream {
                         pos * 2 : MAX_BUFFER_SIZE;
                 if (nsz > marklimit)
                     nsz = marklimit;
-                byte nbuf[] = new byte[nsz];
+                byte[] nbuf = new byte[nsz];
                 System.arraycopy(buffer, 0, nbuf, 0, pos);
-                if (!bufUpdater.compareAndSet(this, buffer, nbuf)) {
+                if (!U.compareAndSetObject(this, BUF_OFFSET, buffer, nbuf)) {
                     // Can't replace buf if there was an async close.
                     // Note: This would need to be changed if fill()
                     // is ever made accessible to multiple threads.
@@ -476,7 +482,7 @@ class BufferedInputStream extends FilterInputStream {
     public void close() throws IOException {
         byte[] buffer;
         while ( (buffer = buf) != null) {
-            if (bufUpdater.compareAndSet(this, buffer, null)) {
+            if (U.compareAndSetObject(this, BUF_OFFSET, buffer, null)) {
                 InputStream input = in;
                 in = null;
                 if (input != null)

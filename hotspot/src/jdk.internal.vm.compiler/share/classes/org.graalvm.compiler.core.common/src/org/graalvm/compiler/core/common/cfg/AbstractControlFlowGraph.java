@@ -81,6 +81,8 @@ public interface AbstractControlFlowGraph<T extends AbstractBlockBase<T>> {
             return b;
         } else if (b == null) {
             return a;
+        } else if (a == b) {
+            return a;
         } else {
             int aDomDepth = a.getDominatorDepth();
             int bDomDepth = b.getDominatorDepth();

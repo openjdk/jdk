@@ -199,9 +199,6 @@
   develop(bool, G1HRRSUseSparseTable, true,                                 \
           "When true, use sparse table to save space.")                     \
                                                                             \
-  develop(bool, G1HRRSFlushLogBuffersOnVerify, false,                       \
-          "Forces flushing of log buffers before verification.")            \
-                                                                            \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
           range(0, 32*M)                                                    \

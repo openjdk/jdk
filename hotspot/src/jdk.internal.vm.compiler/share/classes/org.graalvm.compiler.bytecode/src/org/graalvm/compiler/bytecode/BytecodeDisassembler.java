@@ -165,7 +165,7 @@ public class BytecodeDisassembler {
                 stream.next();
                 opcode = stream.currentBC();
             }
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             throw new RuntimeException(String.format("Error disassembling %s%nPartial disassembly:%n%s", method.format("%H.%n(%p)"), buf.toString()), e);
         }
         return buf.toString();

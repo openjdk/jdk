@@ -28,6 +28,7 @@ import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -35,6 +36,7 @@ import org.graalvm.compiler.hotspot.nodes.StubStartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
 import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
@@ -53,15 +55,15 @@ public class AssertionSnippets implements Snippets {
     public static final ForeignCallDescriptor ASSERTION_VM_MESSAGE_C = new ForeignCallDescriptor("assertionVmMessageC", void.class, boolean.class, Word.class, long.class, long.class, long.class);
 
     @Snippet
-    public static void assertion(boolean value, @ConstantParameter String message) {
-        if (!value) {
+    public static void assertion(boolean condition, @ConstantParameter String message) {
+        if (!condition) {
             vmMessageC(ASSERTION_VM_MESSAGE_C, true, cstring(message), 0L, 0L, 0L);
         }
     }
 
     @Snippet
-    public static void stubAssertion(boolean value, @ConstantParameter String message) {
-        if (!value) {
+    public static void stubAssertion(boolean condition, @ConstantParameter String message) {
+        if (!condition) {
             vmMessageC(ASSERTION_VM_MESSAGE_C, true, cstring(message), 0L, 0L, 0L);
         }
     }
@@ -74,17 +76,17 @@ public class AssertionSnippets implements Snippets {
         private final SnippetInfo assertion = snippet(AssertionSnippets.class, "assertion");
         private final SnippetInfo stubAssertion = snippet(AssertionSnippets.class, "stubAssertion");
 
-        public Templates(HotSpotProviders providers, TargetDescription target) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
         }
 
         public void lower(AssertionNode assertionNode, LoweringTool tool) {
             StructuredGraph graph = assertionNode.graph();
             Arguments args = new Arguments(graph.start() instanceof StubStartNode ? stubAssertion : assertion, graph.getGuardsStage(), tool.getLoweringStage());
-            args.add("value", assertionNode.value());
+            args.add("condition", assertionNode.condition());
             args.addConst("message", "failed runtime assertion in snippet/stub: " + assertionNode.message() + " (" + graph.method() + ")");
 
-            template(args).instantiate(providers.getMetaAccess(), assertionNode, DEFAULT_REPLACER, args);
+            template(assertionNode.getDebug(), args).instantiate(providers.getMetaAccess(), assertionNode, DEFAULT_REPLACER, args);
         }
     }
 }

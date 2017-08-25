@@ -66,7 +66,6 @@ public:
 #ifndef PRODUCT
   // Helpful for debugging
   void print(const char* name);
-  static void print(const char* name, void** buf, size_t index, size_t sz);
 #endif // PRODUCT
 
   // Compiler support.

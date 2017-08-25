@@ -11,7 +11,7 @@
 #
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless".
-# A test flagged with key "printer" requires a printer to succeed, else 
+# A test flagged with key "printer" requires a printer to succeed, else
 # throws a PrinterException or the like.
 
 keys=2d dnd headful i18n intermittent printer randomness
@@ -28,8 +28,8 @@ groups=TEST.groups [closed/TEST.groups]
 # Allow querying of various System properties in @requires clauses
 requires.properties=sun.arch.data.model java.runtime.name
 
-# Tests using jtreg 4.2 b07 features
-requiredVersion=4.2 b07
+# Minimum jtreg version
+requiredVersion=4.2 b08
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ private:
   ciKlass* _base_element_klass;
 
 protected:
-  ciObjArrayKlass(KlassHandle h_k);
+  ciObjArrayKlass(Klass* k);
   ciObjArrayKlass(ciSymbol* array_name,
                   ciKlass* base_element_klass,
                   int dimension);

@@ -45,9 +45,4 @@ Flag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose);
 
 Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose);
 
-Flag::Error SharedReadWriteSizeConstraintFunc(size_t value, bool verbose);
-Flag::Error SharedReadOnlySizeConstraintFunc(size_t value, bool verbose);
-Flag::Error SharedMiscDataSizeConstraintFunc(size_t value, bool verbose);
-Flag::Error SharedMiscCodeSizeConstraintFunc(size_t value, bool verbose);
-
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP */

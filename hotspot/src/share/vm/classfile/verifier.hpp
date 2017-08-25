@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class Verifier : AllStatic {
    * error.
    */
   static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS);
-  static bool verify(instanceKlassHandle klass, Mode mode, bool should_verify_class, TRAPS);
+  static bool verify(InstanceKlass* klass, Mode mode, bool should_verify_class, TRAPS);
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification
@@ -65,9 +65,9 @@ class Verifier : AllStatic {
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
  private:
-  static bool is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class);
+  static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class);
   static Symbol* inference_verify(
-    instanceKlassHandle klass, char* msg, size_t msg_len, TRAPS);
+    InstanceKlass* klass, char* msg, size_t msg_len, TRAPS);
 };
 
 class RawBytecodeStream;
@@ -275,7 +275,7 @@ class ClassVerifier : public StackObj {
   }
 
   bool is_protected_access(
-    instanceKlassHandle this_class, Klass* target_class,
+    InstanceKlass* this_class, Klass* target_class,
     Symbol* field_name, Symbol* field_sig, bool is_method);
 
   void verify_cp_index(u2 bci, const constantPoolHandle& cp, int index, TRAPS);
@@ -344,11 +344,11 @@ class ClassVerifier : public StackObj {
   void verify_astore(u2 index, StackMapFrame* current_frame, TRAPS);
   void verify_iinc  (u2 index, StackMapFrame* current_frame, TRAPS);
 
-  bool name_in_supers(Symbol* ref_name, instanceKlassHandle current);
+  bool name_in_supers(Symbol* ref_name, InstanceKlass* current);
 
   VerificationType object_type() const;
 
-  instanceKlassHandle _klass;  // the class being verified
+  InstanceKlass*      _klass;  // the class being verified
   methodHandle        _method; // current method being verified
   VerificationType    _this_type; // the verification type of the current class
 
@@ -362,7 +362,7 @@ class ClassVerifier : public StackObj {
   // that a class has been verified and prepared for execution.
   bool was_recursively_verified() { return _klass->is_rewritten(); }
 
-  bool is_same_or_direct_interface(instanceKlassHandle klass,
+  bool is_same_or_direct_interface(InstanceKlass* klass,
     VerificationType klass_type, VerificationType ref_class_type);
 
  public:
@@ -372,14 +372,14 @@ class ClassVerifier : public StackObj {
   };
 
   // constructor
-  ClassVerifier(instanceKlassHandle klass, TRAPS);
+  ClassVerifier(InstanceKlass* klass, TRAPS);
 
   // destructor
   ~ClassVerifier();
 
   Thread* thread()             { return _thread; }
   const methodHandle& method() { return _method; }
-  instanceKlassHandle current_class() const { return _klass; }
+  InstanceKlass* current_class() const { return _klass; }
   VerificationType current_type() const { return _this_type; }
 
   // Verifies the class.  If a verify or class file format error occurs,

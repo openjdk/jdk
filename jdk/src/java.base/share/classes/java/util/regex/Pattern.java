@@ -81,309 +81,296 @@ import java.util.stream.StreamSupport;
  *
  * <table class="borderless">
  * <caption style="display:none">Regular expression constructs, and what they match</caption>
- * <thead>
- * <tr style="text-align:left">
- * <th style="text-align:left" id="construct">Construct</th>
- * <th style="text-align:left" id="matches">Matches</th>
+ * <thead style="text-align:left">
+ * <tr>
+ * <th id="construct">Construct</th>
+ * <th id="matches">Matches</th>
  * </tr>
  * </thead>
- * <tbody>
+ * <tbody style="text-align:left">
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="characters">Characters</th></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="characters">Characters</th></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct characters"><i>x</i></td>
- *     <td headers="matches">The character <i>x</i></td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \\}</td>
- *     <td headers="matches">The backslash character</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \0}<i>n</i></td>
- *     <td headers="matches">The character with octal value {@code 0}<i>n</i>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="x"><i>x</i></th>
+ *     <td headers="matches characters x">The character <i>x</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="backslash">{@code \\}</th>
+ *     <td headers="matches characters backslash">The backslash character</td></tr>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="octal_n">{@code \0}<i>n</i></th>
+ *     <td headers="matches characters octal_n">The character with octal value {@code 0}<i>n</i>
  *         (0&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;7)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \0}<i>nn</i></td>
- *     <td headers="matches">The character with octal value {@code 0}<i>nn</i>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="octal_nn">{@code \0}<i>nn</i></th>
+ *     <td headers="matches characters octal_nn">The character with octal value {@code 0}<i>nn</i>
  *         (0&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;7)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \0}<i>mnn</i></td>
- *     <td headers="matches">The character with octal value {@code 0}<i>mnn</i>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="octal_nnn">{@code \0}<i>mnn</i></th>
+ *     <td headers="matches characters octal_nnn">The character with octal value {@code 0}<i>mnn</i>
  *         (0&nbsp;{@code <=}&nbsp;<i>m</i>&nbsp;{@code <=}&nbsp;3,
  *         0&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;7)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \x}<i>hh</i></td>
- *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;{@code 0x}<i>hh</i></td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters"><code>&#92;u</code><i>hhhh</i></td>
- *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;{@code 0x}<i>hhhh</i></td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters"><code>&#92;x</code><i>{h...h}</i></td>
- *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;{@code 0x}<i>h...h</i>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="hex_hh">{@code \x}<i>hh</i></th>
+ *     <td headers="matches characters hex_hh">The character with hexadecimal value {@code 0x}<i>hh</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="hex_hhhh"><code>&#92;u</code><i>hhhh</i></th>
+ *     <td headers="matches characters hex_hhhh">The character with hexadecimal&nbsp;value&nbsp;{@code 0x}<i>hhhh</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="hex_h_h"><code>&#92;x</code><i>{h...h}</i></th>
+ *     <td headers="matches characters hex_h_h">The character with hexadecimal value {@code 0x}<i>h...h</i>
  *         ({@link java.lang.Character#MIN_CODE_POINT Character.MIN_CODE_POINT}
  *         &nbsp;&lt;=&nbsp;{@code 0x}<i>h...h</i>&nbsp;&lt;=&nbsp;
  *          {@link java.lang.Character#MAX_CODE_POINT Character.MAX_CODE_POINT})</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters"><code>&#92;N{</code><i>name</i><code>}</code></td>
- *     <td headers="matches">The character with Unicode character name <i>'name'</i></td></tr>
- * <tr><td style="vertical-align:top" headers="matches">{@code \t}</td>
- *     <td headers="matches">The tab character (<code>'&#92;u0009'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \n}</td>
- *     <td headers="matches">The newline (line feed) character (<code>'&#92;u000A'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \r}</td>
- *     <td headers="matches">The carriage-return character (<code>'&#92;u000D'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \f}</td>
- *     <td headers="matches">The form-feed character (<code>'&#92;u000C'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \a}</td>
- *     <td headers="matches">The alert (bell) character (<code>'&#92;u0007'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \e}</td>
- *     <td headers="matches">The escape character (<code>'&#92;u001B'</code>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct characters">{@code \c}<i>x</i></td>
- *     <td headers="matches">The control character corresponding to <i>x</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight: normal" id="unicode_name"><code>&#92;N{</code><i>name</i><code>}</code></th>
+ *     <td headers="matches characters unicode_name">The character with Unicode character name <i>'name'</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="tab">{@code \t}</th>
+ *     <td headers="matches characters tab">The tab character (<code>'&#92;u0009'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="newline">{@code \n}</th>
+ *     <td headers="matches characters newline">The newline (line feed) character (<code>'&#92;u000A'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="return">{@code \r}</th>
+ *     <td headers="matches characters return">The carriage-return character (<code>'&#92;u000D'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="form_feed">{@code \f}</th>
+ *     <td headers="matches characters form_feed">The form-feed character (<code>'&#92;u000C'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="bell">{@code \a}</th>
+ *     <td headers="matches characters bell">The alert (bell) character (<code>'&#92;u0007'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="escape">{@code \e}</th>
+ *     <td headers="matches characters escape">The escape character (<code>'&#92;u001B'</code>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="ctrl_x">{@code \c}<i>x</i></th>
+ *     <td headers="matches characters ctrl_x">The control character corresponding to <i>x</i></td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="classes">Character classes</th></tr>
+ *  <tr><th colspan="2" style="padding-top:20px" id="classes">Character classes</th></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [abc]}</td>
- *     <td headers="matches">{@code a}, {@code b}, or {@code c} (simple class)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [^abc]}</td>
- *     <td headers="matches">Any character except {@code a}, {@code b}, or {@code c} (negation)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [a-zA-Z]}</td>
- *     <td headers="matches">{@code a} through {@code z}
+ * <tr><th style="vertical-align:top; font-weight:normal" id="simple">{@code [abc]}</th>
+ *     <td headers="matches classes simple">{@code a}, {@code b}, or {@code c} (simple class)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="negation">{@code [^abc]}</th>
+ *     <td headers="matches classes negation">Any character except {@code a}, {@code b}, or {@code c} (negation)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="range">{@code [a-zA-Z]}</th>
+ *     <td headers="matches classes range">{@code a} through {@code z}
  *         or {@code A} through {@code Z}, inclusive (range)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [a-d[m-p]]}</td>
- *     <td headers="matches">{@code a} through {@code d},
+ * <tr><th style="vertical-align:top; font-weight:normal" id="union">{@code [a-d[m-p]]}</th>
+ *     <td headers="matches classes union">{@code a} through {@code d},
  *      or {@code m} through {@code p}: {@code [a-dm-p]} (union)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [a-z&&[def]]}</td>
- *     <td headers="matches">{@code d}, {@code e}, or {@code f} (intersection)</tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [a-z&&[^bc]]}</td>
- *     <td headers="matches">{@code a} through {@code z},
+ * <tr><th style="vertical-align:top; font-weight:normal" id="intersection">{@code [a-z&&[def]]}</th>
+ *     <td headers="matches classes intersection">{@code d}, {@code e}, or {@code f} (intersection)</tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="subtraction1">{@code [a-z&&[^bc]]}</th>
+ *     <td headers="matches classes subtraction1">{@code a} through {@code z},
  *         except for {@code b} and {@code c}: {@code [ad-z]} (subtraction)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct classes">{@code [a-z&&[^m-p]]}</td>
- *     <td headers="matches">{@code a} through {@code z},
+ * <tr><th style="vertical-align:top; font-weight:normal" id="subtraction2">{@code [a-z&&[^m-p]]}</th>
+ *     <td headers="matches classes subtraction2">{@code a} through {@code z},
  *          and not {@code m} through {@code p}: {@code [a-lq-z]}(subtraction)</td></tr>
- * <tr><th>&nbsp;</th></tr>
  *
- * <tr style="text-align:left"><th colspan="2" id="predef">Predefined character classes</th></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="predef">Predefined character classes</th></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct predef">{@code .}</td>
- *     <td headers="matches">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \d}</td>
- *     <td headers="matches">A digit: {@code [0-9]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \D}</td>
- *     <td headers="matches">A non-digit: {@code [^0-9]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \h}</td>
- *     <td headers="matches">A horizontal whitespace character:
+ * <tr><th style="vertical-align:top; font-weight:normal" id="any">{@code .}</th>
+ *     <td headers="matches predef any">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="digit">{@code \d}</th>
+ *     <td headers="matches predef digit">A digit: {@code [0-9]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_digit">{@code \D}</th>
+ *     <td headers="matches predef non_digit">A non-digit: {@code [^0-9]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="horiz_white">{@code \h}</th>
+ *     <td headers="matches predef horiz_white">A horizontal whitespace character:
  *     <code>[ \t\xA0&#92;u1680&#92;u180e&#92;u2000-&#92;u200a&#92;u202f&#92;u205f&#92;u3000]</code></td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \H}</td>
- *     <td headers="matches">A non-horizontal whitespace character: {@code [^\h]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \s}</td>
- *     <td headers="matches">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \S}</td>
- *     <td headers="matches">A non-whitespace character: {@code [^\s]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \v}</td>
- *     <td headers="matches">A vertical whitespace character: <code>[\n\x0B\f\r\x85&#92;u2028&#92;u2029]</code>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_horiz_white">{@code \H}</th>
+ *     <td headers="matches predef non_horiz_white">A non-horizontal whitespace character: {@code [^\h]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="white">{@code \s}</th>
+ *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_white">{@code \S}</th>
+ *     <td headers="matches predef non_white">A non-whitespace character: {@code [^\s]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="vert_white">{@code \v}</th>
+ *     <td headers="matches predef vert_white">A vertical whitespace character: <code>[\n\x0B\f\r\x85&#92;u2028&#92;u2029]</code>
  *     </td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \V}</td>
- *     <td headers="matches">A non-vertical whitespace character: {@code [^\v]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \w}</td>
- *     <td headers="matches">A word character: {@code [a-zA-Z_0-9]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct predef">{@code \W}</td>
- *     <td headers="matches">A non-word character: {@code [^\w]}</td></tr>
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="posix"><b>POSIX character classes (US-ASCII only)</b></th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_vert_white">{@code \V}</th>
+ *     <td headers="matches predef non_vert_white">A non-vertical whitespace character: {@code [^\v]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="word">{@code \w}</th>
+ *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_word">{@code \W}</th>
+ *     <td headers="matches predef non_word">A non-word character: {@code [^\w]}</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Lower}}</td>
- *     <td headers="matches">A lower-case alphabetic character: {@code [a-z]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Upper}}</td>
- *     <td headers="matches">An upper-case alphabetic character:{@code [A-Z]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{ASCII}}</td>
- *     <td headers="matches">All ASCII:{@code [\x00-\x7F]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Alpha}}</td>
- *     <td headers="matches">An alphabetic character:{@code [\p{Lower}\p{Upper}]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Digit}}</td>
- *     <td headers="matches">A decimal digit: {@code [0-9]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Alnum}}</td>
- *     <td headers="matches">An alphanumeric character:{@code [\p{Alpha}\p{Digit}]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Punct}}</td>
- *     <td headers="matches">Punctuation: One of {@code !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~}</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="posix"><b>POSIX character classes (US-ASCII only)</b></th></tr>
+ *
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Lower">{@code \p{Lower}}</th>
+ *     <td headers="matches posix Lower">A lower-case alphabetic character: {@code [a-z]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Upper">{@code \p{Upper}}</th>
+ *     <td headers="matches posix Upper">An upper-case alphabetic character:{@code [A-Z]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="ASCII">{@code \p{ASCII}}</th>
+ *     <td headers="matches posix ASCII">All ASCII:{@code [\x00-\x7F]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Alpha">{@code \p{Alpha}}</th>
+ *     <td headers="matches posix Alpha">An alphabetic character:{@code [\p{Lower}\p{Upper}]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Digit">{@code \p{Digit}}</th>
+ *     <td headers="matches posix Digit">A decimal digit: {@code [0-9]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Alnum">{@code \p{Alnum}}</th>
+ *     <td headers="matches posix Alnum">An alphanumeric character:{@code [\p{Alpha}\p{Digit}]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Punct">{@code \p{Punct}}</th>
+ *     <td headers="matches posix Punct">Punctuation: One of {@code !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~}</td></tr>
  *     <!-- {@code [\!"#\$%&'\(\)\*\+,\-\./:;\<=\>\?@\[\\\]\^_`\{\|\}~]}
  *          {@code [\X21-\X2F\X31-\X40\X5B-\X60\X7B-\X7E]} -->
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Graph}}</td>
- *     <td headers="matches">A visible character: {@code [\p{Alnum}\p{Punct}]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Print}}</td>
- *     <td headers="matches">A printable character: {@code [\p{Graph}\x20]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Blank}}</td>
- *     <td headers="matches">A space or a tab: {@code [ \t]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Cntrl}}</td>
- *     <td headers="matches">A control character: {@code [\x00-\x1F\x7F]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{XDigit}}</td>
- *     <td headers="matches">A hexadecimal digit: {@code [0-9a-fA-F]}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct posix">{@code \p{Space}}</td>
- *     <td headers="matches">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Graph">{@code \p{Graph}}</th>
+ *     <td headers="matches posix Graph">A visible character: {@code [\p{Alnum}\p{Punct}]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Print">{@code \p{Print}}</th>
+ *     <td headers="matches posix Print">A printable character: {@code [\p{Graph}\x20]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Blank">{@code \p{Blank}}</th>
+ *     <td headers="matches posix Blank">A space or a tab: {@code [ \t]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Cntrl">{@code \p{Cntrl}}</th>
+ *     <td headers="matches posix Cntrl">A control character: {@code [\x00-\x1F\x7F]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="XDigit">{@code \p{XDigit}}</th>
+ *     <td headers="matches posix XDigit">A hexadecimal digit: {@code [0-9a-fA-F]}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Space">{@code \p{Space}}</th>
+ *     <td headers="matches posix Space">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2">java.lang.Character classes (simple <a href="#jcc">java character type</a>)</th></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="java">java.lang.Character classes (simple <a href="#jcc">java character type</a>)</th></tr>
  *
- * <tr><td style="vertical-align:top">{@code \p{javaLowerCase}}</td>
- *     <td>Equivalent to java.lang.Character.isLowerCase()</td></tr>
- * <tr><td style="vertical-align:top">{@code \p{javaUpperCase}}</td>
- *     <td>Equivalent to java.lang.Character.isUpperCase()</td></tr>
- * <tr><td style="vertical-align:top">{@code \p{javaWhitespace}}</td>
- *     <td>Equivalent to java.lang.Character.isWhitespace()</td></tr>
- * <tr><td style="vertical-align:top">{@code \p{javaMirrored}}</td>
- *     <td>Equivalent to java.lang.Character.isMirrored()</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="javaLowerCase">{@code \p{javaLowerCase}}</th>
+ *     <td headers="matches java javaLowerCase">Equivalent to java.lang.Character.isLowerCase()</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="javaUpperCase">{@code \p{javaUpperCase}}</th>
+ *     <td headers="matches java javaUpperCase">Equivalent to java.lang.Character.isUpperCase()</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="javaWhitespace">{@code \p{javaWhitespace}}</th>
+ *     <td headers="matches java javaWhitespace">Equivalent to java.lang.Character.isWhitespace()</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="javaMirrored">{@code \p{javaMirrored}}</th>
+ *     <td headers="matches java javaMirrored">Equivalent to java.lang.Character.isMirrored()</td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="unicode">Classes for Unicode scripts, blocks, categories and binary properties</th></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \p{IsLatin}}</td>
- *     <td headers="matches">A Latin&nbsp;script character (<a href="#usc">script</a>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \p{InGreek}}</td>
- *     <td headers="matches">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \p{Lu}}</td>
- *     <td headers="matches">An uppercase letter (<a href="#ucc">category</a>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \p{IsAlphabetic}}</td>
- *     <td headers="matches">An alphabetic character (<a href="#ubpc">binary property</a>)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \p{Sc}}</td>
- *     <td headers="matches">A currency symbol</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code \P{InGreek}}</td>
- *     <td headers="matches">Any character except one in the Greek block (negation)</td></tr>
- * <tr><td style="vertical-align:top" headers="construct unicode">{@code [\p{L}&&[^\p{Lu}]]}</td>
- *     <td headers="matches">Any letter except an uppercase letter (subtraction)</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px"  id="unicode">Classes for Unicode scripts, blocks, categories and binary properties</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="bounds">Boundary matchers</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="IsLatin">{@code \p{IsLatin}}</th>
+ *     <td headers="matches unicode IsLatin">A Latin&nbsp;script character (<a href="#usc">script</a>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="InGreek">{@code \p{InGreek}}</th>
+ *     <td headers="matches unicode InGreek">A character in the Greek&nbsp;block (<a href="#ubc">block</a>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Lu">{@code \p{Lu}}</th>
+ *     <td headers="matches unicode Lu">An uppercase letter (<a href="#ucc">category</a>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="IsAlphabetic">{@code \p{IsAlphabetic}}</th>
+ *     <td headers="matches unicode IsAlphabetic">An alphabetic character (<a href="#ubpc">binary property</a>)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="Sc">{@code \p{Sc}}</th>
+ *     <td headers="matches unicode Sc">A currency symbol</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="not_InGreek">{@code \P{InGreek}}</th>
+ *     <td headers="matches unicode not_InGreek">Any character except one in the Greek block (negation)</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="not_uppercase">{@code [\p{L}&&[^\p{Lu}]]}</th>
+ *     <td headers="matches unicode not_uppercase">Any letter except an uppercase letter (subtraction)</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code ^}</td>
- *     <td headers="matches">The beginning of a line</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code $}</td>
- *     <td headers="matches">The end of a line</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \b}</td>
- *     <td headers="matches">A word boundary</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \b{g}}</td>
- *     <td headers="matches">A Unicode extended grapheme cluster boundary</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \B}</td>
- *     <td headers="matches">A non-word boundary</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \A}</td>
- *     <td headers="matches">The beginning of the input</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \G}</td>
- *     <td headers="matches">The end of the previous match</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \Z}</td>
- *     <td headers="matches">The end of the input but for the final
+ * <tr><th colspan="2" style="padding-top:20px" id="bounds">Boundary matchers</th></tr>
+ *
+ * <tr><th style="vertical-align:top; font-weight:normal" id="begin_line">{@code ^}</th>
+ *     <td headers="matches bounds begin_line">The beginning of a line</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
+ *     <td headers="matches bounds end_line">The end of a line</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
+ *     <td headers="matches bounds word_boundary">A word boundary</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
+ *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
+ *     <td headers="matches bounds non_word_boundary">A non-word boundary</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="begin_input">{@code \A}</th>
+ *     <td headers="matches bounds begin_input">The beginning of the input</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="end_prev_match">{@code \G}</th>
+ *     <td headers="matches bounds end_prev_match">The end of the previous match</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="end_input_except_term">{@code \Z}</th>
+ *     <td headers="matches bounds end_input_except_term">The end of the input but for the final
  *         <a href="#lt">terminator</a>, if&nbsp;any</td></tr>
- * <tr><td style="vertical-align:top" headers="construct bounds">{@code \z}</td>
- *     <td headers="matches">The end of the input</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="end_input">{@code \z}</th>
+ *     <td headers="matches bounds end_input">The end of the input</td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="lineending">Linebreak matcher</th></tr>
- * <tr><td style="vertical-align:top" headers="construct lineending">{@code \R}</td>
- *     <td headers="matches">Any Unicode linebreak sequence, is equivalent to
+ * <tr><th colspan="2" style="padding-top:20px" id="linebreak">Linebreak matcher</th></tr>
+ *
+ * <tr><th style="vertical-align:top; font-weight:normal" id="any_unicode_linebreak">{@code \R}</th>
+ *     <td headers="matches linebreak any_unicode_linebreak">Any Unicode linebreak sequence, is equivalent to
  *     <code>&#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
  *     </code></td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="grapheme">Unicode Extended Grapheme matcher</th></tr>
- * <tr><td style="vertical-align:top" headers="construct grapheme">{@code \X}</td>
- *     <td headers="matches">Any Unicode extended grapheme cluster</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="grapheme">Unicode Extended Grapheme matcher</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="greedy">Greedy quantifiers</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_any">{@code \X}</th>
+ *     <td headers="matches grapheme grapheme_any">Any Unicode extended grapheme cluster</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i>{@code ?}</td>
- *     <td headers="matches"><i>X</i>, once or not at all</td></tr>
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i>{@code *}</td>
- *     <td headers="matches"><i>X</i>, zero or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i>{@code +}</td>
- *     <td headers="matches"><i>X</i>, one or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i><code>{</code><i>n</i><code>}</code></td>
- *     <td headers="matches"><i>X</i>, exactly <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i><code>{</code><i>n</i>{@code ,}}</td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct greedy"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}</code></td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="greedy">Greedy quantifiers</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="reluc">Reluctant quantifiers</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_once_or_not"><i>X</i>{@code ?}</th>
+ *     <td headers="matches greedy greedy_once_or_not"><i>X</i>, once or not at all</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_zero_or_more"><i>X</i>{@code *}</th>
+ *     <td headers="matches greedy greedy_zero_or_more"><i>X</i>, zero or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_one_or_more"><i>X</i>{@code +}</th>
+ *     <td headers="matches greedy greedy_one_or_more"><i>X</i>, one or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_exactly"><i>X</i><code>{</code><i>n</i><code>}</code></th>
+ *     <td headers="matches greedy greedy_exactly"><i>X</i>, exactly <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_at_least"><i>X</i><code>{</code><i>n</i>{@code ,}}</th>
+ *     <td headers="matches greedy greedy_at_least"><i>X</i>, at least <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="greedy_at_least_up_to"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}</code></th>
+ *     <td headers="matches greedy greedy_at_least_up_to"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i>{@code ??}</td>
- *     <td headers="matches"><i>X</i>, once or not at all</td></tr>
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i>{@code *?}</td>
- *     <td headers="matches"><i>X</i>, zero or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i>{@code +?}</td>
- *     <td headers="matches"><i>X</i>, one or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i><code>{</code><i>n</i><code>}?</code></td>
- *     <td headers="matches"><i>X</i>, exactly <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i><code>{</code><i>n</i><code>,}?</code></td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct reluc"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}?</code></td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="reluc">Reluctant quantifiers</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="poss">Possessive quantifiers</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_once_or_not"><i>X</i>{@code ??}</th>
+ *     <td headers="matches reluc reluc_once_or_not"><i>X</i>, once or not at all</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_zero_or_more"><i>X</i>{@code *?}</th>
+ *     <td headers="matches reluc reluc_zero_or_more"><i>X</i>, zero or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_one_or_more"><i>X</i>{@code +?}</th>
+ *     <td headers="matches reluc reluc_one_or_more"><i>X</i>, one or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_exactly"><i>X</i><code>{</code><i>n</i><code>}?</code></th>
+ *     <td headers="matches reluc reluc_exactly"><i>X</i>, exactly <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_at_least"><i>X</i><code>{</code><i>n</i><code>,}?</code></th>
+ *     <td headers="matches reluc reluc_at_least"><i>X</i>, at least <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="reluc_at_least_up_to"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}?</code></th>
+ *     <td headers="matches reluc reluc_at_least_up_to"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i>{@code ?+}</td>
- *     <td headers="matches"><i>X</i>, once or not at all</td></tr>
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i>{@code *+}</td>
- *     <td headers="matches"><i>X</i>, zero or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i>{@code ++}</td>
- *     <td headers="matches"><i>X</i>, one or more times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i><code>{</code><i>n</i><code>}+</code></td>
- *     <td headers="matches"><i>X</i>, exactly <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i><code>{</code><i>n</i><code>,}+</code></td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> times</td></tr>
- * <tr><td style="vertical-align:top" headers="construct poss"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}+</code></td>
- *     <td headers="matches"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="poss">Possessive quantifiers</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="logical">Logical operators</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_once_or_not"><i>X</i>{@code ?+}</th>
+ *     <td headers="matches poss poss_once_or_not"><i>X</i>, once or not at all</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_zero_or_more"><i>X</i>{@code *+}</th>
+ *     <td headers="matches poss poss_zero_or_more"><i>X</i>, zero or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_one_or_more"><i>X</i>{@code ++}</th>
+ *     <td headers="matches poss poss_one_or_more"><i>X</i>, one or more times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_exactly"><i>X</i><code>{</code><i>n</i><code>}+</code></th>
+ *     <td headers="matches poss poss_exactly"><i>X</i>, exactly <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_at_least"><i>X</i><code>{</code><i>n</i><code>,}+</code></th>
+ *     <td headers="matches poss poss_at_least"><i>X</i>, at least <i>n</i> times</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="poss_at_least_up_to"><i>X</i><code>{</code><i>n</i>{@code ,}<i>m</i><code>}+</code></th>
+ *     <td headers="matches poss poss_at_least_up_to"><i>X</i>, at least <i>n</i> but not more than <i>m</i> times</td></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct logical"><i>XY</i></td>
- *     <td headers="matches"><i>X</i> followed by <i>Y</i></td></tr>
- * <tr><td style="vertical-align:top" headers="construct logical"><i>X</i>{@code |}<i>Y</i></td>
- *     <td headers="matches">Either <i>X</i> or <i>Y</i></td></tr>
- * <tr><td style="vertical-align:top" headers="construct logical">{@code (}<i>X</i>{@code )}</td>
- *     <td headers="matches">X, as a <a href="#cg">capturing group</a></td></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="logical">Logical operators</th></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="backref">Back references</th></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="concat"><i>XY</i></th>
+ *     <td headers="matches logical concat"><i>X</i> followed by <i>Y</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="alternate"><i>X</i>{@code |}<i>Y</i></th>
+ *     <td headers="matches logical alternate">Either <i>X</i> or <i>Y</i></td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="group">{@code (}<i>X</i>{@code )}</th>
+ *     <td headers="matches logical group">X, as a <a href="#cg">capturing group</a></td></tr>
  *
- * <tr><td style="vertical-align:bottom" headers="construct backref">{@code \}<i>n</i></td>
- *     <td style="vertical-align:bottom" headers="matches">Whatever the <i>n</i><sup>th</sup>
+ * <tr><th colspan="2" style="padding-top:20px" id="backref">Back references</th></tr>
+ *
+ * <tr><th style="vertical-align:top; font-weight:normal" id="back_nth">{@code \}<i>n</i></th>
+ *     <td headers="matches backref back_nth">Whatever the <i>n</i><sup>th</sup>
  *     <a href="#cg">capturing group</a> matched</td></tr>
- *
- * <tr><td style="vertical-align:bottom" headers="construct backref">{@code \}<i>k</i>&lt;<i>name</i>&gt;</td>
- *     <td style="vertical-align:bottom" headers="matches">Whatever the
+ * <tr><th style="vertical-align:top; font-weight:normal" id="back_named">{@code \}<i>k</i>&lt;<i>name</i>&gt;</th>
+ *     <td headers="matches backref back_named">Whatever the
  *     <a href="#groupname">named-capturing group</a> "name" matched</td></tr>
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="quot">Quotation</th></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="quote">Quotation</th></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct quot">{@code \}</td>
- *     <td headers="matches">Nothing, but quotes the following character</td></tr>
- * <tr><td style="vertical-align:top" headers="construct quot">{@code \Q}</td>
- *     <td headers="matches">Nothing, but quotes all characters until {@code \E}</td></tr>
- * <tr><td style="vertical-align:top" headers="construct quot">{@code \E}</td>
- *     <td headers="matches">Nothing, but ends quoting started by {@code \Q}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="quote_follow">{@code \}</th>
+ *     <td headers="matches quote quote_follow">Nothing, but quotes the following character</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="quote_begin">{@code \Q}</th>
+ *     <td headers="matches quote quote_begin">Nothing, but quotes all characters until {@code \E}</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="quote_end">{@code \E}</th>
+ *     <td headers="matches quote quote_end">Nothing, but ends quoting started by {@code \Q}</td></tr>
  *     <!-- Metachars: !$()*+.<>?[\]^{|} -->
  *
- * <tr><th>&nbsp;</th></tr>
- * <tr style="text-align:left"><th colspan="2" id="special">Special constructs (named-capturing and non-capturing)</th></tr>
+ * <tr><th colspan="2" style="padding-top:20px" id="special">Special constructs (named-capturing and non-capturing)</th></tr>
  *
- * <tr><td style="vertical-align:top" headers="construct special"><code>(?&lt;<a href="#groupname">name</a>&gt;</code><i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, as a named-capturing group</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?:}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, as a non-capturing group</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special"><code>(?idmsuxU-idmsuxU)&nbsp;</code></td>
- *     <td headers="matches">Nothing, but turns match flags <a href="#CASE_INSENSITIVE">i</a>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="named_group"><code>(?&lt;<a href="#groupname">name</a>&gt;</code><i>X</i>{@code )}</th>
+ *     <td headers="matches special named_group"><i>X</i>, as a named-capturing group</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_capture_group">{@code (?:}<i>X</i>{@code )}</th>
+ *     <td headers="matches special non_capture_group"><i>X</i>, as a non-capturing group</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="flags"><code>(?idmsuxU-idmsuxU)&nbsp;</code></th>
+ *     <td headers="matches special flags">Nothing, but turns match flags <a href="#CASE_INSENSITIVE">i</a>
  * <a href="#UNIX_LINES">d</a> <a href="#MULTILINE">m</a> <a href="#DOTALL">s</a>
  * <a href="#UNICODE_CASE">u</a> <a href="#COMMENTS">x</a> <a href="#UNICODE_CHARACTER_CLASS">U</a>
  * on - off</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special"><code>(?idmsux-idmsux:</code><i>X</i>{@code )}&nbsp;&nbsp;</td>
- *     <td headers="matches"><i>X</i>, as a <a href="#cg">non-capturing group</a> with the
+ * <tr><th style="vertical-align:top; font-weight:normal" id="non_capture_group_flags"><code>(?idmsux-idmsux:</code><i>X</i>{@code )}&nbsp;&nbsp;</th>
+ *     <td headers="matches special non_capture_group_flags"><i>X</i>, as a <a href="#cg">non-capturing group</a> with the
  *         given flags <a href="#CASE_INSENSITIVE">i</a> <a href="#UNIX_LINES">d</a>
  * <a href="#MULTILINE">m</a> <a href="#DOTALL">s</a> <a href="#UNICODE_CASE">u</a >
  * <a href="#COMMENTS">x</a> on - off</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?=}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, via zero-width positive lookahead</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?!}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, via zero-width negative lookahead</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?<=}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, via zero-width positive lookbehind</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?<!}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, via zero-width negative lookbehind</td></tr>
- * <tr><td style="vertical-align:top" headers="construct special">{@code (?>}<i>X</i>{@code )}</td>
- *     <td headers="matches"><i>X</i>, as an independent, non-capturing group</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="pos_lookahead">{@code (?=}<i>X</i>{@code )}</th>
+ *     <td headers="matches special pos_lookahead"><i>X</i>, via zero-width positive lookahead</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="neg_lookahead">{@code (?!}<i>X</i>{@code )}</th>
+ *     <td headers="matches special neg_lookahead"><i>X</i>, via zero-width negative lookahead</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="pos_lookbehind">{@code (?<=}<i>X</i>{@code )}</th>
+ *     <td headers="matches special pos_lookbehind"><i>X</i>, via zero-width positive lookbehind</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="neg_lookbehind">{@code (?<!}<i>X</i>{@code )}</th>
+ *     <td headers="matches special neg_lookbehind"><i>X</i>, via zero-width negative lookbehind</td></tr>
+ * <tr><th style="vertical-align:top; font-weight:normal" id="indep_non_capture_group">{@code (?>}<i>X</i>{@code )}</th>
+ *     <td headers="matches special indep_non_capture_group"><i>X</i>, as an independent, non-capturing group</td></tr>
  *
  * </tbody>
  * </table>
@@ -432,26 +419,29 @@ import java.util.stream.StreamSupport;
  *    <p> The precedence of character-class operators is as follows, from
  *    highest to lowest:
  *
- *    <blockquote><table>
+ *    <table class="striped" style="margin-left: 2em;">
  *      <caption style="display:none">Precedence of character class operators.</caption>
+ *      <thead>
+ *      <tr><th scope="col">Precedence<th scope="col">Name<th scope="col">Example
+ *      </thead>
  *      <tbody>
- *      <tr><th>1&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *      <tr><th scope="row">1</th>
  *        <td>Literal escape&nbsp;&nbsp;&nbsp;&nbsp;</td>
  *        <td>{@code \x}</td></tr>
- *     <tr><th>2&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *     <tr><th scope="row">2</th>
  *        <td>Grouping</td>
  *        <td>{@code [...]}</td></tr>
- *     <tr><th>3&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *     <tr><th scope="row">3</th>
  *        <td>Range</td>
  *        <td>{@code a-z}</td></tr>
- *      <tr><th>4&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *      <tr><th scope="row">4</th>
  *        <td>Union</td>
  *        <td>{@code [a-e][i-u]}</td></tr>
- *      <tr><th>5&nbsp;&nbsp;&nbsp;&nbsp;</th>
+ *      <tr><th scope="row">5</th>
  *        <td>Intersection</td>
  *        <td>{@code [a-z&&[aeiou]]}</td></tr>
  *      </tbody>
- *    </table></blockquote>
+ *    </table>
  *
  *    <p> Note that a different set of metacharacters are in effect inside
  *    a character class than outside a character class. For instance, the
@@ -467,18 +457,18 @@ import java.util.stream.StreamSupport;
  *
  * <ul>
  *
- *   <li> A newline (line feed) character&nbsp;({@code '\n'}),
+ *   <li> A newline (line feed) character ({@code '\n'}),
  *
  *   <li> A carriage-return character followed immediately by a newline
- *   character&nbsp;({@code "\r\n"}),
+ *   character ({@code "\r\n"}),
  *
- *   <li> A standalone carriage-return character&nbsp;({@code '\r'}),
+ *   <li> A standalone carriage-return character ({@code '\r'}),
  *
- *   <li> A next-line character&nbsp;(<code>'&#92;u0085'</code>),
+ *   <li> A next-line character (<code>'&#92;u0085'</code>),
  *
- *   <li> A line-separator character&nbsp;(<code>'&#92;u2028'</code>), or
+ *   <li> A line-separator character (<code>'&#92;u2028'</code>), or
  *
- *   <li> A paragraph-separator character&nbsp;(<code>'&#92;u2029'</code>).
+ *   <li> A paragraph-separator character (<code>'&#92;u2029'</code>).
  *
  * </ul>
  * <p>If {@link #UNIX_LINES} mode is activated, then the only line terminators
@@ -501,19 +491,12 @@ import java.util.stream.StreamSupport;
  * left to right.  In the expression {@code ((A)(B(C)))}, for example, there
  * are four such groups: </p>
  *
- * <blockquote><table>
- * <caption style="display:none">Capturing group numberings</caption>
- * <tbody>
- * <tr><th>1&nbsp;&nbsp;&nbsp;&nbsp;</th>
- *     <td>{@code ((A)(B(C)))}</td></tr>
- * <tr><th>2&nbsp;&nbsp;&nbsp;&nbsp;</th>
- *     <td>{@code (A)}</td></tr>
- * <tr><th>3&nbsp;&nbsp;&nbsp;&nbsp;</th>
- *     <td>{@code (B(C))}</td></tr>
- * <tr><th>4&nbsp;&nbsp;&nbsp;&nbsp;</th>
- *     <td>{@code (C)}</td></tr>
- * </tbody>
- * </table></blockquote>
+ * <ol style="margin-left:2em;">
+ *   <li> {@code ((A)(B(C)))}
+ *   <li> {@code (A)}
+ *   <li> {@code (B(C))}
+ *   <li> {@code (C)}
+ * </ol>
  *
  * <p> Group zero always stands for the entire expression.
  *
@@ -649,52 +632,52 @@ import java.util.stream.StreamSupport;
  * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
  * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
  *
- * <table>
+ * <table class="striped">
  * <caption style="display:none">predefined and posix character classes in Unicode mode</caption>
  * <thead>
- * <tr style="text-align:left">
- * <th style="text-align:left" id="predef_classes">Classes</th>
- * <th style="text-align:left" id="predef_matches">Matches</th>
+ * <tr>
+ * <th scope="col" id="predef_classes">Classes</th>
+ * <th scope="col" id="predef_matches">Matches</th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr><td>{@code \p{Lower}}</td>
+ * <tr><th scope="row">{@code \p{Lower}}</th>
  *     <td>A lowercase character:{@code \p{IsLowercase}}</td></tr>
- * <tr><td>{@code \p{Upper}}</td>
+ * <tr><th scope="row">{@code \p{Upper}}</th>
  *     <td>An uppercase character:{@code \p{IsUppercase}}</td></tr>
- * <tr><td>{@code \p{ASCII}}</td>
+ * <tr><th scope="row">{@code \p{ASCII}}</th>
  *     <td>All ASCII:{@code [\x00-\x7F]}</td></tr>
- * <tr><td>{@code \p{Alpha}}</td>
+ * <tr><th scope="row">{@code \p{Alpha}}</th>
  *     <td>An alphabetic character:{@code \p{IsAlphabetic}}</td></tr>
- * <tr><td>{@code \p{Digit}}</td>
+ * <tr><th scope="row">{@code \p{Digit}}</th>
  *     <td>A decimal digit character:{@code \p{IsDigit}}</td></tr>
- * <tr><td>{@code \p{Alnum}}</td>
+ * <tr><th scope="row">{@code \p{Alnum}}</th>
  *     <td>An alphanumeric character:{@code [\p{IsAlphabetic}\p{IsDigit}]}</td></tr>
- * <tr><td>{@code \p{Punct}}</td>
+ * <tr><th scope="row">{@code \p{Punct}}</th>
  *     <td>A punctuation character:{@code \p{IsPunctuation}}</td></tr>
- * <tr><td>{@code \p{Graph}}</td>
+ * <tr><th scope="row">{@code \p{Graph}}</th>
  *     <td>A visible character: {@code [^\p{IsWhite_Space}\p{gc=Cc}\p{gc=Cs}\p{gc=Cn}]}</td></tr>
- * <tr><td>{@code \p{Print}}</td>
+ * <tr><th scope="row">{@code \p{Print}}</th>
  *     <td>A printable character: {@code [\p{Graph}\p{Blank}&&[^\p{Cntrl}]]}</td></tr>
- * <tr><td>{@code \p{Blank}}</td>
+ * <tr><th scope="row">{@code \p{Blank}}</th>
  *     <td>A space or a tab: {@code [\p{IsWhite_Space}&&[^\p{gc=Zl}\p{gc=Zp}\x0a\x0b\x0c\x0d\x85]]}</td></tr>
- * <tr><td>{@code \p{Cntrl}}</td>
+ * <tr><th scope="row">{@code \p{Cntrl}}</th>
  *     <td>A control character: {@code \p{gc=Cc}}</td></tr>
- * <tr><td>{@code \p{XDigit}}</td>
+ * <tr><th scope="row">{@code \p{XDigit}}</th>
  *     <td>A hexadecimal digit: {@code [\p{gc=Nd}\p{IsHex_Digit}]}</td></tr>
- * <tr><td>{@code \p{Space}}</td>
+ * <tr><th scope="row">{@code \p{Space}}</th>
  *     <td>A whitespace character:{@code \p{IsWhite_Space}}</td></tr>
- * <tr><td>{@code \d}</td>
+ * <tr><th scope="row">{@code \d}</th>
  *     <td>A digit: {@code \p{IsDigit}}</td></tr>
- * <tr><td>{@code \D}</td>
+ * <tr><th scope="row">{@code \D}</th>
  *     <td>A non-digit: {@code [^\d]}</td></tr>
- * <tr><td>{@code \s}</td>
+ * <tr><th scope="row">{@code \s}</th>
  *     <td>A whitespace character: {@code \p{IsWhite_Space}}</td></tr>
- * <tr><td>{@code \S}</td>
+ * <tr><th scope="row">{@code \S}</th>
  *     <td>A non-whitespace character: {@code [^\s]}</td></tr>
- * <tr><td>{@code \w}</td>
+ * <tr><th scope="row">{@code \w}</th>
  *     <td>A word character: {@code [\p{Alpha}\p{gc=Mn}\p{gc=Me}\p{gc=Mc}\p{Digit}\p{gc=Pc}\p{IsJoin_Control}]}</td></tr>
- * <tr><td>{@code \W}</td>
+ * <tr><th scope="row">{@code \W}</th>
  *     <td>A non-word character: {@code [^\w]}</td></tr>
  * </tbody>
  * </table>
@@ -1219,34 +1202,36 @@ public final class Pattern
      * <p> The input {@code "boo:and:foo"}, for example, yields the following
      * results with these parameters:
      *
-     * <blockquote><table>
-     * <caption>Split examples showing regex, limit, and result</caption>
+     * <table class="plain" style="margin-left:2em;">
+     * <caption style="display:none">Split example showing regex, limit, and result</caption>
      * <thead>
-     * <tr><th style="text-align:left"><i>Regex&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
-     *     <th style="text-align:left"><i>Limit&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
-     *     <th style="text-align:left"><i>Result&nbsp;&nbsp;&nbsp;&nbsp;</i></th></tr>
+     * <tr>
+     *     <th scope="col">Regex</th>
+     *     <th scope="col">Limit</th>
+     *     <th scope="col">Result</th>
+     * </tr>
      * </thead>
      * <tbody>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">2</td>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">:</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">2</th>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">5</td>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">:</td>
-     *     <td style="text-align:center">-2</td>
+     * <tr><!-- : -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">5</td>
+     * <tr><th scope="row" rowspan="3" style="font-weight:normal">o</th>
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">5</th>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">-2</td>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">-2</th>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
-     *     <td style="text-align:center">0</td>
+     * <tr><!-- o -->
+     *     <th scope="row" style="font-weight:normal; text-align:right; padding-right:1em">0</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
-     * </table></blockquote>
+     * </table>
      *
      * @param  input
      *         The character sequence to be split
@@ -1310,19 +1295,21 @@ public final class Pattern
      * <p> The input {@code "boo:and:foo"}, for example, yields the following
      * results with these expressions:
      *
-     * <blockquote><table>
+     * <table class="plain" style="margin-left:2em">
      * <caption style="display:none">Split examples showing regex and result</caption>
      * <thead>
-     * <tr><th style="text-align:left"><i>Regex&nbsp;&nbsp;&nbsp;&nbsp;</i></th>
-     *     <th style="text-align:left"><i>Result</i></th></tr>
+     * <tr>
+     *  <th scope="col">Regex</th>
+     *  <th scope="col">Result</th>
+     * </tr>
      * </thead>
      * <tbody>
-     * <tr><td style="text-align:center">:</td>
+     * <tr><th scope="row" style="text-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td style="text-align:center">o</td>
+     * <tr><th scope="row" style="text-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
-     * </table></blockquote>
+     * </table>
      *
      *
      * @param  input

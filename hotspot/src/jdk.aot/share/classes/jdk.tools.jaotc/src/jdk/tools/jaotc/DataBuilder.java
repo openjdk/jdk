@@ -33,9 +33,9 @@ import jdk.tools.jaotc.binformat.ByteContainer;
 import jdk.tools.jaotc.binformat.HeaderContainer;
 import jdk.tools.jaotc.utils.Timer;
 import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.debug.Debug;
-import org.graalvm.compiler.debug.Debug.Scope;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
+import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
@@ -123,10 +123,12 @@ class DataBuilder {
     /**
      * Prepare data with all compiled classes and stubs.
      *
+     * @param debug
+     *
      * @throws Exception
      */
     @SuppressWarnings("try")
-    public void prepareData() throws Exception {
+    public void prepareData(DebugContext debug) throws Exception {
         try (Timer t = new Timer(main, "Parsing compiled code")) {
             /*
              * Copy compiled code into code section container and calls stubs (PLT trampoline).
@@ -141,7 +143,7 @@ class DataBuilder {
             }
         }
 
-        AOTCompiledClass stubCompiledCode = retrieveStubCode();
+        AOTCompiledClass stubCompiledCode = retrieveStubCode(debug);
 
         // Free memory!
         try (Timer t = main.options.verbose ? new Timer(main, "Freeing memory") : null) {
@@ -176,17 +178,20 @@ class DataBuilder {
 
     /**
      * Get all stubs from Graal and add them to the code section.
+     *
+     * @param debug
      */
     @SuppressWarnings("try")
-    private AOTCompiledClass retrieveStubCode() {
+    private AOTCompiledClass retrieveStubCode(DebugContext debug) {
         ArrayList<CompiledMethodInfo> stubs = new ArrayList<>();
-        for (Stub stub : Stub.getStubs()) {
-            try (Scope scope = Debug.scope("CompileStubs")) {
-                CompilationResult result = stub.getCompilationResult(backend);
+        HotSpotForeignCallsProvider foreignCallsProvider = backend.getProviders().getForeignCalls();
+        for (Stub stub : foreignCallsProvider.getStubs()) {
+            try (DebugContext.Scope scope = debug.scope("CompileStubs")) {
+                CompilationResult result = stub.getCompilationResult(debug, backend);
                 CompiledMethodInfo cm = new CompiledMethodInfo(result, new AOTStub(stub, backend));
                 stubs.add(cm);
             } catch (Throwable e) {
-                throw Debug.handle(e);
+                throw debug.handle(e);
             }
         }
         AOTCompiledClass stubCompiledCode = new AOTCompiledClass(stubs);

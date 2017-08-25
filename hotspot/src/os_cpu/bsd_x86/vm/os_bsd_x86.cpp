@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -462,7 +463,7 @@ JVM_handle_bsd_signal(int sig,
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
-  os::WatcherThreadCrashProtection::check_crash_protection(sig, t);
+  os::ThreadCrashProtection::check_crash_protection(sig, t);
 
   SignalHandlerMark shm(t);
 
@@ -718,7 +719,7 @@ JVM_handle_bsd_signal(int sig,
     bool pc_is_near_addr =
       (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
     bool instr_spans_page_boundary =
-      (align_size_down((intptr_t) pc ^ (intptr_t) addr,
+      (align_down((intptr_t) pc ^ (intptr_t) addr,
                        (intptr_t) page_size) > 0);
 
     if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
@@ -730,8 +731,7 @@ JVM_handle_bsd_signal(int sig,
           (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
 
         // Set memory to RWX and retry
-        address page_start =
-          (address) align_size_down((intptr_t) addr, (intptr_t) page_size);
+        address page_start = align_down(addr, page_size);
         bool res = os::protect_memory((char*) page_start, page_size,
                                       os::MEM_PROT_RWX);
 
@@ -979,50 +979,50 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t *uc = (const ucontext_t*)context;
   st->print_cr("Registers:");
 #ifdef AMD64
-  st->print(  "RAX=" INTPTR_FORMAT, uc->context_rax);
-  st->print(", RBX=" INTPTR_FORMAT, uc->context_rbx);
-  st->print(", RCX=" INTPTR_FORMAT, uc->context_rcx);
-  st->print(", RDX=" INTPTR_FORMAT, uc->context_rdx);
+  st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->context_rax);
+  st->print(", RBX=" INTPTR_FORMAT, (intptr_t)uc->context_rbx);
+  st->print(", RCX=" INTPTR_FORMAT, (intptr_t)uc->context_rcx);
+  st->print(", RDX=" INTPTR_FORMAT, (intptr_t)uc->context_rdx);
   st->cr();
-  st->print(  "RSP=" INTPTR_FORMAT, uc->context_rsp);
-  st->print(", RBP=" INTPTR_FORMAT, uc->context_rbp);
-  st->print(", RSI=" INTPTR_FORMAT, uc->context_rsi);
-  st->print(", RDI=" INTPTR_FORMAT, uc->context_rdi);
+  st->print(  "RSP=" INTPTR_FORMAT, (intptr_t)uc->context_rsp);
+  st->print(", RBP=" INTPTR_FORMAT, (intptr_t)uc->context_rbp);
+  st->print(", RSI=" INTPTR_FORMAT, (intptr_t)uc->context_rsi);
+  st->print(", RDI=" INTPTR_FORMAT, (intptr_t)uc->context_rdi);
   st->cr();
-  st->print(  "R8 =" INTPTR_FORMAT, uc->context_r8);
-  st->print(", R9 =" INTPTR_FORMAT, uc->context_r9);
-  st->print(", R10=" INTPTR_FORMAT, uc->context_r10);
-  st->print(", R11=" INTPTR_FORMAT, uc->context_r11);
+  st->print(  "R8 =" INTPTR_FORMAT, (intptr_t)uc->context_r8);
+  st->print(", R9 =" INTPTR_FORMAT, (intptr_t)uc->context_r9);
+  st->print(", R10=" INTPTR_FORMAT, (intptr_t)uc->context_r10);
+  st->print(", R11=" INTPTR_FORMAT, (intptr_t)uc->context_r11);
   st->cr();
-  st->print(  "R12=" INTPTR_FORMAT, uc->context_r12);
-  st->print(", R13=" INTPTR_FORMAT, uc->context_r13);
-  st->print(", R14=" INTPTR_FORMAT, uc->context_r14);
-  st->print(", R15=" INTPTR_FORMAT, uc->context_r15);
+  st->print(  "R12=" INTPTR_FORMAT, (intptr_t)uc->context_r12);
+  st->print(", R13=" INTPTR_FORMAT, (intptr_t)uc->context_r13);
+  st->print(", R14=" INTPTR_FORMAT, (intptr_t)uc->context_r14);
+  st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->context_r15);
   st->cr();
-  st->print(  "RIP=" INTPTR_FORMAT, uc->context_rip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->context_flags);
-  st->print(", ERR=" INTPTR_FORMAT, uc->context_err);
+  st->print(  "RIP=" INTPTR_FORMAT, (intptr_t)uc->context_rip);
+  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_flags);
+  st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->context_err);
   st->cr();
-  st->print("  TRAPNO=" INTPTR_FORMAT, uc->context_trapno);
+  st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->context_trapno);
 #else
-  st->print(  "EAX=" INTPTR_FORMAT, uc->context_eax);
-  st->print(", EBX=" INTPTR_FORMAT, uc->context_ebx);
-  st->print(", ECX=" INTPTR_FORMAT, uc->context_ecx);
-  st->print(", EDX=" INTPTR_FORMAT, uc->context_edx);
+  st->print(  "EAX=" INTPTR_FORMAT, (intptr_t)uc->context_eax);
+  st->print(", EBX=" INTPTR_FORMAT, (intptr_t)uc->context_ebx);
+  st->print(", ECX=" INTPTR_FORMAT, (intptr_t)uc->context_ecx);
+  st->print(", EDX=" INTPTR_FORMAT, (intptr_t)uc->context_edx);
   st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, uc->context_esp);
-  st->print(", EBP=" INTPTR_FORMAT, uc->context_ebp);
-  st->print(", ESI=" INTPTR_FORMAT, uc->context_esi);
-  st->print(", EDI=" INTPTR_FORMAT, uc->context_edi);
+  st->print(  "ESP=" INTPTR_FORMAT, (intptr_t)uc->context_esp);
+  st->print(", EBP=" INTPTR_FORMAT, (intptr_t)uc->context_ebp);
+  st->print(", ESI=" INTPTR_FORMAT, (intptr_t)uc->context_esi);
+  st->print(", EDI=" INTPTR_FORMAT, (intptr_t)uc->context_edi);
   st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, uc->context_eip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->context_eflags);
+  st->print(  "EIP=" INTPTR_FORMAT, (intptr_t)uc->context_eip);
+  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_eflags);
 #endif // AMD64
   st->cr();
   st->cr();
 
   intptr_t *sp = (intptr_t *)os::Bsd::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
+  st->print_cr("Top of Stack: (sp=" INTPTR_FORMAT ")", (intptr_t)sp);
   print_hex_dump(st, (address)sp, (address)(sp + 8*sizeof(intptr_t)), sizeof(intptr_t));
   st->cr();
 
@@ -1030,7 +1030,7 @@ void os::print_context(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Bsd::ucontext_get_pc(uc);
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
+  st->print_cr("Instructions: (pc=" INTPTR_FORMAT ")", (intptr_t)pc);
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
 }
 

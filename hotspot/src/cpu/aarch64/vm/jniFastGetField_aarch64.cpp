@@ -76,8 +76,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
           SafepointSynchronize::safepoint_counter_addr(), offset);
   Address safepoint_counter_addr(rcounter_addr, offset);
   __ ldrw(rcounter, safepoint_counter_addr);
-  __ andw(rscratch1, rcounter, 1);
-  __ cbnzw(rscratch1, slow);
+  __ tbnz(rcounter, 0, slow);
   __ eor(robj, c_rarg1, rcounter);
   __ eor(robj, robj, rcounter);               // obj, since
                                               // robj ^ rcounter ^ rcounter == robj
