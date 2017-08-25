@@ -822,7 +822,7 @@ public final class ModuleLayer {
 
     /**
      * Returns the module with the given name in this layer, or if not in this
-     * layer, the {@linkplain #parents parent} layers. Finding a module in
+     * layer, the {@linkplain #parents() parent} layers. Finding a module in
      * parent layers is equivalent to invoking {@code findModule} on each
      * parent, in search order, until the module is found or all parents have
      * been searched. In a <em>tree of layers</em>  then this is equivalent to
@@ -854,7 +854,7 @@ public final class ModuleLayer {
 
     /**
      * Returns the {@code ClassLoader} for the module with the given name. If
-     * a module of the given name is not in this layer then the {@link #parents
+     * a module of the given name is not in this layer then the {@link #parents()
      * parent} layers are searched in the manner specified by {@link
      * #findModule(String) findModule}.
      *

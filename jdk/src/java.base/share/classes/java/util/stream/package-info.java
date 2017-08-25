@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,7 +415,7 @@
  * elements -- but a properly constructed reduce operation is inherently
  * parallelizable, so long as the function(s) used to process the elements
  * are <a href="package-summary.html#Associativity">associative</a> and
- * <a href="package-summary.html#NonInterfering">stateless</a>.
+ * <a href="package-summary.html#Statelessness">stateless</a>.
  * For example, given a stream of numbers for which we want to find the sum, we
  * can write:
  * <pre>{@code
