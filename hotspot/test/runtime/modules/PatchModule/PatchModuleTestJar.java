@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class PatchModuleTestJar {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Build the jar file that will be used for the module "java.naming".
@@ -70,7 +70,7 @@ public class PatchModuleTestJar {
                         "}";
 
         ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
-             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
         // Supply --patch-module with the name of the jar file for the module java.naming.

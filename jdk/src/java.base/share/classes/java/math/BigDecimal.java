@@ -4067,20 +4067,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private static class UnsafeHolder {
-        private static final jdk.internal.misc.Unsafe unsafe;
-        private static final long intCompactOffset;
-        private static final long intValOffset;
-        static {
-            try {
-                unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-                intCompactOffset = unsafe.objectFieldOffset
-                    (BigDecimal.class.getDeclaredField("intCompact"));
-                intValOffset = unsafe.objectFieldOffset
-                    (BigDecimal.class.getDeclaredField("intVal"));
-            } catch (Exception ex) {
-                throw new ExceptionInInitializerError(ex);
-            }
-        }
+        private static final jdk.internal.misc.Unsafe unsafe
+                = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final long intCompactOffset
+                = unsafe.objectFieldOffset(BigDecimal.class, "intCompact");
+        private static final long intValOffset
+                = unsafe.objectFieldOffset(BigDecimal.class, "intVal");
+
         static void setIntCompact(BigDecimal bd, long val) {
             unsafe.putLong(bd, intCompactOffset, val);
         }

@@ -212,7 +212,7 @@ BasicType Bytecode_loadconstant::result_type() const {
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
-  assert(_method.not_null(), "must supply method to resolve constant");
+  assert(_method != NULL, "must supply method to resolve constant");
   int index = raw_index();
   ConstantPool* constants = _method->constants();
   if (has_cache_index()) {

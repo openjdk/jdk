@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/align.hpp"
 
 #ifndef PRODUCT
 void LRG::dump() const {
@@ -607,7 +608,7 @@ void PhaseChaitin::Register_Allocate() {
   assert((int)(_matcher._new_SP+_framesize) >= (int)_matcher._out_arg_limit, "framesize must be large enough");
 
   // This frame must preserve the required fp alignment
-  _framesize = round_to(_framesize, Matcher::stack_alignment_in_slots());
+  _framesize = align_up(_framesize, Matcher::stack_alignment_in_slots());
   assert(_framesize <= 1000000, "sanity check");
 #ifndef PRODUCT
   _total_framesize += _framesize;
@@ -793,7 +794,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         const RegMask &rm = n->out_RegMask();
         lrg.AND( rm );
 
-        int ireg = n->ideal_reg();
+        uint ireg = n->ideal_reg();
         assert( !n->bottom_type()->isa_oop_ptr() || ireg == Op_RegP,
                 "oops must be in Op_RegP's" );
 
@@ -1013,7 +1014,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 
         // Check for bound register masks
         const RegMask &lrgmask = lrg.mask();
-        int kreg = n->in(k)->ideal_reg();
+        uint kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
                is_vect || kreg == Op_RegD || kreg == Op_RegL,
@@ -1300,7 +1301,7 @@ void PhaseChaitin::Simplify( ) {
       if( iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
-           ( (ibound && !bound) || ibound == bound && (icost < cost) )) ) {
+           ( (ibound && !bound) || (ibound == bound && (icost < cost)) )) ) {
         lo_score = i;
         score = iscore;
         area = iarea;

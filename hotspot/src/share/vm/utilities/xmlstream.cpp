@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,12 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
 // Do not assert this condition if there's already another error reported.
 #define assert_if_no_error(cond, msg) \
-  vmassert((cond) || is_error_reported(), msg)
+  vmassert((cond) || VMError::is_error_reported(), msg)
 
 void xmlStream::initialize(outputStream* out) {
   _out = out;
@@ -198,7 +199,7 @@ void xmlStream::pop_tag(const char* tag) {
     _element_depth -= 1;
   }
   if (bad_tag && !VMThread::should_terminate() && !VM_Exit::vm_exited() &&
-      !is_error_reported())
+      !VMError::is_error_reported())
   {
     assert(false, "bad tag in log");
   }
@@ -379,7 +380,7 @@ void xmlStream::stamp() {
 // ------------------------------------------------------------------
 // Output a method attribute, in the form " method='pkg/cls name sig'".
 // This is used only when there is no ciMethod available.
-void xmlStream::method(methodHandle method) {
+void xmlStream::method(const methodHandle& method) {
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;
   print_raw(" method='");
@@ -407,7 +408,7 @@ void xmlStream::method(methodHandle method) {
   }
 }
 
-void xmlStream::method_text(methodHandle method) {
+void xmlStream::method_text(const methodHandle& method) {
   ResourceMark rm;
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;
@@ -422,17 +423,17 @@ void xmlStream::method_text(methodHandle method) {
 // ------------------------------------------------------------------
 // Output a klass attribute, in the form " klass='pkg/cls'".
 // This is used only when there is no ciKlass available.
-void xmlStream::klass(KlassHandle klass) {
+void xmlStream::klass(Klass* klass) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (klass.is_null())  return;
+  if (klass == NULL) return;
   print_raw(" klass='");
   klass_text(klass);
   print_raw("'");
 }
 
-void xmlStream::klass_text(KlassHandle klass) {
+void xmlStream::klass_text(Klass* klass) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (klass.is_null())  return;
+  if (klass == NULL) return;
   //klass->print_short_name(log->out());
   klass->name()->print_symbol_on(out());
 }

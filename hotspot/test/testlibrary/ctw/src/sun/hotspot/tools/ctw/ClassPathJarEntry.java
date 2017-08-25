@@ -23,57 +23,62 @@
 
 package sun.hotspot.tools.ctw;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
-import java.util.jar.*;
-import java.util.concurrent.Executor;
-
-import java.io.*;
-import java.nio.file.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 /**
  * Handler for jar-files containing classes to compile.
  */
-public class ClassPathJarEntry extends PathHandler {
+public class ClassPathJarEntry extends PathHandler.PathEntry {
+    private final JarFile jarFile;
 
-    public ClassPathJarEntry(Path root, Executor executor) {
-        super(root, executor);
+    public ClassPathJarEntry(Path root) {
+        super(root);
+        if (!Files.exists(root)) {
+            throw new Error(root + " file not found");
+        }
         try {
-            URL url = root.toUri().toURL();
-            setLoader(new URLClassLoader(new URL[]{url}));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            jarFile = new JarFile(root.toFile());
+        } catch (IOException e) {
+            throw new Error("can not read " + root + " : " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void process() {
-        CompileTheWorld.OUT.println("# jar: " + root);
-        if (!Files.exists(root)) {
-            return;
-        }
-        try {
-            JarFile jarFile = new JarFile(root.toFile());
-            JarEntry entry;
-            for (Enumeration<JarEntry> e = jarFile.entries();
-                    e.hasMoreElements(); ) {
-                entry = e.nextElement();
-                processJarEntry(entry);
-                if (isFinished()) {
-                    return;
-                }
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+    protected Stream<String> classes() {
+        return jarFile.stream()
+                      .map(JarEntry::getName)
+                      .filter(Utils::isClassFile)
+                      .map(Utils::fileNameToClassName);
     }
 
-     private void processJarEntry(JarEntry entry) {
-        String filename = entry.getName();
-        if (Utils.isClassFile(filename)) {
-            processClass(Utils.fileNameToClassName(filename));
+    @Override
+    protected String description() {
+        return "# jar: " + root;
+    }
+
+    @Override
+    protected byte[] findByteCode(String classname) {
+        try {
+            String filename = Utils.classNameToFileName(classname);
+            JarEntry entry = jarFile.getJarEntry(filename);
+
+            if (entry == null) {
+                return null;
+            }
+
+            try (InputStream is = jarFile.getInputStream(entry)) {
+                return is.readAllBytes();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace(CompileTheWorld.ERR);
+            return null;
         }
     }
 }

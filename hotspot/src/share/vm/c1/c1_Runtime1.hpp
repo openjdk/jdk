@@ -95,8 +95,6 @@ class Runtime1: public AllStatic {
   static int _handle_wrong_method_cnt;
   static int _ic_miss_cnt;
   static int _generic_arraycopy_cnt;
-  static int _primitive_arraycopy_cnt;
-  static int _oop_arraycopy_cnt;
   static int _generic_arraycopystub_cnt;
   static int _arraycopy_slowcase_cnt;
   static int _arraycopy_checkcast_cnt;
@@ -189,8 +187,6 @@ class Runtime1: public AllStatic {
 
   // directly accessible leaf routine
   static int  arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int dst_pos, int length);
-  static void primitive_arraycopy(HeapWord* src, HeapWord* dst, int length);
-  static void oop_arraycopy(HeapWord* src, HeapWord* dst, int length);
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
 
   static void predicate_failed_trap(JavaThread* thread);

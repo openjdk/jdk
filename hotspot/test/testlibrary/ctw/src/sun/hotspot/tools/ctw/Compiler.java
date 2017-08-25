@@ -23,14 +23,17 @@
 
 package sun.hotspot.tools.ctw;
 
-import sun.hotspot.WhiteBox;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.ConstantPool;
-import java.lang.reflect.Executable;
+import sun.hotspot.WhiteBox;
 
+import java.lang.reflect.Executable;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Provide method to compile whole class.
@@ -38,6 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Compiler {
 
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final AtomicLong METHOD_COUNT = new AtomicLong(0L);
 
@@ -62,35 +66,27 @@ public class Compiler {
     public static void compileClass(Class<?> aClass, long id, Executor executor) {
         Objects.requireNonNull(aClass);
         Objects.requireNonNull(executor);
-        try {
-            ConstantPool constantPool = SharedSecrets.getJavaLangAccess().
-                    getConstantPool(aClass);
-            if (Utils.COMPILE_THE_WORLD_PRELOAD_CLASSES) {
-                preloadClasses(aClass.getName(), id, constantPool);
-            }
-            int startLevel = Utils.INITIAL_COMP_LEVEL;
-            int endLevel = Utils.TIERED_COMPILATION ? Utils.TIERED_STOP_AT_LEVEL : startLevel;
-            for (int i = startLevel; i <= endLevel; ++i) {
-                WHITE_BOX.enqueueInitializerForCompilation(aClass, i);
-            }
-            long methodCount = 0;
-            for (Executable e : aClass.getDeclaredConstructors()) {
-                ++methodCount;
-                executor.execute(new CompileMethodCommand(id, e));
-            }
-            for (Executable e : aClass.getDeclaredMethods()) {
-                ++methodCount;
-                executor.execute(new CompileMethodCommand(id, e));
-            }
-            METHOD_COUNT.addAndGet(methodCount);
+        ConstantPool constantPool = SharedSecrets.getJavaLangAccess().
+                getConstantPool(aClass);
+        if (Utils.COMPILE_THE_WORLD_PRELOAD_CLASSES) {
+            preloadClasses(aClass.getName(), id, constantPool);
+        }
+        UNSAFE.ensureClassInitialized(aClass);
+        compileClinit(aClass, id);
+        long methodCount = 0;
+        for (Executable e : aClass.getDeclaredConstructors()) {
+            ++methodCount;
+            executor.execute(new CompileMethodCommand(id, e));
+        }
+        for (Executable e : aClass.getDeclaredMethods()) {
+            ++methodCount;
+            executor.execute(new CompileMethodCommand(id, e));
+        }
+        METHOD_COUNT.addAndGet(methodCount);
 
-            if (Utils.DEOPTIMIZE_ALL_CLASSES_RATE > 0
-                    && (id % Utils.DEOPTIMIZE_ALL_CLASSES_RATE == 0)) {
-                WHITE_BOX.deoptimizeAll();
-            }
-        } catch (Throwable t) {
-            CompileTheWorld.OUT.printf("[%d]\t%s\tskipping %s%n", id, aClass.getName(), t);
-            t.printStackTrace();
+        if (Utils.DEOPTIMIZE_ALL_CLASSES_RATE > 0
+                && (id % Utils.DEOPTIMIZE_ALL_CLASSES_RATE == 0)) {
+            WHITE_BOX.deoptimizeAll();
         }
     }
 
@@ -104,12 +100,25 @@ public class Compiler {
                 }
             }
         } catch (Throwable t) {
-            CompileTheWorld.OUT.printf("[%d]\t%s\tpreloading failed : %s%n",
+            CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING preloading failed : %s%n",
                     id, className, t);
+            t.printStackTrace(CompileTheWorld.ERR);
         }
     }
 
-
+    private static void compileClinit(Class<?> aClass, long id) {
+        int startLevel = Utils.INITIAL_COMP_LEVEL;
+        int endLevel = Utils.TIERED_COMPILATION ? Utils.TIERED_STOP_AT_LEVEL : startLevel;
+        for (int i = startLevel; i <= endLevel; ++i) {
+            try {
+                WHITE_BOX.enqueueInitializerForCompilation(aClass, i);
+            } catch (Throwable t) {
+                CompileTheWorld.OUT.printf("[%d]\t%s::<clinit>\tERROR at level %d : %s%n",
+                        id, aClass.getName(), i, t);
+                t.printStackTrace(CompileTheWorld.ERR);
+            }
+        }
+    }
 
     /**
      * Compilation of method.
@@ -168,41 +177,37 @@ public class Compiler {
                     waitCompilation();
                     int tmp = WHITE_BOX.getMethodCompilationLevel(method);
                     if (tmp != compLevel) {
-                        log("compilation level = " + tmp
+                        log("WARNING compilation level = " + tmp
                                 + ", but not " + compLevel);
                     } else if (Utils.IS_VERBOSE) {
                         log("compilation level = " + tmp + ". OK");
                     }
                 } catch (Throwable t) {
-                    log("error on compile at " + compLevel
-                            + " level");
-                    t.printStackTrace();
+                    log("ERROR at level " + compLevel);
+                    t.printStackTrace(CompileTheWorld.ERR);
                 }
             } else if (Utils.IS_VERBOSE) {
                 log("not compilable at " + compLevel);
             }
         }
 
+        private String methodName() {
+            return String.format("%s::%s(%s)",
+                    className,
+                    method.getName(),
+                    Arrays.stream(method.getParameterTypes())
+                          .map(Class::getName)
+                          .collect(Collectors.joining(", ")));
+        }
+
         private void log(String message) {
-            StringBuilder builder = new StringBuilder("[");
-            builder.append(classId);
-            builder.append("]\t");
-            builder.append(className);
-            builder.append("::");
-            builder.append(method.getName());
-            builder.append('(');
-            Class[] params = method.getParameterTypes();
-            for (int i = 0, n = params.length - 1; i < n; ++i) {
-                builder.append(params[i].getName());
-                builder.append(", ");
-            }
-            if (params.length != 0) {
-                builder.append(params[params.length - 1].getName());
-            }
-            builder.append(')');
+            StringBuilder builder = new StringBuilder("[")
+                    .append(classId)
+                    .append("]\t")
+                    .append(methodName());
             if (message != null) {
-                builder.append('\t');
-                builder.append(message);
+                builder.append('\t')
+                       .append(message);
             }
             CompileTheWorld.ERR.println(builder);
         }

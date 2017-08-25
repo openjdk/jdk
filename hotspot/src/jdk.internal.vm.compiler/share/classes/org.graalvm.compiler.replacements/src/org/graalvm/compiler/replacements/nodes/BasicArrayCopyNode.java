@@ -22,15 +22,14 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
 import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.InputType.State;
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_200;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_100;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_256;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_64;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -51,11 +50,13 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.word.LocationIdentity;
 
+import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-@NodeInfo(cycles = CYCLES_200, size = SIZE_100)
+@NodeInfo(cycles = CYCLES_256, size = SIZE_64)
 public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virtualizable, MemoryCheckpoint.Single, MemoryAccess, Lowerable, DeoptimizingNode.DeoptDuring {
 
     public static final NodeClass<BasicArrayCopyNode> TYPE = NodeClass.create(BasicArrayCopyNode.class);
@@ -85,7 +86,7 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
 
     public BasicArrayCopyNode(NodeClass<? extends AbstractMemoryCheckpoint> type, ValueNode src, ValueNode srcPos, ValueNode dest, ValueNode destPos, ValueNode length, JavaKind elementKind) {
         super(type, StampFactory.forKind(JavaKind.Void));
-        this.bci = -6;
+        this.bci = BytecodeFrame.INVALID_FRAMESTATE_BCI;
         args = new NodeInputList<>(this, new ValueNode[]{src, srcPos, dest, destPos, length});
         this.elementKind = elementKind != JavaKind.Illegal ? elementKind : null;
     }
@@ -204,10 +205,7 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
                         return;
                     }
                     VirtualArrayNode srcVirtual = (VirtualArrayNode) srcAlias;
-                    if (destVirtual.componentType().getJavaKind() != JavaKind.Object) {
-                        return;
-                    }
-                    if (srcVirtual.componentType().getJavaKind() != JavaKind.Object) {
+                    if (destVirtual.componentType().getJavaKind() != srcVirtual.componentType().getJavaKind()) {
                         return;
                     }
                     if (!checkBounds(srcPosInt, len, srcVirtual)) {
@@ -220,8 +218,9 @@ public class BasicArrayCopyNode extends AbstractMemoryCheckpoint implements Virt
                         tool.setVirtualEntry(destVirtual, destPosInt + i, tool.getEntry(srcVirtual, srcPosInt + i), false);
                     }
                     tool.delete();
-                    if (Debug.isLogEnabled()) {
-                        Debug.log("virtualized arraycopyf(%s, %d, %s, %d, %d)", getSource(), srcPosInt, getDestination(), destPosInt, len);
+                    DebugContext debug = getDebug();
+                    if (debug.isLogEnabled()) {
+                        debug.log("virtualized arraycopy(%s, %d, %s, %d, %d)", getSource(), srcPosInt, getDestination(), destPosInt, len);
                     }
                 } else {
                     ResolvedJavaType sourceType = StampTool.typeOrNull(srcAlias);

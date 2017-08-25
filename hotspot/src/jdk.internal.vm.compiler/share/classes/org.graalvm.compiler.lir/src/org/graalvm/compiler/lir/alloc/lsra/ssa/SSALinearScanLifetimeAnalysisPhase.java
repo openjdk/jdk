@@ -24,7 +24,7 @@ package org.graalvm.compiler.lir.alloc.lsra.ssa;
 
 import java.util.EnumSet;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
@@ -58,14 +58,14 @@ public class SSALinearScanLifetimeAnalysisPhase extends LinearScanLifetimeAnalys
                 if (LinearScan.isVariableOrRegister(registerHint)) {
                     Interval from = allocator.getOrCreateInterval((AllocatableValue) registerHint);
 
-                    setHint(op, to, from);
-                    setHint(op, from, to);
+                    setHint(debug, op, to, from);
+                    setHint(debug, op, from, to);
                 }
             });
         }
     }
 
-    public static void setHint(final LIRInstruction op, Interval target, Interval source) {
+    public static void setHint(DebugContext debug, final LIRInstruction op, Interval target, Interval source) {
         Interval currentHint = target.locationHint(false);
         if (currentHint == null || currentHint.from() > target.from()) {
             /*
@@ -73,8 +73,8 @@ public class SSALinearScanLifetimeAnalysisPhase extends LinearScanLifetimeAnalys
              * interval.
              */
             target.setLocationHint(source);
-            if (Debug.isLogEnabled()) {
-                Debug.log("operation at opId %d: added hint from interval %d to %d", op.id(), source.operandNumber, target.operandNumber);
+            if (debug.isLogEnabled()) {
+                debug.log("operation at opId %d: added hint from interval %d to %d", op.id(), source.operandNumber, target.operandNumber);
             }
         }
     }

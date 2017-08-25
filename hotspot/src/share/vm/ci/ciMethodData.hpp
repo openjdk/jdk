@@ -88,6 +88,17 @@ public:
     }
   }
 
+  static ProfilePtrKind ptr_kind(intptr_t v) {
+    bool maybe_null = TypeEntries::was_null_seen(v);
+    if (!maybe_null) {
+      return ProfileNeverNull;
+    } else if (TypeEntries::is_type_none(v)) {
+      return ProfileAlwaysNull;
+    } else {
+      return ProfileMaybeNull;
+    }
+  }
+
   static intptr_t with_status(ciKlass* k, intptr_t in) {
     return TypeEntries::with_status((intptr_t)k, in);
   }
@@ -105,8 +116,8 @@ public:
     return valid_ciklass(type(i));
   }
 
-  bool maybe_null(int i) const {
-    return was_null_seen(type(i));
+  ProfilePtrKind ptr_kind(int i) const {
+    return ciTypeEntries::ptr_kind(type(i));
   }
 
 #ifndef PRODUCT
@@ -122,8 +133,8 @@ public:
     return valid_ciklass(type());
   }
 
-  bool maybe_null() const {
-    return was_null_seen(type());
+  ProfilePtrKind ptr_kind() const {
+    return ciTypeEntries::ptr_kind(type());
   }
 
 #ifndef PRODUCT
@@ -167,12 +178,12 @@ public:
     return ret()->valid_type();
   }
 
-  bool argument_maybe_null(int i) const {
-    return args()->maybe_null(i);
+  ProfilePtrKind argument_ptr_kind(int i) const {
+    return args()->ptr_kind(i);
   }
 
-  bool return_maybe_null() const {
-    return ret()->maybe_null();
+  ProfilePtrKind return_ptr_kind() const {
+    return ret()->ptr_kind();
   }
 
 #ifndef PRODUCT
@@ -281,12 +292,12 @@ public:
     return ret()->valid_type();
   }
 
-  bool argument_maybe_null(int i) const {
-    return args()->maybe_null(i);
+  ProfilePtrKind argument_ptr_kind(int i) const {
+    return args()->ptr_kind(i);
   }
 
-  bool return_maybe_null() const {
-    return ret()->maybe_null();
+  ProfilePtrKind return_ptr_kind() const {
+    return ret()->ptr_kind();
   }
 
 #ifndef PRODUCT
@@ -334,8 +345,8 @@ public:
     return parameters()->valid_type(i);
   }
 
-  bool parameter_maybe_null(int i) const {
-    return parameters()->maybe_null(i);
+  ProfilePtrKind parameter_ptr_kind(int i) const {
+    return parameters()->ptr_kind(i);
   }
 
 #ifndef PRODUCT

@@ -40,7 +40,6 @@ import org.graalvm.compiler.jtt.JTTTest;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -191,9 +190,7 @@ public abstract class LIRTest extends JTTTest {
     };
 
     @Override
-    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
-        InvocationPlugins invocationPlugins = conf.getPlugins().getInvocationPlugins();
-
+    protected void registerInvocationPlugins(InvocationPlugins invocationPlugins) {
         Class<? extends LIRTest> c = getClass();
         for (Method m : c.getMethods()) {
             if (m.getAnnotation(LIRIntrinsic.class) != null) {
@@ -215,7 +212,7 @@ public abstract class LIRTest extends JTTTest {
         };
         invocationPlugins.register(outputPlugin, LIRTest.class, "getOutput", new Class<?>[]{LIRTestSpecification.class, String.class, Object.class});
         invocationPlugins.register(outputPlugin, LIRTest.class, "getOutput", new Class<?>[]{LIRTestSpecification.class, String.class, int.class});
-        return super.editGraphBuilderConfiguration(conf);
+        super.registerInvocationPlugins(invocationPlugins);
     }
 
     @SuppressWarnings("unused")

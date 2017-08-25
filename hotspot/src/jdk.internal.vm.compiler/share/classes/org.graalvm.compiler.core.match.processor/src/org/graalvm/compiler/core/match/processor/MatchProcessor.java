@@ -27,12 +27,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +70,9 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
+import org.graalvm.util.Equivalence;
+import org.graalvm.util.EconomicMap;
+import org.graalvm.util.EconomicSet;
 
 /**
  * Processes classes annotated with {@link MatchRule}. A {@link MatchStatementSet} service is
@@ -206,13 +205,13 @@ public class MatchProcessor extends AbstractProcessor {
                     name = next();
                 }
                 originatingElements.addAll(type.originatingElements);
-                requiredPackages.add(type.nodePackage);
             } else if (Character.isLowerCase(peek("name").charAt(0))) {
                 name = next();
                 type = valueType;
             } else {
                 throw new RuleParseError("Unexpected token \"%s\" when looking for name or node type", peek(null));
             }
+            requiredPackages.add(type.nodePackage);
             if (name != null) {
                 if (!capturedNames.contains(name)) {
                     capturedNames.add(name);
@@ -234,7 +233,7 @@ public class MatchProcessor extends AbstractProcessor {
         /**
          * Recursively accumulate any required Position declarations.
          */
-        void generatePositionDeclarations(Set<String> declarations) {
+        void generatePositionDeclarations(EconomicSet<String> declarations) {
             matchDescriptor.generatePositionDeclarations(declarations);
         }
 
@@ -366,7 +365,7 @@ public class MatchProcessor extends AbstractProcessor {
     /**
      * The types which are know for purpose of parsing MatchRule expressions.
      */
-    Map<String, TypeDescriptor> knownTypes = new HashMap<>();
+    EconomicMap<String, TypeDescriptor> knownTypes = EconomicMap.create(Equivalence.DEFAULT);
 
     private TypeDescriptor valueType;
 
@@ -407,7 +406,7 @@ public class MatchProcessor extends AbstractProcessor {
             }
         }
 
-        public void generatePositionDeclarations(Set<String> declarations) {
+        public void generatePositionDeclarations(EconomicSet<String> declarations) {
             if (inputs.length == 0) {
                 return;
             }
@@ -532,7 +531,7 @@ public class MatchProcessor extends AbstractProcessor {
             out.println();
 
             // Generate declarations for the wrapper class to invoke the code generation methods.
-            for (MethodInvokerItem invoker : info.invokers.values()) {
+            for (MethodInvokerItem invoker : info.invokers.getValues()) {
                 StringBuilder args = new StringBuilder();
                 StringBuilder types = new StringBuilder();
                 int count = invoker.fields.size();
@@ -663,14 +662,14 @@ public class MatchProcessor extends AbstractProcessor {
 
         final TypeElement topDeclaringType;
         final List<MatchRuleItem> matchRules = new ArrayList<>();
-        private final Set<Element> originatingElements = new HashSet<>();
-        public Set<String> positionDeclarations = new LinkedHashSet<>();
+        private final EconomicSet<Element> originatingElements = EconomicSet.create(Equivalence.DEFAULT);
+        public EconomicSet<String> positionDeclarations = EconomicSet.create(Equivalence.DEFAULT);
 
         /**
          * The mapping between elements with MatchRules and the wrapper class used invoke the code
          * generation after the match.
          */
-        Map<String, MethodInvokerItem> invokers = new LinkedHashMap<>();
+        EconomicMap<String, MethodInvokerItem> invokers = EconomicMap.create(Equivalence.DEFAULT);
 
         /**
          * The set of packages which must be imported to refer the classes mention in matchRules.
@@ -728,7 +727,7 @@ public class MatchProcessor extends AbstractProcessor {
             TypeMirror valueTypeMirror = processingEnv.getElementUtils().getTypeElement(ValueNode.class.getName()).asType();
             valueType = new TypeDescriptor(valueTypeMirror, "Value", ValueNode.class.getSimpleName(), ValueNode.class.getPackage().getName(), new String[0], false, false);
 
-            Map<TypeElement, MatchRuleDescriptor> map = new LinkedHashMap<>();
+            EconomicMap<TypeElement, MatchRuleDescriptor> map = EconomicMap.create(Equivalence.DEFAULT);
 
             for (Element element : roundEnv.getElementsAnnotatedWith(MatchRule.class)) {
                 currentElement = element;
@@ -740,7 +739,7 @@ public class MatchProcessor extends AbstractProcessor {
             }
 
             currentElement = null;
-            for (MatchRuleDescriptor info : map.values()) {
+            for (MatchRuleDescriptor info : map.getValues()) {
                 createFiles(info);
             }
 
@@ -834,7 +833,7 @@ public class MatchProcessor extends AbstractProcessor {
         declareType(nodeClassMirror, shortName, nodeClass, nodePackage, matchable.inputs(), matchable.commutative(), matchable.shareable(), element);
     }
 
-    private void processMatchRule(Map<TypeElement, MatchRuleDescriptor> map, Element element, AnnotationMirror mirror) {
+    private void processMatchRule(EconomicMap<TypeElement, MatchRuleDescriptor> map, Element element, AnnotationMirror mirror) {
         if (!processedMatchRule.contains(element)) {
             try {
                 processedMatchRule.add(element);
@@ -961,7 +960,7 @@ public class MatchProcessor extends AbstractProcessor {
             Element enclosing = method.getEnclosingElement();
             String declaringClass = "";
             String separator = "";
-            Set<Element> originatingElementsList = info.originatingElements;
+            EconomicSet<Element> originatingElementsList = info.originatingElements;
             originatingElementsList.add(method);
             while (enclosing != null) {
                 if (enclosing.getKind() == ElementKind.CLASS || enclosing.getKind() == ElementKind.INTERFACE) {

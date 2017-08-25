@@ -95,50 +95,6 @@ public class AuthResources_sv extends java.util.ListResourceBundle {
                 "Kerberos-anv\u00E4ndarnamn [{0}]: "},
         {"Kerberos.password.for.username.",
                 "Kerberos-l\u00F6senord f\u00F6r {0}: "},
-
-        /***    EVERYTHING BELOW IS DEPRECATED  ***/
-
-        // com.sun.security.auth.PolicyFile
-        {".error.parsing.", ": tolkningsfel "},
-        {"COLON", ": "},
-        {".error.adding.Permission.", ": fel vid till\u00E4gg av beh\u00F6righet "},
-        {"SPACE", " "},
-        {".error.adding.Entry.", ": fel vid till\u00E4gg av post "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"attempt.to.add.a.Permission.to.a.readonly.PermissionCollection",
-            "f\u00F6rs\u00F6k att l\u00E4gga till beh\u00F6righet till skrivskyddad PermissionCollection"},
-
-        // com.sun.security.auth.PolicyParser
-        {"expected.keystore.type", "f\u00F6rv\u00E4ntad nyckellagertyp"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "kan inte ange identitetshavare med en jokerteckenklass utan ett jokerteckennamn"},
-        {"expected.codeBase.or.SignedBy", "f\u00F6rv\u00E4ntade codeBase eller SignedBy"},
-        {"only.Principal.based.grant.entries.permitted",
-                "endast identitetshavarbaserade poster till\u00E5ts"},
-        {"expected.permission.entry", "f\u00F6rv\u00E4ntade beh\u00F6righetspost"},
-        {"number.", "nummer"},
-        {"expected.expect.read.end.of.file.",
-                "f\u00F6rv\u00E4ntade {0}, l\u00E4ste filslut"},
-        {"expected.read.end.of.file", "f\u00F6rv\u00E4ntade ';', l\u00E4ste filslut"},
-        {"line.", "rad "},
-        {".expected.", ": f\u00F6rv\u00E4ntade '"},
-        {".found.", "', hittade '"},
-        {"QUOTE", "'"},
-
-        // SolarisPrincipals
-        {"SolarisNumericGroupPrincipal.Primary.Group.",
-                "SolarisNumericGroupPrincipal [prim\u00E4r grupp]: "},
-        {"SolarisNumericGroupPrincipal.Supplementary.Group.",
-                "SolarisNumericGroupPrincipal [till\u00E4ggsgrupp]: "},
-        {"SolarisNumericUserPrincipal.",
-                "SolarisNumericUserPrincipal: "},
-        {"SolarisPrincipal.", "SolarisPrincipal: "},
-        // provided.null.name is the NullPointerException message when a
-        // developer incorrectly passes a null name to the constructor of
-        // subclasses of java.security.Principal
-        {"provided.null.name", "null-namn angavs"}
-
     };
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ static void print_flag_error_message_if_needed(Flag::Error error, const char* na
     case Flag::ERR_OTHER:
       buffer_concat(buffer, "other, unspecified error related to setting the flag."); break;
     case Flag::SUCCESS:
+      break;
+    default:
       break;
   }
 

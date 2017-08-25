@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/nmethod.hpp"
 #include "code/oopRecorder.hpp"
 #include "runtime/stackValue.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
 
 // Classes used for serializing debugging information.
@@ -127,7 +128,7 @@ class ObjectValue: public ScopeValue {
   Handle                      value() const             { return _value; }
   bool                        is_visited() const        { return _visited; }
 
-  void                        set_value(oop value)      { _value = Handle(value); }
+  void                        set_value(oop value)      { _value = Handle(Thread::current(), value); }
   void                        set_visited(bool visited) { _visited = false; }
 
   // Serialization of debugging information

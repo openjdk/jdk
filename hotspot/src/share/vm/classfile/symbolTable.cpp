@@ -32,10 +32,12 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 // --------------------------------------------------------------------------
@@ -56,9 +58,9 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
   Symbol* sym;
 
   if (DumpSharedSpaces) {
-    // Allocate all symbols to CLD shared metaspace
-    sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, PERM_REFCOUNT);
-  } else if (c_heap) {
+    c_heap = false;
+  }
+  if (c_heap) {
     // refcount starts as 1
     sym = new (len, THREAD) Symbol(name, len, 1);
     assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
@@ -90,6 +92,18 @@ void SymbolTable::symbols_do(SymbolClosure *cl) {
          p != NULL;
          p = p->next()) {
       cl->do_symbol(p->literal_addr());
+    }
+  }
+}
+
+void SymbolTable::metaspace_pointers_do(MetaspaceClosure* it) {
+  assert(DumpSharedSpaces, "called only during dump time");
+  const int n = the_table()->table_size();
+  for (int i = 0; i < n; i++) {
+    for (HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
+         p != NULL;
+         p = p->next()) {
+      it->push(p->literal_addr());
     }
   }
 }
@@ -550,7 +564,7 @@ void SymbolTable::verify() {
 
 void SymbolTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    the_table()->dump_table(st, "SymbolTable");
+    the_table()->print_table_statistics(st, "SymbolTable");
   } else {
     st->print_cr("VERSION: 1.0");
     for (int i = 0; i < the_table()->table_size(); ++i) {
@@ -567,10 +581,10 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
   }
 }
 
-void SymbolTable::serialize(SerializeClosure* soc) {
+void SymbolTable::write_to_archive() {
 #if INCLUDE_CDS
-  _shared_table.reset();
-  if (soc->writing()) {
+    _shared_table.reset();
+
     int num_buckets = the_table()->number_of_entries() /
                             SharedSymbolTableBucketSize;
     CompactSymbolTableWriter writer(num_buckets,
@@ -586,19 +600,22 @@ void SymbolTable::serialize(SerializeClosure* soc) {
     }
 
     writer.dump(&_shared_table);
-  }
 
-  _shared_table.set_type(CompactHashtable<Symbol*, char>::_symbol_table);
-  _shared_table.serialize(soc);
-
-  if (soc->writing()) {
     // Verify table is correct
     Symbol* sym = vmSymbols::java_lang_Object();
     const char* name = (const char*)sym->bytes();
     int len = sym->utf8_length();
     unsigned int hash = hash_symbol(name, len);
     assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+#endif
+}
 
+void SymbolTable::serialize(SerializeClosure* soc) {
+#if INCLUDE_CDS
+  _shared_table.set_type(CompactHashtable<Symbol*, char>::_symbol_table);
+  _shared_table.serialize(soc);
+
+  if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
   }

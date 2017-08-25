@@ -1210,15 +1210,15 @@ public abstract class ResourceBundle {
      * <strong>Example:</strong></a>
      * <p>
      * The following class and property files are provided:
-     * <pre>
-     *     MyResources.class
-     *     MyResources.properties
-     *     MyResources_fr.properties
-     *     MyResources_fr_CH.class
-     *     MyResources_fr_CH.properties
-     *     MyResources_en.properties
-     *     MyResources_es_ES.class
-     * </pre>
+     * <ul>
+     *     <li>MyResources.class
+     *     <li>MyResources.properties
+     *     <li>MyResources_fr.properties
+     *     <li>MyResources_fr_CH.class
+     *     <li>MyResources_fr_CH.properties
+     *     <li>MyResources_en.properties
+     *     <li>MyResources_es_ES.class
+     * </ul>
      *
      * The contents of all files are valid (that is, public non-abstract
      * subclasses of <code>ResourceBundle</code> for the ".class" files,
@@ -1228,14 +1228,17 @@ public abstract class ResourceBundle {
      * <p>Calling <code>getBundle</code> with the locale arguments below will
      * instantiate resource bundles as follows:
      *
-     * <table class="borderless">
+     * <table class="striped">
      * <caption style="display:none">getBundle() locale to resource bundle mapping</caption>
+     * <thead>
+     * <tr><th scope="col">Locale</th><th scope="col">Resource bundle</th></tr>
+     * </thead>
      * <tbody>
-     * <tr><td>Locale("fr", "CH")</td><td>MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class</td></tr>
-     * <tr><td>Locale("fr", "FR")</td><td>MyResources_fr.properties, parent MyResources.class</td></tr>
-     * <tr><td>Locale("de", "DE")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
-     * <tr><td>Locale("en", "US")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
-     * <tr><td>Locale("es", "ES")</td><td>MyResources_es_ES.class, parent MyResources.class</td></tr>
+     * <tr><th scope="row">Locale("fr", "CH")</th><td>MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class</td></tr>
+     * <tr><th scope="row">Locale("fr", "FR")</th><td>MyResources_fr.properties, parent MyResources.class</td></tr>
+     * <tr><th scope="row">Locale("de", "DE")</th><td>MyResources_en.properties, parent MyResources.class</td></tr>
+     * <tr><th scope="row">Locale("en", "US")</th><td>MyResources_en.properties, parent MyResources.class</td></tr>
+     * <tr><th scope="row">Locale("es", "ES")</th><td>MyResources_es_ES.class, parent MyResources.class</td></tr>
      * </tbody>
      * </table>
      *
@@ -1324,42 +1327,41 @@ public abstract class ResourceBundle {
      * <caption style="display:none">locale-format combinations for newBundle</caption>
      * <thead>
      * <tr>
-     * <td
-     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>Locale</code><br>
-     * </td>
-     * <td
-     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>format</code><br>
-     * </td>
+     * <th scope="col">Index</th>
+     * <th scope="col"><code>Locale</code></th>
+     * <th scope="col"><code>format</code></th>
      * </tr>
      * </thead>
      * <tbody>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("de", "DE")</code><br>
-     * </td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.class</code><br>
-     * </td>
+     * <th scope="row">1</th>
+     * <td><code>Locale("de", "DE")</code></td>
+     * <td><code>java.class</code></td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("de", "DE")</code></td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code><br>
-     * </td>
+     * <th scope="row">2</th>
+     * <td><code>Locale("de", "DE")</code></td>
+     * <td><code>java.properties</code></td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("de")</code></td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.class</code></td>
+     * <th scope="row">3</th>
+     * <td><code>Locale("de")</code></td>
+     * <td><code>java.class</code></td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("de")</code></td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code></td>
+     * <th scope="row">4</th>
+     * <td><code>Locale("de")</code></td>
+     * <td><code>java.properties</code></td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("")</code><br>
-     * </td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.class</code></td>
+     * <th scope="row">5</th>
+     * <td><code>Locale("")</code></td>
+     * <td><code>java.class</code></td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;"><code>Locale("")</code></td>
-     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code></td>
+     * <th scope="row">6</th>
+     * <td><code>Locale("")</code></td>
+     * <td><code>java.properties</code></td>
      * </tr>
      * </tbody>
      * </table>
@@ -3453,15 +3455,15 @@ public abstract class ResourceBundle {
         }
 
         /**
-         * Converts the given <code>bundleName</code> to the form required
+         * Converts the given {@code bundleName} to the form required
          * by the {@link ClassLoader#getResource ClassLoader.getResource}
-         * method by replacing all occurrences of <code>'.'</code> in
-         * <code>bundleName</code> with <code>'/'</code> and appending a
-         * <code>'.'</code> and the given file <code>suffix</code>. For
-         * example, if <code>bundleName</code> is
-         * <code>"foo.bar.MyResources_ja_JP"</code> and <code>suffix</code>
-         * is <code>"properties"</code>, then
-         * <code>"foo/bar/MyResources_ja_JP.properties"</code> is returned.
+         * method by replacing all occurrences of {@code '.'} in
+         * {@code bundleName} with {@code '/'} and appending a
+         * {@code '.'} and the given file {@code suffix}. For
+         * example, if {@code bundleName} is
+         * {@code "foo.bar.MyResources_ja_JP"} and {@code suffix}
+         * is {@code "properties"}, then
+         * {@code "foo/bar/MyResources_ja_JP.properties"} is returned.
          *
          * @param bundleName
          *        the bundle name
@@ -3469,8 +3471,8 @@ public abstract class ResourceBundle {
          *        the file type suffix
          * @return the converted resource name
          * @exception NullPointerException
-         *         if <code>bundleName</code> or <code>suffix</code>
-         *         is <code>null</code>
+         *         if {@code bundleName} or {@code suffix}
+         *         is {@code null}
          */
         public final String toResourceName(String bundleName, String suffix) {
             StringBuilder sb = new StringBuilder(bundleName.length() + 1 + suffix.length());

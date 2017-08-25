@@ -33,6 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -54,13 +55,13 @@ G1CardLiveData::~G1CardLiveData()  {
 G1CardLiveData::bm_word_t* G1CardLiveData::allocate_large_bitmap(size_t size_in_bits) {
   size_t size_in_words = BitMap::calc_size_in_words(size_in_bits);
 
-  bm_word_t* map = MmapArrayAllocator<bm_word_t, mtGC>::allocate(size_in_words);
+  bm_word_t* map = MmapArrayAllocator<bm_word_t>::allocate(size_in_words, mtGC);
 
   return map;
 }
 
 void G1CardLiveData::free_large_bitmap(bm_word_t* bitmap, size_t size_in_bits) {
-  MmapArrayAllocator<bm_word_t, mtGC>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
+  MmapArrayAllocator<bm_word_t>::free(bitmap, BitMap::calc_size_in_words(size_in_bits));
 }
 
 void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
@@ -131,7 +132,7 @@ private:
 
   void clear_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for((HeapWord*)align_ptr_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
 
     _card_bm.clear_range(start_idx, end_idx);
   }
@@ -139,7 +140,7 @@ private:
   // Mark the card liveness bitmap for the object spanning from start to end.
   void mark_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for((HeapWord*)align_ptr_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
 
     assert((end_idx - start_idx) > 0, "Trying to mark zero sized range.");
 
@@ -220,7 +221,7 @@ public:
     }
     if (hr->is_humongous()) {
       HeapRegion* start_region = hr->humongous_start_region();
-      if (mark_bitmap->isMarked(start_region->bottom())) {
+      if (mark_bitmap->is_marked(start_region->bottom())) {
         mark_card_bitmap_range(start, hr->top());
         return pointer_delta(hr->top(), start, 1);
       } else {
@@ -235,7 +236,7 @@ public:
            p2i(start), p2i(ntams), p2i(hr->end()));
 
     // Find the first marked object at or after "start".
-    start = mark_bitmap->getNextMarkedWordAddress(start, ntams);
+    start = mark_bitmap->get_next_marked_addr(start, ntams);
     while (start < ntams) {
       oop obj = oop(start);
       size_t obj_size = obj->size();
@@ -249,7 +250,7 @@ public:
       marked_bytes += obj_size * HeapWordSize;
 
       // Find the next marked object after this one.
-      start = mark_bitmap->getNextMarkedWordAddress(obj_end, ntams);
+      start = mark_bitmap->get_next_marked_addr(obj_end, ntams);
     }
 
     return marked_bytes;
@@ -423,7 +424,7 @@ public:
 void G1CardLiveData::clear(WorkGang* workers) {
   guarantee(Universe::is_fully_initialized(), "Should not call this during initialization.");
 
-  size_t const num_chunks = align_size_up(live_cards_bm().size_in_bytes(), G1ClearCardLiveDataTask::chunk_size()) / G1ClearCardLiveDataTask::chunk_size();
+  size_t const num_chunks = align_up(live_cards_bm().size_in_bytes(), G1ClearCardLiveDataTask::chunk_size()) / G1ClearCardLiveDataTask::chunk_size();
   uint const num_workers = (uint)MIN2(num_chunks, (size_t)workers->active_workers());
 
   G1ClearCardLiveDataTask cl(live_cards_bm(), num_chunks);

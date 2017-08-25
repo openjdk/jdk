@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@
 // Metaspaces are Arenas for the VM's metadata.
 // They are allocated one per class loader object, and one for the null
 // bootstrap class loader
-// Eventually for bootstrap loader we'll have a read-only section and read-write
-// to write for DumpSharedSpaces and read for UseSharedSpaces
 //
 //    block X ---+       +-------------------+
 //               |       |  Virtualspace     |
@@ -87,6 +85,7 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class VM_CollectForMetadataAllocation;
   friend class MetaspaceGC;
   friend class MetaspaceAux;
+  friend class MetaspaceShared;
   friend class CollectorPolicy;
 
  public:
@@ -98,8 +97,6 @@ class Metaspace : public CHeapObj<mtClass> {
   enum MetaspaceType {
     StandardMetaspaceType,
     BootMetaspaceType,
-    ROMetaspaceType,
-    ReadWriteMetaspaceType,
     AnonymousMetaspaceType,
     ReflectionMetaspaceType
   };
@@ -134,6 +131,7 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static size_t _commit_alignment;
   static size_t _reserve_alignment;
+  DEBUG_ONLY(static bool   _frozen;)
 
   SpaceManager* _vsm;
   SpaceManager* vsm() const { return _vsm; }
@@ -177,12 +175,11 @@ class Metaspace : public CHeapObj<mtClass> {
   }
 
   static const MetaspaceTracer* tracer() { return _tracer; }
-
+  static void freeze() {
+    assert(DumpSharedSpaces, "sanity");
+    DEBUG_ONLY(_frozen = true;)
+  }
  private:
-  // These 2 methods are used by DumpSharedSpaces only, where only _vsm is used. So we will
-  // maintain a single list for now.
-  void record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size);
-  void record_deallocation(void* ptr, size_t word_size);
 
 #ifdef _LP64
   static void set_narrow_klass_base_and_shift(address metaspace_base, address cds_base);
@@ -194,20 +191,6 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static void initialize_class_space(ReservedSpace rs);
 #endif
-
-  class AllocRecord : public CHeapObj<mtClass> {
-  public:
-    AllocRecord(address ptr, MetaspaceObj::Type type, int byte_size)
-      : _next(NULL), _ptr(ptr), _type(type), _byte_size(byte_size) {}
-    AllocRecord *_next;
-    address _ptr;
-    MetaspaceObj::Type _type;
-    int _byte_size;
-  };
-
-  AllocRecord * _alloc_record_head;
-  AllocRecord * _alloc_record_tail;
-
   size_t class_chunk_size(size_t word_size);
 
  public:
@@ -227,7 +210,6 @@ class Metaspace : public CHeapObj<mtClass> {
   static size_t commit_alignment()        { return _commit_alignment; }
   static size_t commit_alignment_words()  { return _commit_alignment / BytesPerWord; }
 
-  char*  bottom() const;
   size_t used_words_slow(MetadataType mdtype) const;
   size_t free_words_slow(MetadataType mdtype) const;
   size_t capacity_words_slow(MetadataType mdtype) const;
@@ -239,10 +221,11 @@ class Metaspace : public CHeapObj<mtClass> {
   size_t allocated_chunks_bytes() const;
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            bool read_only, MetaspaceObj::Type type, TRAPS);
+                            MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   static bool contains(const void* ptr);
+  static bool contains_non_shared(const void* ptr);
 
   void dump(outputStream* const out) const;
 
@@ -261,16 +244,9 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0) NOT_LP64({});
 
-  class AllocRecordClosure :  public StackObj {
-  public:
-    virtual void doit(address ptr, MetaspaceObj::Type type, int byte_size) = 0;
-  };
-
-  void iterate(AllocRecordClosure *closure);
-
-  // Return TRUE only if UseCompressedClassPointers is True and DumpSharedSpaces is False.
+  // Return TRUE only if UseCompressedClassPointers is True.
   static bool using_class_space() {
-    return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers && !DumpSharedSpaces);
+    return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers);
   }
 
   static bool is_class_space_allocation(MetadataType mdType) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,13 +102,12 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   if (length >= 0) {
     if (length <= max_length()) {
       size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-      KlassHandle h_k(THREAD, this);
       typeArrayOop t;
       CollectedHeap* ch = Universe::heap();
       if (do_zero) {
-        t = (typeArrayOop)CollectedHeap::array_allocate(h_k, (int)size, length, CHECK_NULL);
+        t = (typeArrayOop)CollectedHeap::array_allocate(this, (int)size, length, CHECK_NULL);
       } else {
-        t = (typeArrayOop)CollectedHeap::array_allocate_nozero(h_k, (int)size, length, CHECK_NULL);
+        t = (typeArrayOop)CollectedHeap::array_allocate_nozero(this, (int)size, length, CHECK_NULL);
       }
       return t;
     } else {

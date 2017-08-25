@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public:
   // range [from,limit). If it does, print an error message and return
   // false. Otherwise, just return true. bitmap_name should be "prev"
   // or "next".
-  bool verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,
+  bool verify_no_bits_over_tams(const char* bitmap_name, const G1CMBitMap* const bitmap,
                                 HeapWord* from, HeapWord* limit);
 
   // Verify that the prev / next bitmap range [tams,end) for the given
@@ -109,6 +109,8 @@ public:
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
+
+  static void verify_archive_regions();
 };
 
 #endif // SHARE_VM_GC_G1_G1HEAPVERIFIER_HPP

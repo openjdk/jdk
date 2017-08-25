@@ -28,6 +28,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;
@@ -44,7 +45,7 @@ class Bytecode: public StackObj {
   // Address computation
   address addr_at            (int offset)        const     { return (address)_bcp + offset; }
   u_char byte_at(int offset) const               { return *addr_at(offset); }
-  address aligned_addr_at    (int offset)        const     { return (address)round_to((intptr_t)addr_at(offset), jintSize); }
+  address aligned_addr_at    (int offset)        const     { return align_up(addr_at(offset), jintSize); }
 
   // Word access:
   int     get_Java_u2_at     (int offset)        const     { return Bytes::get_Java_u2(addr_at(offset)); }
@@ -122,7 +123,7 @@ class Bytecode: public StackObj {
   static void assert_constant_size(int required_size, int where, Bytecodes::Code bc, bool is_wide = false) NOT_DEBUG_RETURN;
   static void assert_native_index(Bytecodes::Code bc, bool is_wide = false) NOT_DEBUG_RETURN;
   static bool can_use_native_byte_order(Bytecodes::Code bc, bool is_wide = false) {
-    return (!Bytes::is_Java_byte_ordering_different() || Bytecodes::native_byte_order(bc /*, is_wide*/));
+    return (!Endian::is_Java_byte_ordering_different() || Bytecodes::native_byte_order(bc /*, is_wide*/));
   }
 };
 
@@ -177,11 +178,11 @@ class Bytecode_tableswitch: public Bytecode {
 
 class Bytecode_member_ref: public Bytecode {
  protected:
-  const methodHandle _method;                          // method containing the bytecode
+  const Method* _method;                          // method containing the bytecode
 
-  Bytecode_member_ref(const methodHandle& method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
+  Bytecode_member_ref(const methodHandle& method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method()) {}
 
-  methodHandle method() const                    { return _method; }
+  const Method* method() const                 { return _method; }
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
   ConstantPoolCacheEntry* cpcache_entry() const;
@@ -311,15 +312,15 @@ class Bytecode_anewarray: public Bytecode {
 // Abstraction for ldc, ldc_w and ldc2_w
 class Bytecode_loadconstant: public Bytecode {
  private:
-  const methodHandle _method;
+  const Method* _method;
 
   int raw_index() const;
 
  public:
-  Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method) { verify(); }
+  Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method()) { verify(); }
 
   void verify() const {
-    assert(_method.not_null(), "must supply method");
+    assert(_method != NULL, "must supply method");
     Bytecodes::Code stdc = Bytecodes::java_code(code());
     assert(stdc == Bytecodes::_ldc ||
            stdc == Bytecodes::_ldc_w ||

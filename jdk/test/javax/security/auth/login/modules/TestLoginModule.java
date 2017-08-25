@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-import com.sun.security.auth.UnixPrincipal;
+import com.sun.security.auth.UserPrincipal;
 
 /**
  * Custom JAAS login module which will be loaded through Java LoginContext when
@@ -44,7 +44,7 @@ public class TestLoginModule implements LoginModule {
     private static final String PASSWORD = "testPassword";
     private Subject subject;
     private CallbackHandler callbackHandler;
-    private UnixPrincipal userPrincipal;
+    private UserPrincipal userPrincipal;
     private String username;
     private String password;
     private boolean succeeded = false;
@@ -99,7 +99,7 @@ public class TestLoginModule implements LoginModule {
         if (succeeded == false) {
             return false;
         }
-        userPrincipal = new UnixPrincipal(username);
+        userPrincipal = new UserPrincipal(username);
         if (!subject.getPrincipals().contains(userPrincipal)) {
             subject.getPrincipals().add(userPrincipal);
         }

@@ -34,6 +34,13 @@ public interface DebugCloseable extends AutoCloseable {
         }
     };
 
+    /**
+     * Gets the debug context associated with this object.
+     */
+    default DebugContext getDebug() {
+        return null;
+    }
+
     @Override
     void close();
 }

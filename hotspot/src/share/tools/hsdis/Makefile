@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,14 +70,18 @@ CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
 else   #linux
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
-ARCH=$(ARCH1:i686=i386)
+ARCH2=$(ARCH1:i686=i386)
+ARCH=$(ARCH2:sparc64=sparcv9)
 ifdef LP64
 CFLAGS/sparcv9	+= -m64
 CFLAGS/amd64	+= -m64
 CFLAGS/ppc64	+= -m64
 CFLAGS/ppc64le  += -m64 -DABI_ELFv2
 else
-ARCH=$(ARCH1:amd64=i386)
+ARCH=$(ARCH2:amd64=i386)
+ifneq ($(findstring arm,$(ARCH)),)
+ARCH=arm
+endif
 CFLAGS/i386	+= -m32
 CFLAGS/sparc	+= -m32
 endif

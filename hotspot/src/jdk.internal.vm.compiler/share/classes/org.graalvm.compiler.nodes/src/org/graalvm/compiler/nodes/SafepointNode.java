@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_6;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -37,9 +37,9 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
  * Marks a position in the graph where a safepoint should be emitted.
  */
 // @formatter:off
-@NodeInfo(cycles = CYCLES_UNKNOWN,
-          cyclesRationale = "We don't know how long a safepoint would take if it is executed",
-          size = SIZE_6)
+@NodeInfo(cycles = CYCLES_2,
+          cyclesRationale = "read",
+          size = SIZE_1)
 // @formatter:on
 public final class SafepointNode extends DeoptimizingFixedWithNextNode implements Lowerable, LIRLowerable {
 

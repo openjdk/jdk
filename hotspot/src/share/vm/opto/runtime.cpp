@@ -43,6 +43,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -1287,9 +1288,11 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   // normal bytecode execution.
   thread->clear_exception_oop_and_pc();
 
-  if (log_is_enabled(Info, exceptions)) {
+  LogTarget(Info, exceptions) lt;
+  if (lt.is_enabled()) {
     ResourceMark rm;
-    trace_exception(Log(exceptions)::info_stream(), exception(), pc, "");
+    LogStream ls(lt);
+    trace_exception(&ls, exception(), pc, "");
   }
 
   // for AbortVMOnException flag

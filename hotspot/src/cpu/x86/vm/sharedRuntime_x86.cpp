@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 // Since hashCode is usually polymorphic at call sites we can't do this
 // optimization at the call site without a lot of work.
 void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* masm,
-                                 methodHandle method,
+                                 const methodHandle& method,
                                  Register obj_reg,
                                  Register result) {
   Label slowCase;

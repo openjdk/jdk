@@ -23,73 +23,118 @@
 
 package sun.hotspot.tools.ctw;
 
-import jdk.internal.misc.Unsafe;
-
+import java.io.Closeable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
- * Abstract handler for path.
- * Concrete subclasses should implement method {@link #process()}.
+ * Handler for a path, responsible for processing classes in the path.
  */
-public abstract class PathHandler {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+public class PathHandler implements Closeable {
+    public static abstract class PathEntry implements Closeable {
+        private final ClassLoader loader = new PathEntryClassLoader(this::findByteCode);
+
+        /**
+         * returns bytecode for the class
+         * @param name binary name of the class
+         * @return bytecode of the class or null if handler does not have any
+         * code for this name
+         */
+        protected abstract byte[] findByteCode(String name);
+
+        protected final Path root;
+
+        /**
+         * @param root path entry root
+         * @throws NullPointerException if {@code root} is {@code null}
+         */
+        protected PathEntry(Path root) {
+            Objects.requireNonNull(root, "root can not be null");
+            this.root = root.normalize();
+        }
+
+        /**
+         * @return classloader which will be used to define classes
+         */
+        protected final ClassLoader loader() {
+            return loader;
+        }
+
+        /**
+         * @return stream of all classes in the specified path.
+         */
+        protected abstract Stream<String> classes();
+
+        /**
+         * @return string description of the specific path.
+         */
+        protected abstract String description();
+
+        public void close() { }
+
+    }
+
+    private static class PathEntryClassLoader extends java.lang.ClassLoader {
+        private final Function<String, byte[]> findByteCode;
+
+        private PathEntryClassLoader(Function<String, byte[]> findByteCode) {
+            this.findByteCode = findByteCode;
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            byte[] code = findByteCode.apply(name);
+            if (code == null) {
+                return super.findClass(name);
+            } else {
+                return defineClass(name, code, 0, code.length);
+            }
+        }
+    }
+
     private static final AtomicLong CLASS_COUNT = new AtomicLong(0L);
     private static volatile boolean CLASSES_LIMIT_REACHED = false;
     private static final Pattern JAR_IN_DIR_PATTERN
             = Pattern.compile("^(.*[/\\\\])?\\*$");
-    protected final Path root;
-    protected final Executor executor;
-    private ClassLoader loader;
 
     /**
-     * @param root     root path to process
-     * @param executor executor used for process task invocation
-     * @throws NullPointerException if {@code root} or {@code executor} is
-     *                              {@code null}
-     */
-    protected PathHandler(Path root, Executor executor) {
-        Objects.requireNonNull(root);
-        Objects.requireNonNull(executor);
-        this.root = root.normalize();
-        this.executor = executor;
-        this.loader = ClassLoader.getSystemClassLoader();
-    }
-
-   /**
-     * Factory method. Construct concrete handler in depends from {@code path}.
+     * Factory method. Constructs list of handlers for {@code path}.
      *
      * @param path     the path to process
-     * @param executor executor used for compile task invocation
      * @throws NullPointerException if {@code path} or {@code executor} is
      *                              {@code null}
      */
-    public static PathHandler create(String path, Executor executor) {
+    public static List<PathHandler> create(String path) {
         Objects.requireNonNull(path);
-        Objects.requireNonNull(executor);
         Matcher matcher = JAR_IN_DIR_PATTERN.matcher(path);
         if (matcher.matches()) {
             path = matcher.group(1);
             path = path.isEmpty() ? "." : path;
-            return new ClassPathJarInDirEntry(Paths.get(path), executor);
+            return ClassPathJarInDirEntry.create(Paths.get(path));
         } else {
             path = path.isEmpty() ? "." : path;
             Path p = Paths.get(path);
+            PathEntry entry;
             if (isJarFile(p)) {
-                return new ClassPathJarEntry(p, executor);
+                entry = new ClassPathJarEntry(p);
             } else if (isListFile(p)) {
-                return new ClassesListInFile(p, executor);
+                entry = new ClassesListInFile(p);
             } else if (isJimageFile(p)) {
-                return new ClassPathJimageEntry(p, executor);
+                entry = new ClassPathJimageEntry(p);
             } else {
-                return new ClassPathDirEntry(p, executor);
+                entry = new ClassPathDirEntry(p);
             }
+            return Collections.singletonList(new PathHandler(entry));
         }
     }
 
@@ -117,30 +162,42 @@ public abstract class PathHandler {
         return false;
     }
 
-    /**
-     * Processes all classes in specified path.
-     */
-    public abstract void process();
-
-   /**
-     * Sets class loader, that will be used to define class at
-     * {@link #processClass(String)}.
-     *
-     * @param loader class loader
-     * @throws NullPointerException if {@code loader} is {@code null}
-     */
-    protected final void setLoader(ClassLoader loader) {
-        Objects.requireNonNull(loader);
-        this.loader = loader;
+    private final PathEntry entry;
+    protected PathHandler(PathEntry entry) {
+        Objects.requireNonNull(entry);
+        this.entry = entry;
     }
+
+
+    @Override
+    public void close() {
+        entry.close();
+    }
+
+    /**
+     * Processes all classes in the specified path.
+     * @param executor executor used for process task invocation
+     */
+    public final void process(Executor executor) {
+        CompileTheWorld.OUT.println(entry.description());
+        entry.classes().forEach(s -> processClass(s, executor));
+    }
+
+    /**
+     * @return count of all classes in the specified path.
+     */
+    public long classCount() {
+        return entry.classes().count();
+    }
+
 
     /**
      * Processes specified class.
      * @param name fully qualified name of class to process
      */
-    protected final void processClass(String name) {
+    protected final void processClass(String name, Executor executor) {
         Objects.requireNonNull(name);
-        if (CLASSES_LIMIT_REACHED) {
+        if (isFinished()) {
             return;
         }
         long id = CLASS_COUNT.incrementAndGet();
@@ -149,18 +206,16 @@ public abstract class PathHandler {
             return;
         }
         if (id >= Utils.COMPILE_THE_WORLD_START_AT) {
+            Class<?> aClass;
+            Thread.currentThread().setContextClassLoader(entry.loader());
             try {
-                Class<?> aClass = loader.loadClass(name);
-                if (!"sun.reflect.misc.Trampoline".equals(name)
-                        // workaround for JDK-8159155
-                        && !"sun.tools.jconsole.OutputViewer".equals(name)) {
-                    UNSAFE.ensureClassInitialized(aClass);
-                }
                 CompileTheWorld.OUT.printf("[%d]\t%s%n", id, name);
+                aClass = entry.loader().loadClass(name);
                 Compiler.compileClass(aClass, id, executor);
-            } catch (ClassNotFoundException e) {
-                CompileTheWorld.OUT.printf("Class %s loading failed : %s%n",
-                        name, e.getMessage());
+            } catch (Throwable e) {
+                CompileTheWorld.OUT.printf("[%d]\t%s\tWARNING skipped: %s%n",
+                        id, name, e);
+                e.printStackTrace(CompileTheWorld.ERR);
             }
         }
     }
@@ -168,7 +223,7 @@ public abstract class PathHandler {
     /**
      * @return count of processed classes
      */
-    public static long getClassCount() {
+    public static long getProcessedClassCount() {
         long id = CLASS_COUNT.get();
         if (id < Utils.COMPILE_THE_WORLD_START_AT) {
             return 0;

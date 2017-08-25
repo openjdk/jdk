@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _top(NULL), _alignment(alignment) {
@@ -44,8 +45,8 @@ MutableSpace::~MutableSpace() {
 void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
   if (!mr.is_empty()) {
     size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
-    HeapWord *start = (HeapWord*)round_to((intptr_t) mr.start(), page_size);
-    HeapWord *end =  (HeapWord*)round_down((intptr_t) mr.end(), page_size);
+    HeapWord *start = align_up(mr.start(), page_size);
+    HeapWord *end =   align_down(mr.end(), page_size);
     if (end > start) {
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {
@@ -177,7 +178,7 @@ HeapWord* MutableSpace::allocate(size_t size) {
   if (pointer_delta(end(), obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_object_aligned((intptr_t)obj) && is_object_aligned((intptr_t)new_top),
+    assert(is_object_aligned(obj) && is_object_aligned(new_top),
            "checking alignment");
     return obj;
   } else {
@@ -198,7 +199,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
       if (result != obj) {
         continue; // another thread beat us to the allocation, try again
       }
-      assert(is_object_aligned((intptr_t)obj) && is_object_aligned((intptr_t)new_top),
+      assert(is_object_aligned(obj) && is_object_aligned(new_top),
              "checking alignment");
       return obj;
     } else {

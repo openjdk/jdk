@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ private:
   jint _layout_helper;
 
 protected:
-  ciKlass(KlassHandle k_h, ciSymbol* name);
+  ciKlass(Klass* k, ciSymbol* name);
   ciKlass(ciSymbol* name, BasicType bt);
 
   Klass* get_Klass() const {
@@ -72,7 +72,7 @@ protected:
   void print_impl(outputStream* st);
 
 public:
-  ciKlass(KlassHandle k_h);
+  ciKlass(Klass* k);
 
   // What is the name of this klass?
   ciSymbol* name() const { return _name; }
