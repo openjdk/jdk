@@ -43,11 +43,11 @@
  *      compiler.jvmci.SecurityRestrictionsTest
  *      ALL_PERM
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *      -XX:+EnableJVMCI
+ *      -XX:+EnableJVMCI -XX:-UseJVMCICompiler
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI_ACCESS_PERM
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *      -XX:-EnableJVMCI
+ *      -XX:-EnableJVMCI -XX:-UseJVMCICompiler
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI
  */
