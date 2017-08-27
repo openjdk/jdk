@@ -77,18 +77,14 @@
 #include "services/classLoadingService.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/threadService.hpp"
-#include "trace/traceMacros.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/ticks.hpp"
 #if INCLUDE_CDS
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
-#endif
-#if INCLUDE_TRACE
-#include "trace/tracing.hpp"
 #endif
 
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
@@ -615,17 +611,17 @@ InstanceKlass* SystemDictionary::handle_parallel_super_load(
   return NULL;
 }
 
-static void post_class_load_event(const Ticks& start_time,
-                                  InstanceKlass* k,
+static void post_class_load_event(EventClassLoad* event,
+                                  const InstanceKlass* k,
                                   const ClassLoaderData* init_cld) {
 #if INCLUDE_TRACE
-  EventClassLoad event(UNTIMED);
-  if (event.should_commit()) {
-    event.set_starttime(start_time);
-    event.set_loadedClass(k);
-    event.set_definingClassLoader(k->class_loader_data());
-    event.set_initiatingClassLoader(init_cld);
-    event.commit();
+  assert(event != NULL, "invariant");
+  assert(k != NULL, "invariant");
+  if (event->should_commit()) {
+    event->set_loadedClass(k);
+    event->set_definingClassLoader(k->class_loader_data());
+    event->set_initiatingClassLoader(init_cld);
+    event->commit();
   }
 #endif // INCLUDE_TRACE
 }
@@ -653,7 +649,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   assert(name != NULL && !FieldType::is_array(name) &&
          !FieldType::is_obj(name), "invalid class name");
 
-  Ticks class_load_start_time = Ticks::now();
+  EventClassLoad class_load_start_event;
 
   HandleMark hm(THREAD);
 
@@ -899,7 +895,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     return NULL;
   }
 
-  post_class_load_event(class_load_start_time, k, loader_data);
+  post_class_load_event(&class_load_start_event, k, loader_data);
 
 #ifdef ASSERT
   {
@@ -1006,7 +1002,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                               GrowableArray<Handle>* cp_patches,
                                               TRAPS) {
 
-  Ticks class_load_start_time = Ticks::now();
+  EventClassLoad class_load_start_event;
 
   ClassLoaderData* loader_data;
   if (host_klass != NULL) {
@@ -1064,7 +1060,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
         JvmtiExport::post_class_load((JavaThread *) THREAD, k);
     }
 
-    post_class_load_event(class_load_start_time, k, loader_data);
+    post_class_load_event(&class_load_start_event, k, loader_data);
   }
   assert(host_klass != NULL || NULL == cp_patches,
          "cp_patches only found with host_klass");
