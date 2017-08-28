@@ -638,20 +638,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     if (t != NULL) {
       return cm->code_begin() + t->pco();
     } else {
-      // there is no exception handler for this pc => deoptimize
-      cm->make_not_entrant();
-
-      // Use Deoptimization::deoptimize for all of its side-effects:
-      // revoking biases of monitors, gathering traps statistics, logging...
-      // it also patches the return pc but we do not care about that
-      // since we return a continuation to the deopt_blob below.
-      JavaThread* thread = JavaThread::current();
-      RegisterMap reg_map(thread, UseBiasedLocking);
-      frame runtime_frame = thread->last_frame();
-      frame caller_frame = runtime_frame.sender(&reg_map);
-      Deoptimization::deoptimize(thread, caller_frame, &reg_map, Deoptimization::Reason_not_compiled_exception_handler);
-
-      return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
+      return Deoptimization::deoptimize_for_missing_exception_handler(cm);
     }
   }
 #endif // INCLUDE_JVMCI
