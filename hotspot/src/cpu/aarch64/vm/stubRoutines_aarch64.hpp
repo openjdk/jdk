@@ -62,6 +62,9 @@ class aarch64 {
   static address _double_sign_flip;
 
   static address _zero_blocks;
+
+  static address _has_negatives;
+  static address _has_negatives_long;
   static bool _completed;
 
  public:
@@ -118,6 +121,14 @@ class aarch64 {
 
   static address zero_blocks() {
     return _zero_blocks;
+  }
+
+  static address has_negatives() {
+    return _has_negatives;
+  }
+
+  static address has_negatives_long() {
+      return _has_negatives_long;
   }
 
   static bool complete() {

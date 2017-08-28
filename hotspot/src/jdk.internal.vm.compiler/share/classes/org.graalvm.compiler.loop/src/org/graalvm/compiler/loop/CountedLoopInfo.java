@@ -32,6 +32,7 @@ import org.graalvm.compiler.loop.InductionVariable.Direction;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.GuardNode;
+import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.CompareNode;
@@ -51,13 +52,15 @@ public class CountedLoopInfo {
     private ValueNode end;
     private boolean oneOff;
     private AbstractBeginNode body;
+    private IfNode ifNode;
 
-    CountedLoopInfo(LoopEx loop, InductionVariable iv, ValueNode end, boolean oneOff, AbstractBeginNode body) {
+    CountedLoopInfo(LoopEx loop, InductionVariable iv, IfNode ifNode, ValueNode end, boolean oneOff, AbstractBeginNode body) {
         this.loop = loop;
         this.iv = iv;
         this.end = end;
         this.oneOff = oneOff;
         this.body = body;
+        this.ifNode = ifNode;
     }
 
     public ValueNode maxTripCountNode() {
@@ -90,15 +93,50 @@ public class CountedLoopInfo {
         return graph.unique(new ConditionalNode(graph.unique(new IntegerLessThanNode(zero, div)), div, zero));
     }
 
+    /**
+     * @return true if the loop has constant bounds and the trip count is representable as a
+     *         positive integer.
+     */
     public boolean isConstantMaxTripCount() {
+        /*
+         * It's possible that the iteration range is too large to treat this as constant because it
+         * will overflow.
+         */
+        return (hasConstantBounds() && rawConstantMaxTripCount() >= 0);
+    }
+
+    /**
+     * @return true if the bounds on the iteration space are all constants.
+     */
+    public boolean hasConstantBounds() {
         return end instanceof ConstantNode && iv.isConstantInit() && iv.isConstantStride();
     }
 
     public long constantMaxTripCount() {
+        assert isConstantMaxTripCount();
+        return rawConstantMaxTripCount();
+    }
+
+    /**
+     * Compute the raw value of the trip count for this loop. Since we don't have unsigned values
+     * this may be outside representable positive values.
+     */
+    protected long rawConstantMaxTripCount() {
         assert iv.direction() != null;
         long off = oneOff ? iv.direction() == Direction.Up ? 1 : -1 : 0;
-        long max = (((ConstantNode) end).asJavaConstant().asLong() + off - iv.constantInit()) / iv.constantStride();
-        return Math.max(0, max);
+        long endValue = ((ConstantNode) end).asJavaConstant().asLong();
+        try {
+            // If no overflow occurs then negative values represent a trip count of 0
+            long max = Math.subtractExact(Math.addExact(endValue, off), iv.constantInit()) / iv.constantStride();
+            return Math.max(0, max);
+        } catch (ArithmeticException e) {
+            /*
+             * The computation overflowed to return a negative value. It's possible some
+             * optimization could handle this value as an unsigned and produce the right answer but
+             * we hide this value by default.
+             */
+            return -1;
+        }
     }
 
     public boolean isExactTripCount() {
@@ -127,6 +165,10 @@ public class CountedLoopInfo {
 
     public ValueNode getLimit() {
         return end;
+    }
+
+    public IfNode getLimitTest() {
+        return ifNode;
     }
 
     public ValueNode getStart() {

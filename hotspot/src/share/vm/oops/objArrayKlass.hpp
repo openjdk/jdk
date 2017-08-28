@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,14 @@ class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ObjArrayKlass::metaspace_pointers_do().
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
   // Constructor
-  ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name);
-  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS);
+  ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
+  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
  public:
   // For dummy objects
   ObjArrayKlass() {}
@@ -69,7 +71,7 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Allocation
   static Klass* allocate_objArray_klass(ClassLoaderData* loader_data,
-                                          int n, KlassHandle element_klass, TRAPS);
+                                          int n, Klass* element_klass, TRAPS);
 
   objArrayOop allocate(int length, TRAPS);
   oop multi_allocate(int rank, jint* sizes, TRAPS);
@@ -79,6 +81,8 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Compute protection domain
   oop protection_domain() const { return bottom_klass()->protection_domain(); }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.
@@ -112,8 +116,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   // GC specific object visitors
   //
-  // Mark Sweep
-  int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);

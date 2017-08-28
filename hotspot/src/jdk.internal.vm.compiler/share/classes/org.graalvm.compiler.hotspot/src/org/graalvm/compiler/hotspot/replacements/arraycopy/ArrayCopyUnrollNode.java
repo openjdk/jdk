@@ -24,9 +24,8 @@ package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
 import jdk.vm.ci.meta.JavaKind;
 
-import static org.graalvm.compiler.core.common.LocationIdentity.any;
+import static org.graalvm.word.LocationIdentity.any;
 
-import org.graalvm.compiler.core.common.LocationIdentity;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.InputType;
@@ -39,6 +38,7 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = InputType.Memory)
 public class ArrayCopyUnrollNode extends ArrayRangeWriteNode implements MemoryCheckpoint.Single, Lowerable, MemoryAccess {

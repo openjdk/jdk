@@ -51,6 +51,7 @@ class ValueStack;
 class LIR_OprDesc;
 class C1_MacroAssembler;
 class CFGPrinter;
+class CFGPrinterOutput;
 typedef LIR_OprDesc* LIR_Opr;
 
 typedef GrowableArray<BasicType> BasicTypeArray;
@@ -113,6 +114,7 @@ class Compilation: public StackObj {
   Instruction*       _current_instruction;       // the instruction currently being processed
 #ifndef PRODUCT
   Instruction*       _last_instruction_printed;  // the last instruction printed during traversal
+  CFGPrinterOutput*  _cfg_printer_output;
 #endif // PRODUCT
 
  public:
@@ -186,6 +188,10 @@ class Compilation: public StackObj {
 
 #ifndef PRODUCT
   void maybe_print_current_instruction();
+  CFGPrinterOutput* cfg_printer_output() {
+    guarantee(_cfg_printer_output != NULL, "CFG printer output not initialized");
+    return _cfg_printer_output;
+  }
 #endif // PRODUCT
 
   // error handling

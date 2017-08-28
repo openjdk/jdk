@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ public class CheckForProperDetailStackTrace {
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it maches even if the symbol is not unmangled. */
     public static String stackTraceDefault =
+        ".*Hashtable.*allocate_new_entry.*\n" +
         ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry_or_null.*\n" +
-        ".*Modules.*define_module.*\n" +
-        ".*JVM_DefineModule.*\n";
+        ".*Modules.*define_module.*\n";
 
     /* The stack trace we look for on Solaris and Windows slowdebug builds. For some
        reason ALWAYSINLINE for AllocateHeap is ignored, so it appears in the stack strace. */

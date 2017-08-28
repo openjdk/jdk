@@ -35,6 +35,7 @@
 #include "registerSaver_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_s390.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -311,7 +312,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   __ save_return_pc(return_pc);
 
   // Push a new frame (includes stack linkage).
-  __ push_frame(frame_size_in_bytes);
+  // use return_pc as scratch for push_frame. Z_R0_scratch (the default) and Z_R1_scratch are
+  // illegally used to pass parameters (SAPJVM extension) by RangeCheckStub::emit_code().
+  __ push_frame(frame_size_in_bytes, return_pc);
+  // We have to restore return_pc right away.
+  // Nobody else will. Furthermore, return_pc isn't necessarily the default (Z_R14).
+  // Nobody else knows which register we saved.
+  __ z_lg(return_pc, _z_abi16(return_pc) + frame_size_in_bytes, Z_SP);
 
   // Register save area in new frame starts above z_abi_160 area.
   int offset = register_save_offset;
@@ -541,7 +548,6 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
   }
 }
 
-#if INCLUDE_CDS
 size_t SharedRuntime::trampoline_size() {
   return MacroAssembler::load_const_size() + 2;
 }
@@ -551,7 +557,6 @@ void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destinatio
   __ load_const(Z_R1_scratch, destination);
   __ z_br(Z_R1_scratch);
 }
-#endif
 
 // ---------------------------------------------------------------------------
 void SharedRuntime::save_native_result(MacroAssembler * masm,
@@ -744,7 +749,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
@@ -840,7 +845,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return round_to(stk, 2);
+  return align_up(stk, 2);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1734,7 +1739,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         }
       }
     }  // for
-    total_save_slots = double_slots * 2 + round_to(single_slots, 2); // Round to even.
+    total_save_slots = double_slots * 2 + align_up(single_slots, 2); // Round to even.
   }
 
   int oop_handle_slot_offset = stack_slots;
@@ -1761,7 +1766,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now compute actual number of stack words we need.
   // Round to align stack properly.
-  stack_slots = round_to(stack_slots,                                     // 7)
+  stack_slots = align_up(stack_slots,                                     // 7)
                          frame::alignment_in_bytes / VMRegImpl::stack_slot_size);
   int frame_size_in_bytes = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -2395,7 +2400,7 @@ static address gen_c2i_adapter(MacroAssembler  *masm,
   // it has already been allocated.
 
   const int abi_scratch = frame::z_top_ijava_frame_abi_size;
-  int       extraspace  = round_to(total_args_passed, 2)*wordSize + abi_scratch;
+  int       extraspace  = align_up(total_args_passed, 2)*wordSize + abi_scratch;
   Register  sender_SP   = Z_R10;
   Register  value       = Z_R12;
 
@@ -2525,9 +2530,9 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     // registers are below. By subtracting stack0, we either get a negative
     // number (all values in registers) or the maximum stack slot accessed.
     // Convert VMRegImpl (4 byte) stack slots to words.
-    int comp_words_on_stack = round_to(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
+    int comp_words_on_stack = align_up(comp_args_on_stack*VMRegImpl::stack_slot_size, wordSize)>>LogBytesPerWord;
     // Round up to miminum stack alignment, in wordSize
-    comp_words_on_stack = round_to(comp_words_on_stack, 2);
+    comp_words_on_stack = align_up(comp_words_on_stack, 2);
 
     __ resize_frame(-comp_words_on_stack*wordSize, Z_R0_scratch);
   }

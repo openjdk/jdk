@@ -31,6 +31,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
@@ -101,7 +102,7 @@ jobject JNIHandles::make_weak_global(Handle obj) {
       res = _weak_global_handles->allocate_handle(obj());
     }
     // Add weak tag.
-    assert(is_ptr_aligned(res, weak_tag_alignment), "invariant");
+    assert(is_aligned(res, weak_tag_alignment), "invariant");
     char* tptr = reinterpret_cast<char*>(res) + weak_tag_value;
     res = reinterpret_cast<jobject>(tptr);
   } else {
@@ -275,7 +276,7 @@ JNIHandleBlock* JNIHandleBlock::_block_list           = NULL;
 
 void JNIHandleBlock::zap() {
   // Zap block values
-  _top  = 0;
+  _top = 0;
   for (int index = 0; index < block_size_in_oops; index++) {
     _handles[index] = badJNIHandle;
   }
@@ -313,7 +314,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
       _block_free_list = _block_free_list->_next;
     }
   }
-  block->_top  = 0;
+  block->_top = 0;
   block->_next = NULL;
   block->_pop_frame_link = NULL;
   block->_planned_capacity = block_size_in_oops;
@@ -443,6 +444,15 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
       assert(current->_last == NULL, "only first block should have _last set");
       assert(current->_free_list == NULL,
              "only first block should have _free_list set");
+      if (current->_top == 0) {
+        // All blocks after the first clear trailing block are already cleared.
+#ifdef ASSERT
+        for (current = current->_next; current != NULL; current = current->_next) {
+          assert(current->_top == 0, "trailing blocks must already be cleared");
+        }
+#endif
+        break;
+      }
       current->_top = 0;
       if (ZapJNIHandleArea) current->zap();
     }

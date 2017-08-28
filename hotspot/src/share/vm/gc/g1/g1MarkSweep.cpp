@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -56,13 +57,14 @@
 
 class HeapRegion;
 
-bool G1MarkSweep::_archive_check_enabled = false;
-G1ArchiveRegionMap G1MarkSweep::_archive_region_map;
-
 void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
                                       bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
+  HandleMark hm;  // Discard invalid handles created during gc
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  DerivedPointerTable::clear();
+#endif
 #ifdef ASSERT
   if (G1CollectedHeap::heap()->collector_policy()->should_clear_all_soft_refs()) {
     assert(clear_all_softrefs, "Policy should have been checked earler");
@@ -88,8 +90,10 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   // The marking doesn't preserve the marks of biased objects.
   BiasedLocking::preserve_marks();
 
+  // Process roots and do the marking.
   mark_sweep_phase1(marked_for_unloading, clear_all_softrefs);
 
+  // Prepare compaction.
   mark_sweep_phase2();
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -97,13 +101,20 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   DerivedPointerTable::set_active(false);
 #endif
 
+  // Adjust all pointers.
   mark_sweep_phase3();
 
+  // Do the actual compaction.
   mark_sweep_phase4();
 
   GenMarkSweep::restore_marks();
   BiasedLocking::restore_marks();
   GenMarkSweep::deallocate_stacks();
+
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  // Now update the derived pointers.
+  DerivedPointerTable::update_pointers();
+#endif
 
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
@@ -112,6 +123,13 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   GenMarkSweep::set_ref_processor(NULL);
 }
 
+STWGCTimer* G1MarkSweep::gc_timer() {
+  return G1FullGCScope::instance()->timer();
+}
+
+SerialOldTracer* G1MarkSweep::gc_tracer() {
+  return G1FullGCScope::instance()->tracer();
+}
 
 void G1MarkSweep::allocate_stacks() {
   GenMarkSweep::_preserved_count_max = 0;
@@ -152,13 +170,16 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     assert(rp == g1h->ref_processor_stw(), "Sanity");
 
     rp->setup_policy(clear_all_softrefs);
+    ReferenceProcessorPhaseTimes pt(gc_timer(), rp->num_q());
+
     const ReferenceProcessorStats& stats =
         rp->process_discovered_references(&GenMarkSweep::is_alive,
                                           &GenMarkSweep::keep_alive,
                                           &GenMarkSweep::follow_stack_closure,
                                           NULL,
-                                          gc_timer());
+                                          &pt);
     gc_tracer()->report_gc_reference_stats(stats);
+    pt.print_all_references();
   }
 
   // This is the point where the entire marking should have completed.
@@ -168,24 +189,12 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     GCTraceTime(Debug, gc, phases) trace("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
+    bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive, gc_timer());
 
-    // Unload nmethods.
-    CodeCache::do_unloading(&GenMarkSweep::is_alive, purged_class);
-
-    // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
-  }
-
-  {
-    GCTraceTime(Debug, gc, phases) trace("Scrub String and Symbol Tables", gc_timer());
-    // Delete entries for dead interned string and clean up unreferenced symbols in symbol table.
-    g1h->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc, phases) trace("String Deduplication Unlink", gc_timer());
-    G1StringDedup::unlink(&GenMarkSweep::is_alive);
+    g1h->complete_cleaning(&GenMarkSweep::is_alive, purged_class);
+  } else {
+    GCTraceTime(Debug, gc, phases) trace("Cleanup", gc_timer());
+    g1h->partial_cleaning(&GenMarkSweep::is_alive, true, true, G1StringDedup::is_enabled());
   }
 
   if (VerifyDuringGC) {
@@ -234,7 +243,7 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
         // point all the oops to the new location
         MarkSweep::adjust_pointers(obj);
       }
-    } else if (!r->is_pinned()) {
+    } else if (!r->is_closed_archive()) {
       // This really ought to be "as_CompactibleSpace"...
       r->adjust_pointers();
     }
@@ -312,26 +321,6 @@ void G1MarkSweep::mark_sweep_phase4() {
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);
 
-}
-
-void G1MarkSweep::enable_archive_object_check() {
-  assert(!_archive_check_enabled, "archive range check already enabled");
-  _archive_check_enabled = true;
-  size_t length = Universe::heap()->max_capacity();
-  _archive_region_map.initialize((HeapWord*)Universe::heap()->base(),
-                                 (HeapWord*)Universe::heap()->base() + length,
-                                 HeapRegion::GrainBytes);
-}
-
-void G1MarkSweep::set_range_archive(MemRegion range, bool is_archive) {
-  assert(_archive_check_enabled, "archive range check not enabled");
-  _archive_region_map.set_by_address(range, is_archive);
-}
-
-bool G1MarkSweep::in_archive_range(oop object) {
-  // This is the out-of-line part of is_archive_object test, done separately
-  // to avoid additional performance impact when the check is not enabled.
-  return _archive_region_map.get_by_address((HeapWord*)object);
 }
 
 void G1MarkSweep::prepare_compaction_work(G1PrepareCompactClosure* blk) {

@@ -50,9 +50,18 @@ public class RawAddressNode extends AddressNode {
         this.address = address;
     }
 
-    @NodeIntrinsic
-    public static native Address address(long address);
+    @Override
+    public ValueNode getBase() {
+        return address;
+    }
 
-    @NodeIntrinsic
-    public static native Address address(Object address);
+    @Override
+    public long getMaxConstantDisplacement() {
+        return 0;
+    }
+
+    @Override
+    public ValueNode getIndex() {
+        return null;
+    }
 }

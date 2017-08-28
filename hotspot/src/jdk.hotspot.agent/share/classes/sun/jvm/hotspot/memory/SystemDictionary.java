@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,13 @@ package sun.jvm.hotspot.memory;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
 public class SystemDictionary {
-  private static AddressField dictionaryField;
   private static AddressField sharedDictionaryField;
-  private static AddressField placeholdersField;
-  private static AddressField loaderConstraintTableField;
   private static sun.jvm.hotspot.types.OopField javaSystemLoaderField;
 
   private static AddressField objectKlassField;
@@ -56,10 +54,7 @@ public class SystemDictionary {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("SystemDictionary");
 
-    dictionaryField = type.getAddressField("_dictionary");
     sharedDictionaryField = type.getAddressField("_shared_dictionary");
-    placeholdersField = type.getAddressField("_placeholders");
-    loaderConstraintTableField = type.getAddressField("_loader_constraints");
     javaSystemLoaderField = type.getOopField("_java_system_loader");
 
     objectKlassField = type.getAddressField(WK_KLASS("Object_klass"));
@@ -81,24 +76,9 @@ public class SystemDictionary {
       return (kname+"_knum");
   }
 
-  public Dictionary dictionary() {
-    Address tmp = dictionaryField.getValue();
-    return (Dictionary) VMObjectFactory.newObject(Dictionary.class, tmp);
-  }
-
   public Dictionary sharedDictionary() {
     Address tmp = sharedDictionaryField.getValue();
     return (Dictionary) VMObjectFactory.newObject(Dictionary.class, tmp);
-  }
-
-  public PlaceholderTable placeholders() {
-    Address tmp = placeholdersField.getValue();
-    return (PlaceholderTable) VMObjectFactory.newObject(PlaceholderTable.class, tmp);
-  }
-
-  public LoaderConstraintTable constraints() {
-    Address tmp = placeholdersField.getValue();
-    return (LoaderConstraintTable) VMObjectFactory.newObject(LoaderConstraintTable.class, tmp);
   }
 
   // few well known classes -- not all are added here.
@@ -132,8 +112,8 @@ public class SystemDictionary {
   }
 
   public InstanceKlass getAbstractOwnableSynchronizerKlass() {
-    return (InstanceKlass) find("java/util/concurrent/locks/AbstractOwnableSynchronizer",
-                                null, null);
+    ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+    return (InstanceKlass) cldg.find("java/util/concurrent/locks/AbstractOwnableSynchronizer");
   }
 
   public static Oop javaSystemLoader() {
@@ -142,61 +122,5 @@ public class SystemDictionary {
 
   private static Oop newOop(OopHandle handle) {
     return VM.getVM().getObjectHeap().newOop(handle);
-  }
-
-  /** Lookup an already loaded class. If not found null is returned. */
-  public Klass find(String className, Oop classLoader, Oop protectionDomain) {
-    Symbol sym = VM.getVM().getSymbolTable().probe(className);
-    if (sym == null) return null;
-    return find(sym, classLoader, protectionDomain);
-  }
-
-  /** Lookup an already loaded class. If not found null is returned. */
-  public Klass find(Symbol className, Oop classLoader, Oop protectionDomain) {
-    Dictionary dict = dictionary();
-    long hash = dict.computeHash(className, classLoader);
-    int index = dict.hashToIndex(hash);
-    return dict.find(index, hash, className, classLoader, protectionDomain);
-  }
-
-  /** Interface for iterating through all classes in dictionary */
-  public static interface ClassVisitor {
-    public void visit(Klass k);
-  }
-
-  /** Interface for iterating through all classes and their class
-      loaders in dictionary */
-  public static interface ClassAndLoaderVisitor {
-    public void visit(Klass k, Oop loader);
-  }
-
-  /** Iterate over all klasses - including object, primitive
-      array klasses */
-  public void allClassesDo(final ClassVisitor v) {
-    ClassVisitor visitor = new ClassVisitor() {
-      public void visit(Klass k) {
-        for (Klass l = k; l != null; l = l.arrayKlassOrNull()) {
-          v.visit(l);
-        }
-      }
-    };
-    classesDo(visitor);
-    VM.getVM().getUniverse().basicTypeClassesDo(visitor);
-  }
-
-  /** Iterate over all klasses in dictionary; just the classes from
-      declaring class loaders */
-  public void classesDo(ClassVisitor v) {
-    dictionary().classesDo(v);
-  }
-
-  /** All classes, and their class loaders */
-  public void classesDo(ClassAndLoaderVisitor v) {
-    dictionary().classesDo(v);
-  }
-
-  /** All array classes of primitive type, and their class loaders */
-  public void primArrayClassesDo(ClassAndLoaderVisitor v) {
-    placeholders().primArrayClassesDo(v);
   }
 }

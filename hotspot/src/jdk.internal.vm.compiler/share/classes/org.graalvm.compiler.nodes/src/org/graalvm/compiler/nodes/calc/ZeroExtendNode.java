@@ -67,9 +67,8 @@ public final class ZeroExtendNode extends IntegerConvertNode<ZeroExtend, Narrow>
         ValueNode synonym = findSynonym(signExtend, input, inputBits, resultBits, signExtend.foldStamp(inputBits, resultBits, input.stamp()));
         if (synonym != null) {
             return synonym;
-        } else {
-            return new ZeroExtendNode(input, inputBits, resultBits);
         }
+        return canonical(null, input, inputBits, resultBits);
     }
 
     @Override
@@ -97,31 +96,55 @@ public final class ZeroExtendNode extends IntegerConvertNode<ZeroExtend, Narrow>
             return ret;
         }
 
+        return canonical(this, forValue, getInputBits(), getResultBits());
+    }
+
+    private static ValueNode canonical(ZeroExtendNode zeroExtendNode, ValueNode forValue, int inputBits, int resultBits) {
+        ZeroExtendNode self = zeroExtendNode;
         if (forValue instanceof ZeroExtendNode) {
             // xxxx -(zero-extend)-> 0000 xxxx -(zero-extend)-> 00000000 0000xxxx
             // ==> xxxx -(zero-extend)-> 00000000 0000xxxx
             ZeroExtendNode other = (ZeroExtendNode) forValue;
-            return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+            return new ZeroExtendNode(other.getValue(), other.getInputBits(), resultBits);
         }
         if (forValue instanceof NarrowNode) {
             NarrowNode narrow = (NarrowNode) forValue;
             Stamp inputStamp = narrow.getValue().stamp();
-            if (inputStamp instanceof IntegerStamp && inputStamp.isCompatible(stamp())) {
+            if (inputStamp instanceof IntegerStamp) {
                 IntegerStamp istamp = (IntegerStamp) inputStamp;
                 long mask = CodeUtil.mask(PrimitiveStamp.getBits(narrow.stamp()));
-                if (((istamp.upMask() | istamp.downMask()) & ~mask) == 0) {
-                    // The original value is in the range of the masked zero extended result so
-                    // simply return the original input.
-                    return narrow.getValue();
+
+                if ((istamp.upMask() & ~mask) == 0) {
+                    // The original value cannot change because of the narrow and zero extend.
+
+                    if (istamp.getBits() < resultBits) {
+                        // Need to keep the zero extend, skip the narrow.
+                        return create(narrow.getValue(), resultBits);
+                    } else if (istamp.getBits() > resultBits) {
+                        // Need to keep the narrow, skip the zero extend.
+                        return NarrowNode.create(narrow.getValue(), resultBits);
+                    } else {
+                        assert istamp.getBits() == resultBits;
+                        // Just return the original value.
+                        return narrow.getValue();
+                    }
                 }
             }
         }
 
-        return this;
+        if (self == null) {
+            self = new ZeroExtendNode(forValue, inputBits, resultBits);
+        }
+        return self;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitZeroExtend(nodeValueMap.operand(getValue()), getInputBits(), getResultBits()));
+    }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return true;
     }
 }

@@ -71,7 +71,7 @@ public class GraphEncoderTest extends GraalCompilerTest {
             encoder.prepare(originalGraph);
         }
         encoder.finishPrepare();
-        Map<StructuredGraph, Long> startOffsets = new HashMap<>();
+        Map<StructuredGraph, Integer> startOffsets = new HashMap<>();
         for (StructuredGraph originalGraph : originalGraphs) {
             startOffsets.put(originalGraph, encoder.encode(originalGraph));
         }

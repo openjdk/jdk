@@ -29,7 +29,7 @@ import java.util.PriorityQueue;
 
 import org.graalvm.compiler.core.common.alloc.TraceBuilderResult.TrivialTracePredicate;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 
 /**
@@ -37,8 +37,8 @@ import org.graalvm.compiler.debug.Indent;
  */
 public final class UniDirectionalTraceBuilder {
 
-    public static TraceBuilderResult computeTraces(AbstractBlockBase<?> startBlock, AbstractBlockBase<?>[] blocks, TrivialTracePredicate pred) {
-        return new UniDirectionalTraceBuilder(blocks).build(startBlock, blocks, pred);
+    public static TraceBuilderResult computeTraces(DebugContext debug, AbstractBlockBase<?> startBlock, AbstractBlockBase<?>[] blocks, TrivialTracePredicate pred) {
+        return new UniDirectionalTraceBuilder(blocks).build(debug, startBlock, blocks, pred);
     }
 
     private final PriorityQueue<AbstractBlockBase<?>> worklist;
@@ -71,14 +71,14 @@ public final class UniDirectionalTraceBuilder {
     }
 
     @SuppressWarnings("try")
-    private TraceBuilderResult build(AbstractBlockBase<?> startBlock, AbstractBlockBase<?>[] blocks, TrivialTracePredicate pred) {
-        try (Indent indent = Debug.logAndIndent("UniDirectionalTraceBuilder: start trace building: %s", startBlock)) {
-            ArrayList<Trace> traces = buildTraces(startBlock);
-            return TraceBuilderResult.create(blocks, traces, blockToTrace, pred);
+    private TraceBuilderResult build(DebugContext debug, AbstractBlockBase<?> startBlock, AbstractBlockBase<?>[] blocks, TrivialTracePredicate pred) {
+        try (Indent indent = debug.logAndIndent("UniDirectionalTraceBuilder: start trace building: %s", startBlock)) {
+            ArrayList<Trace> traces = buildTraces(debug, startBlock);
+            return TraceBuilderResult.create(debug, blocks, traces, blockToTrace, pred);
         }
     }
 
-    protected ArrayList<Trace> buildTraces(AbstractBlockBase<?> startBlock) {
+    protected ArrayList<Trace> buildTraces(DebugContext debug, AbstractBlockBase<?> startBlock) {
         ArrayList<Trace> traces = new ArrayList<>();
         // add start block
         worklist.add(startBlock);
@@ -87,7 +87,7 @@ public final class UniDirectionalTraceBuilder {
             AbstractBlockBase<?> block = worklist.poll();
             assert block != null;
             if (!processed(block)) {
-                Trace trace = new Trace(startTrace(block));
+                Trace trace = new Trace(startTrace(debug, block));
                 for (AbstractBlockBase<?> traceBlock : trace.getBlocks()) {
                     blockToTrace[traceBlock.getId()] = trace;
                 }
@@ -102,13 +102,13 @@ public final class UniDirectionalTraceBuilder {
      * Build a new trace starting at {@code block}.
      */
     @SuppressWarnings("try")
-    private List<AbstractBlockBase<?>> startTrace(AbstractBlockBase<?> block) {
+    private List<AbstractBlockBase<?>> startTrace(DebugContext debug, AbstractBlockBase<?> block) {
         assert checkPredecessorsProcessed(block);
         ArrayList<AbstractBlockBase<?>> trace = new ArrayList<>();
         int blockNumber = 0;
-        try (Indent i = Debug.logAndIndent("StartTrace: %s", block)) {
+        try (Indent i = debug.logAndIndent("StartTrace: %s", block)) {
             for (AbstractBlockBase<?> currentBlock = block; currentBlock != null; currentBlock = selectNext(currentBlock)) {
-                Debug.log("add %s (prob: %f)", currentBlock, currentBlock.probability());
+                debug.log("add %s (prob: %f)", currentBlock, currentBlock.probability());
                 processed.set(currentBlock.getId());
                 trace.add(currentBlock);
                 unblock(currentBlock);

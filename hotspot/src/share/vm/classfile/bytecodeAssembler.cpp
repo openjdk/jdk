@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,8 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
         cp->symbol_at_put(idx, entry._u.utf8);
         break;
       case BytecodeCPEntry::KLASS:
-        cp->unresolved_klass_at_put(
-            idx, cp->symbol_at(entry._u.klass));
+        cp->klass_index_at_put(
+            idx, entry._u.klass);
         break;
       case BytecodeCPEntry::STRING:
         cp->unresolved_string_at_put(
@@ -85,6 +85,9 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
         ShouldNotReachHere();
     }
   }
+
+  cp->initialize_unresolved_klasses(_orig->pool_holder()->class_loader_data(),
+                                    CHECK_NULL);
   return cp;
 }
 

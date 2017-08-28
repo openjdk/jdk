@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,6 @@
        .nonvolatile
        .end
 
-
-  // Clear SPARC fprs.FEF DU and DL bits --
-  // allows the kernel to avoid saving FPU state at context-switch time.
-  // Use for state-transition points (into _thread_blocked) or when
-  // parking.
-
-       .inline _mark_fpu_nosave, 0
-       .volatile
-       wr   %g0, 0, %fprs
-       .nonvolatile
-       .end
 
   // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest).
   //

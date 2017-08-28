@@ -46,18 +46,18 @@ import java.util.Map;
  * Calendar}. The following are calendar-common fields and their values to be
  * supported for each calendar system.
  *
- *  <table class="plain">
+ * <table class="striped">
  * <caption style="display:none">Field values</caption>
  * <thead>
  *   <tr>
- *     <th>Field</th>
- *     <th>Value</th>
- *     <th>Description</th>
+ *     <th scope="col">Field</th>
+ *     <th scope="col">Value</th>
+ *     <th scope="col">Description</th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td style="vertical-align:top">{@link Calendar#MONTH}</td>
+ *     <th scope="row" style="vertical-align:top">{@link Calendar#MONTH}</th>
  *     <td style="vertical-align:top">{@link Calendar#JANUARY} to {@link Calendar#UNDECIMBER}</td>
  *     <td>Month numbering is 0-based (e.g., 0 - January, ..., 11 -
  *         December). Some calendar systems have 13 months. Month
@@ -67,13 +67,13 @@ import java.util.Map;
  *         in both of the forms.</td>
  *   </tr>
  *   <tr>
- *     <td style="vertical-align:top">{@link Calendar#DAY_OF_WEEK}</td>
+ *     <th scope="row" style="vertical-align:top">{@link Calendar#DAY_OF_WEEK}</th>
  *     <td style="vertical-align:top">{@link Calendar#SUNDAY} to {@link Calendar#SATURDAY}</td>
  *     <td>Day-of-week numbering is 1-based starting from Sunday (i.e., 1 - Sunday,
  *         ..., 7 - Saturday).</td>
  *   </tr>
  *   <tr>
- *     <td style="vertical-align:top">{@link Calendar#AM_PM}</td>
+ *     <th scope="row" style="vertical-align:top">{@link Calendar#AM_PM}</th>
  *     <td style="vertical-align:top">{@link Calendar#AM} to {@link Calendar#PM}</td>
  *     <td>0 - AM, 1 - PM</td>
  *   </tr>
@@ -86,81 +86,81 @@ import java.util.Map;
  * <caption style="display:none">Calendar type and field values</caption>
  * <thead>
  *   <tr>
- *     <th>Calendar Type</th>
- *     <th>Field</th>
- *     <th>Value</th>
- *     <th>Description</th>
+ *     <th scope="col">Calendar Type</th>
+ *     <th scope="col">Field</th>
+ *     <th scope="col">Value</th>
+ *     <th scope="col">Description</th>
  *   </tr>
  * </thead>
  * <tbody>
  *   <tr>
- *     <td rowspan="2" style="vertical-align:top">{@code "gregory"}</td>
- *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
- *     <td>0</td>
+ *     <th scope="row"rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@code "gregory"}</th>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#ERA}</th>
+ *     <th scope="row" style="font-weight:normal">0</th>
  *     <td>{@link java.util.GregorianCalendar#BC} (BCE)</td>
  *   </tr>
  *   <tr>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>{@link java.util.GregorianCalendar#AD} (CE)</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" style="vertical-align:top">{@code "buddhist"}</td>
- *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
- *     <td>0</td>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@code "buddhist"}</th>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#ERA}</th>
+ *     <th scope="row" style="font-weight:normal">0</th>
  *     <td>BC (BCE)</td>
  *   </tr>
  *   <tr>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>B.E. (Buddhist Era)</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="6" style="vertical-align:top">{@code "japanese"}</td>
- *     <td rowspan="5" style="vertical-align:top">{@link Calendar#ERA}</td>
- *     <td>0</td>
+ *     <th scope="row" rowspan="6" style="font-weight:normal; text-align:left; vertical-align:top">{@code "japanese"}</th>
+ *     <th scope="row" rowspan="5" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#ERA}</th>
+ *     <th scope="row" style="font-weight:normal">0</th>
  *     <td>Seireki (Before Meiji)</td>
  *   </tr>
  *   <tr>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>Meiji</td>
  *   </tr>
  *   <tr>
- *     <td>2</td>
+ *     <th scope="row" style="font-weight:normal">2</th>
  *     <td>Taisho</td>
  *   </tr>
  *   <tr>
- *     <td>3</td>
+ *     <th scope="row" style="font-weight:normal">3</th>
  *     <td>Showa</td>
  *   </tr>
  *   <tr>
- *     <td>4</td>
+ *     <th scope="row" style="font-weight:normal">4</th>
  *     <td >Heisei</td>
  *   </tr>
  *   <tr>
- *     <td>{@link Calendar#YEAR}</td>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#YEAR}</th>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>the first year in each era. It should be returned when a long
  *     style ({@link Calendar#LONG_FORMAT} or {@link Calendar#LONG_STANDALONE}) is
  *     specified. See also the <a href="../../text/SimpleDateFormat.html#year">
  *     Year representation in {@code SimpleDateFormat}</a>.</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" style="vertical-align:top">{@code "roc"}</td>
- *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
- *     <td>0</td>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@code "roc"}</th>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#ERA}</th>
+ *     <th scope="row" style="font-weight:normal">0</th>
  *     <td>Before R.O.C.</td>
  *   </tr>
  *   <tr>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>R.O.C.</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" style="vertical-align:top">{@code "islamic"}</td>
- *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
- *     <td>0</td>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@code "islamic"}</th>
+ *     <th scope="row" rowspan="2" style="font-weight:normal; text-align:left; vertical-align:top">{@link Calendar#ERA}</th>
+ *     <th scope="row" style="font-weight:normal">0</th>
  *     <td>Before AH</td>
  *   </tr>
  *   <tr>
- *     <td>1</td>
+ *     <th scope="row" style="font-weight:normal">1</th>
  *     <td>Anno Hijrah (AH)</td>
  *   </tr>
  * </tbody>

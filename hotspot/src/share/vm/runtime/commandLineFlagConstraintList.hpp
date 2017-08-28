@@ -70,6 +70,7 @@ public:
   ~CommandLineFlagConstraint() {};
   const char* name() const { return _name; }
   ConstraintType type() const { return _validate_type; }
+  virtual Flag::Error apply(bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
   virtual Flag::Error apply_bool(bool value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
   virtual Flag::Error apply_int(int value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
   virtual Flag::Error apply_intx(intx value, bool verbose = true) { ShouldNotReachHere(); return Flag::ERR_OTHER; };
