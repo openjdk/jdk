@@ -90,7 +90,7 @@ public abstract class AssemblerTest extends GraalTest {
             StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).compilationId(compilationId).build();
             CallingConvention cc = backend.newLIRGenerationResult(compilationId, null, null, graph, null).getCallingConvention();
 
-            CompilationResult compResult = new CompilationResult();
+            CompilationResult compResult = new CompilationResult(graph.compilationId());
             byte[] targetCode = test.generateCode(compResult, codeCache.getTarget(), registerConfig, cc);
             compResult.setTargetCode(targetCode, targetCode.length);
             compResult.setTotalFrameSize(0);

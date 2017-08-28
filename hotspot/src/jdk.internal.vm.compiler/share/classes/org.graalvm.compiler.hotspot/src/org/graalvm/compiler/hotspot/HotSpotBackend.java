@@ -64,9 +64,9 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.util.Equivalence;
 import org.graalvm.util.EconomicMap;
 import org.graalvm.util.EconomicSet;
+import org.graalvm.util.Equivalence;
 import org.graalvm.util.MapCursor;
 import org.graalvm.word.Pointer;
 
@@ -256,6 +256,18 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
 
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void sha5ImplCompressStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word bufAddr, Object state);
+
+    /**
+     * @see org.graalvm.compiler.hotspot.meta.HotSpotUnsafeSubstitutions#copyMemory
+     */
+    public static final ForeignCallDescriptor UNSAFE_ARRAYCOPY = new ForeignCallDescriptor("unsafe_arraycopy", void.class, Word.class, Word.class, Word.class);
+
+    public static void unsafeArraycopy(Word srcAddr, Word dstAddr, Word size) {
+        unsafeArraycopyStub(HotSpotBackend.UNSAFE_ARRAYCOPY, srcAddr, dstAddr, size);
+    }
+
+    @NodeIntrinsic(ForeignCallNode.class)
+    private static native void unsafeArraycopyStub(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word srcAddr, Word dstAddr, Word size);
 
     /**
      * @see VMErrorNode
