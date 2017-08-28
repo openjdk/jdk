@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/virtualspace.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
@@ -39,7 +40,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
   _listener(NULL),
-  _commit_map(rs.size() * commit_factor / region_granularity) {
+  _commit_map(rs.size() * commit_factor / region_granularity, mtGC) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
 
@@ -111,7 +112,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     _regions_per_page((page_size * commit_factor) / alloc_granularity), _refcounts() {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
-    _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + align_size_up(rs.size(), page_size)), page_size);
+    _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + align_up(rs.size(), page_size)), page_size);
   }
 
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkGang* pretouch_gang) {

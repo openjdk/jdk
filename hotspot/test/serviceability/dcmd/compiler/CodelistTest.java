@@ -118,9 +118,17 @@ public class CodelistTest {
             if (line.contains("CodelistTest.testcaseMethod")) {
                 String[] parts = line.split(" ");
                 int compileID = Integer.parseInt(parts[0]);
-                int compileLevel = Integer.parseInt(parts[1]);
-                String str = parts[2];
+                Assert.assertTrue(compileID > 0, "CompileID must be positive");
 
+                int compileLevel = Integer.parseInt(parts[1]);
+                Assert.assertTrue(compileLevel >= -1, "CompileLevel must be at least -1 (AOT)");
+                Assert.assertTrue(compileLevel <= 4,  "CompileLevel must be at most 4 (C2)");
+
+                int codeState = Integer.parseInt(parts[2]);
+                Assert.assertTrue(codeState >= 0, "CodeState must be at least 0 (In Use)");
+                Assert.assertTrue(codeState <= 4, "CodeState must be at most 4 (Unloaded)");
+
+                String str = parts[3];
                 for (TestCase testcase : testcases) {
                     if (str.contains(testcase.methodName)) {
                         Assert.assertFalse(testcase.check, "Must not be found or already found.");

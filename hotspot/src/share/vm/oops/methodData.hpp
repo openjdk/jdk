@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/align.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
@@ -2151,6 +2152,10 @@ class MethodData : public Metadata {
   CC_INTERP_ONLY(friend class BytecodeInterpreter;)
 private:
   friend class ProfileData;
+  friend class TypeEntriesAtCall;
+
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to MethodData::metaspace_pointers_do().
 
   // Back pointer to the Method*
   Method* _method;
@@ -2173,7 +2178,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 22 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 23 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values
@@ -2302,6 +2307,7 @@ private:
   };
 
   static bool profile_jsr292(const methodHandle& m, int bci);
+  static bool profile_unsafe(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(const methodHandle& m, int bci);
@@ -2336,7 +2342,7 @@ public:
 
   // My size
   int size_in_bytes() const { return _size; }
-  int size() const    { return align_metadata_size(align_size_up(_size, BytesPerWord)/BytesPerWord); }
+  int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
@@ -2587,6 +2593,9 @@ public:
   static ByteSize parameters_type_data_di_offset() {
     return byte_offset_of(MethodData, _parameters_type_data_di);
   }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return MethodDataType; }
 
   // Deallocation support - no pointer fields to deallocate
   void deallocate_contents(ClassLoaderData* loader_data) {}

@@ -28,10 +28,11 @@ import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER
 
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
@@ -154,8 +155,8 @@ public class AMD64ConvertSnippets implements Snippets {
         private final SnippetInfo d2i;
         private final SnippetInfo d2l;
 
-        public Templates(Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
-            super(providers, snippetReflection, target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, Providers providers, SnippetReflectionProvider snippetReflection, TargetDescription target) {
+            super(options, factories, providers, snippetReflection, target);
 
             f2i = snippet(AMD64ConvertSnippets.class, "f2i");
             f2l = snippet(AMD64ConvertSnippets.class, "f2l");
@@ -188,8 +189,8 @@ public class AMD64ConvertSnippets implements Snippets {
             args.add("input", convert.getValue());
             args.add("result", graph.unique(new AMD64FloatConvertNode(convert.getFloatConvert(), convert.getValue())));
 
-            SnippetTemplate template = template(args);
-            Debug.log("Lowering %s in %s: node=%s, template=%s, arguments=%s", convert.getFloatConvert(), graph, convert, template, args);
+            SnippetTemplate template = template(convert.getDebug(), args);
+            convert.getDebug().log("Lowering %s in %s: node=%s, template=%s, arguments=%s", convert.getFloatConvert(), graph, convert, template, args);
             template.instantiate(providers.getMetaAccess(), convert, DEFAULT_REPLACER, tool, args);
             convert.safeDelete();
         }

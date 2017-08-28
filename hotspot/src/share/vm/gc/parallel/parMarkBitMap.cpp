@@ -23,13 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/parallel/parMarkBitMap.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 bool
@@ -44,7 +45,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t raw_bytes = words * sizeof(idx_t);
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);

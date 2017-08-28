@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/annotations.hpp"
 #include "oops/instanceKlass.hpp"
@@ -33,7 +35,7 @@
 
 // Allocate annotations in metadata area
 Annotations* Annotations::allocate(ClassLoaderData* loader_data, TRAPS) {
-  return new (loader_data, size(), true, MetaspaceObj::AnnotationType, THREAD) Annotations();
+  return new (loader_data, size(), MetaspaceObj::AnnotationsType, THREAD) Annotations();
 }
 
 // helper
@@ -74,6 +76,13 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
   }
 }
 
+void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(Annotations): %p", this);
+  it->push(&_class_annotations);
+  it->push(&_fields_annotations);
+  it->push(&_class_type_annotations);
+  it->push(&_fields_type_annotations); // FIXME: need a test case where _fields_type_annotations != NULL
+}
 
 void Annotations::print_value_on(outputStream* st) const {
   st->print("Anotations(" INTPTR_FORMAT ")", p2i(this));

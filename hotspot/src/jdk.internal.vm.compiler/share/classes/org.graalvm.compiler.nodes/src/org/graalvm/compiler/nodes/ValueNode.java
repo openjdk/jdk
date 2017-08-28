@@ -22,12 +22,15 @@
  */
 package org.graalvm.compiler.nodes;
 
+import java.util.function.Predicate;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodePredicate;
 import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.spi.NodeValueMap;
 
 import jdk.vm.ci.meta.Constant;
@@ -143,6 +146,10 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
         }
     }
 
+    public final boolean isJavaConstant() {
+        return isConstant() && asConstant() instanceof JavaConstant;
+    }
+
     public final JavaConstant asJavaConstant() {
         Constant value = asConstant();
         if (value instanceof JavaConstant) {
@@ -182,4 +189,20 @@ public abstract class ValueNode extends org.graalvm.compiler.graph.Node implemen
         return false;
     }
 
+    @Override
+    protected void replaceAtUsages(Node other, Predicate<Node> filter, Node toBeDeleted) {
+        super.replaceAtUsages(other, filter, toBeDeleted);
+        assert checkReplaceAtUsagesInvariants(other);
+    }
+
+    private boolean checkReplaceAtUsagesInvariants(Node other) {
+        assert other == null || other instanceof ValueNode;
+        if (this.hasUsages() && !this.stamp().isEmpty() && !(other instanceof PhiNode) && other != null) {
+            assert ((ValueNode) other).stamp().getClass() == stamp().getClass() : "stamp have to be of same class";
+            boolean morePrecise = ((ValueNode) other).stamp().join(stamp()).equals(((ValueNode) other).stamp());
+            assert morePrecise : "stamp can only get more precise " + toString(Verbosity.All) + " " +
+                            other.toString(Verbosity.All);
+        }
+        return true;
+    }
 }

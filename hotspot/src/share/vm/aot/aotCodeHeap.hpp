@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,8 @@ typedef struct {
 } AOTHeader;
 
 typedef struct {
-  enum { CONFIG_SIZE = 12 + 7 * 4 };
+  enum { CONFIG_SIZE = 7 * jintSize + 11 };
+  // 7 int values
   int _config_size;
   int _narrowOopShift;
   int _narrowKlassShift;
@@ -102,7 +103,6 @@ typedef struct {
   bool _useCompressedClassPointers;
   bool _compactFields;
   bool _useG1GC;
-  bool _useCMSGC;
   bool _useTLAB;
   bool _useBiasedLocking;
   bool _tieredAOT;
@@ -191,24 +191,20 @@ class AOTCodeHeap : public CodeHeap {
   // Collect stubs info
   int* _stubs_offsets;
 
-  address _low_boundary;
-
   bool _lib_symbols_initialized;
 
   void adjust_boundaries(AOTCompiledMethod* method) {
-    address low = _low_boundary;
-    if (method->code_begin() < low) {
-      low = method->code_begin();
+    char* low = (char*)method->code_begin();
+    if (low < low_boundary()) {
+      _memory.set_low_boundary(low);
+      _memory.set_low(low);
     }
-    address high = high_boundary();
-    if (method->code_end() > high) {
-      high = method->code_end();
+    char* high = (char *)method->code_end();
+    if (high > high_boundary()) {
+      _memory.set_high_boundary(high);
+      _memory.set_high(high);
     }
     assert(_method_count > 0, "methods count should be set already");
-
-    _low_boundary = low;
-    _memory.set_high_boundary((char *)high);
-    _memory.set_high((char *)high);
   }
 
   void register_stubs();
@@ -231,20 +227,6 @@ public:
   AOTCodeHeap(AOTLib* lib);
   virtual ~AOTCodeHeap();
 
-  address low_boundary()  const { return _low_boundary; }
-  address high_boundary() const { return (address)CodeHeap::high(); }
-
-  bool contains(const void* p) const {
-    bool result = (low_boundary() <= p) && (p < high_boundary());
-    assert(!result || (_method_count > 0), "");
-    assert(result == CodeHeap::contains(p), "");
-    return result;
-  }
-
-  bool contains_blob(const CodeBlob* blob) const {
-    return CodeHeap::contains(blob->code_begin());
-  }
-
   AOTCompiledMethod* find_aot(address p) const;
 
   virtual void* find_start(void* p)     const;
@@ -253,7 +235,7 @@ public:
   virtual void* next(void *p) const;
 
   AOTKlassData* find_klass(InstanceKlass* ik);
-  bool load_klass_data(instanceKlassHandle kh, Thread* thread);
+  bool load_klass_data(InstanceKlass* ik, Thread* thread);
   Klass* get_klass_from_got(const char* klass_name, int klass_len, const Method* method);
   void sweep_dependent_methods(AOTKlassData* klass_data);
   bool is_dependent_method(Klass* dependee, AOTCompiledMethod* aot);
@@ -289,13 +271,13 @@ public:
     return NULL;
   }
 
-  static Method* find_method(KlassHandle klass, Thread* thread, const char* method_name);
+  static Method* find_method(Klass* klass, Thread* thread, const char* method_name);
 
   void cleanup_inline_caches();
 
   DEBUG_ONLY( int verify_icholder_relocations(); )
 
-  void flush_evol_dependents_on(instanceKlassHandle dependee);
+  void flush_evol_dependents_on(InstanceKlass* dependee);
 
   void alive_methods_do(void f(CompiledMethod* nm));
 

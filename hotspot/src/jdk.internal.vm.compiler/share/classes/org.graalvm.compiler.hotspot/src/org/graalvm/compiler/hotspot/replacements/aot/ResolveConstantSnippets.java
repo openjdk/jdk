@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probabil
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
 import org.graalvm.compiler.api.replacements.Snippet;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -48,6 +49,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetTemplate;
 import org.graalvm.compiler.replacements.SnippetTemplate.AbstractTemplates;
 import org.graalvm.compiler.replacements.SnippetTemplate.Arguments;
@@ -113,8 +115,8 @@ public class ResolveConstantSnippets implements Snippets {
         private final SnippetInfo initializeKlass = snippet(ResolveConstantSnippets.class, "initializeKlass");
         private final SnippetInfo pureInitializeKlass = snippet(ResolveConstantSnippets.class, "pureInitializeKlass");
 
-        public Templates(HotSpotProviders providers, TargetDescription target) {
-            super(providers, providers.getSnippetReflection(), target);
+        public Templates(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, TargetDescription target) {
+            super(options, factories, providers, providers.getSnippetReflection(), target);
         }
 
         public void lower(ResolveConstantNode resolveConstantNode, LoweringTool tool) {
@@ -147,8 +149,8 @@ public class ResolveConstantSnippets implements Snippets {
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("constant", value);
 
-            SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, tool, args);
+            SnippetTemplate template = template(graph.getDebug(), args);
+            template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
 
             assert resolveConstantNode.hasNoUsages();
             if (!resolveConstantNode.isDeleted()) {
@@ -167,7 +169,7 @@ public class ResolveConstantSnippets implements Snippets {
                 Arguments args = new Arguments(initializeKlass, graph.getGuardsStage(), tool.getLoweringStage());
                 args.add("constant", value);
 
-                SnippetTemplate template = template(args);
+                SnippetTemplate template = template(graph.getDebug(), args);
                 template.instantiate(providers.getMetaAccess(), initializeKlassNode, DEFAULT_REPLACER, args);
                 assert initializeKlassNode.hasNoUsages();
                 if (!initializeKlassNode.isDeleted()) {
@@ -185,8 +187,8 @@ public class ResolveConstantSnippets implements Snippets {
             Arguments args = new Arguments(resolveMethodAndLoadCounters, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("method", method);
             args.add("klassHint", resolveMethodAndLoadCountersNode.getHub());
-            SnippetTemplate template = template(args);
-            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, tool, args);
+            SnippetTemplate template = template(graph.getDebug(), args);
+            template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, args);
 
             assert resolveMethodAndLoadCountersNode.hasNoUsages();
             if (!resolveMethodAndLoadCountersNode.isDeleted()) {

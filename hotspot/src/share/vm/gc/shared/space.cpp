@@ -40,6 +40,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -656,7 +657,7 @@ HeapWord* ContiguousSpace::allocate_aligned(size_t size) {
   if (pointer_delta(end_value, obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_ptr_aligned(obj, SurvivorAlignmentInBytes) && is_aligned(new_top),
+    assert(::is_aligned(obj, SurvivorAlignmentInBytes) && is_aligned(new_top),
       "checking alignment");
     return obj;
   } else {
@@ -689,7 +690,7 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
   size = align_object_size(size);
 
   const size_t array_header_size = typeArrayOopDesc::header_size(T_INT);
-  if (size >= (size_t)align_object_size(array_header_size)) {
+  if (size >= align_object_size(array_header_size)) {
     size_t length = (size - array_header_size) * (HeapWordSize / sizeof(jint));
     // allocate uninitialized int array
     typeArrayOop t = (typeArrayOop) allocate(size);

@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
@@ -38,7 +38,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 /**
  * Absolute value.
  */
-@NodeInfo(cycles = CYCLES_3, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_1)
 public final class AbsNode extends UnaryArithmeticNode<Abs> implements ArithmeticLIRLowerable, NarrowableArithmeticNode {
     public static final NodeClass<AbsNode> TYPE = NodeClass.create(AbsNode.class);
 

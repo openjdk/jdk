@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -307,8 +307,8 @@ void ArchDesc::inspectInstructions() {
     // Find result type for match
     const char *result  = instr->reduce_result();
 
-    if ( instr->is_ideal_branch() && instr->label_position() == -1 ||
-        !instr->is_ideal_branch() && instr->label_position() != -1) {
+    if (( instr->is_ideal_branch() && instr->label_position() == -1) ||
+        (!instr->is_ideal_branch() && instr->label_position() != -1)) {
       syntax_err(instr->_linenum, "%s: Only branches to a label are supported\n", rootOp);
     }
 

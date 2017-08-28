@@ -56,31 +56,31 @@ import java.util.Queue;
  * <caption>Summary of BlockingQueue methods</caption>
  *  <tr>
  *    <td></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Special value</em></td>
- *    <td style="text-align:center"><em>Blocks</em></td>
- *    <td style="text-align:center"><em>Times out</em></td>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Throws exception</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Special value</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Blocks</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Times out</th>
  *  </tr>
  *  <tr>
- *    <td><b>Insert</b></td>
+ *    <th scope="row" style="text-align:left">Insert</th>
  *    <td>{@link #add(Object) add(e)}</td>
  *    <td>{@link #offer(Object) offer(e)}</td>
  *    <td>{@link #put(Object) put(e)}</td>
  *    <td>{@link #offer(Object, long, TimeUnit) offer(e, time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Remove</b></td>
+ *    <th scope="row" style="text-align:left">Remove</th>
  *    <td>{@link #remove() remove()}</td>
  *    <td>{@link #poll() poll()}</td>
  *    <td>{@link #take() take()}</td>
  *    <td>{@link #poll(long, TimeUnit) poll(time, unit)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Examine</b></td>
+ *    <th scope="row" style="text-align:left">Examine</th>
  *    <td>{@link #element() element()}</td>
  *    <td>{@link #peek() peek()}</td>
- *    <td><em>not applicable</em></td>
- *    <td><em>not applicable</em></td>
+ *    <td style="font-style: italic">not applicable</td>
+ *    <td style="font-style: italic">not applicable</td>
  *  </tr>
  * </table>
  *

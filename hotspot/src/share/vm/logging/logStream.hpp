@@ -30,11 +30,34 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/ostream.hpp"
 
-// The base class of an output stream that logs to the logging framework.
-template <class streamClass>
-class LogStreamBase : public outputStream {
-  streamClass     _current_line;
+
+class LogStream : public outputStream {
+  friend class LogStreamTest_TestLineBufferAllocation_test_vm_Test; // see test/native/logging/test_logStream.cpp
+  friend class LogStreamTest_TestLineBufferAllocationCap_test_vm_Test; // see test/native/logging/test_logStream.cpp
+
+  // Helper class, maintains the line buffer. For small line lengths,
+  // we avoid malloc and use a fixed sized member char array. If LogStream
+  // is allocated on the stack, this means small lines are assembled
+  // directly on the stack.
+  class LineBuffer {
+    char _smallbuf[64];
+    char* _buf;
+    size_t _cap;
+    size_t _pos;
+    void try_ensure_cap(size_t cap);
+  public:
+    LineBuffer();
+    ~LineBuffer();
+    const char* buffer() const { return _buf; }
+    void append(const char* s, size_t len);
+    void reset();
+  };
+  LineBuffer  _current_line;
   LogTargetHandle _log_handle;
+
+  // Prevent operator new for LogStream.
+  static void* operator new (size_t);
+  static void* operator new[] (size_t);
 
 public:
   // Constructor to support creation from a LogTarget instance.
@@ -42,7 +65,7 @@ public:
   // LogTarget(Debug, gc) log;
   // LogStreamBase(log) stream;
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStreamBase(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
+  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
       _log_handle(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 
   // Constructor to support creation from typed (likely NULL) pointer. Mostly used by the logging framework.
@@ -51,7 +74,7 @@ public:
   //  or
   // LogStreamBase stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStreamBase(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
+  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
       _log_handle(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 
   // Constructor to support creation from a LogTargetHandle.
@@ -59,59 +82,15 @@ public:
   // LogTarget(Debug, gc) log;
   // LogTargetHandle(log) handle;
   // LogStreamBase stream(handle);
-  LogStreamBase(LogTargetHandle handle) : _log_handle(handle) {}
+  LogStream(LogTargetHandle handle) : _log_handle(handle) {}
 
   // Constructor to support creation from a log level and tagset.
   //
   // LogStreamBase(level, tageset);
-  LogStreamBase(LogLevelType level, LogTagSet* tagset) : _log_handle(level, tagset) {}
+  LogStream(LogLevelType level, LogTagSet* tagset) : _log_handle(level, tagset) {}
 
-  ~LogStreamBase() {
-    guarantee(_current_line.size() == 0, "Buffer not flushed. Missing call to print_cr()?");
-  }
-
-public:
   void write(const char* s, size_t len);
 };
-
-// A stringStream with an embedded ResourceMark.
-class stringStreamWithResourceMark : outputStream {
- private:
-  // The stringStream Resource allocate in the constructor,
-  // so the order of the fields is important.
-  ResourceMark _embedded_resource_mark;
-  stringStream _stream;
-
- public:
-  stringStreamWithResourceMark(size_t initial_bufsize = 256) :
-      _embedded_resource_mark(),
-      _stream(initial_bufsize) {}
-
-  virtual void write(const char* c, size_t len) { _stream.write(c, len); }
-  size_t      size()                            { return _stream.size(); }
-  const char* base()                            { return _stream.base(); }
-  void  reset()                                 { _stream.reset(); }
-  char* as_string()                             { return _stream.as_string(); }
-};
-
-// An output stream that logs to the logging framework.
-//
-// The backing buffer is allocated in Resource memory.
-// The caller is required to have a ResourceMark on the stack.
-typedef LogStreamBase<stringStream> LogStreamNoResourceMark;
-
-// An output stream that logs to the logging framework.
-//
-// The backing buffer is allocated in CHeap memory.
-typedef LogStreamBase<bufferedStream> LogStreamCHeap;
-
-// An output stream that logs to the logging framework, and embeds a ResourceMark.
-//
-// The backing buffer is allocated in Resource memory.
-// The class is intended to be stack allocated.
-// The class provides its own ResourceMark,
-//  so care needs to be taken when nested ResourceMarks are used.
-typedef LogStreamBase<stringStreamWithResourceMark> LogStream;
 
 // Support creation of a LogStream without having to provide a LogTarget pointer.
 #define LogStreamHandle(level, ...) LogStreamTemplate<LogLevel::level, LOG_TAGS(__VA_ARGS__)>

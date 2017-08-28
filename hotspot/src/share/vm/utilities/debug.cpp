@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvm.h"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -51,6 +52,7 @@
 #include "services/heapDumper.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -79,14 +81,6 @@
      configuration error: ASSERT et al. must not be defined in PRODUCT version
 #  endif
 #endif // PRODUCT
-
-FormatBufferResource::FormatBufferResource(const char * format, ...)
-  : FormatBufferBase((char*)resource_allocate_bytes(FormatBufferBase::BufferSize)) {
-  va_list argp;
-  va_start(argp, format);
-  jio_vsnprintf(_buf, FormatBufferBase::BufferSize, format, argp);
-  va_end(argp);
-}
 
 ATTRIBUTE_PRINTF(1, 2)
 void warning(const char* format, ...) {
@@ -185,7 +179,7 @@ bool error_is_suppressed(const char* file_name, int line_no) {
     return true;
   }
 
-  if (!is_error_reported() && !SuppressFatalErrorMessage) {
+  if (!VMError::is_error_reported() && !SuppressFatalErrorMessage) {
     // print a friendly hint:
     fdStream out(defaultStream::output_fd());
     out.print_raw_cr("# To suppress the following error report, specify this argument");
@@ -281,42 +275,6 @@ void report_untested(const char* file, int line, const char* message) {
 #endif // !PRODUCT
 }
 
-void report_out_of_shared_space(SharedSpaceType shared_space) {
-  if (shared_space == SharedOptional) {
-    // The estimated shared_optional_space size is large enough
-    // for all class bytes.  It should not run out of space.
-    ShouldNotReachHere();
-  }
-
-  static const char* name[] = {
-    "shared read only space",
-    "shared read write space",
-    "shared miscellaneous data space",
-    "shared miscellaneous code space"
-  };
-  static const char* flag[] = {
-    "SharedReadOnlySize",
-    "SharedReadWriteSize",
-    "SharedMiscDataSize",
-    "SharedMiscCodeSize"
-  };
-
-   warning("\nThe %s is not large enough\n"
-           "to preload requested classes. Use -XX:%s=<size>\n"
-           "to increase the initial size of %s.\n",
-           name[shared_space], flag[shared_space], name[shared_space]);
-   exit(2);
-}
-
-
-void report_insufficient_metaspace(size_t required_size) {
-  warning("\nThe MaxMetaspaceSize of " SIZE_FORMAT " bytes is not large enough.\n"
-          "Either don't specify the -XX:MaxMetaspaceSize=<size>\n"
-          "or increase the size to at least " SIZE_FORMAT ".\n",
-          MaxMetaspaceSize, required_size);
-  exit(2);
-}
-
 void report_java_out_of_memory(const char* message) {
   static jint out_of_memory_reported = 0;
 
@@ -346,107 +304,6 @@ void report_java_out_of_memory(const char* message) {
     }
   }
 }
-
-static bool error_reported = false;
-
-// call this when the VM is dying--it might loosen some asserts
-void set_error_reported() {
-  error_reported = true;
-}
-
-bool is_error_reported() {
-    return error_reported;
-}
-
-#ifndef PRODUCT
-#include <signal.h>
-
-typedef void (*voidfun_t)();
-// Crash with an authentic sigfpe
-static void crash_with_sigfpe() {
-  // generate a native synchronous SIGFPE where possible;
-  // if that did not cause a signal (e.g. on ppc), just
-  // raise the signal.
-  volatile int x = 0;
-  volatile int y = 1/x;
-#ifndef _WIN32
-  // OSX implements raise(sig) incorrectly so we need to
-  // explicitly target the current thread
-  pthread_kill(pthread_self(), SIGFPE);
-#endif
-} // end: crash_with_sigfpe
-
-// crash with sigsegv at non-null address.
-static void crash_with_segfault() {
-
-  char* const crash_addr = (char*) get_segfault_address();
-  *crash_addr = 'X';
-
-} // end: crash_with_segfault
-
-// returns an address which is guaranteed to generate a SIGSEGV on read,
-// for test purposes, which is not NULL and contains bits in every word
-void* get_segfault_address() {
-  return (void*)
-#ifdef _LP64
-    0xABC0000000000ABCULL;
-#else
-    0x00000ABC;
-#endif
-}
-
-void test_error_handler() {
-  controlled_crash(ErrorHandlerTest);
-}
-
-void controlled_crash(int how) {
-  if (how == 0) return;
-
-  // If asserts are disabled, use the corresponding guarantee instead.
-  NOT_DEBUG(if (how <= 2) how += 2);
-
-  const char* const str = "hello";
-  const size_t      num = (size_t)os::vm_page_size();
-
-  const char* const eol = os::line_separator();
-  const char* const msg = "this message should be truncated during formatting";
-  char * const dataPtr = NULL;  // bad data pointer
-  const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
-
-  // Keep this in sync with test/runtime/ErrorHandling/ErrorHandler.java
-  switch (how) {
-    case  1: vmassert(str == NULL, "expected null");
-    case  2: vmassert(num == 1023 && *str == 'X',
-                      "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  3: guarantee(str == NULL, "expected null");
-    case  4: guarantee(num == 1023 && *str == 'X',
-                       "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  5: fatal("expected null");
-    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                   "%s%s#    %s%s#    %s%s#    %s%s#    %s",
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg);
-    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate");
-    case  9: ShouldNotCallThis();
-    case 10: ShouldNotReachHere();
-    case 11: Unimplemented();
-    // There's no guarantee the bad data pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 12: *dataPtr = '\0'; break;
-    // There's no guarantee the bad function pointer will crash us
-    // so "break" out to the ShouldNotReachHere().
-    case 13: (*funcPtr)(); break;
-    case 14: crash_with_segfault(); break;
-    case 15: crash_with_sigfpe(); break;
-
-    default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
-  }
-  ShouldNotReachHere();
-}
-#endif // !PRODUCT
 
 // ------ helper functions for debugging go here ------------
 
@@ -490,7 +347,7 @@ extern "C" void blob(CodeBlob* cb) {
 extern "C" void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
-  k->vtable()->print();
+  k->vtable().print();
 }
 
 
@@ -601,7 +458,7 @@ extern "C" void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-  pd_ps(f);
+    f.pd_ps();
 #endif // PRODUCT
   }
 
@@ -765,57 +622,13 @@ void help() {
   tty->print_cr("  ndebug()      - undo debug");
 }
 
-#endif // !PRODUCT
-
-void print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
-
-  // see if it's a valid frame
-  if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, A=aot compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-
-    int count = 0;
-    while (count++ < StackPrintLimit) {
-      fr.print_on_error(st, buf, buf_size);
-      st->cr();
-      // Compiled code may use EBP register on x86 so it looks like
-      // non-walkable C frame. Use frame.sender() for java frames.
-      if (t && t->is_Java_thread()) {
-        // Catch very first native frame by using stack address.
-        // For JavaThread stack_base and stack_size should be set.
-        if (!t->on_local_stack((address)(fr.real_fp() + 1))) {
-          break;
-        }
-        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map((JavaThread*)t, false); // No update
-          fr = fr.sender(&map);
-        } else {
-          fr = os::get_sender_for_C_frame(&fr);
-        }
-      } else {
-        // is_first_C_frame() does only simple checks for frame pointer,
-        // it will pass if java compiled code has a pointer in EBP.
-        if (os::is_first_C_frame(&fr)) break;
-        fr = os::get_sender_for_C_frame(&fr);
-      }
-    }
-
-    if (count > StackPrintLimit) {
-      st->print_cr("...<more frames>...");
-    }
-
-    st->cr();
-  }
-}
-
-#ifndef PRODUCT
-
 extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
   Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  print_native_stack(tty, fr, t, buf, sizeof(buf));
+  VMError::print_native_stack(tty, fr, t, buf, sizeof(buf));
 }
 
 #endif // !PRODUCT

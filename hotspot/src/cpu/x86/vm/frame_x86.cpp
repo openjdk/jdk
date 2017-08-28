@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -680,6 +680,8 @@ intptr_t* frame::real_fp() const {
 frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
+
+void frame::pd_ps() {}
 #endif
 
 void JavaFrameAnchor::make_walkable(JavaThread* thread) {

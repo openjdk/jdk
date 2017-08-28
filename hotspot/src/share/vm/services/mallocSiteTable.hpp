@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,16 @@
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
 class MallocSite : public AllocationSite<MemoryCounter> {
+ private:
+  MEMFLAGS _flags;
+
  public:
   MallocSite() :
-    AllocationSite<MemoryCounter>(NativeCallStack::EMPTY_STACK) { }
+    AllocationSite<MemoryCounter>(NativeCallStack::EMPTY_STACK), _flags(mtNone) {}
 
-  MallocSite(const NativeCallStack& stack) :
-    AllocationSite<MemoryCounter>(stack) { }
+  MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
+    AllocationSite<MemoryCounter>(stack), _flags(flags) {}
+
 
   void allocate(size_t size)      { data()->allocate(size);   }
   void deallocate(size_t size)    { data()->deallocate(size); }
@@ -51,6 +55,7 @@ class MallocSite : public AllocationSite<MemoryCounter> {
   size_t size()  const { return peek()->size(); }
   // The number of calls were made
   size_t count() const { return peek()->count(); }
+  MEMFLAGS flags() const  { return (MEMFLAGS)_flags; }
 };
 
 // Malloc site hashtable entry
@@ -62,8 +67,10 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  public:
   MallocSiteHashtableEntry() : _next(NULL) { }
 
-  MallocSiteHashtableEntry(NativeCallStack stack):
-    _malloc_site(stack), _next(NULL) { }
+  MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
+    _malloc_site(stack, flags), _next(NULL) {
+    assert(flags != mtNone, "Expect a real memory type");
+  }
 
   inline const MallocSiteHashtableEntry* next() const {
     return _next;
@@ -198,11 +205,11 @@ class MallocSiteTable : AllStatic {
   //  1. out of memory
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-    size_t* bucket_idx, size_t* pos_idx) {
+    size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) {
     AccessLock locker(&_access_count);
     if (locker.sharedLock()) {
       NOT_PRODUCT(_peak_count = MAX2(_peak_count, _access_count);)
-      MallocSite* site = lookup_or_add(stack, bucket_idx, pos_idx);
+      MallocSite* site = lookup_or_add(stack, bucket_idx, pos_idx, flags);
       if (site != NULL) site->allocate(size);
       return site != NULL;
     }
@@ -228,13 +235,13 @@ class MallocSiteTable : AllStatic {
   static bool walk_malloc_site(MallocSiteWalker* walker);
 
  private:
-  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key);
+  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
   static void reset();
 
   // Delete a bucket linked list
   static void delete_linked_list(MallocSiteHashtableEntry* head);
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, size_t* bucket_idx, size_t* pos_idx);
+  static MallocSite* lookup_or_add(const NativeCallStack& key, size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags);
   static MallocSite* malloc_site(size_t bucket_idx, size_t pos_idx);
   static bool walk(MallocSiteWalker* walker);
 

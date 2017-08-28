@@ -33,6 +33,7 @@ import org.graalvm.compiler.hotspot.nodes.ArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.G1PostWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.ObjectWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
+import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
@@ -40,7 +41,7 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.extended.ArrayRangeWriteNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
-import org.graalvm.compiler.nodes.java.LoweredCompareAndSwapNode;
+import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
@@ -48,6 +49,7 @@ import org.graalvm.compiler.nodes.memory.ReadNode;
 import org.graalvm.compiler.nodes.memory.WriteNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
 import org.graalvm.compiler.nodes.type.StampTool;
+import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 
 /**
@@ -73,6 +75,12 @@ public class WriteBarrierVerificationPhase extends Phase {
     private void processWrites(StructuredGraph graph) {
         for (Node node : graph.getNodes()) {
             if (isObjectWrite(node) || isObjectArrayRangeWrite(node)) {
+                if (node instanceof WriteNode) {
+                    WriteNode writeNode = (WriteNode) node;
+                    if (StampTool.isPointerAlwaysNull(writeNode.value())) {
+                        continue;
+                    }
+                }
                 validateWrite(node);
             }
         }
@@ -92,7 +100,7 @@ public class WriteBarrierVerificationPhase extends Phase {
         while (iterator.hasNext()) {
             Node currentNode = iterator.next();
             if (isSafepoint(currentNode)) {
-                throw new AssertionError("Write barrier must be present " + write);
+                throw new AssertionError("Write barrier must be present " + write.toString(Verbosity.All) + " / " + write.inputs());
             }
             if (useG1GC()) {
                 if (!(currentNode instanceof G1PostWriteBarrier) || (!validateBarrier((FixedAccessNode) write, (ObjectWriteBarrier) currentNode))) {
@@ -114,7 +122,13 @@ public class WriteBarrierVerificationPhase extends Phase {
     private boolean hasAttachedBarrier(FixedWithNextNode node) {
         final Node next = node.next();
         final Node previous = node.predecessor();
-        final boolean validatePreBarrier = useG1GC() && (isObjectWrite(node) || !((ArrayRangeWriteNode) node).isInitialization());
+        boolean validatePreBarrier = useG1GC() && (isObjectWrite(node) || !((ArrayRangeWriteNode) node).isInitialization());
+        if (node instanceof WriteNode) {
+            WriteNode writeNode = (WriteNode) node;
+            if (writeNode.getLocationIdentity().isInit()) {
+                validatePreBarrier = false;
+            }
+        }
         if (isObjectWrite(node)) {
             return (isObjectBarrier(node, next) || StampTool.isPointerAlwaysNull(getValueWritten(node))) && (!validatePreBarrier || isObjectBarrier(node, previous));
         } else if (isObjectArrayRangeWrite(node)) {
@@ -150,6 +164,10 @@ public class WriteBarrierVerificationPhase extends Phase {
     }
 
     private static boolean isSafepoint(Node node) {
+        if (node instanceof FixedAccessNode) {
+            // Implicit null checks on reads or writes do not count.
+            return false;
+        }
         /*
          * LoopBegin nodes are also treated as safepoints since a bottom-up analysis is performed
          * and loop safepoints are placed before LoopEnd nodes. Possible elimination of write
@@ -161,8 +179,8 @@ public class WriteBarrierVerificationPhase extends Phase {
     private static ValueNode getValueWritten(FixedWithNextNode write) {
         if (write instanceof WriteNode) {
             return ((WriteNode) write).value();
-        } else if (write instanceof LoweredCompareAndSwapNode) {
-            return ((LoweredCompareAndSwapNode) write).getNewValue();
+        } else if (write instanceof LogicCompareAndSwapNode) {
+            return ((LogicCompareAndSwapNode) write).getNewValue();
         } else if (write instanceof LoweredAtomicReadAndWriteNode) {
             return ((LoweredAtomicReadAndWriteNode) write).getNewValue();
         } else {
@@ -171,10 +189,10 @@ public class WriteBarrierVerificationPhase extends Phase {
     }
 
     private static boolean validateBarrier(FixedAccessNode write, ObjectWriteBarrier barrier) {
-        assert write instanceof WriteNode || write instanceof LoweredCompareAndSwapNode || write instanceof LoweredAtomicReadAndWriteNode : "Node must be of type requiring a write barrier " + write;
+        assert write instanceof WriteNode || write instanceof LogicCompareAndSwapNode || write instanceof LoweredAtomicReadAndWriteNode : "Node must be of type requiring a write barrier " + write;
         if (!barrier.usePrecise()) {
             if (barrier.getAddress() instanceof OffsetAddressNode && write.getAddress() instanceof OffsetAddressNode) {
-                return ((OffsetAddressNode) barrier.getAddress()).getBase() == ((OffsetAddressNode) write.getAddress()).getBase();
+                return GraphUtil.unproxify(((OffsetAddressNode) barrier.getAddress()).getBase()) == GraphUtil.unproxify(((OffsetAddressNode) write.getAddress()).getBase());
             }
         }
         return barrier.getAddress() == write.getAddress();

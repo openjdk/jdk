@@ -127,19 +127,9 @@ public final class Regex implements RegexState {
         this.caseFoldFlag = caseFoldFlag;
         this.warnings = warnings;
 
-        this.analyser = new Analyser(new ScanEnvironment(this, syntax), chars, p, end);
-        this.analyser.compile();
+        new Analyser(new ScanEnvironment(this, syntax), chars, p, end).compile();
 
         this.warnings = null;
-    }
-
-    public synchronized MatcherFactory compile() {
-        if (factory == null && analyser != null) {
-            new ArrayCompiler(analyser).compile();
-            analyser = null; // only do this once
-        }
-        assert factory != null;
-        return factory;
     }
 
     public Matcher matcher(final char[] chars) {
@@ -147,11 +137,7 @@ public final class Regex implements RegexState {
     }
 
     public Matcher matcher(final char[] chars, final int p, final int end) {
-        MatcherFactory matcherFactory = factory;
-        if (matcherFactory == null) {
-            matcherFactory = compile();
-        }
-        return matcherFactory.create(this, chars, p, end);
+        return factory.create(this, chars, p, end);
     }
 
     public WarnCallback getWarnings() {
@@ -309,7 +295,6 @@ public final class Regex implements RegexState {
     }
 
     public String dumpByteCode() {
-        compile();
         return new ByteCodePrinter(this).byteCodeListToString();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@
 #include "runtime/java.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
@@ -257,10 +258,10 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
 
   if (eden_size < minimum_eden_size) {
     // May happen due to 64Kb rounding, if so adjust eden size back up
-    minimum_eden_size = align_size_up(minimum_eden_size, alignment);
+    minimum_eden_size = align_up(minimum_eden_size, alignment);
     uintx maximum_survivor_size = (size - minimum_eden_size) / 2;
     uintx unaligned_survivor_size =
-      align_size_down(maximum_survivor_size, alignment);
+      align_down(maximum_survivor_size, alignment);
     survivor_size = MAX2(unaligned_survivor_size, alignment);
     eden_size = size - (2*survivor_size);
     assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
@@ -273,9 +274,9 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   char *to_end     = to_start   + survivor_size;
 
   assert(to_end == _virtual_space.high(), "just checking");
-  assert(Space::is_aligned((HeapWord*)eden_start), "checking alignment");
-  assert(Space::is_aligned((HeapWord*)from_start), "checking alignment");
-  assert(Space::is_aligned((HeapWord*)to_start),   "checking alignment");
+  assert(Space::is_aligned(eden_start), "checking alignment");
+  assert(Space::is_aligned(from_start), "checking alignment");
+  assert(Space::is_aligned(to_start),   "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
@@ -386,10 +387,10 @@ size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
       if (new_size_candidate <= max_uintx - thread_increase_size) {
         new_size_candidate += thread_increase_size;
 
-        // 3. Check an overflow at 'align_size_up'.
+        // 3. Check an overflow at 'align_up'.
         size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
         if (new_size_candidate <= aligned_max) {
-          desired_new_size = align_size_up(new_size_candidate, alignment);
+          desired_new_size = align_up(new_size_candidate, alignment);
         }
       }
     }
@@ -660,11 +661,13 @@ void DefNewGeneration::collect(bool   full,
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
   rp->setup_policy(clear_all_soft_refs);
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_q());
   const ReferenceProcessorStats& stats =
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
-                                    NULL, _gc_timer);
+                                    NULL, &pt);
   gc_tracer.report_gc_reference_stats(stats);
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
+  pt.print_all_references();
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.

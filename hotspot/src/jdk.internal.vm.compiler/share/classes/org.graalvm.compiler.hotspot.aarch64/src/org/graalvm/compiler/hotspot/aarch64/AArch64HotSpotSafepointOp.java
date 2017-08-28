@@ -25,7 +25,7 @@ package org.graalvm.compiler.hotspot.aarch64;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -77,18 +77,18 @@ public class AArch64HotSpotSafepointOp extends AArch64LIRInstruction {
     }
 
     public static void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm, GraalHotSpotVMConfig config, boolean onReturn, Register scratch, LIRFrameState state) {
-        int pos = masm.position();
         if (isPollingPageFar(config)) {
             crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
             masm.movNativeAddress(scratch, config.safepointPollingAddress);
+            crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_FAR : config.MARKID_POLL_FAR);
             if (state != null) {
-                crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);
+                crb.recordInfopoint(masm.position(), state, InfopointReason.SAFEPOINT);
             }
             masm.ldr(32, zr, AArch64Address.createBaseRegisterOnlyAddress(scratch));
         } else {
             crb.recordMark(onReturn ? config.MARKID_POLL_RETURN_NEAR : config.MARKID_POLL_NEAR);
             if (state != null) {
-                crb.recordInfopoint(pos, state, InfopointReason.SAFEPOINT);
+                crb.recordInfopoint(masm.position(), state, InfopointReason.SAFEPOINT);
             }
             masm.ldr(32, zr, AArch64Address.createPcLiteralAddress(0));
         }

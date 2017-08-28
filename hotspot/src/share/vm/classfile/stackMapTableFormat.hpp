@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ class verification_type_info {
     return ((address)this >= start &&
             (address)this < end &&
             (bci_addr() + sizeof(u2) <= end ||
-                !is_object() && !is_uninitialized()));
+             (!is_object() && !is_uninitialized())));
   }
 
   void print_on(outputStream* st) {

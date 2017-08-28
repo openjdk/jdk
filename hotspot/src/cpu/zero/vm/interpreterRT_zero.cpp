@@ -35,6 +35,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/signature.hpp"
 #include "stack_zero.inline.hpp"
+#include "utilities/align.hpp"
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::pass_int() {
   push(T_INT);
@@ -148,7 +149,7 @@ IRT_ENTRY(address,
   ZeroStack *stack = thread->zero_stack();
 
   int required_words =
-    (align_size_up(sizeof(ffi_cif), wordSize) >> LogBytesPerWord) +
+    (align_up(sizeof(ffi_cif), wordSize) >> LogBytesPerWord) +
     (method->is_static() ? 2 : 1) + method->size_of_parameters() + 1;
 
   stack->overflow_check(required_words, CHECK_NULL);

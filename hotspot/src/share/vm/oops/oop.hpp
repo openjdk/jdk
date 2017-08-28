@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,6 +204,9 @@ class oopDesc {
   inline Metadata* metadata_field(int offset) const;
   inline void metadata_field_put(int offset, Metadata* value);
 
+  inline Metadata* metadata_field_acquire(int offset) const;
+  inline void release_metadata_field_put(int offset, Metadata* value);
+
   inline jbyte byte_field(int offset) const;
   inline void byte_field_put(int offset, jbyte contents);
 
@@ -325,10 +328,6 @@ class oopDesc {
 
   // Garbage Collection support
 
-  // Mark Sweep
-  // Adjust all pointers in this object to point at it's forwarded location and
-  // return the size of this oop. This is used by the MarkSweep collector.
-  inline int  ms_adjust_pointers();
 #if INCLUDE_ALL_GCS
   // Parallel Compact
   inline void pc_follow_contents(ParCompactionManager* cm);
@@ -390,6 +389,8 @@ class oopDesc {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
   }
+
+  static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #endif // SHARE_VM_OOPS_OOP_HPP

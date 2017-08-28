@@ -24,318 +24,362 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.nio.file.StandardCopyOption;
+import java.security.Security;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.stream.Stream;
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.module.ModuleDescriptor;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.test.lib.compiler.CompilerUtils;
-import org.testng.annotations.BeforeTest;
+import java.lang.module.ModuleDescriptor.Builder;
+import jdk.internal.module.ModuleInfoWriter;
+import jdk.test.lib.process.ProcessTools;
 
-/**
+
+/*
  * @test
- * @bug 8130360
- * @library /lib/testlibrary
- * @library /java/security/modules
- * @library /test/lib
+ * @bug 8130360 8183310
+ * @summary Test security provider in different combination of modular option
+ *          defined with(out) service description.
+ * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.module
- * @build jdk.test.lib.compiler.CompilerUtils JarUtils
- * @summary Test custom security provider module with all possible modular
- *          condition. The test includes different combination of security
- *          client/provider modules interaction with or without service
- *          description.
- * @run testng SecurityProviderModularTest
+ * @build JarUtils TestProvider TestClient
+ * @run main SecurityProviderModularTest CL true
+ * @run main SecurityProviderModularTest CL false
+ * @run main SecurityProviderModularTest SL true
+ * @run main SecurityProviderModularTest SL false
+ * @run main SecurityProviderModularTest SPN true
+ * @run main SecurityProviderModularTest SPN false
+ * @run main SecurityProviderModularTest SPT true
+ * @run main SecurityProviderModularTest SPT false
  */
-public class SecurityProviderModularTest extends ModularTest {
+public class SecurityProviderModularTest {
 
-    private static final Path S_SRC = SRC.resolve("TestSecurityProvider.java");
-    private static final String S_PKG = "provider";
-    private static final String S_JAR_NAME = S_PKG + JAR_EXTN;
-    private static final String S_WITH_DESCR_JAR_NAME = S_PKG + DESCRIPTOR
-            + JAR_EXTN;
-    private static final String MS_JAR_NAME = MODULAR + S_PKG + JAR_EXTN;
-    private static final String MS_WITH_DESCR_JAR_NAME = MODULAR + S_PKG
-            + DESCRIPTOR + JAR_EXTN;
-
-    private static final Path C_SRC = SRC.resolve(
-            "TestSecurityProviderClient.java");
-    private static final String C_PKG = "client";
-    private static final String C_JAR_NAME = C_PKG + JAR_EXTN;
-    private static final String MCN_JAR_NAME = MODULAR + C_PKG + "N" + JAR_EXTN;
-    private static final String MC_JAR_NAME = MODULAR + C_PKG + JAR_EXTN;
-
-    private static final Path BUILD_DIR = Paths.get(".").resolve("build");
-    private static final Path COMPILE_DIR = BUILD_DIR.resolve("bin");
-    private static final Path S_BUILD_DIR = COMPILE_DIR.resolve(S_PKG);
-    private static final Path S_WITH_META_DESCR_BUILD_DIR = COMPILE_DIR.resolve(
-            S_PKG + DESCRIPTOR);
-    private static final Path C_BLD_DIR = COMPILE_DIR.resolve(C_PKG);
-    private static final Path M_BASE_PATH = BUILD_DIR.resolve("mbase");
-    private static final Path ARTIFACTS_DIR = BUILD_DIR.resolve("artifacts");
-
-    private static final Path S_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(S_PKG);
-    private static final Path S_JAR = S_ARTIFACTS_DIR.resolve(S_JAR_NAME);
-    private static final Path S_WITH_DESCRIPTOR_JAR = S_ARTIFACTS_DIR.resolve(
-            S_WITH_DESCR_JAR_NAME);
-    private static final Path MS_JAR = S_ARTIFACTS_DIR.resolve(
-            MS_JAR_NAME);
-    private static final Path MS_WITH_DESCR_JAR = S_ARTIFACTS_DIR.resolve(
-            MS_WITH_DESCR_JAR_NAME);
-
-    private static final Path C_ARTIFACTS_DIR = ARTIFACTS_DIR.resolve(C_PKG);
-    private static final Path C_JAR = C_ARTIFACTS_DIR.resolve(C_JAR_NAME);
-    private static final Path MC_JAR = C_ARTIFACTS_DIR.resolve(MC_JAR_NAME);
-    private static final Path MCN_JAR = C_ARTIFACTS_DIR.resolve(MCN_JAR_NAME);
-
-    private static final String MAIN = C_PKG + ".TestSecurityProviderClient";
-    private static final String S_INTERFACE = "java.security.Provider";
-    private static final String S_IMPL = S_PKG + ".TestSecurityProvider";
-    private static final List<String> M_REQUIRED = Arrays.asList("java.base");
-    private static final Path META_DESCR_PATH = Paths.get("META-INF")
-            .resolve("services").resolve(S_INTERFACE);
-    private static final Path S_META_DESCR_FPATH = S_WITH_META_DESCR_BUILD_DIR
-            .resolve(META_DESCR_PATH);
-
-    private static final boolean WITH_S_DESCR = true;
-    private static final boolean WITHOUT_S_DESCR = false;
-    private static final String PROVIDER_NOT_FOUND_MSG = "Unable to find Test"
-            + " Security Provider";
-    private static final String CAN_NOT_ACCESS_MSG = "cannot access class";
-    private static final String NO_FAILURE = null;
-    private static final String SERVICE_LOADER = "SERVICE_LOADER";
-    private static final String CLASS_LOADER = "CLASS_LOADER";
-    private static final String SECURITY_PROP = "SECURITY_PROP";
-    private static final List<String> MECHANISMS = Arrays.asList(SERVICE_LOADER,
-            CLASS_LOADER, SECURITY_PROP);
-    private static final Path SECURE_PROP_EXTN = Paths.get("./java.secure.ext");
+    private static final Path TEST_CLASSES
+            = Paths.get(System.getProperty("test.classes"));
+    private static final Path ARTIFACT_DIR = Paths.get("jars");
+    private static final Path SEC_FILE = Paths.get("java.extn.security");
+    private static final String PS = File.pathSeparator;
+    private static final String P_TYPE = "p.TestProvider";
+    private static final String C_TYPE = "c.TestClient";
 
     /**
-     * Generates Test specific input parameters.
+     * Here is the naming convention followed.
+     * Test runtime arguments,
+     * CL       - Provider class loaded through ClassLoader
+     * SL       - Provider class to be discovered by ServiceLoader
+     * SPN      - Provider name defined through "java.extn.security" file which
+     *            referred through system property "java.security.properties".
+     * SPT      - Provider type defined through "java.extn.security" file which
+     *            referred through system property "java.security.properties".
+     *
+     * For each jar file name,
+     * p.jar    - Unnamed provider jar.
+     * pd.jar   - Unnamed provider jar with META-INF provider descriptor.
+     * mp.jar   - Modular provider jar.
+     * mpd.jar  - Modular provider jar with META-INF provider descriptor.
+     * msp.jar  - Modular provider jar provides service through module-info.java
+     * mspd.jar - Modular provider jar with META-INF provider descriptor and
+     *            provides service through module-info.java.
+     * c.jar    - Unnamed client jar.
+     * mc.jar   - Modular client jar.
+     * mcs.jar  - Modular client jar uses service through module-info.java.
+     * amc.jar  - Modular client used for automatic provider jar.
+     * amcs.jar - Modular client used for automatic provider jar uses service
+     *            through module-info.java.
      */
-    @Override
-    public Object[][] getTestInput() {
+    private static final Path P_JAR = artifact("p.jar");
+    private static final Path PD_JAR = artifact("pd.jar");
+    private static final Path MP_JAR = artifact("mp.jar");
+    private static final Path MPD_JAR = artifact("mpd.jar");
+    private static final Path MSP_JAR = artifact("msp.jar");
+    private static final Path MSPD_JAR = artifact("mspd.jar");
+    private static final Path C_JAR = artifact("c.jar");
+    private static final Path MC_JAR = artifact("mc.jar");
+    private static final Path MCS_JAR = artifact("mcs.jar");
+    private static final Path AMC_JAR = artifact("amc.jar");
+    private static final Path AMCS_JAR = artifact("amcs.jar");
+    private static final Map<String, String> MSG_MAP = new HashMap<>();
 
-        List<List<Object>> params = new ArrayList<>();
-        MECHANISMS.stream().forEach((mechanism) -> {
-            boolean useCLoader = CLASS_LOADER.equals(mechanism);
-            boolean useSLoader = SERVICE_LOADER.equals(mechanism);
-            String[] args = new String[]{mechanism};
-            // PARAMETER ORDERS -
-            // Client Module Type, Service Module Type,
-            // If Service META Descriptor Required,
-            // Expected Failure message, mechanism used to find the provider
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.EXPLICIT,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.EXPLICIT,
-                    WITHOUT_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.AUTO,
-                    WITH_S_DESCR, ((useCLoader) ? CAN_NOT_ACCESS_MSG
-                            : NO_FAILURE), args));
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.AUTO,
-                    WITHOUT_S_DESCR, ((useCLoader) ? CAN_NOT_ACCESS_MSG
-                            : PROVIDER_NOT_FOUND_MSG), args));
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.UNNAMED,
-                    WITH_S_DESCR, ((useCLoader) ? CAN_NOT_ACCESS_MSG
-                            : NO_FAILURE), args));
-            params.add(Arrays.asList(MODULE_TYPE.EXPLICIT, MODULE_TYPE.UNNAMED,
-                    WITHOUT_S_DESCR, ((useCLoader) ? CAN_NOT_ACCESS_MSG
-                            : ((useSLoader) ? PROVIDER_NOT_FOUND_MSG
-                                    : NO_FAILURE)), args));
+    static {
+        /*
+         * This mapping help process finding expected message based
+         * on the key passed as argument while executing java command.
+         */
+        MSG_MAP.put("NoAccess", "cannot access class p.TestProvider");
+        MSG_MAP.put("Success", "Client: found provider TestProvider");
+        MSG_MAP.put("NoProvider", "Provider TestProvider not found");
+    }
 
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.EXPLICIT,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.EXPLICIT,
-                    WITHOUT_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.AUTO,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.AUTO,
-                    WITHOUT_S_DESCR,
-                    (useCLoader) ? NO_FAILURE : PROVIDER_NOT_FOUND_MSG, args));
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.UNNAMED,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.AUTO, MODULE_TYPE.UNNAMED,
-                    WITHOUT_S_DESCR, ((useSLoader) ? PROVIDER_NOT_FOUND_MSG
-                            : NO_FAILURE), args));
+    private final String addUNArg;
+    private final String addNMArg;
+    private final String cArg;
+    private final String unnP;
+    private final String modP;
+    private final String unnC;
+    private final String modC;
+    private final String autoMC;
+    private final String expModRes;
+    private final String expAModRes;
+    // Common set of VM arguments used in all test cases
+    private final List<String> commonArgs;
 
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.EXPLICIT,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.EXPLICIT,
-                    WITHOUT_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.AUTO,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.AUTO,
-                    WITHOUT_S_DESCR,
-                    (useCLoader) ? NO_FAILURE : PROVIDER_NOT_FOUND_MSG, args));
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.UNNAMED,
-                    WITH_S_DESCR, NO_FAILURE, args));
-            params.add(Arrays.asList(MODULE_TYPE.UNNAMED, MODULE_TYPE.UNNAMED,
-                    WITHOUT_S_DESCR, ((useSLoader) ? PROVIDER_NOT_FOUND_MSG
-                            : NO_FAILURE), args));
-        });
-        return params.stream().map(p -> p.toArray()).toArray(Object[][]::new);
+    public SecurityProviderModularTest(String use, boolean metaDesc) {
+
+        List<String> argList = new LinkedList<>();
+        argList.add("-Duser.language=en");
+        argList.add("-Duser.region=US");
+        final boolean useSL = "SL".equals(use) || "SPN".equals(use);
+        final boolean useCL = "CL".equals(use);
+        final boolean useSPT = "SPT".equals(use);
+        final boolean useSP = use.startsWith("SP");
+        /* Use Security property file when the provider expected to
+         * loaded through Security property file. */
+        if (useSP) {
+            /* Create a java.security file to specify the new provider.
+             * java.security file extension can be provided using
+             * "-Djava.security.properties" VM argument at runtime.*/
+            createJavaSecurityFileExtn("SPN".equals(use));
+            argList.add("-Djava.security.properties=" + toAbsPath(SEC_FILE));
+        }
+        commonArgs = Collections.unmodifiableList(argList);
+        cArg = (useCL) ? P_TYPE : "TestProvider";
+        addUNArg = (useSL) ? "" : ("--add-modules="
+                + ((metaDesc) ? "pd" : "p"));
+        addNMArg = (useSL) ? "" : "--add-modules=mp";
+
+        // Based on Testcase, select unnamed/modular jar files to use.
+        unnP = toAbsPath((metaDesc) ? PD_JAR : P_JAR);
+        modP = toAbsPath(useSL ? (metaDesc ? MSPD_JAR : MSP_JAR)
+                : (metaDesc ? MPD_JAR : MP_JAR));
+        unnC = toAbsPath(C_JAR);
+        modC = toAbsPath(useSL ? MCS_JAR : MC_JAR);
+        autoMC = toAbsPath(useSL ? AMCS_JAR : AMC_JAR);
+
+        expModRes = "Success";
+        expAModRes = (useSPT | useCL) ? "Success"
+                : (metaDesc) ? "Success" : "NoProvider";
+        String loadByMsg = useSP ? "SecurityPropertyFile"
+                : ((useCL) ? "ClassLoader" : "ServiceLoader");
+        System.out.printf("%n*** Providers loaded through %s and includes"
+                + " META Descriptor: %s ***%n%n", loadByMsg, metaDesc);
+    }
+
+    /*
+     * Test cases are based on the following logic,
+     * for (ProviderLoadedThrough : {"ServiceLoader", "ClassLoader",
+     *             "SecurityPropertyFile"}) {
+     *     for (definedWith : {"METAINFService", "WithoutMETAINFService"}) {
+     *         for (clientType : {"NAMED", "AUTOMATIC", "UNNAMED"}) {
+     *             for (providerType : {"NAMED", "AUTOMATIC", "UNNAMED"}) {
+     *                 Create and run java command for each possible case
+     *             }
+     *         }
+     *     }
+     * }
+     */
+    public static void main(String[] args) throws Exception {
+
+        // Generates unnamed and modular jars.
+        setUp();
+        boolean metaDesc = Boolean.valueOf(args[1]);
+        SecurityProviderModularTest test
+                = new SecurityProviderModularTest(args[0], metaDesc);
+        test.process(args[0]);
+    }
+
+    private void process(String use) throws Exception {
+
+        // Case: NAMED-NAMED, NAMED-AUTOMATIC, NAMED-UNNAMED
+        System.out.printf("Case: Modular Client and Modular Provider");
+        execute(String.format("--module-path %s%s%s -m mc/%s %s %s",
+                modC, PS, modP, C_TYPE, use, cArg), expModRes);
+        System.out.printf("Case: Modular Client and automatic Provider");
+        execute(String.format("--module-path %s%s%s %s -m mc/%s %s %s", autoMC,
+                PS, unnP, addUNArg, C_TYPE, use, cArg), expAModRes);
+        System.out.printf("Case: Modular Client and unnamed Provider");
+        execute(String.format("--module-path %s -cp %s -m mc/%s %s %s", autoMC,
+                unnP, C_TYPE, use, cArg), expAModRes);
+
+        // Case: AUTOMATIC-NAMED, AUTOMATIC-AUTOMATIC, AUTOMATIC-UNNAMED
+        System.out.printf("Case: Automatic Client and modular Provider");
+        execute(String.format("--module-path %s%s%s %s -m c/%s %s %s", unnC,
+                PS, modP, addNMArg, C_TYPE, use, cArg), expModRes);
+        System.out.printf("Case: Automatic Client and automatic Provider");
+        execute(String.format("--module-path %s%s%s %s -m c/%s %s %s", unnC,
+                PS, unnP, addUNArg, C_TYPE, use, cArg), expAModRes);
+        System.out.printf("Case: Automatic Client and unnamed Provider");
+        execute(String.format("--module-path %s -cp %s -m c/%s %s %s", unnC,
+                unnP, C_TYPE, use, cArg), expAModRes);
+
+        // Case: UNNAMED-NAMED, UNNAMED-AUTOMATIC, UNNAMED-UNNAMED
+        System.out.printf("Case: Unnamed Client and modular Provider");
+        execute(String.format("-cp %s --module-path %s %s %s %s %s", unnC,
+                modP, addNMArg, C_TYPE, use, cArg), expModRes);
+        System.out.printf("Case: Unnamed Client and automatic Provider");
+        execute(String.format("-cp %s --module-path %s %s %s %s %s", unnC,
+                unnP, addUNArg, C_TYPE, use, cArg), expAModRes);
+        System.out.printf("Case: Unnamed Client and unnamed Provider");
+        execute(String.format("-cp %s%s%s %s %s %s", unnC, PS, unnP, C_TYPE,
+                use, cArg), expAModRes);
+
+        // Case: unnamed jars in --module-path and modular jars in -cp.
+        System.out.printf(
+                "Case: Unnamed Client and Unnamed Provider in modulepath");
+        execute(String.format("--module-path %s%s%s %s -m c/%s %s %s", unnC,
+                PS, unnP, addUNArg, C_TYPE, use, cArg), expAModRes);
+        System.out.printf(
+                "Case: Modular Client and Modular Provider in classpath");
+        execute(String.format("-cp %s%s%s %s %s %s", modC, PS, modP, C_TYPE,
+                use, cArg), expAModRes);
     }
 
     /**
-     * Pre-compile and generate the artifacts required to run this test before
-     * running each test cases.
+     * Execute with command arguments and process the result.
      */
-    @BeforeTest
-    public void buildArtifacts() {
+    private void execute(String args, String msgKey) throws Exception {
 
-        boolean done = true;
-        try {
-
-            done &= CompilerUtils.compile(S_SRC, S_BUILD_DIR);
-            done &= CompilerUtils.compile(S_SRC, S_WITH_META_DESCR_BUILD_DIR);
-            done &= createMetaInfServiceDescriptor(S_META_DESCR_FPATH, S_IMPL);
-            // Generate modular/regular jars with(out) META-INF
-            // service descriptor
-            generateJar(true, MODULE_TYPE.EXPLICIT, MS_JAR, S_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.EXPLICIT, MS_WITH_DESCR_JAR,
-                    S_WITH_META_DESCR_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.UNNAMED, S_JAR, S_BUILD_DIR, false);
-            generateJar(true, MODULE_TYPE.UNNAMED, S_WITH_DESCRIPTOR_JAR,
-                    S_WITH_META_DESCR_BUILD_DIR, false);
-            // Compile client source codes.
-            done &= CompilerUtils.compile(C_SRC, C_BLD_DIR, "-cp",
-                    S_JAR.toFile().getCanonicalPath());
-            // Generate modular client jar with explicit dependency
-            generateJar(false, MODULE_TYPE.EXPLICIT, MC_JAR, C_BLD_DIR, true);
-            // Generate modular client jar without any dependency
-            generateJar(false, MODULE_TYPE.EXPLICIT, MCN_JAR, C_BLD_DIR, false);
-            // Generate regular client jar
-            generateJar(false, MODULE_TYPE.UNNAMED, C_JAR, C_BLD_DIR, false);
-            System.out.format("%nArtifacts generated successfully? %s", done);
-            if (!done) {
-                throw new RuntimeException("Artifacts generation failed");
+        String[] safeArgs = Stream.concat(commonArgs.stream(),
+                Stream.of(args.split("\\s+"))).filter(s -> {
+            if (s.contains(" ")) {
+                throw new RuntimeException("No spaces in args");
             }
+            return !s.isEmpty();
+        }).toArray(String[]::new);
+        String out = ProcessTools.executeTestJvm(safeArgs).getOutput();
+        // Handle response.
+        if ((msgKey != null && out.contains(MSG_MAP.get(msgKey)))) {
+            System.out.printf("PASS: Expected Result: %s.%n",
+                    MSG_MAP.get(msgKey));
+        } else if (out.contains("Exception") || out.contains("Error")) {
+            System.out.printf("OUTPUT: %s", out);
+            throw new RuntimeException("FAIL: Unknown Exception occured. "
+                    + "Expected: " + MSG_MAP.get(msgKey));
+        } else {
+            System.out.printf("OUTPUT: %s", out);
+            throw new RuntimeException("FAIL: Unknown Test case found");
+        }
+    }
+
+    /**
+     * Creates Unnamed/modular jar files for TestClient and TestClassLoader.
+     */
+    private static void setUp() throws Exception {
+
+        if (ARTIFACT_DIR.toFile().exists()) {
+            System.out.println("Skipping setup: Artifacts already exists.");
+            return;
+        }
+        // Generate unnamed provider jar file.
+        JarUtils.createJarFile(P_JAR, TEST_CLASSES, "p/TestProvider.class");
+        // Generate unnamed client jar file.
+        JarUtils.createJarFile(C_JAR, TEST_CLASSES, "c/TestClient.class");
+        // Generate unnamed provider jar files with META-INF descriptor.
+        generateJar(P_JAR, PD_JAR, null, true);
+
+        Builder mBuilder = ModuleDescriptor.newModule("mp").exports("p");
+        // Modular provider defined as META-INF service.
+        generateJar(P_JAR, MPD_JAR, mBuilder.build(), true);
+        // Modular jar exports package to let the provider type accessible.
+        generateJar(P_JAR, MP_JAR, mBuilder.build(), false);
+
+        mBuilder = ModuleDescriptor.newModule("mp")
+                .provides("java.security.Provider", Arrays.asList(P_TYPE));
+        // Modular provider Service in module-info does not need to export
+        // its package.
+        generateJar(P_JAR, MSP_JAR, mBuilder.build(), false);
+        // Modular provider Service in module-info also have META-INF descriptor
+        generateJar(P_JAR, MSPD_JAR, mBuilder.build(), true);
+
+        mBuilder = ModuleDescriptor.newModule("mc").exports("c");
+        // Generate modular client jar file to use automatic provider jar.
+        generateJar(C_JAR, AMC_JAR, mBuilder.build(), false);
+        // Generate modular client jar file to use modular provider jar.
+        generateJar(C_JAR, MC_JAR, mBuilder.requires("mp").build(), false);
+
+        mBuilder = ModuleDescriptor.newModule("mc").exports("c")
+                .uses("java.security.Provider");
+        // Generate modular client jar file to use automatic provider service.
+        generateJar(C_JAR, AMCS_JAR, mBuilder.build(), false);
+        // Generate modular client jar file using modular provider service.
+        generateJar(C_JAR, MCS_JAR, mBuilder.requires("mp").build(), false);
+    }
+
+    /**
+     * Update Unnamed jars and include descriptor files.
+     */
+    private static void generateJar(Path sjar, Path djar,
+            ModuleDescriptor mDesc, boolean metaDesc) throws Exception {
+
+        Files.copy(sjar, djar, StandardCopyOption.REPLACE_EXISTING);
+        Path dir = Files.createTempDirectory("tmp");
+        if (metaDesc) {
+            write(dir.resolve(Paths.get("META-INF", "services",
+                    "java.security.Provider")), P_TYPE);
+        }
+        if (mDesc != null) {
+            Path mi = dir.resolve("module-info.class");
+            try (OutputStream out = Files.newOutputStream(mi)) {
+                ModuleInfoWriter.write(mDesc, out);
+            }
+            System.out.format("Added 'module-info.class' in '%s'%n", djar);
+        }
+        JarUtils.updateJarFile(djar, dir);
+    }
+
+    /**
+     * Look for file path in generated jars.
+     */
+    private static Path artifact(String file) {
+        return ARTIFACT_DIR.resolve(file);
+    }
+
+    /**
+     * Convert to absolute file path.
+     */
+    private static String toAbsPath(Path path) {
+        return path.toFile().getAbsolutePath();
+    }
+
+    /**
+     * Create the parent directories if missing to ensure the path exist.
+     */
+    private static Path ensurePath(Path at) throws IOException {
+        Path parent = at.getParent();
+        if (parent != null && !parent.toFile().exists()) {
+            ensurePath(parent);
+        }
+        return Files.createDirectories(parent);
+    }
+
+    /**
+     * Generates service descriptor inside META-INF folder.
+     */
+    private static void write(Path at, String content) throws IOException {
+        ensurePath(at);
+        Files.write(at, content.getBytes("UTF-8"));
+    }
+
+    /**
+     * Create new provider entry through java.security file extension.
+     * New provider entry will be the last entry inside the JRE.
+     */
+    private static void createJavaSecurityFileExtn(boolean useName) {
+        int insertAt = Security.getProviders().length + 1;
+        String provider = (useName ? "TestProvider" : P_TYPE);
+        try {
+            Files.write(SEC_FILE, String.format("security.provider.%s=%s",
+                    insertAt, provider).getBytes("UTF-8"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        System.out.printf("Security property file created at: %s with value:"
+                + " %s%n", SEC_FILE, provider);
     }
-
-    /**
-     * Generate modular/regular jar based on module type for this test.
-     */
-    private void generateJar(boolean isService, MODULE_TYPE moduleType,
-            Path jar, Path compilePath, boolean depends) throws IOException {
-
-        ModuleDescriptor mDescriptor = null;
-        if (isService) {
-            mDescriptor = generateModuleDescriptor(isService, moduleType, S_PKG,
-                    S_PKG, S_INTERFACE, S_IMPL, null, M_REQUIRED, depends);
-        } else {
-            mDescriptor = generateModuleDescriptor(isService, moduleType, C_PKG,
-                    C_PKG, S_INTERFACE, null, S_PKG, M_REQUIRED, depends);
-        }
-        generateJar(mDescriptor, jar, compilePath);
-    }
-
-    /**
-     * Holds Logic for the test. This method will get called with each test
-     * parameter.
-     */
-    @Override
-    public OutputAnalyzer executeTestClient(MODULE_TYPE cModuleType,
-            Path cJarPath, MODULE_TYPE sModuletype, Path sJarPath,
-            String... args) throws Exception {
-
-        OutputAnalyzer output = null;
-        try {
-            // For automated/explicit module types, copy the corresponding
-            // jars to module base folder, which will be considered as
-            // module base path during execution.
-            if (!(cModuleType == MODULE_TYPE.UNNAMED
-                    && sModuletype == MODULE_TYPE.UNNAMED)) {
-                copyJarsToModuleBase(cModuleType, cJarPath, M_BASE_PATH);
-                copyJarsToModuleBase(sModuletype, sJarPath, M_BASE_PATH);
-            }
-
-            System.out.format("%nExecuting java client with required"
-                    + " custom security provider in class/module path.");
-            String mName = getModuleName(cModuleType, cJarPath, C_PKG);
-            Path cmBasePath = (cModuleType != MODULE_TYPE.UNNAMED
-                    || sModuletype != MODULE_TYPE.UNNAMED) ? M_BASE_PATH : null;
-            String cPath = buildClassPath(cModuleType, cJarPath, sModuletype,
-                    sJarPath);
-
-            Map<String, String> vmArgs = getVMArgs(sModuletype,
-                    getModuleName(sModuletype, sJarPath, S_PKG), args);
-            output = ProcessTools.executeTestJava(
-                    getJavaCommand(cmBasePath, cPath, mName, MAIN, vmArgs,
-                            args)).outputTo(System.out).errorTo(System.out);
-        } finally {
-            // Clean module path to hold required jars for next run.
-            cleanModuleBasePath(M_BASE_PATH);
-        }
-        return output;
-    }
-
-    /**
-     * Decide the pre-generated client/service jar path for each test case
-     * based on client/service module type.
-     */
-    @Override
-    public Path findJarPath(boolean isService, MODULE_TYPE moduleType,
-            boolean addMetaDesc, boolean dependsOnServiceModule) {
-        if (isService) {
-            if (moduleType == MODULE_TYPE.EXPLICIT) {
-                if (addMetaDesc) {
-                    return MS_WITH_DESCR_JAR;
-                } else {
-                    return MS_JAR;
-                }
-            } else {
-                if (addMetaDesc) {
-                    return S_WITH_DESCRIPTOR_JAR;
-                } else {
-                    return S_JAR;
-                }
-            }
-        } else {
-            // Choose corresponding client jar to use dependent module
-            if (moduleType == MODULE_TYPE.EXPLICIT) {
-                if (dependsOnServiceModule) {
-                    return MC_JAR;
-                } else {
-                    return MCN_JAR;
-                }
-            } else {
-                return C_JAR;
-            }
-        }
-    }
-
-    /**
-     * VM argument required for the test.
-     */
-    private Map<String, String> getVMArgs(MODULE_TYPE sModuletype,
-            String addModName, String... args) throws IOException {
-        final Map<String, String> vmArgs = new LinkedHashMap<>();
-        vmArgs.put("-Duser.language=", "en");
-        vmArgs.put("-Duser.region=", "US");
-        if (addModName != null && sModuletype == MODULE_TYPE.AUTO) {
-            vmArgs.put("--add-modules=", addModName);
-        }
-        // If mechanism selected to find the provider through
-        // Security.getProvider() then use providerName/ProviderClassName based
-        // on modular/regular provider jar in security configuration file.
-        if (args != null && args.length > 0 && SECURITY_PROP.equals(args[0])) {
-            if (sModuletype == MODULE_TYPE.UNNAMED) {
-                Files.write(SECURE_PROP_EXTN, ("security.provider.10=" + S_IMPL)
-                        .getBytes());
-            } else {
-                Files.write(SECURE_PROP_EXTN, "security.provider.10=TEST"
-                        .getBytes());
-            }
-            vmArgs.put("-Djava.security.properties=", SECURE_PROP_EXTN.toFile()
-                    .getCanonicalPath());
-        }
-        return vmArgs;
-    }
-
 }

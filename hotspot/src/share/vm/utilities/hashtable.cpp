@@ -24,7 +24,12 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
+#include "classfile/placeholders.hpp"
+#include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -79,6 +84,17 @@ template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::new_entry(
   return entry;
 }
 
+// Version of hashtable entry allocation that allocates in the C heap directly.
+// The allocator in blocks is preferable but doesn't have free semantics.
+template <class T, MEMFLAGS F> HashtableEntry<T, F>* Hashtable<T, F>::allocate_new_entry(unsigned int hashValue, T obj) {
+  HashtableEntry<T, F>* entry = (HashtableEntry<T, F>*) NEW_C_HEAP_ARRAY(char, this->entry_size(), F);
+
+  entry->set_hash(hashValue);
+  entry->set_literal(obj);
+  entry->set_next(NULL);
+  return entry;
+}
+
 // Check to see if the hashtable is unbalanced.  The caller set a flag to
 // rehash at the next safepoint.  If this bucket is 60 times greater than the
 // expected average bucket length, it's an unbalanced hashtable.
@@ -94,8 +110,6 @@ template <class T, MEMFLAGS F> bool RehashableHashtable<T, F>::check_rehash_tabl
   }
   return false;
 }
-
-template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
 
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
@@ -155,24 +169,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   }
 }
 
-
-// Reverse the order of elements in the hash buckets.
-
-template <MEMFLAGS F> void BasicHashtable<F>::reverse() {
-
-  for (int i = 0; i < _table_size; ++i) {
-    BasicHashtableEntry<F>* new_list = NULL;
-    BasicHashtableEntry<F>* p = bucket(i);
-    while (p != NULL) {
-      BasicHashtableEntry<F>* next = p->next();
-      p->set_next(new_list);
-      new_list = p;
-      p = next;
-    }
-    *bucket_addr(i) = new_list;
-  }
-}
-
 template <MEMFLAGS F> void BasicHashtable<F>::BucketUnlinkContext::free_entry(BasicHashtableEntry<F>* entry) {
   entry->set_next(_removed_head);
   _removed_head = entry;
@@ -202,30 +198,39 @@ template <MEMFLAGS F> void BasicHashtable<F>::bulk_free_entries(BucketUnlinkCont
   }
   Atomic::add(-context->_num_removed, &_number_of_entries);
 }
-
 // Copy the table to the shared space.
+template <MEMFLAGS F> size_t BasicHashtable<F>::count_bytes_for_table() {
+  size_t bytes = 0;
+  bytes += sizeof(intptr_t); // len
 
-template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) {
+  for (int i = 0; i < _table_size; ++i) {
+    for (BasicHashtableEntry<F>** p = _buckets[i].entry_addr();
+         *p != NULL;
+         p = (*p)->next_addr()) {
+      bytes += entry_size();
+    }
+  }
 
-  // Dump the hash table entries.
+  return bytes;
+}
 
-  intptr_t *plen = (intptr_t*)(*top);
-  *top += sizeof(*plen);
+// Dump the hash table entries (into CDS archive)
+template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char* top, char* end) {
+  assert(is_aligned(top, sizeof(intptr_t)), "bad alignment");
+  intptr_t *plen = (intptr_t*)(top);
+  top += sizeof(*plen);
 
   int i;
   for (i = 0; i < _table_size; ++i) {
     for (BasicHashtableEntry<F>** p = _buckets[i].entry_addr();
-                              *p != NULL;
-                               p = (*p)->next_addr()) {
-      if (*top + entry_size() > end) {
-        report_out_of_shared_space(SharedMiscData);
-      }
-      *p = (BasicHashtableEntry<F>*)memcpy(*top, *p, entry_size());
-      *top += entry_size();
+         *p != NULL;
+         p = (*p)->next_addr()) {
+      *p = (BasicHashtableEntry<F>*)memcpy(top, (void*)*p, entry_size());
+      top += entry_size();
     }
   }
-  *plen = (char*)(*top) - (char*)plen - sizeof(*plen);
-
+  *plen = (char*)(top) - (char*)plen - sizeof(*plen);
+  assert(top == end, "count_bytes_for_table is wrong");
   // Set the shared bit.
 
   for (i = 0; i < _table_size; ++i) {
@@ -235,64 +240,48 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
   }
 }
 
+// For oops and Strings the size of the literal is interesting. For other types, nobody cares.
+static int literal_size(ConstantPool*) { return 0; }
+static int literal_size(Klass*)        { return 0; }
+#if INCLUDE_ALL_GCS
+static int literal_size(nmethod*)      { return 0; }
+#endif
 
-
-// Reverse the order of elements in the hash buckets.
-
-template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
-
-  for (int i = 0; i < this->table_size(); ++i) {
-    HashtableEntry<T, F>* high_list = NULL;
-    HashtableEntry<T, F>* low_list = NULL;
-    HashtableEntry<T, F>* last_low_entry = NULL;
-    HashtableEntry<T, F>* p = bucket(i);
-    while (p != NULL) {
-      HashtableEntry<T, F>* next = p->next();
-      if ((void*)p->literal() >= boundary) {
-        p->set_next(high_list);
-        high_list = p;
-      } else {
-        p->set_next(low_list);
-        low_list = p;
-        if (last_low_entry == NULL) {
-          last_low_entry = p;
-        }
-      }
-      p = next;
-    }
-    if (low_list != NULL) {
-      *bucket_addr(i) = low_list;
-      last_low_entry->set_next(high_list);
-    } else {
-      *bucket_addr(i) = high_list;
-    }
-  }
-}
-
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(Symbol *symbol) {
+static int literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
 }
 
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(oop oop) {
+static int literal_size(oop obj) {
   // NOTE: this would over-count if (pre-JDK8) java_lang_Class::has_offset_field() is true,
   // and the String.value array is shared by several Strings. However, starting from JDK8,
   // the String.value array is not shared anymore.
-  assert(oop != NULL && oop->klass() == SystemDictionary::String_klass(), "only strings are supported");
-  return (oop->size() + java_lang_String::value(oop)->size()) * HeapWordSize;
+  if (obj == NULL) {
+    return 0;
+  } else if (obj->klass() == SystemDictionary::String_klass()) {
+    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
+  } else {
+    return obj->size();
+  }
 }
+
 
 // Dump footprint and bucket length statistics
 //
 // Note: if you create a new subclass of Hashtable<MyNewType, F>, you will need to
-// add a new function Hashtable<T, F>::literal_size(MyNewType lit)
+// add a new function static int literal_size(MyNewType lit)
+// because I can't get template <class T> int literal_size(T) to pick the specializations for Symbol and oop.
+//
+// The StringTable and SymbolTable dumping print how much footprint is used by the String and Symbol
+// literals.
 
-template <class T, MEMFLAGS F> void RehashableHashtable<T, F>::dump_table(outputStream* st, const char *table_name) {
+template <class T, MEMFLAGS F> void Hashtable<T, F>::print_table_statistics(outputStream* st,
+                                                                            const char *table_name) {
   NumberSeq summary;
   int literal_bytes = 0;
   for (int i = 0; i < this->table_size(); ++i) {
     int count = 0;
     for (HashtableEntry<T, F>* e = this->bucket(i);
-       e != NULL; e = e->next()) {
+         e != NULL; e = e->next()) {
       count++;
       literal_bytes += literal_size(e->literal());
     }
@@ -305,14 +294,16 @@ template <class T, MEMFLAGS F> void RehashableHashtable<T, F>::dump_table(output
   int entry_bytes  = (int)num_entries * sizeof(HashtableEntry<T, F>);
   int total_bytes = literal_bytes +  bucket_bytes + entry_bytes;
 
-  double bucket_avg  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
-  double entry_avg   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
-  double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
+  int bucket_size  = (num_buckets <= 0) ? 0 : (bucket_bytes  / num_buckets);
+  int entry_size   = (num_entries <= 0) ? 0 : (entry_bytes   / num_entries);
 
   st->print_cr("%s statistics:", table_name);
-  st->print_cr("Number of buckets       : %9d = %9d bytes, avg %7.3f", (int)num_buckets, bucket_bytes,  bucket_avg);
-  st->print_cr("Number of entries       : %9d = %9d bytes, avg %7.3f", (int)num_entries, entry_bytes,   entry_avg);
-  st->print_cr("Number of literals      : %9d = %9d bytes, avg %7.3f", (int)num_entries, literal_bytes, literal_avg);
+  st->print_cr("Number of buckets       : %9d = %9d bytes, each %d", (int)num_buckets, bucket_bytes,  bucket_size);
+  st->print_cr("Number of entries       : %9d = %9d bytes, each %d", (int)num_entries, entry_bytes,   entry_size);
+  if (literal_bytes != 0) {
+    double literal_avg = (num_entries <= 0) ? 0 : (literal_bytes / num_entries);
+    st->print_cr("Number of literals      : %9d = %9d bytes, avg %7.3f", (int)num_entries, literal_bytes, literal_avg);
+  }
   st->print_cr("Total footprint         : %9s = %9d bytes", "", total_bytes);
   st->print_cr("Average bucket size     : %9.3f", summary.avg());
   st->print_cr("Variance of bucket size : %9.3f", summary.variance());
@@ -323,21 +314,30 @@ template <class T, MEMFLAGS F> void RehashableHashtable<T, F>::dump_table(output
 
 // Dump the hash table buckets.
 
-template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end) {
-  intptr_t len = _table_size * sizeof(HashtableBucket<F>);
-  *(intptr_t*)(*top) = len;
-  *top += sizeof(intptr_t);
+template <MEMFLAGS F> size_t BasicHashtable<F>::count_bytes_for_buckets() {
+  size_t bytes = 0;
+  bytes += sizeof(intptr_t); // len
+  bytes += sizeof(intptr_t); // _number_of_entries
+  bytes += _table_size * sizeof(HashtableBucket<F>); // the buckets
 
-  *(intptr_t*)(*top) = _number_of_entries;
-  *top += sizeof(intptr_t);
-
-  if (*top + len > end) {
-    report_out_of_shared_space(SharedMiscData);
-  }
-  _buckets = (HashtableBucket<F>*)memcpy(*top, _buckets, len);
-  *top += len;
+  return bytes;
 }
 
+// Dump the buckets (into CDS archive)
+template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char* top, char* end) {
+  assert(is_aligned(top, sizeof(intptr_t)), "bad alignment");
+  intptr_t len = _table_size * sizeof(HashtableBucket<F>);
+  *(intptr_t*)(top) = len;
+  top += sizeof(intptr_t);
+
+  *(intptr_t*)(top) = _number_of_entries;
+  top += sizeof(intptr_t);
+
+  _buckets = (HashtableBucket<F>*)memcpy(top, (void*)_buckets, len);
+  top += len;
+
+  assert(top == end, "count_bytes_for_buckets is wrong");
+}
 
 #ifndef PRODUCT
 
@@ -355,38 +355,43 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
   }
 }
 
-
-template <MEMFLAGS F> void BasicHashtable<F>::verify() {
-  int count = 0;
-  for (int i = 0; i < table_size(); i++) {
-    for (BasicHashtableEntry<F>* p = bucket(i); p != NULL; p = p->next()) {
-      ++count;
+template <MEMFLAGS F>
+template <class T> void BasicHashtable<F>::verify_table(const char* table_name) {
+  int element_count = 0;
+  int max_bucket_count = 0;
+  int max_bucket_number = 0;
+  for (int index = 0; index < table_size(); index++) {
+    int bucket_count = 0;
+    for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+      probe->verify();
+      bucket_count++;
+    }
+    element_count += bucket_count;
+    if (bucket_count > max_bucket_count) {
+      max_bucket_count = bucket_count;
+      max_bucket_number = index;
     }
   }
-  assert(count == number_of_entries(), "number of hashtable entries incorrect");
-}
+  guarantee(number_of_entries() == element_count,
+            "Verify of %s failed", table_name);
 
-
-#endif // PRODUCT
-
-#ifdef ASSERT
-
-template <MEMFLAGS F> bool BasicHashtable<F>::verify_lookup_length(double load, const char *table_name) {
-  if ((!_lookup_warning) && (_lookup_count != 0)
-      && ((double)_lookup_length / (double)_lookup_count > load * 2.0)) {
-    warning("Performance bug: %s lookup_count=%d "
-            "lookup_length=%d average=%lf load=%f",
-            table_name, _lookup_count, _lookup_length,
-            (double)_lookup_length / _lookup_count, load);
-    _lookup_warning = true;
-
-    return false;
+  // Log some statistics about the hashtable
+  log_info(hashtables)("%s max bucket size %d bucket %d element count %d table size %d", table_name,
+                       max_bucket_count, max_bucket_number, _number_of_entries, _table_size);
+  if (_number_of_entries > 0 && log_is_enabled(Debug, hashtables)) {
+    for (int index = 0; index < table_size(); index++) {
+      int bucket_count = 0;
+      for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+        log_debug(hashtables)("bucket %d hash " INTPTR_FORMAT, index, (intptr_t)probe->hash());
+        bucket_count++;
+      }
+      if (bucket_count > 0) {
+        log_debug(hashtables)("bucket %d count %d", index, bucket_count);
+      }
+    }
   }
-  return true;
 }
-
-#endif
-
+#endif // PRODUCT
 
 // Explicitly instantiate these types
 #if INCLUDE_ALL_GCS
@@ -401,6 +406,7 @@ template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<oop, mtClass>;
+template class Hashtable<Symbol*, mtModule>;
 #if defined(SOLARIS) || defined(CHECK_UNHANDLED_OOPS)
 template class Hashtable<oop, mtSymbol>;
 template class RehashableHashtable<oop, mtSymbol>;
@@ -410,6 +416,7 @@ template class Hashtable<Symbol*, mtClass>;
 template class HashtableEntry<Symbol*, mtSymbol>;
 template class HashtableEntry<Symbol*, mtClass>;
 template class HashtableEntry<oop, mtSymbol>;
+template class HashtableBucket<mtClass>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;
 template class BasicHashtable<mtClass>;
@@ -424,3 +431,9 @@ template class HashtableEntry<Symbol*, mtTracing>;
 template class BasicHashtable<mtTracing>;
 #endif
 template class BasicHashtable<mtCompiler>;
+
+template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);
+template void BasicHashtable<mtModule>::verify_table<PackageEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<ProtectionDomainCacheEntry>(char const*);
+template void BasicHashtable<mtClass>::verify_table<PlaceholderEntry>(char const*);

@@ -13,6 +13,6 @@ Adding the -i option with also report inlining like PrintInlining.
 
 More information about the LogCompilation output can be found at
 
-https://wikis.oracle.com/display/HotSpotInternals/LogCompilation+overview
-https://wikis.oracle.com/display/HotSpotInternals/PrintCompilation
-https://wikis.oracle.com/display/HotSpotInternals/LogCompilation+tool
+https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+overview
+https://wiki.openjdk.java.net/display/HotSpot/PrintCompilation
+https://wiki.openjdk.java.net/display/HotSpot/LogCompilation+tool

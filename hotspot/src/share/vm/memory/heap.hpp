@@ -149,12 +149,12 @@ class CodeHeap : public CHeapObj<mtCode> {
   void  deallocate(void* p);    // Deallocate memory
 
   // Attributes
-  char* low_boundary() const                     { return _memory.low_boundary (); }
+  char* low_boundary() const                     { return _memory.low_boundary(); }
   char* high() const                             { return _memory.high(); }
   char* high_boundary() const                    { return _memory.high_boundary(); }
 
-  virtual bool contains(const void* p) const     { return low_boundary() <= p && p < high(); }
-  virtual bool contains_blob(const CodeBlob* blob) const { return low_boundary() <= (char*) blob && (char*) blob < high(); }
+  bool contains(const void* p) const             { return low_boundary() <= p && p < high(); }
+  bool contains_blob(const CodeBlob* blob) const { return contains(blob->code_begin()); }
 
   virtual void* find_start(void* p)     const;   // returns the block containing p or NULL
   virtual CodeBlob* find_blob_unsafe(void* start) const;

@@ -65,4 +65,14 @@ public class SPARCLIRKindTool implements LIRKindTool {
     public LIRKind getWordKind() {
         return LIRKind.value(SPARCKind.XWORD);
     }
+
+    @Override
+    public LIRKind getNarrowOopKind() {
+        return LIRKind.reference(SPARCKind.WORD);
+    }
+
+    @Override
+    public LIRKind getNarrowPointerKind() {
+        return LIRKind.value(SPARCKind.WORD);
+    }
 }

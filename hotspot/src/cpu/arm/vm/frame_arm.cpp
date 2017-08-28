@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,6 +621,8 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
+
+void frame::pd_ps() {}
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {
