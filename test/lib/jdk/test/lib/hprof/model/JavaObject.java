@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class JavaObject extends JavaLazyReadObject {
         // while resolving, parse fields in verbose mode.
         // but, getFields calls parseFields in non-verbose mode
         // to avoid printing warnings repeatedly.
-        parseFields(getValue(), true);
+        parseFields(true);
 
         cl.addInstance(this);
         super.resolve(snapshot);
@@ -114,7 +114,7 @@ public class JavaObject extends JavaLazyReadObject {
     public JavaThing[] getFields() {
         // pass false to verbose mode so that dereference
         // warnings are not printed.
-        return parseFields(getValue(), false);
+        return parseFields(false);
     }
 
     // returns the value of field of given name
@@ -212,35 +212,27 @@ public class JavaObject extends JavaLazyReadObject {
      *     data length (int)
      *     byte[length]
      */
-    protected final int readValueLength() throws IOException {
-        JavaClass cl = getClazz();
-        int idSize = cl.getIdentifierSize();
-        long lengthOffset = getOffset() + 2*idSize + 4;
-        return cl.getReadBuffer().getInt(lengthOffset);
+    @Override
+    protected final long readValueLength() throws IOException {
+        long lengthOffset = getOffset() + 2 * idSize() + 4;
+        return buf().getInt(lengthOffset);
     }
 
-    protected final byte[] readValue() throws IOException {
-        JavaClass cl = getClazz();
-        int idSize = cl.getIdentifierSize();
-        ReadBuffer buf = cl.getReadBuffer();
-        long offset = getOffset() + 2*idSize + 4;
-        int length = buf.getInt(offset);
-        if (length == 0) {
-            return Snapshot.EMPTY_BYTE_ARRAY;
-        } else {
-            byte[] res = new byte[length];
-            buf.get(offset + 4, res);
-            return res;
-        }
+    @Override
+    protected final JavaThing[] readValue() throws IOException {
+        return parseFields(false);
     }
 
-    private JavaThing[] parseFields(byte[] data, boolean verbose) {
+    private long dataStartOffset() {
+        return getOffset() + idSize() + 4 + idSize() + 4;
+    }
+
+    private JavaThing[] parseFields(boolean verbose) {
         JavaClass cl = getClazz();
         int target = cl.getNumFieldsForInstance();
         JavaField[] fields = cl.getFields();
         JavaThing[] fieldValues = new JavaThing[target];
         Snapshot snapshot = cl.getSnapshot();
-        int idSize = snapshot.getIdentifierSize();
         int fieldNo = 0;
         // In the dump file, the fields are stored in this order:
         // fields of most derived class (immediate class) are stored
@@ -254,7 +246,7 @@ public class JavaObject extends JavaLazyReadObject {
         // starts with the top of the inheritance hierarchy and works down.
         target -= fields.length;
         JavaClass currClass = cl;
-        int index = 0;
+        long offset = dataStartOffset();
         for (int i = 0; i < fieldValues.length; i++, fieldNo++) {
             while (fieldNo >= fields.length) {
                 currClass = currClass.getSuperclass();
@@ -264,65 +256,72 @@ public class JavaObject extends JavaLazyReadObject {
             }
             JavaField f = fields[fieldNo];
             char sig = f.getSignature().charAt(0);
-            switch (sig) {
-                case 'L':
-                case '[': {
-                    long id = objectIdAt(index, data);
-                    index += idSize;
-                    JavaObjectRef ref = new JavaObjectRef(id);
-                    fieldValues[target+fieldNo] = ref.dereference(snapshot, f, verbose);
-                    break;
+            try {
+                switch (sig) {
+                    case 'L':
+                    case '[': {
+                        long id = objectIdAt(offset);
+                        offset += idSize();
+                        JavaObjectRef ref = new JavaObjectRef(id);
+                        fieldValues[target+fieldNo] = ref.dereference(snapshot, f, verbose);
+                        break;
+                    }
+                    case 'Z': {
+                        byte value = byteAt(offset);
+                        offset++;
+                        fieldValues[target+fieldNo] = new JavaBoolean(value != 0);
+                        break;
+                    }
+                    case 'B': {
+                        byte value = byteAt(offset);
+                        offset++;
+                        fieldValues[target+fieldNo] = new JavaByte(value);
+                        break;
+                    }
+                    case 'S': {
+                        short value = shortAt(offset);
+                        offset += 2;
+                        fieldValues[target+fieldNo] = new JavaShort(value);
+                        break;
+                    }
+                    case 'C': {
+                        char value = charAt(offset);
+                        offset += 2;
+                        fieldValues[target+fieldNo] = new JavaChar(value);
+                        break;
+                    }
+                    case 'I': {
+                        int value = intAt(offset);
+                        offset += 4;
+                        fieldValues[target+fieldNo] = new JavaInt(value);
+                        break;
+                    }
+                    case 'J': {
+                        long value = longAt(offset);
+                        offset += 8;
+                        fieldValues[target+fieldNo] = new JavaLong(value);
+                        break;
+                    }
+                    case 'F': {
+                        float value = floatAt(offset);
+                        offset += 4;
+                        fieldValues[target+fieldNo] = new JavaFloat(value);
+                        break;
+                    }
+                    case 'D': {
+                        double value = doubleAt(offset);
+                        offset += 8;
+                        fieldValues[target+fieldNo] = new JavaDouble(value);
+                        break;
+                    }
+                    default:
+                        throw new RuntimeException("invalid signature: " + sig);
+
                 }
-                case 'Z': {
-                    byte value = byteAt(index, data);
-                    index++;
-                    fieldValues[target+fieldNo] = new JavaBoolean(value != 0);
-                    break;
-                }
-                case 'B': {
-                    byte value = byteAt(index, data);
-                    index++;
-                    fieldValues[target+fieldNo] = new JavaByte(value);
-                    break;
-                }
-                case 'S': {
-                    short value = shortAt(index, data);
-                    index += 2;
-                    fieldValues[target+fieldNo] = new JavaShort(value);
-                    break;
-                }
-                case 'C': {
-                    char value = charAt(index, data);
-                    index += 2;
-                    fieldValues[target+fieldNo] = new JavaChar(value);
-                    break;
-                }
-                case 'I': {
-                    int value = intAt(index, data);
-                    index += 4;
-                    fieldValues[target+fieldNo] = new JavaInt(value);
-                    break;
-                }
-                case 'J': {
-                    long value = longAt(index, data);
-                    index += 8;
-                    fieldValues[target+fieldNo] = new JavaLong(value);
-                    break;
-                }
-                case 'F': {
-                    float value = floatAt(index, data);
-                    index += 4;
-                    fieldValues[target+fieldNo] = new JavaFloat(value);
-                    break;
-                }
-                case 'D': {
-                    double value = doubleAt(index, data);
-                    index += 8;
-                    fieldValues[target+fieldNo] = new JavaDouble(value);
-                    break;
-                }
-                default:
-                    throw new RuntimeException("invalid signature: " + sig);
+        } catch (IOException exp) {
+            System.err.println("lazy read failed at offset " + offset);
+            exp.printStackTrace();
+            return Snapshot.EMPTY_JAVATHING_ARRAY;
             }
         }
         return fieldValues;
