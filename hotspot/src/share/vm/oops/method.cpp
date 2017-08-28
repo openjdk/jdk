@@ -214,26 +214,14 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
 }
 
 void Method::mask_for(int bci, InterpreterOopMap* mask) {
-
-  Thread* myThread    = Thread::current();
-  methodHandle h_this(myThread, this);
-#if defined(ASSERT) && !INCLUDE_JVMCI
-  bool has_capability = myThread->is_VM_thread() ||
-                        myThread->is_ConcurrentGC_thread() ||
-                        myThread->is_GC_task_thread();
-
-  if (!has_capability) {
-    if (!VerifyStack && !VerifyLastFrame) {
-      // verify stack calls this outside VM thread
-      warning("oopmap should only be accessed by the "
-              "VM, GC task or CMS threads (or during debugging)");
-      InterpreterOopMap local_mask;
-      method_holder()->mask_for(h_this, bci, &local_mask);
-      local_mask.print();
-    }
+  methodHandle h_this(Thread::current(), this);
+  // Only GC uses the OopMapCache during thread stack root scanning
+  // any other uses generate an oopmap but do not save it in the cache.
+  if (Universe::heap()->is_gc_active()) {
+    method_holder()->mask_for(h_this, bci, mask);
+  } else {
+    OopMapCache::compute_one_oop_map(h_this, bci, mask);
   }
-#endif
-  method_holder()->mask_for(h_this, bci, mask);
   return;
 }
 
