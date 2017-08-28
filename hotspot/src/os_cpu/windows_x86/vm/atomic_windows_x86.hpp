@@ -57,20 +57,28 @@ inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
 #ifdef AMD64
 inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
 inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
 
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
-  return (jint)(*os::atomic_add_func)(add_value, dest);
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  return add_using_helper<jint>(os::atomic_add_func, add_value, dest);
 }
 
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  return (intptr_t)(*os::atomic_add_ptr_func)(add_value, dest);
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)(*os::atomic_add_ptr_func)(add_value, (volatile intptr_t*)dest);
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  return add_using_helper<intptr_t>(os::atomic_add_ptr_func, add_value, dest);
 }
 
 inline void Atomic::inc    (volatile jint*     dest) {
@@ -130,7 +138,11 @@ inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #else // !AMD64
 
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
   __asm {
     mov edx, dest;
     mov eax, add_value;
@@ -138,14 +150,6 @@ inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
     lock xadd dword ptr [edx], eax;
     add eax, ecx;
   }
-}
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  return (intptr_t)add((jint)add_value, (volatile jint*)dest);
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add((jint)add_value, (volatile jint*)dest);
 }
 
 inline void Atomic::inc    (volatile jint*     dest) {

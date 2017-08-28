@@ -200,7 +200,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_new_chunk() {
     return NULL;
   }
 
-  size_t cur_idx = Atomic::add(1, &_hwm) - 1;
+  size_t cur_idx = Atomic::add(1u, &_hwm) - 1;
   if (cur_idx >= _chunk_capacity) {
     return NULL;
   }

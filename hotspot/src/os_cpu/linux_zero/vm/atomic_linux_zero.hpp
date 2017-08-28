@@ -74,7 +74,7 @@ static inline int m68k_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int m68k_add_and_fetch(volatile int *ptr, int add_value) {
+static inline int m68k_add_and_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until success.
 
@@ -135,7 +135,7 @@ static inline int arm_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int arm_add_and_fetch(volatile int *ptr, int add_value) {
+static inline int arm_add_and_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until a __kernel_cmpxchg succeeds.
 
@@ -167,32 +167,38 @@ inline void Atomic::store_ptr(intptr_t store_value, intptr_t* dest) {
   *dest = store_value;
 }
 
-inline jint Atomic::add(jint add_value, volatile jint* dest) {
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(4 == sizeof(I));
+  STATIC_CAST(4 == sizeof(D));
+
 #ifdef ARM
-  return arm_add_and_fetch(dest, add_value);
+  return add_using_helper<int>(arm_add_and_fetch, add_value, dest);
 #else
 #ifdef M68K
-  return m68k_add_and_fetch(dest, add_value);
+  return add_using_helper<int>(m68k_add_and_fetch, add_value, dest);
 #else
   return __sync_add_and_fetch(dest, add_value);
 #endif // M68K
 #endif // ARM
 }
 
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-#ifdef ARM
-  return arm_add_and_fetch(dest, add_value);
-#else
-#ifdef M68K
-  return m68k_add_and_fetch(dest, add_value);
-#else
-  return __sync_add_and_fetch(dest, add_value);
-#endif // M68K
-#endif // ARM
-}
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(8 == sizeof(I));
+  STATIC_CAST(8 == sizeof(D));
 
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest) {
-  return (void *) add_ptr(add_value, (volatile intptr_t *) dest);
+  return __sync_add_and_fetch(dest, add_value);
 }
 
 inline void Atomic::inc(volatile jint* dest) {
