@@ -541,16 +541,23 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
                 assert instructionIndex == 0 : "not at start?" + instructionIndex;
                 handleTraceBegin(blocks[0]);
 
-                // fix spill state for phi/incoming intervals
-                for (TraceInterval interval : allocator.intervals()) {
-                    if (interval != null && interval.spillState().equals(SpillState.NoDefinitionFound) && interval.spillDefinitionPos() != -1) {
-                        // there was a definition in a phi/incoming
-                        interval.setSpillState(SpillState.NoSpillStore);
-                    }
-                }
                 if (TraceRAuseInterTraceHints.getValue(allocator.getLIR().getOptions())) {
                     addInterTraceHints();
                 }
+                // fix spill state for phi/incoming intervals
+                for (TraceInterval interval : allocator.intervals()) {
+                    if (interval != null) {
+                        if (interval.spillState().equals(SpillState.NoDefinitionFound) && interval.spillDefinitionPos() != -1) {
+                            // there was a definition in a phi/incoming
+                            interval.setSpillState(SpillState.NoSpillStore);
+                        }
+                        if (interval.preSpilledAllocated()) {
+                            // pre-spill unused, start in memory intervals
+                            allocator.assignSpillSlot(interval);
+                        }
+                    }
+                }
+
                 for (FixedInterval interval1 : allocator.fixedIntervals()) {
                     if (interval1 != null) {
                         /* We use [-1, 0] to avoid intersection with incoming values. */
