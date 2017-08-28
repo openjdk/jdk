@@ -366,11 +366,21 @@ void Dictionary::reorder_dictionary_for_sharing() {
   for (int i = 0; i < table_size(); ++i) {
     DictionaryEntry* p = bucket(i);
     while (p != NULL) {
-      DictionaryEntry* tmp;
-      tmp = p->next();
-      p->set_next(master_list);
-      master_list = p;
-      p = tmp;
+      DictionaryEntry* next = p->next();
+      InstanceKlass*ik = p->instance_klass();
+      // we cannot include signed classes in the archive because the certificates
+      // used during dump time may be different than those used during
+      // runtime (due to expiration, etc).
+      if (ik->signers() != NULL) {
+        ResourceMark rm;
+        tty->print_cr("Preload Warning: Skipping %s from signed JAR",
+                       ik->name()->as_C_string());
+        free_entry(p);
+      } else {
+        p->set_next(master_list);
+        master_list = p;
+      }
+      p = next;
     }
     set_entry(i, NULL);
   }

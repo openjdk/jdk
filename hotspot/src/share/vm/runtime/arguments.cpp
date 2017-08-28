@@ -1291,13 +1291,11 @@ void Arguments::check_unsupported_dumping_properties() {
                                            "jdk.module.limitmods",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods.0",
                                            "jdk.module.patch.0" };
   const char* unsupported_options[] = { "-m", // cannot use at dump time
                                         "--limit-modules", // ignored at dump time
                                         "--module-path", // ignored at dump time
                                         "--upgrade-module-path", // ignored at dump time
-                                        "--add-modules", // ignored at dump time
                                         "--patch-module" // ignored at dump time
                                       };
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
@@ -2667,16 +2665,10 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   }
 
   // Do final processing now that all arguments have been parsed
-  result = finalize_vm_init_args();
+  result = finalize_vm_init_args(patch_mod_javabase);
   if (result != JNI_OK) {
     return result;
   }
-
-#if INCLUDE_CDS
-  if (UseSharedSpaces && patch_mod_javabase) {
-    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
-  }
-#endif
 
   return JNI_OK;
 }
@@ -3602,7 +3594,7 @@ static int check_non_empty_dirs(const char* path) {
   return nonEmptyDirs;
 }
 
-jint Arguments::finalize_vm_init_args() {
+jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -3720,6 +3712,17 @@ jint Arguments::finalize_vm_init_args() {
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
     Compilation_mode = CompMode_server;
+  }
+#endif
+
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    // Disable biased locking now as it interferes with the clean up of
+    // the archived Klasses and Java string objects (at dump time only).
+    UseBiasedLocking = false;
+  }
+  if (UseSharedSpaces && patch_mod_javabase) {
+    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
 #endif
 

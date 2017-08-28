@@ -49,21 +49,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
 
 protected:
-  DictionaryEntry* bucket(int i) const {
-    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
-  }
-
-  // The following method is not MT-safe and must be done under lock.
-  DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
-  }
-
-  void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
-  }
-
-  void free_entry(DictionaryEntry* entry);
-
   static size_t entry_size();
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size);
@@ -107,6 +92,24 @@ public:
 
   void print_on(outputStream* st) const;
   void verify();
+  DictionaryEntry* bucket(int i) const {
+    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
+  }
+
+  // The following method is not MT-safe and must be done under lock.
+  DictionaryEntry** bucket_addr(int i) {
+    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
+  }
+
+  void add_entry(int index, DictionaryEntry* new_entry) {
+    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
+  }
+
+  void unlink_entry(DictionaryEntry* entry) {
+    Hashtable<InstanceKlass*, mtClass>::unlink_entry((HashtableEntry<InstanceKlass*, mtClass>*)entry);
+  }
+
+  void free_entry(DictionaryEntry* entry);
 };
 
 // An entry in the class loader data dictionaries, this describes a class as
@@ -254,10 +257,6 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
 class SymbolPropertyTable : public Hashtable<Symbol*, mtSymbol> {
   friend class VMStructs;
 private:
-  SymbolPropertyEntry* bucket(int i) {
-    return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
-  }
-
   // The following method is not MT-safe and must be done under lock.
   SymbolPropertyEntry** bucket_addr(int i) {
     return (SymbolPropertyEntry**) Hashtable<Symbol*, mtSymbol>::bucket_addr(i);
@@ -311,5 +310,9 @@ public:
   void methods_do(void f(Method*));
 
   void verify();
+
+  SymbolPropertyEntry* bucket(int i) {
+    return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
+  }
 };
 #endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP

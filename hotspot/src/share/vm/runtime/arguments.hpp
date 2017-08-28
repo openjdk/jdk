@@ -536,7 +536,7 @@ class Arguments : AllStatic {
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
   static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, Flag::Flags origin);
-  static jint finalize_vm_init_args();
+  static jint finalize_vm_init_args(bool patch_mod_javabase);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {

@@ -374,10 +374,31 @@ address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
 // Global object for holding classes that have been loaded.  Since this
 // is run at a safepoint just before exit, this is the entire set of classes.
 static GrowableArray<Klass*>* _global_klass_objects;
+
+static void collect_array_classes(Klass* k) {
+  _global_klass_objects->append_if_missing(k);
+  if (k->is_array_klass()) {
+    // Add in the array classes too
+    ArrayKlass* ak = ArrayKlass::cast(k);
+    Klass* h = ak->higher_dimension();
+    if (h != NULL) {
+      h->array_klasses_do(collect_array_classes);
+    }
+  }
+}
+
 class CollectClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
     if (!(k->is_instance_klass() && InstanceKlass::cast(k)->is_in_error_state())) {
       _global_klass_objects->append_if_missing(k);
+    }
+    if (k->is_array_klass()) {
+      // Add in the array classes too
+      ArrayKlass* ak = ArrayKlass::cast(k);
+      Klass* h = ak->higher_dimension();
+      if (h != NULL) {
+        h->array_klasses_do(collect_array_classes);
+      }
     }
   }
 };
@@ -385,14 +406,31 @@ class CollectClassesClosure : public KlassClosure {
 static void remove_unshareable_in_classes() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
-    k->remove_unshareable_info();
+    if (!k->is_objArray_klass()) {
+      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
+      // on their array classes.
+      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
+      k->remove_unshareable_info();
+    }
+  }
+}
+
+static void remove_java_mirror_in_classes() {
+  for (int i = 0; i < _global_klass_objects->length(); i++) {
+    Klass* k = _global_klass_objects->at(i);
+    if (!k->is_objArray_klass()) {
+      // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
+      // on their array classes.
+      assert(k->is_instance_klass() || k->is_typeArray_klass(), "must be");
+      k->remove_java_mirror();
+    }
   }
 }
 
 static void rewrite_nofast_bytecode(Method* method) {
-  RawBytecodeStream bcs(method);
+  BytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
-    Bytecodes::Code opcode = bcs.raw_next();
+    Bytecodes::Code opcode = bcs.next();
     switch (opcode) {
     case Bytecodes::_getfield:      *bcs.bcp() = Bytecodes::_nofast_getfield;      break;
     case Bytecodes::_putfield:      *bcs.bcp() = Bytecodes::_nofast_putfield;      break;
@@ -445,6 +483,17 @@ static void relocate_cached_class_file() {
     }
   }
 }
+
+NOT_PRODUCT(
+static void assert_not_anonymous_class(InstanceKlass* k) {
+  assert(!(k->is_anonymous()), "cannot archive anonymous classes");
+}
+
+// Anonymous classes are not stored inside any dictionaries. They are created by
+// SystemDictionary::parse_stream() with a non-null host_klass.
+static void assert_no_anonymoys_classes_in_dictionaries() {
+  ClassLoaderDataGraph::dictionary_classes_do(assert_not_anonymous_class);
+})
 
 // Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
 // (In GCC this is the field <Type>::_vptr, i.e., first word in the object.)
@@ -957,8 +1006,8 @@ public:
     }
     memcpy(p, obj, bytes);
     bool isnew = _new_loc_table->put(obj, (address)p);
-    assert(isnew, "must be");
     log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(obj), p2i(p), bytes);
+    assert(isnew, "must be");
 
     _alloc_stats->record(ref->msotype(), int(newtop - oldtop), read_only);
     if (ref->msotype() == MetaspaceObj::SymbolType) {
@@ -1151,6 +1200,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Reorder the system dictionary. Moving the symbols affects
   // how the hash table indices are calculated.
   SystemDictionary::reorder_dictionary_for_sharing();
+  tty->print("Removing java_mirror ... ");
+  remove_java_mirror_in_classes();
+  tty->print_cr("done. ");
   NOT_PRODUCT(SystemDictionary::verify();)
 
   size_t buckets_bytes = SystemDictionary::count_bytes_for_buckets();
@@ -1218,10 +1270,19 @@ void VM_PopulateDumpSharedSpace::doit() {
   rewrite_nofast_bytecodes_and_calculate_fingerprints();
   tty->print_cr("done. ");
 
+  // Move classes from platform/system dictionaries into the boot dictionary
+  SystemDictionary::combine_shared_dictionaries();
+
   // Remove all references outside the metadata
   tty->print("Removing unshareable information ... ");
   remove_unshareable_in_classes();
   tty->print_cr("done. ");
+
+  // We don't support archiving anonymous classes. Verify that they are not stored in
+  // the any dictionaries.
+  NOT_PRODUCT(assert_no_anonymoys_classes_in_dictionaries());
+
+  SystemDictionaryShared::finalize_verification_constraints();
 
   ArchiveCompactor::initialize();
   ArchiveCompactor::copy_and_compact();
@@ -1312,6 +1373,14 @@ void VM_PopulateDumpSharedSpace::doit() {
     ArchiveCompactor::alloc_stats()->print_stats(int(_ro_region.used()), int(_rw_region.used()),
                                                  int(_mc_region.used()), int(_md_region.used()));
   }
+
+  if (PrintSystemDictionaryAtExit) {
+    SystemDictionary::print();
+  }
+  // There may be other pending VM operations that operate on the InstanceKlasses,
+  // which will fail because InstanceKlasses::remove_unshareable_info()
+  // has been called. Forget these operations and exit the VM directly.
+  vm_direct_exit(0);
 }
 
 void VM_PopulateDumpSharedSpace::print_region_stats() {
@@ -1438,10 +1507,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
       exit(1);
     }
   }
-
-  // Copy the verification constraints from C_HEAP-alloced GrowableArrays to RO-alloced
-  // Arrays
-  SystemDictionaryShared::finalize_verification_constraints();
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -1509,17 +1574,11 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     link_and_cleanup_shared_classes(CATCH);
     tty->print_cr("Rewriting and linking classes: done");
 
+    SystemDictionary::clear_invoke_method_table();
+
     VM_PopulateDumpSharedSpace op;
     VMThread::execute(&op);
   }
-
-  if (PrintSystemDictionaryAtExit) {
-    SystemDictionary::print();
-  }
-
-  // Since various initialization steps have been undone by this process,
-  // it is not reasonable to continue running a java process.
-  exit(0);
 }
 
 
@@ -1529,8 +1588,14 @@ int MetaspaceShared::preload_classes(const char* class_list_path, TRAPS) {
 
     while (parser.parse_one_line()) {
       Klass* klass = ClassLoaderExt::load_one_class(&parser, THREAD);
-
-      CLEAR_PENDING_EXCEPTION;
+      if (HAS_PENDING_EXCEPTION) {
+        if (klass == NULL &&
+             (PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_ClassNotFoundException())) {
+          // print a warning only when the pending exception is class not found
+          tty->print_cr("Preload Warning: Cannot find %s", parser.current_class_name());
+        }
+        CLEAR_PENDING_EXCEPTION;
+      }
       if (klass != NULL) {
         if (log_is_enabled(Trace, cds)) {
           ResourceMark rm;
