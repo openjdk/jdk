@@ -61,7 +61,12 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.ERA;
+
 import java.time.DateTimeException;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.util.Locale;
 
 /**
  * An era in the Minguo calendar system.
@@ -151,6 +156,21 @@ public enum MinguoEra implements Era {
     @Override
     public int getValue() {
         return ordinal();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param style {@inheritDoc}
+     * @param locale {@inheritDoc}
+     */
+    @Override
+    public String getDisplayName(TextStyle style, Locale locale) {
+        return new DateTimeFormatterBuilder()
+            .appendText(ERA, style)
+            .toFormatter(locale)
+            .withChronology(MinguoChronology.INSTANCE)
+            .format(this == ROC ? MinguoDate.of(1, 1, 1) : MinguoDate.of(0, 1, 1));
     }
 
 }
