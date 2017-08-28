@@ -2488,12 +2488,8 @@ public final class String
      * <tr>
      *   <td>(all)</td>
      *   <th scope="row" style="font-weight:normal; text-align:left">
-     *       <img src="doc-files/capiota.gif" alt="capiota"><img src="doc-files/capchi.gif" alt="capchi">
-     *       <img src="doc-files/captheta.gif" alt="captheta"><img src="doc-files/capupsil.gif" alt="capupsil">
-     *       <img src="doc-files/capsigma.gif" alt="capsigma"></th>
-     *   <td><img src="doc-files/iota.gif" alt="iota"><img src="doc-files/chi.gif" alt="chi">
-     *       <img src="doc-files/theta.gif" alt="theta"><img src="doc-files/upsilon.gif" alt="upsilon">
-     *       <img src="doc-files/sigma1.gif" alt="sigma"></td>
+     *       &Iota;&Chi;&Theta;&Upsilon;&Sigma;</th>
+     *   <td>&iota;&chi;&theta;&upsilon;&sigma;</td>
      *   <td>lowercased all chars in String</td>
      * </tr>
      * </tbody>

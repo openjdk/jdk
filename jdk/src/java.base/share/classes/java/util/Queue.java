@@ -46,28 +46,32 @@ package java.util;
  * use with capacity-restricted {@code Queue} implementations; in most
  * implementations, insert operations cannot fail.
  *
- * <table class="plain">
+ * <table class="striped">
  * <caption>Summary of Queue methods</caption>
+ *  <thead>
  *  <tr>
  *    <td></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Returns special value</em></td>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Throws exception</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Returns special value</th>
  *  </tr>
+ *  </thead>
+ *  <tbody>
  *  <tr>
- *    <td><b>Insert</b></td>
+ *    <th scope="row">Insert</th>
  *    <td>{@link #add(Object) add(e)}</td>
  *    <td>{@link #offer(Object) offer(e)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Remove</b></td>
+ *    <th scope="row">Remove</th>
  *    <td>{@link #remove() remove()}</td>
  *    <td>{@link #poll() poll()}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Examine</b></td>
+ *    <th scope="row">Examine</th>
  *    <td>{@link #element() element()}</td>
  *    <td>{@link #peek() peek()}</td>
  *  </tr>
+ *  </tbody>
  * </table>
  *
  * <p>Queues typically, but do not necessarily, order elements in a

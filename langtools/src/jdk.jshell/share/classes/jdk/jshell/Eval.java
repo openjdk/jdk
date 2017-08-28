@@ -574,7 +574,7 @@ class Eval {
                     DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(ex.id());
                     exception = new UnresolvedReferenceException(sn, translateExceptionStack(ex));
                 } catch (UserException ex) {
-                    exception = new EvalException(translateExceptionMessage(ex),
+                    exception = new EvalException(ex.getMessage(),
                             ex.causeExceptionClass(),
                             translateExceptionStack(ex));
                 } catch (RunException ex) {
@@ -780,13 +780,6 @@ class Eval {
             }
         }
         return elems;
-    }
-
-    private String translateExceptionMessage(Exception ex) {
-        String msg = ex.getMessage();
-        return msg.equals("<none>")
-                ? null
-                : msg;
     }
 
     private boolean isWrap(StackTraceElement ste) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package provider;
-
-import java.security.Provider;
 
 /**
- * Custom Security provider for modular test.
+ * JDK-8175362 : StringIndexOutOfBoundsException from /.*((a[^a]+){2})c$/.exec('ababc')
+ *
+ * @test
+ * @run
  */
-public final class TestSecurityProvider extends Provider {
 
-    public TestSecurityProvider() {
-        super("TEST", "1.0", "Test Security provider");
-        System.out.println(String.format("TEST Security provider loaded"
-                + " successfully : %s", this.toString()));
-    }
+var regexp;
 
-    @Override
-    public String toString() {
-        return "TestSecurityProvider [getName()=" + getName()
-                + ", getVersion()=" + getVersionStr() + ", getInfo()="
-                + getInfo() + ", toString()=" + super.toString() + "]";
-    }
-
-}
+regexp = new RegExp(".*((a[^a]+){2})c$");
+print(regexp.exec("ababc"));
+regexp = new RegExp("(a[^a]+){3}");
+print(regexp.exec("ababc"));
