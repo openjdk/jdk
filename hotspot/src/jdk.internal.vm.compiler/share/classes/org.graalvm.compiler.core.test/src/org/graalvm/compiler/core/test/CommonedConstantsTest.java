@@ -90,7 +90,7 @@ public class CommonedConstantsTest extends GraalCompilerTest {
 
     @Test
     public void test1() {
-        getSuites().getHighTier().findPhase(AbstractInliningPhase.class).remove();
+        createSuites(getInitialOptions()).getHighTier().findPhase(AbstractInliningPhase.class).remove();
         test1Snippet(new String(alphabet));
 
         test("test1Snippet", (Object) null);
@@ -114,7 +114,7 @@ public class CommonedConstantsTest extends GraalCompilerTest {
 
     @Test
     public void test2() {
-        assert getSuites().getHighTier().findPhase(AbstractInliningPhase.class).hasNext();
+        assert createSuites(getInitialOptions()).getHighTier().findPhase(AbstractInliningPhase.class).hasNext();
         test2Snippet(new String(alphabet));
 
         test("test2Snippet", (Object) null);

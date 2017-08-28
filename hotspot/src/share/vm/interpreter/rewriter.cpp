@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -94,11 +95,20 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                   _invokedynamic_references_map, CHECK);
 
   // initialize object cache in constant pool
-  _pool->initialize_resolved_references(loader_data, _resolved_references_map,
-                                        _resolved_reference_limit,
-                                        CHECK);
   _pool->set_cache(cache);
   cache->set_constant_pool(_pool());
+
+  // _resolved_references is stored in pool->cache(), so need to be done after
+  // the above lines.
+  _pool->initialize_resolved_references(loader_data, _resolved_references_map,
+                                        _resolved_reference_limit,
+                                        THREAD);
+
+  // Clean up constant pool cache if initialize_resolved_references() failed.
+  if (HAS_PENDING_EXCEPTION) {
+    MetadataFactory::free_metadata(loader_data, cache);
+    _pool->set_cache(NULL);  // so the verifier isn't confused
+  }
 }
 
 
@@ -114,7 +124,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
 // require that local 0 is never overwritten so it's available as an
 // argument for registration.
 
-void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
+void Rewriter::rewrite_Object_init(const methodHandle& method, TRAPS) {
   RawBytecodeStream bcs(method);
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.raw_next();
@@ -136,6 +146,9 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
       case Bytecodes::_astore_0:
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
                   "can't overwrite local 0 in Object.<init>");
+        break;
+
+      default:
         break;
     }
   }
@@ -163,9 +176,7 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
 // If the constant pool entry for invokespecial is InterfaceMethodref,
 // we need to add a separate cpCache entry for its resolution, because it is
 // different than the resolution for invokeinterface with InterfaceMethodref.
-// These cannot share cpCache entries.  It's unclear if all invokespecial to
-// InterfaceMethodrefs would resolve to the same thing so a new cpCache entry
-// is created for each one.  This was added with lambda.
+// These cannot share cpCache entries.
 void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error) {
   address p = bcp + offset;
   if (!reverse) {
@@ -344,129 +355,124 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
+  Bytecodes::Code c;
 
-  {
-    // We cannot tolerate a GC in this block, because we've
-    // cached the bytecodes in 'code_base'. If the Method*
-    // moves, the bytecodes will also move.
-    NoSafepointVerifier nsv;
-    Bytecodes::Code c;
+  // Bytecodes and their length
+  const address code_base = method->code_base();
+  const int code_length = method->code_size();
 
-    // Bytecodes and their length
-    const address code_base = method->code_base();
-    const int code_length = method->code_size();
+  int bc_length;
+  for (int bci = 0; bci < code_length; bci += bc_length) {
+    address bcp = code_base + bci;
+    int prefix_length = 0;
+    c = (Bytecodes::Code)(*bcp);
 
-    int bc_length;
-    for (int bci = 0; bci < code_length; bci += bc_length) {
-      address bcp = code_base + bci;
-      int prefix_length = 0;
-      c = (Bytecodes::Code)(*bcp);
+    // Since we have the code, see if we can get the length
+    // directly. Some more complicated bytecodes will report
+    // a length of zero, meaning we need to make another method
+    // call to calculate the length.
+    bc_length = Bytecodes::length_for(c);
+    if (bc_length == 0) {
+      bc_length = Bytecodes::length_at(method, bcp);
 
-      // Since we have the code, see if we can get the length
-      // directly. Some more complicated bytecodes will report
-      // a length of zero, meaning we need to make another method
-      // call to calculate the length.
-      bc_length = Bytecodes::length_for(c);
-      if (bc_length == 0) {
-        bc_length = Bytecodes::length_at(method, bcp);
+      // length_at will put us at the bytecode after the one modified
+      // by 'wide'. We don't currently examine any of the bytecodes
+      // modified by wide, but in case we do in the future...
+      if (c == Bytecodes::_wide) {
+        prefix_length = 1;
+        c = (Bytecodes::Code)bcp[1];
+      }
+    }
 
-        // length_at will put us at the bytecode after the one modified
-        // by 'wide'. We don't currently examine any of the bytecodes
-        // modified by wide, but in case we do in the future...
-        if (c == Bytecodes::_wide) {
-          prefix_length = 1;
-          c = (Bytecodes::Code)bcp[1];
-        }
+    assert(bc_length != 0, "impossible bytecode length");
+
+    switch (c) {
+      case Bytecodes::_lookupswitch   : {
+#ifndef CC_INTERP
+        Bytecode_lookupswitch bc(method, bcp);
+        (*bcp) = (
+          bc.number_of_pairs() < BinarySwitchThreshold
+          ? Bytecodes::_fast_linearswitch
+          : Bytecodes::_fast_binaryswitch
+        );
+#endif
+        break;
+      }
+      case Bytecodes::_fast_linearswitch:
+      case Bytecodes::_fast_binaryswitch: {
+#ifndef CC_INTERP
+        (*bcp) = Bytecodes::_lookupswitch;
+#endif
+        break;
       }
 
-      assert(bc_length != 0, "impossible bytecode length");
+      case Bytecodes::_invokespecial  : {
+        rewrite_invokespecial(bcp, prefix_length+1, reverse, invokespecial_error);
+        break;
+      }
 
-      switch (c) {
-        case Bytecodes::_lookupswitch   : {
-#ifndef CC_INTERP
-          Bytecode_lookupswitch bc(method, bcp);
-          (*bcp) = (
-            bc.number_of_pairs() < BinarySwitchThreshold
-            ? Bytecodes::_fast_linearswitch
-            : Bytecodes::_fast_binaryswitch
-          );
-#endif
-          break;
-        }
-        case Bytecodes::_fast_linearswitch:
-        case Bytecodes::_fast_binaryswitch: {
-#ifndef CC_INTERP
-          (*bcp) = Bytecodes::_lookupswitch;
-#endif
-          break;
-        }
+      case Bytecodes::_putstatic      :
+      case Bytecodes::_putfield       : {
+        if (!reverse) {
+          // Check if any final field of the class given as parameter is modified
+          // outside of initializer methods of the class. Fields that are modified
+          // are marked with a flag. For marked fields, the compilers do not perform
+          // constant folding (as the field can be changed after initialization).
+          //
+          // The check is performed after verification and only if verification has
+          // succeeded. Therefore, the class is guaranteed to be well-formed.
+          InstanceKlass* klass = method->method_holder();
+          u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
+          constantPoolHandle cp(method->constants());
+          Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
 
-        case Bytecodes::_invokespecial  : {
-          rewrite_invokespecial(bcp, prefix_length+1, reverse, invokespecial_error);
-          break;
-        }
+          if (klass->name() == ref_class_name) {
+            Symbol* field_name = cp->name_ref_at(bc_index);
+            Symbol* field_sig = cp->signature_ref_at(bc_index);
 
-        case Bytecodes::_putstatic      :
-        case Bytecodes::_putfield       : {
-          if (!reverse) {
-            // Check if any final field of the class given as parameter is modified
-            // outside of initializer methods of the class. Fields that are modified
-            // are marked with a flag. For marked fields, the compilers do not perform
-            // constant folding (as the field can be changed after initialization).
-            //
-            // The check is performed after verification and only if verification has
-            // succeeded. Therefore, the class is guaranteed to be well-formed.
-            InstanceKlass* klass = method->method_holder();
-            u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
-            constantPoolHandle cp(method->constants());
-            Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
-
-            if (klass->name() == ref_class_name) {
-              Symbol* field_name = cp->name_ref_at(bc_index);
-              Symbol* field_sig = cp->signature_ref_at(bc_index);
-
-              fieldDescriptor fd;
-              if (klass->find_field(field_name, field_sig, &fd) != NULL) {
-                if (fd.access_flags().is_final()) {
-                  if (fd.access_flags().is_static()) {
-                    if (!method->is_static_initializer()) {
-                      fd.set_has_initialized_final_update(true);
-                    }
-                  } else {
-                    if (!method->is_object_initializer()) {
-                      fd.set_has_initialized_final_update(true);
-                    }
+            fieldDescriptor fd;
+            if (klass->find_field(field_name, field_sig, &fd) != NULL) {
+              if (fd.access_flags().is_final()) {
+                if (fd.access_flags().is_static()) {
+                  if (!method->is_static_initializer()) {
+                    fd.set_has_initialized_final_update(true);
+                  }
+                } else {
+                  if (!method->is_object_initializer()) {
+                    fd.set_has_initialized_final_update(true);
                   }
                 }
               }
             }
           }
         }
-        // fall through
-        case Bytecodes::_getstatic      : // fall through
-        case Bytecodes::_getfield       : // fall through
-        case Bytecodes::_invokevirtual  : // fall through
-        case Bytecodes::_invokestatic   :
-        case Bytecodes::_invokeinterface:
-        case Bytecodes::_invokehandle   : // if reverse=true
-          rewrite_member_reference(bcp, prefix_length+1, reverse);
-          break;
-        case Bytecodes::_invokedynamic:
-          rewrite_invokedynamic(bcp, prefix_length+1, reverse);
-          break;
-        case Bytecodes::_ldc:
-        case Bytecodes::_fast_aldc:  // if reverse=true
-          maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
-          break;
-        case Bytecodes::_ldc_w:
-        case Bytecodes::_fast_aldc_w:  // if reverse=true
-          maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
-          break;
-        case Bytecodes::_jsr            : // fall through
-        case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
-        case Bytecodes::_monitorenter   : // fall through
-        case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
       }
+      // fall through
+      case Bytecodes::_getstatic      : // fall through
+      case Bytecodes::_getfield       : // fall through
+      case Bytecodes::_invokevirtual  : // fall through
+      case Bytecodes::_invokestatic   :
+      case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokehandle   : // if reverse=true
+        rewrite_member_reference(bcp, prefix_length+1, reverse);
+        break;
+      case Bytecodes::_invokedynamic:
+        rewrite_invokedynamic(bcp, prefix_length+1, reverse);
+        break;
+      case Bytecodes::_ldc:
+      case Bytecodes::_fast_aldc:  // if reverse=true
+        maybe_rewrite_ldc(bcp, prefix_length+1, false, reverse);
+        break;
+      case Bytecodes::_ldc_w:
+      case Bytecodes::_fast_aldc_w:  // if reverse=true
+        maybe_rewrite_ldc(bcp, prefix_length+1, true, reverse);
+        break;
+      case Bytecodes::_jsr            : // fall through
+      case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
+      case Bytecodes::_monitorenter   : // fall through
+      case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
+
+      default: break;
     }
   }
 
@@ -485,17 +491,16 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
 }
 
 // After constant pool is created, revisit methods containing jsrs.
-methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
+methodHandle Rewriter::rewrite_jsrs(const methodHandle& method, TRAPS) {
   ResourceMark rm(THREAD);
   ResolveOopMapConflicts romc(method);
-  methodHandle original_method = method;
-  method = romc.do_potential_rewrite(CHECK_(methodHandle()));
+  methodHandle new_method = romc.do_potential_rewrite(CHECK_(methodHandle()));
   // Update monitor matching info.
   if (romc.monitor_safe()) {
-    method->set_guaranteed_monitor_matching();
+    new_method->set_guaranteed_monitor_matching();
   }
 
-  return method;
+  return new_method;
 }
 
 void Rewriter::rewrite_bytecodes(TRAPS) {
@@ -544,16 +549,16 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   patch_invokedynamic_bytecodes();
 }
 
-void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
+void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
   if (!DumpSharedSpaces) {
-    assert(!MetaspaceShared::is_in_shared_space(klass()), "archive methods must not be rewritten at run time");
+    assert(!MetaspaceShared::is_in_shared_space(klass), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
+Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
     _methods(methods),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
+import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
+import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
@@ -37,18 +38,44 @@ import org.graalvm.compiler.nodes.virtual.AllocatedObjectNode;
 import org.graalvm.compiler.nodes.virtual.CommitAllocationNode;
 import org.graalvm.compiler.nodes.virtual.LockState;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
+import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.virtual.phases.ea.EffectList.Effect;
 
 public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<T>> extends EffectsBlockState<T> {
 
     private static final ObjectState[] EMPTY_ARRAY = new ObjectState[0];
 
+    /**
+     * This array contains the state of all virtual objects, indexed by
+     * {@link VirtualObjectNode#getObjectId()}. Entries in this array may be null if the
+     * corresponding virtual object is not alive or reachable currently.
+     */
     private ObjectState[] objectStates;
+
+    public boolean contains(VirtualObjectNode value) {
+        for (ObjectState state : objectStates) {
+            if (state != null && state.isVirtual() && state.getEntries() != null) {
+                for (ValueNode entry : state.getEntries()) {
+                    if (entry == value) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     private static class RefCount {
         private int refCount = 1;
     }
 
+    /**
+     * Usage count for the objectStates array, to avoid unneessary copying.
+     */
     private RefCount arrayRefCount;
+
+    private final OptionValues options;
+    private final DebugContext debug;
 
     /**
      * Final subclass of PartialEscapeBlockState, for performance and to make everything behave
@@ -56,7 +83,8 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
      */
     public static final class Final extends PartialEscapeBlockState<Final> {
 
-        public Final() {
+        public Final(OptionValues options, DebugContext debug) {
+            super(options, debug);
         }
 
         public Final(Final other) {
@@ -64,14 +92,18 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
         }
     }
 
-    protected PartialEscapeBlockState() {
+    protected PartialEscapeBlockState(OptionValues options, DebugContext debug) {
         objectStates = EMPTY_ARRAY;
         arrayRefCount = new RefCount();
+        this.options = options;
+        this.debug = debug;
     }
 
     protected PartialEscapeBlockState(PartialEscapeBlockState<T> other) {
         super(other);
         adoptAddObjectStates(other);
+        options = other.options;
+        debug = other.debug;
     }
 
     public ObjectState getObjectState(int object) {
@@ -84,6 +116,9 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
         return object >= objectStates.length ? null : objectStates[object];
     }
 
+    /**
+     * Asserts that the given virtual object is available/reachable in the current state.
+     */
     public ObjectState getObjectState(VirtualObjectNode object) {
         ObjectState state = objectStates[object.getObjectId()];
         assert state != null;
@@ -98,6 +133,7 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
     private ObjectState[] getObjectStateArrayForModification() {
         if (arrayRefCount.refCount > 1) {
             objectStates = objectStates.clone();
+            arrayRefCount.refCount--;
             arrayRefCount = new RefCount();
         }
         return objectStates;
@@ -142,49 +178,59 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
         }
     }
 
+    /**
+     * Materializes the given virtual object and produces the necessary effects in the effects list.
+     * This transitively also materializes all other virtual objects that are reachable from the
+     * entries.
+     */
     public void materializeBefore(FixedNode fixed, VirtualObjectNode virtual, GraphEffectList materializeEffects) {
-        PartialEscapeClosure.COUNTER_MATERIALIZATIONS.increment();
+        PartialEscapeClosure.COUNTER_MATERIALIZATIONS.increment(fixed.getDebug());
         List<AllocatedObjectNode> objects = new ArrayList<>(2);
         List<ValueNode> values = new ArrayList<>(8);
-        List<List<MonitorIdNode>> locks = new ArrayList<>(2);
+        List<List<MonitorIdNode>> locks = new ArrayList<>();
         List<ValueNode> otherAllocations = new ArrayList<>(2);
         List<Boolean> ensureVirtual = new ArrayList<>(2);
         materializeWithCommit(fixed, virtual, objects, locks, values, ensureVirtual, otherAllocations);
-        assert fixed != null;
 
-        materializeEffects.add("materializeBefore", (graph, obsoleteNodes) -> {
-            for (ValueNode otherAllocation : otherAllocations) {
-                graph.addWithoutUnique(otherAllocation);
-                if (otherAllocation instanceof FixedWithNextNode) {
-                    graph.addBeforeFixed(fixed, (FixedWithNextNode) otherAllocation);
-                } else {
-                    assert otherAllocation instanceof FloatingNode;
+        materializeEffects.addVirtualizationDelta(-(objects.size() + otherAllocations.size()));
+        materializeEffects.add("materializeBefore", new Effect() {
+            @Override
+            public void apply(StructuredGraph graph, ArrayList<Node> obsoleteNodes) {
+                for (ValueNode alloc : otherAllocations) {
+                    ValueNode otherAllocation = graph.addOrUniqueWithInputs(alloc);
+                    if (otherAllocation instanceof FixedWithNextNode) {
+                        graph.addBeforeFixed(fixed, (FixedWithNextNode) otherAllocation);
+                    } else {
+                        assert otherAllocation instanceof FloatingNode;
+                    }
                 }
-            }
-            if (!objects.isEmpty()) {
-                CommitAllocationNode commit;
-                if (fixed.predecessor() instanceof CommitAllocationNode) {
-                    commit = (CommitAllocationNode) fixed.predecessor();
-                } else {
-                    commit = graph.add(new CommitAllocationNode());
-                    graph.addBeforeFixed(fixed, commit);
-                }
-                for (AllocatedObjectNode obj : objects) {
-                    graph.addWithoutUnique(obj);
-                    commit.getVirtualObjects().add(obj.getVirtualObject());
-                    obj.setCommit(commit);
-                }
-                commit.getValues().addAll(values);
-                for (List<MonitorIdNode> monitorIds : locks) {
-                    commit.addLocks(monitorIds);
-                }
-                commit.getEnsureVirtual().addAll(ensureVirtual);
+                if (!objects.isEmpty()) {
+                    CommitAllocationNode commit;
+                    if (fixed.predecessor() instanceof CommitAllocationNode) {
+                        commit = (CommitAllocationNode) fixed.predecessor();
+                    } else {
+                        commit = graph.add(new CommitAllocationNode());
+                        graph.addBeforeFixed(fixed, commit);
+                    }
+                    for (AllocatedObjectNode obj : objects) {
+                        graph.addWithoutUnique(obj);
+                        commit.getVirtualObjects().add(obj.getVirtualObject());
+                        obj.setCommit(commit);
+                    }
+                    for (ValueNode value : values) {
+                        commit.getValues().add(graph.addOrUniqueWithInputs(value));
+                    }
+                    for (List<MonitorIdNode> monitorIds : locks) {
+                        commit.addLocks(monitorIds);
+                    }
+                    commit.getEnsureVirtual().addAll(ensureVirtual);
 
-                assert commit.usages().filter(AllocatedObjectNode.class).count() == commit.getUsageCount();
-                List<AllocatedObjectNode> materializedValues = commit.usages().filter(AllocatedObjectNode.class).snapshot();
-                for (int i = 0; i < commit.getValues().size(); i++) {
-                    if (materializedValues.contains(commit.getValues().get(i))) {
-                        commit.getValues().set(i, ((AllocatedObjectNode) commit.getValues().get(i)).getVirtualObject());
+                    assert commit.usages().filter(AllocatedObjectNode.class).count() == commit.getUsageCount();
+                    List<AllocatedObjectNode> materializedValues = commit.usages().filter(AllocatedObjectNode.class).snapshot();
+                    for (int i = 0; i < commit.getValues().size(); i++) {
+                        if (materializedValues.contains(commit.getValues().get(i))) {
+                            commit.getValues().set(i, ((AllocatedObjectNode) commit.getValues().get(i)).getVirtualObject());
+                        }
                     }
                 }
             }
@@ -223,14 +269,14 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
             }
             objectMaterialized(virtual, (AllocatedObjectNode) representation, values.subList(pos, pos + entries.length));
         } else {
-            VirtualUtil.trace("materialized %s as %s", virtual, representation);
+            VirtualUtil.trace(options, debug, "materialized %s as %s", virtual, representation);
             otherAllocations.add(representation);
             assert obj.getLocks() == null;
         }
     }
 
     protected void objectMaterialized(VirtualObjectNode virtual, AllocatedObjectNode representation, List<ValueNode> values) {
-        VirtualUtil.trace("materialized %s as %s with values %s", virtual, representation, values);
+        VirtualUtil.trace(options, debug, "materialized %s as %s with values %s", virtual, representation, values);
     }
 
     public void addObject(int virtual, ObjectState state) {
@@ -273,41 +319,6 @@ public abstract class PartialEscapeBlockState<T extends PartialEscapeBlockState<
             }
         }
         return true;
-    }
-
-    protected static <K, V> boolean compareMaps(Map<K, V> left, Map<K, V> right) {
-        if (left.size() != right.size()) {
-            return false;
-        }
-        return compareMapsNoSize(left, right);
-    }
-
-    protected static <K, V> boolean compareMapsNoSize(Map<K, V> left, Map<K, V> right) {
-        if (left == right) {
-            return true;
-        }
-        for (Map.Entry<K, V> entry : right.entrySet()) {
-            K key = entry.getKey();
-            V value = entry.getValue();
-            assert value != null;
-            V otherValue = left.get(key);
-            if (otherValue != value && !value.equals(otherValue)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected static <U, V> void meetMaps(Map<U, V> target, Map<U, V> source) {
-        Iterator<Map.Entry<U, V>> iter = target.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<U, V> entry = iter.next();
-            if (source.containsKey(entry.getKey())) {
-                assert source.get(entry.getKey()) == entry.getValue();
-            } else {
-                iter.remove();
-            }
-        }
     }
 
     public void resetObjectStates(int size) {

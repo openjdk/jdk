@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.debug;
 
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.lir.LIR;
 
 import jdk.vm.ci.meta.Value;
@@ -38,17 +38,17 @@ public interface LIRGenerationDebugContext {
      */
     Object getSourceForOperand(Value value);
 
-    static LIRGenerationDebugContext getFromDebugContext() {
-        if (Debug.isEnabled()) {
-            LIRGenerationDebugContext lirGen = Debug.contextLookup(LIRGenerationDebugContext.class);
+    static LIRGenerationDebugContext getFromDebugContext(DebugContext debug) {
+        if (debug.areScopesEnabled()) {
+            LIRGenerationDebugContext lirGen = debug.contextLookup(LIRGenerationDebugContext.class);
             assert lirGen != null;
             return lirGen;
         }
         return null;
     }
 
-    static Object getSourceForOperandFromDebugContext(Value value) {
-        LIRGenerationDebugContext gen = getFromDebugContext();
+    static Object getSourceForOperandFromDebugContext(DebugContext debug, Value value) {
+        LIRGenerationDebugContext gen = getFromDebugContext(debug);
         if (gen != null) {
             return gen.getSourceForOperand(value);
         }

@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 
 // A HandlerTableEntry describes an individual entry of a subtable
 // of ExceptionHandlerTable. An entry consists of a pair(bci, pco),
@@ -114,7 +115,7 @@ class ExceptionHandlerTable VALUE_OBJ_CLASS_SPEC {
   );
 
   // nmethod support
-  int  size_in_bytes() const { return round_to(_length * sizeof(HandlerTableEntry), oopSize); }
+  int  size_in_bytes() const { return align_up(_length * (int)sizeof(HandlerTableEntry), oopSize); }
   void copy_to(CompiledMethod* nm);
   void copy_bytes_to(address addr);
 

@@ -24,32 +24,33 @@ package org.graalvm.compiler.options;
 
 /**
  * Describes the attributes of a static field {@linkplain Option option} and provides access to its
- * {@linkplain OptionValue value}.
+ * {@linkplain OptionKey value}.
  */
 public final class OptionDescriptor {
 
     protected final String name;
     protected final Class<?> type;
     protected final String help;
-    protected final OptionValue<?> option;
+    protected final OptionKey<?> optionKey;
     protected final Class<?> declaringClass;
     protected final String fieldName;
 
-    public static OptionDescriptor create(String name, Class<?> type, String help, Class<?> declaringClass, String fieldName, OptionValue<?> option) {
+    public static OptionDescriptor create(String name, Class<?> type, String help, Class<?> declaringClass, String fieldName, OptionKey<?> option) {
+        assert option != null : declaringClass + "." + fieldName;
         OptionDescriptor result = option.getDescriptor();
         if (result == null) {
             result = new OptionDescriptor(name, type, help, declaringClass, fieldName, option);
             option.setDescriptor(result);
         }
-        assert result.name.equals(name) && result.type == type && result.declaringClass == declaringClass && result.fieldName.equals(fieldName) && result.option == option;
+        assert result.name.equals(name) && result.type == type && result.declaringClass == declaringClass && result.fieldName.equals(fieldName) && result.optionKey == option;
         return result;
     }
 
-    private OptionDescriptor(String name, Class<?> type, String help, Class<?> declaringClass, String fieldName, OptionValue<?> option) {
+    private OptionDescriptor(String name, Class<?> type, String help, Class<?> declaringClass, String fieldName, OptionKey<?> optionKey) {
         this.name = name;
         this.type = type;
         this.help = help;
-        this.option = option;
+        this.optionKey = optionKey;
         this.declaringClass = declaringClass;
         this.fieldName = fieldName;
         assert !type.isPrimitive() : "must used boxed type instead of " + type;
@@ -81,8 +82,8 @@ public final class OptionDescriptor {
     /**
      * Gets the boxed option value.
      */
-    public OptionValue<?> getOptionValue() {
-        return option;
+    public OptionKey<?> getOptionKey() {
+        return optionKey;
     }
 
     public Class<?> getDeclaringClass() {

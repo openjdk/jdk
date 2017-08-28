@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import sun.jvm.hotspot.code.CodeCacheVisitor;
 import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.SymbolTable;
 import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
@@ -853,8 +854,8 @@ public class CommandProcessor {
                 } else {
                     String s = t.nextToken();
                     if (s.equals("-a")) {
-                        SystemDictionary sysDict = VM.getVM().getSystemDictionary();
-                        sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+                        ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+                        cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                                 public void visit(Klass k) {
                                     if (k instanceof InstanceKlass) {
                                         MethodArray methods = ((InstanceKlass)k).getMethods();
@@ -887,8 +888,8 @@ public class CommandProcessor {
                 if (t.countTokens() != 0) {
                     usage();
                 } else {
-                    SystemDictionary sysDict = VM.getVM().getSystemDictionary();
-                    sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+                    ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+                    cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                             public void visit(Klass k) {
                                 if (k instanceof InstanceKlass && ((InstanceKlass)k).getConstants().getCache() != null) {
                                     MethodArray methods = ((InstanceKlass)k).getMethods();

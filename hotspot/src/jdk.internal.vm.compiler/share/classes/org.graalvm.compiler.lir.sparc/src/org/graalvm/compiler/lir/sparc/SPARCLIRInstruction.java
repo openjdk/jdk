@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.sparc;
 
-import org.graalvm.compiler.asm.NumUtil;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,8 +334,8 @@ public:
   }
 
   // Vector ideal reg
-  static const int vector_ideal_reg(int len);
-  static const int vector_shift_count_ideal_reg(int len);
+  static const uint vector_ideal_reg(int len);
+  static const uint vector_shift_count_ideal_reg(int len);
 
   // CPU supports misaligned vectors store/load.
   static const bool misaligned_vectors_ok();
@@ -377,8 +377,8 @@ public:
   virtual OptoReg::Name return_addr() const;
   RegMask              _return_addr_mask;
   // Return value register.  On Intel it is EAX.  On Sparc i0/o0.
-  static OptoRegPair   return_value(int ideal_reg, bool is_outgoing);
-  static OptoRegPair c_return_value(int ideal_reg, bool is_outgoing);
+  static OptoRegPair   return_value(uint ideal_reg, bool is_outgoing);
+  static OptoRegPair c_return_value(uint ideal_reg, bool is_outgoing);
   RegMask                     _return_value_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();

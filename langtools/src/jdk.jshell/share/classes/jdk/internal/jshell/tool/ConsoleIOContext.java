@@ -1167,7 +1167,7 @@ class ConsoleIOContext extends IOContext {
 
         public TestTerminal(StopDetectingInputStream input) throws Exception {
             super(true);
-            setAnsiSupported(false);
+            setAnsiSupported(Boolean.getBoolean("test.terminal.ansi.supported"));
             setEchoEnabled(false);
             this.input = input;
             int h = DEFAULT_HEIGHT;

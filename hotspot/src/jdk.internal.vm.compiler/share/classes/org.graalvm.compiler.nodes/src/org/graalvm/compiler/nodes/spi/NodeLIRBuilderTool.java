@@ -46,6 +46,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.extended.SwitchNode;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.meta.Value;
@@ -87,4 +88,8 @@ public interface NodeLIRBuilderTool extends NodeValueMap {
     Value[] visitInvokeArguments(CallingConvention cc, Collection<ValueNode> arguments);
 
     void doBlock(Block block, StructuredGraph graph, BlockMap<List<Node>> blockMap);
+
+    default OptionValues getOptions() {
+        return getLIRGeneratorTool().getResult().getLIR().getOptions();
+    }
 }

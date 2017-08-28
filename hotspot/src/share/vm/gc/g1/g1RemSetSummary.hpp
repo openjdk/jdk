@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,20 +36,16 @@ class G1RemSetSummary VALUE_OBJ_CLASS_SPEC {
 private:
   friend class GetRSThreadVTimeClosure;
 
-  G1RemSet* _remset;
+  G1RemSet* _rem_set;
 
-  G1RemSet* remset() const {
-    return _remset;
-  }
-
-  size_t _num_refined_cards;
+  size_t _num_conc_refined_cards;
   size_t _num_processed_buf_mutator;
   size_t _num_processed_buf_rs_threads;
 
   size_t _num_coarsenings;
 
-  double* _rs_threads_vtimes;
   size_t _num_vtimes;
+  double* _rs_threads_vtimes;
 
   double _sampling_thread_vtime;
 
@@ -63,16 +59,14 @@ private:
 
 public:
   G1RemSetSummary();
+  G1RemSetSummary(G1RemSet* remset);
+
   ~G1RemSetSummary();
 
   // set the counters in this summary to the values of the others
   void set(G1RemSetSummary* other);
   // subtract all counters from the other summary, and set them in the current
   void subtract_from(G1RemSetSummary* other);
-
-  // initialize and get the first sampling
-  void initialize(G1RemSet* remset);
-  bool const initialized() { return _rs_threads_vtimes != NULL; }
 
   void print_on(outputStream* out);
 
@@ -82,8 +76,8 @@ public:
     return _sampling_thread_vtime;
   }
 
-  size_t num_concurrent_refined_cards() const {
-    return _num_refined_cards;
+  size_t num_conc_refined_cards() const {
+    return _num_conc_refined_cards;
   }
 
   size_t num_processed_buf_mutator() const {

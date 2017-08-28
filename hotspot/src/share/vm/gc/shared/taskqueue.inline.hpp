@@ -44,13 +44,13 @@ inline GenericTaskQueueSet<T, F>::GenericTaskQueueSet(int n) : _n(n) {
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline void GenericTaskQueue<E, F, N>::initialize() {
-  _elems = ArrayAllocator<E, F>::allocate(N);
+  _elems = ArrayAllocator<E>::allocate(N, F);
 }
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
   assert(false, "This code is currently never called");
-  ArrayAllocator<E, F>::free(const_cast<E*>(_elems), N);
+  ArrayAllocator<E>::free(const_cast<E*>(_elems), N);
 }
 
 template<class E, MEMFLAGS F, unsigned int N>

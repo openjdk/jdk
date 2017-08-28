@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "code/relocInfo.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/os.hpp"
-#include "code/relocInfo.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsCompiler.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
 
 Flag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
@@ -276,23 +278,24 @@ Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return Flag::VIOLATES_CONSTRAINT;
   }
 
-#ifdef SPARC
+  // Relevant on ppc, s390, sparc. Will be optimized where
+  // addr_unit() == 1.
   if (OptoLoopAlignment % relocInfo::addr_unit() != 0) {
     CommandLineError::print(verbose,
                             "OptoLoopAlignment (" INTX_FORMAT ") must be "
-                            "multiple of NOP size\n");
+                            "multiple of NOP size (%d)\n",
+                            value, relocInfo::addr_unit());
     return Flag::VIOLATES_CONSTRAINT;
   }
-#endif
 
   return Flag::SUCCESS;
 }
 
 Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
-  if (value != 0) {
+  if (value >= 4032) {
     CommandLineError::print(verbose,
-                            "ArraycopyDstPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
-                            value);
+                            "ArraycopyDstPrefetchDistance (" UINTX_FORMAT ") must be"
+                            "between 0 and 4031\n", value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
@@ -300,10 +303,10 @@ Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose
 }
 
 Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
-  if (value != 0) {
+  if (value >= 4032) {
     CommandLineError::print(verbose,
-                            "ArraycopySrcPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
-                            value);
+                            "ArraycopySrcPrefetchDistance (" UINTX_FORMAT ") must be"
+                            "between 0 and 4031\n", value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
@@ -388,3 +391,17 @@ Flag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
   return Flag::SUCCESS;
 }
 #endif // COMPILER2
+
+Flag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose) {
+#if INCLUDE_RTM_OPT
+  if (UseRTMLocking && !is_power_of_2(RTMTotalCountIncrRate)) {
+    CommandLineError::print(verbose,
+                            "RTMTotalCountIncrRate (" INTX_FORMAT
+                            ") must be a power of 2, resetting it to 64\n",
+                            RTMTotalCountIncrRate);
+    FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
+  }
+#endif
+
+  return Flag::SUCCESS;
+}

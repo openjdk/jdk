@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.hotspot.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -39,7 +39,7 @@ import jdk.vm.ci.meta.DeoptimizationReason;
 /**
  * Removes the current frame and tail calls the uncommon trap routine.
  */
-@NodeInfo(shortName = "DeoptCaller", nameTemplate = "DeoptCaller {p#reason/s}", cycles = CYCLES_1, size = SIZE_3)
+@NodeInfo(shortName = "DeoptCaller", nameTemplate = "DeoptCaller {p#reason/s}", cycles = CYCLES_8, size = SIZE_8)
 public final class DeoptimizeCallerNode extends ControlSinkNode implements LIRLowerable {
 
     public static final NodeClass<DeoptimizeCallerNode> TYPE = NodeClass.create(DeoptimizeCallerNode.class);

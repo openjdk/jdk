@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,50 +95,6 @@ public class AuthResources_zh_CN extends java.util.ListResourceBundle {
                 "Kerberos \u7528\u6237\u540D [{0}]: "},
         {"Kerberos.password.for.username.",
                 "{0}\u7684 Kerberos \u53E3\u4EE4: "},
-
-        /***    EVERYTHING BELOW IS DEPRECATED  ***/
-
-        // com.sun.security.auth.PolicyFile
-        {".error.parsing.", ": \u89E3\u6790\u65F6\u51FA\u9519 "},
-        {"COLON", ": "},
-        {".error.adding.Permission.", ": \u6DFB\u52A0\u6743\u9650\u65F6\u51FA\u9519 "},
-        {"SPACE", " "},
-        {".error.adding.Entry.", ": \u6DFB\u52A0\u6761\u76EE\u65F6\u51FA\u9519 "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"attempt.to.add.a.Permission.to.a.readonly.PermissionCollection",
-            "\u5C1D\u8BD5\u5C06\u6743\u9650\u6DFB\u52A0\u81F3\u53EA\u8BFB\u7684 PermissionCollection"},
-
-        // com.sun.security.auth.PolicyParser
-        {"expected.keystore.type", "\u5E94\u4E3A\u5BC6\u94A5\u5E93\u7C7B\u578B"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "\u6CA1\u6709\u901A\u914D\u7B26\u540D\u79F0, \u65E0\u6CD5\u4F7F\u7528\u901A\u914D\u7B26\u7C7B\u6307\u5B9A\u4E3B\u7528\u6237"},
-        {"expected.codeBase.or.SignedBy", "\u5E94\u4E3A codeBase \u6216 SignedBy"},
-        {"only.Principal.based.grant.entries.permitted",
-                "\u53EA\u5141\u8BB8\u57FA\u4E8E\u4E3B\u7528\u6237\u7684\u6388\u6743\u6761\u76EE"},
-        {"expected.permission.entry", "\u5E94\u4E3A\u6743\u9650\u6761\u76EE"},
-        {"number.", "\u7F16\u53F7 "},
-        {"expected.expect.read.end.of.file.",
-                "\u5E94\u4E3A{0}, \u8BFB\u53D6\u7684\u662F\u6587\u4EF6\u7ED3\u5C3E"},
-        {"expected.read.end.of.file", "\u5E94\u4E3A ';', \u8BFB\u53D6\u7684\u662F\u6587\u4EF6\u7ED3\u5C3E"},
-        {"line.", "\u884C "},
-        {".expected.", ": \u5E94\u4E3A '"},
-        {".found.", "', \u627E\u5230 '"},
-        {"QUOTE", "'"},
-
-        // SolarisPrincipals
-        {"SolarisNumericGroupPrincipal.Primary.Group.",
-                "SolarisNumericGroupPrincipal [\u4E3B\u7EC4]: "},
-        {"SolarisNumericGroupPrincipal.Supplementary.Group.",
-                "SolarisNumericGroupPrincipal [\u8865\u5145\u7EC4]: "},
-        {"SolarisNumericUserPrincipal.",
-                "SolarisNumericUserPrincipal: "},
-        {"SolarisPrincipal.", "SolarisPrincipal: "},
-        // provided.null.name is the NullPointerException message when a
-        // developer incorrectly passes a null name to the constructor of
-        // subclasses of java.security.Principal
-        {"provided.null.name", "\u63D0\u4F9B\u7684\u540D\u79F0\u4E3A\u7A7A\u503C"}
-
     };
 
     /**

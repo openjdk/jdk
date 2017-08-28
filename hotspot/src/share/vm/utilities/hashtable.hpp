@@ -124,17 +124,9 @@ private:
   // Instance variable
   BasicHashtableEntry<F>*       _entry;
 
-#ifdef ASSERT
-private:
-  unsigned _hits;
-public:
-  unsigned hits()   { return _hits; }
-  void count_hit()  { _hits++; }
-#endif
-
 public:
   // Accessing
-  void clear()                        { _entry = NULL; DEBUG_ONLY(_hits = 0); }
+  void clear()                        { _entry = NULL; }
 
   // The following methods use order access methods to avoid race
   // conditions in multiprocessor systems.
@@ -156,8 +148,10 @@ public:
                  HashtableBucket<F>* buckets, int number_of_entries);
 
   // Sharing support.
-  void copy_buckets(char** top, char* end);
-  void copy_table(char** top, char* end);
+  size_t count_bytes_for_buckets();
+  size_t count_bytes_for_table();
+  void copy_buckets(char* top, char* end);
+  void copy_table(char* top, char* end);
 
   // Bucket handling
   int hash_to_index(unsigned int full_hash) const {
@@ -165,9 +159,6 @@ public:
     assert(h >= 0 && h < _table_size, "Illegal hash value");
     return h;
   }
-
-  // Reverse the order of elements in each of the buckets.
-  void reverse();
 
 private:
   // Instance variables
@@ -180,13 +171,6 @@ private:
   volatile int      _number_of_entries;
 
 protected:
-
-#ifdef ASSERT
-  bool              _lookup_warning;
-  mutable int       _lookup_count;
-  mutable int       _lookup_length;
-  bool verify_lookup_length(double load, const char *table_name);
-#endif
 
   void initialize(int table_size, int entry_size, int number_of_entries);
 
@@ -244,25 +228,16 @@ protected:
   // is mt-safe wrt. to other calls of this method.
   void bulk_free_entries(BucketUnlinkContext* context);
 public:
-  int table_size() { return _table_size; }
+  int table_size() const { return _table_size; }
   void set_entry(int index, BasicHashtableEntry<F>* entry);
 
   void add_entry(int index, BasicHashtableEntry<F>* entry);
 
   void free_entry(BasicHashtableEntry<F>* entry);
 
-  int number_of_entries() { return _number_of_entries; }
+  int number_of_entries() const { return _number_of_entries; }
 
-  void verify() PRODUCT_RETURN;
-
-#ifdef ASSERT
-  void bucket_count_hit(int i) const {
-    _buckets[i].count_hit();
-  }
-  unsigned bucket_hits(int i) const {
-    return _buckets[i].hits();
-  }
-#endif
+  template <class T> void verify_table(const char* table_name) PRODUCT_RETURN;
 };
 
 
@@ -280,24 +255,22 @@ public:
   // Debugging
   void print()               PRODUCT_RETURN;
 
-  // Reverse the order of elements in each of the buckets. Hashtable
-  // entries which refer to objects at a lower address than 'boundary'
-  // are separated from those which refer to objects at higher
-  // addresses, and appear first in the list.
-  void reverse(void* boundary = NULL);
-
-protected:
-
-  unsigned int compute_hash(Symbol* name) {
+  unsigned int compute_hash(const Symbol* name) const {
     return (unsigned int) name->identity_hash();
   }
 
-  int index_for(Symbol* name) {
+  int index_for(const Symbol* name) const {
     return this->hash_to_index(compute_hash(name));
   }
 
+  void print_table_statistics(outputStream* st, const char *table_name);
+
+ protected:
+
   // Table entry management
   HashtableEntry<T, F>* new_entry(unsigned int hashValue, T obj);
+  // Don't create and use freelist of HashtableEntry.
+  HashtableEntry<T, F>* allocate_new_entry(unsigned int hashValue, T obj);
 
   // The following method is MT-safe and may be used with caution.
   HashtableEntry<T, F>* bucket(int i) const {
@@ -334,51 +307,15 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
 
   // Function to move these elements into the new table.
   void move_to(RehashableHashtable<T, F>* new_table);
-  static bool use_alternate_hashcode()  { return _seed != 0; }
-  static juint seed()                    { return _seed; }
-
-  static int literal_size(Symbol *symbol);
-  static int literal_size(oop oop);
-
-  // The following two are currently not used, but are needed anyway because some
-  // C++ compilers (MacOS and Solaris) force the instantiation of
-  // Hashtable<ConstantPool*, mtClass>::dump_table() even though we never call this function
-  // in the VM code.
-  static int literal_size(ConstantPool *cp) {Unimplemented(); return 0;}
-  static int literal_size(Klass *k)         {Unimplemented(); return 0;}
-
-  void dump_table(outputStream* st, const char *table_name);
+  static bool use_alternate_hashcode();
+  static juint seed();
 
  private:
   static juint _seed;
 };
 
-
-// Versions of hashtable where two handles are used to compute the index.
-
-template <class T, MEMFLAGS F> class TwoOopHashtable : public Hashtable<T, F> {
-  friend class VMStructs;
-protected:
-  TwoOopHashtable(int table_size, int entry_size)
-    : Hashtable<T, F>(table_size, entry_size) {}
-
-  TwoOopHashtable(int table_size, int entry_size, HashtableBucket<F>* t,
-                  int number_of_entries)
-    : Hashtable<T, F>(table_size, entry_size, t, number_of_entries) {}
-
-public:
-  unsigned int compute_hash(const Symbol* name, const ClassLoaderData* loader_data) const {
-    unsigned int name_hash = name->identity_hash();
-    // loader is null with CDS
-    assert(loader_data != NULL || UseSharedSpaces || DumpSharedSpaces,
-           "only allowed with shared spaces");
-    unsigned int loader_hash = loader_data == NULL ? 0 : loader_data->identity_hash();
-    return name_hash ^ loader_hash;
-  }
-
-  int index_for(Symbol* name, ClassLoaderData* loader_data) {
-    return this->hash_to_index(compute_hash(name, loader_data));
-  }
-};
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::seed() { return _seed; };
+template <class T, MEMFLAGS F> bool  RehashableHashtable<T, F>::use_alternate_hashcode() { return _seed != 0; };
 
 #endif // SHARE_VM_UTILITIES_HASHTABLE_HPP

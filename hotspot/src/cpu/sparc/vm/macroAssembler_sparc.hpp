@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,6 @@ REGISTER_DECLARATION(Register, O5_savedSP       , O5);
 REGISTER_DECLARATION(Register, I5_savedSP       , I5); // Saved SP before bumping for locals.  This is simply
                                                        // a copy SP, so in 64-bit it's a biased value.  The bias
                                                        // is added and removed as needed in the frame code.
-REGISTER_DECLARATION(Register, IdispatchTables  , I4); // Base address of the bytecode dispatch tables
 REGISTER_DECLARATION(Register, IdispatchAddress , I3); // Register which saves the dispatch address for each bytecode
 REGISTER_DECLARATION(Register, ImethodDataPtr   , I2); // Pointer to the current method data
 
@@ -228,7 +227,6 @@ REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is comi
 #define O5_savedSP          AS_REGISTER(Register, O5_savedSP)
 #define IdispatchAddress    AS_REGISTER(Register, IdispatchAddress)
 #define ImethodDataPtr      AS_REGISTER(Register, ImethodDataPtr)
-#define IdispatchTables     AS_REGISTER(Register, IdispatchTables)
 
 #define Oexception          AS_REGISTER(Register, Oexception)
 #define Oissuing_pc         AS_REGISTER(Register, Oissuing_pc)
@@ -333,14 +331,12 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
       return external_word_Relocation::spec(addr);
     case relocInfo::internal_word_type:
       return internal_word_Relocation::spec(addr);
-#ifdef _LP64
     case relocInfo::opt_virtual_call_type:
       return opt_virtual_call_Relocation::spec();
     case relocInfo::static_call_type:
       return static_call_Relocation::spec();
     case relocInfo::runtime_call_type:
       return runtime_call_Relocation::spec();
-#endif
     case relocInfo::none:
       return RelocationHolder();
     default:
@@ -396,12 +392,10 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-#ifdef _LP64
   // 32-bit complains about a multiple declaration for int*.
   AddressLiteral(intptr_t* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
-#endif
 
   AddressLiteral(Metadata* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
@@ -464,16 +458,10 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   bool _is_in;
 
  public:
-#ifdef _LP64
   enum {
     n_register_parameters = 6,          // only 6 registers may contain integer parameters
     n_float_register_parameters = 16    // Can have up to 16 floating registers
   };
-#else
-  enum {
-    n_register_parameters = 6           // only 6 registers may contain integer parameters
-  };
-#endif
 
   // creation
   Argument(int number, bool is_in) : _number(number), _is_in(is_in) {}
@@ -489,7 +477,6 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   // locating register-based arguments:
   bool is_register() const { return _number < n_register_parameters; }
 
-#ifdef _LP64
   // locating Floating Point register-based arguments:
   bool is_float_register() const { return _number < n_float_register_parameters; }
 
@@ -501,7 +488,6 @@ class Argument VALUE_OBJ_CLASS_SPEC {
     assert(is_float_register(), "must be a register argument");
     return as_FloatRegister(( number() *2 ));
   }
-#endif
 
   Register as_register() const {
     assert(is_register(), "must be a register argument");
@@ -604,14 +590,14 @@ class MacroAssembler : public Assembler {
     bool            check_exception=true    // flag which indicates if exception should be checked
   );
 
+ public:
+  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+
   // This routine should emit JVMTI PopFrame and ForceEarlyReturn handling code.
   // The implementation is only non-empty for the InterpreterMacroAssembler,
   // as only the interpreter handles and ForceEarlyReturn PopFrame requests.
   virtual void check_and_handle_popframe(Register scratch_reg);
   virtual void check_and_handle_earlyret(Register scratch_reg);
-
- public:
-  MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   // Support for NULL-checks
   //
@@ -675,9 +661,6 @@ class MacroAssembler : public Assembler {
   // Branch that tests fp condition codes
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
-
-  // get PC the best way
-  inline int get_pc( Register d );
 
   // Sparc shorthands(pp 85, V8 manual, pp 289 V9 manual)
   inline void cmp(  Register s1, Register s2 );
@@ -1144,7 +1127,7 @@ public:
   void stop(const char* msg);                          // prints msg, dumps registers and stops execution
   void warn(const char* msg);                          // prints msg, but don't stop
   void untested(const char* what = "");
-  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "");
   void should_not_reach_here()                   { stop("should not reach here"); }
   void print_CPU_state();
 
@@ -1217,9 +1200,7 @@ public:
   void lushr( Register Rin_high,  Register Rin_low,  Register Rcount,
               Register Rout_high, Register Rout_low, Register Rtemp );
 
-#ifdef _LP64
   void lcmp( Register Ra, Register Rb, Register Rresult);
-#endif
 
   // Load and store values by size and signed-ness
   void load_sized_value( Address src, Register dst, size_t size_in_bytes, bool is_signed);
@@ -1412,7 +1393,7 @@ public:
   void movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2);
   void movftoi_revbytes(FloatRegister src, Register dst, Register tmp1, Register tmp2);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes0() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes0() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len, Register table);
   // Fold 128-bit data chunk
   void fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register buf, int offset);
@@ -1420,7 +1401,7 @@ public:
   // Fold 8-bit data
   void fold_8bit_crc32(Register xcrc, Register table, Register xtmp, Register tmp);
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
-  // CRC32C code for java.util.zip.CRC32C::updateBytes/updateDirectByteBuffer instrinsic.
+  // CRC32C code for java.util.zip.CRC32C::updateBytes/updateDirectByteBuffer intrinsic.
   void kernel_crc32c(Register crc, Register buf, Register len, Register table);
 
 };

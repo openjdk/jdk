@@ -56,41 +56,44 @@ package java.util;
  * <p>The twelve methods described above are summarized in the
  * following table:
  *
- * <table class="plain">
+ * <table class="striped">
  * <caption>Summary of Deque methods</caption>
+ *  <thead>
  *  <tr>
- *    <td></td>
- *    <td style="text-align:center" COLSPAN = 2> <b>First Element (Head)</b></td>
- *    <td style="text-align:center" COLSPAN = 2> <b>Last Element (Tail)</b></td>
+ *    <td rowspan="2"></td>
+ *    <th scope="col" colspan="2"> First Element (Head)</th>
+ *    <th scope="col" colspan="2"> Last Element (Tail)</th>
  *  </tr>
  *  <tr>
- *    <td></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Special value</em></td>
- *    <td style="text-align:center"><em>Throws exception</em></td>
- *    <td style="text-align:center"><em>Special value</em></td>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Throws exception</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Special value</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Throws exception</th>
+ *    <th scope="col" style="font-weight:normal; font-style:italic">Special value</th>
  *  </tr>
+ *  </thead>
+ *  <tbody>
  *  <tr>
- *    <td><b>Insert</b></td>
+ *    <th scope="row">Insert</th>
  *    <td>{@link #addFirst(Object) addFirst(e)}</td>
  *    <td>{@link #offerFirst(Object) offerFirst(e)}</td>
  *    <td>{@link #addLast(Object) addLast(e)}</td>
  *    <td>{@link #offerLast(Object) offerLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Remove</b></td>
+ *    <th scope="row">Remove</th>
  *    <td>{@link #removeFirst() removeFirst()}</td>
  *    <td>{@link #pollFirst() pollFirst()}</td>
  *    <td>{@link #removeLast() removeLast()}</td>
  *    <td>{@link #pollLast() pollLast()}</td>
  *  </tr>
  *  <tr>
- *    <td><b>Examine</b></td>
+ *    <th scope="row">Examine</th>
  *    <td>{@link #getFirst() getFirst()}</td>
  *    <td>{@link #peekFirst() peekFirst()}</td>
  *    <td>{@link #getLast() getLast()}</td>
  *    <td>{@link #peekLast() peekLast()}</td>
  *  </tr>
+ *  </tbody>
  * </table>
  *
  * <p>This interface extends the {@link Queue} interface.  When a deque is
@@ -99,36 +102,40 @@ package java.util;
  * inherited from the {@code Queue} interface are precisely equivalent to
  * {@code Deque} methods as indicated in the following table:
  *
- * <table class="plain">
+ * <table class="striped">
  * <caption>Comparison of Queue and Deque methods</caption>
+ *  <thead>
  *  <tr>
- *    <td style="text-align:center"> <b>{@code Queue} Method</b></td>
- *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
+ *    <th scope="col"> {@code Queue} Method</th>
+ *    <th scope="col"> Equivalent {@code Deque} Method</th>
  *  </tr>
+ *  </thead>
+ *  <tbody>
  *  <tr>
- *    <td>{@link #add(Object) add(e)}</td>
+ *    <th scope="row">{@link #add(Object) add(e)}</th>
  *    <td>{@link #addLast(Object) addLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #offer(Object) offer(e)}</td>
+ *    <th scope="row">{@link #offer(Object) offer(e)}</th>
  *    <td>{@link #offerLast(Object) offerLast(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #remove() remove()}</td>
+ *    <th scope="row">{@link #remove() remove()}</th>
  *    <td>{@link #removeFirst() removeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #poll() poll()}</td>
+ *    <th scope="row">{@link #poll() poll()}</th>
  *    <td>{@link #pollFirst() pollFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #element() element()}</td>
+ *    <th scope="row">{@link #element() element()}</th>
  *    <td>{@link #getFirst() getFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #peek() peek()}</td>
+ *    <th scope="row">{@link #peek() peek()}</th>
  *    <td>{@link #peekFirst() peekFirst()}</td>
  *  </tr>
+ *  </tbody>
  * </table>
  *
  * <p>Deques can also be used as LIFO (Last-In-First-Out) stacks.  This
@@ -137,24 +144,28 @@ package java.util;
  * beginning of the deque.  Stack methods are precisely equivalent to
  * {@code Deque} methods as indicated in the table below:
  *
- * <table class="plain">
+ * <table class="striped">
  * <caption>Comparison of Stack and Deque methods</caption>
+ *  <thead>
  *  <tr>
- *    <td style="text-align:center"> <b>Stack Method</b></td>
- *    <td style="text-align:center"> <b>Equivalent {@code Deque} Method</b></td>
+ *    <th scope="col"> Stack Method</th>
+ *    <th scope="col"> Equivalent {@code Deque} Method</th>
  *  </tr>
+ *  </thead>
+ *  <tbody>
  *  <tr>
- *    <td>{@link #push(Object) push(e)}</td>
+ *    <th scope="row">{@link #push(Object) push(e)}</th>
  *    <td>{@link #addFirst(Object) addFirst(e)}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #pop() pop()}</td>
+ *    <th scope="row">{@link #pop() pop()}</th>
  *    <td>{@link #removeFirst() removeFirst()}</td>
  *  </tr>
  *  <tr>
- *    <td>{@link #peek() peek()}</td>
+ *    <th scope="row">{@link #peek() peek()}</th>
  *    <td>{@link #peekFirst() peekFirst()}</td>
  *  </tr>
+ *  </tbody>
  * </table>
  *
  * <p>Note that the {@link #peek peek} method works equally well when

@@ -22,15 +22,13 @@
  */
 package org.graalvm.compiler.phases.common.inlining.info.elem;
 
-import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
-import static org.graalvm.compiler.core.common.GraalOptions.UseGraalInstrumentation;
 import static org.graalvm.compiler.phases.common.DeadCodeEliminationPhase.Optionality.Optional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.type.Stamp;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodes.ConstantNode;
@@ -42,7 +40,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.compiler.phases.common.instrumentation.ExtractInstrumentationPhase;
 import org.graalvm.compiler.phases.graph.FixedNodeProbabilityCache;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 
@@ -72,7 +69,7 @@ public class InlineableGraph implements Inlineable {
     public InlineableGraph(final ResolvedJavaMethod method, final Invoke invoke, final HighTierContext context, CanonicalizerPhase canonicalizer) {
         StructuredGraph original = getOriginalGraph(method, context, canonicalizer, invoke.asNode().graph(), invoke.bci());
         // TODO copying the graph is only necessary if it is modified or if it contains any invokes
-        this.graph = (StructuredGraph) original.copy();
+        this.graph = (StructuredGraph) original.copy(invoke.asNode().getDebug());
         specializeGraphToArguments(invoke, context, canonicalizer);
     }
 
@@ -95,7 +92,8 @@ public class InlineableGraph implements Inlineable {
      */
     @SuppressWarnings("try")
     private boolean specializeGraphToArguments(final Invoke invoke, final HighTierContext context, CanonicalizerPhase canonicalizer) {
-        try (Debug.Scope s = Debug.scope("InlineGraph", graph)) {
+        DebugContext debug = graph.getDebug();
+        try (DebugContext.Scope s = debug.scope("InlineGraph", graph)) {
 
             ArrayList<Node> parameterUsages = replaceParamsWithMoreInformativeArguments(invoke, context);
             if (parameterUsages != null) {
@@ -110,7 +108,7 @@ public class InlineableGraph implements Inlineable {
             }
 
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 
@@ -196,8 +194,9 @@ public class InlineableGraph implements Inlineable {
      */
     @SuppressWarnings("try")
     private static StructuredGraph parseBytecodes(ResolvedJavaMethod method, HighTierContext context, CanonicalizerPhase canonicalizer, StructuredGraph caller) {
-        StructuredGraph newGraph = new StructuredGraph(method, AllowAssumptions.from(caller.getAssumptions() != null), INVALID_COMPILATION_ID);
-        try (Debug.Scope s = Debug.scope("InlineGraph", newGraph)) {
+        DebugContext debug = caller.getDebug();
+        StructuredGraph newGraph = new StructuredGraph.Builder(caller.getOptions(), debug, AllowAssumptions.ifNonNull(caller.getAssumptions())).method(method).build();
+        try (DebugContext.Scope s = debug.scope("InlineGraph", newGraph)) {
             if (!caller.isUnsafeAccessTrackingEnabled()) {
                 newGraph.disableUnsafeAccessTracking();
             }
@@ -206,16 +205,13 @@ public class InlineableGraph implements Inlineable {
             }
             assert newGraph.start().next() != null : "graph needs to be populated by the GraphBuilderSuite " + method + ", " + method.canBeInlined();
 
-            if (UseGraalInstrumentation.getValue()) {
-                new ExtractInstrumentationPhase().apply(newGraph, context);
-            }
             new DeadCodeEliminationPhase(Optional).apply(newGraph);
 
             canonicalizer.apply(newGraph, context);
 
             return newGraph;
         } catch (Throwable e) {
-            throw Debug.handle(e);
+            throw debug.handle(e);
         }
     }
 

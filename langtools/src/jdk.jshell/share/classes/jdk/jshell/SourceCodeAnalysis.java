@@ -153,7 +153,7 @@ public abstract class SourceCodeAnalysis {
      * Only preliminary compilation is performed, sufficient to build the
      * {@code Snippet}.  Snippets known to be erroneous, are returned as
      * {@link ErroneousSnippet}, other snippets may or may not be in error.
-     * <p>
+     *
      * @param input The input String to convert
      * @return usually a singleton list of Snippet, but may be empty or multiple
      * @throws IllegalStateException if the {@code JShell} instance is closed.

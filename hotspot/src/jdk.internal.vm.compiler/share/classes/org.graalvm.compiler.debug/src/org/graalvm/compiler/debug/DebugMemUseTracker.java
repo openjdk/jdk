@@ -22,11 +22,9 @@
  */
 package org.graalvm.compiler.debug;
 
-import com.sun.management.ThreadMXBean;
-
 /**
- * Tracks memory usage within a scope using {@link ThreadMXBean}. This facility should be employed
- * using the try-with-resources pattern:
+ * Tracks memory usage within a scope using {@link com.sun.management.ThreadMXBean}. This facility
+ * should be employed using the try-with-resources pattern:
  *
  * <pre>
  * try (DebugMemUseTracker.Closeable a = memUseTracker.start()) {
@@ -38,7 +36,7 @@ public interface DebugMemUseTracker {
 
     /**
      * Creates a point from which memory usage will be recorded if memory use tracking is
-     * {@linkplain Debug#isMemUseTrackingEnabled() enabled}.
+     * {@linkplain DebugContext#isMemUseTrackingEnabled() enabled}.
      *
      * @return an object that must be closed once the activity has completed to add the memory used
      *         since this call to the total for this tracker

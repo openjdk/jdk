@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.replacements.nodes;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_3;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.LIRKind;
@@ -32,7 +32,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.UnsafeStoreNode;
+import org.graalvm.compiler.nodes.extended.RawStoreNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -40,10 +40,10 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 
 /**
- * A special purpose store node that differs from {@link UnsafeStoreNode} in that it is not a
+ * A special purpose store node that differs from {@link RawStoreNode} in that it is not a
  * {@link StateSplit} and takes a computed address instead of an object.
  */
-@NodeInfo(cycles = CYCLES_3, size = SIZE_1)
+@NodeInfo(cycles = CYCLES_2, size = SIZE_1)
 public final class DirectStoreNode extends FixedWithNextNode implements LIRLowerable {
 
     public static final NodeClass<DirectStoreNode> TYPE = NodeClass.create(DirectStoreNode.class);

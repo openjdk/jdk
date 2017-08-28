@@ -302,18 +302,10 @@ public class InetSocketAddress
         throw new InvalidObjectException("Stream data required");
     }
 
-    private static final long FIELDS_OFFSET;
-    private static final jdk.internal.misc.Unsafe UNSAFE;
-    static {
-        try {
-            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                    InetSocketAddress.class.getDeclaredField("holder"));
-            UNSAFE = unsafe;
-        } catch (ReflectiveOperationException e) {
-            throw new Error(e);
-        }
-    }
+    private static final jdk.internal.misc.Unsafe UNSAFE
+            = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final long FIELDS_OFFSET
+            = UNSAFE.objectFieldOffset(InetSocketAddress.class, "holder");
 
     /**
      * Gets the port number.

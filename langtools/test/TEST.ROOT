@@ -14,8 +14,8 @@ keys=intermittent randomness
 # Group definitions
 groups=TEST.groups
 
-# Tests using jtreg 4.2 b07 features
-requiredVersion=4.2 b07
+# Minimum jtreg version
+requiredVersion=4.2 b08
 
 # Use new module options
 useNewOptions=true

@@ -22,14 +22,14 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import org.graalvm.compiler.debug.Debug;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.util.Pair;
 
 import jdk.vm.ci.code.TargetDescription;
 
-public final class LinearScanRegisterAllocationPhase extends AllocationPhase {
+public final class LinearScanRegisterAllocationPhase extends LinearScanAllocationPhase {
 
     private final LinearScan allocator;
 
@@ -38,7 +38,7 @@ public final class LinearScanRegisterAllocationPhase extends AllocationPhase {
     }
 
     @Override
-    protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
+    protected void run(TargetDescription target, LIRGenerationResult result, AllocationContext context) {
         allocator.printIntervals("Before register allocation");
         allocateRegisters();
         allocator.printIntervals("After register allocation");
@@ -46,17 +46,17 @@ public final class LinearScanRegisterAllocationPhase extends AllocationPhase {
 
     @SuppressWarnings("try")
     void allocateRegisters() {
-        try (Indent indent = Debug.logAndIndent("allocate registers")) {
+        try (Indent indent = allocator.getDebug().logAndIndent("allocate registers")) {
             Interval precoloredIntervals;
             Interval notPrecoloredIntervals;
 
-            Interval.Pair result = allocator.createUnhandledLists(LinearScan.IS_PRECOLORED_INTERVAL, LinearScan.IS_VARIABLE_INTERVAL);
-            precoloredIntervals = result.first;
-            notPrecoloredIntervals = result.second;
+            Pair<Interval, Interval> result = allocator.createUnhandledLists(LinearScan.IS_PRECOLORED_INTERVAL, LinearScan.IS_VARIABLE_INTERVAL);
+            precoloredIntervals = result.getLeft();
+            notPrecoloredIntervals = result.getRight();
 
             // allocate cpu registers
             LinearScanWalker lsw;
-            if (OptimizingLinearScanWalker.Options.LSRAOptimization.getValue()) {
+            if (OptimizingLinearScanWalker.Options.LSRAOptimization.getValue(allocator.getOptions())) {
                 lsw = new OptimizingLinearScanWalker(allocator, precoloredIntervals, notPrecoloredIntervals);
             } else {
                 lsw = new LinearScanWalker(allocator, precoloredIntervals, notPrecoloredIntervals);
