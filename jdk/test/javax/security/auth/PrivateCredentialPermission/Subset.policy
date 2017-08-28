@@ -6,5 +6,5 @@ grant {
 grant {
      permission javax.security.auth.AuthPermission "modifyPrivateCredentials";
      permission javax.security.auth.AuthPermission "modifyPublicCredentials";
-     permission	javax.security.auth.PrivateCredentialPermission "java.lang.String com.sun.security.auth.SolarisPrincipal \"user\"", "read";
+     permission	javax.security.auth.PrivateCredentialPermission "java.lang.String com.sun.security.auth.UnixPrincipal \"user\"", "read";
 };

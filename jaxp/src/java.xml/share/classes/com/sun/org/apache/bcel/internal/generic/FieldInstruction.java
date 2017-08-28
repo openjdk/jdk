@@ -21,62 +21,66 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 import com.sun.org.apache.bcel.internal.classfile.ConstantPool;
-import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
-import com.sun.org.apache.bcel.internal.classfile.ConstantNameAndType;
-import com.sun.org.apache.bcel.internal.classfile.ConstantCP;
-import com.sun.org.apache.bcel.internal.classfile.*;
 
 /**
  * Super class for the GET/PUTxxx family of instructions.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: FieldInstruction.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public abstract class FieldInstruction extends FieldOrMethod
-  implements TypedInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  FieldInstruction() {}
+public abstract class FieldInstruction extends FieldOrMethod {
 
-  /**
-   * @param index to constant pool
-   */
-  protected FieldInstruction(short opcode, int index) {
-    super(opcode, index);
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    FieldInstruction() {
+    }
 
-  /**
-   * @return mnemonic for instruction with symbolic references resolved
-   */
-  public String toString(ConstantPool cp) {
-    return com.sun.org.apache.bcel.internal.Constants.OPCODE_NAMES[opcode] + " " +
-      cp.constantToString(index, com.sun.org.apache.bcel.internal.Constants.CONSTANT_Fieldref);
-  }
 
-  /** @return size of field (1 or 2)
-   */
-  protected int getFieldSize(ConstantPoolGen cpg) {
-    return getType(cpg).getSize();
-  }
+    /**
+     * @param index to constant pool
+     */
+    protected FieldInstruction(final short opcode, final int index) {
+        super(opcode, index);
+    }
 
-  /** @return return type of referenced field
-   */
-  public Type getType(ConstantPoolGen cpg) {
-    return getFieldType(cpg);
-  }
 
-  /** @return type of field
-   */
-  public Type getFieldType(ConstantPoolGen cpg) {
-    return Type.getType(getSignature(cpg));
-  }
+    /**
+     * @return mnemonic for instruction with symbolic references resolved
+     */
+    @Override
+    public String toString( final ConstantPool cp ) {
+        return com.sun.org.apache.bcel.internal.Const.getOpcodeName(super.getOpcode()) + " "
+                + cp.constantToString(super.getIndex(), com.sun.org.apache.bcel.internal.Const.CONSTANT_Fieldref);
+    }
 
-  /** @return name of referenced field.
-   */
-  public String getFieldName(ConstantPoolGen cpg) {
-    return getName(cpg);
-  }
+
+    /** @return size of field (1 or 2)
+     */
+    protected int getFieldSize( final ConstantPoolGen cpg ) {
+        return Type.size(Type.getTypeSize(getSignature(cpg)));
+    }
+
+
+    /** @return return type of referenced field
+     */
+    @Override
+    public Type getType( final ConstantPoolGen cpg ) {
+        return getFieldType(cpg);
+    }
+
+
+    /** @return type of field
+     */
+    public Type getFieldType( final ConstantPoolGen cpg ) {
+        return Type.getType(getSignature(cpg));
+    }
+
+
+    /** @return name of referenced field.
+     */
+    public String getFieldName( final ConstantPoolGen cpg ) {
+        return getName(cpg);
+    }
 }

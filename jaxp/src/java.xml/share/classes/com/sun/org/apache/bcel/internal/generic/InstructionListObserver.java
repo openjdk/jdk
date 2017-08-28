@@ -21,13 +21,13 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Implement this interface if you're interested in changes to an InstructionList object
  * and register yourself with addObserver().
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: InstructionListObserver.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface InstructionListObserver {
-  public void notify(InstructionList list);
+
+    void notify( InstructionList list );
 }

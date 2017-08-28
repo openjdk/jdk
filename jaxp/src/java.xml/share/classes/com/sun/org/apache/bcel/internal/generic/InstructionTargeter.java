@@ -21,7 +21,6 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Denote that a class targets InstructionHandles within an InstructionList. Namely
  * the following implementers:
@@ -29,9 +28,21 @@ package com.sun.org.apache.bcel.internal.generic;
  * @see BranchHandle
  * @see LocalVariableGen
  * @see CodeExceptionGen
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: InstructionTargeter.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public interface InstructionTargeter {
-  public boolean containsTarget(InstructionHandle ih);
-  public void updateTarget(InstructionHandle old_ih, InstructionHandle new_ih);
+
+    /**
+     * Checks whether this targeter targets the specified instruction handle.
+     */
+    boolean containsTarget(InstructionHandle ih);
+
+    /**
+     * Replaces the target of this targeter from this old handle to the new handle.
+     *
+     * @param old_ih the old handle
+     * @param new_ih the new handle
+     * @throws ClassGenException if old_ih is not targeted by this object
+     */
+    void updateTarget(InstructionHandle old_ih, InstructionHandle new_ih) throws ClassGenException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,7 +26,7 @@ import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
+import com.sun.org.apache.bcel.internal.generic.InstructionConst;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.InvokeInstruction;
 import com.sun.org.apache.bcel.internal.generic.LDC;
@@ -824,7 +824,7 @@ class FunctionCall extends Expression {
             }
 
             il.append(new NEW(cpg.addClass(_className)));
-            il.append(InstructionConstants.DUP);
+            il.append(InstructionConst.DUP);
 
             for (int i = 0; i < n; i++) {
                 final Expression arg = argument(i);
@@ -935,7 +935,7 @@ class FunctionCall extends Expression {
                                  ADD_READS,
                                  ADD_READS_SIG);
         il.append(new INVOKEVIRTUAL(index));
-        il.append(InstructionConstants.POP);
+        il.append(InstructionConst.POP);
 
         methodGen.markChunkEnd();
     }

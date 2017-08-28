@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import com.sun.tools.attach.spi.AttachProvider;         // for javadoc
 
 /**
  * Thrown by {@link com.sun.tools.attach.VirtualMachine#attach
- * VirtalMachine.attach} when attempting to attach to a Java virtual machine
+ * VirtualMachine.attach} when attempting to attach to a Java virtual machine
  * for which a compatible {@link com.sun.tools.attach.spi.AttachProvider
  * AttachProvider} does not exist. It is also thrown by {@link
  * com.sun.tools.attach.spi.AttachProvider#attachVirtualMachine

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -52,7 +51,7 @@ public final class AttributeSetMethodGenerator extends MethodGenerator {
     }
 
    public AttributeSetMethodGenerator(String methodName, ClassGenerator classGen) {
-        super(com.sun.org.apache.bcel.internal.Constants.ACC_PRIVATE,
+        super(com.sun.org.apache.bcel.internal.Const.ACC_PRIVATE,
               com.sun.org.apache.bcel.internal.generic.Type.VOID,
               argTypes, argNames, methodName,
               classGen.getClassName(),

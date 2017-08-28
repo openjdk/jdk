@@ -21,17 +21,20 @@
 
 package com.sun.org.apache.bcel.internal.classfile;
 
-
 /**
  * Unknown (non-standard) attributes may be read via user-defined factory
  * objects that can be registered with the Attribute.addAttributeReader
  * method. These factory objects should implement this interface.
 
  * @see Attribute
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: AttributeReader.java 1748467 2016-06-14 21:05:14Z ggregory $
+ *
+ * @deprecated Use UnknownAttributeReader instead
  */
+@java.lang.Deprecated
 public interface AttributeReader {
-  /**
+
+    /**
      When this attribute reader is added via the static method
      Attribute.addAttributeReader, an attribute name is associated with it.
      As the class file parser parses attributes, it will call various
@@ -56,9 +59,6 @@ public interface AttributeReader {
      returned which will cause the parsing of the class file to fail.
 
      @see Attribute#addAttributeReader( String, AttributeReader )
-  */
-  public Attribute createAttribute(int name_index,
-                                   int length,
-                                   java.io.DataInputStream file,
-                                   ConstantPool constant_pool);
+     */
+    Attribute createAttribute( int name_index, int length, java.io.DataInputStream file, ConstantPool constant_pool );
 }

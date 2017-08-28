@@ -84,7 +84,7 @@
       "startPosition": "50"
     },
     "endPosition": "51",
-    "kind": "PLUS",
+    "kind": "UNARY_PLUS",
     "startPosition": "49"
   },
   {
@@ -95,7 +95,7 @@
       "startPosition": "54"
     },
     "endPosition": "55",
-    "kind": "MINUS",
+    "kind": "UNARY_MINUS",
     "startPosition": "53"
   },
   {
