@@ -217,7 +217,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
         // Reallocation may trigger GC. If deoptimization happened on return from
         // call which returns oop we need to save it since it is not in oopmap.
         oop result = deoptee.saved_oop_result(&map);
-        assert(result == NULL || result->is_oop(), "must be oop");
+        assert(oopDesc::is_oop_or_null(result), "must be oop");
         return_value = Handle(thread, result);
         assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
         if (TraceDeoptimization) {

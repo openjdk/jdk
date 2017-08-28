@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ import jdk.tools.jaotc.binformat.Relocation.RelocType;
  */
 abstract class CallSiteRelocationInfo {
 
-    public final String targetSymbol;
-    public final RelocType type;
+    final String targetSymbol;
+    final RelocType type;
 
-    public CallSiteRelocationInfo(String targetSymbol, RelocType type) {
+    CallSiteRelocationInfo(String targetSymbol, RelocType type) {
         this.targetSymbol = targetSymbol;
         this.type = type;
     }

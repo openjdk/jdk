@@ -995,6 +995,7 @@ public:
   inline void ldbool(const Address& a, Register d);
   inline void movbool( bool boolconst, Register d);
 
+  void resolve_oop_handle(Register result);
   void load_mirror(Register mirror, Register method);
 
   // klass oop manipulations if compressed

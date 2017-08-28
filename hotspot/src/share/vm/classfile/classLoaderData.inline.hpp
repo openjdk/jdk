@@ -41,7 +41,7 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
 
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, TRAPS) {
-  guarantee(loader() != NULL && loader()->is_oop(), "Loader must be oop");
+  guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
   ClassLoaderData* loader_data= java_lang_ClassLoader::loader_data(loader());

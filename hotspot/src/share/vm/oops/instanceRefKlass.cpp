@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   // Verify referent field
   oop referent = java_lang_ref_Reference::referent(obj);
   if (referent != NULL) {
-    guarantee(referent->is_oop(), "referent field heap failed");
+    guarantee(oopDesc::is_oop(referent), "referent field heap failed");
   }
   // Verify next field
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
-    guarantee(next->is_oop(), "next field should be an oop");
+    guarantee(oopDesc::is_oop(next), "next field should be an oop");
     guarantee(next->is_instance(), "next field should be an instance");
     guarantee(InstanceKlass::cast(next->klass())->is_reference_instance_klass(), "next field verify failed");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 /**
  * A class encapsulating any user-specified compilation restrictions.
  */
-public class CompilationSpec {
+final class CompilationSpec {
 
     /**
      * Set of method names to restrict compilation to.
@@ -51,7 +51,7 @@ public class CompilationSpec {
      *
      * @param pattern regex or non-regex pattern string
      */
-    public void addCompileOnlyPattern(String pattern) {
+    void addCompileOnlyPattern(String pattern) {
         if (pattern.contains("*")) {
             compileOnlyPatterns.add(Pattern.compile(pattern));
         } else {
@@ -64,7 +64,7 @@ public class CompilationSpec {
      *
      * @param pattern regex or non-regex pattern string
      */
-    public void addExcludePattern(String pattern) {
+    void addExcludePattern(String pattern) {
         if (pattern.contains("*")) {
             excludePatterns.add(Pattern.compile(pattern));
         } else {
@@ -78,14 +78,14 @@ public class CompilationSpec {
      * @param method method to be checked
      * @return true or false
      */
-    public boolean shouldCompileMethod(ResolvedJavaMethod method) {
+    boolean shouldCompileMethod(ResolvedJavaMethod method) {
         if (compileWithRestrictions()) {
             // If there are user-specified compileOnly patterns, default action
             // is not to compile the method.
             boolean compileMethod = compileOnlyStrings.isEmpty() && compileOnlyPatterns.isEmpty();
 
             // Check if the method matches with any of the specified compileOnly patterns.
-            String methodName = MiscUtils.uniqueMethodName(method);
+            String methodName = JavaMethodInfo.uniqueMethodName(method);
 
             // compileOnly
             if (!compileMethod) {
