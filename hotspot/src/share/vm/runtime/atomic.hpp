@@ -26,11 +26,14 @@
 #define SHARE_VM_RUNTIME_ATOMIC_HPP
 
 #include "memory/allocation.hpp"
+#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/isIntegral.hpp"
+#include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "metaprogramming/removeCV.hpp"
+#include "metaprogramming/removePointer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -82,11 +85,17 @@ class Atomic : AllStatic {
 
   // Atomically add to a location. Returns updated value. add*() provide:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
-  inline static jshort   add    (jshort   add_value, volatile jshort*   dest);
-  inline static jint     add    (jint     add_value, volatile jint*     dest);
-  inline static size_t   add    (size_t   add_value, volatile size_t*   dest);
-  inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
-  inline static void*    add_ptr(intptr_t add_value, volatile void*     dest);
+
+  template<typename I, typename D>
+  inline static D add(I add_value, D volatile* dest);
+
+  inline static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest) {
+    return add(add_value, dest);
+  }
+
+  inline static void* add_ptr(intptr_t add_value, volatile void* dest) {
+    return add(add_value, reinterpret_cast<char* volatile*>(dest));
+  }
 
   // Atomically increment location. inc*() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
@@ -156,6 +165,74 @@ private:
   // that is needed here.
   template<typename From, typename To> struct IsPointerConvertible;
 
+  // Dispatch handler for add.  Provides type-based validity checking
+  // and limited conversions around calls to the platform-specific
+  // implementation layer provided by PlatformAdd.
+  template<typename I, typename D, typename Enable = void>
+  struct AddImpl;
+
+  // Platform-specific implementation of add.  Support for sizes of 4
+  // bytes and (if different) pointer size bytes are required.  The
+  // class is a function object that must be default constructable,
+  // with these requirements:
+  //
+  // - dest is of type D*, an integral or pointer type.
+  // - add_value is of type I, an integral type.
+  // - sizeof(I) == sizeof(D).
+  // - if D is an integral type, I == D.
+  // - platform_add is an object of type PlatformAdd<sizeof(D)>.
+  //
+  // Then
+  //   platform_add(add_value, dest)
+  // must be a valid expression, returning a result convertible to D.
+  //
+  // No definition is provided; all platforms must explicitly define
+  // this class and any needed specializations.
+  template<size_t byte_size> struct PlatformAdd;
+
+  // Helper base classes for defining PlatformAdd.  To use, define
+  // PlatformAdd or a specialization that derives from one of these,
+  // and include in the PlatformAdd definition the support function
+  // (described below) required by the base class.
+  //
+  // These classes implement the required function object protocol for
+  // PlatformAdd, using a support function template provided by the
+  // derived class.  Let add_value (of type I) and dest (of type D) be
+  // the arguments the object is called with.  If D is a pointer type
+  // P*, then let addend (of type I) be add_value * sizeof(P);
+  // otherwise, addend is add_value.
+  //
+  // FetchAndAdd requires the derived class to provide
+  //   fetch_and_add(addend, dest)
+  // atomically adding addend to the value of dest, and returning the
+  // old value.
+  //
+  // AddAndFetch requires the derived class to provide
+  //   add_and_fetch(addend, dest)
+  // atomically adding addend to the value of dest, and returning the
+  // new value.
+  //
+  // When D is a pointer type P*, both fetch_and_add and add_and_fetch
+  // treat it as if it were a uintptr_t; they do not perform any
+  // scaling of the addend, as that has already been done by the
+  // caller.
+public: // Temporary, can't be private: C++03 11.4/2. Fixed by C++11.
+  template<typename Derived> struct FetchAndAdd;
+  template<typename Derived> struct AddAndFetch;
+private:
+
+  // Support for platforms that implement some variants of add using a
+  // (typically out of line) non-template helper function.  The
+  // generic arguments passed to PlatformAdd need to be translated to
+  // the appropriate type for the helper function, the helper function
+  // invoked on the translated arguments, and the result translated
+  // back.  Type is the parameter / return type of the helper
+  // function.  No scaling of add_value is performed when D is a pointer
+  // type, so this function can be used to implement the support function
+  // required by AddAndFetch.
+  template<typename Type, typename Fn, typename I, typename D>
+  static D add_using_helper(Fn fn, I add_value, D volatile* dest);
+
   // Dispatch handler for cmpxchg.  Provides type-based validity
   // checking and limited conversions around calls to the
   // platform-specific implementation layer provided by
@@ -219,6 +296,22 @@ struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
   static const bool value = (sizeof(yes) == sizeof(test(test_value)));
 };
 
+// Define FetchAndAdd and AddAndFetch helper classes before including
+// platform file, which may use these as base classes, requiring they
+// be complete.
+
+template<typename Derived>
+struct Atomic::FetchAndAdd VALUE_OBJ_CLASS_SPEC {
+  template<typename I, typename D>
+  D operator()(I add_value, D volatile* dest) const;
+};
+
+template<typename Derived>
+struct Atomic::AddAndFetch VALUE_OBJ_CLASS_SPEC {
+  template<typename I, typename D>
+  D operator()(I add_value, D volatile* dest) const;
+};
+
 // Define the class before including platform file, which may specialize
 // the operator definition.  No generic definition of specializations
 // of the operator template are provided, nor are there any generic
@@ -255,8 +348,93 @@ struct Atomic::CmpxchgByteUsingInt VALUE_OBJ_CLASS_SPEC {
 #error size_t is not WORD_SIZE, interesting platform, but missing implementation here
 #endif
 
-inline size_t Atomic::add(size_t add_value, volatile size_t* dest) {
-  return (size_t) add_ptr((intptr_t) add_value, (volatile intptr_t*) dest);
+template<typename I, typename D>
+inline D Atomic::add(I add_value, D volatile* dest) {
+  return AddImpl<I, D>()(add_value, dest);
+}
+
+template<typename I, typename D>
+struct Atomic::AddImpl<
+  I, D,
+  typename EnableIf<IsIntegral<I>::value &&
+                    IsIntegral<D>::value &&
+                    (sizeof(I) <= sizeof(D)) &&
+                    (IsSigned<I>::value == IsSigned<D>::value)>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  D operator()(I add_value, D volatile* dest) const {
+    D addend = add_value;
+    return PlatformAdd<sizeof(D)>()(addend, dest);
+  }
+};
+
+template<typename I, typename P>
+struct Atomic::AddImpl<
+  I, P*,
+  typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
+  VALUE_OBJ_CLASS_SPEC
+{
+  P* operator()(I add_value, P* volatile* dest) const {
+    STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
+    STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
+    typedef typename Conditional<IsSigned<I>::value,
+                                 intptr_t,
+                                 uintptr_t>::type CI;
+    CI addend = add_value;
+    return PlatformAdd<sizeof(P*)>()(addend, dest);
+  }
+};
+
+// Most platforms do not support atomic add on a 2-byte value. However,
+// if the value occupies the most significant 16 bits of an aligned 32-bit
+// word, then we can do this with an atomic add of (add_value << 16)
+// to the 32-bit word.
+//
+// The least significant parts of this 32-bit word will never be affected, even
+// in case of overflow/underflow.
+//
+// Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
+template<>
+struct Atomic::AddImpl<jshort, jshort> VALUE_OBJ_CLASS_SPEC {
+  jshort operator()(jshort add_value, jshort volatile* dest) const {
+#ifdef VM_LITTLE_ENDIAN
+    assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
+    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
+#else
+    assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
+    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
+#endif
+    return (jshort)(new_value >> 16); // preserves sign
+  }
+};
+
+template<typename Derived>
+template<typename I, typename D>
+inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest) const {
+  I addend = add_value;
+  // If D is a pointer type P*, scale by sizeof(P).
+  if (IsPointer<D>::value) {
+    addend *= sizeof(typename RemovePointer<D>::type);
+  }
+  D old = static_cast<const Derived*>(this)->fetch_and_add(addend, dest);
+  return old + add_value;
+}
+
+template<typename Derived>
+template<typename I, typename D>
+inline D Atomic::AddAndFetch<Derived>::operator()(I add_value, D volatile* dest) const {
+  // If D is a pointer type P*, scale by sizeof(P).
+  if (IsPointer<D>::value) {
+    add_value *= sizeof(typename RemovePointer<D>::type);
+  }
+  return static_cast<const Derived*>(this)->add_and_fetch(add_value, dest);
+}
+
+template<typename Type, typename Fn, typename I, typename D>
+inline D Atomic::add_using_helper(Fn fn, I add_value, D volatile* dest) {
+  return PrimitiveConversions::cast<D>(
+    fn(PrimitiveConversions::cast<Type>(add_value),
+       reinterpret_cast<Type volatile*>(dest)));
 }
 
 inline void Atomic::inc(volatile size_t* dest) {
@@ -413,32 +591,12 @@ inline unsigned Atomic::xchg(unsigned int exchange_value, volatile unsigned int*
   return (unsigned int)Atomic::xchg((jint)exchange_value, (volatile jint*)dest);
 }
 
-inline jshort Atomic::add(jshort add_value, volatile jshort* dest) {
-  // Most platforms do not support atomic add on a 2-byte value. However,
-  // if the value occupies the most significant 16 bits of an aligned 32-bit
-  // word, then we can do this with an atomic add of (add_value << 16)
-  // to the 32-bit word.
-  //
-  // The least significant parts of this 32-bit word will never be affected, even
-  // in case of overflow/underflow.
-  //
-  // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
-#ifdef VM_LITTLE_ENDIAN
-  assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
-#else
-  assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-  jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
-#endif
-  return (jshort)(new_value >> 16); // preserves sign
-}
-
 inline void Atomic::inc(volatile jshort* dest) {
-  (void)add(1, dest);
+  (void)add(jshort(1), dest);
 }
 
 inline void Atomic::dec(volatile jshort* dest) {
-  (void)add(-1, dest);
+  (void)add(jshort(-1), dest);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP

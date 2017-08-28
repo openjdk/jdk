@@ -47,10 +47,15 @@ inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
 
-inline jint Atomic::add(jint add_value, volatile jint* dest)
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
- return __sync_add_and_fetch(dest, add_value);
-}
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const {
+    return __sync_add_and_fetch(dest, add_value);
+  }
+};
 
 inline void Atomic::inc(volatile jint* dest)
 {
@@ -104,16 +109,6 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
 
 inline void Atomic::store (jlong store_value, jlong* dest) { *dest = store_value; }
 inline void Atomic::store (jlong store_value, volatile jlong* dest) { *dest = store_value; }
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest)
-{
- return __sync_add_and_fetch(dest, add_value);
-}
-
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest)
-{
-  return (void *) add_ptr(add_value, (volatile intptr_t *) dest);
-}
 
 inline void Atomic::inc_ptr(volatile intptr_t* dest)
 {

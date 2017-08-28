@@ -51,6 +51,8 @@ inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); 
 
 extern "C" {
   jint _Atomic_add(jint add_value, volatile jint* dest);
+  jlong _Atomic_add_long(jlong add_value, volatile jlong* dest);
+
   jint _Atomic_xchg(jint exchange_value, volatile jint* dest);
   jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest,
                              jbyte compare_value);
@@ -60,8 +62,34 @@ extern "C" {
                              jlong compare_value);
 }
 
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
-  return _Atomic_add(add_value, dest);
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
+// Not using add_using_helper; see comment for cmpxchg.
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
+  return PrimitiveConversions::cast<D>(
+    _Atomic_add(PrimitiveConversions::cast<jint>(add_value),
+                reinterpret_cast<jint volatile*>(dest)));
+}
+
+// Not using add_using_helper; see comment for cmpxchg.
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
+  return PrimitiveConversions::cast<D>(
+    _Atomic_add_long(PrimitiveConversions::cast<jlong>(add_value),
+                     reinterpret_cast<jlong volatile*>(dest)));
 }
 
 inline jint     Atomic::xchg       (jint     exchange_value, volatile jint*     dest) {
@@ -115,16 +143,7 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 
 inline void Atomic::store    (jlong    store_value, jlong*             dest) { *dest = store_value; }
 inline void Atomic::store    (jlong    store_value, volatile jlong*    dest) { *dest = store_value; }
-extern "C" jlong _Atomic_add_long(jlong add_value, volatile jlong* dest);
 extern "C" jlong _Atomic_xchg_long(jlong exchange_value, volatile jlong* dest);
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  return (intptr_t)_Atomic_add_long((jlong)add_value, (volatile jlong*)dest);
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)_Atomic_add_long((jlong)add_value, (volatile jlong*)dest);
-}
 
 inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* dest) {
   return (intptr_t)_Atomic_xchg_long((jlong)exchange_value, (volatile jlong*)dest);

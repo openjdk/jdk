@@ -62,22 +62,21 @@ inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 extern "C" jint     _Atomic_swap32(jint     exchange_value, volatile jint*     dest);
 extern "C" intptr_t _Atomic_swap64(intptr_t exchange_value, volatile intptr_t* dest);
 
-extern "C" jint     _Atomic_add32(jint     inc,       volatile jint*     dest);
-extern "C" intptr_t _Atomic_add64(intptr_t add_value, volatile intptr_t* dest);
-
-
-inline jint     Atomic::add     (jint    add_value, volatile jint*     dest) {
-  return _Atomic_add32(add_value, dest);
-}
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  return _Atomic_add64(add_value, dest);
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add_ptr((intptr_t)add_value, (volatile intptr_t*)dest);
-}
-
+// Implement ADD using a CAS loop.
+template<size_t byte_size>
+struct Atomic::PlatformAdd VALUE_OBJ_CLASS_SPEC {
+  template<typename I, typename D>
+  inline D operator()(I add_value, D volatile* dest) const {
+    D old_value = *dest;
+    while (true) {
+      D new_value = old_value + add_value;
+      D result = cmpxchg(new_value, dest, old_value);
+      if (result == old_value) break;
+      old_value = result;
+    }
+    return old_value + add_value;
+  }
+};
 
 inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
   return _Atomic_swap32(exchange_value, dest);
