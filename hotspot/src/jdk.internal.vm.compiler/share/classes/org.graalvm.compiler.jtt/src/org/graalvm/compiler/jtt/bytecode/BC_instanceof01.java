@@ -26,8 +26,7 @@ import org.junit.Test;
 
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.jtt.JTTTest;
-import org.graalvm.compiler.options.OptionValue;
-import org.graalvm.compiler.options.OptionValue.OverrideScope;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.Suites;
 
 /**
@@ -89,10 +88,8 @@ public class BC_instanceof01 extends JTTTest {
 
     @Override
     @SuppressWarnings("try")
-    protected Suites getSuites() {
-        try (OverrideScope scope = OptionValue.override(HighTier.Options.Inline, false)) {
-            return super.getSuites();
-        }
+    protected Suites createSuites(OptionValues options) {
+        return super.createSuites(new OptionValues(options, HighTier.Options.Inline, false));
     }
 
     @Test

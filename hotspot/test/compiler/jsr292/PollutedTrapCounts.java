@@ -26,7 +26,7 @@
  * @bug 8074551
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- *
+ * @build jdk.test.lib.* jdk.test.lib.process.*
  * @run driver compiler.jsr292.PollutedTrapCounts
  */
 

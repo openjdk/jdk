@@ -130,36 +130,3 @@ Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
     return Flag::SUCCESS;
   }
 }
-
-static inline Flag::Error sharedConstraintFunc(const char *name, size_t value, size_t taken, bool verbose) {
-  size_t available = (MAX_SHARED_DELTA-(taken+SHARED_PAGE));
-  if (value > available) {
-    CommandLineError::print(verbose,
-                            "%s (" SIZE_FORMAT ") must be "
-                            "smaller than or equal to (" SIZE_FORMAT ")\n",
-                            name, value, available);
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
-}
-
-Flag::Error SharedReadWriteSizeConstraintFunc(size_t value, bool verbose) {
-  size_t taken = (SharedReadOnlySize+SharedMiscDataSize+SharedMiscCodeSize);
-  return sharedConstraintFunc("SharedReadWriteSize", value, taken, verbose);
-}
-
-Flag::Error SharedReadOnlySizeConstraintFunc(size_t value, bool verbose) {
-  size_t taken = (SharedReadWriteSize+SharedMiscDataSize+SharedMiscCodeSize);
-  return sharedConstraintFunc("SharedReadOnlySize", value, taken, verbose);
-}
-
-Flag::Error SharedMiscDataSizeConstraintFunc(size_t value, bool verbose) {
-  size_t taken = (SharedReadWriteSize+SharedReadOnlySize+SharedMiscCodeSize);
-  return sharedConstraintFunc("SharedMiscDataSize", value, taken, verbose);
-}
-
-Flag::Error SharedMiscCodeSizeConstraintFunc(size_t value, bool verbose) {
-  size_t taken = (SharedReadWriteSize+SharedReadOnlySize+SharedMiscDataSize);
-  return sharedConstraintFunc("SharedMiscCodeSize", value, taken, verbose);
-}

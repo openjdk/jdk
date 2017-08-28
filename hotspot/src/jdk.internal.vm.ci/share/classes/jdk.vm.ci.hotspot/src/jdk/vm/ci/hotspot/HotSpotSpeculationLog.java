@@ -39,7 +39,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     private Set<SpeculationReason> failedSpeculations;
 
     /** Strong references to all reasons embedded in the current nmethod. */
-    private volatile Collection<SpeculationReason> speculations;
+    private Collection<SpeculationReason> speculations;
 
     @Override
     public synchronized void collectFailedSpeculations() {
@@ -70,14 +70,12 @@ public class HotSpotSpeculationLog implements SpeculationLog {
          * reason objects that are embedded in nmethods, so we add them to the speculations
          * collection.
          */
-        if (speculations == null) {
-            synchronized (this) {
-                if (speculations == null) {
-                    speculations = new ConcurrentLinkedQueue<>();
-                }
+        synchronized (this) {
+            if (speculations == null) {
+                speculations = new ConcurrentLinkedQueue<>();
             }
+            speculations.add(reason);
         }
-        speculations.add(reason);
 
         return HotSpotObjectConstantImpl.forObject(reason);
     }

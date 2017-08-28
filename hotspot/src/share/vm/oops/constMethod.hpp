@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_CONSTMETHODOOP_HPP
 
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // An ConstMethod represents portions of a Java method which are not written to after
 // the classfile is parsed(*see below).  This part of the method can be shared across
@@ -197,6 +198,9 @@ private:
   // multiple threads, so is volatile.
   volatile uint64_t _fingerprint;
 
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to ConstMethod::metaspace_pointers_do().
+
   ConstantPool*     _constants;                  // Constant pool
 
   // Raw stackmap data for the method
@@ -360,7 +364,7 @@ public:
 
   // Sizing
   static int header_size() {
-    return align_size_up(sizeof(ConstMethod), wordSize) / wordSize;
+    return align_up((int)sizeof(ConstMethod), wordSize) / wordSize;
   }
 
   // Size needed
@@ -368,6 +372,10 @@ public:
 
   int size() const                    { return _constMethod_size;}
   void set_constMethod_size(int size)     { _constMethod_size = size; }
+
+  // ConstMethods should be stored in the read-only region of CDS archive.
+  static bool is_read_only_by_default() { return true; }
+
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;
 #endif
@@ -528,6 +536,8 @@ public:
   bool is_klass() const { return false; }
   DEBUG_ONLY(bool on_stack() { return false; })
 
+  void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return ConstMethodType; }
 private:
   // Since the size of the compressed line number table is unknown, the
   // offsets of the other variable sized sections are computed backwards

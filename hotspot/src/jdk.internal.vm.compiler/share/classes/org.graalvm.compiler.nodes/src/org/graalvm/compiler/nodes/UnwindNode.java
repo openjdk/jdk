@@ -23,7 +23,7 @@
 package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -38,7 +38,7 @@ import jdk.vm.ci.meta.JavaKind;
 /**
  * Unwinds the current frame to an exception handler in the caller frame.
  */
-@NodeInfo(cycles = CYCLES_8, size = SIZE_4)
+@NodeInfo(cycles = CYCLES_8, size = SIZE_8, cyclesRationale = "stub call", sizeRationale = "stub call")
 public final class UnwindNode extends ControlSinkNode implements Lowerable, LIRLowerable {
 
     public static final NodeClass<UnwindNode> TYPE = NodeClass.create(UnwindNode.class);

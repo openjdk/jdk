@@ -569,7 +569,7 @@ void Parse::do_call() {
   // save across call, for a subsequent cast_not_null.
   Node* receiver = has_receiver ? argument(0) : NULL;
 
-  // The extra CheckCastPP for speculative types mess with PhaseStringOpts
+  // The extra CheckCastPPs for speculative types mess with PhaseStringOpts
   if (receiver != NULL && !call_does_dispatch && !cg->is_string_late_inline()) {
     // Feed profiling data for a single receiver to the type system so
     // it can propagate it as a speculative type
@@ -719,6 +719,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
   GrowableArray<const Type*>* extypes = new (C->node_arena()) GrowableArray<const Type*>(C->node_arena(), 8, 0, NULL);
   GrowableArray<int>* saw_unloaded = new (C->node_arena()) GrowableArray<int>(C->node_arena(), 8, 0, 0);
 
+  bool default_handler = false;
   for (; !handlers.is_done(); handlers.next()) {
     ciExceptionHandler* h        = handlers.handler();
     int                 h_bci    = h->handler_bci();
@@ -741,6 +742,14 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     // Note:  It's OK if the BCIs repeat themselves.
     bcis->append(h_bci);
     extypes->append(h_extype);
+    if (h_bci == -1) {
+      default_handler = true;
+    }
+  }
+
+  if (!default_handler) {
+    bcis->append(-1);
+    extypes->append(TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr());
   }
 
   int len = bcis->length();

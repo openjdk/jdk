@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -52,11 +53,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   return i;
 }
 
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  // No special entry points that preclude compilation
-  return true;
-}
-
 static int size_activation_helper(int callee_extra_locals, int max_stack, int monitor_size) {
 
   // Figure out the size of an interpreter frame (in words) given that we have a fully allocated
@@ -71,12 +67,12 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
   // the caller so we must ensure that it is properly aligned for our callee.
   //
   const int rounded_vm_local_words =
-       round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+      align_up((int)frame::interpreter_frame_vm_local_words,WordsPerLong);
   // callee_locals and max_stack are counts, not the size in frame.
   const int locals_size =
-       round_to(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
+      align_up(callee_extra_locals * Interpreter::stackElementWords, WordsPerLong);
   const int max_stack_words = max_stack * Interpreter::stackElementWords;
-  return (round_to((max_stack_words
+  return (align_up((max_stack_words
                    + rounded_vm_local_words
                    + frame::memory_parameter_word_sp_offset), WordsPerLong)
                    // already rounded
@@ -87,7 +83,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
 int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 
   // See call_stub code
-  int call_stub_size  = round_to(7 + frame::memory_parameter_word_sp_offset,
+  int call_stub_size  = align_up(7 + frame::memory_parameter_word_sp_offset,
                                  WordsPerLong);    // 7 + register save area
 
   // Save space for one monitor to get into the interpreted method in case
@@ -110,7 +106,7 @@ int AbstractInterpreter::size_activation(int max_stack,
 
   int monitor_size           = monitors * frame::interpreter_frame_monitor_size();
 
-  assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
+  assert(is_aligned(monitor_size, WordsPerLong), "must align");
 
   //
   // Note: if you look closely this appears to be doing something much different
@@ -136,8 +132,8 @@ int AbstractInterpreter::size_activation(int max_stack,
   // there is no sense in messing working code.
   //
 
-  int rounded_cls = round_to((callee_locals - callee_params), WordsPerLong);
-  assert(rounded_cls == round_to(rounded_cls, WordsPerLong), "must align");
+  int rounded_cls = align_up((callee_locals - callee_params), WordsPerLong);
+  assert(is_aligned(rounded_cls, WordsPerLong), "must align");
 
   int raw_frame_size = size_activation_helper(rounded_cls, max_stack, monitor_size);
 
@@ -171,9 +167,9 @@ void AbstractInterpreter::layout_activation(Method* method,
   // even if not fully filled out.
   assert(interpreter_frame->is_interpreted_frame(), "Must be interpreted frame");
 
-  int rounded_vm_local_words = round_to(frame::interpreter_frame_vm_local_words,WordsPerLong);
+  int rounded_vm_local_words = align_up((int)frame::interpreter_frame_vm_local_words,WordsPerLong);
   int monitor_size           = moncount * frame::interpreter_frame_monitor_size();
-  assert(monitor_size == round_to(monitor_size, WordsPerLong), "must align");
+  assert(is_aligned(monitor_size, WordsPerLong), "must align");
 
   intptr_t* fp = interpreter_frame->fp();
 
@@ -203,7 +199,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     int parm_words  = caller_actual_parameters * Interpreter::stackElementWords;
     locals = Lesp_ptr + parm_words;
     int delta = local_words - parm_words;
-    int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
+    int computed_sp_adjustment = (delta > 0) ? align_up(delta, WordsPerLong) : 0;
     *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
     if (!is_bottom_frame) {
       // Llast_SP is set below for the current frame to SP (with the
@@ -270,9 +266,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     assert(locals < interpreter_frame->sp() || locals > (interpreter_frame->sp() + 16), "locals in save area");
     assert(locals < interpreter_frame->fp() || locals >= (interpreter_frame->fp() + 16), "locals in save area");
   }
-#ifdef _LP64
   assert(*interpreter_frame->register_addr(I5_savedSP) & 1, "must be odd");
-#endif
 
   *interpreter_frame->register_addr(Lmethod)     = (intptr_t) method;
   *interpreter_frame->register_addr(Llocals)     = (intptr_t) locals;
@@ -283,9 +277,6 @@ void AbstractInterpreter::layout_activation(Method* method,
   *interpreter_frame->register_addr(LcpoolCache) = (intptr_t) method->constants()->cache();
   // save the mirror in the interpreter frame
   *interpreter_frame->interpreter_frame_mirror_addr() = method->method_holder()->java_mirror();
-#ifdef FAST_DISPATCH
-  *interpreter_frame->register_addr(IdispatchTables) = (intptr_t) Interpreter::dispatch_table();
-#endif
 
 #ifdef ASSERT
   BasicObjectLock* mp = (BasicObjectLock*)monitors;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,9 @@ private:
   HeapWord* _next_offset_threshold;
   size_t    _next_offset_index;      // index corresponding to that boundary
 
+  // Indicates if an object can span into this G1BlockOffsetTablePart.
+  debug_only(bool _object_can_span;)
+
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
@@ -224,6 +227,7 @@ public:
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
+  void set_object_can_span(bool can_span) NOT_DEBUG_RETURN;
 
   void print_on(outputStream* out) PRODUCT_RETURN;
 };

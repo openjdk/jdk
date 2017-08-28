@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @requires vm.aot
  * @library /test/lib /
- * @requires vm.bits == "64" & os.arch == "amd64" & os.family == "linux"
+ * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.verification.ClassAndLibraryNotMatchTest
  * @run driver compiler.aot.verification.ClassAndLibraryNotMatchTest
@@ -86,7 +87,7 @@ public class ClassAndLibraryNotMatchTest {
 
     private void compileAotLibrary() {
         AotCompiler.launchCompiler(LIB_NAME, HELLO_WORLD_CLASS_NAME,
-                Arrays.asList("-classpath", Utils.TEST_CLASS_PATH + ":."), null);
+                Arrays.asList("-classpath", Utils.TEST_CLASS_PATH + File.pathSeparator + "."), null);
     }
 
     private void runAndCheckHelloWorld(String checkString) {

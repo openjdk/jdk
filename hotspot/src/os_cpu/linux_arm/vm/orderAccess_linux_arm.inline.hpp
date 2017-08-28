@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ inline void OrderAccess::fence()      { dmb_sy(); }
 
 #ifdef AARCH64
 
-template<> inline jbyte    OrderAccess::specialized_load_acquire<jbyte>(volatile jbyte*   p) {
+template<> inline jbyte    OrderAccess::specialized_load_acquire<jbyte>(const volatile jbyte*   p) {
   volatile jbyte result;
   __asm__ volatile(
     "ldarb %w[res], [%[ptr]]"
@@ -141,7 +141,7 @@ template<> inline jbyte    OrderAccess::specialized_load_acquire<jbyte>(volatile
   return result;
 }
 
-template<> inline jshort   OrderAccess::specialized_load_acquire<jshort>(volatile jshort*  p) {
+template<> inline jshort   OrderAccess::specialized_load_acquire<jshort>(const volatile jshort*  p) {
   volatile jshort result;
   __asm__ volatile(
     "ldarh %w[res], [%[ptr]]"
@@ -151,7 +151,7 @@ template<> inline jshort   OrderAccess::specialized_load_acquire<jshort>(volatil
   return result;
 }
 
-template<> inline jint     OrderAccess::specialized_load_acquire<jint>(volatile jint*    p) {
+template<> inline jint     OrderAccess::specialized_load_acquire<jint>(const volatile jint*    p) {
   volatile jint result;
   __asm__ volatile(
     "ldar %w[res], [%[ptr]]"
@@ -161,16 +161,16 @@ template<> inline jint     OrderAccess::specialized_load_acquire<jint>(volatile 
   return result;
 }
 
-template<> inline jfloat   OrderAccess::specialized_load_acquire<jfloat>(volatile jfloat*  p) {
-  return jfloat_cast(specialized_load_acquire((volatile jint*)p));
+template<> inline jfloat   OrderAccess::specialized_load_acquire<jfloat>(const volatile jfloat*  p) {
+  return jfloat_cast(specialized_load_acquire((const volatile jint*)p));
 }
 
 // This is implicit as jlong and intptr_t are both "long int"
-//template<> inline jlong    OrderAccess::specialized_load_acquire(volatile jlong*   p) {
-//  return (volatile jlong)specialized_load_acquire((volatile intptr_t*)p);
+//template<> inline jlong    OrderAccess::specialized_load_acquire(const volatile jlong*   p) {
+//  return (volatile jlong)specialized_load_acquire((const volatile intptr_t*)p);
 //}
 
-template<> inline intptr_t OrderAccess::specialized_load_acquire<intptr_t>(volatile intptr_t*   p) {
+template<> inline intptr_t OrderAccess::specialized_load_acquire<intptr_t>(const volatile intptr_t*   p) {
   volatile intptr_t result;
   __asm__ volatile(
     "ldar %[res], [%[ptr]]"
@@ -180,8 +180,8 @@ template<> inline intptr_t OrderAccess::specialized_load_acquire<intptr_t>(volat
   return result;
 }
 
-template<> inline jdouble  OrderAccess::specialized_load_acquire<jdouble>(volatile jdouble* p) {
-  return jdouble_cast(specialized_load_acquire((volatile intptr_t*)p));
+template<> inline jdouble  OrderAccess::specialized_load_acquire<jdouble>(const volatile jdouble* p) {
+  return jdouble_cast(specialized_load_acquire((const volatile intptr_t*)p));
 }
 
 

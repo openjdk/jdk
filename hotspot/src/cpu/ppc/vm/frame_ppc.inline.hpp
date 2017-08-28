@@ -28,6 +28,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inline functions for ppc64 frames:
 
@@ -193,7 +194,7 @@ inline intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
 
 inline int frame::interpreter_frame_monitor_size() {
   // Number of stack slots for a monitor.
-  return round_to(BasicObjectLock::size(),  // number of stack slots
+  return align_up(BasicObjectLock::size(),  // number of stack slots
                   WordsPerLong);            // number of stack slots for a Java long
 }
 

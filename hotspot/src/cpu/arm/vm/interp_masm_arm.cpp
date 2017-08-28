@@ -298,7 +298,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   Register cache = result;
   // load pointer for resolved_references[] objArray
-  ldr(cache, Address(result, ConstantPool::resolved_references_offset_in_bytes()));
+  ldr(cache, Address(result, ConstantPool::cache_offset_in_bytes()));
+  ldr(cache, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
   // JNIHandles::resolve(result)
   ldr(cache, Address(cache, 0));
   // Add in the index
@@ -306,6 +307,15 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // word index to byte offset. Since this is a java object, it can be compressed
   add(cache, cache, AsmOperand(index, lsl, LogBytesPerHeapOop));
   load_heap_oop(result, Address(cache, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+}
+
+void InterpreterMacroAssembler::load_resolved_klass_at_offset(
+                                           Register Rcpool, Register Rindex, Register Rklass) {
+  add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
+  ldrh(Rtemp, Address(Rtemp, sizeof(ConstantPool))); // Rtemp = resolved_klass_index
+  ldr(Rklass, Address(Rcpool,  ConstantPool::resolved_klasses_offset_in_bytes())); // Rklass = cpool->_resolved_klasses
+  add(Rklass, Rklass, AsmOperand(Rtemp, lsl, LogBytesPerWord));
+  ldr(Rklass, Address(Rklass, Array<Klass*>::base_offset_in_bytes()));
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is
@@ -2016,75 +2026,42 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register Rcounters,
-                                                    Label& skip) {
+                                                    Label& skip,
+                                                    bool saveRegs,
+                                                    Register reg1,
+                                                    Register reg2,
+                                                    Register reg3) {
   const Address method_counters(method, Method::method_counters_offset());
   Label has_counters;
 
   ldr(Rcounters, method_counters);
   cbnz(Rcounters, has_counters);
 
+  if (saveRegs) {
+    // Save and restore in use caller-saved registers since they will be trashed by call_VM
+    assert(reg1 != noreg, "must specify reg1");
+    assert(reg2 != noreg, "must specify reg2");
 #ifdef AARCH64
-  const Register tmp = Rcounters;
-  const int saved_regs_size = 20*wordSize;
-
-  // Note: call_VM will cut SP according to Rstack_top value before call, and restore SP to
-  // extended_sp value from frame after the call.
-  // So make sure there is enough stack space to save registers and adjust Rstack_top accordingly.
-  {
-    Label enough_stack_space;
-    check_extended_sp(tmp);
-    sub(Rstack_top, Rstack_top, saved_regs_size);
-    cmp(SP, Rstack_top);
-    b(enough_stack_space, ls);
-
-    align_reg(tmp, Rstack_top, StackAlignmentInBytes);
-    mov(SP, tmp);
-    str(tmp, Address(FP, frame::interpreter_frame_extended_sp_offset * wordSize));
-
-    bind(enough_stack_space);
-    check_stack_top();
-
-    int offset = 0;
-    stp(R0,  R1,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R2,  R3,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R4,  R5,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R6,  R7,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R8,  R9,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R10, R11, Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R12, R13, Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R14, R15, Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R16, R17, Address(Rstack_top, offset)); offset += 2*wordSize;
-    stp(R18, LR,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    assert (offset == saved_regs_size, "should be");
-  }
+    assert(reg3 != noreg, "must specify reg3");
+    stp(reg1, reg2, Address(Rstack_top, -2*wordSize, pre_indexed));
+    stp(reg3, ZR, Address(Rstack_top, -2*wordSize, pre_indexed));
 #else
-  push(RegisterSet(R0, R3) | RegisterSet(R12) | RegisterSet(R14));
-#endif // AARCH64
+    assert(reg3 == noreg, "must not specify reg3");
+    push(RegisterSet(reg1) | RegisterSet(reg2));
+#endif
+  }
 
   mov(R1, method);
-  call_VM(noreg, CAST_FROM_FN_PTR(address,
-          InterpreterRuntime::build_method_counters), R1);
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::build_method_counters), R1);
 
+  if (saveRegs) {
 #ifdef AARCH64
-  {
-    int offset = 0;
-    ldp(R0,  R1,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R2,  R3,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R4,  R5,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R6,  R7,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R8,  R9,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R10, R11, Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R12, R13, Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R14, R15, Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R16, R17, Address(Rstack_top, offset)); offset += 2*wordSize;
-    ldp(R18, LR,  Address(Rstack_top, offset)); offset += 2*wordSize;
-    assert (offset == saved_regs_size, "should be");
-
-    add(Rstack_top, Rstack_top, saved_regs_size);
-  }
+    ldp(reg3, ZR, Address(Rstack_top, 2*wordSize, post_indexed));
+    ldp(reg1, reg2, Address(Rstack_top, 2*wordSize, post_indexed));
 #else
-  pop(RegisterSet(R0, R3) | RegisterSet(R12) | RegisterSet(R14));
-#endif // AARCH64
+    pop(RegisterSet(reg1) | RegisterSet(reg2));
+#endif
+  }
 
   ldr(Rcounters, method_counters);
   cbz(Rcounters, skip); // No MethodCounters created, OutOfMemory

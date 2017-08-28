@@ -33,6 +33,7 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
@@ -504,16 +505,14 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
   }
 #ifdef ASSERT
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(cur_committed.start() ==
-    (HeapWord*) align_size_up((uintptr_t) cur_committed.start(),
-                              os::vm_page_size()),
+  assert(cur_committed.start() == align_up(cur_committed.start(), os::vm_page_size()),
     "Starts should have proper alignment");
 #endif
 
   jbyte* new_start = byte_for(new_region.start());
   // Round down because this is for the start address
   HeapWord* new_start_aligned =
-    (HeapWord*)align_size_down((uintptr_t)new_start, os::vm_page_size());
+    (HeapWord*)align_down((uintptr_t)new_start, os::vm_page_size());
   // The guard page is always committed and should not be committed over.
   // This method is used in cases where the generation is growing toward
   // lower addresses but the guard region is still at the end of the
@@ -586,8 +585,7 @@ void CardTableExtension::resize_update_committed_table(int changed_region,
   jbyte* new_start = byte_for(new_region.start());
   // Set the new start of the committed region
   HeapWord* new_start_aligned =
-    (HeapWord*)align_size_down((uintptr_t)new_start,
-                             os::vm_page_size());
+    (HeapWord*)align_down(new_start, os::vm_page_size());
   MemRegion new_committed = MemRegion(new_start_aligned,
     _committed[changed_region].end());
   _committed[changed_region] = new_committed;

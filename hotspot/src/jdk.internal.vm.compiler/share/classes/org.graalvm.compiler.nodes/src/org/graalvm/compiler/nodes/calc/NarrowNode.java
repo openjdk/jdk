@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.Narrow;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.SignExtend;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
@@ -35,6 +36,8 @@ import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+
+import jdk.vm.ci.code.CodeUtil;
 
 /**
  * The {@code NarrowNode} converts an integer to a narrower integer.
@@ -87,7 +90,7 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
         } else if (forValue instanceof IntegerConvertNode) {
             // SignExtendNode or ZeroExtendNode
             IntegerConvertNode<?, ?> other = (IntegerConvertNode<?, ?>) forValue;
-            if (other.getValue().getUsageCount() == 1 && other.getUsageCount() > 1) {
+            if (other.getValue().hasExactlyOneUsage() && other.hasMoreThanOneUsage()) {
                 // Do not perform if this will introduce a new live value.
                 // If the original value's usage count is > 1, there is already another user.
                 // If the convert's usage count is <=1, it will be dead code eliminated.
@@ -105,19 +108,35 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
                 if (other instanceof SignExtendNode) {
                     // sxxx -(sign-extend)-> ssssssss sssssxxx -(narrow)-> sssssxxx
                     // ==> sxxx -(sign-extend)-> sssssxxx
-                    return new SignExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+                    return SignExtendNode.create(other.getValue(), other.getInputBits(), getResultBits());
                 } else if (other instanceof ZeroExtendNode) {
                     // xxxx -(zero-extend)-> 00000000 00000xxx -(narrow)-> 0000xxxx
                     // ==> xxxx -(zero-extend)-> 0000xxxx
                     return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits());
                 }
             }
+        } else if (forValue instanceof AndNode) {
+            AndNode andNode = (AndNode) forValue;
+            IntegerStamp yStamp = (IntegerStamp) andNode.getY().stamp();
+            IntegerStamp xStamp = (IntegerStamp) andNode.getX().stamp();
+            long relevantMask = CodeUtil.mask(this.getResultBits());
+            if ((relevantMask & yStamp.downMask()) == relevantMask) {
+                return create(andNode.getX(), this.getResultBits());
+            } else if ((relevantMask & xStamp.downMask()) == relevantMask) {
+                return create(andNode.getY(), this.getResultBits());
+            }
         }
+
         return this;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool nodeValueMap, ArithmeticLIRGeneratorTool gen) {
         nodeValueMap.setResult(this, gen.emitNarrow(nodeValueMap.operand(getValue()), getResultBits()));
+    }
+
+    @Override
+    public boolean mayNullCheckSkipConversion() {
+        return false;
     }
 }

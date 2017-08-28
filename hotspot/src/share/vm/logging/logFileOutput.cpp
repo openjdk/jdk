@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,19 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "memory/allocation.inline.hpp"
+#include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/defaultStream.hpp"
 
-const char* LogFileOutput::Prefix = "file=";
-const char* LogFileOutput::FileOpenMode = "a";
-const char* LogFileOutput::PidFilenamePlaceholder = "%p";
-const char* LogFileOutput::TimestampFilenamePlaceholder = "%t";
-const char* LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
-const char* LogFileOutput::FileSizeOptionKey = "filesize";
-const char* LogFileOutput::FileCountOptionKey = "filecount";
+const char* const LogFileOutput::Prefix = "file=";
+const char* const LogFileOutput::FileOpenMode = "a";
+const char* const LogFileOutput::PidFilenamePlaceholder = "%p";
+const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
+const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
+const char* const LogFileOutput::FileSizeOptionKey = "filesize";
+const char* const LogFileOutput::FileCountOptionKey = "filecount";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
@@ -190,7 +191,7 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
       success = Arguments::atojulong(value_str, &value);
       if (!success || (value > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
-                            SIZE_FORMAT "]", FileSizeOptionKey, SIZE_MAX);
+                            SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
         break;
       }
@@ -435,4 +436,3 @@ void LogFileOutput::describe(outputStream *out) {
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size));
 }
-

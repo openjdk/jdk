@@ -23,7 +23,6 @@
 package org.graalvm.compiler.hotspot.amd64;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_20;
 
 import org.graalvm.compiler.core.amd64.AMD64NodeLIRBuilder;
 import org.graalvm.compiler.core.common.type.RawPointerStamp;
@@ -32,6 +31,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
@@ -46,7 +46,7 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
 
-@NodeInfo(cycles = CYCLES_UNKNOWN, cyclesRationale = "Native call is a block hole", size = SIZE_20)
+@NodeInfo(cycles = CYCLES_UNKNOWN, cyclesRationale = "Native call is a block hole", size = NodeSize.SIZE_UNKNOWN)
 public final class AMD64RawNativeCallNode extends FixedWithNextNode implements LIRLowerable {
     public static final NodeClass<AMD64RawNativeCallNode> TYPE = NodeClass.create(AMD64RawNativeCallNode.class);
 

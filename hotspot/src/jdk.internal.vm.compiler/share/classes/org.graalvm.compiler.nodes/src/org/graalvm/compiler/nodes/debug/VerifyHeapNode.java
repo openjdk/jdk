@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.nodes.debug;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_30;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_50;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
@@ -38,7 +38,12 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
  * A node for platform dependent verification of the Java heap. Intended to be used for debugging
  * heap corruption issues.
  */
-@NodeInfo(cycles = CYCLES_30, size = SIZE_50)
+//@formatter:off
+@NodeInfo(size = SIZE_IGNORED,
+        sizeRationale = "Node is a debugging node that should not be used in production.",
+        cycles = CYCLES_IGNORED,
+        cyclesRationale = "Node is a debugging node that should not be used in production.")
+//@formatter:on
 public final class VerifyHeapNode extends FixedWithNextNode implements Lowerable {
 
     public static final NodeClass<VerifyHeapNode> TYPE = NodeClass.create(VerifyHeapNode.class);

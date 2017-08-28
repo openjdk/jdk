@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -77,12 +77,6 @@ class MacroAssembler: public Assembler {
     bool     check_exceptions          // whether to check for pending exceptions after return
   );
 
-  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
-  // The implementation is only non-empty for the InterpreterMacroAssembler,
-  // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
-  virtual void check_and_handle_popframe(Register java_thread);
-  virtual void check_and_handle_earlyret(Register java_thread);
-
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
   // Maximum size of class area in Metaspace when compressed
@@ -96,6 +90,12 @@ class MacroAssembler: public Assembler {
          && ((uint64_t)Universe::narrow_klass_base()
              > (1u << log2_intptr(CompressedClassSpaceSize))));
   }
+
+ // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
+ // The implementation is only non-empty for the InterpreterMacroAssembler,
+ // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
+ virtual void check_and_handle_popframe(Register java_thread);
+ virtual void check_and_handle_earlyret(Register java_thread);
 
   // Biased locking support
   // lock_reg and obj_reg must be loaded up with the appropriate values.
@@ -169,6 +169,7 @@ class MacroAssembler: public Assembler {
 
   template<class T>
   inline void cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
+  // imm is limited to 12 bits.
   inline void cmp(Register Rd, unsigned imm)  { subs(zr, Rd, imm); }
 
   inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
@@ -941,7 +942,7 @@ public:
 
   void untested()                                { stop("untested"); }
 
-  void unimplemented(const char* what = "")      { char* b = new char[1024];  jio_snprintf(b, 1024, "unimplemented: %s", what);  stop(b); }
+  void unimplemented(const char* what = "");
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
@@ -949,8 +950,8 @@ public:
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
     assert(offset > 0, "must bang with negative offset");
-    mov(rscratch2, -offset);
-    str(zr, Address(sp, rscratch2));
+    sub(rscratch2, sp, offset);
+    str(zr, Address(rscratch2));
   }
 
   // Writes to stack successive pages until offset reached to check for
@@ -974,6 +975,8 @@ public:
 
   // Various forms of CAS
 
+  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
+                          Label &suceed, Label *fail);
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                   Label &suceed, Label *fail);
 
@@ -1206,6 +1209,8 @@ public:
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1,
                       FloatRegister vtmp, FloatRegister vtmpZ, int ae);
+
+  void has_negatives(Register ary1, Register len, Register result);
 
   void arrays_equals(Register a1, Register a2,
                      Register result, Register cnt1,

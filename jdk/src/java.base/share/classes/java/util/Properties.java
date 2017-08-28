@@ -1345,7 +1345,6 @@ class Properties extends Hashtable<Object,Object> {
         return map.remove(key, value);
     }
 
-    /** @hidden */
     @Override
     public synchronized boolean replace(Object key, Object oldValue, Object newValue) {
         return map.replace(key, oldValue, newValue);

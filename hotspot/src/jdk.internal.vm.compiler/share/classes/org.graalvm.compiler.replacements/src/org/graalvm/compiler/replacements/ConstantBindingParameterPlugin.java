@@ -57,7 +57,16 @@ public class ConstantBindingParameterPlugin implements ParameterPlugin {
         if (arg != null) {
             ConstantNode constantNode;
             if (arg instanceof ConstantNode) {
-                constantNode = (ConstantNode) arg;
+                ConstantNode otherCon = (ConstantNode) arg;
+                if (otherCon.graph() != b.getGraph()) {
+                    /*
+                     * This is a node from another graph, so copy over extra state into a new
+                     * ConstantNode.
+                     */
+                    constantNode = ConstantNode.forConstant(stamp.getTrustedStamp(), otherCon.asConstant(), otherCon.getStableDimension(), otherCon.isDefaultStable(), metaAccess);
+                } else {
+                    constantNode = otherCon;
+                }
             } else if (arg instanceof Constant) {
                 constantNode = ConstantNode.forConstant(stamp.getTrustedStamp(), (Constant) arg, metaAccess);
             } else {

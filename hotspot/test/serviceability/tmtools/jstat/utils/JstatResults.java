@@ -23,6 +23,9 @@
 package utils;
 
 import common.ToolResults;
+import java.text.NumberFormat;
+import java.text.ParseException;
+
 
 /**
  * Results of running the jstat tool Concrete subclasses will detail the jstat
@@ -55,7 +58,13 @@ abstract public class JstatResults extends ToolResults {
      */
     public float getFloatValue(String name) {
         int valueNdx = new StringOfValues(getStdoutLine(0)).getIndex(name);
-        return Float.valueOf(new StringOfValues(getStdoutLine(1)).getValue(valueNdx));
+        // Let the parsing use the current locale format.
+        try {
+            return NumberFormat.getInstance().parse(new StringOfValues(getStdoutLine(1)).getValue(valueNdx)).floatValue();
+        } catch (ParseException e) {
+            throw new NumberFormatException(e.getMessage());
+        }
+
     }
 
     /**
@@ -66,7 +75,11 @@ abstract public class JstatResults extends ToolResults {
      */
     public int getIntValue(String name) {
         int valueNdx = new StringOfValues(getStdoutLine(0)).getIndex(name);
-        return Integer.valueOf(new StringOfValues(getStdoutLine(1)).getValue(valueNdx));
+        try {
+            return NumberFormat.getInstance().parse(new StringOfValues(getStdoutLine(1)).getValue(valueNdx)).intValue();
+        } catch (ParseException e) {
+            throw new NumberFormatException(e.getMessage());
+        }
     }
 
     /**

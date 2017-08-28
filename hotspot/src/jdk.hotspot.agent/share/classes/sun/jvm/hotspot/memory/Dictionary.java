@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@ package sun.jvm.hotspot.memory;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class Dictionary extends TwoOopHashtable {
+public class Dictionary extends sun.jvm.hotspot.utilities.Hashtable {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -55,56 +56,32 @@ public class Dictionary extends TwoOopHashtable {
     return DictionaryEntry.class;
   }
 
-  /** Iterate over all klasses in dictionary; just the classes from
-      declaring class loaders */
-  public void classesDo(SystemDictionary.ClassVisitor v) {
-    ObjectHeap heap = VM.getVM().getObjectHeap();
+  /** All classes, and their initiating class loader, passed in. */
+  public void allEntriesDo(ClassLoaderDataGraph.ClassAndLoaderVisitor v, Oop loader) {
     int tblSize = tableSize();
     for (int index = 0; index < tblSize; index++) {
       for (DictionaryEntry probe = (DictionaryEntry) bucket(index); probe != null;
-                                             probe = (DictionaryEntry) probe.next()) {
+                                              probe = (DictionaryEntry) probe.next()) {
         Klass k = probe.klass();
-        if (heap.equal(probe.loader(), ((InstanceKlass) k).getClassLoader())) {
-            v.visit(k);
-        }
+        v.visit(k, loader);
       }
     }
-  }
-
-  /** All classes, and their class loaders */
-  public void classesDo(SystemDictionary.ClassAndLoaderVisitor v) {
-    int tblSize = tableSize();
-    for (int index = 0; index < tblSize; index++) {
-      for (DictionaryEntry probe = (DictionaryEntry) bucket(index); probe != null;
-                                             probe = (DictionaryEntry) probe.next()) {
-        Klass k = probe.klass();
-        v.visit(k, probe.loader());
-      }
-    }
-  }
-
-  public Klass find(int index, long hash, Symbol className, Oop classLoader, Oop protectionDomain) {
-    DictionaryEntry entry = getEntry(index, hash, className, classLoader);
-    if (entry != null && entry.isValidProtectionDomain(protectionDomain)) {
-      return entry.klass();
-    }
-    return null;
   }
 
   // - Internals only below this point
 
-  private DictionaryEntry getEntry(int index, long hash, Symbol className, Oop classLoader) {
+  private DictionaryEntry getEntry(int index, long hash, Symbol className) {
     for (DictionaryEntry entry = (DictionaryEntry) bucket(index); entry != null;
                                     entry = (DictionaryEntry) entry.next()) {
-      if (entry.hash() == hash && entry.equals(className, classLoader)) {
+      if (entry.hash() == hash && entry.equals(className)) {
         return entry;
       }
     }
     return null;
   }
 
-  public boolean contains(Klass c, Oop classLoader) {
-    long hash = computeHash(c.getName(), classLoader);
+  public boolean contains(Klass c) {
+    long hash = computeHash(c.getName());
     int index = hashToIndex(hash);
 
     for (DictionaryEntry entry = (DictionaryEntry) bucket(index); entry != null;

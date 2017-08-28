@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * invoked, these methods should be used within a
  * {@code try}&nbsp;...&nbsp;{@code finally} block:
  *
- * <blockquote><pre>
+ * <blockquote><pre id="be">
  * try {
  *     begin();
  *     // Perform blocking I/O operation here

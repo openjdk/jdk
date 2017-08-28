@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.replacements.nodes.arithmetic;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_4;
-import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_4;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
 import java.util.function.BiFunction;
 
@@ -43,7 +43,7 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
 
-@NodeInfo(shortName = "|*H|", cycles = CYCLES_4, cyclesRationale = "mul + mov", size = SIZE_4)
+@NodeInfo(shortName = "|*H|", cycles = CYCLES_2, size = SIZE_2)
 public final class UnsignedMulHighNode extends BinaryNode implements ArithmeticLIRLowerable {
 
     public static final NodeClass<UnsignedMulHighNode> TYPE = NodeClass.create(UnsignedMulHighNode.class);

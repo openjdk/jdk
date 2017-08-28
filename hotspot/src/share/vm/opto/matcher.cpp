@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "opto/vectornode.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 
 OptoReg::Name OptoReg::c_frame_pointer;
 
@@ -139,7 +140,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
 OptoReg::Name Compile::compute_old_SP() {
   int fixed    = fixed_slots();
   int preserve = in_preserve_stack_slots();
-  return OptoReg::stack2reg(round_to(fixed + preserve, Matcher::stack_alignment_in_slots()));
+  return OptoReg::stack2reg(align_up(fixed + preserve, (int)Matcher::stack_alignment_in_slots()));
 }
 
 
@@ -188,7 +189,7 @@ void Matcher::match( ) {
   const TypeTuple *range = C->tf()->range();
   if( range->cnt() > TypeFunc::Parms ) { // If not a void function
     // Get ideal-register return type
-    int ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
+    uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
     // Get machine return register
     uint sop = C->start()->Opcode();
     OptoRegPair regs = return_value(ireg, false);
@@ -286,7 +287,7 @@ void Matcher::match( ) {
   // particular, in the spill area) which look aligned will in fact be
   // aligned relative to the stack pointer in the target machine.  Double
   // stack slots will always be allocated aligned.
-  _new_SP = OptoReg::Name(round_to(_in_arg_limit, RegMask::SlotsPerLong));
+  _new_SP = OptoReg::Name(align_up(_in_arg_limit, (int)RegMask::SlotsPerLong));
 
   // Compute highest outgoing stack argument as
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).
@@ -977,7 +978,6 @@ Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
   MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
-
   while (mstack.is_nonempty()) {
     C->check_node_count(NodeLimitFudgeFactor, "too many nodes matching instructions");
     if (C->failing()) return NULL;
@@ -1680,14 +1680,14 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
       }
       const Type* mach_at = mach->adr_type();
       // DecodeN node consumed by an address may have different type
-      // then its input. Don't compare types for such case.
+      // than its input. Don't compare types for such case.
       if (m->adr_type() != mach_at &&
           (m->in(MemNode::Address)->is_DecodeNarrowPtr() ||
-           m->in(MemNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr() ||
-           m->in(MemNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr())) {
+           (m->in(MemNode::Address)->is_AddP() &&
+            m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()) ||
+           (m->in(MemNode::Address)->is_AddP() &&
+            m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
+            m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr()))) {
         mach_at = m->adr_type();
       }
       if (m->adr_type() != mach_at) {
@@ -2123,6 +2123,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_EncodeISOArray:
       case Op_FmaD:
       case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF:
         set_shared(n); // Force result into register (it will be anyways)
         break;
       case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2312,7 +2314,9 @@ void Matcher::find_shared( Node *n ) {
         break;
       }
       case Op_FmaD:
-      case Op_FmaF: {
+      case Op_FmaF:
+      case Op_FmaVD:
+      case Op_FmaVF: {
         // Restructure into a binary tree for Matching.
         Node* pair = new BinaryNode(n->in(1), n->in(2));
         n->set_req(2, pair);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ inline jint  CompressedStream::decode_sign(juint value) {
 // converts trailing zeroes (common in floats) to leading zeroes
 inline juint CompressedStream::reverse_int(juint i) {
   // Hacker's Delight, Figure 7-1
-  i = (i & 0x55555555) << 1 | (i >> 1) & 0x55555555;
-  i = (i & 0x33333333) << 2 | (i >> 2) & 0x33333333;
-  i = (i & 0x0f0f0f0f) << 4 | (i >> 4) & 0x0f0f0f0f;
+  i = (i & 0x55555555) << 1 | ((i >> 1) & 0x55555555);
+  i = (i & 0x33333333) << 2 | ((i >> 2) & 0x33333333);
+  i = (i & 0x0f0f0f0f) << 4 | ((i >> 4) & 0x0f0f0f0f);
   i = (i << 24) | ((i & 0xff00) << 8) | ((i >> 8) & 0xff00) | (i >> 24);
   return i;
 }
@@ -126,41 +126,6 @@ void CompressedWriteStream::write_long(jlong value) {
 void test_compressed_stream(int trace);
 bool test_compressed_stream_enabled = false;
 #endif
-
-// This encoding, called UNSIGNED5, is taken from J2SE Pack200.
-// It assumes that most values have lots of leading zeroes.
-// Very small values, in the range [0..191], code in one byte.
-// Any 32-bit value (including negatives) can be coded, in
-// up to five bytes.  The grammar is:
-//    low_byte  = [0..191]
-//    high_byte = [192..255]
-//    any_byte  = low_byte | high_byte
-//    coding = low_byte
-//           | high_byte low_byte
-//           | high_byte high_byte low_byte
-//           | high_byte high_byte high_byte low_byte
-//           | high_byte high_byte high_byte high_byte any_byte
-// Each high_byte contributes six bits of payload.
-// The encoding is one-to-one (except for integer overflow)
-// and easy to parse and unparse.
-
-jint CompressedReadStream::read_int_mb(jint b0) {
-  int     pos = position() - 1;
-  u_char* buf = buffer() + pos;
-  assert(buf[0] == b0 && b0 >= L, "correctly called");
-  jint    sum = b0;
-  // must collect more bytes:  b[1]...b[4]
-  int lg_H_i = lg_H;
-  for (int i = 0; ; ) {
-    jint b_i = buf[++i]; // b_i = read(); ++i;
-    sum += b_i << lg_H_i;  // sum += b[i]*(64**i)
-    if (b_i < L || i == MAX_i) {
-      set_position(pos+i+1);
-      return sum;
-    }
-    lg_H_i += lg_H;
-  }
-}
 
 void CompressedWriteStream::write_int_mb(jint value) {
   debug_only(int pos1 = position());

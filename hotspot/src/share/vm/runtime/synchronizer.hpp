@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,12 @@
 #include "runtime/perfData.hpp"
 
 class ObjectMonitor;
+
+struct DeflateMonitorCounters {
+  int nInuse;          // currently associated with objects
+  int nInCirculation;  // extant
+  int nScavenged;      // reclaimed
+};
 
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
@@ -127,7 +133,11 @@ class ObjectSynchronizer : AllStatic {
   // GC: we current use aggressive monitor deflation policy
   // Basically we deflate all monitors that are not busy.
   // An adaptive profile-based deflation policy could be used if needed
-  static void deflate_idle_monitors();
+  static void deflate_idle_monitors(DeflateMonitorCounters* counters);
+  static void deflate_thread_local_monitors(Thread* thread, DeflateMonitorCounters* counters);
+  static void prepare_deflate_idle_monitors(DeflateMonitorCounters* counters);
+  static void finish_deflate_idle_monitors(DeflateMonitorCounters* counters);
+
   // For a given monitor list: global or per-thread, deflate idle monitors
   static int deflate_monitor_list(ObjectMonitor** listheadp,
                                   ObjectMonitor** freeHeadp,
@@ -135,13 +145,15 @@ class ObjectSynchronizer : AllStatic {
   static bool deflate_monitor(ObjectMonitor* mid, oop obj,
                               ObjectMonitor** freeHeadp,
                               ObjectMonitor** freeTailp);
+  static bool is_cleanup_needed();
   static void oops_do(OopClosure* f);
+  // Process oops in thread local used monitors
+  static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
 
   // debugging
   static void sanity_checks(const bool verbose,
                             const unsigned int cache_line_size,
                             int *error_cnt_ptr, int *warning_cnt_ptr);
-  static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
  private:
@@ -157,6 +169,14 @@ class ObjectSynchronizer : AllStatic {
   static ObjectMonitor * volatile gOmInUseList;
   // count of entries in gOmInUseList
   static int gOmInUseCount;
+
+  // Process oops in all monitors
+  static void global_oops_do(OopClosure* f);
+  // Process oops in all global used monitors (i.e. moribund thread's monitors)
+  static void global_used_oops_do(OopClosure* f);
+  // Process oops in monitors on the given list
+  static void list_oops_do(ObjectMonitor* list, OopClosure* f);
+
 };
 
 // ObjectLocker enforced balanced locking and can never thrown an

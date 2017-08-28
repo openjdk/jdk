@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * @summary JSR 292: Cannot create more than 16 instances of an anonymous class
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @library /lib/testlibrary
+ * @library /test/lib
  * @author  Robert Field
  * @compile -XDignore.symbol.file ManyNewInstanceAnonTest.java
- * @build jdk.testlibrary.*
  * @run main ClassFileInstaller ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all ManyNewInstanceAnonTest
  * @run main/othervm -Xbootclasspath/a:. -Xverify:all -Dsun.reflection.noInflation=true ManyNewInstanceAnonTest

@@ -26,12 +26,15 @@ import java.util.List;
 
 import org.graalvm.compiler.nodes.ControlSplitNode;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
+
 import jdk.vm.ci.meta.MetaAccessProvider;
 
 public interface LoopPolicies {
     boolean shouldPeel(LoopEx loop, ControlFlowGraph cfg, MetaAccessProvider metaAccess);
 
     boolean shouldFullUnroll(LoopEx loop);
+
+    boolean shouldPartiallyUnroll(LoopEx loop);
 
     boolean shouldTryUnswitch(LoopEx loop);
 

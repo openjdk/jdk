@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 
 class AbstractDecoder : public CHeapObj<mtInternal> {
 public:
+  virtual ~AbstractDecoder() {}
+
   // status code for decoding native C frame
   enum decoder_status {
          not_available = -10,  // real decoder is not available
@@ -82,7 +84,7 @@ public:
     _decoder_status = not_available;
   }
 
-  ~NullDecoder() {};
+  virtual ~NullDecoder() {};
 
   virtual bool decode(address pc, char* buf, int buflen, int* offset,
                       const char* modulepath, bool demangle) {

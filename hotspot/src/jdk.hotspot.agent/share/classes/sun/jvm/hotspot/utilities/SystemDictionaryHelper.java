@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.utilities;
 
 import java.util.*;
+import sun.jvm.hotspot.classfile.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
@@ -52,8 +53,8 @@ public class SystemDictionaryHelper {
       }
 
       final Vector tmp = new Vector();
-      SystemDictionary dict = VM.getVM().getSystemDictionary();
-      dict.classesDo(new SystemDictionary.ClassVisitor() {
+      ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
+      cldg.classesDo(new ClassLoaderDataGraph.ClassVisitor() {
                         public void visit(Klass k) {
                            if (k instanceof InstanceKlass) {
                               InstanceKlass ik = (InstanceKlass) k;
@@ -100,42 +101,15 @@ public class SystemDictionaryHelper {
    public static InstanceKlass findInstanceKlass(String className) {
       // convert to internal name
       className = className.replace('.', '/');
-      SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+      ClassLoaderDataGraph cldg = VM.getVM().getClassLoaderDataGraph();
 
-      // check whether we have a bootstrap class of given name
-      Klass klass = sysDict.find(className, null, null);
-      if (klass != null) {
+      // check whether we have a class of given name
+      Klass klass = cldg.find(className);
+      if (klass != null && klass instanceof InstanceKlass) {
          return (InstanceKlass) klass;
+      } else {
+        // no match ..
+        return null;
       }
-
-      // check whether we have a system class of given name
-      klass = sysDict.find(className, sysDict.javaSystemLoader(), null);
-      if (klass != null) {
-         return (InstanceKlass) klass;
-      }
-
-      // didn't find bootstrap or system class of given name.
-      // search through the entire dictionary..
-      InstanceKlass[] tmpKlasses = getAllInstanceKlasses();
-      // instance klass array is sorted by name. do binary search
-      int low = 0;
-      int high = tmpKlasses.length-1;
-
-      int mid = -1;
-      while (low <= high) {
-         mid = (low + high) >> 1;
-         InstanceKlass midVal = tmpKlasses[mid];
-         int cmp = midVal.getName().asString().compareTo(className);
-
-         if (cmp < 0) {
-             low = mid + 1;
-         } else if (cmp > 0) {
-             high = mid - 1;
-         } else { // match found
-             return tmpKlasses[mid];
-         }
-      }
-      // no match ..
-      return null;
    }
 }
