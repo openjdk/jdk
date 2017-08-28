@@ -29,7 +29,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
-#include "decoder_windows.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_windows.h"
 #include "memory/allocation.inline.hpp"
@@ -51,10 +50,12 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "unwind_windows_x86.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
+#include "windbghelp.hpp"
 
-# include "unwind_windows_x86.hpp"
+
 #undef REG_SP
 #undef REG_FP
 #undef REG_PC
@@ -401,24 +402,18 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
       lastpc = pc;
     }
 
-    PVOID p = WindowsDbgHelp::SymFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
+    PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
     if (!p) {
       // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
       break;
     }
 
-    BOOL result = WindowsDbgHelp::StackWalk64(
+    BOOL result = WindowsDbgHelp::stackWalk64(
         IMAGE_FILE_MACHINE_AMD64,  // __in      DWORD MachineType,
         GetCurrentProcess(),       // __in      HANDLE hProcess,
         GetCurrentThread(),        // __in      HANDLE hThread,
         &stk,                      // __inout   LP STACKFRAME64 StackFrame,
-        &ctx,                      // __inout   PVOID ContextRecord,
-        NULL,                      // __in_opt  PREAD_PROCESS_MEMORY_ROUTINE64 ReadMemoryRoutine,
-        WindowsDbgHelp::pfnSymFunctionTableAccess64(),
-                                   // __in_opt  PFUNCTION_TABLE_ACCESS_ROUTINE64 FunctionTableAccessRoutine,
-        WindowsDbgHelp::pfnSymGetModuleBase64(),
-                                   // __in_opt  PGET_MODULE_BASE_ROUTINE64 GetModuleBaseRoutine,
-        NULL);                     // __in_opt  PTRANSLATE_ADDRESS_ROUTINE64 TranslateAddress
+        &ctx);                     // __inout   PVOID ContextRecord,
 
     if (!result) {
       break;

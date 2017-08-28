@@ -74,6 +74,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "windbghelp.hpp"
+
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -1009,7 +1011,6 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
 }
 
 void os::abort(bool dump_core, void* siginfo, const void* context) {
-  HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
   MINIDUMP_EXCEPTION_INFORMATION* pmei;
@@ -1023,28 +1024,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (dumpFile != NULL) {
       CloseHandle(dumpFile);
     }
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
-  }
-
-  dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
-
-  if (dbghelp == NULL) {
-    jio_fprintf(stderr, "Failed to load dbghelp.dll\n");
-    CloseHandle(dumpFile);
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
-  }
-
-  _MiniDumpWriteDump =
-      CAST_TO_FN_PTR(BOOL(WINAPI *)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE,
-                                    PMINIDUMP_EXCEPTION_INFORMATION,
-                                    PMINIDUMP_USER_STREAM_INFORMATION,
-                                    PMINIDUMP_CALLBACK_INFORMATION),
-                                    GetProcAddress(dbghelp,
-                                    "MiniDumpWriteDump"));
-
-  if (_MiniDumpWriteDump == NULL) {
-    jio_fprintf(stderr, "Failed to find MiniDumpWriteDump() in module dbghelp.dll.\n");
-    CloseHandle(dumpFile);
     win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
   }
 
@@ -1064,8 +1043,8 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 
   // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
-  if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
-      _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
+  if (!WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) &&
+      !WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL)) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);

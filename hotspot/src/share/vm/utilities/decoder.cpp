@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 #if defined(_WINDOWS)
   #include "decoder_windows.hpp"
+  #include "windbghelp.hpp"
 #elif defined(__APPLE__)
   #include "decoder_machO.hpp"
 #elif defined(AIX)
@@ -160,5 +161,11 @@ void Decoder::shutdown() {
   }
 
   _shared_decoder = &_do_nothing_decoder;
+}
+
+void Decoder::print_state_on(outputStream* st) {
+#ifdef _WINDOWS
+  WindowsDbgHelp::print_state_on(st);
+#endif
 }
 
