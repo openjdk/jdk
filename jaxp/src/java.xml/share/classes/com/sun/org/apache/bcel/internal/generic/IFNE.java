@@ -21,45 +21,50 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * IFNE - Branch if int comparison with zero succeeds
  *
  * <PRE>Stack: ..., value -&gt; ...</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: IFNE.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public class IFNE extends IfInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  IFNE() {}
 
-  public IFNE(InstructionHandle target) {
-    super(com.sun.org.apache.bcel.internal.Constants.IFNE, target);
-  }
-
-  /**
-   * @return negation of instruction
-   */
-  public IfInstruction negate() {
-    return new IFEQ(target);
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    IFNE() {
+    }
 
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitStackConsumer(this);
-    v.visitBranchInstruction(this);
-    v.visitIfInstruction(this);
-    v.visitIFNE(this);
-  }
+    public IFNE(final InstructionHandle target) {
+        super(com.sun.org.apache.bcel.internal.Const.IFNE, target);
+    }
+
+
+    /**
+     * @return negation of instruction
+     */
+    @Override
+    public IfInstruction negate() {
+        return new IFEQ(super.getTarget());
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitStackConsumer(this);
+        v.visitBranchInstruction(this);
+        v.visitIfInstruction(this);
+        v.visitIFNE(this);
+    }
 }

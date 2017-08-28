@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +40,7 @@ import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.Instruction;
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants;
+import com.sun.org.apache.bcel.internal.generic.InstructionConst;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
@@ -247,27 +246,27 @@ public final class IntType extends NumberType {
     }
 
     public Instruction ADD() {
-        return InstructionConstants.IADD;
+        return InstructionConst.IADD;
     }
 
     public Instruction SUB() {
-        return InstructionConstants.ISUB;
+        return InstructionConst.ISUB;
     }
 
     public Instruction MUL() {
-        return InstructionConstants.IMUL;
+        return InstructionConst.IMUL;
     }
 
     public Instruction DIV() {
-        return InstructionConstants.IDIV;
+        return InstructionConst.IDIV;
     }
 
     public Instruction REM() {
-        return InstructionConstants.IREM;
+        return InstructionConst.IREM;
     }
 
     public Instruction NEG() {
-        return InstructionConstants.INEG;
+        return InstructionConst.INEG;
     }
 
     public Instruction LOAD(int slot) {

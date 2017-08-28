@@ -3983,7 +3983,7 @@
           "startPosition": "1164"
         },
         "endPosition": "1165",
-        "kind": "PLUS",
+        "kind": "UNARY_PLUS",
         "startPosition": "1163"
       },
       "endPosition": "1165",
@@ -3999,7 +3999,7 @@
           "startPosition": "1168"
         },
         "endPosition": "1169",
-        "kind": "MINUS",
+        "kind": "UNARY_MINUS",
         "startPosition": "1167"
       },
       "endPosition": "1169",

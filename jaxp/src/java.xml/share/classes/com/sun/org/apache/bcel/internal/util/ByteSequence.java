@@ -21,29 +21,51 @@
 
 package com.sun.org.apache.bcel.internal.util;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 
 /**
  * Utility class that implements a sequence of bytes which can be read
  * via the `readByte()' method. This is used to implement a wrapper for the
  * Java byte code stream to gain some more readability.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ByteSequence.java 1747278 2016-06-07 17:28:43Z britter $
  */
 public final class ByteSequence extends DataInputStream {
-  private ByteArrayStream byte_stream;
 
-  public ByteSequence(byte[] bytes) {
-    super(new ByteArrayStream(bytes));
-    byte_stream = (ByteArrayStream)in;
-  }
+    private final ByteArrayStream byteStream;
 
-  public final int getIndex()   { return byte_stream.getPosition(); }
-  final  void      unreadByte() { byte_stream.unreadByte(); }
 
-  private static final class ByteArrayStream extends ByteArrayInputStream {
-    ByteArrayStream(byte[] bytes) { super(bytes); }
-    final int  getPosition() { return pos; } // is protected in ByteArrayInputStream
-    final void unreadByte()  { if(pos > 0) pos--; }
-  }
+    public ByteSequence(final byte[] bytes) {
+        super(new ByteArrayStream(bytes));
+        byteStream = (ByteArrayStream) in;
+    }
+
+
+    public final int getIndex() {
+        return byteStream.getPosition();
+    }
+
+
+    final void unreadByte() {
+        byteStream.unreadByte();
+    }
+
+    private static final class ByteArrayStream extends ByteArrayInputStream {
+
+        ByteArrayStream(final byte[] bytes) {
+            super(bytes);
+        }
+
+        final int getPosition() {
+            // pos is protected in ByteArrayInputStream
+            return pos;
+        }
+
+        final void unreadByte() {
+            if (pos > 0) {
+                pos--;
+            }
+        }
+    }
 }

@@ -20,63 +20,68 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * LDC2_W - Push long or double from constant pool
  *
  * <PRE>Stack: ... -&gt; ..., item.word1, item.word2</PRE>
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: LDC2_W.java 1749603 2016-06-21 20:50:19Z ggregory $
  */
-public class LDC2_W extends CPInstruction
-  implements PushInstruction, TypedInstruction {
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  LDC2_W() {}
+public class LDC2_W extends CPInstruction implements PushInstruction {
 
-  public LDC2_W(int index) {
-    super(com.sun.org.apache.bcel.internal.Constants.LDC2_W, index);
-  }
-
-  public Type getType(ConstantPoolGen cpg) {
-    switch(cpg.getConstantPool().getConstant(index).getTag()) {
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Long:   return Type.LONG;
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Double: return Type.DOUBLE;
-    default: // Never reached
-      throw new RuntimeException("Unknown constant type " + opcode);
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    LDC2_W() {
     }
-  }
 
-  public Number getValue(ConstantPoolGen cpg) {
-    com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(index);
 
-    switch(c.getTag()) {
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Long:
-        return Long.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantLong)c).getBytes());
+    public LDC2_W(final int index) {
+        super(com.sun.org.apache.bcel.internal.Const.LDC2_W, index);
+    }
 
-    case com.sun.org.apache.bcel.internal.Constants.CONSTANT_Double:
-        return Double.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantDouble)c).getBytes());
 
-    default: // Never reached
-      throw new RuntimeException("Unknown or invalid constant type at " + index);
-      }
-  }
+    @Override
+    public Type getType( final ConstantPoolGen cpg ) {
+        switch (cpg.getConstantPool().getConstant(super.getIndex()).getTag()) {
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Long:
+                return Type.LONG;
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Double:
+                return Type.DOUBLE;
+            default: // Never reached
+                throw new RuntimeException("Unknown constant type " + super.getOpcode());
+        }
+    }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitStackProducer(this);
-    v.visitPushInstruction(this);
-    v.visitTypedInstruction(this);
-    v.visitCPInstruction(this);
-    v.visitLDC2_W(this);
-  }
+
+    public Number getValue( final ConstantPoolGen cpg ) {
+        final com.sun.org.apache.bcel.internal.classfile.Constant c = cpg.getConstantPool().getConstant(super.getIndex());
+        switch (c.getTag()) {
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Long:
+                return Long.valueOf(((com.sun.org.apache.bcel.internal.classfile.ConstantLong) c).getBytes());
+            case com.sun.org.apache.bcel.internal.Const.CONSTANT_Double:
+                return new Double(((com.sun.org.apache.bcel.internal.classfile.ConstantDouble) c).getBytes());
+            default: // Never reached
+                throw new RuntimeException("Unknown or invalid constant type at " + super.getIndex());
+        }
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitStackProducer(this);
+        v.visitPushInstruction(this);
+        v.visitTypedInstruction(this);
+        v.visitCPInstruction(this);
+        v.visitLDC2_W(this);
+    }
 }

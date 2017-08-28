@@ -21,16 +21,16 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-
 /**
  * Denotes a push instruction that produces a literal on the stack
  * such as  SIPUSH, BIPUSH, ICONST, etc.
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: ConstantPushInstruction.java 1747278 2016-06-07 17:28:43Z britter $
 
  * @see ICONST
  * @see SIPUSH
  */
 public interface ConstantPushInstruction extends PushInstruction, TypedInstruction {
-  public Number getValue();
+
+    Number getValue();
 }

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -18,31 +17,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.bcel.internal.util;
 
 import java.util.LinkedList;
+
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 
 /**
- * Utility class implementing a (typesafe) queue of JavaClass
- * objects.
+ * Utility class implementing a (typesafe) queue of JavaClass objects.
  *
- * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
- * @see ClassVector
-*/
-public class ClassQueue implements java.io.Serializable {
-  protected LinkedList vec  = new LinkedList();
+ * @version $Id: ClassQueue.java 1747278 2016-06-07 17:28:43Z britter $
+ */
+public class ClassQueue {
 
-  public void enqueue(JavaClass clazz) { vec.addLast(clazz); }
+    private final LinkedList<JavaClass> vec = new LinkedList<>();
 
-  public JavaClass dequeue()                {
-    return (JavaClass)vec.removeFirst();
-  }
+    public void enqueue(final JavaClass clazz) {
+        vec.addLast(clazz);
+    }
 
-  public boolean empty() { return vec.isEmpty(); }
+    public JavaClass dequeue() {
+        return vec.removeFirst();
+    }
 
-  public String toString() {
-    return vec.toString();
-  }
+    public boolean empty() {
+        return vec.isEmpty();
+    }
+
+    @Override
+    public String toString() {
+        return vec.toString();
+    }
 }

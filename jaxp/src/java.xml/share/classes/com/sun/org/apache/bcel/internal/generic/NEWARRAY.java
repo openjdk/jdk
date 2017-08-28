@@ -21,7 +21,10 @@
 
 package com.sun.org.apache.bcel.internal.generic;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import com.sun.org.apache.bcel.internal.ExceptionConst;
 import com.sun.org.apache.bcel.internal.util.ByteSequence;
 
 /**
@@ -29,79 +32,100 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * <PRE>Stack: ..., count -&gt; ..., arrayref</PRE>
  * type must be one of T_INT, T_SHORT, ...
  *
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: NEWARRAY.java 1747278 2016-06-07 17:28:43Z britter $
  */
-public class NEWARRAY extends Instruction
-  implements AllocationInstruction, ExceptionThrower, StackProducer {
-  private byte type;
+public class NEWARRAY extends Instruction implements AllocationInstruction, ExceptionThrower,
+        StackProducer {
 
-  /**
-   * Empty constructor needed for the Class.newInstance() statement in
-   * Instruction.readInstruction(). Not to be used otherwise.
-   */
-  NEWARRAY() {}
+    private byte type;
 
-  public NEWARRAY(byte type) {
-    super(com.sun.org.apache.bcel.internal.Constants.NEWARRAY, (short)2);
-    this.type = type;
-  }
 
-  public NEWARRAY(BasicType type) {
-      this(type.getType());
-  }
+    /**
+     * Empty constructor needed for the Class.newInstance() statement in
+     * Instruction.readInstruction(). Not to be used otherwise.
+     */
+    NEWARRAY() {
+    }
 
-  /**
-   * Dump instruction as byte code to stream out.
-   * @param out Output stream
-   */
-  public void dump(DataOutputStream out) throws IOException {
-    out.writeByte(opcode);
-    out.writeByte(type);
-  }
 
-  /**
-   * @return numeric code for basic element type
-   */
-  public final byte getTypecode() { return type; }
+    public NEWARRAY(final byte type) {
+        super(com.sun.org.apache.bcel.internal.Const.NEWARRAY, (short) 2);
+        this.type = type;
+    }
 
-  /**
-   * @return type of constructed array
-   */
-  public final Type getType() {
-    return new ArrayType(BasicType.getType(type), 1);
-  }
 
-  /**
-   * @return mnemonic for instruction
-   */
-  public String toString(boolean verbose) {
-    return super.toString(verbose) + " " + com.sun.org.apache.bcel.internal.Constants.TYPE_NAMES[type];
-  }
-  /**
-   * Read needed data (e.g. index) from file.
-   */
-  protected void initFromFile(ByteSequence bytes, boolean wide) throws IOException
-  {
-    type   = bytes.readByte();
-    length = 2;
-  }
+    public NEWARRAY(final BasicType type) {
+        this(type.getType());
+    }
 
-  public Class[] getExceptions() {
-    return new Class[] { com.sun.org.apache.bcel.internal.ExceptionConstants.NEGATIVE_ARRAY_SIZE_EXCEPTION };
-  }
 
-  /**
-   * Call corresponding visitor method(s). The order is:
-   * Call visitor methods of implemented interfaces first, then
-   * call methods according to the class hierarchy in descending order,
-   * i.e., the most specific visitXXX() call comes last.
-   *
-   * @param v Visitor object
-   */
-  public void accept(Visitor v) {
-    v.visitAllocationInstruction(this);
-    v.visitExceptionThrower(this);
-    v.visitStackProducer(this);
-    v.visitNEWARRAY(this);
-  }
+    /**
+     * Dump instruction as byte code to stream out.
+     * @param out Output stream
+     */
+    @Override
+    public void dump( final DataOutputStream out ) throws IOException {
+        out.writeByte(super.getOpcode());
+        out.writeByte(type);
+    }
+
+
+    /**
+     * @return numeric code for basic element type
+     */
+    public final byte getTypecode() {
+        return type;
+    }
+
+
+    /**
+     * @return type of constructed array
+     */
+    public final Type getType() {
+        return new ArrayType(BasicType.getType(type), 1);
+    }
+
+
+    /**
+     * @return mnemonic for instruction
+     */
+    @Override
+    public String toString( final boolean verbose ) {
+        return super.toString(verbose) + " " + com.sun.org.apache.bcel.internal.Const.getTypeName(type);
+    }
+
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
+        type = bytes.readByte();
+        super.setLength(2);
+    }
+
+
+    @Override
+    public Class<?>[] getExceptions() {
+        return new Class[] {
+            ExceptionConst.NEGATIVE_ARRAY_SIZE_EXCEPTION
+        };
+    }
+
+
+    /**
+     * Call corresponding visitor method(s). The order is:
+     * Call visitor methods of implemented interfaces first, then
+     * call methods according to the class hierarchy in descending order,
+     * i.e., the most specific visitXXX() call comes last.
+     *
+     * @param v Visitor object
+     */
+    @Override
+    public void accept( final Visitor v ) {
+        v.visitAllocationInstruction(this);
+        v.visitExceptionThrower(this);
+        v.visitStackProducer(this);
+        v.visitNEWARRAY(this);
+    }
 }

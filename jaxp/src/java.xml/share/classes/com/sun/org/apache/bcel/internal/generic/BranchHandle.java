@@ -18,100 +18,110 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.bcel.internal.generic;
-
 
 /**
  * BranchHandle is returned by specialized InstructionList.append() whenever a
  * BranchInstruction is appended. This is useful when the target of this
- * instruction is not known at time of creation and must be set later
- * via setTarget().
+ * instruction is not known at time of creation and must be set later via
+ * setTarget().
  *
  * @see InstructionHandle
  * @see Instruction
  * @see InstructionList
- * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
+ * @version $Id: BranchHandle.java 1749603 2016-06-21 20:50:19Z ggregory $
  */
 public final class BranchHandle extends InstructionHandle {
-  private BranchInstruction bi; // An alias in fact, but saves lots of casts
 
-  private BranchHandle(BranchInstruction i) {
-    super(i);
-    bi = i;
-  }
+    // This is also a cache in case the InstructionHandle#swapInstruction() method is used
+    // See BCEL-273
+    private BranchInstruction bi; // An alias in fact, but saves lots of casts
 
-  /** Factory methods.
-   */
-  private static BranchHandle bh_list = null; // List of reusable handles
-
-  static final BranchHandle getBranchHandle(BranchInstruction i) {
-    if(bh_list == null)
-      return new BranchHandle(i);
-    else {
-      BranchHandle bh = bh_list;
-      bh_list = (BranchHandle)bh.next;
-
-      bh.setInstruction(i);
-
-      return bh;
+    private BranchHandle(final BranchInstruction i) {
+        super(i);
+        bi = i;
     }
-  }
 
-  /** Handle adds itself to the list of resuable handles.
-   */
-  protected void addHandle() {
-    next    = bh_list;
-    bh_list = this;
-  }
+    /**
+     * Factory methods.
+     */
+    private static BranchHandle bh_list = null; // List of reusable handles
 
-  /* Override InstructionHandle methods: delegate to branch instruction.
-   * Through this overriding all access to the private i_position field should
-   * be prevented.
-   */
-  public int getPosition() { return bi.position; }
+    static BranchHandle getBranchHandle(final BranchInstruction i) {
+        if (bh_list == null) {
+            return new BranchHandle(i);
+        }
+        final BranchHandle bh = bh_list;
+        bh_list = (BranchHandle) bh.getNext();
+        bh.setInstruction(i);
+        return bh;
+    }
 
-  void setPosition(int pos) {
-    i_position = bi.position = pos;
-  }
+    /**
+     * Handle adds itself to the list of resuable handles.
+     */
+    @Override
+    protected void addHandle() {
+        super.setNext(bh_list);
+        bh_list = this;
+    }
 
-  protected int updatePosition(int offset, int max_offset) {
-    int x = bi.updatePosition(offset, max_offset);
-    i_position = bi.position;
-    return x;
-  }
 
-  /**
-   * Pass new target to instruction.
-   */
-  public void setTarget(InstructionHandle ih) {
-    bi.setTarget(ih);
-  }
+    /* Override InstructionHandle methods: delegate to branch instruction.
+     * Through this overriding all access to the private i_position field should
+     * be prevented.
+     */
+    @Override
+    public int getPosition() {
+        return bi.getPosition();
+    }
 
-  /**
-   * Update target of instruction.
-   */
-  public void updateTarget(InstructionHandle old_ih, InstructionHandle new_ih) {
-    bi.updateTarget(old_ih, new_ih);
-  }
+    @Override
+    void setPosition(final int pos) {
+        // Original code: i_position = bi.position = pos;
+        bi.setPosition(pos);
+        super.setPosition(pos);
+    }
 
-  /**
-   * @return target of instruction.
-   */
-  public InstructionHandle getTarget() {
-    return bi.getTarget();
-  }
+    @Override
+    protected int updatePosition(final int offset, final int max_offset) {
+        final int x = bi.updatePosition(offset, max_offset);
+        super.setPosition(bi.getPosition());
+        return x;
+    }
 
-  /**
-   * Set new contents. Old instruction is disposed and may not be used anymore.
-   */
-  public void setInstruction(Instruction i) {
-    super.setInstruction(i);
+    /**
+     * Pass new target to instruction.
+     */
+    public void setTarget(final InstructionHandle ih) {
+        bi.setTarget(ih);
+    }
 
-    if(!(i instanceof BranchInstruction))
-      throw new ClassGenException("Assigning " + i +
-                                  " to branch handle which is not a branch instruction");
+    /**
+     * Update target of instruction.
+     */
+    public void updateTarget(final InstructionHandle old_ih, final InstructionHandle new_ih) {
+        bi.updateTarget(old_ih, new_ih);
+    }
 
-    bi = (BranchInstruction)i;
-  }
+    /**
+     * @return target of instruction.
+     */
+    public InstructionHandle getTarget() {
+        return bi.getTarget();
+    }
+
+    /**
+     * Set new contents. Old instruction is disposed and may not be used
+     * anymore.
+     */
+    @Override // This is only done in order to apply the additional type check; could be merged with super impl.
+    public void setInstruction(final Instruction i) { // TODO could be package-protected?
+        super.setInstruction(i);
+        if (!(i instanceof BranchInstruction)) {
+            throw new ClassGenException("Assigning " + i
+                    + " to branch handle which is not a branch instruction");
+        }
+        bi = (BranchInstruction) i;
+    }
 }
