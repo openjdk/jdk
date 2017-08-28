@@ -29,6 +29,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import jdk.jshell.JShellException;
 import jdk.jshell.spi.ExecutionControl;
+import static jdk.jshell.execution.ExecutionControlForwarder.NULL_MARKER;
 import static jdk.jshell.execution.RemoteCodes.*;
 
 /**
@@ -185,6 +186,16 @@ public class StreamingExecutionControl implements ExecutionControl {
     }
 
     /**
+     * Read a UTF or a null encoded as a null marker.
+     * @return a string or null
+     * @throws IOException passed through from readUTF()
+     */
+    private String readNullOrUTF() throws IOException {
+        String s = in.readUTF();
+        return s.equals(NULL_MARKER) ? null : s;
+    }
+
+    /**
      * Reports results from a remote agent command that does not expect
      * exceptions.
      */
@@ -273,7 +284,7 @@ public class StreamingExecutionControl implements ExecutionControl {
                 }
                 case RESULT_USER_EXCEPTION: {
                     // A user exception was encountered.
-                    String message = in.readUTF();
+                    String message = readNullOrUTF();
                     String exceptionClassName = in.readUTF();
                     StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
                     throw new UserException(message, exceptionClassName, elems);

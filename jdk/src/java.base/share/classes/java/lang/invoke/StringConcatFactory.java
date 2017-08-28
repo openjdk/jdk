@@ -25,19 +25,24 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.misc.Unsafe;
+import sun.invoke.util.Wrapper;
+import sun.security.action.GetPropertyAction;
 
 import java.lang.invoke.MethodHandles.Lookup;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import sun.security.action.GetPropertyAction;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -319,12 +324,12 @@ public final class StringConcatFactory {
     }
 
     private static final class RecipeElement {
-        private final Object value;
+        private final String value;
         private final int argPos;
         private final char tag;
 
         public RecipeElement(Object cnst) {
-            this.value = Objects.requireNonNull(cnst);
+            this.value = String.valueOf(Objects.requireNonNull(cnst));
             this.argPos = -1;
             this.tag = TAG_CONST;
         }
@@ -335,7 +340,7 @@ public final class StringConcatFactory {
             this.tag = TAG_ARG;
         }
 
-        public Object getValue() {
+        public String getValue() {
             assert (tag == TAG_CONST);
             return value;
         }
@@ -923,8 +928,7 @@ public final class StringConcatFactory {
                 for (RecipeElement el : recipe.getElements()) {
                     switch (el.getTag()) {
                         case TAG_CONST:
-                            Object cnst = el.getValue();
-                            len += cnst.toString().length();
+                            len += el.getValue().length();
                             break;
                         case TAG_ARG:
                             /*
@@ -983,9 +987,8 @@ public final class StringConcatFactory {
                     String desc;
                     switch (el.getTag()) {
                         case TAG_CONST:
-                            Object cnst = el.getValue();
-                            mv.visitLdcInsn(cnst);
-                            desc = getSBAppendDesc(cnst.getClass());
+                            mv.visitLdcInsn(el.getValue());
+                            desc = getSBAppendDesc(String.class);
                             break;
                         case TAG_ARG:
                             Class<?> cl = arr[el.getArgPos()];
@@ -1273,8 +1276,7 @@ public final class StringConcatFactory {
             for (RecipeElement el : recipe.getElements()) {
                 switch (el.getTag()) {
                     case TAG_CONST:
-                        Object cnst = el.getValue();
-                        initial += cnst.toString().length();
+                        initial += el.getValue().length();
                         break;
                     case TAG_ARG:
                         final int i = el.getArgPos();
@@ -1303,9 +1305,8 @@ public final class StringConcatFactory {
                 MethodHandle appender;
                 switch (el.getTag()) {
                     case TAG_CONST:
-                        Object constant = el.getValue();
-                        MethodHandle mh = appender(adaptToStringBuilder(constant.getClass()));
-                        appender = MethodHandles.insertArguments(mh, 1, constant);
+                        MethodHandle mh = appender(adaptToStringBuilder(String.class));
+                        appender = MethodHandles.insertArguments(mh, 1, el.getValue());
                         break;
                     case TAG_ARG:
                         int ac = el.getArgPos();
@@ -1506,8 +1507,7 @@ public final class StringConcatFactory {
                 mh = MethodHandles.dropArguments(mh, 2, int.class);
                 switch (el.getTag()) {
                     case TAG_CONST: {
-                        Object cnst = el.getValue();
-                        MethodHandle prepender = MethodHandles.insertArguments(prepender(cnst.getClass()), 3, cnst);
+                        MethodHandle prepender = MethodHandles.insertArguments(prepender(String.class), 3, el.getValue());
                         mh = MethodHandles.foldArguments(mh, 1, prepender,
                                 2, 0, 3 // index, storage, coder
                         );
@@ -1550,10 +1550,9 @@ public final class StringConcatFactory {
             for (RecipeElement el : recipe.getElements()) {
                 switch (el.getTag()) {
                     case TAG_CONST:
-                        Object constant = el.getValue();
-                        String s = constant.toString();
-                        initialCoder = (byte) coderMixer(String.class).invoke(initialCoder, s);
-                        initialLen += s.length();
+                        String constant = el.getValue();
+                        initialCoder = (byte) coderMixer(String.class).invoke(initialCoder, constant);
+                        initialLen += constant.length();
                         break;
                     case TAG_ARG:
                         int ac = el.getArgPos();
@@ -1621,7 +1620,8 @@ public final class StringConcatFactory {
         private static final Function<Class<?>, MethodHandle> PREPEND = new Function<Class<?>, MethodHandle>() {
             @Override
             public MethodHandle apply(Class<?> c) {
-                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "prepend", int.class, int.class, byte[].class, byte.class, c);
+                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "prepend", int.class, int.class, byte[].class, byte.class,
+                        Wrapper.asPrimitiveType(c));
             }
         };
 
@@ -1629,7 +1629,8 @@ public final class StringConcatFactory {
         private static final Function<Class<?>, MethodHandle> CODER_MIX = new Function<Class<?>, MethodHandle>() {
             @Override
             public MethodHandle apply(Class<?> c) {
-                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "mixCoder", byte.class, byte.class, c);
+                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "mixCoder", byte.class, byte.class,
+                        Wrapper.asPrimitiveType(c));
             }
         };
 
@@ -1637,7 +1638,8 @@ public final class StringConcatFactory {
         private static final Function<Class<?>, MethodHandle> LENGTH_MIX = new Function<Class<?>, MethodHandle>() {
             @Override
             public MethodHandle apply(Class<?> c) {
-                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "mixLen", int.class, int.class, c);
+                return lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "mixLen", int.class, int.class,
+                        Wrapper.asPrimitiveType(c));
             }
         };
 

@@ -1,3 +1,4 @@
+<!doctype html>
 <!--
  Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -22,7 +23,6 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html lang="en">
 <head>
   <title>Java Thread Primitive Deprecation</title>
@@ -30,7 +30,7 @@
 </head>
 <body>
 <h2>Java Thread Primitive Deprecation</h2>
-<hr size="3" noshade="noshade" />
+<hr>
 <h3>Why is <code>Thread.stop</code> deprecated?</h3>
 <p>Because it is inherently unsafe. Stopping a thread causes it to
 unlock all the monitors that it has locked. (The monitors are
@@ -45,7 +45,7 @@ detect, or it may be pronounced. Unlike other unchecked exceptions,
 no warning that his program may be corrupted. The corruption can
 manifest itself at any time after the actual damage occurs, even
 hours or days in the future.</p>
-<hr />
+<hr>
 <h3>Couldn't I just catch the <code>ThreadDeath</code> exception
 and fix the damaged object?</h3>
 <p>In theory, perhaps, but it would <em>vastly</em> complicate the
@@ -61,7 +61,7 @@ while cleaning up from the first (in the <code>catch</code> or
 it succeeded. The code to ensure this would be quite complex.</li>
 </ol>
 In sum, it just isn't practical.
-<hr />
+<hr>
 <h3>What about <code>Thread.stop(Throwable)</code>?</h3>
 <p>In addition to all of the problems noted above, this method may
 be used to generate exceptions that its target thread is unprepared
@@ -76,7 +76,7 @@ the checked exceptions that it may throw:</p>
         Thread.currentThread().stop(t);
     }
 </pre>
-<hr />
+<hr>
 <h3>What should I use instead of <code>Thread.stop</code>?</h3>
 <p>Most uses of <code>stop</code> should be replaced by code that
 simply modifies some variable to indicate that the target thread
@@ -84,7 +84,7 @@ should stop running. The target thread should check this variable
 regularly, and return from its run method in an orderly fashion if
 the variable indicates that it is to stop running. To ensure prompt
 communication of the stop-request, the variable must be
-<tt>volatile</tt> (or access to the variable must be
+<code>volatile</code> (or access to the variable must be
 synchronized).</p>
 <p>For example, suppose your applet contains the following
 <code>start</code>, <code>stop</code> and <code>run</code>
@@ -131,7 +131,7 @@ applet's <code>stop</code> and <code>run</code> methods with:
         }
     }
 </pre>
-<hr />
+<hr>
 <h3>How do I stop a thread that waits for long periods (e.g., for
 input)?</h3>
 <p>That's what the <code>Thread.interrupt</code> method is for. The
@@ -159,7 +159,7 @@ following incantation:
 </pre>
 This ensures that the Thread will reraise the
 <code>InterruptedException</code> as soon as it is able.
-<hr />
+<hr>
 <h3>What if a thread doesn't respond to
 <code>Thread.interrupt</code>?</h3>
 <p>In some cases, you can use application specific tricks. For
@@ -172,7 +172,7 @@ wouldn't respond to <code>Thread.stop</code> either.</em> Such
 cases include deliberate denial-of-service attacks, and I/O
 operations for which thread.stop and thread.interrupt do not work
 properly.</p>
-<hr />
+<hr>
 <h3>Why are <code>Thread.suspend</code> and
 <code>Thread.resume</code> deprecated?</h3>
 <p><code>Thread.suspend</code> is inherently deadlock-prone. If the
@@ -182,7 +182,7 @@ resource until the target thread is resumed. If the thread that
 would resume the target thread attempts to lock this monitor prior
 to calling <code>resume</code>, deadlock results. Such deadlocks
 typically manifest themselves as "frozen" processes.</p>
-<hr />
+<hr>
 <h3>What should I use instead of <code>Thread.suspend</code> and
 <code>Thread.resume</code>?</h3>
 <p>As with <code>Thread.stop</code>, the prudent approach is to
@@ -274,7 +274,7 @@ block only if the thread has actually been suspended:</p>
                 }
 </pre>
 <p>In the absence of explicit synchronization,
-<tt>threadSuspended</tt> must be made <tt>volatile</tt> to ensure
+<code>threadSuspended</code> must be made <code>volatile</code> to ensure
 prompt communication of the suspend-request.</p>
 The resulting <code>run</code> method is:
 <pre>
@@ -302,17 +302,17 @@ The resulting <code>run</code> method is:
 be safely "stopped" or "suspended"?</h3>
 Yes, it's reasonably straightforward. The one subtlety is that the
 target thread may already be suspended at the time that another
-thread tries to stop it. If the <tt>stop</tt> method merely sets
-the state variable (<tt>blinker</tt>) to null, the target thread
+thread tries to stop it. If the <code>stop</code> method merely sets
+the state variable (<code>blinker</code>) to null, the target thread
 will remain suspended (waiting on the monitor), rather than exiting
 gracefully as it should. If the applet is restarted, multiple
 threads could end up waiting on the monitor at the same time,
 resulting in erratic behavior.
-<p>To rectify this situation, the <tt>stop</tt> method must ensure
+<p>To rectify this situation, the <code>stop</code> method must ensure
 that the target thread resumes immediately if it is suspended. Once
 the target thread resumes, it must recognize immediately that it
 has been stopped, and exit gracefully. Here's how the resulting
-<tt>run</tt> and <tt>stop</tt> methods look:</p>
+<code>run</code> and <code>stop</code> methods look:</p>
 <pre>
     public void run() {
         Thread thisThread = Thread.currentThread();
@@ -335,18 +335,18 @@ has been stopped, and exit gracefully. Here's how the resulting
         notify();
     }
 </pre>
-If the <tt>stop</tt> method calls <tt>Thread.interrupt</tt>, as
-described above, it needn't call <tt>notify</tt> as well, but it
+If the <code>stop</code> method calls <code>Thread.interrupt</code>, as
+described above, it needn't call <code>notify</code> as well, but it
 still must be synchronized. This ensures that the target thread
 won't miss an interrupt due to a race condition.
-<hr />
+<hr>
 <h3>What about <code>Thread.destroy</code>?</h3>
 <code>Thread.destroy</code> was never implemented and has been
 deprecated. If it were implemented, it would be deadlock-prone in
 the manner of <code>Thread.suspend</code>. (In fact, it is roughly
 equivalent to <code>Thread.suspend</code> without the possibility
 of a subsequent <code>Thread.resume</code>.)
-<hr />
+<hr>
 <h3>Why is <code>Runtime.runFinalizersOnExit</code>
 deprecated?</h3>
 Because it is inherently unsafe. It may result in finalizers being
