@@ -85,7 +85,7 @@ public class HasFinalizableSubclassTest {
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
         HotSpotResolvedObjectType metaspaceKlass = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.aClass),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.aClass),
                         getClass(), /* resolve = */ true);
         Asserts.assertEQ(tcase.expected,
                 CompilerToVMHelper.hasFinalizableSubclass(metaspaceKlass),

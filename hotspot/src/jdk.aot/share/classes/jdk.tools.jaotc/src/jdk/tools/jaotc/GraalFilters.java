@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import org.graalvm.compiler.hotspot.word.MetaspacePointer;
 import org.graalvm.compiler.replacements.Snippets;
 import org.graalvm.word.WordBase;
 
-public class GraalFilters {
+final class GraalFilters {
     private List<ResolvedJavaType> specialClasses;
     private List<ResolvedJavaType> specialArgumentAndReturnTypes;
 
@@ -57,7 +57,7 @@ public class GraalFilters {
         skipAnnotations.add(MethodSubstitution.class);
     }
 
-    public boolean shouldCompileMethod(ResolvedJavaMethod method) {
+    boolean shouldCompileMethod(ResolvedJavaMethod method) {
         // NodeIntrinsics cannot be compiled.
         if (hasExcludedAnnotation(method)) {
             return false;
@@ -83,7 +83,7 @@ public class GraalFilters {
         return false;
     }
 
-    public boolean shouldCompileAnyMethodInClass(ResolvedJavaType klass) {
+    boolean shouldCompileAnyMethodInClass(ResolvedJavaType klass) {
         if (specialClasses.stream().filter(s -> s.isAssignableFrom(klass)).findAny().isPresent()) {
             return false;
         }
@@ -113,7 +113,7 @@ public class GraalFilters {
         specialArgumentAndReturnTypes = getSpecialArgumentAndReturnTypes(metaAccess);
     }
 
-    public boolean shouldIgnoreException(Throwable e) {
+    static boolean shouldIgnoreException(Throwable e) {
         if (e instanceof GraalError) {
             String m = e.getMessage();
             if (m.contains("ArrayKlass::_component_mirror")) {

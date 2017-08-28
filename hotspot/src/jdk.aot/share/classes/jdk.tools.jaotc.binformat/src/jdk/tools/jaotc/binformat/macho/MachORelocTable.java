@@ -25,56 +25,43 @@ package jdk.tools.jaotc.binformat.macho;
 
 import java.util.ArrayList;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import jdk.tools.jaotc.binformat.macho.MachORelocEntry;
-import jdk.tools.jaotc.binformat.macho.MachOTargetInfo;
 import jdk.tools.jaotc.binformat.macho.MachO.reloc_info;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachORelocTable {
-    ArrayList<ArrayList<MachORelocEntry>> relocEntries;
+final class MachORelocTable {
+    private final ArrayList<ArrayList<MachORelocEntry>> relocEntries;
     int fileOffset;
 
-    public MachORelocTable(int numsects) {
-        relocEntries = new ArrayList<ArrayList<MachORelocEntry>>(numsects);
-        for (int i = 0; i < numsects; i++)
+    MachORelocTable(int numsects) {
+        relocEntries = new ArrayList<>(numsects);
+        for (int i = 0; i < numsects; i++) {
             relocEntries.add(new ArrayList<MachORelocEntry>());
+        }
     }
 
-    public void createRelocationEntry(int sectindex,
-                                 int offset,
-                                 int symno,
-                                 int pcrel,
-                                 int length,
-                                 int isextern,
-                                 int type) {
-
-        MachORelocEntry entry = new MachORelocEntry(offset,
-                                                    symno,
-                                                    pcrel,
-                                                    length,
-                                                    isextern,
-                                                    type);
+    void createRelocationEntry(int sectindex, int offset, int symno, int pcrel, int length, int isextern, int type) {
+        MachORelocEntry entry = new MachORelocEntry(offset, symno, pcrel, length, isextern, type);
         relocEntries.get(sectindex).add(entry);
     }
 
-    public int getAlign() {
+    static int getAlign() {
         return (4);
     }
 
-    public int getNumRelocs(int section_index) {
+    int getNumRelocs(int section_index) {
         return relocEntries.get(section_index).size();
     }
 
     // Return the relocation entries for a single section
-    //   or null if no entries added to section
-    public byte [] getRelocData(int section_index) {
+    // or null if no entries added to section
+    byte[] getRelocData(int section_index) {
         ArrayList<MachORelocEntry> entryList = relocEntries.get(section_index);
 
-        if (entryList.size() == 0)
+        if (entryList.size() == 0) {
             return null;
-
+        }
         ByteBuffer relocData = MachOByteBuffer.allocate(entryList.size() * reloc_info.totalsize);
 
         // Copy each entry to a single ByteBuffer
@@ -86,4 +73,3 @@ public class MachORelocTable {
         return (relocData.array());
     }
 }
-

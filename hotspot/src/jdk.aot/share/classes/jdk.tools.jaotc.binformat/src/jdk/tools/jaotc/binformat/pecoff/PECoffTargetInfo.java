@@ -24,14 +24,13 @@
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteOrder;
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_FILE_HEADER;
 
 /**
  * Class that abstracts MACH-O target details.
  *
  */
-public class PECoffTargetInfo {
+final class PECoffTargetInfo {
     /**
      * Target architecture.
      */
@@ -63,12 +62,11 @@ public class PECoffTargetInfo {
         }
     }
 
-    public static char getPECoffArch() {
+    static char getPECoffArch() {
         return arch;
     }
 
-    public static String getOsName() {
+    static String getOsName() {
         return osName;
     }
 }
-

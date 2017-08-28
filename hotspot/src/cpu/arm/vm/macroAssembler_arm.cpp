@@ -2887,6 +2887,11 @@ int MacroAssembler::patchable_call(address target, RelocationHolder const& rspec
   return offset();
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  ldr(result, Address(result, 0));
+}
 
 void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
@@ -2895,6 +2900,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
   ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset_in_bytes()));
   ldr(mirror, Address(tmp, mirror_offset));
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 

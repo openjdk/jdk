@@ -24,41 +24,36 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.section_64;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachOSection {
-    ByteBuffer section;
-    byte [] data;
-    boolean hasrelocations;
+final class MachOSection {
+    private final ByteBuffer section;
+    private final byte[] data;
+    private final boolean hasrelocations;
 
-    public MachOSection(String sectName, String segName, byte [] sectData, int sectFlags, boolean hasRelocations, int align) {
+    MachOSection(String sectName, String segName, byte[] sectData, int sectFlags, boolean hasRelocations, int align) {
         section = MachOByteBuffer.allocate(section_64.totalsize);
 
         // TODO: Hotspot uses long section names.
-        //       They are getting truncated.
-        //       Is this a problem??
+        // They are getting truncated.
+        // Is this a problem??
         byte[] sectNameBytes = sectName.getBytes();
-        int sectNameMax = section_64.sectname.sz < sectNameBytes.length ?
-                         section_64.sectname.sz : sectNameBytes.length;
+        int sectNameMax = section_64.sectname.sz < sectNameBytes.length ? section_64.sectname.sz : sectNameBytes.length;
 
-        for (int i = 0; i < sectNameMax; i++)
-            section.put(section_64.sectname.off+i, sectNameBytes[i]);
-
+        for (int i = 0; i < sectNameMax; i++) {
+            section.put(section_64.sectname.off + i, sectNameBytes[i]);
+        }
         byte[] segNameBytes = segName.getBytes();
-        int segNameMax = section_64.segname.sz < segNameBytes.length ?
-                         section_64.segname.sz : segNameBytes.length;
+        int segNameMax = section_64.segname.sz < segNameBytes.length ? section_64.segname.sz : segNameBytes.length;
 
-        for (int i = 0; i < segNameMax; i++)
-            section.put(section_64.segname.off+i, segNameBytes[i]);
-
+        for (int i = 0; i < segNameMax; i++) {
+            section.put(section_64.segname.off + i, segNameBytes[i]);
+        }
         section.putLong(section_64.size.off, sectData.length);
 
-        section.putInt(section_64.align.off,
-                       31 - Integer.numberOfLeadingZeros(align));
+        section.putInt(section_64.align.off, 31 - Integer.numberOfLeadingZeros(align));
 
         section.putInt(section_64.flags.off, sectFlags);
 
@@ -67,49 +62,47 @@ public class MachOSection {
         hasrelocations = hasRelocations;
     }
 
-    public long getSize() {
+    long getSize() {
         return section.getLong(section_64.size.off);
     }
 
-    public int getAlign() {
+    int getAlign() {
         return (1 << section.getInt(section_64.align.off));
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return section.array();
     }
 
-    public byte[] getDataArray() {
+    byte[] getDataArray() {
         return data;
     }
 
-    public void setAddr(long addr) {
+    void setAddr(long addr) {
         section.putLong(section_64.addr.off, addr);
     }
 
-    public long getAddr() {
+    long getAddr() {
         return (section.getLong(section_64.addr.off));
     }
 
-    public void setOffset(int offset) {
+    void setOffset(int offset) {
         section.putInt(section_64.offset.off, offset);
     }
 
-    public int getOffset() {
+    int getOffset() {
         return (section.getInt(section_64.offset.off));
     }
 
-    public void setReloff(int offset) {
+    void setReloff(int offset) {
         section.putInt(section_64.reloff.off, offset);
     }
 
-    public void setRelcount(int count) {
+    void setRelcount(int count) {
         section.putInt(section_64.nreloc.off, count);
     }
 
-    public boolean hasRelocations() {
+    boolean hasRelocations() {
         return hasrelocations;
     }
 }
-
-

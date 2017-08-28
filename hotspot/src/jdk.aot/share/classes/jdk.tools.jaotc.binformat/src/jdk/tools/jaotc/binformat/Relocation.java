@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,17 @@
 
 package jdk.tools.jaotc.binformat;
 
-public class Relocation {
+public final class Relocation {
 
     public enum RelocType {
         UNDEFINED,
         JAVA_CALL_INDIRECT,
         JAVA_CALL_DIRECT,
-        FOREIGN_CALL_INDIRECT,
         FOREIGN_CALL_INDIRECT_GOT, // Call to address in GOT cell
-        FOREIGN_CALL_DIRECT,
-        FOREIGN_CALL_DIRECT_FAR,
         STUB_CALL_DIRECT,
-        STUB_CALL_INDIRECT,
-        EXTERNAL_DATA_REFERENCE_FAR,
         METASPACE_GOT_REFERENCE,
         EXTERNAL_GOT_TO_PLT,
-        EXTERNAL_PLT_TO_GOT,
-        STATIC_STUB_TO_STATIC_METHOD,
-        STATIC_STUB_TO_HOTSPOT_LINKAGE_GOT,
-        LOADTIME_ADDRESS
+        EXTERNAL_PLT_TO_GOT
     }
 
     private final RelocType type;

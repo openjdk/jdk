@@ -24,32 +24,39 @@
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SECTION_HEADER;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffSection {
-    ByteBuffer section;
-    byte [] data;
-    boolean hasrelocations;
-    int sectionIndex;
-    int align;
+final class PECoffSection {
+    private final ByteBuffer section;
+    private final byte[] data;
+    private final boolean hasrelocations;
+    private final int sectionIndex;
+    private final int align;
 
-    public PECoffSection(String sectName, byte [] sectData, int sectFlags,
-                         boolean hasRelocations, int sectIndex) {
+    PECoffSection(String sectName, byte[] sectData0, int sectFlags0, int sectAlign, boolean hasRelocations, int sectIndex) {
 
         section = PECoffByteBuffer.allocate(IMAGE_SECTION_HEADER.totalsize);
 
-        // bug: If JVM.oop.got section is empty, VM exits since JVM.oop.got
-        //      symbol ends up as external forwarded reference.
-        if (sectData.length == 0) sectData = new byte[8];
+        // If .oop.got section is empty, VM exits since .oop.got
+        // symbol ends up as external forwarded reference.
+        byte[] sectData = sectData0;
+        if (sectData0.length == 0) {
+            sectData = new byte[8];
+        }
 
         // Copy only Max allowed bytes to Section Entry
-        byte [] Name = sectName.getBytes();
-        int max = Name.length <= IMAGE_SECTION_HEADER.Name.sz ?
-                  Name.length : IMAGE_SECTION_HEADER.Name.sz;
+        byte[] Name = sectName.getBytes();
+        int max = Name.length <= IMAGE_SECTION_HEADER.Name.sz ? Name.length : IMAGE_SECTION_HEADER.Name.sz;
+
+        assert !(sectAlign < 1 || sectAlign > 1024 || (sectAlign & (sectAlign - 1)) != 0) : "section alignment is not valid: " + sectAlign;
+        align = sectAlign;
+
+        // Using 32 because IMAGE_SCN_ALIGN_*BYTES is value + 1
+        int sectAlignBits = (32 - Integer.numberOfLeadingZeros(align)) << IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_SHIFT;
+        // Clear and set alignment bits
+        int sectFlags = (sectFlags0 & ~IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_MASK) | (sectAlignBits & IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_MASK);
 
         section.put(Name, IMAGE_SECTION_HEADER.Name.off, max);
 
@@ -57,84 +64,69 @@ public class PECoffSection {
         section.putInt(IMAGE_SECTION_HEADER.VirtualAddress.off, 0);
         section.putInt(IMAGE_SECTION_HEADER.SizeOfRawData.off, sectData.length);
         section.putInt(IMAGE_SECTION_HEADER.PointerToLinenumbers.off, 0);
-        section.putChar(IMAGE_SECTION_HEADER.NumberOfLinenumbers.off, (char)0);
+        section.putChar(IMAGE_SECTION_HEADER.NumberOfLinenumbers.off, (char) 0);
 
         section.putInt(IMAGE_SECTION_HEADER.Characteristics.off, sectFlags);
-
-        // Extract alignment from Characteristics field
-        int alignshift = (sectFlags & IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_MASK) >>
-                                       IMAGE_SECTION_HEADER.IMAGE_SCN_ALIGN_SHIFT;
-
-        // Use 8 byte alignment if not specified
-        if (alignshift == 0)
-            alignshift = 3;
-        else
-            --alignshift;
-
-        align = 1 << alignshift;
 
         data = sectData;
         hasrelocations = hasRelocations;
         sectionIndex = sectIndex;
     }
 
-    public long getSize() {
+    long getSize() {
         return section.getInt(IMAGE_SECTION_HEADER.SizeOfRawData.off);
     }
 
-    public int getDataAlign() {
+    int getDataAlign() {
         return (align);
     }
 
     // Alignment requirements for the IMAGE_SECTION_HEADER structures
-    public static int getShdrAlign() {
+    static int getShdrAlign() {
         return (4);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return section.array();
     }
 
-    public byte[] getDataArray() {
+    byte[] getDataArray() {
         return data;
     }
 
-    public void setOffset(long offset) {
-        section.putInt(IMAGE_SECTION_HEADER.PointerToRawData.off, (int)offset);
+    void setOffset(long offset) {
+        section.putInt(IMAGE_SECTION_HEADER.PointerToRawData.off, (int) offset);
     }
 
-    public long getOffset() {
+    long getOffset() {
         return (section.getInt(IMAGE_SECTION_HEADER.PointerToRawData.off));
     }
 
-    public void setReloff(int offset) {
+    void setReloff(int offset) {
         section.putInt(IMAGE_SECTION_HEADER.PointerToRelocations.off, offset);
     }
 
-    public void setRelcount(int count) {
+    void setRelcount(int count) {
         // If the number of relocs is larger than 65K, then set
-        // the overflow bit.  The real count will be written to
+        // the overflow bit. The real count will be written to
         // the first reloc entry for this section.
         if (count > 0xFFFF) {
             int flags;
-            section.putChar(IMAGE_SECTION_HEADER.NumberOfRelocations.off, (char)0xFFFF);
+            section.putChar(IMAGE_SECTION_HEADER.NumberOfRelocations.off, (char) 0xFFFF);
             flags = section.getInt(IMAGE_SECTION_HEADER.Characteristics.off);
             flags |= IMAGE_SECTION_HEADER.IMAGE_SCN_LNK_NRELOC_OVFL;
             section.putInt(IMAGE_SECTION_HEADER.Characteristics.off, flags);
-        }
-        else {
-            section.putChar(IMAGE_SECTION_HEADER.NumberOfRelocations.off, (char)count);
+        } else {
+            section.putChar(IMAGE_SECTION_HEADER.NumberOfRelocations.off, (char) count);
         }
     }
 
-    public boolean hasRelocations() {
+    boolean hasRelocations() {
         return hasrelocations;
     }
 
-    public int getSectionId() {
+    int getSectionId() {
         return sectionIndex;
     }
 
 }
-
-

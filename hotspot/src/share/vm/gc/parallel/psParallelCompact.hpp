@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,9 +593,8 @@ inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
 
 inline bool ParallelCompactData::RegionData::claim()
 {
-  const int los = (int) live_obj_size();
-  const int old = Atomic::cmpxchg(dc_claimed | los,
-                                  (volatile int*) &_dc_and_los, los);
+  const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
+  const region_sz_t old = Atomic::cmpxchg(dc_claimed | los, &_dc_and_los, los);
   return old == los;
 }
 
