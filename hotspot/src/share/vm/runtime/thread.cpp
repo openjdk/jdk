@@ -3717,14 +3717,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   Thread* THREAD = Thread::current();
 
-  // At this point, the Universe is initialized, but we have not executed
-  // any byte code.  Now is a good time (the only time) to dump out the
-  // internal state of the JVM for sharing.
-  if (DumpSharedSpaces) {
-    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
-    ShouldNotReachHere();
-  }
-
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_early_start_phase();
@@ -3887,6 +3879,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #ifdef ASSERT
   _vm_complete = true;
 #endif
+
+  if (DumpSharedSpaces) {
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    ShouldNotReachHere();
+  }
+
   return JNI_OK;
 }
 

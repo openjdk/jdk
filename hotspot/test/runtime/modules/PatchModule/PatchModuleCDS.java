@@ -69,7 +69,7 @@ public class PatchModuleCDS {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:dump",
-            "--patch-module=java.base=" + System.getProperty("test.classes"),
+            "--patch-module=java.naming=" + System.getProperty("test.classes"),
             "-Xlog:class+path=info",
             "-version");
         new OutputAnalyzer(pb.start())
