@@ -153,7 +153,7 @@ public final class TraceLinearScanPhase extends TraceAllocationPhase<TraceAlloca
         @Override
         public boolean apply(TraceInterval i) {
             // all TraceIntervals are variable intervals
-            return true;
+            return !i.preSpilledAllocated();
         }
     };
     private static final Comparator<TraceInterval> SORT_BY_FROM_COMP = new Comparator<TraceInterval>() {

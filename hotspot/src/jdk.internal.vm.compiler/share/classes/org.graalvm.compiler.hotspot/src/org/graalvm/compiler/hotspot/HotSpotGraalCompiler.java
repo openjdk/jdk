@@ -198,7 +198,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
     public CompilationResult compile(ResolvedJavaMethod method, int entryBCI, boolean useProfilingInfo, CompilationIdentifier compilationId, OptionValues options, DebugContext debug) {
         StructuredGraph graph = createGraph(method, entryBCI, useProfilingInfo, compilationId, options, debug);
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = new CompilationResult(compilationId);
         return compileHelper(CompilationResultBuilderFactory.Default, result, graph, method, entryBCI, useProfilingInfo, options);
     }
 

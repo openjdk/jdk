@@ -216,8 +216,9 @@ public abstract class Stub {
 
     @SuppressWarnings("try")
     private CompilationResult buildCompilationResult(DebugContext debug, final Backend backend) {
-        CompilationResult compResult = new CompilationResult(toString(), GeneratePIC.getValue(options));
-        final StructuredGraph graph = getGraph(debug, getStubCompilationId());
+        CompilationIdentifier compilationId = getStubCompilationId();
+        final StructuredGraph graph = getGraph(debug, compilationId);
+        CompilationResult compResult = new CompilationResult(compilationId, toString(), GeneratePIC.getValue(options));
 
         // Stubs cannot be recompiled so they cannot be compiled with assumptions
         assert graph.getAssumptions() == null;
