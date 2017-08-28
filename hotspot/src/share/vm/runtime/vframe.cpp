@@ -396,14 +396,7 @@ StackValueCollection* interpretedVFrame::expressions() const {
 StackValueCollection* interpretedVFrame::stack_data(bool expressions) const {
 
   InterpreterOopMap oop_mask;
-  // oopmap for current bci
-  if ((TraceDeoptimization && Verbose) JVMCI_ONLY( || PrintDeoptimizationDetails)) {
-    methodHandle m_h(Thread::current(), method());
-    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-  } else {
-    method()->mask_for(bci(), &oop_mask);
-  }
-
+  method()->mask_for(bci(), &oop_mask);
   const int mask_len = oop_mask.number_of_entries();
 
   // If the method is native, method()->max_locals() is not telling the truth.
