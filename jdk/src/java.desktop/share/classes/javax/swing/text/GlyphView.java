@@ -1131,7 +1131,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * facilitate faster rendering and model/view
      * translation.  At a minimum, the GlyphPainter
      * allows a View implementation to perform its
-     * duties independant of a particular version
+     * duties independent of a particular version
      * of JVM and selection of capabilities (i.e.
      * shaping for i18n, etc).
      *
