@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/arrayKlass.hpp"
@@ -96,18 +97,18 @@ ArrayKlass::ArrayKlass(Symbol* name) :
 
 // Initialization of vtables and mirror object is done separatly from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
-void ArrayKlass::complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, ModuleEntry* module_entry, TRAPS) {
+void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
   ResourceMark rm(THREAD);
-  k->initialize_supers(super_klass(), CHECK);
-  k->vtable()->initialize_vtable(false, CHECK);
+  k->initialize_supers(super_klass, CHECK);
+  k->vtable().initialize_vtable(false, CHECK);
 
   // During bootstrapping, before java.base is defined, the module_entry may not be present yet.
   // These classes will be put on a fixup list and their module fields will be patched once
   // java.base is defined.
   assert((module_entry != NULL) || ((module_entry == NULL) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
-  oop module = (module_entry != NULL) ? JNIHandles::resolve(module_entry->module()) : (oop)NULL;
-  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(NULL), CHECK);
+  oop module = (module_entry != NULL) ? module_entry->module() : (oop)NULL;
+  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), CHECK);
 }
 
 GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots) {
@@ -171,6 +172,17 @@ jint ArrayKlass::compute_modifier_flags(TRAPS) const {
 
 jint ArrayKlass::jvmti_class_status() const {
   return JVMTI_CLASS_STATUS_ARRAY;
+}
+
+void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
+  Klass::metaspace_pointers_do(it);
+
+  ResourceMark rm;
+  log_trace(cds)("Iter(ArrayKlass): %p (%s)", this, external_name());
+
+  // need to cast away volatile
+  it->push((Klass**)&_higher_dimension);
+  it->push((Klass**)&_lower_dimension);
 }
 
 void ArrayKlass::remove_unshareable_info() {

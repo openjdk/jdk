@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,11 +49,6 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   }
   assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
   return i;
-}
-
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  // No special entry points that preclude compilation.
-  return true;
 }
 
 // How much stack a method top interpreter activation needs in words.

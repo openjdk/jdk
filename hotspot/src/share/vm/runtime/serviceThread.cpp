@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ ServiceThread* ServiceThread::_instance = NULL;
 void ServiceThread::initialize() {
   EXCEPTION_MARK;
 
-  instanceKlassHandle klass (THREAD,  SystemDictionary::Thread_klass());
+  InstanceKlass* klass = SystemDictionary::Thread_klass();
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
   const char* name = "Service Thread";

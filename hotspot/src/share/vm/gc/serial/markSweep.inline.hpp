@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,40 @@
 #define SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
 #include "gc/serial/markSweep.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1MarkSweep.hpp"
+#include "gc/g1/g1Allocator.inline.hpp"
 #endif // INCLUDE_ALL_GCS
+
+inline bool MarkSweep::is_closed_archive_object(oop object) {
+#if INCLUDE_ALL_GCS
+  return G1ArchiveAllocator::is_closed_archive_object(object);
+#else
+  return false;
+#endif
+}
+
+inline bool MarkSweep::is_open_archive_object(oop object) {
+#if INCLUDE_ALL_GCS
+  return G1ArchiveAllocator::is_open_archive_object(object);
+#else
+  return false;
+#endif
+}
 
 inline bool MarkSweep::is_archive_object(oop object) {
 #if INCLUDE_ALL_GCS
-  return (G1MarkSweep::archive_check_enabled() &&
-          G1MarkSweep::in_archive_range(object));
+  return G1ArchiveAllocator::is_archive_object(object);
 #else
   return false;
 #endif
 }
 
 inline int MarkSweep::adjust_pointers(oop obj) {
-  return obj->ms_adjust_pointers();
+  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
 }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
@@ -53,14 +69,24 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = oop(obj->mark()->decode_pointer());
-    assert(is_archive_object(obj) ||                  // no forwarding of archive objects
+
+    assert(is_archive_object(obj) ||             // no forwarding of archive objects
            new_obj != NULL ||                         // is forwarding ptr?
            obj->mark() == markOopDesc::prototype() || // not gc marked?
            (UseBiasedLocking && obj->mark()->has_bias_pattern()),
            // not gc marked?
            "should be forwarded");
+
+#ifndef PRODUCT
+    // open_archive objects are marked by GC. Their mark should
+    // not have forwarding ptr.
+    if (is_open_archive_object(obj)) {
+      assert(new_obj == NULL, "archive heap object has forwarding ptr");
+    }
+#endif
+
     if (new_obj != NULL) {
-      if (!is_archive_object(obj)) {
+      if (!is_closed_archive_object(obj)) {
         assert(Universe::heap()->is_in_reserved(new_obj),
               "should be in object space");
         oopDesc::encode_store_heap_oop_not_null(p, new_obj);

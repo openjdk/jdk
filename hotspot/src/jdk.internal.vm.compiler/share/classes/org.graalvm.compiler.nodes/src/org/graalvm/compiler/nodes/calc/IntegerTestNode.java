@@ -68,10 +68,8 @@ public final class IntegerTestNode extends BinaryOpLogicNode implements BinaryCo
     }
 
     @Override
-    public Stamp getSucceedingStampForX(boolean negated) {
-        Stamp xStampGeneric = this.getX().stamp();
-        Stamp yStampGeneric = this.getY().stamp();
-        return getSucceedingStamp(negated, xStampGeneric, yStampGeneric);
+    public Stamp getSucceedingStampForX(boolean negated, Stamp xStamp, Stamp yStamp) {
+        return getSucceedingStamp(negated, xStamp, yStamp);
     }
 
     private static Stamp getSucceedingStamp(boolean negated, Stamp xStampGeneric, Stamp otherStampGeneric) {
@@ -96,10 +94,8 @@ public final class IntegerTestNode extends BinaryOpLogicNode implements BinaryCo
     }
 
     @Override
-    public Stamp getSucceedingStampForY(boolean negated) {
-        Stamp xStampGeneric = this.getX().stamp();
-        Stamp yStampGeneric = this.getY().stamp();
-        return getSucceedingStamp(negated, yStampGeneric, xStampGeneric);
+    public Stamp getSucceedingStampForY(boolean negated, Stamp xStamp, Stamp yStamp) {
+        return getSucceedingStamp(negated, yStamp, xStamp);
     }
 
     @Override

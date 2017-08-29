@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 
 import jdk.vm.ci.code.BytecodeFrame;
@@ -46,7 +47,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class HotSpotMonitorValueTest extends GraalCompilerTest {
 
     @Override
-    protected InstalledCode addMethod(ResolvedJavaMethod method, CompilationResult compResult) {
+    protected InstalledCode addMethod(DebugContext debug, ResolvedJavaMethod method, CompilationResult compResult) {
         for (Infopoint i : compResult.getInfopoints()) {
             if (i instanceof Call) {
                 Call call = (Call) i;
@@ -75,7 +76,7 @@ public class HotSpotMonitorValueTest extends GraalCompilerTest {
                         }
                         assertDeepEquals(lock3.getOwner(), lock4.getOwner());
                         assertThat(lock1.getOwner(), not(lock2.getOwner()));
-                        return super.addMethod(method, compResult);
+                        return super.addMethod(debug, method, compResult);
                     }
                 }
             }

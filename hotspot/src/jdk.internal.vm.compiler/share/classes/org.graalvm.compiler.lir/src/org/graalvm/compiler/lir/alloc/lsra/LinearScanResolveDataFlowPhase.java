@@ -22,18 +22,16 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import static org.graalvm.compiler.core.common.GraalOptions.DetailedAsserts;
-
+import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
 
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
-import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.StandardOp;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
 
 import jdk.vm.ci.code.TargetDescription;
 
@@ -42,7 +40,7 @@ import jdk.vm.ci.code.TargetDescription;
  *
  * Insert moves at edges between blocks if intervals have been split.
  */
-public class LinearScanResolveDataFlowPhase extends AllocationPhase {
+public class LinearScanResolveDataFlowPhase extends LinearScanAllocationPhase {
 
     protected final LinearScan allocator;
 
@@ -83,12 +81,13 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
     }
 
     void resolveFindInsertPos(AbstractBlockBase<?> fromBlock, AbstractBlockBase<?> toBlock, MoveResolver moveResolver) {
+        DebugContext debug = allocator.getDebug();
         if (fromBlock.getSuccessorCount() <= 1) {
-            if (Debug.isLogEnabled()) {
-                Debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
+            if (debug.isLogEnabled()) {
+                debug.log("inserting moves at end of fromBlock B%d", fromBlock.getId());
             }
 
-            List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(fromBlock);
+            ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(fromBlock);
             LIRInstruction instr = instructions.get(instructions.size() - 1);
             if (instr instanceof StandardOp.JumpOp) {
                 // insert moves before branch
@@ -98,11 +97,11 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
             }
 
         } else {
-            if (Debug.isLogEnabled()) {
-                Debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
+            if (debug.isLogEnabled()) {
+                debug.log("inserting moves at beginning of toBlock B%d", toBlock.getId());
             }
 
-            if (DetailedAsserts.getValue()) {
+            if (allocator.detailedAsserts) {
                 assert allocator.getLIR().getLIRforBlock(fromBlock).get(0) instanceof StandardOp.LabelOp : "block does not start with a label";
 
                 /*
@@ -125,7 +124,7 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
      */
     @SuppressWarnings("try")
     protected void resolveDataFlow() {
-        try (Indent indent = Debug.logAndIndent("resolve data flow")) {
+        try (Indent indent = allocator.getDebug().logAndIndent("resolve data flow")) {
 
             MoveResolver moveResolver = allocator.createMoveResolver();
             BitSet blockCompleted = new BitSet(allocator.blockCount());
@@ -142,7 +141,7 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
 
             // check if block has only one predecessor and only one successor
             if (block.getPredecessorCount() == 1 && block.getSuccessorCount() == 1) {
-                List<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
+                ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
                 assert instructions.get(0) instanceof StandardOp.LabelOp : "block must start with label";
                 assert instructions.get(instructions.size() - 1) instanceof StandardOp.JumpOp : "block with successor must end with unconditional jump";
 
@@ -153,8 +152,9 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
 
                     // prevent optimization of two consecutive blocks
                     if (!blockCompleted.get(pred.getLinearScanNumber()) && !blockCompleted.get(sux.getLinearScanNumber())) {
-                        if (Debug.isLogEnabled()) {
-                            Debug.log(" optimizing empty block B%d (pred: B%d, sux: B%d)", block.getId(), pred.getId(), sux.getId());
+                        DebugContext debug = allocator.getDebug();
+                        if (debug.isLogEnabled()) {
+                            debug.log(" optimizing empty block B%d (pred: B%d, sux: B%d)", block.getId(), pred.getId(), sux.getId());
                         }
 
                         blockCompleted.set(block.getLinearScanNumber());
@@ -188,8 +188,9 @@ public class LinearScanResolveDataFlowPhase extends AllocationPhase {
                      * blocks).
                      */
                     if (!alreadyResolved.get(toBlock.getLinearScanNumber())) {
-                        if (Debug.isLogEnabled()) {
-                            Debug.log("processing edge between B%d and B%d", fromBlock.getId(), toBlock.getId());
+                        DebugContext debug = allocator.getDebug();
+                        if (debug.isLogEnabled()) {
+                            debug.log("processing edge between B%d and B%d", fromBlock.getId(), toBlock.getId());
                         }
 
                         alreadyResolved.set(toBlock.getLinearScanNumber());

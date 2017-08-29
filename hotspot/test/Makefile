@@ -95,25 +95,7 @@ hotspot_internal:
 ALT_MAKE ?= closed
 -include $(ALT_MAKE)/Makefile
 
-# flags used to execute java in test targets
-TEST_FLAGS += -version -Xinternalversion -X -help
-
-sanitytest: prep $(PRODUCT_HOME)
-	@for flag in $(TEST_FLAGS);                                             \
-	do                                                                      \
-	    echo Executing java $(JAVA_OPTIONS) $$flag;                         \
-	    $(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) $$flag;                    \
-	    res=$$?;                                                            \
-	    if [ $$res -ne 0 ]; then                                            \
-	        exit $$res;                                                     \
-	    fi;                                                                 \
-	done
-
-PHONY_LIST += sanitytest
-
 ################################################################
-
-# basicvmtest (make sure various basic java options work)
 
 # Set up the directory in which the jvm directories live (client/, server/, etc.)
 ifeq ($(PLATFORM),windows)
@@ -125,45 +107,6 @@ endif
 # Use the existance of a directory as a sign that jvm variant is available
 CANDIDATE_JVM_VARIANTS := client minimal server
 JVM_VARIANTS := $(strip $(foreach x,$(CANDIDATE_JVM_VARIANTS),$(if $(wildcard $(JVMS_DIR)/$(x)),$(x))))
-
-hotspot_basicvmtest:
-	for variant in $(JVM_VARIANTS);                                           \
-	do                                                                        \
-	    $(MAKE) JAVA_ARGS="$(JAVA_ARGS) -$$variant" hotspot_$${variant}test;  \
-	    res=$$?;                                                              \
-	    if [ $$res -ne 0 ]; then                                              \
-	        exit $$res;                                                       \
-	    fi;                                                                   \
-	done
-
-PHONY_LIST += hotspot_basicvmtest
-
-################################################################
-
-# clienttest (make sure various basic java client options work)
-
-hotspot_clienttest clienttest: sanitytest
-	$(RM) $(PRODUCT_HOME)/jre/lib/*/client/classes.jsa
-	$(RM) $(PRODUCT_HOME)/jre/bin/client/classes.jsa
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
-
-PHONY_LIST += hotspot_clienttest clienttest
-
-################################################################
-
-# minimaltest (make sure various basic java minimal options work)
-
-hotspot_minimaltest minimaltest: sanitytest
-
-PHONY_LIST += hotspot_minimaltest minimaltest
-
-################################################################
-
-# servertest (make sure various basic java server options work)
-
-hotspot_servertest servertest: sanitytest
-
-PHONY_LIST += hotspot_servertest servertest
 
 ################################################################
 

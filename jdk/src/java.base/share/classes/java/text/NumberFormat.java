@@ -181,6 +181,17 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * The subclass may provide its own implementation and specification about
  * {@code NullPointerException}.
  *
+ * <p>
+ * The default implementation provides rounding modes defined
+ * in {@link java.math.RoundingMode} for formatting numbers. It
+ * uses the {@linkplain java.math.RoundingMode#HALF_EVEN
+ * round half-even algorithm}. To change the rounding mode use
+ * {@link #setRoundingMode(java.math.RoundingMode) setRoundingMode}.
+ * The {@code NumberFormat} returned by the static factory methods is
+ * configured to round floating point numbers using half-even
+ * rounding (see {@link java.math.RoundingMode#HALF_EVEN
+ * RoundingMode.HALF_EVEN}) for formatting.
+ *
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @author       Mark Davis

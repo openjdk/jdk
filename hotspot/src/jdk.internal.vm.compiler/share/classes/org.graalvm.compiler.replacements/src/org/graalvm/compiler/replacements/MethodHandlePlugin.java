@@ -55,8 +55,13 @@ public class MethodHandlePlugin implements NodePlugin {
                 args[0] = b.nullCheckedValue(args[0]);
             }
             StampPair invokeReturnStamp = b.getInvokeReturnStamp(b.getAssumptions());
-            InvokeNode invoke = MethodHandleNode.tryResolveTargetInvoke(b.getAssumptions(), b.getConstantReflection().getMethodHandleAccess(), intrinsicMethod, method, b.bci(), invokeReturnStamp,
-                            args);
+            MethodHandleNode.GraphAdder adder = new MethodHandleNode.GraphAdder(b.getGraph()) {
+                @Override
+                public <T extends ValueNode> T add(T node) {
+                    return b.add(node);
+                }
+            };
+            InvokeNode invoke = MethodHandleNode.tryResolveTargetInvoke(adder, methodHandleAccess, intrinsicMethod, method, b.bci(), invokeReturnStamp, args);
             if (invoke == null) {
                 MethodHandleNode methodHandleNode = new MethodHandleNode(intrinsicMethod, invokeKind, method, b.bci(), invokeReturnStamp, args);
                 if (invokeReturnStamp.getTrustedStamp().getStackKind() == JavaKind.Void) {
@@ -68,7 +73,7 @@ public class MethodHandlePlugin implements NodePlugin {
                 CallTargetNode callTarget = invoke.callTarget();
                 NodeInputList<ValueNode> argumentsList = callTarget.arguments();
                 for (int i = 0; i < argumentsList.size(); ++i) {
-                    argumentsList.initialize(i, b.recursiveAppend(argumentsList.get(i)));
+                    argumentsList.initialize(i, b.append(argumentsList.get(i)));
                 }
 
                 boolean inlineEverything = false;

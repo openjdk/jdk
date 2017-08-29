@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,7 @@ private:
     // _last_Java_sp will always be a an unbiased stack pointer
     // if is is biased then some setter screwed up. This is
     // deadly.
-#ifdef _LP64
     assert(((intptr_t)_last_Java_sp & 0xF) == 0, "Biased last_Java_sp");
-#endif
     return _last_Java_sp;
   }
 

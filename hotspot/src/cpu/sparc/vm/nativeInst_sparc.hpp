@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,8 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_illegal();
   bool is_zombie() {
     int x = long_at(0);
-    return is_op3(x,
-                  Assembler::ldsw_op3,
-                  Assembler::ldst_op)
-        && Assembler::inv_rs1(x) == G0
-        && Assembler::inv_rd(x) == O7;
+    return (is_op3(x, Assembler::ldsw_op3, Assembler::ldst_op) &&
+            inv_rs1(x) == G0 && inv_rd(x) == O7);
   }
   bool is_ic_miss_trap();       // Inline-cache uses a trap to detect a miss
   bool is_return() {
@@ -121,11 +118,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
 
   bool is_safepoint_poll() {
     int x = long_at(0);
-#ifdef _LP64
     return is_op3(x, Assembler::ldx_op3,  Assembler::ldst_op) &&
-#else
-    return is_op3(x, Assembler::lduw_op3, Assembler::ldst_op) &&
-#endif
       (inv_rd(x) == G0) && (inv_immed(x) ? Assembler::inv_simm13(x) == 0 : inv_rs2(x) == G0);
   }
 
@@ -133,29 +126,11 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_load_store_with_small_offset(Register reg);
 
  public:
-#ifdef ASSERT
-  static int rdpc_instruction()        { return Assembler::op(Assembler::arith_op ) | Assembler::op3(Assembler::rdreg_op3) | Assembler::u_field(5, 18, 14) | Assembler::rd(O7); }
-#else
-  // Temporary fix: in optimized mode, u_field is a macro for efficiency reasons (see Assembler::u_field) - needs to be fixed
-  static int rdpc_instruction()        { return Assembler::op(Assembler::arith_op ) | Assembler::op3(Assembler::rdreg_op3) |            u_field(5, 18, 14) | Assembler::rd(O7); }
-#endif
   static int nop_instruction()         { return Assembler::op(Assembler::branch_op) | Assembler::op2(Assembler::sethi_op2); }
   static int illegal_instruction();    // the output of __ breakpoint_trap()
   static int call_instruction(address destination, address pc) { return Assembler::op(Assembler::call_op) | Assembler::wdisp((intptr_t)destination, (intptr_t)pc, 30); }
 
-  static int branch_instruction(Assembler::op2s op2val, Assembler::Condition c, bool a) {
-    return Assembler::op(Assembler::branch_op) | Assembler::op2(op2val) | Assembler::annul(a) | Assembler::cond(c);
-  }
-
-  static int op3_instruction(Assembler::ops opval, Register rd, Assembler::op3s op3val, Register rs1, int simm13a) {
-    return Assembler::op(opval) | Assembler::rd(rd) | Assembler::op3(op3val) | Assembler::rs1(rs1) | Assembler::immed(true) | Assembler::simm(simm13a, 13);
-  }
-
-  static int sethi_instruction(Register rd, int imm22a) {
-    return Assembler::op(Assembler::branch_op) | Assembler::rd(rd) | Assembler::op2(Assembler::sethi_op2) | Assembler::hi22(imm22a);
-  }
-
- protected:
+protected:
   address  addr_at(int offset) const    { return address(this) + offset; }
   int      long_at(int offset) const    { return *(int*)addr_at(offset); }
   void set_long_at(int offset, int i);      /* deals with I-cache */
@@ -432,22 +407,6 @@ class NativeCallReg: public NativeInstruction {
 // instructions in the sparcv9 vm.  Used to call native methods which may be loaded
 // anywhere in the address space, possibly out of reach of a call instruction.
 
-#ifndef _LP64
-
-// On 32-bit systems, a far call is the same as a near one.
-class NativeFarCall;
-inline NativeFarCall* nativeFarCall_at(address instr);
-class NativeFarCall : public NativeCall {
-public:
-  friend inline NativeFarCall* nativeFarCall_at(address instr) { return (NativeFarCall*)nativeCall_at(instr); }
-  friend NativeFarCall* nativeFarCall_overwriting_at(address instr, address destination = NULL)
-                                                        { return (NativeFarCall*)nativeCall_overwriting_at(instr, destination); }
-  friend NativeFarCall* nativeFarCall_before(address return_address)
-                                                        { return (NativeFarCall*)nativeCall_before(return_address); }
-};
-
-#else
-
 // The format of this extended-range call is:
 //      jumpl_to addr, lreg
 //      == sethi %hi54(addr), O7 ;  jumpl O7, %lo10(addr), O7 ;  <delay>
@@ -515,7 +474,6 @@ class NativeFarCall: public NativeInstruction {
   static void replace_mt_safe(address instr_addr, address code_buffer);
 };
 
-#endif // _LP64
 
 // An interface for accessing/manipulating 32 bit native set_metadata imm, reg instructions
 // (used to manipulate inlined data references, etc.)
@@ -567,13 +525,8 @@ class NativeMovConstReg: public NativeInstruction {
  public:
   enum Sparc_specific_constants {
     sethi_offset           = 0,
-#ifdef _LP64
     add_offset             = 7 * BytesPerInstWord,
     instruction_size       = 8 * BytesPerInstWord
-#else
-    add_offset             = 4,
-    instruction_size       = 8
-#endif
   };
 
   address instruction_address() const       { return addr_at(0); }
@@ -626,11 +579,7 @@ inline NativeMovConstRegPatching* nativeMovConstRegPatching_at(address address);
  public:
   enum Sparc_specific_constants {
     sethi_offset           = 0,
-#ifdef _LP64
     nop_offset             = 7 * BytesPerInstWord,
-#else
-    nop_offset             = sethi_offset + BytesPerInstWord,
-#endif
     add_offset             = nop_offset   + BytesPerInstWord,
     instruction_size       = add_offset   + BytesPerInstWord
   };
@@ -705,11 +654,7 @@ class NativeMovRegMem: public NativeInstruction {
 
     offset_width    = 13,
     sethi_offset    = 0,
-#ifdef _LP64
     add_offset      = 7 * BytesPerInstWord,
-#else
-    add_offset      = 4,
-#endif
     ldst_offset     = add_offset + BytesPerInstWord
   };
   bool is_immediate() const {
@@ -720,11 +665,7 @@ class NativeMovRegMem: public NativeInstruction {
 
   address instruction_address() const           { return addr_at(0); }
   address next_instruction_address() const      {
-#ifdef _LP64
     return addr_at(is_immediate() ? 4 : (7 * BytesPerInstWord));
-#else
-    return addr_at(is_immediate() ? 4 : 12);
-#endif
   }
   intptr_t   offset() const                             {
      return is_immediate()? inv_simm(long_at(0), offset_width) :
@@ -777,19 +718,13 @@ class NativeJump: public NativeInstruction {
  public:
   enum Sparc_specific_constants {
     sethi_offset           = 0,
-#ifdef _LP64
     jmpl_offset            = 7 * BytesPerInstWord,
     instruction_size       = 9 * BytesPerInstWord  // includes delay slot
-#else
-    jmpl_offset            = 1 * BytesPerInstWord,
-    instruction_size       = 3 * BytesPerInstWord  // includes delay slot
-#endif
   };
 
   address instruction_address() const       { return addr_at(0); }
   address next_instruction_address() const  { return addr_at(instruction_size); }
 
-#ifdef _LP64
   address jump_destination() const {
     return (address) data64(instruction_address(), long_at(jmpl_offset));
   }
@@ -797,15 +732,6 @@ class NativeJump: public NativeInstruction {
     set_data64_sethi( instruction_address(), (intptr_t)dest);
     set_long_at(jmpl_offset,  set_data32_simm13( long_at(jmpl_offset),  (intptr_t)dest));
   }
-#else
-  address jump_destination() const {
-    return (address) data32(long_at(sethi_offset), long_at(jmpl_offset));
-  }
-  void set_jump_destination(address dest) {
-    set_long_at(sethi_offset, set_data32_sethi(  long_at(sethi_offset), (intptr_t)dest));
-    set_long_at(jmpl_offset,  set_data32_simm13( long_at(jmpl_offset),  (intptr_t)dest));
-  }
-#endif
 
   // Creation
   friend inline NativeJump* nativeJump_at(address address) {

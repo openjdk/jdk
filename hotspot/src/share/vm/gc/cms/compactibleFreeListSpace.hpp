@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr);
   // Accessors
   bool bestFitFirst() { return _fitStrategy == FreeBlockBestFitFirst; }
-  FreeBlockDictionary<FreeChunk>* dictionary() const { return _dictionary; }
+  AFLBinaryTreeDictionary* dictionary() const { return _dictionary; }
   HeapWord* nearLargestChunk() const { return _nearLargestChunk; }
   void set_nearLargestChunk(HeapWord* v) { _nearLargestChunk = v; }
 
@@ -513,7 +513,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Adjust the chunk for the minimum size.  This version is called in
   // most cases in CompactibleFreeListSpace methods.
   inline static size_t adjustObjectSize(size_t size) {
-    return (size_t) align_object_size(MAX2(size, (size_t)MinChunkSize));
+    return align_object_size(MAX2(size, (size_t)MinChunkSize));
   }
   // This is a virtual version of adjustObjectSize() that is called
   // only occasionally when the compaction space changes and the type

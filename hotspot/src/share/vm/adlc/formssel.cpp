@@ -3792,11 +3792,16 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
     "AddI","AddL","AddF","AddD",
+    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "AndI","AndL",
+    "AndV",
     "MaxI","MinI",
     "MulI","MulL","MulF","MulD",
-    "OrI" ,"OrL" ,
-    "XorI","XorL"
+    "MulVS","MulVI","MulVL","MulVF","MulVD",
+    "OrI","OrL",
+    "OrV",
+    "XorI","XorL",
+    "XorV"
   };
   int cnt = sizeof(commut_op_list)/sizeof(char*);
 
@@ -4174,6 +4179,7 @@ bool MatchRule::is_vector() const {
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
     "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
     "LoadVector","StoreVector",
+    "FmaVD", "FmaVF",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
     "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"

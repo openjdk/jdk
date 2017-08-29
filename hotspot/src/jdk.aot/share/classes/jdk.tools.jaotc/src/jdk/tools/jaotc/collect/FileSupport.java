@@ -46,7 +46,9 @@ public class FileSupport {
 
     private URI makeJarFileURI(Path path) {
         try {
-            return new URI("jar:file:" + path.toAbsolutePath() + "!/");
+            String name = path.toAbsolutePath().toString();
+            name = name.replace('\\','/');
+            return new URI("jar:file:///" + name + "!/");
         } catch (URISyntaxException e) {
             throw new InternalError(e);
         }

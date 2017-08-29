@@ -25,7 +25,7 @@
  * @test
  * @bug 8003147
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @compile Bug8003147TestClass.java
+ * @compile -g Bug8003147TestClass.java
  * @run testng/othervm -DrunSecMngr=true parsers.Bug8003147Test
  * @run testng/othervm parsers.Bug8003147Test
  * @summary Test port fix for BCEL bug 39695.
@@ -52,16 +52,17 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.bcel.internal.classfile.Method;
 import com.sun.org.apache.bcel.internal.generic.ClassGen;
 import com.sun.org.apache.bcel.internal.generic.MethodGen;
+import com.sun.org.apache.bcel.internal.generic.InstructionFactory;
+import com.sun.org.apache.bcel.internal.generic.InstructionList;
 
 @Listeners({ jaxp.library.FilePolicy.class, jaxp.library.InternalAPIPolicy.class })
 public class Bug8003147Test {
 
     @Test
     public void test() throws Exception {
-        // Note: com.sun.org.apache.bcel.internal.classfile.JavaClass doesn't
-        // support InvokeDynamic, so can't use lambda, also can't use string1 +
-        // string2, because javac will generate a dynamic call where invoking
-        // string1.concat(string2), so create a separate Bug8003147TestClass
+        // Note: Because BCEL library is always behind java version, to make sure
+        // JavaClass can parse the class file, create a separate
+        // Bug8003147TestClass.java, which only uses basic features.
         JAXPTestUtilities.tryRunWithTmpPermission(() -> {
             String classfile = getSystemProperty("test.classes") + "/parsers/Bug8003147TestClass.class";
             JavaClass jc = new ClassParser(classfile).parse();
@@ -80,6 +81,16 @@ public class Bug8003147Test {
             }
             Method m = methods[index];
             MethodGen mg = new MethodGen(m, gen.getClassName(), gen.getConstantPool());
+
+            // @bug 8064516, not currently used directly by JAXP, but we may need
+            // to modify preexisting methods in the future.
+            InstructionFactory f = new InstructionFactory(gen);
+            InstructionList il = mg.getInstructionList();
+            InstructionList newInst = new InstructionList();
+            newInst.append(f.createPrintln("Hello Sekai!"));
+            il.insert(newInst);
+            mg.setMaxStack();
+
             gen.replaceMethod(m, mg.getMethod());
             String path = classfile.replace("Bug8003147TestClass", "Bug8003147TestClassPrime");
             gen.getJavaClass().dump(new FileOutputStream(path));

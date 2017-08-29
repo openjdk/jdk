@@ -25,6 +25,7 @@ package org.graalvm.compiler.replacements.test;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.JavaTypeProfile;
@@ -42,8 +43,8 @@ public abstract class TypeCheckTest extends GraalCompilerTest {
     protected JavaTypeProfile currentProfile;
 
     @Override
-    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId) {
-        StructuredGraph graph = super.parseForCompile(method, compilationId);
+    protected StructuredGraph parseForCompile(ResolvedJavaMethod method, CompilationIdentifier compilationId, OptionValues options) {
+        StructuredGraph graph = super.parseForCompile(method, compilationId, options);
         if (currentProfile != null) {
             replaceProfile(graph, currentProfile);
         }
@@ -51,8 +52,8 @@ public abstract class TypeCheckTest extends GraalCompilerTest {
     }
 
     @Override
-    protected InstalledCode getCode(final ResolvedJavaMethod method, final StructuredGraph graph) {
-        return getCode(method, graph, currentProfile != null);
+    protected InstalledCode getCode(final ResolvedJavaMethod method, final StructuredGraph graph, boolean ignore, boolean installAsDefault, OptionValues options) {
+        return super.getCode(method, graph, currentProfile != null, installAsDefault, options);
     }
 
     protected JavaTypeProfile profile(Class<?>... types) {

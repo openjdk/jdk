@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 inline void update_barrier_set(void* p, oop v, bool release = false) {
@@ -232,31 +233,14 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // length of the array, shift (multiply) it appropriately,
       // up to wordSize, add the header, and align to object size.
       size_t size_in_bytes;
-#ifdef _M_IA64
-      // The Windows Itanium Aug 2002 SDK hoists this load above
-      // the check for s < 0.  An oop at the end of the heap will
-      // cause an access violation if this load is performed on a non
-      // array oop.  Making the reference volatile prohibits this.
-      // (%%% please explain by what magic the length is actually fetched!)
-      volatile int *array_length;
-      array_length = (volatile int *)( (intptr_t)this +
-                          arrayOopDesc::length_offset_in_bytes() );
-      assert(array_length > 0, "Integer arithmetic problem somewhere");
-      // Put into size_t to avoid overflow.
-      size_in_bytes = (size_t) array_length;
-      size_in_bytes = size_in_bytes << Klass::layout_helper_log2_element_size(lh);
-#else
       size_t array_length = (size_t) ((arrayOop)this)->length();
       size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
-#endif
       size_in_bytes += Klass::layout_helper_header_size(lh);
 
       // This code could be simplified, but by keeping array_header_in_bytes
       // in units of bytes and doing it this way we can round up just once,
-      // skipping the intermediate round to HeapWordSize.  Cast the result
-      // of round_to to size_t to guarantee unsigned division == right shift.
-      s = (int)((size_t)round_to(size_in_bytes, MinObjAlignmentInBytes) /
-        HeapWordSize);
+      // skipping the intermediate round to HeapWordSize.
+      s = (int)(align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize);
 
       // ParNew (used by CMS), UseParallelGC and UseG1GC can change the length field
       // of an "old copy" of an object array in the young gen so it indicates
@@ -284,8 +268,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s % MinObjAlignment == 0, "Oop size is not properly aligned: %d", s);
   assert(s > 0, "Oop size must be greater than zero, not %d", s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: %d", s);
   return s;
 }
 
@@ -462,6 +446,14 @@ void oopDesc::obj_field_put_volatile(int offset, oop value) {
 Metadata* oopDesc::metadata_field(int offset) const           { return *metadata_field_addr(offset);   }
 void oopDesc::metadata_field_put(int offset, Metadata* value) { *metadata_field_addr(offset) = value;  }
 
+Metadata* oopDesc::metadata_field_acquire(int offset) const   {
+  return (Metadata*)OrderAccess::load_ptr_acquire(metadata_field_addr(offset));
+}
+
+void oopDesc::release_metadata_field_put(int offset, Metadata* value) {
+  OrderAccess::release_store_ptr(metadata_field_addr(offset), value);
+}
+
 jbyte oopDesc::byte_field(int offset) const                   { return (jbyte) *byte_field_addr(offset);    }
 void oopDesc::byte_field_put(int offset, jbyte contents)      { *byte_field_addr(offset) = (jint) contents; }
 
@@ -598,6 +590,9 @@ void oopDesc::forward_to(oop p) {
          "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
+  assert(!is_archive_object(oop(this)) &&
+         !is_archive_object(p),
+         "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
   set_mark(m);
@@ -662,13 +657,6 @@ void oopDesc::incr_age() {
   } else {
     set_mark(mark()->incr_age());
   }
-}
-
-int oopDesc::ms_adjust_pointers() {
-  debug_only(int check_size = size());
-  int s = klass()->oop_ms_adjust_pointers(this);
-  assert(s == check_size, "should be the same");
-  return s;
 }
 
 #if INCLUDE_ALL_GCS

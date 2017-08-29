@@ -53,7 +53,7 @@ public interface NodeValueMap {
     Value setResult(ValueNode node, Value operand);
 
     /**
-     * Gets the the {@link ValueNode} that produced a {@code value}. If the {@code value} is not
+     * Gets the {@link ValueNode} that produced a {@code value}. If the {@code value} is not
      * associated with a {@link ValueNode} {@code null} is returned.
      *
      * This method is intended for debugging purposes only.

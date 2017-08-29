@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,24 +513,18 @@ function systemLoader() {
    return sa.sysDict.javaSystemLoader();
 }
 
-// iterate system dictionary for each 'Klass' 
+// iterate class loader data for each 'Klass' 
 function forEachKlass(callback) {
-   var VisitorClass = sapkg.memory.SystemDictionary.ClassVisitor;
+   var VisitorClass = sapkg.classfile.ClassLoaderDataGraph.ClassVisitor;
    var visitor = new VisitorClass() { visit: callback };
-   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary.ClassVisitor)"](visitor);
+   sa.sysDict["classesDo(sun.jvm.hotspot.classfile.ClassLoaderDataGraph.ClassVisitor)"](visitor);
 }
 
 // iterate system dictionary for each 'Klass' and initiating loader
 function forEachKlassAndLoader(callback) {
-   var VisitorClass = sapkg.memory.SystemDictionary.ClassAndLoaderVisitor;
+   var VisitorClass = sapkg.classfile.ClassLoaderDataGraph.ClassAndLoaderVisitor;
    var visitor = new VisitorClass() { visit: callback };
-   sa.sysDict["classesDo(sun.jvm.hotspot.memory.SystemDictionary.ClassAndLoaderVisitor)"](visitor);
-}
-
-// iterate system dictionary for each primitive array klass
-function forEachPrimArrayKlass(callback) {
-   var VisitorClass = sapkg.memory.SystemDictionary.ClassAndLoaderVisitor;
-   sa.sysDict.primArrayClassesDo(new VisitorClass() { visit: callback });
+   sa.sysDict["allEntriesDo(sun.jvm.hotspot.classfile.ClassLoaderDataGraph.ClassAndLoaderVisitor)"](visitor);
 }
 
 // 'oop' to higher-level java object wrapper in which for(i in o) 

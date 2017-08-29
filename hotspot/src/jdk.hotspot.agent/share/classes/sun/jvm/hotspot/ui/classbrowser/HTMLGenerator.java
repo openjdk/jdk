@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -630,11 +630,12 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.beginTag("ul");
             for (int exp = 0; exp < exceptions.length; exp++) {
                short cpIndex = (short) exceptions[exp].getClassCPIndex();
-               ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
-               if (obj.isUnresolved()) {
-                 buf.li((obj.getSymbol()).asString().replace('/', '.'));
+               ConstantTag tag = cpool.getTagAt(cpIndex);
+               if (tag.isUnresolvedKlass()) {
+                 buf.li(cpool.getKlassNameAt(cpIndex).asString().replace('/', '.'));
                } else {
-                 buf.li(genKlassLink((InstanceKlass)obj.getKlass()));
+                 Klass k = cpool.getKlassAt(cpIndex);
+                 buf.li(genKlassLink((InstanceKlass)k));
                }
             }
             buf.endTag("ul");
@@ -766,13 +767,14 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                   buf.cell(Integer.toString(exceptionTable[e].getEndPC()));
                   buf.cell(Integer.toString(exceptionTable[e].getHandlerPC()));
                   short cpIndex = (short) exceptionTable[e].getCatchTypeIndex();
-                  ConstantPool.CPSlot obj = cpIndex == 0? null : cpool.getSlotAt(cpIndex);
-                  if (obj == null) {
-                     buf.cell("Any");
-                  } else if (obj.isUnresolved()) {
-                     buf.cell(obj.getSymbol().asString().replace('/', '.'));
+                  ConstantTag tag = cpIndex == 0? null : cpool.getTagAt(cpIndex);
+                  if (tag == null) {
+                    buf.cell("Any");
+                  } else if (tag.isUnresolvedKlass()) {
+                    buf.cell(cpool.getKlassNameAt(cpIndex).asString().replace('/', '.'));
                   } else {
-                    buf.cell(genKlassLink((InstanceKlass)obj.getKlass()));
+                    Klass k = cpool.getKlassAt(cpIndex);
+                    buf.cell(genKlassLink((InstanceKlass)k));
                   }
                   buf.endTag("tr");
                }

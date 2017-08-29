@@ -23,9 +23,8 @@
 package org.graalvm.compiler.hotspot;
 
 import org.graalvm.compiler.core.match.MatchableNode;
-import org.graalvm.compiler.hotspot.nodes.CompressionNode;
-import org.graalvm.compiler.hotspot.nodes.DirectCompareAndSwapNode;
 import org.graalvm.compiler.lir.gen.LIRGenerator;
+import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -43,7 +42,4 @@ public interface HotSpotNodeLIRBuilder {
     }
 
     void emitJumpToExceptionHandlerInCaller(ValueNode handlerInCallerPc, ValueNode exception, ValueNode exceptionPc);
-
-    void visitDirectCompareAndSwap(DirectCompareAndSwapNode x);
-
 }

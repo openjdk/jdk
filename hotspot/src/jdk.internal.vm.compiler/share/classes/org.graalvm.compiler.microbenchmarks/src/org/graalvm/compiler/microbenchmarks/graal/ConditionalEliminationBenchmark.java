@@ -22,14 +22,12 @@
  */
 package org.graalvm.compiler.microbenchmarks.graal;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Warmup;
-
 import org.graalvm.compiler.microbenchmarks.graal.util.GraalState;
 import org.graalvm.compiler.microbenchmarks.graal.util.GraphState;
 import org.graalvm.compiler.microbenchmarks.graal.util.MethodSpec;
-import org.graalvm.compiler.phases.common.DominatorConditionalEliminationPhase;
+import org.graalvm.compiler.phases.common.ConditionalEliminationPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.openjdk.jmh.annotations.Benchmark;
 
 public class ConditionalEliminationBenchmark extends GraalBenchmark {
 
@@ -38,17 +36,36 @@ public class ConditionalEliminationBenchmark extends GraalBenchmark {
     }
 
     @SuppressWarnings("unused")
-    public static int nullnessSnippet(Object a, Object b) {
+    public static int nullnessSnippet(Object a, Object b, int n, int m) {
+        int result = 0;
         if (a == null) {
             if (a == b) {
                 if (b == null) {
+                    for (int i = 0; i < n; ++i) {
+                        if (i % 3 == 0) {
+                            break;
+                        }
+                        result <<= 1;
+                        if (i % 7 == 0) {
+                            break;
+                        }
+                    }
                     return 1;
                 } else {
                     return -2;
                 }
             } else {
                 if (b == null) {
-                    return -3;
+                    for (int i = 0; i < n; ++i) {
+                        if (i % 4 == 0) {
+                            break;
+                        }
+                        result <<= 1;
+                        if (i % 7 == 0) {
+                            break;
+                        }
+                    }
+                    return result;
                 } else {
                     return 4;
                 }
@@ -56,13 +73,31 @@ public class ConditionalEliminationBenchmark extends GraalBenchmark {
         } else {
             if (a == b) {
                 if (b == null) {
-                    return -5;
+                    for (int i = 0; i < n; ++i) {
+                        if (i % 5 == 0) {
+                            break;
+                        }
+                        result <<= 1;
+                        if (i % 7 == 0) {
+                            break;
+                        }
+                    }
+                    return result;
                 } else {
                     return 6;
                 }
             } else {
                 if (b == null) {
-                    return 7;
+                    for (int i = 0; i < n; ++i) {
+                        if (i % 6 == 0) {
+                            break;
+                        }
+                        result <<= 1;
+                        if (i % 7 == 0) {
+                            break;
+                        }
+                    }
+                    return result;
                 } else {
                     return 8;
                 }
@@ -71,9 +106,13 @@ public class ConditionalEliminationBenchmark extends GraalBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 20)
     public void nullness(Nullness s, GraalState g) {
-        new DominatorConditionalEliminationPhase(false).apply(s.graph, new PhaseContext(g.providers));
+        new ConditionalEliminationPhase(false).apply(s.graph, new PhaseContext(g.providers));
+    }
+
+    @Benchmark
+    public void newDominatorConditionalElimination(Nullness s, GraalState g) {
+        new ConditionalEliminationPhase(false).apply(s.graph, new PhaseContext(g.providers));
     }
 
     @MethodSpec(declaringClass = ConditionalEliminationBenchmark.class, name = "searchSnippet")
@@ -124,6 +163,6 @@ public class ConditionalEliminationBenchmark extends GraalBenchmark {
 
     @Benchmark
     public void search(Search s, GraalState g) {
-        new DominatorConditionalEliminationPhase(false).apply(s.graph, new PhaseContext(g.providers));
+        new ConditionalEliminationPhase(false).apply(s.graph, new PhaseContext(g.providers));
     }
 }
