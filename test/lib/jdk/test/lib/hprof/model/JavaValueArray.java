@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,38 +91,92 @@ public class JavaValueArray extends JavaLazyReadObject
      *
      *    object ID
      *    stack trace serial number (int)
-     *    length of the instance data (int)
+     *    number of elements (int)
      *    element type (byte)
      *    array data
      */
-    protected final int readValueLength() throws IOException {
-        JavaClass cl = getClazz();
-        ReadBuffer buf = cl.getReadBuffer();
-        int idSize = cl.getIdentifierSize();
-        long offset = getOffset() + idSize + 4;
-        // length of the array
-        int len = buf.getInt(offset);
-        // typecode of array element type
-        byte type = buf.getByte(offset + 4);
-        return len * elementSize(type);
+    @Override
+    protected final long readValueLength() throws IOException {
+        long offset = getOffset() + idSize() + 4;
+        // length of the array in elements
+        long len = buf().getInt(offset);
+        // byte length of array
+        return len * elementSize(getElementType());
     }
 
-    protected final byte[] readValue() throws IOException {
-        JavaClass cl = getClazz();
-        ReadBuffer buf = cl.getReadBuffer();
-        int idSize = cl.getIdentifierSize();
-        long offset = getOffset() + idSize + 4;
-        // length of the array
-        int length = buf.getInt(offset);
-        // typecode of array element type
-        byte type = buf.getByte(offset + 4);
-        if (length == 0) {
-            return Snapshot.EMPTY_BYTE_ARRAY;
-        } else {
-            length *= elementSize(type);
-            byte[] res = new byte[length];
-            buf.get(offset + 5, res);
-            return res;
+    private long dataStartOffset() {
+        return getOffset() + idSize() + 4 + 4 + 1;
+    }
+
+
+    @Override
+    protected final JavaThing[] readValue() throws IOException {
+        int len = getLength();
+        long offset = dataStartOffset();
+
+        JavaThing[] res = new JavaThing[len];
+        synchronized (buf()) {
+            switch (getElementType()) {
+                case 'Z': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaBoolean(booleanAt(offset));
+                                  offset += 1;
+                              }
+                              return res;
+                }
+                case 'B': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaByte(byteAt(offset));
+                                  offset += 1;
+                              }
+                              return res;
+                }
+                case 'C': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaChar(charAt(offset));
+                                  offset += 2;
+                              }
+                              return res;
+                }
+                case 'S': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaShort(shortAt(offset));
+                                  offset += 2;
+                              }
+                              return res;
+                }
+                case 'I': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaInt(intAt(offset));
+                                  offset += 4;
+                              }
+                              return res;
+                }
+                case 'J': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaLong(longAt(offset));
+                                  offset += 8;
+                              }
+                              return res;
+                }
+                case 'F': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaFloat(floatAt(offset));
+                                  offset += 4;
+                              }
+                              return res;
+                }
+                case 'D': {
+                              for (int i = 0; i < len; i++) {
+                                  res[i] = new JavaDouble(doubleAt(offset));
+                                  offset += 8;
+                              }
+                              return res;
+                }
+                default: {
+                             throw new RuntimeException("unknown primitive type?");
+                }
+            }
         }
     }
 
@@ -197,83 +251,11 @@ public class JavaValueArray extends JavaLazyReadObject
             }
             data |= (divider << LENGTH_DIVIDER_SHIFT);
         }
-        return (getValueLength() / divider);
+        return (int)(getValueLength() / divider);
     }
 
-    public Object getElements() {
-        final int len = getLength();
-        final byte et = getElementType();
-        byte[] data = getValue();
-        int index = 0;
-        switch (et) {
-            case 'Z': {
-                boolean[] res = new boolean[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = booleanAt(index, data);
-                    index++;
-                }
-                return res;
-            }
-            case 'B': {
-                byte[] res = new byte[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = byteAt(index, data);
-                    index++;
-                }
-                return res;
-            }
-            case 'C': {
-                char[] res = new char[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = charAt(index, data);
-                    index += 2;
-                }
-                return res;
-            }
-            case 'S': {
-                short[] res = new short[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = shortAt(index, data);
-                    index += 2;
-                }
-                return res;
-            }
-            case 'I': {
-                int[] res = new int[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = intAt(index, data);
-                    index += 4;
-                }
-                return res;
-            }
-            case 'J': {
-                long[] res = new long[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = longAt(index, data);
-                    index += 8;
-                }
-                return res;
-            }
-            case 'F': {
-                float[] res = new float[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = floatAt(index, data);
-                    index += 4;
-                }
-                return res;
-            }
-            case 'D': {
-                double[] res = new double[len];
-                for (int i = 0; i < len; i++) {
-                    res[i] = doubleAt(index, data);
-                    index += 8;
-                }
-                return res;
-            }
-            default: {
-                throw new RuntimeException("unknown primitive type?");
-            }
-        }
+    public JavaThing[] getElements() {
+        return getValue();
     }
 
     public byte getElementType() {
@@ -292,54 +274,6 @@ public class JavaValueArray extends JavaLazyReadObject
         }
     }
 
-    public boolean getBooleanAt(int index) {
-        checkIndex(index);
-        requireType('Z');
-        return booleanAt(index, getValue());
-    }
-
-    public byte getByteAt(int index) {
-        checkIndex(index);
-        requireType('B');
-        return byteAt(index, getValue());
-    }
-
-    public char getCharAt(int index) {
-        checkIndex(index);
-        requireType('C');
-        return charAt(index << 1, getValue());
-    }
-
-    public short getShortAt(int index) {
-        checkIndex(index);
-        requireType('S');
-        return shortAt(index << 1, getValue());
-    }
-
-    public int getIntAt(int index) {
-        checkIndex(index);
-        requireType('I');
-        return intAt(index << 2, getValue());
-    }
-
-    public long getLongAt(int index) {
-        checkIndex(index);
-        requireType('J');
-        return longAt(index << 3, getValue());
-    }
-
-    public float getFloatAt(int index) {
-        checkIndex(index);
-        requireType('F');
-        return floatAt(index << 2, getValue());
-    }
-
-    public double getDoubleAt(int index) {
-        checkIndex(index);
-        requireType('D');
-        return doubleAt(index << 3, getValue());
-    }
-
     public String valueString() {
         return valueString(true);
     }
@@ -347,15 +281,12 @@ public class JavaValueArray extends JavaLazyReadObject
     public String valueString(boolean bigLimit) {
         // Char arrays deserve special treatment
         StringBuilder result;
-        byte[] value = getValue();
-        int max = value.length;
+        JavaThing[] things = getValue();
         byte elementSignature = getElementType();
         if (elementSignature == 'C')  {
             result = new StringBuilder();
-            for (int i = 0; i < value.length; ) {
-                char val = charAt(i, value);
-                result.append(val);
-                i += 2;
+            for (int i = 0; i < things.length; i++) {
+                result.append(things[i]);
             }
         } else {
             int limit = 8;
@@ -363,61 +294,52 @@ public class JavaValueArray extends JavaLazyReadObject
                 limit = 1000;
             }
             result = new StringBuilder("{");
-            int num = 0;
-            for (int i = 0; i < value.length; ) {
-                if (num > 0) {
+            for (int i = 0; i < things.length; i++) {
+                if (i > 0) {
                     result.append(", ");
                 }
-                if (num >= limit) {
+                if (i >= limit) {
                     result.append("... ");
                     break;
                 }
-                num++;
                 switch (elementSignature) {
                     case 'Z': {
-                        boolean val = booleanAt(i, value);
+                        boolean val = ((JavaBoolean)things[i]).value;
                         if (val) {
                             result.append("true");
                         } else {
                             result.append("false");
                         }
-                        i++;
                         break;
                     }
                     case 'B': {
-                        int val = 0xFF & byteAt(i, value);
+                        byte val = ((JavaByte)things[i]).value;
                         result.append("0x").append(Integer.toString(val, 16));
-                        i++;
                         break;
                     }
                     case 'S': {
-                        short val = shortAt(i, value);
-                        i += 2;
+                        short val = ((JavaShort)things[i]).value;
                         result.append(val);
                         break;
                     }
                     case 'I': {
-                        int val = intAt(i, value);
-                        i += 4;
+                        int val = ((JavaInt)things[i]).value;
                         result.append(val);
                         break;
                     }
                     case 'J': {         // long
-                        long val = longAt(i, value);
+                        long val = ((JavaLong)things[i]).value;
                         result.append(val);
-                        i += 8;
                         break;
                     }
                     case 'F': {
-                        float val = floatAt(i, value);
+                        float val = ((JavaFloat)things[i]).value;
                         result.append(val);
-                        i += 4;
                         break;
                     }
                     case 'D': {         // double
-                        double val = doubleAt(i, value);
+                        double val = ((JavaDouble)things[i]).value;
                         result.append(val);
-                        i += 8;
                         break;
                     }
                     default: {
@@ -429,5 +351,4 @@ public class JavaValueArray extends JavaLazyReadObject
         }
         return result.toString();
     }
-
 }
