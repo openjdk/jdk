@@ -335,8 +335,12 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
     INCLUDE_GRAAL="true"
   else
-    # By default enable graal build where AOT is available
-    if test "x$ENABLE_AOT" = "xtrue"; then
+    # By default enable graal build on linux-x64 or where AOT is available.
+    # graal build requires jvmci.
+    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && \
+        (test "x$OPENJDK_TARGET_CPU" = "xx86_64" && \
+         test "x$OPENJDK_TARGET_OS" = "xlinux" || \
+         test "x$ENABLE_AOT" = "xtrue") ; then
       AC_MSG_RESULT([yes])
       JVM_FEATURES_graal="graal"
       INCLUDE_GRAAL="true"

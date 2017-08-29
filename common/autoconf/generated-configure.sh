@@ -5151,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1503919695
+DATE_WHEN_GENERATED=1504027321
 
 ###############################################################################
 #
@@ -65798,8 +65798,12 @@ $as_echo "yes, forced" >&6; }
     fi
     INCLUDE_GRAAL="true"
   else
-    # By default enable graal build where AOT is available
-    if test "x$ENABLE_AOT" = "xtrue"; then
+    # By default enable graal build on linux-x64 or where AOT is available.
+    # graal build requires jvmci.
+    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && \
+        (test "x$OPENJDK_TARGET_CPU" = "xx86_64" && \
+         test "x$OPENJDK_TARGET_OS" = "xlinux" || \
+         test "x$ENABLE_AOT" = "xtrue") ; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       JVM_FEATURES_graal="graal"
