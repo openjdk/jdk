@@ -412,7 +412,7 @@ public abstract class NumberFormat extends Format  {
      * For example in the English locale, with ParseIntegerOnly true, the
      * string "1234." would be parsed as the integer value 1234 and parsing
      * would stop at the "." character.  Of course, the exact format accepted
-     * by the parse operation is locale dependant and determined by sub-classes
+     * by the parse operation is locale dependent and determined by sub-classes
      * of NumberFormat.
      *
      * @return {@code true} if numbers should be parsed as integers only;
@@ -657,7 +657,7 @@ public abstract class NumberFormat extends Format  {
      * Returns true if grouping is used in this format. For example, in the
      * English locale, with grouping on, the number 1234567 might be formatted
      * as "1,234,567". The grouping separator as well as the size of each group
-     * is locale dependant and is determined by sub-classes of NumberFormat.
+     * is locale dependent and is determined by sub-classes of NumberFormat.
      *
      * @return {@code true} if grouping is used;
      *         {@code false} otherwise
