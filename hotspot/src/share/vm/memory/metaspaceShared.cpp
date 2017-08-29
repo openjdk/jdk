@@ -1613,6 +1613,8 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
     tty->print_cr("Dumping objects to open archive heap region ...");
     _open_archive_heap_regions = new GrowableArray<MemRegion>(2);
     MetaspaceShared::dump_open_archive_heap_objects(_open_archive_heap_regions);
+
+    MetaspaceShared::destroy_archive_object_cache();
   }
 
   G1HeapVerifier::verify_archive_regions();

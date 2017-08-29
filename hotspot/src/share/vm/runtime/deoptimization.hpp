@@ -136,6 +136,10 @@ class Deoptimization : AllStatic {
   static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map);
   static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason);
 
+#if INCLUDE_JVMCI
+  static address deoptimize_for_missing_exception_handler(CompiledMethod* cm);
+#endif
+
   private:
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);

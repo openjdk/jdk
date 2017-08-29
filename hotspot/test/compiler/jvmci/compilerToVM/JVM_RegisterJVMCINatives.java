@@ -35,9 +35,8 @@
  *      compiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives.positive=false
- *      -XX:-EnableJVMCI
+ *      -XX:-EnableJVMCI -XX:-UseJVMCICompiler
  *      compiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives
-
  */
 
 package compiler.jvmci.compilerToVM;

@@ -95,9 +95,21 @@ inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 #define strasm_nobarrier                  ""
 #define strasm_nobarrier_clobber_memory   ""
 
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
 
-  unsigned int result;
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(4 == sizeof(I));
+  STATIC_CAST(4 == sizeof(D));
+
+  D result;
 
   __asm__ __volatile__ (
     strasm_lwsync
@@ -110,13 +122,17 @@ inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
 
-  return (jint) result;
+  return result;
 }
 
 
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(8 == sizeof(I));
+  STATIC_CAST(8 == sizeof(D));
 
-  long result;
+  D result;
 
   __asm__ __volatile__ (
     strasm_lwsync
@@ -129,11 +145,7 @@ inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
 
-  return (intptr_t) result;
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add_ptr(add_value, (volatile intptr_t*)dest);
+  return result;
 }
 
 

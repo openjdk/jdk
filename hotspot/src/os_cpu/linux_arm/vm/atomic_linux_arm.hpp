@@ -91,9 +91,21 @@ inline void Atomic::store (jlong value, jlong* dest) {
 //
 // For ARMv7 we add explicit barriers in the stubs.
 
-inline jint Atomic::add(jint add_value, volatile jint* dest) {
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
 #ifdef AARCH64
-  jint val;
+  D val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -106,7 +118,7 @@ inline jint Atomic::add(jint add_value, volatile jint* dest) {
     : "memory");
   return val;
 #else
-  return (*os::atomic_add_func)(add_value, dest);
+  return add_using_helper<jint>(os::atomic_add_func, add_value, dest);
 #endif
 }
 
@@ -118,9 +130,13 @@ inline void Atomic::dec(volatile jint* dest) {
   Atomic::add(-1, (volatile jint *)dest);
 }
 
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
 #ifdef AARCH64
-  intptr_t val;
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
+  D val;
   int tmp;
   __asm__ volatile(
     "1:\n\t"
@@ -132,14 +148,8 @@ inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
     : [add_val] "r" (add_value), [dest] "r" (dest)
     : "memory");
   return val;
-#else
-  return (intptr_t)Atomic::add((jint)add_value, (volatile jint*)dest);
-#endif
 }
-
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest) {
-  return (void*)add_ptr(add_value, (volatile intptr_t*)dest);
-}
+#endif // AARCH64
 
 inline void Atomic::inc_ptr(volatile intptr_t* dest) {
   Atomic::add_ptr(1, dest);

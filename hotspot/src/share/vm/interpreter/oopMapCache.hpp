@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,17 +144,19 @@ class InterpreterOopMap: ResourceObj {
 };
 
 class OopMapCache : public CHeapObj<mtClass> {
+ static OopMapCacheEntry* volatile _old_entries;
  private:
   enum { _size        = 32,     // Use fixed size for now
          _probe_depth = 3       // probe depth in case of collisions
   };
 
-  OopMapCacheEntry* _array;
+  OopMapCacheEntry* volatile * _array;
 
   unsigned int hash_value_for(const methodHandle& method, int bci) const;
   OopMapCacheEntry* entry_at(int i) const;
+  bool put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old);
 
-  mutable Mutex _mut;
+  static void enqueue_for_cleanup(OopMapCacheEntry* entry);
 
   void flush();
 
@@ -167,13 +169,11 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Returns the oopMap for (method, bci) in parameter "entry".
   // Returns false if an oop map was not found.
-  void lookup(const methodHandle& method, int bci, InterpreterOopMap* entry) const;
+  void lookup(const methodHandle& method, int bci, InterpreterOopMap* entry);
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry);
-
-  // Returns total no. of bytes allocated as part of OopMapCache's
-  static long memory_usage()                     PRODUCT_RETURN0;
+  static void cleanup_old_entries();
 };
 
 #endif // SHARE_VM_INTERPRETER_OOPMAPCACHE_HPP

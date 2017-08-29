@@ -12658,6 +12658,64 @@ instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask m
   ins_pipe(ialu_reg_shift);
 %}
 
+// We can use ubfiz when masking by a positive number and then left shifting the result.
+// We know that the mask is positive because immI_bitmask guarantees it.
+instruct ubfizwI(iRegINoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
+%{
+  match(Set dst (LShiftI (AndI src mask) lshift));
+  predicate((unsigned int)n->in(2)->get_int() <= 31 &&
+    (exact_log2(n->in(1)->in(2)->get_int()+1) + (unsigned int)n->in(2)->get_int()) <= (31+1));
+
+  ins_cost(INSN_COST);
+  format %{ "ubfizw $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant;
+    long mask = $mask$$constant;
+    int width = exact_log2(mask+1);
+    __ ubfizw(as_Register($dst$$reg),
+          as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+// We can use ubfiz when masking by a positive number and then left shifting the result.
+// We know that the mask is positive because immL_bitmask guarantees it.
+instruct ubfizL(iRegLNoSp dst, iRegL src, immI lshift, immL_bitmask mask)
+%{
+  match(Set dst (LShiftL (AndL src mask) lshift));
+  predicate((unsigned int)n->in(2)->get_int() <= 63 &&
+    (exact_log2_long(n->in(1)->in(2)->get_long()+1) + (unsigned int)n->in(2)->get_int()) <= (63+1));
+
+  ins_cost(INSN_COST);
+  format %{ "ubfiz $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant;
+    long mask = $mask$$constant;
+    int width = exact_log2(mask+1);
+    __ ubfiz(as_Register($dst$$reg),
+          as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+// If there is a convert I to L block between and AndI and a LShiftL, we can also match ubfiz
+instruct ubfizIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI lshift, immI_bitmask mask)
+%{
+  match(Set dst (LShiftL (ConvI2L(AndI src mask)) lshift));
+  predicate((unsigned int)n->in(2)->get_int() <= 31 &&
+    (exact_log2((unsigned int)n->in(1)->in(1)->in(2)->get_int()+1) + (unsigned int)n->in(2)->get_int()) <= 32);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfiz $dst, $src, $lshift, $mask" %}
+  ins_encode %{
+    int lshift = $lshift$$constant;
+    long mask = $mask$$constant;
+    int width = exact_log2(mask+1);
+    __ ubfiz(as_Register($dst$$reg),
+             as_Register($src$$reg), lshift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
 // Rotations
 
 instruct extrOrL(iRegLNoSp dst, iRegL src1, iRegL src2, immI lshift, immI rshift, rFlagsReg cr)
