@@ -90,58 +90,6 @@
         .nonvolatile
         .end
 
-  // Support for jint Atomic::add(jint add_value, volatile jint* dest).
-  //
-  // Arguments:
-  //      add_value: O0   (e.g., +1 or -1)
-  //      dest:      O1
-  //
-  // Results:
-  //     O0: the new value stored in dest
-  //
-  // Overwrites O3
-
-        .inline _Atomic_add32, 2
-        .volatile
-    2:
-        ld      [%o1], %o2
-        add     %o0, %o2, %o3
-        cas     [%o1], %o2, %o3
-        cmp     %o2, %o3
-        bne     2b
-         nop
-        add     %o0, %o2, %o0
-        .nonvolatile
-        .end
-
-
-  // Support for intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest)
-  //
-  // 64-bit
-  //
-  // Arguments:
-  //      add_value: O0   (e.g., +1 or -1)
-  //      dest:      O1
-  //
-  // Results:
-  //     O0: the new value stored in dest
-  //
-  // Overwrites O3
-
-        .inline _Atomic_add64, 2
-        .volatile
-    3:
-        ldx     [%o1], %o2
-        add     %o0, %o2, %o3
-        casx    [%o1], %o2, %o3
-        cmp     %o2, %o3
-        bne     %xcc, 3b
-         nop
-        add     %o0, %o2, %o0
-        .nonvolatile
-        .end
-
-
   // Support for void Prefetch::read(void *loc, intx interval)
   //
   // Prefetch for several reads.

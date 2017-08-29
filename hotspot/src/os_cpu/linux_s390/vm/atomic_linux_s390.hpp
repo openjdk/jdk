@@ -82,8 +82,21 @@ inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *
 // The return value of the method is the value that was successfully stored. At the
 // time the caller receives back control, the value in memory may have changed already.
 
-inline jint Atomic::add(jint inc, volatile jint*dest) {
-  unsigned int old, upd;
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(4 == sizeof(I));
+  STATIC_CAST(4 == sizeof(D));
+
+  D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
     __asm__ __volatile__ (
@@ -124,12 +137,17 @@ inline jint Atomic::add(jint inc, volatile jint*dest) {
     );
   }
 
-  return (jint)upd;
+  return upd;
 }
 
 
-inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
-  unsigned long old, upd;
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(8 == sizeof(I));
+  STATIC_CAST(8 == sizeof(D));
+
+  D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
     __asm__ __volatile__ (
@@ -170,11 +188,7 @@ inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
     );
   }
 
-  return (intptr_t)upd;
-}
-
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest) {
-  return (void*)add_ptr(add_value, (volatile intptr_t*)dest);
+  return upd;
 }
 
 
