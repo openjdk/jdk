@@ -1066,7 +1066,7 @@ void ClassLoader::load_zip_library() {
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = NULL;
-  if (os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
+  if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
     handle = os::dll_load(path, ebuf, sizeof ebuf);
   }
   if (handle == NULL) {
@@ -1104,7 +1104,7 @@ void ClassLoader::load_jimage_library() {
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = NULL;
-  if (os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "jimage")) {
+  if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), "jimage")) {
     handle = os::dll_load(path, ebuf, sizeof ebuf);
   }
   if (handle == NULL) {

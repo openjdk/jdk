@@ -1419,53 +1419,6 @@ static bool file_exists(const char* filename) {
   return os::stat(filename, &statbuf) == 0;
 }
 
-bool os::dll_build_name(char* buffer, size_t buflen,
-                        const char* pname, const char* fname) {
-  bool retval = false;
-  // Copied from libhpi
-  const size_t pnamelen = pname ? strlen(pname) : 0;
-
-  // Return error on buffer overflow.
-  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
-    return retval;
-  }
-
-  if (pnamelen == 0) {
-    snprintf(buffer, buflen, "lib%s.so", fname);
-    retval = true;
-  } else if (strchr(pname, *os::path_separator()) != NULL) {
-    int n;
-    char** pelements = split_path(pname, &n);
-    if (pelements == NULL) {
-      return false;
-    }
-    for (int i = 0; i < n; i++) {
-      // Really shouldn't be NULL, but check can't hurt
-      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
-        continue; // skip the empty path values
-      }
-      snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
-      if (file_exists(buffer)) {
-        retval = true;
-        break;
-      }
-    }
-    // release the storage
-    for (int i = 0; i < n; i++) {
-      if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
-      }
-    }
-    if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
-    }
-  } else {
-    snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
-    retval = true;
-  }
-  return retval;
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
