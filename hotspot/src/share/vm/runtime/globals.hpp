@@ -2037,7 +2037,7 @@ public:
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
-          "MaxRAM / MaxRAMFraction")                                        \
+          "MaxRAM * MaxRAMPercentage / 100")                                \
           range(0, max_uintx)                                               \
                                                                             \
   experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
@@ -2046,17 +2046,33 @@ public:
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
-          "size")                                                           \
+          "size. "                                                          \
+          "Deprecated, use MaxRAMPercentage instead")                       \
           range(1, max_uintx)                                               \
                                                                             \
   product(uintx, MinRAMFraction, 2,                                         \
           "Minimum fraction (1/n) of real memory used for maximum heap "    \
-          "size on systems with small physical memory size")                \
+          "size on systems with small physical memory size. "               \
+          "Deprecated, use MinRAMPercentage instead")                       \
           range(1, max_uintx)                                               \
                                                                             \
   product(uintx, InitialRAMFraction, 64,                                    \
-          "Fraction (1/n) of real memory used for initial heap size")       \
+          "Fraction (1/n) of real memory used for initial heap size. "      \
+          "Deprecated, use InitialRAMPercentage instead")                   \
           range(1, max_uintx)                                               \
+                                                                            \
+  product(double, MaxRAMPercentage, 25.0,                                   \
+          "Maximum percentage of real memory used for maximum heap size")   \
+          range(0.0, 100.0)                                                 \
+                                                                            \
+  product(double, MinRAMPercentage, 50.0,                                   \
+          "Minimum percentage of real memory used for maximum heap"         \
+          "size on systems with small physical memory size")                \
+          range(0.0, 100.0)                                                 \
+                                                                            \
+  product(double, InitialRAMPercentage, 1.5625,                             \
+          "Percentage of real memory used for initial heap size")           \
+          range(0.0, 100.0)                                                 \
                                                                             \
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
