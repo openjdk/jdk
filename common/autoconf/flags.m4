@@ -1046,7 +1046,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   # Set some additional per-CPU defines.
   if test "x$OPENJDK_$1_OS-$OPENJDK_$1_CPU" = xwindows-x86; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -arch:IA32"
-  elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
+  elif test "x$OPENJDK_$1_OS-$OPENJDK_$1_CPU" = xsolaris-sparcv9; then
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS -xarch=sparc"
   elif test "x$OPENJDK_$1_CPU" = xppc64; then
     if test "x$OPENJDK_$1_OS" = xlinux; then
