@@ -87,11 +87,25 @@ class AixSymbols {
 
 class AixNativeCallstack {
  public:
+  // This function can be used independently from os::init();
   static void print_callstack_for_context(outputStream* st, const ucontext_t* uc,
                                           bool demangle,
                                           char* buf, size_t buf_size);
 };
 
+class AixMisc {
+ public:
+  struct stackbounds_t {
+    address base; // high address (stack grows down)
+    size_t size;
+  };
+
+  // Invokes pthread_getthrds_np() and returns its values. Note: values are
+  // not aligned to stack page sizes.
+  // This function can be used independently from os::init();
+  static bool query_stack_bounds_for_current_thread(stackbounds_t* out);
+
+};
 
 #endif // OS_AIX_VM_PORTING_AIX_HPP
 

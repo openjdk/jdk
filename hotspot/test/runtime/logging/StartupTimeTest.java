@@ -39,6 +39,7 @@ public class StartupTimeTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldMatch("(Genesis, [0-9]+.[0-9]+ secs)");
         output.shouldMatch("(Start VMThread, [0-9]+.[0-9]+ secs)");
+        output.shouldMatch("(Initialize module system, [0-9]+.[0-9]+ secs)");
         output.shouldMatch("(Create VM, [0-9]+.[0-9]+ secs)");
         output.shouldHaveExitValue(0);
     }
@@ -46,18 +47,6 @@ public class StartupTimeTest {
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("[startuptime]");
-        output.shouldHaveExitValue(0);
-    }
-
-    static void analyzeModulesOutputOn(ProcessBuilder pb) throws Exception {
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldMatch("(Phase2 initialization, [0-9]+.[0-9]+ secs)");
-        output.shouldHaveExitValue(0);
-    }
-
-    static void analyzeModulesOutputOff(ProcessBuilder pb) throws Exception {
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[module,startuptime]");
         output.shouldHaveExitValue(0);
     }
 
@@ -69,14 +58,6 @@ public class StartupTimeTest {
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime=off",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
-
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+module",
-                                                   InnerClass.class.getName());
-        analyzeModulesOutputOn(pb);
-
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:startuptime+module=off",
-                                                   InnerClass.class.getName());
-        analyzeModulesOutputOff(pb);
     }
 
     public static class InnerClass {

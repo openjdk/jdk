@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.nodes;
 
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
+import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
+
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -60,6 +63,32 @@ public final class PiArrayNode extends PiNode implements ArrayLengthProvider {
         return super.canonical(tool);
     }
 
-    @NodeIntrinsic
-    public static native Object piArrayCast(Object object, int length, @ConstantNodeParameter Stamp stamp);
+    /**
+     * Changes the stamp of an object inside a snippet to be the stamp of the node replaced by the
+     * snippet.
+     */
+    @NodeIntrinsic(Placeholder.class)
+    public static native Object piArrayCastToSnippetReplaceeStamp(Object object, int length);
+
+    /**
+     * A placeholder node in a snippet that will be replaced with a {@link PiArrayNode} when the
+     * snippet is instantiated.
+     */
+    @NodeInfo(cycles = CYCLES_0, size = SIZE_0)
+    public static class Placeholder extends PiNode.Placeholder {
+
+        public static final NodeClass<Placeholder> TYPE = NodeClass.create(Placeholder.class);
+        @Input ValueNode length;
+
+        protected Placeholder(ValueNode object, ValueNode length) {
+            super(TYPE, object);
+            this.length = length;
+        }
+
+        @Override
+        public void makeReplacement(Stamp snippetReplaceeStamp) {
+            PiArrayNode piArray = graph().addOrUnique(new PiArrayNode(object(), length, snippetReplaceeStamp));
+            replaceAndDelete(piArray);
+        }
+    }
 }

@@ -39,6 +39,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -619,19 +620,21 @@ class StubGenerator: public StubCodeGenerator {
 
   // Generate code for an array write pre barrier
   //
-  //     addr    -  starting address
-  //     count   -  element count
-  //     tmp     - scratch register
+  //     addr       - starting address
+  //     count      - element count
+  //     tmp        - scratch register
+  //     saved_regs - registers to be saved before calling static_write_ref_array_pre
   //
-  //     Destroy no registers except rscratch1 and rscratch2
+  //     Callers must specify which registers to preserve in saved_regs.
+  //     Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
   //
-  void  gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
+  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized, RegSet saved_regs) {
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
     case BarrierSet::G1SATBCTLogging:
       // With G1, don't generate the call if we statically know that the target in uninitialized
       if (!dest_uninitialized) {
-        __ push_call_clobbered_registers();
+        __ push(saved_regs, sp);
         if (count == c_rarg0) {
           if (addr == c_rarg1) {
             // exactly backwards!!
@@ -647,7 +650,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg1, count);
         }
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop_call_clobbered_registers();
+        __ pop(saved_regs, sp);
         break;
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
@@ -664,20 +667,23 @@ class StubGenerator: public StubCodeGenerator {
   // Generate code for an array write post barrier
   //
   //  Input:
-  //     start    - register containing starting address of destination array
-  //     end      - register containing ending address of destination array
-  //     scratch  - scratch register
+  //     start      - register containing starting address of destination array
+  //     end        - register containing ending address of destination array
+  //     scratch    - scratch register
+  //     saved_regs - registers to be saved before calling static_write_ref_array_post
   //
   //  The input registers are overwritten.
   //  The ending address is inclusive.
-  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch) {
+  //  Callers must specify which registers to preserve in saved_regs.
+  //  Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
+  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch, RegSet saved_regs) {
     assert_different_registers(start, end, scratch);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
       case BarrierSet::G1SATBCTLogging:
 
         {
-          __ push_call_clobbered_registers();
+          __ push(saved_regs, sp);
           // must compute element count unless barrier set interface is changed (other platforms supply count)
           assert_different_registers(start, end, scratch);
           __ lea(scratch, Address(end, BytesPerHeapOop));
@@ -686,7 +692,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop_call_clobbered_registers();
+          __ pop(saved_regs, sp);
         }
         break;
       case BarrierSet::CardTableForRS:
@@ -758,7 +764,7 @@ class StubGenerator: public StubCodeGenerator {
       // alignment.
       Label small;
       int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
-      __ cmp(cnt, low_limit >> 3);
+      __ subs(rscratch1, cnt, low_limit >> 3);
       __ br(Assembler::LT, small);
       __ zero_dcache_blocks(base, cnt);
       __ bind(small);
@@ -821,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     Label again, drain;
     const char *stub_name;
     if (direction == copy_forwards)
-      stub_name = "foward_copy_longs";
+      stub_name = "forward_copy_longs";
     else
       stub_name = "backward_copy_longs";
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -1438,6 +1444,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_copy(size_t size, bool aligned, bool is_oop, address *entry,
                                   const char *name, bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
+    RegSet saved_reg = RegSet::of(s, d, count);
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
@@ -1450,9 +1457,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     if (is_oop) {
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_reg);
+      // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
     copy_memory(aligned, s, d, count, rscratch1, size);
     if (is_oop) {
@@ -1461,7 +1468,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1);
+      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
     __ leave();
     __ mov(r0, zr); // return 0
@@ -1494,7 +1501,7 @@ class StubGenerator: public StubCodeGenerator {
                                  address *entry, const char *name,
                                  bool dest_uninitialized = false) {
     Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
-
+    RegSet saved_regs = RegSet::of(s, d, count);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
     __ enter();
@@ -1511,9 +1518,9 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::HS, nooverlap_target);
 
     if (is_oop) {
+      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_regs);
+      // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
-      // no registers are destroyed by this call
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized);
     }
     copy_memory(aligned, s, d, count, rscratch1, -size);
     if (is_oop) {
@@ -1522,7 +1529,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1);
+      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
     __ leave();
     __ mov(r0, zr); // return 0
@@ -1804,6 +1811,9 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckoff       = c_rarg3;   // super_check_offset
     const Register ckval       = c_rarg4;   // super_klass
 
+    RegSet wb_pre_saved_regs = RegSet::range(c_rarg0, c_rarg4);
+    RegSet wb_post_saved_regs = RegSet::of(count);
+
     // Registers used as temps (r18, r19, r20 are save-on-entry)
     const Register count_save  = r21;       // orig elementscount
     const Register start_to    = r20;       // destination array start address
@@ -1861,7 +1871,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized, wb_pre_saved_regs);
 
     // save the original count
     __ mov(count_save, count);
@@ -1905,7 +1915,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_do_card_marks);
     __ add(to, to, -heapOopSize);         // make an inclusive end pointer
-    gen_write_ref_array_post_barrier(start_to, to, rscratch1);
+    gen_write_ref_array_post_barrier(start_to, to, rscratch1, wb_post_saved_regs);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r18, r19, r20, r21), sp);
@@ -3660,6 +3670,167 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(result, __ T16B, lo, t0);
   }
 
+  address generate_has_negatives(address &has_negatives_long) {
+    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+    const int large_loop_size = 64;
+    const uint64_t UPPER_BIT_MASK=0x8080808080808080;
+    int dcache_line = VM_Version::dcache_line_size();
+
+    Register ary1 = r1, len = r2, result = r0;
+
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+
+    __ enter();
+
+  Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16, DONE,
+        LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
+
+  __ cmp(len, 15);
+  __ br(Assembler::GT, LEN_OVER_15);
+  // The only case when execution falls into this code is when pointer is near
+  // the end of memory page and we have to avoid reading next page
+  __ add(ary1, ary1, len);
+  __ subs(len, len, 8);
+  __ br(Assembler::GT, LEN_OVER_8);
+  __ ldr(rscratch2, Address(ary1, -8));
+  __ sub(rscratch1, zr, len, __ LSL, 3);  // LSL 3 is to get bits from bytes.
+  __ lsrv(rscratch2, rscratch2, rscratch1);
+  __ tst(rscratch2, UPPER_BIT_MASK);
+  __ cset(result, Assembler::NE);
+  __ leave();
+  __ ret(lr);
+  __ bind(LEN_OVER_8);
+  __ ldp(rscratch1, rscratch2, Address(ary1, -16));
+  __ sub(len, len, 8); // no data dep., then sub can be executed while loading
+  __ tst(rscratch2, UPPER_BIT_MASK);
+  __ br(Assembler::NE, RET_TRUE_NO_POP);
+  __ sub(rscratch2, zr, len, __ LSL, 3); // LSL 3 is to get bits from bytes
+  __ lsrv(rscratch1, rscratch1, rscratch2);
+  __ tst(rscratch1, UPPER_BIT_MASK);
+  __ cset(result, Assembler::NE);
+  __ leave();
+  __ ret(lr);
+
+  Register tmp1 = r3, tmp2 = r4, tmp3 = r5, tmp4 = r6, tmp5 = r7, tmp6 = r10;
+  const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
+
+  has_negatives_long = __ pc(); // 2nd entry point
+
+  __ enter();
+
+  __ bind(LEN_OVER_15);
+    __ push(spilled_regs, sp);
+    __ andr(rscratch2, ary1, 15); // check pointer for 16-byte alignment
+    __ cbz(rscratch2, ALIGNED);
+    __ ldp(tmp6, tmp1, Address(ary1));
+    __ mov(tmp5, 16);
+    __ sub(rscratch1, tmp5, rscratch2); // amount of bytes until aligned address
+    __ add(ary1, ary1, rscratch1);
+    __ sub(len, len, rscratch1);
+    __ orr(tmp6, tmp6, tmp1);
+    __ tst(tmp6, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+
+  __ bind(ALIGNED);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::LT, CHECK_16);
+    // Perform 16-byte load as early return in pre-loop to handle situation
+    // when initially aligned large array has negative values at starting bytes,
+    // so LARGE_LOOP would do 4 reads instead of 1 (in worst case), which is
+    // slower. Cases with negative bytes further ahead won't be affected that
+    // much. In fact, it'll be faster due to early loads, less instructions and
+    // less branches in LARGE_LOOP.
+    __ ldp(tmp6, tmp1, Address(__ post(ary1, 16)));
+    __ sub(len, len, 16);
+    __ orr(tmp6, tmp6, tmp1);
+    __ tst(tmp6, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::LT, CHECK_16);
+
+    if (SoftwarePrefetchHintDistance >= 0
+        && SoftwarePrefetchHintDistance >= dcache_line) {
+      // initial prefetch
+      __ prfm(Address(ary1, SoftwarePrefetchHintDistance - dcache_line));
+    }
+  __ bind(LARGE_LOOP);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ prfm(Address(ary1, SoftwarePrefetchHintDistance));
+    }
+    // Issue load instructions first, since it can save few CPU/MEM cycles, also
+    // instead of 4 triples of "orr(...), addr(...);cbnz(...);" (for each ldp)
+    // better generate 7 * orr(...) + 1 andr(...) + 1 cbnz(...) which saves 3
+    // instructions per cycle and have less branches, but this approach disables
+    // early return, thus, all 64 bytes are loaded and checked every time.
+    __ ldp(tmp2, tmp3, Address(ary1));
+    __ ldp(tmp4, tmp5, Address(ary1, 16));
+    __ ldp(rscratch1, rscratch2, Address(ary1, 32));
+    __ ldp(tmp6, tmp1, Address(ary1, 48));
+    __ add(ary1, ary1, large_loop_size);
+    __ sub(len, len, large_loop_size);
+    __ orr(tmp2, tmp2, tmp3);
+    __ orr(tmp4, tmp4, tmp5);
+    __ orr(rscratch1, rscratch1, rscratch2);
+    __ orr(tmp6, tmp6, tmp1);
+    __ orr(tmp2, tmp2, tmp4);
+    __ orr(rscratch1, rscratch1, tmp6);
+    __ orr(tmp2, tmp2, rscratch1);
+    __ tst(tmp2, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, large_loop_size);
+    __ br(Assembler::GE, LARGE_LOOP);
+
+  __ bind(CHECK_16); // small 16-byte load pre-loop
+    __ cmp(len, 16);
+    __ br(Assembler::LT, POST_LOOP16);
+
+  __ bind(LOOP16); // small 16-byte load loop
+    __ ldp(tmp2, tmp3, Address(__ post(ary1, 16)));
+    __ sub(len, len, 16);
+    __ orr(tmp2, tmp2, tmp3);
+    __ tst(tmp2, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    __ cmp(len, 16);
+    __ br(Assembler::GE, LOOP16); // 16-byte load loop end
+
+  __ bind(POST_LOOP16); // 16-byte aligned, so we can read unconditionally
+    __ cmp(len, 8);
+    __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
+    __ ldr(tmp3, Address(__ post(ary1, 8)));
+    __ sub(len, len, 8);
+    __ tst(tmp3, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+
+  __ bind(POST_LOOP16_LOAD_TAIL);
+    __ cbz(len, RET_FALSE); // Can't shift left by 64 when len==0
+    __ ldr(tmp1, Address(ary1));
+    __ mov(tmp2, 64);
+    __ sub(tmp4, tmp2, len, __ LSL, 3);
+    __ lslv(tmp1, tmp1, tmp4);
+    __ tst(tmp1, UPPER_BIT_MASK);
+    __ br(Assembler::NE, RET_TRUE);
+    // Fallthrough
+
+  __ bind(RET_FALSE);
+    __ pop(spilled_regs, sp);
+    __ leave();
+    __ mov(result, zr);
+    __ ret(lr);
+
+  __ bind(RET_TRUE);
+    __ pop(spilled_regs, sp);
+  __ bind(RET_TRUE_NO_POP);
+    __ leave();
+    __ mov(result, 1);
+    __ ret(lr);
+
+  __ bind(DONE);
+    __ pop(spilled_regs, sp);
+    __ leave();
+    __ ret(lr);
+    return entry;
+  }
   /**
    *  Arguments:
    *
@@ -4676,6 +4847,7 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
+
   // Initialization
   void generate_initial() {
     // Generate initial stubs and initializes the entry points
@@ -4733,6 +4905,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // has negatives stub for large arrays.
+    StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

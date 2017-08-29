@@ -121,17 +121,6 @@ class ClassFileStream: public ResourceObj {
     return res;
   }
 
-  // Get direct pointer into stream at current position.
-  // Returns NULL if length elements are not remaining. The caller is
-  // responsible for calling skip below if buffer contents is used.
-  const u1* get_u1_buffer() const {
-    return _current;
-  }
-
-  const u2* get_u2_buffer() const {
-    return (const u2*) _current;
-  }
-
   // Skip length u1 or u2 elements from stream
   void skip_u1(int length, TRAPS) const;
   void skip_u1_fast(int length) const {

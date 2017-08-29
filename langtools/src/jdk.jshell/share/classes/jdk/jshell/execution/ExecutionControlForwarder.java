@@ -45,6 +45,12 @@ import static jdk.jshell.execution.RemoteCodes.*;
 class ExecutionControlForwarder {
 
     /**
+     * Represent null in a streamed UTF string. Vanishingly improbable string to
+     * occur in a user string.
+     */
+    static final String NULL_MARKER = "\u0002*\u03C0*NULL*\u03C0*\u0003";
+
+    /**
      * Maximum number of characters for writeUTF().  Byte maximum is 65535, at
      * maximum three bytes per character that is 65535 / 3 == 21845.  Minus one
      * for safety.
@@ -91,6 +97,10 @@ class ExecutionControlForwarder {
 
     private void writeInt(int i) throws IOException {
         out.writeInt(i);
+    }
+
+    private void writeNullOrUTF(String s) throws IOException {
+        writeUTF(s == null ? NULL_MARKER : s);
     }
 
     private void writeUTF(String s) throws IOException {
@@ -197,7 +207,7 @@ class ExecutionControlForwarder {
             return true;
         } catch (UserException ex) {
             writeStatus(RESULT_USER_EXCEPTION);
-            writeUTF(ex.getMessage());
+            writeNullOrUTF(ex.getMessage());
             writeUTF(ex.causeExceptionClass());
             writeObject(ex.getStackTrace());
             flush();
@@ -213,8 +223,10 @@ class ExecutionControlForwarder {
             flush();
             return true;
         } catch (Throwable ex) {
+            // Unexpected exception, have something in the message
             writeStatus(RESULT_TERMINATED);
-            writeUTF(ex.getMessage());
+            String msg = ex.getMessage();
+            writeUTF(msg == null? ex.toString() : msg);
             flush();
             return false;
         }

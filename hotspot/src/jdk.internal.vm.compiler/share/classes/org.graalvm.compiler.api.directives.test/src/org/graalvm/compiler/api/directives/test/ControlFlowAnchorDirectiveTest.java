@@ -220,7 +220,7 @@ public class ControlFlowAnchorDirectiveTest extends GraalCompilerTest {
     @Test
     public void testClone() {
         StructuredGraph g = parseEager("preventPeelSnippet", AllowAssumptions.NO);
-        g.copy();
+        g.copy(g.getDebug());
     }
 
     private static List<NodeCount> getNodeCountAnnotations(StructuredGraph graph) {

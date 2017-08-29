@@ -30,6 +30,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "nativeInst_x86.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 #if INCLUDE_ALL_GCS
@@ -290,7 +291,7 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
   // very hard to make a guess about what code might be in the icache.
   // Force the instruction to be double word aligned so that it
   // doesn't span a cache line.
-  masm->align(round_to(NativeGeneralJump::instruction_size, wordSize));
+  masm->align(align_up((int)NativeGeneralJump::instruction_size, wordSize));
 }
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {

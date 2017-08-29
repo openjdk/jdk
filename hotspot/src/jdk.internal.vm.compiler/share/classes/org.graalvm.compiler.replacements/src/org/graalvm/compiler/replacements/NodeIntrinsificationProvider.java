@@ -50,7 +50,7 @@ public class NodeIntrinsificationProvider implements InjectionProvider {
     }
 
     @Override
-    public Stamp getReturnStamp(Class<?> type, boolean nonNull) {
+    public Stamp getInjectedStamp(Class<?> type, boolean nonNull) {
         JavaKind kind = JavaKind.fromJavaClass(type);
         if (kind == JavaKind.Object) {
             ResolvedJavaType returnType = metaAccess.lookupJavaType(type);

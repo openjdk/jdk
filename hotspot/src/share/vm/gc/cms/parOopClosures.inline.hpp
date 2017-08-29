@@ -31,6 +31,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 
 template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
   assert (!oopDesc::is_null(*p), "null weak reference?");
@@ -90,11 +91,12 @@ inline void ParScanClosure::do_oop_work(T* p,
         assert((HeapWord*)obj < (HeapWord*)p, "Error");
         log.error("Object: " PTR_FORMAT, p2i((void *)obj));
         log.error("-------");
-        obj->print_on(log.error_stream());
+        LogStream ls(log.error());
+        obj->print_on(&ls);
         log.error("-----");
         log.error("Heap:");
         log.error("-----");
-        gch->print_on(log.error_stream());
+        gch->print_on(&ls);
         ShouldNotReachHere();
       }
 #endif

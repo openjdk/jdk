@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "oops/oop.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
+#include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
 
 // A Method represents a Java method.
@@ -65,6 +66,8 @@ class Method : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
+  // If you add a new field that points to any metaspace object, you
+  // must add this field to Method::metaspace_pointers_do().
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
@@ -122,11 +125,6 @@ class Method : public Metadata {
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.
   Method(){}
 
-  // The Method vtable is restored by this call when the Method is in the
-  // shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
-  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
-  // by their vtable.
-  void restore_vtable() { guarantee(is_method(), "vtable restored by this call"); }
   bool is_method() const volatile { return true; }
 
   void restore_unshareable_info(TRAPS);
@@ -137,7 +135,7 @@ class Method : public Metadata {
   void set_constMethod(ConstMethod* xconst)    { _constMethod = xconst; }
 
 
-  static address make_adapters(methodHandle mh, TRAPS);
+  static address make_adapters(const methodHandle& mh, TRAPS);
   volatile address from_compiled_entry() const   { return (address)OrderAccess::load_ptr_acquire(&_from_compiled_entry); }
   volatile address from_compiled_entry_no_trampoline() const;
   volatile address from_interpreted_entry() const{ return (address)OrderAccess::load_ptr_acquire(&_from_interpreted_entry); }
@@ -328,7 +326,7 @@ class Method : public Metadata {
   // exception handler which caused the exception to be thrown, which
   // is needed for proper retries. See, for example,
   // InterpreterRuntime::exception_handler_for_exception.
-  static int fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS);
+  static int fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS);
 
   // method data access
   MethodData* method_data() const              {
@@ -456,7 +454,7 @@ class Method : public Metadata {
   bool check_code() const;      // Not inline to avoid circular ref
   CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return (CompiledMethod *)OrderAccess::load_ptr_acquire(&_code); }
   void clear_code(bool acquire_lock = true);    // Clear out any compiled code
-  static void set_code(methodHandle mh, CompiledMethod* code);
+  static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     constMethod()->set_adapter_entry(adapter);
   }
@@ -474,6 +472,9 @@ class Method : public Metadata {
   void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual MetaspaceObj::Type type() const { return MethodType; }
 
   // vtable index
   enum VtableIndexFlag {
@@ -672,7 +673,7 @@ class Method : public Metadata {
 
   // sizing
   static int header_size()                       {
-    return align_size_up(sizeof(Method), wordSize) / wordSize;
+    return align_up((int)sizeof(Method), wordSize) / wordSize;
   }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
@@ -780,7 +781,7 @@ class Method : public Metadata {
   void set_is_prefixed_native()                     { _access_flags.set_is_prefixed_native(); }
 
   // Rewriting support
-  static methodHandle clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
+  static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                           u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS);
 
   // jmethodID handling
@@ -818,8 +819,7 @@ class Method : public Metadata {
   static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
-  jmethodID jmethod_id()                            { methodHandle this_h(this);
-                                                      return InstanceKlass::get_jmethod_id(method_holder(), this_h); }
+  jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }
 
   // Lookup the jmethodID for this method.  Return NULL if not found.
   // NOTE that this function can be called from a signal handler
@@ -959,10 +959,10 @@ class Method : public Metadata {
   void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
 
   // Resolve all classes in signature, return 'true' if successful
-  static bool load_signature_classes(methodHandle m, TRAPS);
+  static bool load_signature_classes(const methodHandle& m, TRAPS);
 
   // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(methodHandle m, TRAPS);
+  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
 
   // Printing
   void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM

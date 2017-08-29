@@ -27,7 +27,7 @@
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 
 inline size_t ParallelScavengeHeap::total_invocations() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "memory/universe.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 
-KlassStream::KlassStream(instanceKlassHandle klass, bool local_only,
+KlassStream::KlassStream(InstanceKlass* klass, bool local_only,
                          bool classes_only, bool walk_defaults) {
   _klass = _base_klass = klass;
   _base_class_search_defaults = false;
@@ -48,7 +48,7 @@ bool KlassStream::eos() {
   if (_local_only) return true;
   if (!_klass->is_interface() && _klass->super() != NULL) {
     // go up superclass chain (not for interfaces)
-    _klass = _klass->super();
+    _klass = InstanceKlass::cast(_klass->super());
   // Next for method walks, walk default methods
   } else if (_walk_defaults && (_defaults_checked == false)  && (_base_klass->default_methods() != NULL)) {
       _base_class_search_defaults = true;
@@ -57,7 +57,7 @@ bool KlassStream::eos() {
   } else {
     // Next walk transitive interfaces
     if (_interface_index > 0) {
-      _klass = _interfaces->at(--_interface_index);
+      _klass = InstanceKlass::cast(_interfaces->at(--_interface_index));
     } else {
       return true;
     }

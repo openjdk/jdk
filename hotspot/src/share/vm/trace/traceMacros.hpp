@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ extern "C" void JNICALL trace_register_natives(JNIEnv*, jclass);
 #define TRACE_INITIALIZE() JNI_OK
 #define TRACE_VM_EXIT()
 #define TRACE_VM_ERROR()
+#define TRACE_SUSPEND_THREAD(t)
 
 #define TRACE_DEFINE_TRACE_ID_METHODS typedef int ___IGNORED_hs_trace_type1
 #define TRACE_DEFINE_TRACE_ID_FIELD typedef int ___IGNORED_hs_trace_type2

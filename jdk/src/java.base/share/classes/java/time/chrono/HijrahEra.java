@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,13 @@ package java.time.chrono;
 import static java.time.temporal.ChronoField.ERA;
 
 import java.time.DateTimeException;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
+import java.util.Locale;
 
 /**
  * An era in the Hijrah calendar system.
@@ -155,4 +158,18 @@ public enum HijrahEra implements Era {
         return Era.super.range(field);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param style {@inheritDoc}
+     * @param locale {@inheritDoc}
+     */
+    @Override
+    public String getDisplayName(TextStyle style, Locale locale) {
+        return new DateTimeFormatterBuilder()
+            .appendText(ERA, style)
+            .toFormatter(locale)
+            .withChronology(HijrahChronology.INSTANCE)
+            .format(HijrahDate.now());
+    }
 }

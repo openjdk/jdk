@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
@@ -65,7 +66,10 @@
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/stack.inline.hpp"
 
 #include <math.h>
@@ -202,7 +206,8 @@ void PSParallelCompact::print_region_ranges() {
   }
   Log(gc, compaction) log;
   ResourceMark rm;
-  Universe::print_on(log.trace_stream());
+  LogStream ls(log.trace());
+  Universe::print_on(&ls);
   log.trace("space  bottom     top        end        new_top");
   log.trace("------ ---------- ---------- ---------- ----------");
 
@@ -429,7 +434,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
+  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
   const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
@@ -1036,7 +1041,11 @@ void PSParallelCompact::post_compact()
   DerivedPointerTable::update_pointers();
 #endif
 
-  ref_processor()->enqueue_discovered_references(NULL);
+  ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_q());
+
+  ref_processor()->enqueue_discovered_references(NULL, &pt);
+
+  pt.print_enqueue_phase();
 
   if (ZapUnusedHeapArea) {
     heap->gen_mangle_unused_area();
@@ -1981,7 +1990,7 @@ bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_po
   const size_t alignment = old_gen->virtual_space()->alignment();
   const size_t eden_used = eden_space->used_in_bytes();
   const size_t promoted = (size_t)size_policy->avg_promoted()->padded_average();
-  const size_t absorb_size = align_size_up(eden_used + promoted, alignment);
+  const size_t absorb_size = align_up(eden_used + promoted, alignment);
   const size_t eden_capacity = eden_space->capacity_in_bytes();
 
   if (absorb_size >= eden_capacity) {
@@ -2098,18 +2107,20 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
     ReferenceProcessorStats stats;
+    ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_q());
     if (ref_processor()->processing_is_mt()) {
       RefProcTaskExecutor task_executor;
       stats = ref_processor()->process_discovered_references(
         is_alive_closure(), &mark_and_push_closure, &follow_stack_closure,
-        &task_executor, &_gc_timer);
+        &task_executor, &pt);
     } else {
       stats = ref_processor()->process_discovered_references(
         is_alive_closure(), &mark_and_push_closure, &follow_stack_closure, NULL,
-        &_gc_timer);
+        &pt);
     }
 
     gc_tracer->report_gc_reference_stats(stats);
+    pt.print_all_references();
   }
 
   // This is the point where the entire marking should have completed.
@@ -2119,7 +2130,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
     // Follow system dictionary roots and unload classes.
-    bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
+    bool purged_class = SystemDictionary::do_unloading(is_alive_closure(), &_gc_timer);
 
     // Unload nmethods.
     CodeCache::do_unloading(is_alive_closure(), purged_class);
@@ -2368,7 +2379,8 @@ void PSParallelCompact::write_block_fill_histogram()
 
   Log(gc, compaction) log;
   ResourceMark rm;
-  outputStream* out = log.trace_stream();
+  LogStream ls(log.trace());
+  outputStream* out = &ls;
 
   typedef ParallelCompactData::RegionData rd_t;
   ParallelCompactData& sd = summary_data();
@@ -3153,6 +3165,14 @@ ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
   return ParMarkBitMap::incomplete;
+}
+
+FillClosure::FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
+  ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
+  _start_array(PSParallelCompact::start_array(space_id))
+{
+  assert(space_id == PSParallelCompact::old_space_id,
+         "cannot use FillClosure in the young gen");
 }
 
 ParMarkBitMapClosure::IterationStatus

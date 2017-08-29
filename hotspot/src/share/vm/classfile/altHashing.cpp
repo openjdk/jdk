@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 // return a random number, which is one of the possible hash code used for
 // objects.  We don't want to call the synchronizer hash code to install
 // this value because it may safepoint.
-intptr_t object_hash(Klass* k) {
+static intptr_t object_hash(Klass* k) {
   intptr_t hc = k->java_mirror()->mark()->hash();
   return hc != markOopDesc::no_hash ? hc : os::random();
 }
@@ -45,7 +45,7 @@ juint AltHashing::compute_seed() {
   int SEED_MATERIAL[8] = {
             (int) object_hash(SystemDictionary::String_klass()),
             (int) object_hash(SystemDictionary::System_klass()),
-            (int) os::random(),  // current thread isn't a java thread
+            os::random(),  // current thread isn't a java thread
             (int) (((julong)nanos) >> 32),
             (int) nanos,
             (int) (((julong)now) >> 32),

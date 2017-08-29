@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1844,8 +1844,8 @@ void ArchDesc::declareClasses(FILE *fp) {
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
-        instr->_matrule != NULL &&
-        instr->num_opnds() != instr->num_unique_opnds() ) {
+        (instr->_matrule != NULL &&
+         instr->num_opnds() != instr->num_unique_opnds()) ) {
       fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");
     }
 

@@ -496,6 +496,8 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
       C->log()->inline_fail(inline_msg);
     }
   }
+  CompileTask::print_inlining_ul(callee_method, inline_level(),
+                                               caller_bci, inline_msg);
   if (C->print_inlining()) {
     C->print_inlining(callee_method, inline_level(), caller_bci, inline_msg);
     if (callee_method == NULL) tty->print(" callee not monotonic or profiled");

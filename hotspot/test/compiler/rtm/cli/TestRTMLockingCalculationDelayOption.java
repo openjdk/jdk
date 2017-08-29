@@ -39,11 +39,11 @@ public class TestRTMLockingCalculationDelayOption
     private static final String DEFAULT_VALUE = "0";
 
     private TestRTMLockingCalculationDelayOption() {
-        super(Boolean.TRUE::booleanValue, "RTMLockingCalculationDelay", false,
+        super("RTMLockingCalculationDelay", false,
                 true, TestRTMLockingCalculationDelayOption.DEFAULT_VALUE);
     }
 
     public static void main(String agrs[]) throws Throwable {
-        new TestRTMLockingCalculationDelayOption().test();
+        new TestRTMLockingCalculationDelayOption().runTestCases();
     }
 }

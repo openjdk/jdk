@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,15 +56,6 @@ inline void Atomic::store    (jint     store_value, volatile jint*     dest) { *
 
 inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *dest = store_value; }
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
-
-// Adding a lock prefix to an instruction on MP machine
-// VC++ doesn't like the lock prefix to be on a single line
-// so we can't insert a label after the lock prefix.
-// By emitting a lock prefix, we can define a label after it.
-#define LOCK_IF_MP(mp) __asm cmp mp, 0  \
-                       __asm je L0      \
-                       __asm _emit 0xF0 \
-                       __asm L0:
 
 #ifdef AMD64
 inline void Atomic::store    (jlong    store_value, jlong*    dest) { *dest = store_value; }
@@ -139,18 +130,16 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
 }
 
-inline jlong Atomic::load(volatile jlong* src) { return *src; }
+inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 
 #else // !AMD64
 
 inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
-  int mp = os::is_MP();
   __asm {
     mov edx, dest;
     mov eax, add_value;
     mov ecx, eax;
-    LOCK_IF_MP(mp)
-    xadd dword ptr [edx], eax;
+    lock xadd dword ptr [edx], eax;
     add eax, ecx;
   }
 }
@@ -165,11 +154,9 @@ inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
 
 inline void Atomic::inc    (volatile jint*     dest) {
   // alternative for InterlockedIncrement
-  int mp = os::is_MP();
   __asm {
     mov edx, dest;
-    LOCK_IF_MP(mp)
-    add dword ptr [edx], 1;
+    lock add dword ptr [edx], 1;
   }
 }
 
@@ -183,11 +170,9 @@ inline void Atomic::inc_ptr(volatile void*     dest) {
 
 inline void Atomic::dec    (volatile jint*     dest) {
   // alternative for InterlockedDecrement
-  int mp = os::is_MP();
   __asm {
     mov edx, dest;
-    LOCK_IF_MP(mp)
-    sub dword ptr [edx], 1;
+    lock sub dword ptr [edx], 1;
   }
 }
 
@@ -219,30 +204,25 @@ inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     des
 #define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
 inline jbyte    Atomic::cmpxchg    (jbyte    exchange_value, volatile jbyte*    dest, jbyte    compare_value, cmpxchg_memory_order order) {
   // alternative for InterlockedCompareExchange
-  int mp = os::is_MP();
   __asm {
     mov edx, dest
     mov cl, exchange_value
     mov al, compare_value
-    LOCK_IF_MP(mp)
-    cmpxchg byte ptr [edx], cl
+    lock cmpxchg byte ptr [edx], cl
   }
 }
 
 inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value, cmpxchg_memory_order order) {
   // alternative for InterlockedCompareExchange
-  int mp = os::is_MP();
   __asm {
     mov edx, dest
     mov ecx, exchange_value
     mov eax, compare_value
-    LOCK_IF_MP(mp)
-    cmpxchg dword ptr [edx], ecx
+    lock cmpxchg dword ptr [edx], ecx
   }
 }
 
 inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-  int mp = os::is_MP();
   jint ex_lo  = (jint)exchange_value;
   jint ex_hi  = *( ((jint*)&exchange_value) + 1 );
   jint cmp_lo = (jint)compare_value;
@@ -255,8 +235,7 @@ inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    
     mov edi, dest
     mov ebx, ex_lo
     mov ecx, ex_hi
-    LOCK_IF_MP(mp)
-    cmpxchg8b qword ptr [edi]
+    lock cmpxchg8b qword ptr [edi]
     pop edi
     pop ebx
   }
@@ -270,7 +249,7 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value, order);
 }
 
-inline jlong Atomic::load(volatile jlong* src) {
+inline jlong Atomic::load(const volatile jlong* src) {
   volatile jlong dest;
   volatile jlong* pdest = &dest;
   __asm {

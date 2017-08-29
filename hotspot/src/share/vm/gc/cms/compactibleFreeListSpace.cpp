@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "logging/logStream.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
 /////////////////////////////////////////////////////////////////////////
@@ -64,7 +66,7 @@ void CompactibleFreeListSpace::set_cms_values() {
 
   // MinChunkSize should be a multiple of MinObjAlignment and be large enough
   // for chunks to contain a FreeChunk.
-  size_t min_chunk_size_in_bytes = align_size_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
+  size_t min_chunk_size_in_bytes = align_up(sizeof(FreeChunk), MinObjAlignmentInBytes);
   MinChunkSize = min_chunk_size_in_bytes / BytesPerWord;
 
   assert(IndexSetStart == 0 && IndexSetStride == 0, "already set");
@@ -797,7 +799,7 @@ void CompactibleFreeListSpace::object_iterate_mem(MemRegion mr,
   // because the two are not necessarily equal for some kinds of
   // spaces, in particular, certain kinds of free list spaces.
   // We could use the more complicated but more precise:
-  // MemRegion(used_region().start(), round_to(used_region().end(), CardSize))
+  // MemRegion(used_region().start(), align_up(used_region().end(), CardSize))
   // but the slight imprecision seems acceptable in the assertion check.
   assert(MemRegion(bottom(), end()).contains(mr),
          "Should be within used space");
@@ -858,7 +860,7 @@ CompactibleFreeListSpace::object_iterate_careful_m(MemRegion mr,
   assert_lock_strong(freelistLock());
   // Can't use used_region() below because it may not necessarily
   // be the same as [bottom(),end()); although we could
-  // use [used_region().start(),round_to(used_region().end(),CardSize)),
+  // use [used_region().start(),align_up(used_region().end(),CardSize)),
   // that appears too cumbersome, so we just do the simpler check
   // in the assertion below.
   assert(!mr.is_empty() && MemRegion(bottom(),end()).contains(mr),
@@ -1201,7 +1203,7 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
 
   size_t i;
   size_t currSize = numWords + MinChunkSize;
-  assert(currSize % MinObjAlignment == 0, "currSize should be aligned");
+  assert(is_object_aligned(currSize), "currSize should be aligned");
   for (i = currSize; i < IndexSetSize; i += IndexSetStride) {
     AdaptiveFreeList<FreeChunk>* fl = &_indexedFreeList[i];
     if (fl->head()) {
@@ -1532,8 +1534,7 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size,
-                                         FreeBlockDictionary<FreeChunk>::atLeast);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return NULL;
   }
@@ -1550,8 +1551,7 @@ CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->get_chunk(size,
-                                         FreeBlockDictionary<FreeChunk>::atLeast);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return fc;
   }
@@ -1564,8 +1564,7 @@ CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   if (fc->size() < size + MinChunkSize) {
     // Return the chunk to the dictionary and go get a bigger one.
     returnChunkToDictionary(fc);
-    fc = _dictionary->get_chunk(size + MinChunkSize,
-                                FreeBlockDictionary<FreeChunk>::atLeast);
+    fc = _dictionary->get_chunk(size + MinChunkSize);
     if (fc == NULL) {
       return NULL;
     }
@@ -1735,7 +1734,7 @@ FreeChunk* CompactibleFreeListSpace::bestFitSmall(size_t numWords) {
     AdaptiveFreeList<FreeChunk>* it   = _indexedFreeList;
     size_t    hint = _indexedFreeList[start].hint();
     while (hint < IndexSetSize) {
-      assert(hint % MinObjAlignment == 0, "hint should be aligned");
+      assert(is_object_aligned(hint), "hint should be aligned");
       AdaptiveFreeList<FreeChunk> *fl = &_indexedFreeList[hint];
       if (fl->surplus() > 0 && fl->head() != NULL) {
         // Found a list with surplus, reset original hint
@@ -2196,8 +2195,8 @@ class VerifyAllBlksClosure: public BlkClosure {
                 " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
         p2i(addr),       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
         p2i(_last_addr), _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
-      ResourceMark rm;
-      _sp->print_on(log.error_stream());
+      LogStream ls(log.error());
+      _sp->print_on(&ls);
       guarantee(false, "Verification failed.");
     }
     _last_addr = addr;
@@ -2371,7 +2370,8 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   AdaptiveFreeList<FreeChunk> total;
   log.print("end sweep# " SIZE_FORMAT, sweep_count);
   ResourceMark rm;
-  outputStream* out = log.stream();
+  LogStream ls(log);
+  outputStream* out = &ls;
   AdaptiveFreeList<FreeChunk>::print_labels_on(out, "size");
   size_t total_free = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
@@ -2678,8 +2678,7 @@ FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, si
     MutexLockerEx x(parDictionaryAllocLock(),
                     Mutex::_no_safepoint_check_flag);
     while (n > 0) {
-      fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()),
-                                  FreeBlockDictionary<FreeChunk>::atLeast);
+      fc = dictionary()->get_chunk(MAX2(n * word_sz, _dictionary->min_size()));
       if (fc != NULL) {
         break;
       } else {
@@ -2873,8 +2872,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
     if (span.contains(low)) {
       // Align low down to  a card boundary so that
       // we can use block_offset_careful() on span boundaries.
-      HeapWord* aligned_low = (HeapWord*)align_size_down((uintptr_t)low,
-                                 CardTableModRefBS::card_size);
+      HeapWord* aligned_low = align_down(low, CardTableModRefBS::card_size);
       // Clip span prefix at aligned_low
       span = span.intersection(MemRegion(aligned_low, span.end()));
     } else if (low > span.end()) {

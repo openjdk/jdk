@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/vmError.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -215,8 +217,8 @@ static void test_arraycopy_func(address func, int alignment) {
   }
   // C++ does not guarantee jlong[] array alignment to 8 bytes.
   // Use middle of array to check that memory before it is not modified.
-  address buffer  = (address) round_to((intptr_t)&lbuffer[4], BytesPerLong);
-  address buffer2 = (address) round_to((intptr_t)&lbuffer2[4], BytesPerLong);
+  address buffer  = align_up((address)&lbuffer[4], BytesPerLong);
+  address buffer2 = align_up((address)&lbuffer2[4], BytesPerLong);
   // do an aligned copy
   ((arraycopy_fn)func)(buffer, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
@@ -238,7 +240,7 @@ static void test_arraycopy_func(address func, int alignment) {
 static void test_safefetch32() {
   if (CanUseSafeFetch32()) {
     int dummy = 17;
-    int* const p_invalid = (int*) get_segfault_address();
+    int* const p_invalid = (int*) VMError::get_segfault_address();
     int* const p_valid = &dummy;
     int result_invalid = SafeFetch32(p_invalid, 0xABC);
     assert(result_invalid == 0xABC, "SafeFetch32 error");
@@ -258,7 +260,7 @@ static void test_safefetchN() {
     const intptr_t v2 = 0xDEFDDEFD;
 #endif
     intptr_t dummy = v1;
-    intptr_t* const p_invalid = (intptr_t*) get_segfault_address();
+    intptr_t* const p_invalid = (intptr_t*) VMError::get_segfault_address();
     intptr_t* const p_valid = &dummy;
     intptr_t result_invalid = SafeFetchN(p_invalid, v2);
     assert(result_invalid == v2, "SafeFetchN error");

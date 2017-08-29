@@ -51,14 +51,14 @@ public class ComputeFQNsTest extends KullaTesting {
     private final Path outDir = Paths.get("ComputeFQNsTest");
 
     public void testAddImport() throws Exception {
-        compiler.compile(outDir, "package test1; public class TestClass { }", "package test2; public class TestClass { }");
+        compiler.compile(outDir, "package test1; public class FQNTestClass { }", "package test2; public class FQNTestClass { }");
         String jarName = "test.jar";
-        compiler.jar(outDir, jarName, "test1/TestClass.class", "test2/TestClass.class");
+        compiler.jar(outDir, jarName, "test1/FQNTestClass.class", "test2/FQNTestClass.class");
         addToClasspath(compiler.getPath(outDir).resolve(jarName));
 
         assertInferredFQNs("LinkedList", "java.util.LinkedList");
         assertInferredFQNs("ArrayList", "java.util.ArrayList");
-        assertInferredFQNs("TestClass", "test1.TestClass", "test2.TestClass");
+        assertInferredFQNs("FQNTestClass", "test1.FQNTestClass", "test2.FQNTestClass");
         assertInferredFQNs("CharSequence", "CharSequence".length(), true, "java.lang.CharSequence");
         assertInferredFQNs("unresolvable");
         assertInferredFQNs("void test(ArrayList", "ArrayList".length(), false, "java.util.ArrayList");

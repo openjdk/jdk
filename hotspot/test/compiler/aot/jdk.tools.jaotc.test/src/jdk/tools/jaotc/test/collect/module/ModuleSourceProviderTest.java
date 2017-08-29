@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.aot
  * @modules jdk.aot/jdk.tools.jaotc
  *          jdk.aot/jdk.tools.jaotc.collect
  *          jdk.aot/jdk.tools.jaotc.collect.module
@@ -46,8 +47,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.BiFunction;
 
+import static jdk.tools.jaotc.test.collect.Utils.mkpath;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
 
 public class ModuleSourceProviderTest {
     private ClassLoader classLoader;
@@ -86,8 +90,8 @@ public class ModuleSourceProviderTest {
         };
 
         ModuleSource source = (ModuleSource) target.findSource("test.module", null);
-        assertEquals("modules/test.module", source.getModulePath().toString());
-        assertEquals("module:modules/test.module", source.toString());
+        assertEquals(mkpath("modules/test.module"), source.getModulePath().toString());
+        assertEquals("module:" + mkpath("modules/test.module"), source.toString());
     }
 
     private static class FakeClassLoader extends ClassLoader {

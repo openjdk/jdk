@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ BiasedLockingCounters BiasedLocking::_counters;
 static GrowableArray<Handle>*  _preserved_oop_stack  = NULL;
 static GrowableArray<markOop>* _preserved_mark_stack = NULL;
 
-static void enable_biased_locking(Klass* k) {
+static void enable_biased_locking(InstanceKlass* k) {
   k->set_prototype_header(markOopDesc::biased_locking_prototype());
 }
 
@@ -56,9 +56,9 @@ class VM_EnableBiasedLocking: public VM_Operation {
   bool is_cheap_allocated() const { return _is_cheap_allocated; }
 
   void doit() {
-    // Iterate the system dictionary enabling biased locking for all
-    // currently loaded classes
-    SystemDictionary::classes_do(enable_biased_locking);
+    // Iterate the class loader data dictionaries enabling biased locking for all
+    // currently loaded classes.
+    ClassLoaderDataGraph::dictionary_classes_do(enable_biased_locking);
     // Indicate that future instances should enable it as well
     _biased_locking_enabled = true;
 
@@ -579,7 +579,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
     // the bias of the object.
     markOop biased_value       = mark;
     markOop unbiased_prototype = markOopDesc::prototype()->set_age(mark->age());
-    markOop res_mark = (markOop) Atomic::cmpxchg_ptr(unbiased_prototype, obj->mark_addr(), mark);
+    markOop res_mark = obj->cas_set_mark(unbiased_prototype, mark);
     if (res_mark == biased_value) {
       return BIAS_REVOKED;
     }
@@ -594,7 +594,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       // by another thread so we simply return and let the caller deal
       // with it.
       markOop biased_value       = mark;
-      markOop res_mark = (markOop) Atomic::cmpxchg_ptr(prototype_header, obj->mark_addr(), mark);
+      markOop res_mark = obj->cas_set_mark(prototype_header, mark);
       assert(!(*(obj->mark_addr()))->has_bias_pattern(), "even if we raced, should still be revoked");
       return BIAS_REVOKED;
     } else if (prototype_header->bias_epoch() != mark->bias_epoch()) {
@@ -609,14 +609,14 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
         assert(THREAD->is_Java_thread(), "");
         markOop biased_value       = mark;
         markOop rebiased_prototype = markOopDesc::encode((JavaThread*) THREAD, mark->age(), prototype_header->bias_epoch());
-        markOop res_mark = (markOop) Atomic::cmpxchg_ptr(rebiased_prototype, obj->mark_addr(), mark);
+        markOop res_mark = obj->cas_set_mark(rebiased_prototype, mark);
         if (res_mark == biased_value) {
           return BIAS_REVOKED_AND_REBIASED;
         }
       } else {
         markOop biased_value       = mark;
         markOop unbiased_prototype = markOopDesc::prototype()->set_age(mark->age());
-        markOop res_mark = (markOop) Atomic::cmpxchg_ptr(unbiased_prototype, obj->mark_addr(), mark);
+        markOop res_mark = obj->cas_set_mark(unbiased_prototype, mark);
         if (res_mark == biased_value) {
           return BIAS_REVOKED;
         }

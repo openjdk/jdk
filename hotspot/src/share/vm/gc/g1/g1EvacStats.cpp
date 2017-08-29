@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,29 +46,7 @@ void G1EvacStats::log_plab_allocation() {
                       _failure_waste * HeapWordSize);
 }
 
-void G1EvacStats::adjust_desired_plab_sz() {
-  log_plab_allocation();
-
-  if (!ResizePLAB) {
-    // Clear accumulators for next round.
-    reset();
-    return;
-  }
-
-  assert(is_object_aligned(max_size()) && min_size() <= max_size(),
-         "PLAB clipping computation may be incorrect");
-
-  if (_allocated == 0) {
-    assert((_unused == 0),
-           "Inconsistency in PLAB stats: "
-           "_allocated: " SIZE_FORMAT ", "
-           "_wasted: " SIZE_FORMAT ", "
-           "_region_end_waste: " SIZE_FORMAT ", "
-           "_unused: " SIZE_FORMAT ", "
-           "_used  : " SIZE_FORMAT,
-           _allocated, _wasted, _region_end_waste, _unused, used());
-    _allocated = 1;
-  }
+size_t G1EvacStats::compute_desired_plab_sz() {
   // The size of the PLAB caps the amount of space that can be wasted at the
   // end of the collection. In the worst case the last PLAB could be completely
   // empty.
@@ -109,13 +87,7 @@ void G1EvacStats::adjust_desired_plab_sz() {
 
   size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
   size_t const cur_plab_sz = (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
-  // Take historical weighted average
-  _filter.sample(cur_plab_sz);
-  _desired_net_plab_sz = MAX2(min_size(), (size_t)_filter.average());
-
-  log_sizing(cur_plab_sz, _desired_net_plab_sz);
-  // Clear accumulators for next round.
-  reset();
+  return cur_plab_sz;
 }
 
 G1EvacStats::G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt) :
