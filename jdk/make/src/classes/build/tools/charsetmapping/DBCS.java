@@ -179,7 +179,7 @@ public class DBCS {
                        .replace("$NAME_CLZ$", clzName)
                        .replace("$NAME_ALIASES$",
                                 "sun.nio.cs".equals(pkgName) ?
-                                "StandardCharsets.aliases_" + clzName :
+                                "StandardCharsets.aliases_" + clzName + "()" :
                                 "ExtendedCharsets.aliasesFor(\"" + csName + "\")")
                        .replace("$NAME_CS$" , csName)
                        .replace("$CONTAINS$",
