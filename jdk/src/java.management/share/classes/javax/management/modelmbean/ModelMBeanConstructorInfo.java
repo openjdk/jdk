@@ -60,19 +60,23 @@ import javax.management.RuntimeOperationsException;
  *
  * <table class="striped">
  * <caption style="display:none">ModelMBeanConstructorInfo Fields</caption>
- * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
- * <tr><td>name</td><td>String</td>
+ * <thead>
+ * <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Meaning</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">name</th><td>String</td>
  *     <td>Constructor name.</td></tr>
- * <tr><td>descriptorType</td><td>String</td>
+ * <tr><th scope="row">descriptorType</th><td>String</td>
  *     <td>Must be "operation".</td></tr>
- * <tr><td>role</td><td>String</td>
+ * <tr><th scope="row">role</th><td>String</td>
  *     <td>Must be "constructor".</td></tr>
- * <tr><td>displayName</td><td>String</td>
+ * <tr><th scope="row">displayName</th><td>String</td>
  *     <td>Human readable name of constructor.</td></tr>
- * <tr><td>visibility</td><td>Number</td>
+ * <tr><th scope="row">visibility</th><td>Number</td>
  *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
- * <tr><td>presentationString</td><td>String</td>
+ * <tr><th scope="row">presentationString</th><td>String</td>
  *     <td>XML formatted string to describe how to present operation</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>The {@code persistPolicy} and {@code currencyTimeLimit} fields
