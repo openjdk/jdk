@@ -137,9 +137,10 @@ public abstract class AbstractResourceBundleProvider implements ResourceBundlePr
      *
      * <p>For example, if {@code baseName} is {@code "p.resources.Bundle"} then
      * the resource bundle name of {@code "p.resources.Bundle"} of
-     * {@code Locale("ja",&nbsp;"",&nbsp;"XX")} and {@code Locale("en")}
-     * could be {@code "p.resources.ja.Bundle_ja_&thinsp;_XX"} and
-     * {@code p.resources.Bundle_en"} respectively
+     * <code style="white-space:nowrap">Locale("ja", "", "XX")</code>
+     * and {@code Locale("en")} could be <code style="white-space:nowrap">
+     * "p.resources.ja.Bundle_ja_&thinsp;_XX"</code> and
+     * {@code "p.resources.Bundle_en"} respectively.
      *
      * <p> This method is called from the default implementation of the
      * {@link #getBundle(String, Locale)} method.
