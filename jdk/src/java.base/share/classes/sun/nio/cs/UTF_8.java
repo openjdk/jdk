@@ -54,10 +54,12 @@ import java.nio.charset.CodingErrorAction;
  *
  */
 
-class UTF_8 extends Unicode
-{
+public final class UTF_8 extends Unicode {
+
+    public static final UTF_8 INSTANCE = new UTF_8();
+
     public UTF_8() {
-        super(StandardCharsets.UTF_8, StandardCharsets.aliases_UTF_8);
+        super("UTF-8", StandardCharsets.aliases_UTF_8());
     }
 
     public String historicalName() {
@@ -72,7 +74,7 @@ class UTF_8 extends Unicode
         return new Encoder(this);
     }
 
-    private static final void updatePositions(Buffer src, int sp,
+    static final void updatePositions(Buffer src, int sp,
                                               Buffer dst, int dp) {
         src.position(sp - src.arrayOffset());
         dst.position(dp - dst.arrayOffset());
