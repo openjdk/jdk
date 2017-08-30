@@ -36,14 +36,17 @@ package java.lang.management;
  *
  * <table class="striped">
  * <caption style="display:none">Table shows permission target name, what the permission allows, and associated risks</caption>
+ * <thead>
  * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
+ * <th scope="col">Permission Target Name</th>
+ * <th scope="col">What the Permission Allows</th>
+ * <th scope="col">Risks of Allowing this Permission</th>
  * </tr>
+ * </thead>
+ * <tbody style="text=align:left">
  *
  * <tr>
- *   <td>control</td>
+ *   <th scope="row">control</th>
  *   <td>Ability to control the runtime characteristics of the Java virtual
  *       machine, for example, enabling and disabling the verbose output for
  *       the class loading or memory system, setting the threshold of a memory
@@ -59,7 +62,7 @@ package java.lang.management;
  *   </td>
  * </tr>
  * <tr>
- *   <td>monitor</td>
+ *   <th scope="row">monitor</th>
  *   <td>Ability to retrieve runtime information about
  *       the Java virtual machine such as thread
  *       stack trace, a list of all loaded class names, and input arguments
@@ -68,6 +71,7 @@ package java.lang.management;
  *       uncover vulnerabilities.</td>
  * </tr>
  *
+ * </tbody>
  * </table>
  *
  * <p>

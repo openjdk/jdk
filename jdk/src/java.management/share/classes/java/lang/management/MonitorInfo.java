@@ -105,15 +105,17 @@ public class MonitorInfo extends LockInfo {
      * as well as the attributes specified in the
      * <a href="LockInfo.html#MappedType">
      * mapped type</a> for the {@link LockInfo} class:
-     * <blockquote>
-     * <table border="1">
+     * <table class="striped" style="margin-left:2em">
      * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
      * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
      * <tr>
-     *   <td>lockedStackFrame</td>
+     *   <th scope="row">lockedStackFrame</th>
      *   <td><code>CompositeData as specified in the
      *       <a href="ThreadInfo.html#StackTrace">stackTrace</a>
      *       attribute defined in the {@link ThreadInfo#from
@@ -121,11 +123,11 @@ public class MonitorInfo extends LockInfo {
      *       </code></td>
      * </tr>
      * <tr>
-     *   <td>lockedStackDepth</td>
+     *   <th scope="row">lockedStackDepth</th>
      *   <td>{@code java.lang.Integer}</td>
      * </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @param cd {@code CompositeData} representing a {@code MonitorInfo}
      *

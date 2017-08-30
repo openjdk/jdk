@@ -694,51 +694,53 @@ public class ThreadInfo {
      * given {@code CompositeData}.
      * The given {@code CompositeData} must contain the following attributes
      * unless otherwise specified below:
-     * <blockquote>
-     * <table class="plain">
+     * <table class="striped" style="margin-left:2em">
      * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
      * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
      * <tr>
-     *   <td>threadId</td>
+     *   <th scope="row">threadId</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>threadName</td>
+     *   <th scope="row">threadName</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>threadState</td>
+     *   <th scope="row">threadState</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>suspended</td>
+     *   <th scope="row">suspended</th>
      *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * <tr>
-     *   <td>inNative</td>
+     *   <th scope="row">inNative</th>
      *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * <tr>
-     *   <td>blockedCount</td>
+     *   <th scope="row">blockedCount</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>blockedTime</td>
+     *   <th scope="row">blockedTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>waitedCount</td>
+     *   <th scope="row">waitedCount</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>waitedTime</td>
+     *   <th scope="row">waitedTime</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>lockInfo</td>
+     *   <th scope="row">lockInfo</th>
      *   <td>{@code javax.management.openmbean.CompositeData}
      *       - the mapped type for {@link LockInfo} as specified in the
      *         {@link LockInfo#from} method.
@@ -748,64 +750,66 @@ public class ThreadInfo {
      *       the value of the {@code lockName} attribute. </td>
      * </tr>
      * <tr>
-     *   <td>lockName</td>
+     *   <th scope="row">lockName</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>lockOwnerId</td>
+     *   <th scope="row">lockOwnerId</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>lockOwnerName</td>
+     *   <th scope="row">lockOwnerName</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td><a id="StackTrace">stackTrace</a></td>
+     *   <th scope="row"><a id="StackTrace">stackTrace</a></th>
      *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       <p>
      *       Each element is a {@code CompositeData} representing
      *       StackTraceElement containing the following attributes:
-     *       <blockquote>
-     *       <table class="borderless">
+     *       <table class="striped" style="margin-left:2em">
      *       <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
+     *       <thead style="text-align:center">
      *       <tr>
-     *         <th style="text-align:left">Attribute Name</th>
-     *         <th style="text-align:left">Type</th>
+     *         <th scope="col">Attribute Name</th>
+     *         <th scope="col">Type</th>
      *       </tr>
+     *       </thead>
+     *       <tbody style="text-align:left">
      *       <tr>
-     *         <td>moduleName</td>
+     *         <th scope="row">moduleName</th>
      *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
-     *         <td>moduleVersion</td>
+     *         <th scope="row">moduleVersion</th>
      *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
-     *         <td>className</td>
+     *         <th scope="row">className</th>
      *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
-     *         <td>methodName</td>
+     *         <th scope="row">methodName</th>
      *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
-     *         <td>fileName</td>
+     *         <th scope="row">fileName</th>
      *         <td>{@code java.lang.String}</td>
      *       </tr>
      *       <tr>
-     *         <td>lineNumber</td>
+     *         <th scope="row">lineNumber</th>
      *         <td>{@code java.lang.Integer}</td>
      *       </tr>
      *       <tr>
-     *         <td>nativeMethod</td>
+     *         <th scope="row">nativeMethod</th>
      *         <td>{@code java.lang.Boolean}</td>
      *       </tr>
+     *       </tbody>
      *       </table>
-     *       </blockquote>
      *   </td>
      * </tr>
      * <tr>
-     *   <td>lockedMonitors</td>
+     *   <th scope="row">lockedMonitors</th>
      *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       whose element type is the mapped type for
      *       {@link MonitorInfo} as specified in the
@@ -815,7 +819,7 @@ public class ThreadInfo {
      *       this attribute will be set to an empty array. </td>
      * </tr>
      * <tr>
-     *   <td>lockedSynchronizers</td>
+     *   <th scope="row">lockedSynchronizers</th>
      *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       whose element type is the mapped type for
      *       {@link LockInfo} as specified in the {@link LockInfo#from} method.
@@ -824,15 +828,15 @@ public class ThreadInfo {
      *       this attribute will be set to an empty array. </td>
      * </tr>
      * <tr>
-     *   <td>daemon</td>
+     *   <th scope="row">daemon</th>
      *   <td>{@code java.lang.Boolean}</td>
      * </tr>
      * <tr>
-     *   <td>priority</td>
+     *   <th scope="row">priority</th>
      *   <td>{@code java.lang.Integer}</td>
      * </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @param cd {@code CompositeData} representing a {@code ThreadInfo}
      *

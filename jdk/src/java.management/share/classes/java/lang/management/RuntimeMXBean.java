@@ -311,23 +311,25 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      * The mapped type of {@code Map<String,String>} is
      * {@link javax.management.openmbean.TabularData TabularData}
      * with two items in each row as follows:
-     * <blockquote>
-     * <table border="1">
+     * <table class="striped" style="margin-left:2em">
      * <caption style="display:none">Name and Type for each item</caption>
+     * <thead>
      * <tr>
-     *   <th>Item Name</th>
-     *   <th>Item Type</th>
+     *   <th scope="col">Item Name</th>
+     *   <th scope="col">Item Type</th>
      *   </tr>
-     * <tr>
-     *   <td>{@code key}</td>
+     * </thead>
+     * <tbody>
+     * <tr style="text-align:left">
+     *   <th scope="row">{@code key}</th>
      *   <td>{@code String}</td>
      *   </tr>
      * <tr>
-     *   <td>{@code value}</td>
+     *   <th scope="row">{@code value}</th>
      *   <td>{@code String}</td>
      *   </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @return a map of names and values of all system properties.
      *

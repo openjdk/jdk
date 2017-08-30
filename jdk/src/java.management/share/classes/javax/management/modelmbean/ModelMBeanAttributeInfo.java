@@ -59,41 +59,45 @@ import javax.management.RuntimeOperationsException;
  *
  * <table class="striped">
  * <caption style="display:none">ModelMBeanAttributeInfo Fields</caption>
- * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
- * <tr><td>name</td><td>String</td>
+ * <thead>
+ * <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Meaning</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">name</th><td>String</td>
  *     <td>Attribute name.</td></tr>
- * <tr><td>descriptorType</td><td>String</td>
+ * <tr><th scope="row">descriptorType</th><td>String</td>
  *     <td>Must be "attribute".</td></tr>
- * <tr id="value-field"><td>value</td><td>Object</td>
+ * <tr id="value-field"><th scope="row">value</th><td>Object</td>
  *     <td>Current (cached) value for attribute.</td></tr>
- * <tr><td>default</td><td>Object</td>
+ * <tr><th scope="row">default</th><td>Object</td>
  *     <td>Default value for attribute.</td></tr>
- * <tr><td>displayName</td><td>String</td>
+ * <tr><th scope="row">displayName</th><td>String</td>
  *     <td>Name of attribute to be used in displays.</td></tr>
- * <tr><td>getMethod</td><td>String</td>
+ * <tr><th scope="row">getMethod</th><td>String</td>
  *     <td>Name of operation descriptor for get method.</td></tr>
- * <tr><td>setMethod</td><td>String</td>
+ * <tr><th scope="row">setMethod</th><td>String</td>
  *     <td>Name of operation descriptor for set method.</td></tr>
- * <tr><td>protocolMap</td><td>Descriptor</td>
+ * <tr><th scope="row">protocolMap</th><td>Descriptor</td>
  *     <td>See the section "Protocol Map Support" in the JMX specification
  *         document.  Mappings must be appropriate for the attribute and entries
  *         can be updated or augmented at runtime.</td></tr>
- * <tr><td>persistPolicy</td><td>String</td>
+ * <tr><th scope="row">persistPolicy</th><td>String</td>
  *     <td>One of: OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never.
  *         See the section "MBean Descriptor Fields" in the JMX specification
  *         document.</td></tr>
- * <tr><td>persistPeriod</td><td>Number</td>
+ * <tr><th scope="row">persistPeriod</th><td>Number</td>
  *     <td>Frequency of persist cycle in seconds. Used when persistPolicy is
  *         "OnTimer" or "NoMoreOftenThan".</td></tr>
- * <tr><td>currencyTimeLimit</td><td>Number</td>
- *     <td>How long <a href="#value=field">value</a> is valid: &lt;0 never,
+ * <tr><th scope="row">currencyTimeLimit</th><td>Number</td>
+ *     <td>How long <a href="#value-field">value</a> is valid: &lt;0 never,
  *         =0 always, &gt;0 seconds.</td></tr>
- * <tr><td>lastUpdatedTimeStamp</td><td>Number</td>
+ * <tr><th scope="row">lastUpdatedTimeStamp</th><td>Number</td>
  *     <td>When <a href="#value-field">value</a> was set.</td></tr>
- * <tr><td>visibility</td><td>Number</td>
+ * <tr><th scope="row">visibility</th><td>Number</td>
  *     <td>1-4 where 1: always visible, 4: rarely visible.</td></tr>
- * <tr><td>presentationString</td><td>String</td>
+ * <tr><th scope="row">presentationString</th><td>String</td>
  *     <td>XML formatted string to allow presentation of data.</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>The default descriptor contains the name, descriptorType and displayName
