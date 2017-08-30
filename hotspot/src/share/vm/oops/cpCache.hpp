@@ -510,9 +510,9 @@ class ConstantPoolCache: public MetaspaceObj {
   void dump_cache();
 #endif // INCLUDE_JVMTI
 
-  // Deallocate - no fields to deallocate
+  // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })
-  void deallocate_contents(ClassLoaderData* data) {}
+  void deallocate_contents(ClassLoaderData* data);
   bool is_klass() const { return false; }
 
   // Printing
