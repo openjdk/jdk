@@ -102,11 +102,6 @@ public class TCPTransport extends Transport {
         AccessController.doPrivileged((PrivilegedAction<Long>) () ->
             Long.getLong("sun.rmi.transport.tcp.threadKeepAliveTime", 60000));
 
-    /** enable multiplexing protocol */
-    private static final boolean enableMultiplexProtocol =     // default false
-            AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-                    Boolean.getBoolean("sun.rmi.transport.tcp.enableMultiplexProtocol"));
-
     /** thread pool for connection handlers */
     private static final ExecutorService connectionThreadPool =
         new ThreadPoolExecutor(0, maxConnectionThreads,
@@ -687,6 +682,7 @@ public class TCPTransport extends Transport {
             }
         }
 
+        @SuppressWarnings("fallthrough")
         private void run0() {
             TCPEndpoint endpoint = getEndpoint();
             int port = endpoint.getPort();
@@ -801,59 +797,11 @@ public class TCPTransport extends Transport {
                     break;
 
                 case TransportConstants.MultiplexProtocol:
-
-                    if (!enableMultiplexProtocol) {
-                        if (tcpLog.isLoggable(Log.VERBOSE)) {
-                            tcpLog.log(Log.VERBOSE, "(port " + port +
-                                    ") rejecting multiplex protocol");
-                        }
-
-                        // If MultiplexProtocol is disabled, send NACK immediately.
-                        out.writeByte(TransportConstants.ProtocolNack);
-                        out.flush();
-                        break;
-                    }
-
                     if (tcpLog.isLoggable(Log.VERBOSE)) {
                         tcpLog.log(Log.VERBOSE, "(port " + port +
-                            ") accepting multiplex protocol");
+                                ") rejecting multiplex protocol");
                     }
-
-                    // send ack
-                    out.writeByte(TransportConstants.ProtocolAck);
-
-                    // suggest endpoint (in case client doesn't already have one)
-                    if (tcpLog.isLoggable(Log.VERBOSE)) {
-                        tcpLog.log(Log.VERBOSE, "(port " + port +
-                            ") suggesting " + remoteHost + ":" + remotePort);
-                    }
-
-                    out.writeUTF(remoteHost);
-                    out.writeInt(remotePort);
-                    out.flush();
-
-                    // read endpoint client has decided to use
-                    ep = new TCPEndpoint(in.readUTF(), in.readInt(),
-                                         endpoint.getClientSocketFactory(),
-                                         endpoint.getServerSocketFactory());
-                    if (tcpLog.isLoggable(Log.VERBOSE)) {
-                        tcpLog.log(Log.VERBOSE, "(port " +
-                            port + ") client using " +
-                            ep.getHost() + ":" + ep.getPort());
-                    }
-
-                    ConnectionMultiplexer multiplexer;
-                    synchronized (channelTable) {
-                        // create or find channel for this endpoint
-                        ch = getChannel(ep);
-                        multiplexer =
-                            new ConnectionMultiplexer(ch, bufIn, sockOut,
-                                                      false);
-                        ch.useMultiplexer(multiplexer);
-                    }
-                    multiplexer.run();
-                    break;
-
+                    // Fall-through to reject use of MultiplexProtocol
                 default:
                     // protocol not understood, send nack and close socket
                     out.writeByte(TransportConstants.ProtocolNack);
