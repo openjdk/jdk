@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.hpp"
 
 
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
@@ -183,9 +184,12 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
   typedef Assembler::WhichOperand WhichOperand;
   WhichOperand which = (WhichOperand) format();
 #if !INCLUDE_JVMCI
-  assert((which == Assembler::disp32_operand) == !Assembler::is_polling_page_far(), "format not set correctly");
+  if (SafepointMechanism::uses_global_page_poll()) {
+    assert((which == Assembler::disp32_operand) == !Assembler::is_polling_page_far(), "format not set correctly");
+  }
 #endif
   if (which == Assembler::disp32_operand) {
+    assert(SafepointMechanism::uses_global_page_poll(), "should only have generated such a poll if global polling enabled");
     address orig_addr = old_addr_for(addr(), src, dest);
     NativeInstruction* oni = nativeInstruction_at(orig_addr);
     int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);

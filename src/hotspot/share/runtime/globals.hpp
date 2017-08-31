@@ -598,6 +598,13 @@ public:
   develop(bool, CleanChunkPoolAsync, true,                                  \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
+  product_pd(bool, ThreadLocalHandshakes,                                   \
+          "Use thread-local polls instead of global poll for safepoints.")  \
+          constraint(ThreadLocalHandshakesConstraintFunc,AfterErgo)         \
+                                                                            \
+  diagnostic(uint, HandshakeTimeout, 0,                                     \
+          "If nonzero set a timeout in milliseconds for handshakes")        \
+                                                                            \
   experimental(bool, AlwaysSafeConstructors, false,                         \
           "Force safe construction, as if all fields are final.")           \
                                                                             \

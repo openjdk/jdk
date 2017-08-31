@@ -3911,27 +3911,6 @@ static jint initSock();
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
-  // Allocate a single page and mark it as readable for safepoint polling
-  address polling_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READONLY);
-  guarantee(polling_page != NULL, "Reserve Failed for polling page");
-
-  address return_page  = (address)VirtualAlloc(polling_page, os::vm_page_size(), MEM_COMMIT, PAGE_READONLY);
-  guarantee(return_page != NULL, "Commit Failed for polling page");
-
-  os::set_polling_page(polling_page);
-  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
-
-  if (!UseMembar) {
-    address mem_serialize_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READWRITE);
-    guarantee(mem_serialize_page != NULL, "Reserve Failed for memory serialize page");
-
-    return_page  = (address)VirtualAlloc(mem_serialize_page, os::vm_page_size(), MEM_COMMIT, PAGE_READWRITE);
-    guarantee(return_page != NULL, "Commit Failed for memory serialize page");
-
-    os::set_memory_serialize_page(mem_serialize_page);
-    log_info(os)("Memory Serialize Page address: " INTPTR_FORMAT, p2i(mem_serialize_page));
-  }
-
   // Setup Windows Exceptions
 
   // for debugging float code generation bugs

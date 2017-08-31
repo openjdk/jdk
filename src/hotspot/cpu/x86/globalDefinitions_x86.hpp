@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,11 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #if defined(LINUX) || defined(SOLARIS) || defined(__APPLE__)
 #define SUPPORT_RESERVED_STACK_AREA
+#endif
+
+#ifdef _LP64
+// X64 have implemented the local polling
+#define THREAD_LOCAL_POLL
 #endif
 
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP
