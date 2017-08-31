@@ -719,7 +719,9 @@ public class EventQueue {
                     fwDispatcher.scheduleDispatch(new Runnable() {
                         @Override
                         public void run() {
-                            dispatchEventImpl(event, src);
+                            if (dispatchThread.filterAndCheckEvent(event)) {
+                                dispatchEventImpl(event, src);
+                            }
                         }
                     });
                 }
@@ -1008,6 +1010,32 @@ public class EventQueue {
         return createSecondaryLoop(null, null, 0);
     }
 
+    private class FwSecondaryLoopWrapper implements SecondaryLoop {
+        final private SecondaryLoop loop;
+        final private EventFilter filter;
+
+        public FwSecondaryLoopWrapper(SecondaryLoop loop, EventFilter filter) {
+            this.loop = loop;
+            this.filter = filter;
+        }
+
+        @Override
+        public boolean enter() {
+            if (filter != null) {
+                dispatchThread.addEventFilter(filter);
+            }
+            return loop.enter();
+        }
+
+        @Override
+        public boolean exit() {
+            if (filter != null) {
+                dispatchThread.removeEventFilter(filter);
+            }
+            return loop.exit();
+        }
+    }
+
     SecondaryLoop createSecondaryLoop(Conditional cond, EventFilter filter, long interval) {
         pushPopLock.lock();
         try {
@@ -1016,7 +1044,7 @@ public class EventQueue {
                 return nextQueue.createSecondaryLoop(cond, filter, interval);
             }
             if (fwDispatcher != null) {
-                return fwDispatcher.createSecondaryLoop();
+                return new FwSecondaryLoopWrapper(fwDispatcher.createSecondaryLoop(), filter);
             }
             if (dispatchThread == null) {
                 initDispatchThread();
