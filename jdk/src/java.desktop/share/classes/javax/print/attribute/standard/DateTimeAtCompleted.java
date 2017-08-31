@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,47 +22,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
+import java.util.Calendar;
 import java.util.Date;
+
 import javax.print.attribute.Attribute;
 import javax.print.attribute.DateTimeSyntax;
 import javax.print.attribute.PrintJobAttribute;
 
 /**
- * Class DateTimeAtCompleted is a printing attribute class, a date-time
+ * Class {@code DateTimeAtCompleted} is a printing attribute class, a date-time
  * attribute, that indicates the date and time at which the Print Job completed
  * (or was canceled or aborted).
- * <P>
- * To construct a DateTimeAtCompleted attribute from separate values of the
- * year, month, day, hour, minute, and so on, use a {@link java.util.Calendar
- * Calendar} object to construct a {@link java.util.Date Date} object, then use
- * the {@link java.util.Date Date} object to construct the DateTimeAtCompleted
- * attribute. To convert a DateTimeAtCompleted attribute to separate values of
- * the year, month, day, hour, minute, and so on, create a {@link
- * java.util.Calendar Calendar} object and set it to the {@link java.util.Date
- * Date} from the DateTimeAtCompleted attribute.
- * <P>
- * <B>IPP Compatibility:</B> The information needed to construct an IPP
+ * <p>
+ * To construct a {@code DateTimeAtCompleted} attribute from separate values of
+ * the year, month, day, hour, minute, and so on, use a
+ * {@link Calendar Calendar} object to construct a {@link Date Date} object,
+ * then use the {@link Date Date} object to construct the DateTimeAtCompleted
+ * attribute. To convert a {@code DateTimeAtCompleted} attribute to separate
+ * values of the year, month, day, hour, minute, and so on, create a
+ * {@link Calendar Calendar} object and set it to the {@link Date Date} from the
+ * {@code DateTimeAtCompleted} attribute.
+ * <p>
+ * <b>IPP Compatibility:</b> The information needed to construct an IPP
  * "date-time-at-completed" attribute can be obtained as described above. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class DateTimeAtCompleted extends DateTimeSyntax
     implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 6497399708058490000L;
 
     /**
-     * Construct a new date-time at completed attribute with the given {@link
-     * java.util.Date Date} value.
+     * Construct a new date-time at completed attribute with the given
+     * {@link Date Date} value.
      *
-     * @param  dateTime  {@link java.util.Date Date} value.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code dateTime} is null.
+     * @param  dateTime {@link Date Date} value
+     * @throws NullPointerException if {@code dateTime} is {@code null}
      */
     public DateTimeAtCompleted(Date dateTime) {
         super (dateTime);
@@ -72,38 +75,34 @@ public final class DateTimeAtCompleted extends DateTimeSyntax
      * Returns whether this date-time at completed attribute is equivalent to
      * the passed in object. To be equivalent, all of the following conditions
      * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class DateTimeAtCompleted.
-     * <LI>
-     * This date-time at completed attribute's {@link java.util.Date Date} value
-     * and {@code object}'s {@link java.util.Date Date} value are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code DateTimeAtCompleted}.
+     *   <li>This date-time at completed attribute's {@link Date Date}
+     *   value and {@code object}'s {@link Date Date} value are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this date-time
-     *          at completed attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this date-time at
+     *         completed attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return(super.equals (object) &&
                object instanceof DateTimeAtCompleted);
     }
 
-// Exported operations inherited and implemented from interface Attribute.
+    // Exported operations inherited and implemented from interface Attribute.
 
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-         * <P>
-         * For class DateTimeAtCompleted, the category is class
-         * DateTimeAtCompleted itself.
-         *
-         * @return  Printing attribute class (category), an instance of class
-         *          {@link java.lang.Class java.lang.Class}.
-         */
+     * <p>
+     * For class {@code DateTimeAtCompleted}, the category is class
+     * {@code DateTimeAtCompleted} itself.
+     *
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
+     */
     public final Class<? extends Attribute> getCategory() {
         return DateTimeAtCompleted.class;
     }
@@ -111,14 +110,13 @@ public final class DateTimeAtCompleted extends DateTimeSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class DateTimeAtCompleted, the category name is
+     * <p>
+     * For class {@code DateTimeAtCompleted}, the category name is
      * {@code "date-time-at-completed"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "date-time-at-completed";
     }
-
 }

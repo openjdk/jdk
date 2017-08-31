@@ -22,126 +22,119 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.IntegerSyntax;
-import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class JobKOctets is an integer valued printing attribute class that specifies
- * the total size of the document(s) in K octets, i.e., in units of 1024 octets
- * requested to be processed in the job. The value must be rounded up, so that a
- * job between 1 and 1024 octets must be indicated as being 1K octets, 1025 to
- * 2048 must be 2K octets, etc. For a multidoc print job (a job with multiple
- * documents), the JobKOctets value is computed by adding up the individual
- * documents' sizes in octets, then rounding up to the next K octets value.
- * <P>
- * The JobKOctets attribute describes the size of the job. This attribute is not
- * intended to be a counter; it is intended to be useful routing and scheduling
- * information if known. The printer may try to compute the JobKOctets
- * attribute's value if it is not supplied in the Print Request. Even if the
- * client does supply a value for the JobKOctets attribute in the Print Request,
- * the printer may choose to change the value if the printer is able to compute
- * a value which is more accurate than the client supplied value. The printer
- * may be able to determine the correct value for the JobKOctets attribute
- * either right at job submission time or at any later point in time.
- * <P>
- * The JobKOctets value must not include the multiplicative factors contributed
- * by the number of copies specified by the {@link Copies Copies} attribute,
- * independent of whether the device can process multiple copies without making
- * multiple passes over the job or document data and independent of whether the
- * output is collated or not. Thus the value is independent of the
- * implementation and indicates the size of the document(s) measured in K octets
- * independent of the number of copies.
- * <P>
- * The JobKOctets value must also not include the multiplicative factor due to a
- * copies instruction embedded in the document data. If the document data
- * actually includes replications of the document data, this value will include
- * such replication. In other words, this value is always the size of the source
- * document data, rather than a measure of the hardcopy output to be produced.
- * <P>
+ * Class {@code JobKOctets} is an integer valued printing attribute class that
+ * specifies the total size of the document(s) in K octets, i.e., in units of
+ * 1024 octets requested to be processed in the job. The value must be rounded
+ * up, so that a job between 1 and 1024 octets must be indicated as being 1K
+ * octets, 1025 to 2048 must be 2K octets, etc. For a multidoc print job (a job
+ * with multiple documents), the {@code JobKOctets} value is computed by adding
+ * up the individual documents' sizes in octets, then rounding up to the next K
+ * octets value.
+ * <p>
+ * The {@code JobKOctets} attribute describes the size of the job. This
+ * attribute is not intended to be a counter; it is intended to be useful
+ * routing and scheduling information if known. The printer may try to compute
+ * the {@code JobKOctets} attribute's value if it is not supplied in the Print
+ * Request. Even if the client does supply a value for the {@code JobKOctets}
+ * attribute in the Print Request, the printer may choose to change the value if
+ * the printer is able to compute a value which is more accurate than the client
+ * supplied value. The printer may be able to determine the correct value for
+ * the {@code JobKOctets} attribute either right at job submission time or at
+ * any later point in time.
+ * <p>
+ * The {@code JobKOctets} value must not include the multiplicative factors
+ * contributed by the number of copies specified by the {@link Copies Copies}
+ * attribute, independent of whether the device can process multiple copies
+ * without making multiple passes over the job or document data and independent
+ * of whether the output is collated or not. Thus the value is independent of
+ * the implementation and indicates the size of the document(s) measured in K
+ * octets independent of the number of copies.
+ * <p>
+ * The {@code JobKOctets} value must also not include the multiplicative factor
+ * due to a copies instruction embedded in the document data. If the document
+ * data actually includes replications of the document data, this value will
+ * include such replication. In other words, this value is always the size of
+ * the source document data, rather than a measure of the hardcopy output to be
+ * produced.
+ * <p>
  * The size of a doc is computed based on the print data representation class as
- * specified by the doc's {@link javax.print.DocFlavor DocFlavor}, as
- * shown in the table below.
- *
+ * specified by the doc's {@link javax.print.DocFlavor DocFlavor}, as shown in
+ * the table below.
  * <table class="striped">
  * <caption>Table showing computation of doc sizes</caption>
  * <thead>
- * <TR>
- * <TH>Representation Class</TH>
- * <TH>Document Size</TH>
- * </TR>
+ *   <tr>
+ *     <th>Representation Class
+ *     <th>Document Size
  * </thead>
  * <tbody>
- * <TR>
- * <TD>byte[]</TD>
- * <TD>Length of the byte array</TD>
- * </TR>
- * <TR>
- * <TD>java.io.InputStream</TD>
- * <TD>Number of bytes read from the stream</TD>
- * </TR>
- * <TR>
- * <TD>char[]</TD>
- * <TD>Length of the character array x 2</TD>
- * </TR>
- * <TR>
- * <TD>java.lang.String</TD>
- * <TD>Length of the string x 2</TD>
- * </TR>
- * <TR>
- * <TD>java.io.Reader</TD>
- * <TD>Number of characters read from the stream x 2</TD>
- * </TR>
- * <TR>
- * <TD>java.net.URL</TD>
- * <TD>Number of bytes read from the file at the given URL address</TD>
- * </TR>
- * <TR>
- * <TD>java.awt.image.renderable.RenderableImage</TD>
- * <TD>Implementation dependent&#42;</TD>
- * </TR>
- * <TR>
- * <TD>java.awt.print.Printable</TD>
- * <TD>Implementation dependent&#42;</TD>
- * </TR>
- * <TR>
- * <TD>java.awt.print.Pageable</TD>
- * <TD>Implementation dependent&#42;</TD>
- * </TR>
+ *   <tr>
+ *     <td>{@code byte[]}
+ *     <td>Length of the byte array
+ *   <tr>
+ *     <td>{@code java.io.InputStream}
+ *     <td>Number of bytes read from the stream
+ *   <tr>
+ *     <td>{@code char[]}
+ *     <td>Length of the character array x 2
+ *   <tr>
+ *     <td>{@code java.lang.String}
+ *     <td>Length of the string x 2
+ *   <tr>
+ *     <td>{@code java.io.Reader}
+ *     <td>Number of characters read from the stream x 2
+ *   <tr>
+ *     <td>{@code java.net.URL}
+ *     <td>Number of bytes read from the file at the given {@code URL} address
+ *   <tr>
+ *     <td>{@code java.awt.image.renderable.RenderableImage}
+ *     <td>Implementation dependent&#42;
+ *   <tr>
+ *     <td>{@code java.awt.print.Printable}
+ *     <td>Implementation dependent&#42;
+ *   <tr>
+ *     <td>{@code java.awt.print.Pageable}
+ *     <td>Implementation dependent&#42;
  * </tbody>
- * </TABLE>
- * <P>
+ * </table>
+ * <p>
  * &#42; In these cases the Print Service itself generates the print data sent
- * to the printer. If the Print Service supports the JobKOctets attribute, for
- * these cases the Print Service itself must calculate the size of the print
- * data, replacing any JobKOctets value the client specified.
- * <P>
- * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
+ * to the printer. If the Print Service supports the {@code JobKOctets}
+ * attribute, for these cases the Print Service itself must calculate the size
+ * of the print data, replacing any {@code JobKOctets} value the client
+ * specified.
+ * <p>
+ * <b>IPP Compatibility:</b> The integer value gives the IPP integer value. The
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
+ * @author Alan Kaminsky
  * @see JobKOctetsSupported
  * @see JobKOctetsProcessed
  * @see JobImpressions
  * @see JobMediaSheets
- *
- * @author  Alan Kaminsky
  */
 public final class JobKOctets   extends IntegerSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -8959710146498202869L;
 
     /**
      * Construct a new job K octets attribute with the given integer value.
      *
-     * @param  value  Integer value.
-     *
-     * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if {@code value} is less than 0.
+     * @param  value Integer value
+     * @throws IllegalArgumentException if {@code value} is negative
      */
     public JobKOctets(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -151,20 +144,16 @@ public final class JobKOctets   extends IntegerSyntax
      * Returns whether this job K octets attribute is equivalent to the passed
      * in object. To be equivalent, all of the following conditions must be
      * true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class JobKOctets.
-     * <LI>
-     * This job K octets attribute's value and {@code object}'s value
-     * are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code JobKOctets}.
+     *   <li>This job K octets attribute's value and {@code object}'s value are
+     *   equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this job K
-     *          octets attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this job K octets
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return super.equals(object) && object instanceof JobKOctets;
@@ -173,11 +162,12 @@ public final class JobKOctets   extends IntegerSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class JobKOctets, the category is class JobKOctets itself.
+     * <p>
+     * For class {@code JobKOctets}, the category is class
+     * {@code JobKOctets} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return JobKOctets.class;
@@ -186,13 +176,13 @@ public final class JobKOctets   extends IntegerSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class JobKOctets, the category name is {@code "job-k-octets"}.
+     * <p>
+     * For class {@code JobKOctets}, the category name is
+     * {@code "job-k-octets"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "job-k-octets";
     }
-
 }

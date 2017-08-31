@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,31 @@
 package javax.print.event;
 
 /**
- *
- * Class PrintEvent is the super class of all Print Service API events.
+ * Class {@code PrintEvent} is the super class of all Print Service API events.
  */
-
 public class PrintEvent extends java.util.EventObject {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 2286914924430763847L;
 
     /**
-     * Constructs a PrintEvent object.
-     * @param source is the source of the event
-     * @throws IllegalArgumentException if {@code source} is
-     *         {@code null}.
+     * Constructs a {@code PrintEvent} object.
+     *
+     * @param  source is the source of the event
+     * @throws IllegalArgumentException if {@code source} is {@code null}
      */
     public PrintEvent (Object source) {
         super(source);
     }
 
     /**
+     * Returns a string representation of this {@code PrintEvent}.
+     *
      * @return a message describing the event
      */
     public String toString() {
         return ("PrintEvent on " + getSource().toString());
     }
-
 }

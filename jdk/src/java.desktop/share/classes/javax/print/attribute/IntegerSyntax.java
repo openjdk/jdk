@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,28 @@ package javax.print.attribute;
 import java.io.Serializable;
 
 /**
- * Class IntegerSyntax is an abstract base class providing the common
+ * Class {@code IntegerSyntax} is an abstract base class providing the common
  * implementation of all attributes with integer values.
- * <P>
+ * <p>
  * Under the hood, an integer attribute is just an integer. You can get an
- * integer attribute's integer value by calling {@link #getValue()
- * getValue()}. An integer attribute's integer value is
- * established when it is constructed (see {@link #IntegerSyntax(int)
- * IntegerSyntax(int)}). Once constructed, an integer attribute's
- * value is immutable.
+ * integer attribute's integer value by calling {@link #getValue() getValue()}.
+ * An integer attribute's integer value is established when it is constructed
+ * (see {@link #IntegerSyntax(int) IntegerSyntax(int)}). Once constructed, an
+ * integer attribute's value is immutable.
  *
- * @author  David Mendenhall
- * @author  Alan Kaminsky
+ * @author David Mendenhall
+ * @author Alan Kaminsky
  */
 public abstract class IntegerSyntax implements Serializable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 3644574816328081943L;
 
     /**
      * This integer attribute's integer value.
+     *
      * @serial
      */
     private int value;
@@ -54,7 +57,7 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
     /**
      * Construct a new integer attribute with the given integer value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected IntegerSyntax(int value) {
         this.value = value;
@@ -64,14 +67,11 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
      * Construct a new integer attribute with the given integer value, which
      * must lie within the given range.
      *
-     * @param  value       Integer value.
-     * @param  lowerBound  Lower bound.
-     * @param  upperBound  Upper bound.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code value} is less than
-     *     {@code lowerBound} or greater than
-     *     {@code upperBound}.
+     * @param  value Integer value
+     * @param  lowerBound Lower bound
+     * @param  upperBound Upper bound
+     * @throws IllegalArgumentException if {@code value} is less than
+     *         {@code lowerBound} or greater than {@code upperBound}
      */
     protected IntegerSyntax(int value, int lowerBound, int upperBound) {
         if (lowerBound > value || value > upperBound) {
@@ -84,6 +84,7 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
 
     /**
      * Returns this integer attribute's integer value.
+     *
      * @return the integer value
      */
     public int getValue() {
@@ -93,20 +94,16 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
     /**
      * Returns whether this integer attribute is equivalent to the passed in
      * object. To be equivalent, all of the following conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class IntegerSyntax.
-     * <LI>
-     * This integer attribute's value and {@code object}'s value are
-     * equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code IntegerSyntax}.
+     *   <li>This integer attribute's value and {@code object}'s value are
+     *   equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this integer
-     *          attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this integer
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
@@ -29,25 +30,28 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.PrintServiceAttribute;
 
 /**
- * Class PrinterState is a printing attribute class, an enumeration, that
- * identifies the current state of a printer. Class PrinterState defines
- * standard printer state values. A Print Service implementation only needs
- * to report those printer states which are appropriate for the particular
+ * Class {@code PrinterState} is a printing attribute class, an enumeration,
+ * that identifies the current state of a printer. Class {@code PrinterState}
+ * defines standard printer state values. A Print Service implementation only
+ * needs to report those printer states which are appropriate for the particular
  * implementation; it does not have to report every defined printer state. The
  * {@link PrinterStateReasons PrinterStateReasons} attribute augments the
- * PrinterState attribute to give more detailed information about the printer
- * in  given printer state.
- * <P>
- * <B>IPP Compatibility:</B> The category name returned by
- * {@code getName()} is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The {@code toString()} method
- * returns the IPP string representation of the attribute value.
+ * {@code PrinterState} attribute to give more detailed information about the
+ * printer in given printer state.
+ * <p>
+ * <b>IPP Compatibility:</b> The category name returned by {@code getName()} is
+ * the IPP attribute name. The enumeration's integer value is the IPP enum
+ * value. The {@code toString()} method returns the IPP string representation of
+ * the attribute value.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class PrinterState extends EnumSyntax
 implements PrintServiceAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -649578618346507718L;
 
     /**
@@ -61,8 +65,7 @@ implements PrintServiceAttribute {
     public static final PrinterState IDLE = new PrinterState(3);
 
     /**
-     * Indicates that jobs are processing;
-     * new jobs will wait before processing.
+     * Indicates that jobs are processing; new jobs will wait before processing.
      */
     public static final PrinterState PROCESSING = new PrinterState(4);
 
@@ -75,12 +78,15 @@ implements PrintServiceAttribute {
      * Construct a new printer state enumeration value with the given integer
      * value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected PrinterState(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code PrinterState}.
+     */
     private static final String[] myStringTable = {
         "unknown",
         null,
@@ -90,6 +96,9 @@ implements PrintServiceAttribute {
         "stopped"
     };
 
+    /**
+     * The enumeration value table for class {@code PrinterState}.
+     */
     private static final PrinterState[] myEnumValueTable = {
         UNKNOWN,
         null,
@@ -100,14 +109,14 @@ implements PrintServiceAttribute {
     };
 
     /**
-     * Returns the string table for class PrinterState.
+     * Returns the string table for class {@code PrinterState}.
      */
     protected String[] getStringTable() {
         return myStringTable;
     }
 
     /**
-     * Returns the enumeration value table for class PrinterState.
+     * Returns the enumeration value table for class {@code PrinterState}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return myEnumValueTable;
@@ -116,11 +125,12 @@ implements PrintServiceAttribute {
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterState, the category is class PrinterState itself.
+     * <p>
+     * For class {@code PrinterState}, the category is class
+     * {@code PrinterState} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterState.class;
@@ -129,13 +139,13 @@ implements PrintServiceAttribute {
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterState, the category name is {@code "printer-state"}.
+     * <p>
+     * For class {@code PrinterState}, the category name is
+     * {@code "printer-state"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-state";
     }
-
 }
