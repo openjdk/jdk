@@ -36,10 +36,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class FlagWithInvalidValue {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxRAMFraction=v", "-version");
+        "-XX:MaxRAMPercentage=v", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Improperly specified VM option 'MaxRAMFraction=v'");
+    output.shouldContain("Improperly specified VM option 'MaxRAMPercentage=v'");
     output.shouldHaveExitValue(1);
   }
 }

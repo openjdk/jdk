@@ -1437,12 +1437,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  st->print("CPU:");
-  st->print("total %d", os::processor_count());
-  // It's not safe to query number of active processors after crash.
-  // st->print("(active %d)", os::active_processor_count());
-  st->print(" %s", VM_Version::features());
-  st->cr();
+  // Nothing to do beyond what os::print_cpu_info() does.
 }
 
 static void print_signal_handler(outputStream* st, int sig,
