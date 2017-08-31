@@ -49,7 +49,6 @@
  *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
- *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xmixed -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -61,7 +60,6 @@
  *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
- *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xmixed -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -73,7 +71,6 @@
  *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
- *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  * @run main/othervm -Xmixed -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -85,7 +82,6 @@
  *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
- *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  */
 

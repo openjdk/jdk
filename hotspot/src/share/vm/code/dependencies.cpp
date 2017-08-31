@@ -940,7 +940,7 @@ uintptr_t Dependencies::DepStream::get_identifier(int i) {
 
 oop Dependencies::DepStream::argument_oop(int i) {
   oop result = recorded_oop_at(argument_index(i));
-  assert(result == NULL || result->is_oop(), "must be");
+  assert(oopDesc::is_oop_or_null(result), "must be");
   return result;
 }
 

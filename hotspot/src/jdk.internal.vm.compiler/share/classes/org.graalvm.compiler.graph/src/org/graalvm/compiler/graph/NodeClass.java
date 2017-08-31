@@ -931,7 +931,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     /**
-     * @returns true if the node has no inputs and no successors
+     * @return true if the node has no inputs and no successors
      */
     public boolean isLeafNode() {
         return isLeafNode;

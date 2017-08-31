@@ -208,7 +208,7 @@ IRT_END
 
 
 IRT_ENTRY(void, InterpreterRuntime::register_finalizer(JavaThread* thread, oopDesc* obj))
-  assert(obj->is_oop(), "must be a valid oop");
+  assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 IRT_END
@@ -435,7 +435,6 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // assertions
 #ifdef ASSERT
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
-    assert(h_exception->is_oop(), "just checking");
     // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
     if (!(h_exception->is_a(SystemDictionary::Throwable_klass()))) {
       if (ExitVMOnVerifyError) vm_exit(-1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,7 @@ import java.util.List;
 
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ByteContainer;
-import jdk.tools.jaotc.binformat.Symbol.Binding;
-import jdk.tools.jaotc.binformat.Symbol.Kind;
 import jdk.tools.jaotc.binformat.GotSymbol;
-import jdk.tools.jaotc.AOTCompiledClass.AOTKlassData;
 import jdk.tools.jaotc.utils.NativeOrderOutputStream;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
@@ -43,7 +40,7 @@ import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotMetaData;
 
-class MetadataBuilder {
+final class MetadataBuilder {
 
     private final DataBuilder dataBuilder;
 
@@ -58,8 +55,6 @@ class MetadataBuilder {
      * Process compiled methods and create method metadata.
      */
     void processMetadata(List<AOTCompiledClass> classes, AOTCompiledClass stubCompiledCode) {
-        binaryContainer.getMethodMetadataContainer().createSymbol(0, Kind.OBJECT, Binding.LOCAL, 0, "metaStart");
-
         for (AOTCompiledClass c : classes) {
             processMetadataClass(c);
         }

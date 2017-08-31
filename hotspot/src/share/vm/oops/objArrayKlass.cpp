@@ -498,6 +498,6 @@ void ObjArrayKlass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_objArray(), "must be objArray");
   objArrayOop oa = objArrayOop(obj);
   for(int index = 0; index < oa->length(); index++) {
-    guarantee(oa->obj_at(index)->is_oop_or_null(), "should be oop");
+    guarantee(oopDesc::is_oop_or_null(oa->obj_at(index)), "should be oop");
   }
 }

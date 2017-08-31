@@ -47,10 +47,15 @@ inline void Atomic::store_ptr(intptr_t store_value, volatile intptr_t* dest) { *
 inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *(void* volatile *)dest = store_value; }
 
 
-inline jint Atomic::add(jint add_value, volatile jint* dest)
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
- return __sync_add_and_fetch(dest, add_value);
-}
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const {
+    return __sync_add_and_fetch(dest, add_value);
+  }
+};
 
 inline void Atomic::inc(volatile jint* dest)
 {
@@ -85,9 +90,13 @@ inline void* Atomic::xchg_ptr(void* exchange_value, volatile void* dest)
                            (volatile intptr_t*) dest);
 }
 
-template <typename T> T generic_cmpxchg(T exchange_value, volatile T* dest,
-                                        T compare_value, cmpxchg_memory_order order)
-{
+template<size_t byte_size>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
+                                                        T volatile* dest,
+                                                        T compare_value,
+                                                        cmpxchg_memory_order order) const {
+  STATIC_ASSERT(byte_size == sizeof(T));
   if (order == memory_order_relaxed) {
     T value = compare_value;
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
@@ -98,29 +107,8 @@ template <typename T> T generic_cmpxchg(T exchange_value, volatile T* dest,
   }
 }
 
-#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
-inline jbyte Atomic::cmpxchg (jbyte exchange_value, volatile jbyte* dest, jbyte compare_value, cmpxchg_memory_order order)
-{
-  return generic_cmpxchg(exchange_value, dest, compare_value, order);
-}
-
-inline jint Atomic::cmpxchg (jint exchange_value, volatile jint* dest, jint compare_value, cmpxchg_memory_order order)
-{
-  return generic_cmpxchg(exchange_value, dest, compare_value, order);
-}
-
 inline void Atomic::store (jlong store_value, jlong* dest) { *dest = store_value; }
 inline void Atomic::store (jlong store_value, volatile jlong* dest) { *dest = store_value; }
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest)
-{
- return __sync_add_and_fetch(dest, add_value);
-}
-
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest)
-{
-  return (void *) add_ptr(add_value, (volatile intptr_t *) dest);
-}
 
 inline void Atomic::inc_ptr(volatile intptr_t* dest)
 {
@@ -137,24 +125,6 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value, volatile intptr_t* des
   intptr_t res = __sync_lock_test_and_set (dest, exchange_value);
   FULL_MEM_BARRIER;
   return res;
-}
-
-inline jlong Atomic::cmpxchg (jlong exchange_value, volatile jlong* dest, jlong compare_value, cmpxchg_memory_order order)
-{
-  return generic_cmpxchg(exchange_value, dest, compare_value, order);
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order)
-{
-  return generic_cmpxchg(exchange_value, dest, compare_value, order);
-}
-
-inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void* compare_value, cmpxchg_memory_order order)
-{
-  return (void *) cmpxchg_ptr((intptr_t) exchange_value,
-                              (volatile intptr_t*) dest,
-                              (intptr_t) compare_value,
-                              order);
 }
 
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }

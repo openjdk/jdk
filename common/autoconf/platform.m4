@@ -337,6 +337,12 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   elif test "x$OPENJDK_$1_OS" != xmacosx && test "x$OPENJDK_$1_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
     OPENJDK_$1_CPU_LEGACY="amd64"
+  elif test "x$OPENJDK_$1_CPU" = xalpha; then
+    # Avoid name collisions with variables named alpha
+    OPENJDK_$1_CPU_LEGACY="_alpha_"
+  elif test "x$OPENJDK_$1_CPU" = xsh; then
+    # Avoid name collisions with variables named sh
+    OPENJDK_$1_CPU_LEGACY="_sh_"
   fi
   AC_SUBST(OPENJDK_$1_CPU_LEGACY)
 

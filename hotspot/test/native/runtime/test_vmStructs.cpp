@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/vmStructs.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
 
 #if INCLUDE_VM_STRUCTS
+#include "runtime/vmStructs.hpp"
+
 TEST(VMStructs, last_entries)  {
   // Make sure last entry in the each array is indeed the correct end marker.
   // The reason why these are static is to make sure they are zero initialized.

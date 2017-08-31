@@ -78,6 +78,8 @@ public final class SPARCArrayEqualsOp extends SPARCLIRInstruction {
 
     public SPARCArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, AllocatableValue result, AllocatableValue array1, AllocatableValue array2, AllocatableValue length) {
         super(TYPE, SIZE);
+
+        assert !kind.isNumericFloat() : "Float arrays comparison (bitwise_equal || both_NaN) isn't supported";
         this.kind = kind;
 
         Class<?> arrayClass = Array.newInstance(kind.toJavaClass(), 0).getClass();

@@ -24,16 +24,14 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.version_min_command;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachOVersion {
-    ByteBuffer version;
+final class MachOVersion {
+    private final ByteBuffer version;
 
-    public MachOVersion() {
+    MachOVersion() {
         version = MachOByteBuffer.allocate(version_min_command.totalsize);
 
         version.putInt(version_min_command.cmd.off, version_min_command.LC_VERSION_MIN_MACOSX);
@@ -42,8 +40,7 @@ public class MachOVersion {
         version.putInt(version_min_command.sdk.off, 0); /* N/A SDK */
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return version.array();
     }
 }
-

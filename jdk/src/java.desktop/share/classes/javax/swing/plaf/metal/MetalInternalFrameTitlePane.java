@@ -518,7 +518,7 @@ public class MetalInternalFrameTitlePane  extends BasicInternalFrameTitlePane {
     }
 
     /**
-     * Updates any state dependant upon the JInternalFrame being shown in
+     * Updates any state dependent upon the JInternalFrame being shown in
      * a <code>JOptionPane</code>.
      */
     private void updateOptionPaneState() {

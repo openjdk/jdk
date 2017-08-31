@@ -129,7 +129,7 @@ void MemProfiler::do_trace() {
   fprintf(_log_fp, UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",%6ld\n",
           handles_memory_usage / K,
           resource_memory_usage / K,
-          OopMapCache::memory_usage() / K);
+          0L);
   fflush(_log_fp);
 }
 

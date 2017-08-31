@@ -82,8 +82,21 @@ inline void Atomic::store_ptr(void*    store_value, volatile void*     dest) { *
 // The return value of the method is the value that was successfully stored. At the
 // time the caller receives back control, the value in memory may have changed already.
 
-inline jint Atomic::add(jint inc, volatile jint*dest) {
-  unsigned int old, upd;
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
+
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(4 == sizeof(I));
+  STATIC_CAST(4 == sizeof(D));
+
+  D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
     __asm__ __volatile__ (
@@ -105,7 +118,7 @@ inline jint Atomic::add(jint inc, volatile jint*dest) {
       //---<  inputs  >---
       : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r0", "r2", "r3"
+      : "cc", "r0", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -120,16 +133,21 @@ inline jint Atomic::add(jint inc, volatile jint*dest) {
       //---<  inputs  >---
       : [inc] "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 
-  return (jint)upd;
+  return upd;
 }
 
 
-inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
-  unsigned long old, upd;
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(8 == sizeof(I));
+  STATIC_CAST(8 == sizeof(D));
+
+  D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
     __asm__ __volatile__ (
@@ -151,7 +169,7 @@ inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
       //---<  inputs  >---
       : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r0", "r2", "r3"
+      : "cc", "r0", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -166,15 +184,11 @@ inline intptr_t Atomic::add_ptr(intptr_t inc, volatile intptr_t* dest) {
       //---<  inputs  >---
       : [inc] "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 
-  return (intptr_t)upd;
-}
-
-inline void* Atomic::add_ptr(intptr_t add_value, volatile void* dest) {
-  return (void*)add_ptr(add_value, (volatile intptr_t*)dest);
+  return upd;
 }
 
 
@@ -214,7 +228,7 @@ inline void Atomic::inc(volatile jint* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -229,7 +243,7 @@ inline void Atomic::inc(volatile jint* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -258,7 +272,7 @@ inline void Atomic::inc_ptr(volatile intptr_t* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -273,7 +287,7 @@ inline void Atomic::inc_ptr(volatile intptr_t* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -317,7 +331,7 @@ inline void Atomic::dec(volatile jint* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -335,7 +349,7 @@ inline void Atomic::dec(volatile jint* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -364,7 +378,7 @@ inline void Atomic::dec_ptr(volatile intptr_t* dest) {
       :
 //    : [inc]  "a"   (inc)    // read-only.
       //---<  clobbered  >---
-      : "cc", "r2", "r3"
+      : "cc", "r2", "r3", "memory"
     );
   } else {
     __asm__ __volatile__ (
@@ -382,7 +396,7 @@ inline void Atomic::dec_ptr(volatile intptr_t* dest) {
       //---<  inputs  >---
       :
       //---<  clobbered  >---
-      : "cc"
+      : "cc", "memory"
     );
   }
 }
@@ -420,7 +434,7 @@ inline jint Atomic::xchg (jint xchg_val, volatile jint* dest) {
     //---<  inputs  >---
     : [upd] "d"   (xchg_val) // read-only, value to be written to memory
     //---<  clobbered  >---
-    : "cc"
+    : "cc", "memory"
   );
 
   return (jint)old;
@@ -439,7 +453,7 @@ inline intptr_t Atomic::xchg_ptr(intptr_t xchg_val, volatile intptr_t* dest) {
     //---<  inputs  >---
     : [upd] "d"   (xchg_val) // read-only, value to be written to memory
     //---<  clobbered  >---
-    : "cc"
+    : "cc", "memory"
   );
 
   return (intptr_t)old;
@@ -478,8 +492,18 @@ inline void *Atomic::xchg_ptr(void *exchange_value, volatile void *dest) {
 // function is performed before the operand is fetched and again after the
 // operation is completed."
 
-jint Atomic::cmpxchg(jint xchg_val, volatile jint* dest, jint cmp_val, cmpxchg_memory_order unused) {
-  unsigned long old;
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
+
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
+                                                T volatile* dest,
+                                                T cmp_val,
+                                                cmpxchg_memory_order unused) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   CS       %[old],%[upd],%[mem]    \n\t" // Try to xchg upd with mem.
@@ -490,14 +514,20 @@ jint Atomic::cmpxchg(jint xchg_val, volatile jint* dest, jint cmp_val, cmpxchg_m
     : [upd] "d"   (xchg_val)
     ,       "0"   (cmp_val)  // Read-only, initial value for [old] (operand #0).
     // clobbered
-    : "cc"
+    : "cc", "memory"
   );
 
-  return (jint)old;
+  return old;
 }
 
-jlong Atomic::cmpxchg(jlong xchg_val, volatile jlong* dest, jlong cmp_val, cmpxchg_memory_order unused) {
-  unsigned long old;
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
+                                                T volatile* dest,
+                                                T cmp_val,
+                                                cmpxchg_memory_order unused) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T old;
 
   __asm__ __volatile__ (
     "   CSG      %[old],%[upd],%[mem]    \n\t" // Try to xchg upd with mem.
@@ -508,18 +538,10 @@ jlong Atomic::cmpxchg(jlong xchg_val, volatile jlong* dest, jlong cmp_val, cmpxc
     : [upd] "d"   (xchg_val)
     ,       "0"   (cmp_val)  // Read-only, initial value for [old] (operand #0).
     // clobbered
-    : "cc"
+    : "cc", "memory"
   );
 
-  return (jlong)old;
-}
-
-void* Atomic::cmpxchg_ptr(void *xchg_val, volatile void* dest, void* cmp_val, cmpxchg_memory_order unused) {
-  return (void*)cmpxchg((jlong)xchg_val, (volatile jlong*)dest, (jlong)cmp_val, unused);
-}
-
-intptr_t Atomic::cmpxchg_ptr(intptr_t xchg_val, volatile intptr_t* dest, intptr_t cmp_val, cmpxchg_memory_order unused) {
-  return (intptr_t)cmpxchg((jlong)xchg_val, (volatile jlong*)dest, (jlong)cmp_val, unused);
+  return old;
 }
 
 inline jlong Atomic::load(const volatile jlong* src) { return *src; }

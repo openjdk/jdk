@@ -40,34 +40,38 @@ import javax.management.ObjectName;
  *
  * <p>The notification type is one of the following:</p>
  *
- * <table>
+ * <table class="striped">
  * <caption style="display:none">JMXConnectionNotification Types</caption>
  *
+ * <thead style="text-align:left">
  * <tr>
- * <th style="text-align:left">Type</th>
- * <th style="text-align:left">Meaning</th>
+ * <th scope="col">Type</th>
+ * <th scope="col">Meaning</th>
  * </tr>
+ * </thead>
  *
+ * <tbody style="text-align:left">
  * <tr>
- * <td><code>jmx.remote.connection.opened</code></td>
+ * <th scope="row"><code>jmx.remote.connection.opened</code></th>
  * <td>A new client connection has been opened.</td>
  * </tr>
  *
  * <tr>
- * <td><code>jmx.remote.connection.closed</code></td>
+ * <th scope="row"><code>jmx.remote.connection.closed</code></th>
  * <td>A client connection has been closed.</td>
  * </tr>
  *
  * <tr>
- * <td><code>jmx.remote.connection.failed</code></td>
+ * <th scope="row"><code>jmx.remote.connection.failed</code></th>
  * <td>A client connection has failed unexpectedly.</td>
  * </tr>
  *
  * <tr>
- * <td><code>jmx.remote.connection.notifs.lost</code></td>
+ * <th scope="row"><code>jmx.remote.connection.notifs.lost</code></th>
  * <td>A client connection has potentially lost notifications.  This
  * notification only appears on the client side.</td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * <p>The <code>timeStamp</code> of the notification is a time value

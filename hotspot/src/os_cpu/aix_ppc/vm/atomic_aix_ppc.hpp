@@ -30,6 +30,8 @@
 #error "Atomic currently only impleneted for PPC64"
 #endif
 
+#include "utilities/debug.hpp"
+
 // Implementation of class atomic
 
 inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
@@ -93,9 +95,21 @@ inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 #define strasm_nobarrier                  ""
 #define strasm_nobarrier_clobber_memory   ""
 
-inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
+template<size_t byte_size>
+struct Atomic::PlatformAdd
+  : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
+{
+  template<typename I, typename D>
+  D add_and_fetch(I add_value, D volatile* dest) const;
+};
 
-  unsigned int result;
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(4 == sizeof(I));
+  STATIC_CAST(4 == sizeof(D));
+
+  D result;
 
   __asm__ __volatile__ (
     strasm_lwsync
@@ -108,13 +122,17 @@ inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
 
-  return (jint) result;
+  return result;
 }
 
 
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
+template<>
+template<typename I, typename D>
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+  STATIC_CAST(8 == sizeof(I));
+  STATIC_CAST(8 == sizeof(D));
 
-  long result;
+  D result;
 
   __asm__ __volatile__ (
     strasm_lwsync
@@ -127,11 +145,7 @@ inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
     : /*%1*/"r" (add_value), /*%2*/"r" (dest)
     : "cc", "memory" );
 
-  return (intptr_t) result;
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add_ptr(add_value, (volatile intptr_t*)dest);
+  return result;
 }
 
 
@@ -306,8 +320,13 @@ inline void cmpxchg_post_membar(cmpxchg_memory_order order) {
   }
 }
 
-#define VM_HAS_SPECIALIZED_CMPXCHG_BYTE
-inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value, cmpxchg_memory_order order) {
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(1 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
@@ -368,16 +387,22 @@ inline jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte c
 
   cmpxchg_post_membar(order);
 
-  return (jbyte)(unsigned char)old_value;
+  return PrimitiveConversions::cast<T>((unsigned char)old_value);
 }
 
-inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compare_value, cmpxchg_memory_order order) {
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
   // specified otherwise (see atomic.hpp).
 
-  unsigned int old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   cmpxchg_pre_membar(order);
@@ -412,16 +437,22 @@ inline jint Atomic::cmpxchg(jint exchange_value, volatile jint* dest, jint compa
 
   cmpxchg_post_membar(order);
 
-  return (jint) old_value;
+  return old_value;
 }
 
-inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong compare_value, cmpxchg_memory_order order) {
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
 
   // Note that cmpxchg guarantees a two-way memory barrier across
   // the cmpxchg, so it's really a a 'fence_cmpxchg_fence' if not
   // specified otherwise (see atomic.hpp).
 
-  long old_value;
+  T old_value;
   const uint64_t zero = 0;
 
   cmpxchg_pre_membar(order);
@@ -456,15 +487,7 @@ inline jlong Atomic::cmpxchg(jlong exchange_value, volatile jlong* dest, jlong c
 
   cmpxchg_post_membar(order);
 
-  return (jlong) old_value;
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
-  return (intptr_t)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
-}
-
-inline void* Atomic::cmpxchg_ptr(void* exchange_value, volatile void* dest, void* compare_value, cmpxchg_memory_order order) {
-  return (void*)cmpxchg((jlong)exchange_value, (volatile jlong*)dest, (jlong)compare_value, order);
+  return old_value;
 }
 
 #undef strasm_sync

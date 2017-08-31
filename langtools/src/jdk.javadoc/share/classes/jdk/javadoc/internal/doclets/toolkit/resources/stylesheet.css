@@ -203,7 +203,7 @@ ul.navListSearch li {
     padding: 5px 6px;
     text-transform:uppercase;
 }
-ul.navListSearch li span {
+ul.navListSearch li label {
     position:relative;
     right:-16px;
 }
@@ -756,18 +756,20 @@ ul.ui-autocomplete  li {
 }
 #reset {
     background-color: rgb(255,255,255);
+    background-image:url('resources/x.png');
+    background-position:center;
+    background-repeat:no-repeat;
+    background-size:12px;
     border:0 none;
     width:16px;
     height:17px;
     position:relative;
-    left:-2px;
-    background-image:url('resources/x.png');
-    background-repeat:no-repeat;
-    background-size:12px;
-    background-position:center;
+    left:-4px;
+    top:-4px;
+    font-size:0px;
 }
 .watermark {
-    color:#888;
+    color:#545454;
 }
 .searchTagDescResult {
     font-style:italic;
@@ -871,4 +873,3 @@ table.striped > tbody > tr > th, table.striped > tbody > tr > td {
 table.striped > tbody > tr > th {
     font-weight: normal;
 }
-
