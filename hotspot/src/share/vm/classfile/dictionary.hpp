@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/ostream.hpp"
 
@@ -134,7 +135,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // It is essentially a cache to avoid repeated Java up-calls to
   // ClassLoader.checkPackageAccess().
   //
-  ProtectionDomainEntry* _pd_set;
+  ProtectionDomainEntry* volatile _pd_set;
 
  public:
   // Tells whether a protection is in the approved set.
@@ -153,8 +154,15 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
-  ProtectionDomainEntry* pd_set() const { return _pd_set; }
-  void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
+  ProtectionDomainEntry* pd_set() const            { return _pd_set; }
+  void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
+
+  ProtectionDomainEntry* pd_set_acquire() const    {
+    return (ProtectionDomainEntry*)OrderAccess::load_ptr_acquire(&_pd_set);
+  }
+  void release_set_pd_set(ProtectionDomainEntry* new_head) {
+    OrderAccess::release_store_ptr(&_pd_set, new_head);
+  }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
   bool is_valid_protection_domain(Handle protection_domain) {
@@ -167,7 +175,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   }
 
   void verify_protection_domain_set() {
-    for (ProtectionDomainEntry* current = _pd_set;
+    for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                                 current != NULL;
                                 current = current->_next) {
       current->_pd_cache->protection_domain()->verify();
@@ -181,7 +189,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
 
   void print_count(outputStream *st) {
     int count = 0;
-    for (ProtectionDomainEntry* current = _pd_set;
+    for (ProtectionDomainEntry* current = pd_set();  // accessed inside SD lock
                                 current != NULL;
                                 current = current->_next) {
       count++;

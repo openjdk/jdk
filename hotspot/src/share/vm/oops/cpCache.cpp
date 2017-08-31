@@ -26,6 +26,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "logging/log.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -606,6 +607,14 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
       ref += ConstantPoolCacheEntry::_indy_resolved_references_entries - 1;  // skip extra entries
     }
   }
+}
+
+void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
+  assert(!is_shared(), "shared caches are not deallocated");
+  data->remove_handle(_resolved_references);
+  set_resolved_references(NULL);
+  MetadataFactory::free_array<u2>(data, _reference_map);
+  set_reference_map(NULL);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
