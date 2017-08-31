@@ -211,27 +211,29 @@ public class MemoryNotificationInfo {
      * given {@code CompositeData}.
      * The given {@code CompositeData} must contain
      * the following attributes:
-     * <blockquote>
-     * <table border="1">
+     * <table class="striped" style="margin-left:2em">
      * <caption style="display:none">The attributes and the types the given CompositeData contains</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
      * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
      * <tr>
-     *   <td>poolName</td>
+     *   <th scope="row">poolName</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>usage</td>
+     *   <th scope="row">usage</th>
      *   <td>{@code javax.management.openmbean.CompositeData}</td>
      * </tr>
      * <tr>
-     *   <td>count</td>
+     *   <th scope="row">count</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @param cd {@code CompositeData} representing a
      *           {@code MemoryNotificationInfo}

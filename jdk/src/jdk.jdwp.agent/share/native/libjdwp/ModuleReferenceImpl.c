@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ getName(PacketInputStream *in, PacketOutputStream *out)
     }
     (void)outStream_writeString(out, name);
     if (name != NULL) {
-        jvmtiDeallocate(name);
+        JNI_FUNC_PTR(env, ReleaseStringUTFChars)(env, namestr, name);
     }
     return JNI_TRUE;
 }

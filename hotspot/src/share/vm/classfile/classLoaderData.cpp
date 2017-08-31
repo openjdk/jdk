@@ -759,14 +759,18 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
   return metaspace;
 }
 
-jobject ClassLoaderData::add_handle(Handle h) {
+OopHandle ClassLoaderData::add_handle(Handle h) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  return (jobject) _handles.add(h());
+  return OopHandle(_handles.add(h()));
 }
 
-void ClassLoaderData::remove_handle_unsafe(jobject h) {
-  assert(_handles.contains((oop*) h), "Got unexpected handle " PTR_FORMAT, p2i((oop*) h));
-  *((oop*) h) = NULL;
+void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
+  MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
+  if (dest.resolve() != NULL) {
+    return;
+  } else {
+    dest = _handles.add(h());
+  }
 }
 
 // Add this metadata pointer to be freed when it's safe.  This is only during

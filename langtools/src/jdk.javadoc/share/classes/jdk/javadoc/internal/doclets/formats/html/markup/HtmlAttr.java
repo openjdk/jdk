@@ -44,6 +44,7 @@ public enum HtmlAttr {
     COLS,
     CONTENT,
     DISABLED,
+    FOR,
     HREF,
     HTTP_EQUIV("http-equiv"),
     ID,

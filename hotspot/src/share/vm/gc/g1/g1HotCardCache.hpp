@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
   size_t            _hot_cache_size;
 
-  int               _hot_cache_par_chunk_size;
+  size_t            _hot_cache_par_chunk_size;
 
   // Avoids false sharing when concurrently updating _hot_cache_idx or
   // _hot_cache_par_claimed_idx. These are never updated at the same time

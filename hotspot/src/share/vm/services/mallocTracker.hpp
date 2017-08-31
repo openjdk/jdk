@@ -53,7 +53,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
   }
 
   inline void allocate(size_t sz) {
-    Atomic::add(1, &_count);
+    Atomic::inc(&_count);
     if (sz > 0) {
       Atomic::add(sz, &_size);
       DEBUG_ONLY(_peak_size = MAX2(_peak_size, _size));
@@ -64,7 +64,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
   inline void deallocate(size_t sz) {
     assert(_count > 0, "Nothing allocated yet");
     assert(_size >= sz, "deallocation > allocated");
-    Atomic::add(-1, &_count);
+    Atomic::dec(&_count);
     if (sz > 0) {
       // unary minus operator applied to unsigned type, result still unsigned
       #pragma warning(suppress: 4146)
@@ -74,7 +74,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
 
   inline void resize(long sz) {
     if (sz != 0) {
-      Atomic::add(sz, &_size);
+      Atomic::add(size_t(sz), &_size);
       DEBUG_ONLY(_peak_size = MAX2(_size, _peak_size);)
     }
   }

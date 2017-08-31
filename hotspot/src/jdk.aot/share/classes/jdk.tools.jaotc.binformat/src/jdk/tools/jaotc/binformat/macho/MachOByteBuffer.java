@@ -23,21 +23,19 @@
 
 package jdk.tools.jaotc.binformat.macho;
 
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import jdk.tools.jaotc.binformat.macho.MachOTargetInfo;
-import jdk.tools.jaotc.binformat.macho.MachO.mach_header_64;
 
-public class MachOByteBuffer {
+final class MachOByteBuffer {
 
-    public static ByteBuffer allocate(int size) {
+    static ByteBuffer allocate(int size) {
         ByteBuffer buf = ByteBuffer.allocate(size);
-        if (MachOTargetInfo.getMachOEndian() ==
-            MachO.mach_header_64.CPU_SUBTYPE_LITTLE_ENDIAN)
+        if (MachOTargetInfo.getMachOEndian() == MachO.mach_header_64.CPU_SUBTYPE_LITTLE_ENDIAN) {
             buf.order(ByteOrder.LITTLE_ENDIAN);
-        else
+        } else {
             buf.order(ByteOrder.BIG_ENDIAN);
+        }
         return (buf);
     }
 

@@ -867,7 +867,7 @@ void RelocIterator::print_current() {
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != NULL) {
         tty->print("oop_value=" INTPTR_FORMAT ": ", p2i(oop_value));
-        if (oop_value->is_oop()) {
+        if (oopDesc::is_oop(oop_value)) {
           oop_value->print_value_on(tty);
         }
       }

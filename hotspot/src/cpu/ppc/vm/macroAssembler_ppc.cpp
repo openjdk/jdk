@@ -3372,6 +3372,12 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  ld(result, 0, result);
+}
+
 void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
   ld(mirror, in_bytes(ConstMethod::constants_offset()), const_method);
   ld(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);

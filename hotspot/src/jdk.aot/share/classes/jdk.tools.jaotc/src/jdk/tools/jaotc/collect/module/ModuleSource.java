@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.module;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -28,13 +29,17 @@ import jdk.tools.jaotc.collect.FileSystemFinder;
 import java.nio.file.Path;
 import java.util.function.BiConsumer;
 
-public class ModuleSource implements ClassSource {
+public final class ModuleSource implements ClassSource {
     private final Path modulePath;
     private final ClassLoader classLoader;
 
-    public ModuleSource(Path modulePath, ClassLoader classLoader) {
+    ModuleSource(Path modulePath, ClassLoader classLoader) {
         this.modulePath = modulePath;
         this.classLoader = classLoader;
+    }
+
+    public Path getModulePath() {
+        return modulePath;
     }
 
     @Override
@@ -44,10 +49,6 @@ public class ModuleSource implements ClassSource {
         for (Path path : finder) {
             consumer.accept(ClassSource.makeClassName(modulePath.relativize(path).normalize()), classLoader);
         }
-    }
-
-    public Path getModulePath() {
-        return modulePath;
     }
 
     @Override

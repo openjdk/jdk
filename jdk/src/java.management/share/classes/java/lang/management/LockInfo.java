@@ -104,23 +104,25 @@ public class LockInfo {
      * Returns a {@code LockInfo} object represented by the
      * given {@code CompositeData}.
      * The given {@code CompositeData} must contain the following attributes:
-     * <blockquote>
-     * <table border="1">
+     * <table class="striped" style="margin-left:2em;">
      * <caption style="display:none">The attributes and the types the given CompositeData contains</caption>
+     * <thead style="text-align:left">
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
      * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
      * <tr>
-     *   <td>className</td>
+     *   <th scope="row">className</th>
      *   <td>{@code java.lang.String}</td>
      * </tr>
      * <tr>
-     *   <td>identityHashCode</td>
+     *   <th scope="row">identityHashCode</th>
      *   <td>{@code java.lang.Integer}</td>
      * </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @param cd {@code CompositeData} representing a {@code LockInfo}
      *

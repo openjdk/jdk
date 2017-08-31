@@ -24,45 +24,41 @@
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_FILE_HEADER;
-import jdk.tools.jaotc.binformat.pecoff.PECoffTargetInfo;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffHeader {
-    ByteBuffer header;
+final class PECoffHeader {
+    private final ByteBuffer header;
 
-    public PECoffHeader() {
+    PECoffHeader() {
         header = PECoffByteBuffer.allocate(IMAGE_FILE_HEADER.totalsize);
 
         header.putChar(IMAGE_FILE_HEADER.Machine.off, IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64);
-        header.putInt(IMAGE_FILE_HEADER.TimeDateStamp.off, (int)(System.currentTimeMillis()/1000));
+        header.putInt(IMAGE_FILE_HEADER.TimeDateStamp.off, (int) (System.currentTimeMillis() / 1000));
         header.putInt(IMAGE_FILE_HEADER.PointerToSymbolTable.off, 0);
         header.putInt(IMAGE_FILE_HEADER.NumberOfSymbols.off, 0);
-        header.putChar(IMAGE_FILE_HEADER.SizeOfOptionalHeader.off, (char)0);
-        header.putChar(IMAGE_FILE_HEADER.Characteristics.off, (char)0);
+        header.putChar(IMAGE_FILE_HEADER.SizeOfOptionalHeader.off, (char) 0);
+        header.putChar(IMAGE_FILE_HEADER.Characteristics.off, (char) 0);
 
     }
 
     // Update header with the number of total sections
-    public void setSectionCount(int count) {
-        header.putChar(IMAGE_FILE_HEADER.NumberOfSections.off, (char)count);
+    void setSectionCount(int count) {
+        header.putChar(IMAGE_FILE_HEADER.NumberOfSections.off, (char) count);
     }
 
     // Update header with the number of total symbols
-    public void setSymbolCount(int count) {
+    void setSymbolCount(int count) {
         header.putInt(IMAGE_FILE_HEADER.NumberOfSymbols.off, count);
     }
 
     // Update header with the offset of symbol table
-    public void setSymbolOff(int offset) {
+    void setSymbolOff(int offset) {
         header.putInt(IMAGE_FILE_HEADER.PointerToSymbolTable.off, offset);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return header.array();
     }
 }
-

@@ -23,7 +23,7 @@
 
 package jdk.tools.jaotc.binformat;
 
-public interface Container {
+interface Container {
 
     String getContainerName();
 

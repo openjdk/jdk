@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622
+ * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881 8181622 8182263
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -273,9 +273,9 @@ public class TestSearch extends JavadocTester {
                 "<script type=\"text/javascript\" src=\"jquery/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";loadScripts(document, 'script');",
                 "<ul class=\"navListSearch\">\n",
-                "<li><span>SEARCH:&nbsp;</span>\n",
-                "<input type=\"text\" id=\"search\" value=\" \" disabled=\"disabled\">\n",
-                "<input type=\"reset\" id=\"reset\" value=\" \" disabled=\"disabled\">\n");
+                "<li><label for=\"search\">SEARCH:</label>\n"
+                + "<input type=\"text\" id=\"search\" value=\"search\" disabled=\"disabled\">\n"
+                + "<input type=\"reset\" id=\"reset\" value=\"reset\" disabled=\"disabled\">\n");
         checkOutput(fileName, true,
                 "<div class=\"fixedNav\">");
     }

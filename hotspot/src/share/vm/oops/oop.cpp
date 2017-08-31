@@ -121,11 +121,44 @@ unsigned int oopDesc::new_hash(juint seed) {
   }
 }
 
+// used only for asserts and guarantees
+bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
+  if (!check_obj_alignment(obj)) return false;
+  if (!Universe::heap()->is_in_reserved(obj)) return false;
+  // obj is aligned and accessible in heap
+  if (Universe::heap()->is_in_reserved(obj->klass_or_null())) return false;
+
+  // Header verification: the mark is typically non-NULL. If we're
+  // at a safepoint, it must not be null.
+  // Outside of a safepoint, the header could be changing (for example,
+  // another thread could be inflating a lock on this object).
+  if (ignore_mark_word) {
+    return true;
+  }
+  if (obj->mark() != NULL) {
+    return true;
+  }
+  return !SafepointSynchronize::is_at_safepoint();
+}
+
+// used only for asserts and guarantees
+bool oopDesc::is_oop_or_null(oop obj, bool ignore_mark_word) {
+  return obj == NULL ? true : is_oop(obj, ignore_mark_word);
+}
+
+#ifndef PRODUCT
+// used only for asserts
+bool oopDesc::is_unlocked_oop() const {
+  if (!Universe::heap()->is_in_reserved(this)) return false;
+  return mark()->is_unlocked();
+}
+#endif // PRODUCT
+
 VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
-  guarantee(obj->is_oop_or_null(), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
+  guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
 }
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }

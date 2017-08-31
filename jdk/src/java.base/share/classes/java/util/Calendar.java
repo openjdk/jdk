@@ -1399,7 +1399,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         /**
          * Sets the week definition parameters to the values given by
          * {@code firstDayOfWeek} and {@code minimalDaysInFirstWeek} that are
-         * used to determine the <a href="Calendar.html#First_Week">first
+         * used to determine the <a href="Calendar.html#first_week">first
          * week</a> of a year. The parameters given by this method have
          * precedence over the default values given by the
          * {@linkplain #setLocale(Locale) locale}.
