@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,22 +38,22 @@ import java.io.InputStream;
  * The {@code Sequencer} interface includes methods for the following basic MIDI
  * sequencer operations:
  * <ul>
- * <li>obtaining a sequence from MIDI file data</li>
- * <li>starting and stopping playback</li>
- * <li>moving to an arbitrary position in the sequence</li>
- * <li>changing the tempo (speed) of playback</li>
- * <li>synchronizing playback to an internal clock or to received MIDI
- * messages</li>
- * <li>controlling the timing of another device</li>
+ *   <li>obtaining a sequence from MIDI file data
+ *   <li>starting and stopping playback
+ *   <li>moving to an arbitrary position in the sequence
+ *   <li>changing the tempo (speed) of playback
+ *   <li>synchronizing playback to an internal clock or to received MIDI
+ *   messages
+ *   <li>controlling the timing of another device
  * </ul>
  * In addition, the following operations are supported, either directly, or
  * indirectly through objects that the {@code Sequencer} has access to:
  * <ul>
- * <li>editing the data by adding or deleting individual MIDI events or entire
- * tracks</li>
- * <li>muting or soloing individual tracks in the sequence</li>
- * <li>notifying listener objects about any meta-events or control-change events
- * encountered while playing back the sequence.</li>
+ *   <li>editing the data by adding or deleting individual MIDI events or entire
+ *   tracks
+ *   <li>muting or soloing individual tracks in the sequence
+ *   <li>notifying listener objects about any meta-events or control-change
+ *   events encountered while playing back the sequence
  * </ul>
  *
  * @author Kara Kytle
@@ -694,12 +694,13 @@ public interface Sequencer extends MidiDevice {
         }
 
         /**
-         * Determines whether two objects are equal. Returns {@code true} if the
-         * objects are identical.
+         * Indicates whether the specified object is equal to this
+         * synchronization mode, returning {@code true} if the objects are the
+         * same.
          *
          * @param  obj the reference object with which to compare
-         * @return {@code true} if this object is the same as the {@code obj}
-         *         argument, {@code false} otherwise
+         * @return {@code true} if the specified object is equal to this
+         *         synchronization mode; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -708,7 +709,9 @@ public interface Sequencer extends MidiDevice {
         }
 
         /**
-         * Finalizes the hashcode method.
+         * Returns a hash code value for this synchronization mode.
+         *
+         * @return a hash code value for this synchronization mode
          */
         @Override
         public final int hashCode() {
