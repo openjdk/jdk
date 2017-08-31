@@ -12614,7 +12614,7 @@ instruct ubfxwI(iRegINoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask)
   match(Set dst (AndI (URShiftI src rshift) mask));
 
   ins_cost(INSN_COST);
-  format %{ "ubfxw $dst, $src, $mask" %}
+  format %{ "ubfxw $dst, $src, $rshift, $mask" %}
   ins_encode %{
     int rshift = $rshift$$constant;
     long mask = $mask$$constant;
@@ -12629,7 +12629,7 @@ instruct ubfxL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask)
   match(Set dst (AndL (URShiftL src rshift) mask));
 
   ins_cost(INSN_COST);
-  format %{ "ubfx $dst, $src, $mask" %}
+  format %{ "ubfx $dst, $src, $rshift, $mask" %}
   ins_encode %{
     int rshift = $rshift$$constant;
     long mask = $mask$$constant;
@@ -12647,7 +12647,7 @@ instruct ubfxIConvI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask m
   match(Set dst (ConvI2L (AndI (URShiftI src rshift) mask)));
 
   ins_cost(INSN_COST * 2);
-  format %{ "ubfx $dst, $src, $mask" %}
+  format %{ "ubfx $dst, $src, $rshift, $mask" %}
   ins_encode %{
     int rshift = $rshift$$constant;
     long mask = $mask$$constant;
