@@ -1804,8 +1804,7 @@ public final class Main {
             } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                 keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
             } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
-                // hardcode for now as DEF_DSA_KEY_SIZE is still 1024
-                keysize = 2048; // SecurityProviderConstants.DEF_DSA_KEY_SIZE;
+                keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
             }
         }
 
