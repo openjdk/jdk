@@ -36,9 +36,10 @@ public class US_ASCII
     extends Charset
     implements HistoricallyNamedCharset
 {
+    public static final US_ASCII INSTANCE = new US_ASCII();
 
     public US_ASCII() {
-        super(StandardCharsets.US_ASCII, StandardCharsets.aliases_US_ASCII);
+        super("US-ASCII", StandardCharsets.aliases_US_ASCII());
     }
 
     public String historicalName() {

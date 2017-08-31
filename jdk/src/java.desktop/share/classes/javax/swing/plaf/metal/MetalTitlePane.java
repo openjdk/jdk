@@ -538,7 +538,7 @@ class MetalTitlePane extends JComponent {
     }
 
     /**
-     * Updates state dependant upon the Window's active state.
+     * Updates state dependent upon the Window's active state.
      */
     private void setActive(boolean isActive) {
         Boolean activeB = isActive ? Boolean.TRUE : Boolean.FALSE;

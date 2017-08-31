@@ -61,7 +61,7 @@ import javax.swing.text.html.HTML;
  * gridbag layout), where table cells can request to span more
  * than one grid cell.  The default horizontal span of table cells
  * will be based upon this grid, but can be changed by reimplementing
- * the requested span of the cell (i.e. table cells can have independant
+ * the requested span of the cell (i.e. table cells can have independent
  * spans if desired).
  *
  * @author  Timothy Prinzing
