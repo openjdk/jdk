@@ -69,6 +69,9 @@
   template(G1CollectFull)                         \
   template(G1CollectForAllocation)                \
   template(G1IncCollectionPause)                  \
+  template(HandshakeOneThread)                    \
+  template(HandshakeAllThreads)                   \
+  template(HandshakeFallback)                     \
   template(DestroyAllocationContext)              \
   template(EnableBiasedLocking)                   \
   template(RevokeBias)                            \

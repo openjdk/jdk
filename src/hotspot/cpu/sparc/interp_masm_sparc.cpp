@@ -36,6 +36,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
@@ -95,12 +96,11 @@ void InterpreterMacroAssembler::dispatch_epilog(TosState state, int bcp_incr) {
   else                delayed()->nop();
 }
 
-
-void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr) {
+void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool generate_poll) {
   // %%%% consider branching to a single shared dispatch stub (for each bcp_incr)
   assert_not_delayed();
   ldub( Lbcp, bcp_incr, Lbyte_code);               // load next bytecode
-  dispatch_Lbyte_code(state, Interpreter::dispatch_table(state), bcp_incr);
+  dispatch_Lbyte_code(state, Interpreter::dispatch_table(state), bcp_incr, true, generate_poll);
 }
 
 
@@ -261,15 +261,34 @@ void InterpreterMacroAssembler::dispatch_only(TosState state) {
 // common code to dispatch and dispatch_only
 // dispatch value in Lbyte_code and increment Lbcp
 
-void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* table, int bcp_incr, bool verify) {
+void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* table, int bcp_incr, bool verify, bool generate_poll) {
   verify_FPU(1, state);
   // %%%%% maybe implement +VerifyActivationFrameSize here
   //verify_thread(); //too slow; we will just verify on method entry & exit
   if (verify) interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   // dispatch table to use
   AddressLiteral tbl(table);
-  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
+  Label dispatch;
+
+  if (SafepointMechanism::uses_thread_local_poll() && generate_poll) {
+    AddressLiteral sfpt_tbl(Interpreter::safept_table(state));
+    Label no_safepoint;
+
+    if (tbl.value() != sfpt_tbl.value()) {
+      ldx(Address(G2_thread, Thread::polling_page_offset()), G3_scratch, 0);
+      // Armed page has poll_bit set, if poll bit is cleared just continue.
+      and3(G3_scratch, SafepointMechanism::poll_bit(), G3_scratch);
+
+      br_null_short(G3_scratch, Assembler::pt, no_safepoint);
+      set(sfpt_tbl, G3_scratch);
+      ba_short(dispatch);
+    }
+    bind(no_safepoint);
+  }
+
   set(tbl, G3_scratch);                               // compute addr of table
+  bind(dispatch);
+  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
   ld_ptr(G3_scratch, Lbyte_code, G3_scratch);         // get entry addr
   jmp( G3_scratch, 0 );
   if (bcp_incr != 0)  delayed()->inc(Lbcp, bcp_incr);

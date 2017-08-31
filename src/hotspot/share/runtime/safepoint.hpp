@@ -160,17 +160,22 @@ public:
   inline static bool is_synchronizing()  { return _state == _synchronizing;  }
   inline static int safepoint_counter()  { return _safepoint_counter; }
 
-  inline static bool do_call_back() {
-    return (_state != _not_synchronized);
-  }
-
   inline static void increment_jni_active_count() {
     assert_locked_or_safepoint(Safepoint_lock);
     _current_jni_active_count++;
   }
 
+private:
+  inline static bool do_call_back() {
+    return (_state != _not_synchronized);
+  }
+
   // Called when a thread voluntarily blocks
   static void   block(JavaThread *thread);
+
+  friend class SafepointMechanism;
+
+public:
   static void   signal_thread_at_safepoint()              { _waiting_to_block--; }
 
   // Exception handling for page polling

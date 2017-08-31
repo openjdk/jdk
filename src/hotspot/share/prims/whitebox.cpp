@@ -49,6 +49,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -1727,6 +1728,40 @@ WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #endif
 WB_END
 
+WB_ENTRY(jint, WB_HandshakeWalkStack(JNIEnv* env, jobject wb, jobject thread_handle, jboolean all_threads))
+  class TraceSelfClosure : public ThreadClosure {
+    jint _num_threads_completed;
+
+    void do_thread(Thread* th) {
+      assert(th->is_Java_thread(), "sanity");
+      JavaThread* jt = (JavaThread*)th;
+      ResourceMark rm;
+
+      jt->print_on(tty);
+      jt->print_stack_on(tty);
+      tty->cr();
+      Atomic::inc(&_num_threads_completed);
+    }
+
+  public:
+    TraceSelfClosure() : _num_threads_completed(0) {}
+
+    jint num_threads_completed() const { return _num_threads_completed; }
+  };
+  TraceSelfClosure tsc;
+
+  if (all_threads) {
+    Handshake::execute(&tsc);
+  } else {
+    oop thread_oop = JNIHandles::resolve(thread_handle);
+    if (thread_oop != NULL) {
+      JavaThread* target = java_lang_Thread::thread(thread_oop);
+      Handshake::execute(&tsc, target);
+    }
+  }
+  return tsc.num_threads_completed();
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -2038,6 +2073,7 @@ static JNINativeMethod methods[] = {
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },
+  {CC"handshakeWalkStack", CC"(Ljava/lang/Thread;Z)I", (void*)&WB_HandshakeWalkStack },
   {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",             (void*)&WB_RemoveCompilerDirective },

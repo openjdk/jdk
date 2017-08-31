@@ -38,6 +38,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
@@ -3758,6 +3760,25 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   // Size of store must match masking code above
   movl(as_Address(ArrayAddress(page, index)), tmp);
 }
+
+#ifdef _LP64
+void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+    jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
+  } else {
+    cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
+        SafepointSynchronize::_not_synchronized);
+    jcc(Assembler::notEqual, slow_path);
+  }
+}
+#else
+void MacroAssembler::safepoint_poll(Label& slow_path) {
+  cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
+      SafepointSynchronize::_not_synchronized);
+  jcc(Assembler::notEqual, slow_path);
+}
+#endif
 
 // Calls to C land
 //

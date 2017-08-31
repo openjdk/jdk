@@ -526,32 +526,57 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
   // Note: we do not need to round double result; float result has the right precision
   // the poll sets the condition code, but no data registers
-  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
 
-  if (Assembler::is_polling_page_far()) {
-    __ lea(rscratch1, polling_page);
+  if (SafepointMechanism::uses_thread_local_poll()) {
+#ifdef _LP64
+    __ movptr(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
     __ relocate(relocInfo::poll_return_type);
     __ testl(rax, Address(rscratch1, 0));
+#else
+    ShouldNotReachHere();
+#endif
   } else {
-    __ testl(rax, polling_page);
+    AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
+
+    if (Assembler::is_polling_page_far()) {
+      __ lea(rscratch1, polling_page);
+      __ relocate(relocInfo::poll_return_type);
+      __ testl(rax, Address(rscratch1, 0));
+    } else {
+      __ testl(rax, polling_page);
+    }
   }
   __ ret(0);
 }
 
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
   guarantee(info != NULL, "Shouldn't be NULL");
   int offset = __ offset();
-  if (Assembler::is_polling_page_far()) {
-    __ lea(rscratch1, polling_page);
-    offset = __ offset();
+  if (SafepointMechanism::uses_thread_local_poll()) {
+#ifdef _LP64
+    __ movptr(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
     add_debug_info_for_branch(info);
     __ relocate(relocInfo::poll_type);
+    address pre_pc = __ pc();
     __ testl(rax, Address(rscratch1, 0));
+    address post_pc = __ pc();
+    guarantee(pointer_delta(post_pc, pre_pc, 1) == 3, "must be exact length");
+#else
+    ShouldNotReachHere();
+#endif
   } else {
-    add_debug_info_for_branch(info);
-    __ testl(rax, polling_page);
+    AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
+    if (Assembler::is_polling_page_far()) {
+      __ lea(rscratch1, polling_page);
+      offset = __ offset();
+      add_debug_info_for_branch(info);
+      __ relocate(relocInfo::poll_type);
+      __ testl(rax, Address(rscratch1, 0));
+    } else {
+      add_debug_info_for_branch(info);
+      __ testl(rax, polling_page);
+    }
   }
   return offset;
 }

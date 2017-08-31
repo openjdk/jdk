@@ -37,6 +37,8 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
@@ -236,6 +238,20 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register t
 }
 
 
+void MacroAssembler::safepoint_poll(Label& slow_path, bool a, Register thread_reg, Register temp_reg) {
+  if (SafepointMechanism::uses_thread_local_poll()) {
+    ldx(Address(thread_reg, Thread::polling_page_offset()), temp_reg, 0);
+    // Armed page has poll bit set.
+    and3(temp_reg, SafepointMechanism::poll_bit(), temp_reg);
+    br_notnull(temp_reg, a, Assembler::pn, slow_path);
+  } else {
+    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
+
+    load_contents(sync_state, temp_reg);
+    cmp(temp_reg, SafepointSynchronize::_not_synchronized);
+    br(Assembler::notEqual, a, Assembler::pn, slow_path);
+  }
+}
 
 void MacroAssembler::enter() {
   Unimplemented();
