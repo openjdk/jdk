@@ -910,12 +910,9 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   if (protection_domain() == NULL) return k;
 
   // Check the protection domain has the right access
-  {
-    MutexLocker mu(SystemDictionary_lock, THREAD);
-    if (dictionary->is_valid_protection_domain(d_index, d_hash, name,
-                                               protection_domain)) {
-      return k;
-    }
+  if (dictionary->is_valid_protection_domain(d_index, d_hash, name,
+                                             protection_domain)) {
+    return k;
   }
 
   // Verify protection domain. If it fails an exception is thrown
