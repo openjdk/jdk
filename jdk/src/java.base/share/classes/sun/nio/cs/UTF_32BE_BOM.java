@@ -31,7 +31,7 @@ import java.nio.charset.CharsetEncoder;
 public class UTF_32BE_BOM extends Unicode
 {
     public UTF_32BE_BOM() {
-        super("X-UTF-32BE-BOM", StandardCharsets.aliases_UTF_32BE_BOM);
+        super("X-UTF-32BE-BOM", StandardCharsets.aliases_UTF_32BE_BOM());
     }
 
     public String historicalName() {

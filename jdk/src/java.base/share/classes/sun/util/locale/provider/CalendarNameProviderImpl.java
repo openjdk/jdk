@@ -87,9 +87,15 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                         Era[] jeras = CalendarSystem.forName("japanese").getEras();
                         if (jeras.length == value) {
                             Era supEra = jeras[value - 1]; // 0-based index
-                            return style == LONG ?
-                                supEra.getName() :
-                                supEra.getAbbreviation();
+                            if (javatime) {
+                                return getBaseStyle(style) == NARROW_FORMAT ?
+                                    supEra.getAbbreviation() :
+                                    supEra.getName();
+                            } else {
+                                return (style & LONG) != 0 ?
+                                    supEra.getName() :
+                                    supEra.getAbbreviation();
+                            }
                         }
                     }
                     return null;

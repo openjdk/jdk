@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug      4114080
+ * @bug      4114080 8186803
  * @summary  Make sure the euro converters, which are derived from
  * existing converters, only differ from their parents at the expected
  * code point.
@@ -98,9 +98,9 @@ public class EuroConverter {
                     bytes[0] = (byte)j;
                     char euroValue = new String(bytes, euroEnc).charAt(0);
                     chars[0] = euroValue;
-                    // NOTE: 0x15 doesn't round trip on the EBCDIC code pages,
+                    // NOTE: 0x25 doesn't round trip on the EBCDIC code pages,
                     // so we don't check that code point in the sanity check.
-                    if (j != 0x0015) {
+                    if (j != 0x0025) {
                         int euroRoundTrip = new String(chars).getBytes(euroEnc)[0];
                         if (euroRoundTrip != j) {
                             pass = false;
