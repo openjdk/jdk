@@ -5151,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1504019871
+DATE_WHEN_GENERATED=1504187184
 
 ###############################################################################
 #
@@ -16141,6 +16141,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
     OPENJDK_TARGET_CPU_LEGACY="amd64"
+  elif test "x$OPENJDK_TARGET_CPU" = xalpha; then
+    # Avoid name collisions with variables named alpha
+    OPENJDK_TARGET_CPU_LEGACY="_alpha_"
+  elif test "x$OPENJDK_TARGET_CPU" = xsh; then
+    # Avoid name collisions with variables named sh
+    OPENJDK_TARGET_CPU_LEGACY="_sh_"
   fi
 
 
@@ -16293,6 +16299,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
     OPENJDK_BUILD_CPU_LEGACY="amd64"
+  elif test "x$OPENJDK_BUILD_CPU" = xalpha; then
+    # Avoid name collisions with variables named alpha
+    OPENJDK_BUILD_CPU_LEGACY="_alpha_"
+  elif test "x$OPENJDK_BUILD_CPU" = xsh; then
+    # Avoid name collisions with variables named sh
+    OPENJDK_BUILD_CPU_LEGACY="_sh_"
   fi
 
 
