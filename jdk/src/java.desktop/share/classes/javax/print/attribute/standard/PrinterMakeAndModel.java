@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
+
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
 import javax.print.attribute.PrintServiceAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class PrinterMakeAndModel is a printing attribute class, a text attribute,
- * that the make and model of the printer.
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code PrinterMakeAndModel} is a printing attribute class, a text
+ * attribute, that the make and model of the printer.
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class PrinterMakeAndModel extends TextSyntax
         implements PrintServiceAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 4580461489499351411L;
 
     /**
-     * Constructs a new printer make and model attribute with the given make
-     * and model string and locale.
+     * Constructs a new printer make and model attribute with the given make and
+     * model string and locale.
      *
-     * @param  makeAndModel  Printer make and model string.
-     * @param  locale        Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *    (unchecked exception) Thrown if {@code makeAndModel} is null.
+     * @param  makeAndModel printer make and model string
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code makeAndModel} is {@code null}
      */
     public PrinterMakeAndModel(String makeAndModel, Locale locale) {
         super (makeAndModel, locale);
@@ -64,23 +67,18 @@ public final class PrinterMakeAndModel extends TextSyntax
      * Returns whether this printer make and model attribute is equivalent to
      * the passed in object. To be equivalent, all of the following conditions
      * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class PrinterMakeAndModel.
-     * <LI>
-     * This printer make and model attribute's underlying string and
-     * {@code object}'s underlying string are equal.
-     * <LI>
-     * This printer make and model attribute's locale and
-     * {@code object}'s locale are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code PrinterMakeAndModel}.
+     *   <li>This printer make and model attribute's underlying string and
+     *   {@code object}'s underlying string are equal.
+     *   <li>This printer make and model attribute's locale and {@code object}'s
+     *   locale are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this printer
-     *          make and model attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this printer make
+     *         and model attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) &&
@@ -90,12 +88,12 @@ public final class PrinterMakeAndModel extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterMakeAndModel, the
-     * category is class PrinterMakeAndModel itself.
+     * <p>
+     * For class {@code PrinterMakeAndModel}, the category is class
+     * {@code PrinterMakeAndModel} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterMakeAndModel.class;
@@ -104,14 +102,13 @@ public final class PrinterMakeAndModel extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterMakeAndModel, the
-     * category name is {@code "printer-make-and-model"}.
+     * <p>
+     * For class {@code PrinterMakeAndModel}, the category name is
+     * {@code "printer-make-and-model"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-make-and-model";
     }
-
 }

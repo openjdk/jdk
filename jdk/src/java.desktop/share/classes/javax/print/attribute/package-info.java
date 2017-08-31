@@ -39,19 +39,20 @@
  * The print data and the processing instructions are separate entities. This
  * means that:
  * <ul>
- *     <li>You can print the same print data at different times using different
- *     processing instructions.<br>For example, you can print a slide
- *     presentation on US letter-sized white paper, double-sided, stapled, 20
- *     copies to make handouts for a talk; and you could print the same slide
- *     presentation on US letter-sized transparencies, single-sided, one copy to
- *     make the actual slides for the talk.</li>
- *     <li>You can use the same processing instructions at different times to
- *     print different data. For example, you could set your default processing
- *     instructions to: US letter-sized paper, double sided, stapled. Whenever
- *     you print a job, it prints with these settings, unless you explicitly
- *     override them.</li>
+ *   <li>You can print the same print data at different times using different
+ *   processing instructions.
+ *   <br>
+ *   For example, you can print a slide presentation on US letter-sized white
+ *   paper, double-sided, stapled, 20 copies to make handouts for a talk; and
+ *   you could print the same slide presentation on US letter-sized
+ *   transparencies, single-sided, one copy to make the actual slides for the
+ *   talk.
+ *   <li>You can use the same processing instructions at different times to
+ *   print different data. For example, you could set your default processing
+ *   instructions to: US letter-sized paper, double sided, stapled. Whenever you
+ *   print a job, it prints with these settings, unless you explicitly override
+ *   them.
  * </ul>
- * <p>
  * The processing instruction does not specify how the print job processes the
  * request; each processing instruction is only a description of the results of
  * a print job. The print job determines the manner in which it achieves the
@@ -97,18 +98,18 @@
  * The Java Print Service API defines these different kinds of attributes with
  * five subinterfaces of {@code Attribute}:
  * <ul>
- *     <li><a href="DocAttribute.html">DocAttribute</a> specifies a
- *     characteristic of an individual document and the print job settings to be
- *     applied to an individual document.</li>
- *     <li><a href="PrintRequestAttribute.html">PrintRequestAttribute</a>
- *     specifies a setting applied to a whole print job and to all the documents
- *     in the print job.</li>
- *     <li><a href="PrintJobAttribute.html">PrintJobAttribute</a> reports the
- *     status of a print job.</li>
- *     <li><a href="PrintServiceAttribute.html">PrintServiceAttribute</a>
- *     reports the status of a print service.</li>
- *     <li><a href="SupportedValuesAttribute.html">SupportedValuesAttribute</a>
- *     gives the supported values for another attribute.</li>
+ *   <li><a href="DocAttribute.html">DocAttribute</a> specifies a characteristic
+ *   of an individual document and the print job settings to be applied to an
+ *   individual document.
+ *   <li><a href="PrintRequestAttribute.html">PrintRequestAttribute</a>
+ *   specifies a setting applied to a whole print job and to all the documents
+ *   in the print job.
+ *   <li><a href="PrintJobAttribute.html">PrintJobAttribute</a> reports the
+ *   status of a print job.
+ *   <li><a href="PrintServiceAttribute.html">PrintServiceAttribute</a> reports
+ *   the status of a print service.
+ *   <li><a href="SupportedValuesAttribute.html">SupportedValuesAttribute</a>
+ *   gives the supported values for another attribute.
  * </ul>
  * Each attribute class implements one or more of these tagging subinterfaces to
  * indicate where the attribute can be used in the API. If an attribute class
@@ -123,40 +124,39 @@
  * The Java Print Service API defines a group of standard attribute classes
  * modeled upon the attributes in the Internet Printing Protocol (IPP) version
  * 1.1. The standard attribute classes are in the subpackage
- * javax.print.attribute.standard to keep the actual attribute classes
+ * {@code javax.print.attribute.standard} to keep the actual attribute classes
  * conceptually separate from the generic apparatus defined in package
- * javax.print.attribute.
+ * {@code javax.print.attribute}.
  *
  * <h3>Attribute Sets</h3>
  * A client usually needs to provide more than one processing instruction when
- * submitting a print job. For example, the client might need to specify a
- * media size of A4 and a landscape orientation. To send more than one
- * processing instruction, the client collects the attributes into an attribute
- * set, which the Java Print Service API represents with the
+ * submitting a print job. For example, the client might need to specify a media
+ * size of A4 and a landscape orientation. To send more than one processing
+ * instruction, the client collects the attributes into an attribute set, which
+ * the Java Print Service API represents with the
  * <a href="AttributeSet.html">AttributeSet</a> interface.
  * <p>
  * The {@code AttributeSet} interface is similar to the
  * <a href="../../../java/util/Map.html">Map</a> interface: it provides a map of
  * key to values, in which each key is unique and can contain no more than one
  * value. However, the {@code AttributeSet} interface is designed to
- * specifically support the needs of the Java Print Service API. An {@code
- * AttributeSet} requires that:
+ * specifically support the needs of the Java Print Service API. An
+ * {@code AttributeSet} requires that:
  * <ol type=1>
- *     <li>Each key in an {@code AttributeSet} corresponds to a category, and
- *     the value of the key can only be  one of the attribute values that belong
- *     to the category represented by the key. Thus, unlike a {@code Map}, an
- *     {@code AttributeSet} restricts the possible values of a key: an attribute
- *     category cannot be set to an attribute value that does not belong to that
- *     category.</li>
- *     <li>No two attributes from the same category can exist in the same set.
- *     For example, an attribute collection must not contain both a "one-sided"
- *     attribute and a "two-sided" attribute because these two attributes give
- *     the printer conflicting instructions.</li>
- *     <li>Only attributes implementing the {@code Attribute} interface can be
- *     added to the set.</li>
+ *   <li>Each key in an {@code AttributeSet} corresponds to a category, and the
+ *   value of the key can only be one of the attribute values that belong to the
+ *   category represented by the key. Thus, unlike a {@code Map}, an
+ *   {@code AttributeSet} restricts the possible values of a key: an attribute
+ *   category cannot be set to an attribute value that does not belong to that
+ *   category.
+ *   <li>No two attributes from the same category can exist in the same set. For
+ *   example, an attribute collection must not contain both a "one-sided"
+ *   attribute and a "two-sided" attribute because these two attributes give the
+ *   printer conflicting instructions.
+ *   <li>Only attributes implementing the {@code Attribute} interface can be
+ *   added to the set.
  * </ol>
- * <p>
- * The javax.print.attribute package includes
+ * The {@code javax.print.attribute} package includes
  * <a href="HashAttributeSet.html">HashAttributeSet</a> as a concrete
  * implementation of the attribute set interface. {@code HashAttributeSet}
  * provides an attribute set based on a hash map. You can use this
@@ -167,18 +167,15 @@
  * that are restricted to contain just one of the four kinds of attributes, as
  * discussed in the <a href="#role">Attribute Roles</a> section:
  * <ul>
- *     <li><a href="DocAttributeSet.html">DocAttributeSet</a></li>
- *     <li><a href="PrintRequestAttributeSet.html">
- *         PrintRequestAttributeSet</a></li>
- *     <li><a href="PrintJobAttributeSet.html">
- *         PrintJobAttributeSet</a></li>
- *     <li><a href="PrintServiceAttributeSet.html">
- *         PrintServiceAttributeSet</a></li>
+ *   <li><a href="DocAttributeSet.html">DocAttributeSet</a>
+ *   <li><a href="PrintRequestAttributeSet.html">PrintRequestAttributeSet</a>
+ *   <li><a href="PrintJobAttributeSet.html"> PrintJobAttributeSet</a>
+ *   <li><a href="PrintServiceAttributeSet.html">PrintServiceAttributeSet</a>
  * </ul>
  * Notice that only four kinds of attribute sets are listed here, but there are
  * five kinds of attributes. Interface
- * <a href="SupportedValuesAttribute.html">SupportedValuesAttribute</a>
- * denotes an attribute that gives the supported values for another attribute.
+ * <a href="SupportedValuesAttribute.html">SupportedValuesAttribute</a> denotes
+ * an attribute that gives the supported values for another attribute.
  * Supported-values attributes are never aggregated into attribute sets, so
  * there is no attribute set subinterface defined for them.
  * <p>
@@ -189,17 +186,15 @@
  * For a read-only attribute set, calling a mutating operation throws an
  * {@code UnmodifiableSetException}.
  * <p>
- * Package javax.print.attribute includes one concrete implementation of each of
- * the attribute set subinterfaces:
+ * Package {@code javax.print.attribute} includes one concrete implementation of
+ * each of the attribute set subinterfaces:
  * <ul>
- *     <li><a href="HashDocAttributeSet.html">
- *         HashDocAttributeSet</a></li>
- *     <li><a href="HashPrintRequestAttributeSet.html">
- *         HashPrintRequestAttributeSet</a>,</li>
- *     <li><a href="HashPrintJobAttributeSet.html">
- *         HashPrintJobAttributeSet</a>,</li>
- *     <li><a href="HashPrintServiceAttributeSet.html">
- *         HashPrintServiceAttributeSet</a>.</li>
+ *   <li><a href="HashDocAttributeSet.html"> HashDocAttributeSet</a>
+ *   <li><a href="HashPrintRequestAttributeSet.html">
+ *   HashPrintRequestAttributeSet</a>,
+ *   <li><a href="HashPrintJobAttributeSet.html">HashPrintJobAttributeSet</a>,
+ *   <li><a href="HashPrintServiceAttributeSet.html">
+ *   HashPrintServiceAttributeSet</a>.
  * </ul>
  * All of these classes extend
  * <a href="HashAttributeSet.html">HashAttributeSet</a> and enforce the
@@ -211,12 +206,11 @@
  * enumerated value. The Java Print Service API does not use primitive data
  * types, such as int, to represent attribute values for these reasons:
  * <ul>
- *     <li>Primitive data types are not type-safe. For example, a compiler
- *     should not allow a "copies" attribute value to be used for a "sides"
- *     attribute.</li>
- *     <li>Some attributes must be represented as a record of several values.
- *     One example is printer resolution, which requires two numbers, such as
- *     600 and 300 representing 600 x 300 dpi.</li>
+ *   <li>Primitive data types are not type-safe. For example, a compiler should
+ *   not allow a "copies" attribute value to be used for a "sides" attribute.
+ *   <li>Some attributes must be represented as a record of several values. One
+ *   example is printer resolution, which requires two numbers, such as 600 and
+ *   300 representing 600 x 300 dpi.
  * </ul>
  * For type-safety and to represent all attributes uniformly, the Java Print
  * Service API defines each attribute category as a class, such as class
@@ -240,27 +234,27 @@
  * represent each abstract syntax, and these classes are used as the parent of
  * standard attributes whenever possible. The abstract syntax classes are:
  * <ul>
- *     <li><a href="EnumSyntax.html">EnumSyntax</a> provides a type-safe
- *     enumeration in which enumerated values are represented as singleton
- *     objects. Each enumeration singleton is an instance of the enumeration
- *     class that wraps a hidden int value.</li>
- *     <li><a href="IntegerSyntax.html">IntegerSyntax</a> is the abstract syntax
- *     for integer-valued attributes.</li>
- *     <li><a href="TextSyntax.html">TextSyntax</a> is the abstract syntax for
- *     text-valued attributes, and includes a locale giving the text string's
- *     natural language.</li>
- *     <li><a href="SetOfIntegerSyntax.html">SetOfIntegerSyntax</a> is the
- *     abstract syntax for attributes representing a range or set of integers
- *     <li><a href="ResolutionSyntax.html">ResolutionSyntax</a> is the abstract
- *     syntax for attributes representing resolution values, such as 600x300
- *     dpi.</li>
- *     <li><a href="Size2DSyntax.html">Size2DSyntax</a> is the abstract syntax
- *     for attributes representing a two-dimensional size, such as a paper size
- *     of 8.5 x 11 inches.</li>
- *     <li><a href="DateTimeSyntax.html">DateTimeSyntax</a> is the abstract
- *     syntax for attributes whose value is a date and time.</li>
- *     <li><a href="URISyntax.html">URISyntax</a> is the abstract syntax for
- *     attributes whose value is a Uniform Resource Indicator.</li>
+ *   <li><a href="EnumSyntax.html">EnumSyntax</a> provides a type-safe
+ *   enumeration in which enumerated values are represented as singleton
+ *   objects. Each enumeration singleton is an instance of the enumeration class
+ *   that wraps a hidden int value.
+ *   <li><a href="IntegerSyntax.html">IntegerSyntax</a> is the abstract syntax
+ *   for integer-valued attributes.
+ *   <li><a href="TextSyntax.html">TextSyntax</a> is the abstract syntax for
+ *   text-valued attributes, and includes a locale giving the text string's
+ *   natural language.
+ *   <li><a href="SetOfIntegerSyntax.html">SetOfIntegerSyntax</a> is the
+ *   abstract syntax for attributes representing a range or set of integers
+ *   <li><a href="ResolutionSyntax.html">ResolutionSyntax</a> is the abstract
+ *   syntax for attributes representing resolution values, such as 600x300
+ *   dpi.
+ *   <li><a href="Size2DSyntax.html">Size2DSyntax</a> is the abstract syntax for
+ *   attributes representing a two-dimensional size, such as a paper size of
+ *   8.5 x 11 inches.
+ *   <li><a href="DateTimeSyntax.html">DateTimeSyntax</a> is the abstract syntax
+ *   for attributes whose value is a date and time.
+ *   <li><a href="URISyntax.html">URISyntax</a> is the abstract syntax for
+ *   attributes whose value is a Uniform Resource Indicator.
  * </ul>
  * The abstract syntax classes are independent of the attributes that use them.
  * In fact, applications that have nothing to do with printing can use the
@@ -304,12 +298,10 @@
  * <h3>Attribute Vendors</h3>
  * The Java Print Service API is designed so that vendors can:
  * <ul>
- *     <li>define new vendor-specific values for any standard attribute defined
- *     in <a href="standard/package-summary.html">javax.print.attribute.standard
- *     </a>.</li>
- *     <li>define new attribute categories representing the vendor printer's
- *     proprietary capabilities not already supported by the standard
- *     attributes.</li>
+ *   <li>define new vendor-specific values for any standard attribute defined in
+ *   <a href="standard/package-summary.html">javax.print.attribute.standard</a>.
+ *   <li>define new attribute categories representing the vendor printer's
+ *   proprietary capabilities not already supported by the standard attributes.
  * </ul>
  * To define a new value for an attribute, a client can construct instances of
  * such attributes with arbitrary values at runtime. However, an enumerated
@@ -364,12 +356,12 @@
  * }</pre>
  * </blockquote>
  * <p>
- * Please note: In the javax.print APIs, a null reference parameter to methods
- * is incorrect unless explicitly documented on the method as having a
- * meaningful interpretation. Usage to the contrary is incorrect coding and may
- * result in a run time exception either immediately or at some later time.
- * IllegalArgumentException and NullPointerException are examples of typical and
- * acceptable run time exceptions for such cases.
+ * Please note: In the {@code javax.print} APIs, a {@code null} reference
+ * parameter to methods is incorrect unless explicitly documented on the method
+ * as having a meaningful interpretation. Usage to the contrary is incorrect
+ * coding and may result in a run time exception either immediately or at some
+ * later time. {@code IllegalArgumentException} and {@code NullPointerException}
+ * are examples of typical and acceptable run time exceptions for such cases.
  *
  * @since 1.4
  */
