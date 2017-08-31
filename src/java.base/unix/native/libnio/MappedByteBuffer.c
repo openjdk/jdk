@@ -28,9 +28,31 @@
 #include "jvm.h"
 #include "jlong.h"
 #include "java_nio_MappedByteBuffer.h"
+#include <assert.h>
 #include <sys/mman.h>
 #include <stddef.h>
 #include <stdlib.h>
+
+#ifdef _AIX
+#include <unistd.h>
+#endif
+
+/* Output type for mincore(2) */
+#ifdef __linux__
+typedef unsigned char mincore_vec_t;
+#else
+typedef char mincore_vec_t;
+#endif
+
+#ifdef _AIX
+static long calculate_number_of_pages_in_range(void* address, size_t len, size_t pagesize) {
+    uintptr_t address_unaligned = (uintptr_t) address;
+    uintptr_t address_aligned = address_unaligned & (~(pagesize - 1));
+    size_t len2 = len + (address_unaligned - address_aligned);
+    long numPages = (len2 + pagesize - 1) / pagesize;
+    return numPages;
+}
+#endif
 
 JNIEXPORT jboolean JNICALL
 Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address,
@@ -40,18 +62,30 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address
     int result = 0;
     int i = 0;
     void *a = (void *) jlong_to_ptr(address);
-#ifdef __linux__
-    unsigned char *vec = (unsigned char *)malloc(numPages * sizeof(char));
-#else
-    char *vec = (char *)malloc(numPages * sizeof(char));
+    mincore_vec_t* vec = NULL;
+
+#ifdef _AIX
+    /* See JDK-8186665 */
+    size_t pagesize = (size_t)sysconf(_SC_PAGESIZE);
+    if ((long)pagesize == -1) {
+        return JNI_FALSE;
+    }
+    numPages = (jint) calculate_number_of_pages_in_range(a, len, pagesize);
 #endif
+
+    /* Include space for one sentinel byte at the end of the buffer
+     * to catch overflows. */
+    vec = (mincore_vec_t*) malloc(numPages + 1);
 
     if (vec == NULL) {
         JNU_ThrowOutOfMemoryError(env, NULL);
         return JNI_FALSE;
     }
 
+    vec[numPages] = '\x7f'; /* Write sentinel. */
     result = mincore(a, (size_t)len, vec);
+    assert(vec[numPages] == '\x7f'); /* Check sentinel. */
+
     if (result == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "mincore failed");
         free(vec);
