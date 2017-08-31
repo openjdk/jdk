@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,8 +237,8 @@ public interface Line extends AutoCloseable {
          * class. This constructor is typically used by an application to
          * describe a desired line.
          *
-         * @param  lineClass the class of the line that the new Line.Info object
-         *         describes
+         * @param  lineClass the class of the line that the new
+         *         {@code Line.Info} object describes
          */
         public Info(Class<?> lineClass) {
 
@@ -250,7 +250,8 @@ public interface Line extends AutoCloseable {
         }
 
         /**
-         * Obtains the class of the line that this Line.Info object describes.
+         * Obtains the class of the line that this {@code Line.Info} object
+         * describes.
          *
          * @return the described line's class
          */
@@ -261,13 +262,13 @@ public interface Line extends AutoCloseable {
         /**
          * Indicates whether the specified info object matches this one. To
          * match, the specified object must be identical to or a special case of
-         * this one. The specified info object must be either an instance of
-         * the same class as this one, or an instance of a sub-type of this one.
-         * In addition, the attributes of the specified object must be
-         * compatible with the capabilities of this one. Specifically, the
-         * routing configuration for the specified info object must be
-         * compatible with that of this one. Subclasses may add other criteria
-         * to determine whether the two objects match.
+         * this one. The specified info object must be either an instance of the
+         * same class as this one, or an instance of a sub-type of this one. In
+         * addition, the attributes of the specified object must be compatible
+         * with the capabilities of this one. Specifically, the routing
+         * configuration for the specified info object must be compatible with
+         * that of this one. Subclasses may add other criteria to determine
+         * whether the two objects match.
          *
          * @param  info the info object which is being compared to this one
          * @return {@code true} if the specified object matches this one,

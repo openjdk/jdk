@@ -38,29 +38,29 @@ package javax.sound.midi;
  * The base {@code MidiMessage} class provides access to three types of
  * information about a MIDI message:
  * <ul>
- * <li>The messages's status byte</li>
- * <li>The total length of the message in bytes (the status byte plus any data
- * bytes)</li>
- * <li>A byte array containing the complete message</li>
+ *   <li>The messages's status byte
+ *   <li>The total length of the message in bytes (the status byte plus any data
+ *   bytes)
+ *   <li>A byte array containing the complete message
  * </ul>
  *
  * {@code MidiMessage} includes methods to get, but not set, these values.
  * Setting them is a subclass responsibility.
  * <p>
- * <a id="integersVsBytes"></a> The MIDI standard expresses MIDI data in
- * bytes. However, because Java<sup>TM</sup> uses signed bytes, the Java Sound
- * API uses integers instead of bytes when expressing MIDI data. For example,
- * the {@link #getStatus()} method of {@code MidiMessage} returns MIDI status
- * bytes as integers. If you are processing MIDI data that originated outside
- * Java Sound and now is encoded as signed bytes, the bytes can be
- * converted to integers using this conversion:
+ * <a id="integersVsBytes"></a>The MIDI standard expresses MIDI data in bytes.
+ * However, because Java&trade; uses signed bytes, the Java Sound API uses
+ * integers instead of bytes when expressing MIDI data. For example, the
+ * {@link #getStatus()} method of {@code MidiMessage} returns MIDI status bytes
+ * as integers. If you are processing MIDI data that originated outside Java
+ * Sound and now is encoded as signed bytes, the bytes can be converted to
+ * integers using this conversion:
  * <p style="text-align:center">
  * {@code int i = (int)(byte & 0xFF)}
  * <p>
  * If you simply need to pass a known MIDI byte value as a method parameter, it
  * can be expressed directly as an integer, using (for example) decimal or
  * hexadecimal notation. For instance, to pass the "active sensing" status byte
- * as the first argument to ShortMessage's
+ * as the first argument to {@code ShortMessage}'s
  * {@link ShortMessage#setMessage(int) setMessage(int)} method, you can express
  * it as 254 or 0xFE.
  *
