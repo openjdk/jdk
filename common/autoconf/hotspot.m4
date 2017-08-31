@@ -240,6 +240,25 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
   AC_SUBST(ENABLE_AOT)
 ])
 
+################################################################################
+# Allow to disable CDS
+#
+AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_CDS],
+[
+  AC_ARG_ENABLE([cds], [AS_HELP_STRING([--enable-cds@<:@=yes/no@:>@],
+      [enable class data sharing feature in non-minimal VM. Default is yes.])])
+
+  if test "x$enable_cds" = "x" || test "x$enable_cds" = "xyes"; then
+    ENABLE_CDS="true"
+  elif test "x$enable_cds" = "xno"; then
+    ENABLE_CDS="false"
+  else
+    AC_MSG_ERROR([Invalid value for --enable-cds: $enable_cds])
+  fi
+
+  AC_SUBST(ENABLE_CDS)
+])
+
 ###############################################################################
 # Set up all JVM features for each JVM variant.
 #
@@ -378,7 +397,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt"
+  if test "x$ENABLE_CDS" = "xtrue"; then
+    NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
+  fi                                            
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"

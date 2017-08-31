@@ -702,6 +702,7 @@ LIBCXX
 FIXPATH_DETACH_FLAG
 FIXPATH
 BUILD_GTEST
+ENABLE_CDS
 ENABLE_AOT
 GCOV_ENABLED
 ZIP_EXTERNAL_DEBUG_SYMBOLS
@@ -1191,6 +1192,7 @@ enable_zip_debug_info
 enable_native_coverage
 enable_dtrace
 enable_aot
+enable_cds
 enable_hotspot_gtest
 with_stdc__lib
 with_msvcr_dll
@@ -1999,6 +2001,8 @@ Optional Features:
                           enable ahead of time compilation feature. Default is
                           auto, where aot is enabled if all dependencies are
                           present.
+  --enable-cds[=yes/no]   enable class data sharing feature in non-minimal VM.
+                          Default is yes.
   --disable-hotspot-gtest Disables building of the Hotspot unit tests
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
@@ -2016,7 +2020,8 @@ Optional Features:
   --disable-generate-classlist
                           forces enabling or disabling of the generation of a
                           CDS classlist at build time. Default is to generate
-                          it when either the server or client JVMs are built.
+                          it when either the server or client JVMs are built
+                          and enable-cds is true.
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
   --disable-javac-server  disable javac server [enabled]
@@ -4345,6 +4350,11 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 #
 
 
+################################################################################
+# Allow to disable CDS
+#
+
+
 ###############################################################################
 # Set up all JVM features for each JVM variant.
 #
@@ -5151,7 +5161,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1504027321
+DATE_WHEN_GENERATED=1504214237
 
 ###############################################################################
 #
@@ -54204,6 +54214,23 @@ $as_echo "no, forced" >&6; }
 
 
 
+  # Check whether --enable-cds was given.
+if test "${enable_cds+set}" = set; then :
+  enableval=$enable_cds;
+fi
+
+
+  if test "x$enable_cds" = "x" || test "x$enable_cds" = "xyes"; then
+    ENABLE_CDS="true"
+  elif test "x$enable_cds" = "xno"; then
+    ENABLE_CDS="false"
+  else
+    as_fn_error $? "Invalid value for --enable-cds: $enable_cds" "$LINENO" 5
+  fi
+
+
+
+
   # Check whether --enable-hotspot-gtest was given.
 if test "${enable_hotspot_gtest+set}" = set; then :
   enableval=$enable_hotspot_gtest;
@@ -65848,7 +65875,10 @@ $as_echo "no" >&6; }
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt"
+  if test "x$ENABLE_CDS" = "xtrue"; then
+    NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
+  fi
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
@@ -65952,7 +65982,7 @@ fi
 
   # Check if it's likely that it's possible to generate the classlist. Depending
   # on exact jvm configuration it could be possible anyway.
-  if   [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]  ; then
+  if test "x$ENABLE_CDS" = "xtrue" && (  [[ " $JVM_VARIANTS " =~ " server " ]]   ||   [[ " $JVM_VARIANTS " =~ " client " ]]  ); then
     ENABLE_GENERATE_CLASSLIST_POSSIBLE="true"
   else
     ENABLE_GENERATE_CLASSLIST_POSSIBLE="false"
@@ -65965,8 +65995,8 @@ $as_echo_n "checking if the CDS classlist generation should be enabled... " >&6;
 $as_echo "yes, forced" >&6; }
     ENABLE_GENERATE_CLASSLIST="true"
     if test "x$ENABLE_GENERATE_CLASSLIST_POSSIBLE" = "xfalse"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&5
-$as_echo "$as_me: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS" >&2;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS and enable-cds=$ENABLE_CDS" >&5
+$as_echo "$as_me: WARNING: Generation of classlist might not be possible with JVM Variants $JVM_VARIANTS and enable-cds=$ENABLE_CDS" >&2;}
     fi
   elif test "x$enable_generate_classlist" = "xno"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
