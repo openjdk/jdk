@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,14 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.SampleModel;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.ListIterator;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
@@ -212,7 +220,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public ArrayList<String> tEXt_keyword = new ArrayList<String>(); // 1-79 characters
     public ArrayList<String> tEXt_text = new ArrayList<String>();
 
-    // tIME chunk
+    // tIME chunk. Gives the image modification time.
     public boolean tIME_present;
     public int tIME_year;
     public int tIME_month;
@@ -220,6 +228,41 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public int tIME_hour;
     public int tIME_minute;
     public int tIME_second;
+
+    // Specifies whether metadata contains Standard/Document/ImageCreationTime
+    public boolean creation_time_present;
+
+    // Values that make up Standard/Document/ImageCreationTime
+    public int creation_time_year;
+    public int creation_time_month;
+    public int creation_time_day;
+    public int creation_time_hour;
+    public int creation_time_minute;
+    public int creation_time_second;
+    public ZoneOffset creation_time_offset;
+
+    /*
+     * tEXt_creation_time_present- Specifies whether any text chunk (tEXt, iTXt,
+     * zTXt) exists with image creation time. The data structure corresponding
+     * to the last decoded text chunk with creation time is indicated by the
+     * iterator- tEXt_creation_time_iter.
+     *
+     * Any update to the text chunks with creation time is reflected on
+     * Standard/Document/ImageCreationTime after retrieving time from the text
+     * chunk. If there are multiple text chunks with creation time, the time
+     * retrieved from the last decoded text chunk will be used. A point to note
+     * is that, retrieval of time from text chunks is possible only if the
+     * encoded time in the chunk confirms to either the recommended RFC1123
+     * format or ISO format.
+     *
+     * Similarly, any update to Standard/Document/ImageCreationTime is reflected
+     * on the last decoded text chunk's data structure with time encoded in
+     * RFC1123 format. By updating the text chunk's data structure, we also
+     * ensure that PNGImageWriter will write image creation time on the output.
+     */
+    public boolean tEXt_creation_time_present;
+    private ListIterator<String> tEXt_creation_time_iter = null;
+    public static final String tEXt_creationTimeKey = "Creation Time";
 
     // tRNS chunk
     // If external (non-PNG sourced) data has red = green = blue,
@@ -985,21 +1028,41 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     }
 
     public IIOMetadataNode getStandardDocumentNode() {
-        if (!tIME_present) {
-            return null;
+        IIOMetadataNode document_node = null;
+
+        // Check if image modification time exists
+        if (tIME_present) {
+            // Create new document node
+            document_node = new IIOMetadataNode("Document");
+
+            // Node to hold image modification time
+            IIOMetadataNode node = new IIOMetadataNode("ImageModificationTime");
+            node.setAttribute("year", Integer.toString(tIME_year));
+            node.setAttribute("month", Integer.toString(tIME_month));
+            node.setAttribute("day", Integer.toString(tIME_day));
+            node.setAttribute("hour", Integer.toString(tIME_hour));
+            node.setAttribute("minute", Integer.toString(tIME_minute));
+            node.setAttribute("second", Integer.toString(tIME_second));
+            document_node.appendChild(node);
         }
 
-        IIOMetadataNode document_node = new IIOMetadataNode("Document");
-        IIOMetadataNode node = null; // scratch node
+        // Check if image creation time exists
+        if (creation_time_present) {
+            if (document_node == null) {
+                // Create new document node
+                document_node = new IIOMetadataNode("Document");
+            }
 
-        node = new IIOMetadataNode("ImageModificationTime");
-        node.setAttribute("year", Integer.toString(tIME_year));
-        node.setAttribute("month", Integer.toString(tIME_month));
-        node.setAttribute("day", Integer.toString(tIME_day));
-        node.setAttribute("hour", Integer.toString(tIME_hour));
-        node.setAttribute("minute", Integer.toString(tIME_minute));
-        node.setAttribute("second", Integer.toString(tIME_second));
-        document_node.appendChild(node);
+            // Node to hold image creation time
+            IIOMetadataNode node = new IIOMetadataNode("ImageCreationTime");
+            node.setAttribute("year", Integer.toString(creation_time_year));
+            node.setAttribute("month", Integer.toString(creation_time_month));
+            node.setAttribute("day", Integer.toString(creation_time_day));
+            node.setAttribute("hour", Integer.toString(creation_time_hour));
+            node.setAttribute("minute", Integer.toString(creation_time_minute));
+            node.setAttribute("second", Integer.toString(creation_time_second));
+            document_node.appendChild(node);
+        }
 
         return document_node;
     }
@@ -1437,6 +1500,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                         String text = getAttribute(iTXt_node, "text");
                         iTXt_text.add(text);
 
+                        // Check if the text chunk contains image creation time
+                        if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+                            // Update Standard/Document/ImageCreationTime
+                            int index = iTXt_text.size()-1;
+                            decodeImageCreationTimeFromTextChunk(
+                                    iTXt_text.listIterator(index));
+                        }
                     }
                     // silently skip invalid text entry
 
@@ -1564,6 +1634,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     String text = getAttribute(tEXt_node, "value");
                     tEXt_text.add(text);
 
+                    // Check if the text chunk contains image creation time
+                    if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+                        // Update Standard/Document/ImageCreationTime
+                        int index = tEXt_text.size()-1;
+                        decodeImageCreationTimeFromTextChunk(
+                                tEXt_text.listIterator(index));
+                    }
                     tEXt_node = tEXt_node.getNextSibling();
                 }
             } else if (name.equals("tIME")) {
@@ -1652,6 +1729,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     String text = getAttribute(zTXt_node, "text");
                     zTXt_text.add(text);
 
+                    // Check if the text chunk contains image creation time
+                    if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+                        // Update Standard/Document/ImageCreationTime
+                        int index = zTXt_text.size()-1;
+                        decodeImageCreationTimeFromTextChunk(
+                                zTXt_text.listIterator(index));
+                    }
                     zTXt_node = zTXt_node.getNextSibling();
                 }
             } else if (name.equals("UnknownChunks")) {
@@ -1952,7 +2036,22 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                         tIME_second =
                             getIntAttribute(child, "second", 0, false);
 //                  } else if (childName.equals("SubimageInterpretation")) {
-//                  } else if (childName.equals("ImageCreationTime")) {
+                    } else if (childName.equals("ImageCreationTime")) {
+                        // Extract the creation time values
+                        int year  = getIntAttribute(child, "year");
+                        int month = getIntAttribute(child, "month");
+                        int day   = getIntAttribute(child, "day");
+                        int hour  = getIntAttribute(child, "hour", 0, false);
+                        int mins  = getIntAttribute(child, "minute", 0, false);
+                        int sec   = getIntAttribute(child, "second", 0, false);
+
+                        /*
+                         * Update Standard/Document/ImageCreationTime and encode
+                         * the same in the last decoded text chunk with creation
+                         * time
+                         */
+                        initImageCreationTime(year, month, day, hour, mins, sec);
+                        encodeImageCreationTimeToTextChunk();
                     }
                     child = child.getNextSibling();
                 }
@@ -2014,6 +2113,152 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         }
     }
 
+    void initImageCreationTime(OffsetDateTime offsetDateTime) {
+        // Check for incoming arguments
+        if (offsetDateTime != null) {
+            // set values that make up Standard/Document/ImageCreationTime
+            creation_time_present = true;
+            creation_time_year    = offsetDateTime.getYear();
+            creation_time_month   = offsetDateTime.getMonthValue();
+            creation_time_day     = offsetDateTime.getDayOfMonth();
+            creation_time_hour    = offsetDateTime.getHour();
+            creation_time_minute  = offsetDateTime.getMinute();
+            creation_time_second  = offsetDateTime.getSecond();
+            creation_time_offset  = offsetDateTime.getOffset();
+        }
+    }
+
+    void initImageCreationTime(int year, int month, int day,
+            int hour, int min,int second) {
+        /*
+         * Though LocalDateTime suffices the need to store Standard/Document/
+         * ImageCreationTime, we require the zone offset to encode the same
+         * in the text chunk based on RFC1123 format.
+         */
+        LocalDateTime locDT = LocalDateTime.of(year, month, day, hour, min, second);
+        ZoneOffset offset = ZoneId.systemDefault()
+                                  .getRules()
+                                  .getOffset(locDT);
+        OffsetDateTime offDateTime = OffsetDateTime.of(locDT,offset);
+        initImageCreationTime(offDateTime);
+    }
+
+    void decodeImageCreationTimeFromTextChunk(ListIterator<String> iterChunk) {
+        // Check for incoming arguments
+        if (iterChunk != null && iterChunk.hasNext()) {
+            /*
+             * Save the iterator to mark the last decoded text chunk with
+             * creation time. The contents of this chunk will be updated when
+             * user provides creation time by merging a standard tree with
+             * Standard/Document/ImageCreationTime.
+             */
+            setCreationTimeChunk(iterChunk);
+
+            // Parse encoded time and set Standard/Document/ImageCreationTime.
+            String encodedTime = getEncodedTime();
+            initImageCreationTime(parseEncodedTime(encodedTime));
+        }
+    }
+
+    void encodeImageCreationTimeToTextChunk() {
+        // Check if Standard/Document/ImageCreationTime exists.
+        if (creation_time_present) {
+            // Check if a text chunk with creation time exists.
+            if (tEXt_creation_time_present == false) {
+                // No text chunk exists with image creation time. Add an entry.
+                this.tEXt_keyword.add(tEXt_creationTimeKey);
+                this.tEXt_text.add("Creation Time Place Holder");
+
+                // Update the iterator
+                int index = tEXt_text.size() - 1;
+                setCreationTimeChunk(tEXt_text.listIterator(index));
+            }
+
+            // Encode image creation time with RFC1123 formatter
+            OffsetDateTime offDateTime = OffsetDateTime.of(creation_time_year,
+                    creation_time_month, creation_time_day,
+                    creation_time_hour, creation_time_minute,
+                    creation_time_second, 0, creation_time_offset);
+            DateTimeFormatter formatter = DateTimeFormatter.RFC_1123_DATE_TIME;
+            String encodedTime = offDateTime.format(formatter);
+            setEncodedTime(encodedTime);
+        }
+    }
+
+    private void setCreationTimeChunk(ListIterator<String> iter) {
+        // Check for iterator's valid state
+        if (iter != null && iter.hasNext()) {
+            tEXt_creation_time_iter = iter;
+            tEXt_creation_time_present = true;
+        }
+    }
+
+    private void setEncodedTime(String encodedTime) {
+        if (tEXt_creation_time_iter != null
+                && tEXt_creation_time_iter.hasNext()
+                && encodedTime != null) {
+            // Set the value at the iterator and reset its state
+            tEXt_creation_time_iter.next();
+            tEXt_creation_time_iter.set(encodedTime);
+            tEXt_creation_time_iter.previous();
+        }
+    }
+
+    private String getEncodedTime() {
+        String encodedTime = null;
+        if (tEXt_creation_time_iter != null
+                && tEXt_creation_time_iter.hasNext()) {
+            // Get the value at iterator and reset its state
+            encodedTime = tEXt_creation_time_iter.next();
+            tEXt_creation_time_iter.previous();
+        }
+        return encodedTime;
+    }
+
+    private OffsetDateTime parseEncodedTime(String encodedTime) {
+        OffsetDateTime retVal = null;
+        boolean timeDecoded = false;
+
+        /*
+         * PNG specification recommends that image encoders use RFC1123 format
+         * to represent time in String but doesn't mandate. Encoders could
+         * use any convenient format. Hence, we extract time provided the
+         * encoded time complies with either RFC1123 or ISO standards.
+         */
+        try {
+            // Check if the encoded time complies with RFC1123
+            retVal = OffsetDateTime.parse(encodedTime,
+                                          DateTimeFormatter.RFC_1123_DATE_TIME);
+            timeDecoded = true;
+        } catch (DateTimeParseException exception) {
+            // No Op. Encoded time did not comply with RFC1123 standard.
+        }
+
+        if (timeDecoded == false) {
+            try {
+                // Check if the encoded time complies with ISO standard.
+                DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+                TemporalAccessor dt = formatter.parseBest(encodedTime,
+                        OffsetDateTime::from, LocalDateTime::from);
+
+                if (dt instanceof OffsetDateTime) {
+                    // Encoded time contains date time and zone offset
+                    retVal = (OffsetDateTime) dt;
+                } else if (dt instanceof LocalDateTime) {
+                    /*
+                     * Encoded time contains only date and time. Since zone
+                     * offset information isn't available, we set to the default
+                     */
+                    LocalDateTime locDT = (LocalDateTime) dt;
+                    retVal = OffsetDateTime.of(locDT, ZoneOffset.UTC);
+                }
+            }  catch (DateTimeParseException exception) {
+                // No Op. Encoded time did not comply with ISO standard.
+            }
+        }
+        return retVal;
+    }
+
     // Reset all instance variables to their initial state
     public void reset() {
         IHDR_present = false;
@@ -2035,7 +2280,12 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         sRGB_present = false;
         tEXt_keyword = new ArrayList<String>();
         tEXt_text = new ArrayList<String>();
+        // tIME chunk with Image modification time
         tIME_present = false;
+        // Text chunk with Image creation time
+        tEXt_creation_time_present = false;
+        tEXt_creation_time_iter = null;
+        creation_time_present = false;
         tRNS_present = false;
         zTXt_keyword = new ArrayList<String>();
         zTXt_compressionMethod = new ArrayList<Integer>();
