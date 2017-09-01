@@ -241,12 +241,19 @@ public class TypeEnter implements Completer {
             boolean firstToComplete = queue.isEmpty();
 
             Phase prevTopLevelPhase = topLevelPhase;
+            boolean success = false;
 
             try {
                 topLevelPhase = this;
                 doCompleteEnvs(envs);
+                success = true;
             } finally {
                 topLevelPhase = prevTopLevelPhase;
+                if (!success && firstToComplete) {
+                    //an exception was thrown, e.g. BreakAttr:
+                    //the queue would become stale, clear it:
+                    queue.clear();
+                }
             }
 
             if (firstToComplete) {

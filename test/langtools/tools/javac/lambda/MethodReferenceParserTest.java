@@ -203,9 +203,9 @@ public class MethodReferenceParserTest extends ComboInstance<MethodReferencePars
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(template)
-                .parse());
+                .parse(this::check);
     }
 
     void check(Result<?> res) {

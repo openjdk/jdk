@@ -189,11 +189,11 @@ public class GenericOverrideTest extends ComboInstance<GenericOverrideTest> {
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withOption("-XDuseUnsharedTable") //this test relies on predictable name indexes!
                 .withOptions(level.opts)
                 .withSourceFromTemplate(template)
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<?> res) {

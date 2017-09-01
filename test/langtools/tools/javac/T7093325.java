@@ -130,9 +130,9 @@ public class T7093325 extends ComboInstance<T7093325> {
 
     @Override
     public void doWork() throws IOException {
-        verifyBytecode(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(source_template)
-                .generate());
+                .generate(this::verifyBytecode);
     }
 
     void verifyBytecode(Result<Iterable<? extends JavaFileObject>> result) {

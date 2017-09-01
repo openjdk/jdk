@@ -252,17 +252,16 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
 
     @Override
     public void doWork() throws IOException {
-        ComboTask comboTask = newCompilationTask()
+        newCompilationTask()
                 .withOption("-g")
-                .withSourceFromTemplate(source_template);
-
-        JavacTaskImpl ct = (JavacTaskImpl)comboTask.getTask();
-        Context context = ct.getContext();
-        Symtab syms = Symtab.instance(context);
-        Names names = Names.instance(context);
-        Types types = Types.instance(context);
-        ct.addTaskListener(new Indifier(syms, names, types));
-        verifyBytecode(comboTask.generate());
+                .withSourceFromTemplate(source_template)
+                .withListenerFactory(context -> {
+                        Symtab syms = Symtab.instance(context);
+                        Names names = Names.instance(context);
+                        Types types = Types.instance(context);
+                        return new Indifier(syms, names, types);
+                    })
+                .generate(this::verifyBytecode);
     }
 
     void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res) {

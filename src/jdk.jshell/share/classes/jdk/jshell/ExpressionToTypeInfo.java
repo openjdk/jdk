@@ -163,14 +163,15 @@ class ExpressionToTypeInfo {
         if (code == null || code.isEmpty()) {
             return null;
         }
+        OuterWrap codeWrap = state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(code));
         try {
-            OuterWrap codeWrap = state.outerMap.wrapInTrialClass(Wrap.methodReturnWrap(code));
-            AnalyzeTask at = state.taskFactory.new AnalyzeTask(codeWrap);
-            CompilationUnitTree cu = at.firstCuTree();
-            if (at.hasErrors() || cu == null) {
-                return null;
-            }
-            return new ExpressionToTypeInfo(at, cu, state).typeOfExpression();
+            return state.taskFactory.analyze(codeWrap, at -> {
+                CompilationUnitTree cu = at.firstCuTree();
+                if (at.hasErrors() || cu == null) {
+                    return null;
+                }
+                return new ExpressionToTypeInfo(at, cu, state).typeOfExpression();
+            });
         } catch (Exception ex) {
             return null;
         }
@@ -189,12 +190,13 @@ class ExpressionToTypeInfo {
         }
         try {
             OuterWrap codeWrap = state.outerMap.wrapInTrialClass(Wrap.methodWrap("var $$$ = " + code));
-            AnalyzeTask at = state.taskFactory.new AnalyzeTask(codeWrap);
-            CompilationUnitTree cu = at.firstCuTree();
-            if (at.hasErrors() || cu == null) {
-                return null;
-            }
-            return new ExpressionToTypeInfo(at, cu, state).typeOfExpression();
+            return state.taskFactory.analyze(codeWrap, at -> {
+                CompilationUnitTree cu = at.firstCuTree();
+                if (at.hasErrors() || cu == null) {
+                    return null;
+                }
+                return new ExpressionToTypeInfo(at, cu, state).typeOfExpression();
+            });
         } catch (Exception ex) {
             return null;
         }
