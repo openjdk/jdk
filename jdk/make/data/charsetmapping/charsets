@@ -257,6 +257,8 @@ charset ISO-8859-15 ISO_8859_15
     hisname ISO8859_15
     ascii   true
     alias   ISO_8859-15                # IANA alias
+    alias   Latin-9
+    alias   csISO885915
     alias   8859_15                    # Other aliases
     alias   ISO-8859-15
     alias   ISO8859_15
@@ -271,6 +273,18 @@ charset ISO-8859-15 ISO_8859_15
     alias   csISOlatin0
     alias   csISOlatin9
     alias   ISO8859_15_FDIS
+
+charset ISO-8859-16 ISO_8859_16
+    package sun.nio.cs
+    type    sbcs
+    hisname ISO8859_16
+    ascii   true
+    alias   iso-ir-226
+    alias   ISO_8859-16:2001
+    alias   ISO_8859-16
+    alias   latin10
+    alias   l10
+    alias   csISO885916
 
 charset KOI8-R KOI8_R
     package sun.nio.cs

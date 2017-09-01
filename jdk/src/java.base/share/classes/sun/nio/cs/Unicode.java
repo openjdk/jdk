@@ -38,6 +38,7 @@ abstract class Unicode extends Charset
         return ((cs instanceof US_ASCII)
                 || (cs instanceof ISO_8859_1)
                 || (cs instanceof ISO_8859_15)
+                || (cs instanceof ISO_8859_16)
                 || (cs instanceof MS1252)
                 || (cs instanceof UTF_8)
                 || (cs instanceof UTF_16)
