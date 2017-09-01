@@ -35,7 +35,7 @@
  *      The jrt file system can be created by calling
  *      {@link java.nio.file.FileSystems#newFileSystem
  *      FileSystems.newFileSystem(URI.create("jrt:/"))}.
- *      <p></dd>
+ *      </dd>
  * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Tool Guides:</dt>
  * <dd style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif"> {@extLink java_tool_reference java launcher},
  *      {@extLink keytool_tool_reference keytool}</dd>
