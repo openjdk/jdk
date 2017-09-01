@@ -476,7 +476,6 @@ class os: AllStatic {
   static frame      fetch_frame_from_context(const void* ucVoid);
   static frame      fetch_frame_from_ucontext(Thread* thread, void* ucVoid);
 
-  static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
 

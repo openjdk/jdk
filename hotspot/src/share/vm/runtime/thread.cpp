@@ -63,7 +63,6 @@
 #include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
@@ -748,19 +747,6 @@ void JavaThread::record_jump(address target, address instr, const char* file,
 }
 #endif // PRODUCT
 
-// Called by flat profiler
-// Callers have already called wait_for_ext_suspend_completion
-// The assertion for that is currently too complex to put here:
-bool JavaThread::profile_last_Java_frame(frame* _fr) {
-  bool gotframe = false;
-  // self suspension saves needed state.
-  if (has_last_Java_frame() && _anchor.walkable()) {
-    *_fr = pd_last_frame();
-    gotframe = true;
-  }
-  return gotframe;
-}
-
 void Thread::interrupt(Thread* thread) {
   debug_only(check_for_dangling_thread_pointer(thread);)
   os::interrupt(thread);
@@ -1381,14 +1367,6 @@ void WatcherThread::stop() {
   while (watcher_thread() != NULL) {
     // This wait should make safepoint checks, wait without a timeout,
     // and wait as a suspend-equivalent condition.
-    //
-    // Note: If the FlatProfiler is running, then this thread is waiting
-    // for the WatcherThread to terminate and the WatcherThread, via the
-    // FlatProfiler task, is waiting for the external suspend request on
-    // this thread to complete. wait_for_ext_suspend_completion() will
-    // eventually timeout, but that takes time. Making this wait a
-    // suspend-equivalent condition solves that timeout problem.
-    //
     Terminator_lock->wait(!Mutex::_no_safepoint_check_flag, 0,
                           Mutex::_as_suspend_equivalent_flag);
   }
@@ -1504,16 +1482,6 @@ void JavaThread::initialize() {
     record_jump(NULL, NULL, NULL, 0);
   }
 #endif // PRODUCT
-
-  set_thread_profiler(NULL);
-  if (FlatProfiler::is_active()) {
-    // This is where we would decide to either give each thread it's own profiler
-    // or use one global one from FlatProfiler,
-    // or up to some count of the number of profiled threads, etc.
-    ThreadProfiler* pp = new ThreadProfiler();
-    pp->engage();
-    set_thread_profiler(pp);
-  }
 
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
@@ -1660,7 +1628,6 @@ JavaThread::~JavaThread() {
 
   // All Java related clean up happens in exit
   ThreadSafepointState::destroy(this);
-  if (_thread_profiler != NULL) delete _thread_profiler;
   if (_thread_stat != NULL) delete _thread_stat;
 
 #if INCLUDE_JVMCI
@@ -1774,13 +1741,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   this->clear_pending_exception();
   Handle threadObj(this, this->threadObj());
   assert(threadObj.not_null(), "Java thread object should be created");
-
-  if (get_thread_profiler() != NULL) {
-    get_thread_profiler()->disengage();
-    ResourceMark rm;
-    get_thread_profiler()->print(get_thread_name());
-  }
-
 
   // FIXIT: This code should be moved into else part, when reliable 1.2/1.3 check is in place
   {
@@ -1983,12 +1943,6 @@ void JavaThread::initialize_queues() {
 #endif // INCLUDE_ALL_GCS
 
 void JavaThread::cleanup_failed_attach_current_thread() {
-  if (get_thread_profiler() != NULL) {
-    get_thread_profiler()->disengage();
-    ResourceMark rm;
-    get_thread_profiler()->print(get_thread_name());
-  }
-
   if (active_handles() != NULL) {
     JNIHandleBlock* block = active_handles();
     set_active_handles(NULL);
@@ -2785,9 +2739,6 @@ class RememberProcessedThread: public StackObj {
 void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
-
-  // The ThreadProfiler oops_do is done from FlatProfiler::oops_do
-  // since there may be more than one thread using each ThreadProfiler.
 
   // Traverse the GCHandles
   Thread::oops_do(f, cf);
@@ -3841,7 +3792,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // INCLUDE_MANAGEMENT
 
-  if (Arguments::has_profile())       FlatProfiler::engage(main_thread, true);
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
@@ -4136,7 +4086,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
-//      > stop flat profiler, StatSampler, watcher thread, CMS threads,
+//      > stop StatSampler, watcher thread, CMS threads,
 //        post thread end and vm death events to JVMTI,
 //        stop signal thread
 //   + Call JavaThread::exit(), it will:
@@ -4165,14 +4115,6 @@ bool Threads::destroy_vm() {
     while (Threads::number_of_non_daemon_threads() > 1)
       // This wait should make safepoint checks, wait without a timeout,
       // and wait as a suspend-equivalent condition.
-      //
-      // Note: If the FlatProfiler is running and this thread is waiting
-      // for another non-daemon thread to finish, then the FlatProfiler
-      // is waiting for the external suspend request on this thread to
-      // complete. wait_for_ext_suspend_completion() will eventually
-      // timeout, but that takes time. Making this wait a suspend-
-      // equivalent condition solves that timeout problem.
-      //
       Threads_lock->wait(!Mutex::_no_safepoint_check_flag, 0,
                          Mutex::_as_suspend_equivalent_flag);
   }

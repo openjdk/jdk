@@ -57,7 +57,6 @@ class G1RootProcessor : public StackObj {
     G1RP_PS_Universe_oops_do,
     G1RP_PS_JNIHandles_oops_do,
     G1RP_PS_ObjectSynchronizer_oops_do,
-    G1RP_PS_FlatProfiler_oops_do,
     G1RP_PS_Management_oops_do,
     G1RP_PS_SystemDictionary_oops_do,
     G1RP_PS_ClassLoaderDataGraph_oops_do,

@@ -3506,22 +3506,6 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
   return interrupted;
 }
 
-// Get's a pc (hint) for a running thread. Currently used only for profiling.
-ExtendedPC os::get_thread_pc(Thread* thread) {
-  CONTEXT context;
-  context.ContextFlags = CONTEXT_CONTROL;
-  HANDLE handle = thread->osthread()->thread_handle();
-  if (GetThreadContext(handle, &context)) {
-#ifdef _M_AMD64
-    return ExtendedPC((address) context.Rip);
-#else
-    return ExtendedPC((address) context.Eip);
-#endif
-  } else {
-    return ExtendedPC(NULL);
-  }
-}
-
 // GetCurrentThreadId() returns DWORD
 intx os::current_thread_id()  { return GetCurrentThreadId(); }
 

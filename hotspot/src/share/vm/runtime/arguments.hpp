@@ -412,7 +412,6 @@ class Arguments : AllStatic {
   static bool   _sun_java_launcher_is_altjvm;
 
   // Option flags
-  static bool   _has_profile;
   static const char*  _gc_log_filename;
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
@@ -695,9 +694,6 @@ class Arguments : AllStatic {
   static bool sun_java_launcher_is_altjvm();
   // -Dsun.java.launcher.pid
   static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
-
-  // -Xprof
-  static bool has_profile()                 { return _has_profile; }
 
   // -Xms
   static size_t min_heap_size()             { return _min_heap_size; }

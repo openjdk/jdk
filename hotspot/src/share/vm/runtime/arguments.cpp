@@ -78,7 +78,6 @@ int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
-bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 size_t Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
@@ -3160,16 +3159,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(bool, ReduceSignalUsage, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xprof
+      // -Xprof
     } else if (match_option(option, "-Xprof")) {
-#if INCLUDE_FPROF
-      log_warning(arguments)("Option -Xprof was deprecated in version 9 and will likely be removed in a future release.");
-      _has_profile = true;
-#else // INCLUDE_FPROF
-      jio_fprintf(defaultStream::error_stream(),
-        "Flat profiling is not supported in this VM.\n");
-      return JNI_ERR;
-#endif // INCLUDE_FPROF
+      char version[256];
+      // Obsolete in JDK 10
+      JDK_Version::jdk(10).to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     // -Xconcurrentio
     } else if (match_option(option, "-Xconcurrentio")) {
       if (FLAG_SET_CMDLINE(bool, UseLWPSynchronization, true) != Flag::SUCCESS) {
