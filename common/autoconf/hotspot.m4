@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds \
+    graal vm-structs jni-check services management all-gcs nmt cds \
     static-build link-time-opt aot"
 
 # All valid JVM variants
@@ -397,7 +397,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti vm-structs jni-check services management all-gcs nmt"
   if test "x$ENABLE_CDS" = "xtrue"; then
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
   fi                                            
