@@ -254,9 +254,9 @@ public class IntersectionTypeCastTest extends ComboInstance<IntersectionTypeCast
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(bodyTemplate)
-                .analyze());
+                .analyze(this::check);
     }
 
     String bodyTemplate = "class Test {\n" +

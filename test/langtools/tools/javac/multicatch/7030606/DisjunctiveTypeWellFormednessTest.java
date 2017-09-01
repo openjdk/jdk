@@ -128,9 +128,9 @@ public class DisjunctiveTypeWellFormednessTest extends ComboInstance<Disjunctive
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(template)
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<?> res) {

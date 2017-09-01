@@ -231,12 +231,12 @@ public class Warn4 extends ComboInstance<Warn4> {
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withOption("-Xlint:unchecked")
                 .withOption("-source")
                 .withOption(sourceLevel.sourceKey)
                 .withSourceFromTemplate(template)
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<?> res) {

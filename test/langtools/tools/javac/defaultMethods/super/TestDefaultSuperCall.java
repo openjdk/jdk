@@ -303,9 +303,9 @@ public class TestDefaultSuperCall extends ComboInstance<TestDefaultSuperCall> {
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(template, this::methodName)
-                .analyze());
+                .analyze(this::check);
     }
 
     ComboParameter methodName(String parameterName) {

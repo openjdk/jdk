@@ -193,9 +193,9 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
 
     @Override
     public void doWork() throws IOException {
-        verifyBytecode(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(source_template)
-                .generate());
+                .generate(this::verifyBytecode);
     }
 
     void verifyBytecode(Result<Iterable<? extends JavaFileObject>> res) {

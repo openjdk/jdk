@@ -188,11 +188,11 @@ public class FunctionalInterfaceConversionTest extends ComboInstance<FunctionalI
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate("Sam", samSource)
                 .withSourceFromTemplate("PackageClass", pkgClassSource)
                 .withSourceFromTemplate("Client", clientSource, this::importStmt)
-                .analyze());
+                .analyze(this::check);
     }
 
     ComboParameter importStmt(String name) {

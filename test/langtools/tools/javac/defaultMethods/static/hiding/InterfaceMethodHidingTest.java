@@ -154,10 +154,10 @@ public class InterfaceMethodHidingTest extends ComboInstance<InterfaceMethodHidi
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withOption("-XDallowStaticInterfaceMethods")
                 .withSourceFromTemplate(template, this::returnExpr)
-                .analyze());
+                .analyze(this::check);
     }
 
     ComboParameter returnExpr(String name) {

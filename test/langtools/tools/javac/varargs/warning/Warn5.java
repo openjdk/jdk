@@ -235,12 +235,12 @@ public class Warn5 extends ComboInstance<Warn5> {
 
     @Override
     public void doWork() throws IOException {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withOption(xlint.getXlintOption())
                 .withOption("-source")
                 .withOption(sourceLevel.sourceKey)
                 .withSourceFromTemplate(template)
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<?> res) {

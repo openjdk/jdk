@@ -241,9 +241,9 @@ public class TestUncheckedCalls extends ComboInstance<TestUncheckedCalls> {
 
     @Override
     public void doWork() throws Throwable {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(sourceTemplate)
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<Iterable<? extends Element>> result) {

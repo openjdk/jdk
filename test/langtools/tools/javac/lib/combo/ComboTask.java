@@ -26,8 +26,9 @@ package combo;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskListener;
-import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import combo.ComboParameter.Resolver;
 
@@ -40,16 +41,11 @@ import javax.tools.SimpleJavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * This class represents a compilation task associated with a combo test instance. This is a small
@@ -73,8 +69,8 @@ public class ComboTask {
     /** Listeners associated with this task. */
     private List<TaskListener> listeners = List.nil();
 
-    /** Underlying javac task object. */
-    private JavacTask task;
+    /** Listener factories associated with this task. */
+    private List<Function<Context, TaskListener>> listenerFactories = List.nil();
 
     /** Combo execution environment. */
     private ComboTestHelper<?>.Env env;
@@ -170,77 +166,55 @@ public class ComboTask {
     }
 
     /**
+     * Add a task listener factory to this task.
+     */
+    public ComboTask withListenerFactory(Function<Context, TaskListener> factory) {
+        listenerFactories = listenerFactories.prepend(factory);
+        return this;
+    }
+
+    /**
      * Parse the sources associated with this task.
      */
-    public Result<Iterable<? extends CompilationUnitTree>> parse() throws IOException {
-        return new Result<>(getTask().parse());
+    public void parse(Consumer<Result<Iterable<? extends CompilationUnitTree>>> c) {
+        doRunTest(c, JavacTask::parse);
     }
 
     /**
      * Parse and analyzes the sources associated with this task.
      */
-    public Result<Iterable<? extends Element>> analyze() throws IOException {
-        return new Result<>(getTask().analyze());
+    public void analyze(Consumer<Result<Iterable<? extends Element>>> c) {
+        doRunTest(c, JavacTask::analyze);
     }
 
     /**
      * Parse, analyze and perform code generation for the sources associated with this task.
      */
-    public Result<Iterable<? extends JavaFileObject>> generate() throws IOException {
-        return new Result<>(getTask().generate());
+    public void generate(Consumer<Result<Iterable<? extends JavaFileObject>>> c) {
+        doRunTest(c, JavacTask::generate);
     }
 
-    /**
-     * Parse, analyze, perform code generation for the sources associated with this task and finally
-     * executes them
-     */
-    public <Z> Optional<Z> execute(Function<ExecutionTask, Z> executionFunc) throws IOException {
-        Result<Iterable<? extends JavaFileObject>> generationResult = generate();
-        Iterable<? extends JavaFileObject> jfoIterable = generationResult.get();
-        if (generationResult.hasErrors()) {
-            // we have nothing else to do
-            return Optional.empty();
-        }
-        java.util.List<URL> urlList = new ArrayList<>();
-        for (JavaFileObject jfo : jfoIterable) {
-            String urlStr = jfo.toUri().toURL().toString();
-            urlStr = urlStr.substring(0, urlStr.length() - jfo.getName().length());
-            urlList.add(new URL(urlStr));
-        }
-        return Optional.of(
-                executionFunc.apply(
-                        new ExecutionTask(new URLClassLoader(urlList.toArray(new URL[urlList.size()])))));
+    private <V> void doRunTest(Consumer<Result<Iterable<? extends V>>> c,
+                               Convertor<V> task2Data) {
+        env.pool().getTask(out, env.fileManager(),
+                diagsCollector, options, null, sources, task -> {
+            try {
+                for (TaskListener l : listeners) {
+                    task.addTaskListener(l);
+                }
+                for (Function<Context, TaskListener> f : listenerFactories) {
+                    task.addTaskListener(f.apply(((JavacTaskImpl) task).getContext()));
+                }
+                c.accept(new Result<>(task2Data.convert(task)));
+                return null;
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
+        });
     }
 
-    /**
-     * Fork a new compilation task; if possible the compilation context from previous executions is
-     * retained (see comments in ReusableContext as to when it's safe to do so); otherwise a brand
-     * new context is created.
-     */
-    public JavacTask getTask() {
-        if (task == null) {
-            ReusableContext context = env.context();
-            String opts = options == null ? "" :
-                    StreamSupport.stream(options.spliterator(), false).collect(Collectors.joining());
-            context.clear();
-            if (!context.polluted && (context.opts == null || context.opts.equals(opts))) {
-                //we can reuse former context
-                env.info().ctxReusedCount++;
-            } else {
-                env.info().ctxDroppedCount++;
-                //it's not safe to reuse context - create a new one
-                context = env.setContext(new ReusableContext());
-            }
-            context.opts = opts;
-            JavacTask javacTask = ((JavacTool)env.javaCompiler()).getTask(out, env.fileManager(),
-                    diagsCollector, options, null, sources, context);
-            javacTask.setTaskListener(context);
-            for (TaskListener l : listeners) {
-                javacTask.addTaskListener(l);
-            }
-            task = javacTask;
-        }
-        return task;
+    interface Convertor<V> {
+        public Iterable<? extends V> convert(JavacTask task) throws IOException;
     }
 
     /**

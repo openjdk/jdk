@@ -40,8 +40,12 @@ class ReplParserFactory extends ParserFactory {
     private final boolean forceExpression;
 
     public static void preRegister(Context context, boolean forceExpression) {
-        context.put(parserFactoryKey, (Context.Factory<ParserFactory>)
-                (c -> new ReplParserFactory(c, forceExpression)));
+        class Mark {}
+        if (context.get(Mark.class) == null) { //don't register the factory if Context is reused
+            context.put(parserFactoryKey, (Context.Factory<ParserFactory>)
+                    (c -> new ReplParserFactory(c, forceExpression)));
+            context.put(Mark.class, new Mark());
+        }
     }
 
     private final ScannerFactory scannerFactory;

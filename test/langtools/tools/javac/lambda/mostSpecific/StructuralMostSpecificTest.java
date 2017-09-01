@@ -208,10 +208,10 @@ public class StructuralMostSpecificTest extends ComboInstance<StructuralMostSpec
 
     @Override
     public void doWork() throws Throwable {
-        check(newCompilationTask()
+        newCompilationTask()
                 .withSourceFromTemplate(sourceTemplate)
                 .withOption("--debug:verboseResolution=all,-predef,-internal,-object-init")
-                .analyze());
+                .analyze(this::check);
     }
 
     void check(Result<Iterable<? extends Element>> result) {
