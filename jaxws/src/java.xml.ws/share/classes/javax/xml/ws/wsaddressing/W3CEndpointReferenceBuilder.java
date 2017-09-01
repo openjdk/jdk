@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public final class W3CEndpointReferenceBuilder {
      * Sets the {@code endpointName} as
      * {@code wsam:ServiceName/@EndpointName} in the
      * {@code wsa:Metadata} element. This method can only be called
-     * after the {@link #serviceName} method has been called.
+     * after the {@link #serviceName(QName)} method has been called.
      * <p>
      * See <a href="http://www.w3.org/TR/2007/REC-ws-addr-metadata-20070904/#refmetadatfromepr">
      * 2.1 Referencing WSDL Metadata from an EPR</a> for more details.

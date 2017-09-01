@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,58 +113,60 @@ import java.lang.annotation.Target;
  * complex type or simple type. The notational symbols used in the table are:
  * <ul>
  *   <li> {@literal ->}    : represents a mapping </li>
- *   <li> [x]+  : one or more occurances of x </li>
+ *   <li> [x]+  : one or more occurrences of x </li>
  *   <li> [ {@code @XmlValue} property ]: JavaBean property annotated with
  *         {@code @XmlValue}</li>
  *   <li> X     : don't care
  * </ul>
  * <blockquote>
- *   <table summary="" border="1" cellpadding="4" cellspacing="3">
+ *   <table class="striped">
+ *     <thead>
+ *       <tr>
+ *         <th scope="col">Target</th>
+ *         <th scope="col">propOrder</th>
+ *         <th scope="col">ClassBody</th>
+ *         <th scope="col">ComplexType</th>
+ *         <th scope="col">SimpleType</th>
+ *       </tr>
+ *     </thead>
+ *
  *     <tbody>
  *       <tr>
- *         <td><b>Target</b></td>
- *         <td><b>propOrder</b></td>
- *         <td><b>ClassBody</b></td>
- *         <td><b>ComplexType</b></td>
- *         <td><b>SimpleType</b></td>
- *       </tr>
- *
- *       <tr valign="top">
  *         <td>Class</td>
  *         <td>{}</td>
- *         <td>[property]+ {@literal ->} elements</td>
+ *         <th scope="row">[property]+ {@literal ->} elements</th>
  *         <td>complexcontent<br>xs:all</td>
  *         <td> </td>
  *       </tr>
  *
- *       <tr valign="top">
+ *       <tr>
  *         <td>Class</td>
  *         <td>non empty</td>
- *         <td>[property]+ {@literal ->} elements</td>
+ *         <th scope="row">[property]+ {@literal ->} elements</th>
  *         <td>complexcontent<br>xs:sequence</td>
  *         <td> </td>
  *       </tr>
  *
- *       <tr valign="top">
+ *       <tr>
  *         <td>Class</td>
  *         <td>X</td>
- *         <td>no property {@literal ->} element</td>
+ *         <th scope="row">no property {@literal ->} element</th>
  *         <td>complexcontent<br>empty sequence</td>
  *         <td> </td>
  *       </tr>
  *
- *       <tr valign="top">
+ *       <tr>
  *         <td>Class</td>
  *         <td>X</td>
- *         <td>1 [{@code @XmlValue} property] {@literal &&} <br> [property]+ {@literal ->} attributes</td>
+ *         <th scope="row">1 [{@code @XmlValue} property] {@literal &&} <br> [property]+ {@literal ->} attributes</th>
  *         <td>simplecontent</td>
  *         <td> </td>
  *       </tr>
  *
- *       <tr valign="top">
+ *       <tr>
  *         <td>Class</td>
  *         <td>X</td>
- *         <td>1 [{@code @XmlValue} property] {@literal &&} <br> no properties {@literal ->} attribute</td>
+ *         <th scope="row">1 [{@code @XmlValue} property] {@literal &&} <br> no properties {@literal ->} attribute</th>
  *         <td> </td>
  *         <td>simpletype</td>
  *       </tr>

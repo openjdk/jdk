@@ -25,13 +25,13 @@
 
 /**
  * Useful client utility classes.
- * <p>
+ *
  * <h2>Package Specification</h2>
- * <p>
+ *
  * <ul>
  * <li><a href="https://jaxb.java.net/">JAXB Specification</a>
  * </ul>
- * <p>
+ *
  * <h2>Related Documentation</h2>
  * <p>
  * For overviews, tutorials, examples, guides, and tool documentation,
