@@ -292,7 +292,7 @@ void MacroAssembler::verify_thread() {
   if (VerifyThread) {
     // NOTE: this chops off the heads of the 64-bit O registers.
     // make sure G2_thread contains the right value
-    save_frame_and_mov(0, Lmethod, Lmethod);   // to avoid clobbering O0 (and propagate Lmethod for -Xprof)
+    save_frame_and_mov(0, Lmethod, Lmethod);   // to avoid clobbering O0 (and propagate Lmethod)
     mov(G1, L1);                // avoid clobbering G1
     // G2 saved below
     mov(G3, L3);                // avoid clobbering G3
@@ -398,7 +398,7 @@ void MacroAssembler::reset_last_Java_frame(void) {
 
 #ifdef ASSERT
   // check that it WAS previously set
-    save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod to helper frame for -Xprof
+    save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod to helper frame
     ld_ptr(sp_addr, L0);
     tst(L0);
     breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
@@ -618,7 +618,7 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 
 # ifdef ASSERT
     // Check that we are not overwriting any other oop.
-    save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod for -Xprof
+    save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod
     ld_ptr(vm_result_addr, L0);
     tst(L0);
     restore();

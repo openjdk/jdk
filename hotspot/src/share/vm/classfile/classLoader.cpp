@@ -57,7 +57,6 @@
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -1442,7 +1441,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   const char* const class_name = name->as_C_string();
 
   EventMark m("loading class %s", class_name);
-  ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
   const char* const file_name = file_name_for_class_name(class_name,
                                                          name->utf8_length());
