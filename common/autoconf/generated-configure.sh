@@ -4300,7 +4300,7 @@ pkgadd_help() {
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds \
+    graal vm-structs jni-check services management all-gcs nmt cds \
     static-build link-time-opt aot"
 
 # All valid JVM variants
@@ -5161,7 +5161,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1504214237
+DATE_WHEN_GENERATED=1504224733
 
 ###############################################################################
 #
@@ -65875,7 +65875,7 @@ $as_echo "no" >&6; }
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti vm-structs jni-check services management all-gcs nmt"
   if test "x$ENABLE_CDS" = "xtrue"; then
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
   fi
