@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/ostream.hpp"
 
@@ -48,21 +49,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
 
 protected:
-  DictionaryEntry* bucket(int i) const {
-    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
-  }
-
-  // The following method is not MT-safe and must be done under lock.
-  DictionaryEntry** bucket_addr(int i) {
-    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
-  }
-
-  void add_entry(int index, DictionaryEntry* new_entry) {
-    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
-  }
-
-  void free_entry(DictionaryEntry* entry);
-
   static size_t entry_size();
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size);
@@ -106,6 +92,24 @@ public:
 
   void print_on(outputStream* st) const;
   void verify();
+  DictionaryEntry* bucket(int i) const {
+    return (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::bucket(i);
+  }
+
+  // The following method is not MT-safe and must be done under lock.
+  DictionaryEntry** bucket_addr(int i) {
+    return (DictionaryEntry**)Hashtable<InstanceKlass*, mtClass>::bucket_addr(i);
+  }
+
+  void add_entry(int index, DictionaryEntry* new_entry) {
+    Hashtable<InstanceKlass*, mtClass>::add_entry(index, (HashtableEntry<InstanceKlass*, mtClass>*)new_entry);
+  }
+
+  void unlink_entry(DictionaryEntry* entry) {
+    Hashtable<InstanceKlass*, mtClass>::unlink_entry((HashtableEntry<InstanceKlass*, mtClass>*)entry);
+  }
+
+  void free_entry(DictionaryEntry* entry);
 };
 
 // An entry in the class loader data dictionaries, this describes a class as
@@ -134,7 +138,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   // It is essentially a cache to avoid repeated Java up-calls to
   // ClassLoader.checkPackageAccess().
   //
-  ProtectionDomainEntry* _pd_set;
+  ProtectionDomainEntry* volatile _pd_set;
 
  public:
   // Tells whether a protection is in the approved set.
@@ -153,8 +157,15 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     return (DictionaryEntry**)HashtableEntry<InstanceKlass*, mtClass>::next_addr();
   }
 
-  ProtectionDomainEntry* pd_set() const { return _pd_set; }
-  void set_pd_set(ProtectionDomainEntry* pd_set) { _pd_set = pd_set; }
+  ProtectionDomainEntry* pd_set() const            { return _pd_set; }
+  void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
+
+  ProtectionDomainEntry* pd_set_acquire() const    {
+    return (ProtectionDomainEntry*)OrderAccess::load_ptr_acquire(&_pd_set);
+  }
+  void release_set_pd_set(ProtectionDomainEntry* new_head) {
+    OrderAccess::release_store_ptr(&_pd_set, new_head);
+  }
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
   bool is_valid_protection_domain(Handle protection_domain) {
@@ -167,7 +178,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   }
 
   void verify_protection_domain_set() {
-    for (ProtectionDomainEntry* current = _pd_set;
+    for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                                 current != NULL;
                                 current = current->_next) {
       current->_pd_cache->protection_domain()->verify();
@@ -181,7 +192,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
 
   void print_count(outputStream *st) {
     int count = 0;
-    for (ProtectionDomainEntry* current = _pd_set;
+    for (ProtectionDomainEntry* current = pd_set();  // accessed inside SD lock
                                 current != NULL;
                                 current = current->_next) {
       count++;
@@ -246,10 +257,6 @@ class SymbolPropertyEntry : public HashtableEntry<Symbol*, mtSymbol> {
 class SymbolPropertyTable : public Hashtable<Symbol*, mtSymbol> {
   friend class VMStructs;
 private:
-  SymbolPropertyEntry* bucket(int i) {
-    return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
-  }
-
   // The following method is not MT-safe and must be done under lock.
   SymbolPropertyEntry** bucket_addr(int i) {
     return (SymbolPropertyEntry**) Hashtable<Symbol*, mtSymbol>::bucket_addr(i);
@@ -303,5 +310,9 @@ public:
   void methods_do(void f(Method*));
 
   void verify();
+
+  SymbolPropertyEntry* bucket(int i) {
+    return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
+  }
 };
 #endif // SHARE_VM_CLASSFILE_DICTIONARY_HPP

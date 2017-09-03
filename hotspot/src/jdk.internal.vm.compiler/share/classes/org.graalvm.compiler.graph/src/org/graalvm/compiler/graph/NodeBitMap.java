@@ -23,22 +23,23 @@
 package org.graalvm.compiler.graph;
 
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 
-public final class NodeBitMap implements NodeIterable<Node> {
+public final class NodeBitMap extends NodeIdAccessor implements NodeIterable<Node> {
     private static final int SHIFT = 6;
 
     private long[] bits;
     private int nodeCount;
     private int counter;
-    private final Graph graph;
 
     public NodeBitMap(Graph graph) {
+        super(graph);
         this.nodeCount = graph.nodeIdCount();
         this.bits = new long[sizeForNodeCount(nodeCount)];
-        this.graph = graph;
     }
 
     private static int sizeForNodeCount(int nodeCount) {
@@ -50,9 +51,9 @@ public final class NodeBitMap implements NodeIterable<Node> {
     }
 
     private NodeBitMap(NodeBitMap other) {
+        super(other.graph);
         this.bits = other.bits.clone();
         this.nodeCount = other.nodeCount;
-        this.graph = other.graph;
     }
 
     public Graph graph() {
@@ -60,12 +61,12 @@ public final class NodeBitMap implements NodeIterable<Node> {
     }
 
     public boolean isNew(Node node) {
-        return node.id() >= nodeCount;
+        return getNodeId(node) >= nodeCount;
     }
 
     public boolean isMarked(Node node) {
         assert check(node, false);
-        return isMarked(node.id());
+        return isMarked(getNodeId(node));
     }
 
     public boolean checkAndMarkInc(Node node) {
@@ -84,33 +85,33 @@ public final class NodeBitMap implements NodeIterable<Node> {
 
     public boolean isMarkedAndGrow(Node node) {
         assert check(node, true);
-        int id = node.id();
+        int id = getNodeId(node);
         checkGrow(id);
         return isMarked(id);
     }
 
     public void mark(Node node) {
         assert check(node, false);
-        int id = node.id();
+        int id = getNodeId(node);
         bits[id >> SHIFT] |= (1L << id);
     }
 
     public void markAndGrow(Node node) {
         assert check(node, true);
-        int id = node.id();
+        int id = getNodeId(node);
         checkGrow(id);
         bits[id >> SHIFT] |= (1L << id);
     }
 
     public void clear(Node node) {
         assert check(node, false);
-        int id = node.id();
+        int id = getNodeId(node);
         bits[id >> SHIFT] &= ~(1L << id);
     }
 
     public void clearAndGrow(Node node) {
         assert check(node, true);
-        int id = node.id();
+        int id = getNodeId(node);
         checkGrow(id);
         bits[id >> SHIFT] &= ~(1L << id);
     }
@@ -181,15 +182,30 @@ public final class NodeBitMap implements NodeIterable<Node> {
         }
     }
 
-    protected int nextMarkedNodeId(int fromNodeId) {
+    protected Node nextMarkedNode(int fromNodeId) {
         assert fromNodeId >= 0;
         int wordIndex = fromNodeId >> SHIFT;
         int wordsInUse = bits.length;
         if (wordIndex < wordsInUse) {
-            long word = bits[wordIndex] & (0xFFFFFFFFFFFFFFFFL << fromNodeId);
+            long word = getPartOfWord(bits[wordIndex], fromNodeId);
             while (true) {
-                if (word != 0) {
-                    return wordIndex * Long.SIZE + Long.numberOfTrailingZeros(word);
+                while (word != 0) {
+                    int bitIndex = Long.numberOfTrailingZeros(word);
+                    int nodeId = wordIndex * Long.SIZE + bitIndex;
+                    Node result = graph.getNode(nodeId);
+                    if (result == null) {
+                        // node was deleted -> clear the bit and continue searching
+                        bits[wordIndex] = bits[wordIndex] & ~(1 << bitIndex);
+                        int nextNodeId = nodeId + 1;
+                        if ((nextNodeId & (Long.SIZE - 1)) == 0) {
+                            // we reached the end of this word
+                            break;
+                        } else {
+                            word = getPartOfWord(word, nextNodeId);
+                        }
+                    } else {
+                        return result;
+                    }
                 }
                 if (++wordIndex == wordsInUse) {
                     break;
@@ -197,30 +213,56 @@ public final class NodeBitMap implements NodeIterable<Node> {
                 word = bits[wordIndex];
             }
         }
-        return -2;
+        return null;
     }
 
+    private static long getPartOfWord(long word, int firstNodeIdToInclude) {
+        return word & (0xFFFFFFFFFFFFFFFFL << firstNodeIdToInclude);
+    }
+
+    /**
+     * This iterator only returns nodes that are marked in the {@link NodeBitMap} and are alive in
+     * the corresponding {@link Graph}.
+     */
     private class MarkedNodeIterator implements Iterator<Node> {
-        private int nextNodeId;
+        private int currentNodeId;
+        private Node currentNode;
 
         MarkedNodeIterator() {
-            nextNodeId = -1;
+            currentNodeId = -1;
             forward();
         }
 
         private void forward() {
-            nextNodeId = NodeBitMap.this.nextMarkedNodeId(nextNodeId + 1);
+            assert currentNode == null;
+            currentNode = NodeBitMap.this.nextMarkedNode(currentNodeId + 1);
+            if (currentNode != null) {
+                assert currentNode.isAlive();
+                currentNodeId = getNodeId(currentNode);
+            } else {
+                currentNodeId = -1;
+            }
         }
 
         @Override
         public boolean hasNext() {
-            return nextNodeId >= 0;
+            if (currentNode == null && currentNodeId >= 0) {
+                forward();
+            }
+            return currentNodeId >= 0;
         }
 
         @Override
         public Node next() {
-            Node result = graph.getNode(nextNodeId);
-            forward();
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            if (!currentNode.isAlive()) {
+                throw new ConcurrentModificationException("NodeBitMap was modified between the calls to hasNext() and next()");
+            }
+
+            Node result = currentNode;
+            currentNode = null;
             return result;
         }
 

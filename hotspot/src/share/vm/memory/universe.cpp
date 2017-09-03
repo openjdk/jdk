@@ -63,7 +63,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"

@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_CLASSLOADEREXT_HPP
 
 #include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
 
@@ -56,8 +57,15 @@ public:
       if (ClassLoader::add_package(_file_name, classpath_index, THREAD)) {
 #if INCLUDE_CDS
         if (DumpSharedSpaces) {
-          s2 classloader_type = ClassLoader::classloader_type(
-                          class_name, e, classpath_index, CHECK_(result));
+          oop loader = result->class_loader();
+          s2 classloader_type = ClassLoader::BOOT_LOADER;
+          if (SystemDictionary::is_system_class_loader(loader)) {
+            classloader_type = ClassLoader::APP_LOADER;
+            ClassLoaderExt::set_has_app_classes();
+          } else if (SystemDictionary::is_platform_class_loader(loader)) {
+            classloader_type = ClassLoader::PLATFORM_LOADER;
+            ClassLoaderExt::set_has_platform_classes();
+          }
           result->set_shared_classpath_index(classpath_index);
           result->set_class_loader_type(classloader_type);
         }
@@ -82,6 +90,13 @@ public:
    return true;
  }
   static Klass* load_one_class(ClassListParser* parser, TRAPS);
+#if INCLUDE_CDS
+  static void set_has_app_classes() {}
+  static void set_has_platform_classes() {}
+  static char* read_manifest(ClassPathEntry* entry, jint *manifest_size, TRAPS) {
+    return NULL;
+  }
+#endif
 };
 
 #endif // SHARE_VM_CLASSFILE_CLASSLOADEREXT_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,12 +94,11 @@ class MarkFromRootsTask : public GCTask {
     jni_handles           = 2,
     threads               = 3,
     object_synchronizer   = 4,
-    flat_profiler         = 5,
-    management            = 6,
-    jvmti                 = 7,
-    system_dictionary     = 8,
-    class_loader_data     = 9,
-    code_cache            = 10
+    management            = 5,
+    jvmti                 = 6,
+    system_dictionary     = 7,
+    class_loader_data     = 8,
+    code_cache            = 9
   };
  private:
   RootType _root_type;

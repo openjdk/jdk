@@ -205,7 +205,11 @@ public class BootAppendTests {
             OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
             CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context");
             if (!CDSTestUtils.isUnableToMap(out)) {
-                out.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+                if (mode.equals("off")) {
+                    out.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+                } else {
+                    CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context source: shared objects file");
+                }
             }
         }
     }

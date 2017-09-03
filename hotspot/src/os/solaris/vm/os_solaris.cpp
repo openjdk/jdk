@@ -1356,60 +1356,6 @@ const char* os::dll_file_extension() { return ".so"; }
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
-static bool file_exists(const char* filename) {
-  struct stat statbuf;
-  if (filename == NULL || strlen(filename) == 0) {
-    return false;
-  }
-  return os::stat(filename, &statbuf) == 0;
-}
-
-bool os::dll_build_name(char* buffer, size_t buflen,
-                        const char* pname, const char* fname) {
-  bool retval = false;
-  const size_t pnamelen = pname ? strlen(pname) : 0;
-
-  // Return error on buffer overflow.
-  if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
-    return retval;
-  }
-
-  if (pnamelen == 0) {
-    snprintf(buffer, buflen, "lib%s.so", fname);
-    retval = true;
-  } else if (strchr(pname, *os::path_separator()) != NULL) {
-    int n;
-    char** pelements = split_path(pname, &n);
-    if (pelements == NULL) {
-      return false;
-    }
-    for (int i = 0; i < n; i++) {
-      // really shouldn't be NULL but what the heck, check can't hurt
-      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
-        continue; // skip the empty path values
-      }
-      snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
-      if (file_exists(buffer)) {
-        retval = true;
-        break;
-      }
-    }
-    // release the storage
-    for (int i = 0; i < n; i++) {
-      if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
-      }
-    }
-    if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
-    }
-  } else {
-    snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
-    retval = true;
-  }
-  return retval;
-}
-
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
@@ -3496,6 +3442,37 @@ void os::hint_no_preempt() {
   schedctl_start(schedctl_init());
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// suspend/resume support
+
+//  The low-level signal-based suspend/resume support is a remnant from the
+//  old VM-suspension that used to be for java-suspension, safepoints etc,
+//  within hotspot. Currently used by JFR's OSThreadSampler
+//
+//  The remaining code is greatly simplified from the more general suspension
+//  code that used to be used.
+//
+//  The protocol is quite simple:
+//  - suspend:
+//      - sends a signal to the target thread
+//      - polls the suspend state of the osthread using a yield loop
+//      - target thread signal handler (SR_handler) sets suspend state
+//        and blocks in sigsuspend until continued
+//  - resume:
+//      - sets target osthread state to continue
+//      - sends signal to end the sigsuspend loop in the SR_handler
+//
+//  Note that the SR_lock plays no role in this suspend/resume protocol,
+//  but is checked for NULL in SR_handler as a thread termination indicator.
+//  The SR_lock is, however, used by JavaThread::java_suspend()/java_resume() APIs.
+//
+//  Note that resume_clear_context() and suspend_save_context() are needed
+//  by SR_handler(), so that fetch_frame_from_ucontext() works,
+//  which in part is used by:
+//    - Forte Analyzer: AsyncGetCallTrace()
+//    - StackBanging: get_frame_at_stack_banging_point()
+//    - JFR: get_topframe()-->....-->get_valid_uc_in_signal_handler()
+
 static void resume_clear_context(OSThread *osthread) {
   osthread->set_ucontext(NULL);
 }
@@ -3506,7 +3483,7 @@ static void suspend_save_context(OSThread *osthread, ucontext_t* context) {
 
 static PosixSemaphore sr_semaphore;
 
-void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
+void os::Solaris::SR_handler(Thread* thread, ucontext_t* context) {
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
   int old_errno = errno;
@@ -3516,7 +3493,7 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 
   os::SuspendResume::State current = osthread->sr.state();
   if (current == os::SuspendResume::SR_SUSPEND_REQUEST) {
-    suspend_save_context(osthread, uc);
+    suspend_save_context(osthread, context);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
     os::SuspendResume::State state = osthread->sr.suspended();
@@ -3662,45 +3639,6 @@ void os::SuspendedThreadTask::internal_do_task() {
     do_resume(_thread->osthread());
   }
 }
-
-class PcFetcher : public os::SuspendedThreadTask {
- public:
-  PcFetcher(Thread* thread) : os::SuspendedThreadTask(thread) {}
-  ExtendedPC result();
- protected:
-  void do_task(const os::SuspendedThreadTaskContext& context);
- private:
-  ExtendedPC _epc;
-};
-
-ExtendedPC PcFetcher::result() {
-  guarantee(is_done(), "task is not done yet.");
-  return _epc;
-}
-
-void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
-  Thread* thread = context.thread();
-  OSThread* osthread = thread->osthread();
-  if (osthread->ucontext() != NULL) {
-    _epc = os::Solaris::ucontext_get_pc((const ucontext_t *) context.ucontext());
-  } else {
-    // NULL context is unexpected, double-check this is the VMThread
-    guarantee(thread->is_VM_thread(), "can only be called for VMThread");
-  }
-}
-
-// A lightweight implementation that does not suspend the target thread and
-// thus returns only a hint. Used for profiling only!
-ExtendedPC os::get_thread_pc(Thread* thread) {
-  // Make sure that it is called by the watcher and the Threads lock is owned.
-  assert(Thread::current()->is_Watcher_thread(), "Must be watcher and own Threads_lock");
-  // For now, is only used to profile the VM Thread
-  assert(thread->is_VM_thread(), "Can only be called for VMThread");
-  PcFetcher fetcher(thread);
-  fetcher.run();
-  return fetcher.result();
-}
-
 
 // This does not do anything on Solaris. This is basically a hook for being
 // able to use structured exception handling (thread-local exception filters) on, e.g., Win32.

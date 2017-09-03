@@ -89,8 +89,6 @@ ConstantPool::ConstantPool(Array<u1>* tags) :
 
 void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   if (cache() != NULL) {
-    MetadataFactory::free_array<u2>(loader_data, reference_map());
-    set_reference_map(NULL);
     MetadataFactory::free_metadata(loader_data, cache());
     set_cache(NULL);
   }
@@ -259,10 +257,14 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
   }
 
   objArrayOop rr = resolved_references();
+  Array<u2>* ref_map = reference_map();
   if (rr != NULL) {
-    for (int i = 0; i < rr->length(); i++) {
+    int ref_map_len = ref_map == NULL ? 0 : ref_map->length();
+    int rr_len = rr->length();
+    for (int i = 0; i < rr_len; i++) {
       oop p = rr->obj_at(i);
-      if (p != NULL) {
+      rr->obj_at_put(i, NULL);
+      if (p != NULL && i < ref_map_len) {
         int index = object_to_cp_index(i);
         // Skip the entry if the string hash code is 0 since the string
         // is not included in the shared string_table, see StringTable::copy_shared_string.
@@ -273,11 +275,10 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
           // have a 'bad' reference in the archived resolved_reference
           // array.
           rr->obj_at_put(i, op);
-        } else {
-          rr->obj_at_put(i, NULL);
         }
       }
     }
+
     oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
     _cache->set_archived_references(archived);
     set_resolved_references(NULL);
@@ -348,6 +349,26 @@ void ConstantPool::remove_unshareable_info() {
   // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
   // we always set _on_stack to true to avoid having to change _flags during runtime.
   _flags |= (_on_stack | _is_shared);
+  int num_klasses = 0;
+  for (int index = 1; index < length(); index++) { // Index 0 is unused
+    assert(!tag_at(index).is_unresolved_klass_in_error(), "This must not happen during dump time");
+    if (tag_at(index).is_klass()) {
+      // This class was resolved as a side effect of executing Java code
+      // during dump time. We need to restore it back to an UnresolvedClass,
+      // so that the proper class loading and initialization can happen
+      // at runtime.
+      CPKlassSlot kslot = klass_slot_at(index);
+      int resolved_klass_index = kslot.resolved_klass_index();
+      int name_index = kslot.name_index();
+      assert(tag_at(name_index).is_symbol(), "sanity");
+      resolved_klasses()->at_put(resolved_klass_index, NULL);
+      tag_at_put(index, JVM_CONSTANT_UnresolvedClass);
+      assert(klass_name_at(index) == symbol_at(name_index), "sanity");
+    }
+  }
+  if (cache() != NULL) {
+    cache()->remove_unshareable_info();
+  }
 }
 
 int ConstantPool::cp_to_object_index(int cp_index) {

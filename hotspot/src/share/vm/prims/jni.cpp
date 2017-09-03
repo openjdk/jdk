@@ -62,7 +62,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/fieldDescriptor.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"

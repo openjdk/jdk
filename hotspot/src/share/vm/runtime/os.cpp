@@ -235,6 +235,82 @@ OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) 
   return OS_OK;
 }
 
+bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
+  int n = jio_snprintf(buffer, size, "%s%s%s", JNI_LIB_PREFIX, fname, JNI_LIB_SUFFIX);
+  return (n != -1);
+}
+
+// Helper for dll_locate_lib.
+// Pass buffer and printbuffer as we already printed the path to buffer
+// when we called get_current_directory. This way we avoid another buffer
+// of size MAX_PATH.
+static bool conc_path_file_and_check(char *buffer, char *printbuffer, size_t printbuflen,
+                                     const char* pname, char lastchar, const char* fname) {
+
+  // Concatenate path and file name, but don't print double path separators.
+  const char *filesep = (WINDOWS_ONLY(lastchar == ':' ||) lastchar == os::file_separator()[0]) ?
+                        "" : os::file_separator();
+  int ret = jio_snprintf(printbuffer, printbuflen, "%s%s%s", pname, filesep, fname);
+  // Check whether file exists.
+  if (ret != -1) {
+    struct stat statbuf;
+    return os::stat(buffer, &statbuf) == 0;
+  }
+  return false;
+}
+
+bool os::dll_locate_lib(char *buffer, size_t buflen,
+                        const char* pname, const char* fname) {
+  bool retval = false;
+
+  size_t fullfnamelen = strlen(JNI_LIB_PREFIX) + strlen(fname) + strlen(JNI_LIB_SUFFIX);
+  char* fullfname = (char*)NEW_C_HEAP_ARRAY(char, fullfnamelen + 1, mtInternal);
+  if (dll_build_name(fullfname, fullfnamelen + 1, fname)) {
+    const size_t pnamelen = pname ? strlen(pname) : 0;
+
+    if (pnamelen == 0) {
+      // If no path given, use current working directory.
+      const char* p = get_current_directory(buffer, buflen);
+      if (p != NULL) {
+        const size_t plen = strlen(buffer);
+        const char lastchar = buffer[plen - 1];
+        retval = conc_path_file_and_check(buffer, &buffer[plen], buflen - plen,
+                                          "", lastchar, fullfname);
+      }
+    } else if (strchr(pname, *os::path_separator()) != NULL) {
+      // A list of paths. Search for the path that contains the library.
+      int n;
+      char** pelements = split_path(pname, &n);
+      if (pelements != NULL) {
+        for (int i = 0; i < n; i++) {
+          char* path = pelements[i];
+          // Really shouldn't be NULL, but check can't hurt.
+          size_t plen = (path == NULL) ? 0 : strlen(path);
+          if (plen == 0) {
+            continue; // Skip the empty path values.
+          }
+          const char lastchar = path[plen - 1];
+          retval = conc_path_file_and_check(buffer, buffer, buflen, path, lastchar, fullfname);
+          if (retval) break;
+        }
+        // Release the storage allocated by split_path.
+        for (int i = 0; i < n; i++) {
+          if (pelements[i] != NULL) {
+            FREE_C_HEAP_ARRAY(char, pelements[i]);
+          }
+        }
+        FREE_C_HEAP_ARRAY(char*, pelements);
+      }
+    } else {
+      // A definite path.
+      const char lastchar = pname[pnamelen-1];
+      retval = conc_path_file_and_check(buffer, buffer, buflen, pname, lastchar, fullfname);
+    }
+  }
+
+  FREE_C_HEAP_ARRAY(char*, fullfname);
+  return retval;
+}
 
 // --------------------- sun.misc.Signal (optional) ---------------------
 
@@ -427,13 +503,13 @@ void* os::native_java_library() {
     // Try to load verify dll first. In 1.3 java dll depends on it and is not
     // always able to find it when the loading executable is outside the JDK.
     // In order to keep working with 1.2 we ignore any loading errors.
-    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+    if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                        "verify")) {
       dll_load(buffer, ebuf, sizeof(ebuf));
     }
 
     // Load java dll
-    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+    if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                        "java")) {
       _native_java_library = dll_load(buffer, ebuf, sizeof(ebuf));
     }
@@ -444,7 +520,7 @@ void* os::native_java_library() {
 #if defined(__OpenBSD__)
     // Work-around OpenBSD's lack of $ORIGIN support by pre-loading libnet.so
     // ignore errors
-    if (dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+    if (dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                        "net")) {
       dll_load(buffer, ebuf, sizeof(ebuf));
     }

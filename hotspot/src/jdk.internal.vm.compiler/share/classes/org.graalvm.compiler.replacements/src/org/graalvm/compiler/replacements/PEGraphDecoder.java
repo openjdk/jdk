@@ -707,10 +707,22 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
             }
         }
 
+        LoopScope inlineLoopScope = createInitialLoopScope(inlineScope, predecessor);
+
+        /*
+         * The GraphEncoder assigns parameters a nodeId immediately after the fixed nodes.
+         * Initializing createdNodes here avoid decoding and immediately replacing the
+         * ParameterNodes.
+         */
+        int firstArgumentNodeId = inlineScope.maxFixedNodeOrderId + 1;
+        for (int i = 0; i < arguments.length; i++) {
+            inlineLoopScope.createdNodes[firstArgumentNodeId + i] = arguments[i];
+        }
+
         /*
          * Do the actual inlining by returning the initial loop scope for the inlined method scope.
          */
-        return createInitialLoopScope(inlineScope, predecessor);
+        return inlineLoopScope;
     }
 
     @Override
@@ -1028,9 +1040,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         if (node instanceof ParameterNode) {
             ParameterNode param = (ParameterNode) node;
             if (methodScope.isInlinedMethod()) {
-                Node result = methodScope.arguments[param.index()];
-                assert result != null;
-                return result;
+                throw GraalError.shouldNotReachHere("Parameter nodes are already registered when the inlined scope is created");
 
             } else if (parameterPlugin != null) {
                 assert !methodScope.isInlinedMethod();

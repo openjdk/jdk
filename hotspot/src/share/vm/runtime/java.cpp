@@ -55,7 +55,6 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -463,12 +462,6 @@ void before_exit(JavaThread* thread) {
   // PeriodicTasks to reduce the likelihood of races.
   if (PeriodicTask::num_tasks() > 0) {
     WatcherThread::stop();
-  }
-
-  // Print statistics gathered (profiling ...)
-  if (Arguments::has_profile()) {
-    FlatProfiler::disengage();
-    FlatProfiler::print(10);
   }
 
   // shut down the StatSampler task

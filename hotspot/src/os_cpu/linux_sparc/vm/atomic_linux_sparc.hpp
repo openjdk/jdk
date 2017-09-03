@@ -62,8 +62,8 @@ struct Atomic::PlatformAdd
 template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
-  STATIC_CAST(4 == sizeof(I));
-  STATIC_CAST(4 == sizeof(D));
+  STATIC_ASSERT(4 == sizeof(I));
+  STATIC_ASSERT(4 == sizeof(D));
 
   D rv;
   __asm__ volatile(
@@ -81,10 +81,11 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
   return rv;
 }
 
+template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
-  STATIC_CAST(8 == sizeof(I));
-  STATIC_CAST(8 == sizeof(D));
+  STATIC_ASSERT(8 == sizeof(I));
+  STATIC_ASSERT(8 == sizeof(D));
 
   D rv;
   __asm__ volatile(
