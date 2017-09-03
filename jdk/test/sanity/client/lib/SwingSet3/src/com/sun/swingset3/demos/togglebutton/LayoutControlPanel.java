@@ -66,7 +66,7 @@ public final class LayoutControlPanel extends JPanel implements SwingConstants {
         //    PositioningListener positioningListener = new PositioningListener();
         //    JRadioButton absolutePos = new JRadioButton("Absolute");
         //    absolutePos.setMnemonic('a');
-        //    absolutePos.setToolTipText("Text/Content positioning is independant of line direction");
+        //    absolutePos.setToolTipText("Text/Content positioning is independent of line direction");
         //    group.add(absolutePos);
         //    absolutePos.addItemListener(positioningListener);
         //    add(absolutePos);

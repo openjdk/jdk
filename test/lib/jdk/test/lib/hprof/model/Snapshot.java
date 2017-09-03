@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import jdk.test.lib.hprof.util.Misc;
 public class Snapshot implements AutoCloseable {
 
     public static final long SMALL_ID_MASK = 0x0FFFFFFFFL;
-    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    public static final JavaThing[] EMPTY_JAVATHING_ARRAY = new JavaThing[0];
 
     private static final JavaField[] EMPTY_FIELD_ARRAY = new JavaField[0];
     private static final JavaStatic[] EMPTY_STATIC_ARRAY = new JavaStatic[0];

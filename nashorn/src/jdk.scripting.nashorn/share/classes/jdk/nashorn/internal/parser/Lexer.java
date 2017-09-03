@@ -1605,6 +1605,10 @@ public class Lexer extends Scanner {
                 // Skip any whitespace.
                 skipWhitespace(false);
 
+                //handle trailing blank lines
+                lastLinePosition = position;
+                stringEnd = position;
+
                 if (hasHereMarker(identStart, identLength)) {
                     break;
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,8 @@ public final class PKCS12Attribute implements KeyStore.Entry.Attribute {
         // Validate value
         int length = value.length();
         String[] values;
-        if (value.charAt(0) == '[' && value.charAt(length - 1) == ']') {
+        if (length > 1 &&
+                value.charAt(0) == '[' && value.charAt(length - 1) == ']') {
             values = value.substring(1, length - 1).split(", ");
         } else {
             values = new String[]{ value };
