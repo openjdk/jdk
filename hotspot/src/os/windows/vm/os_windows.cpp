@@ -74,6 +74,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#include "windbghelp.hpp"
+
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -1009,7 +1011,6 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
 }
 
 void os::abort(bool dump_core, void* siginfo, const void* context) {
-  HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
   MINIDUMP_EXCEPTION_INFORMATION* pmei;
@@ -1023,28 +1024,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (dumpFile != NULL) {
       CloseHandle(dumpFile);
     }
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
-  }
-
-  dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
-
-  if (dbghelp == NULL) {
-    jio_fprintf(stderr, "Failed to load dbghelp.dll\n");
-    CloseHandle(dumpFile);
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
-  }
-
-  _MiniDumpWriteDump =
-      CAST_TO_FN_PTR(BOOL(WINAPI *)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE,
-                                    PMINIDUMP_EXCEPTION_INFORMATION,
-                                    PMINIDUMP_USER_STREAM_INFORMATION,
-                                    PMINIDUMP_CALLBACK_INFORMATION),
-                                    GetProcAddress(dbghelp,
-                                    "MiniDumpWriteDump"));
-
-  if (_MiniDumpWriteDump == NULL) {
-    jio_fprintf(stderr, "Failed to find MiniDumpWriteDump() in module dbghelp.dll.\n");
-    CloseHandle(dumpFile);
     win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
   }
 
@@ -1064,8 +1043,8 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 
   // Older versions of dbghelp.dll (the one shipped with Win2003 for example) may not support all
   // the dump types we really want. If first call fails, lets fall back to just use MiniDumpWithFullMemory then.
-  if (_MiniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) == false &&
-      _MiniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL) == false) {
+  if (!WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, dumpType, pmei, NULL, NULL) &&
+      !WindowsDbgHelp::miniDumpWriteDump(hProcess, processId, dumpFile, (MINIDUMP_TYPE)MiniDumpWithFullMemory, pmei, NULL, NULL)) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);
@@ -1196,70 +1175,6 @@ const char* os::get_temp_directory() {
     path_buf[0] = '\0';
     return path_buf;
   }
-}
-
-static bool file_exists(const char* filename) {
-  if (filename == NULL || strlen(filename) == 0) {
-    return false;
-  }
-  return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
-}
-
-bool os::dll_build_name(char *buffer, size_t buflen,
-                        const char* pname, const char* fname) {
-  bool retval = false;
-  const size_t pnamelen = pname ? strlen(pname) : 0;
-  const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
-
-  // Return error on buffer overflow.
-  if (pnamelen + strlen(fname) + 10 > buflen) {
-    return retval;
-  }
-
-  if (pnamelen == 0) {
-    jio_snprintf(buffer, buflen, "%s.dll", fname);
-    retval = true;
-  } else if (c == ':' || c == '\\') {
-    jio_snprintf(buffer, buflen, "%s%s.dll", pname, fname);
-    retval = true;
-  } else if (strchr(pname, *os::path_separator()) != NULL) {
-    int n;
-    char** pelements = split_path(pname, &n);
-    if (pelements == NULL) {
-      return false;
-    }
-    for (int i = 0; i < n; i++) {
-      char* path = pelements[i];
-      // Really shouldn't be NULL, but check can't hurt
-      size_t plen = (path == NULL) ? 0 : strlen(path);
-      if (plen == 0) {
-        continue; // skip the empty path values
-      }
-      const char lastchar = path[plen - 1];
-      if (lastchar == ':' || lastchar == '\\') {
-        jio_snprintf(buffer, buflen, "%s%s.dll", path, fname);
-      } else {
-        jio_snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
-      }
-      if (file_exists(buffer)) {
-        retval = true;
-        break;
-      }
-    }
-    // release the storage
-    for (int i = 0; i < n; i++) {
-      if (pelements[i] != NULL) {
-        FREE_C_HEAP_ARRAY(char, pelements[i]);
-      }
-    }
-    if (pelements != NULL) {
-      FREE_C_HEAP_ARRAY(char*, pelements);
-    }
-  } else {
-    jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
-    retval = true;
-  }
-  return retval;
 }
 
 // Needs to be in os specific directory because windows requires another
@@ -3589,22 +3504,6 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
   } // Otherwise leave the interrupted state alone
 
   return interrupted;
-}
-
-// Get's a pc (hint) for a running thread. Currently used only for profiling.
-ExtendedPC os::get_thread_pc(Thread* thread) {
-  CONTEXT context;
-  context.ContextFlags = CONTEXT_CONTROL;
-  HANDLE handle = thread->osthread()->thread_handle();
-  if (GetThreadContext(handle, &context)) {
-#ifdef _M_AMD64
-    return ExtendedPC((address) context.Rip);
-#else
-    return ExtendedPC((address) context.Eip);
-#endif
-  } else {
-    return ExtendedPC(NULL);
-  }
 }
 
 // GetCurrentThreadId() returns DWORD

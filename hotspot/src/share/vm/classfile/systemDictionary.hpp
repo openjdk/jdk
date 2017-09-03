@@ -385,6 +385,7 @@ public:
 public:
   // Sharing support.
   static void reorder_dictionary_for_sharing();
+  static void combine_shared_dictionaries();
   static size_t count_bytes_for_buckets();
   static size_t count_bytes_for_table();
   static void copy_buckets(char* top, char* end);
@@ -643,6 +644,7 @@ public:
                                           TRAPS);
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
+  static void clear_invoke_method_table();
 
 protected:
   static InstanceKlass* find_shared_class(Symbol* class_name);

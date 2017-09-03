@@ -209,7 +209,6 @@ public class GraphEncoder {
         int nodeCount = nodeOrder.nextOrderId;
         assert nodeOrder.orderIds.get(graph.start()) == START_NODE_ORDER_ID;
         assert nodeOrder.orderIds.get(graph.start().next()) == FIRST_NODE_ORDER_ID;
-        assert nodeCount == graph.getNodeCount() + 1;
 
         long[] nodeStartOffsets = new long[nodeCount];
         UnmodifiableMapCursor<Node, Integer> cursor = nodeOrder.orderIds.getEntries();
@@ -218,6 +217,7 @@ public class GraphEncoder {
             Integer orderId = cursor.getValue();
 
             assert !(node instanceof AbstractBeginNode) || nodeOrder.orderIds.get(((AbstractBeginNode) node).next()) == orderId + BEGIN_NEXT_ORDER_ID_OFFSET;
+            assert nodeStartOffsets[orderId] == 0;
             nodeStartOffsets[orderId] = writer.getBytesWritten();
 
             /* Write out the type, properties, and edges. */
@@ -284,7 +284,6 @@ public class GraphEncoder {
         writer.putUV(nodeOrder.maxFixedNodeOrderId);
         writer.putUV(nodeCount);
         for (int i = 0; i < nodeCount; i++) {
-            assert i == NULL_ORDER_ID || i == START_NODE_ORDER_ID || nodeStartOffsets[i] > 0;
             writer.putUV(metadataStart - nodeStartOffsets[i]);
         }
 
@@ -344,8 +343,25 @@ public class GraphEncoder {
             } while (current != null);
 
             maxFixedNodeOrderId = nextOrderId - 1;
+
+            /*
+             * Emit all parameters consecutively at a known location (after all fixed nodes). This
+             * allows substituting parameters when inlining during decoding by pre-initializing the
+             * decoded node list.
+             *
+             * Note that not all parameters must be present (unused parameters are deleted after
+             * parsing). This leads to holes in the orderId, i.e., unused orderIds.
+             */
+            int parameterCount = graph.method().getSignature().getParameterCount(!graph.method().isStatic());
+            for (ParameterNode node : graph.getNodes(ParameterNode.TYPE)) {
+                assert orderIds.get(node) == null : "Parameter node must not be ordered yet";
+                assert node.index() < parameterCount : "Parameter index out of range";
+                orderIds.set(node, nextOrderId + node.index());
+            }
+            nextOrderId += parameterCount;
+
             for (Node node : graph.getNodes()) {
-                assert (node instanceof FixedNode) == (orderIds.get(node) != null) : "all fixed nodes must be ordered: " + node;
+                assert (node instanceof FixedNode || node instanceof ParameterNode) == (orderIds.get(node) != null) : "all fixed nodes and ParameterNodes must be ordered: " + node;
                 add(node);
             }
         }

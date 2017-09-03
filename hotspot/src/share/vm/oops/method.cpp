@@ -944,10 +944,6 @@ void Method::unlink_method() {
   _from_compiled_entry = cds_adapter->get_c2i_entry_trampoline();
   assert(*((int*)_from_compiled_entry) == 0, "must be NULL during dump time, to be initialized at run time");
 
-
-  // In case of DumpSharedSpaces, _method_data should always be NULL.
-  assert(_method_data == NULL, "unexpected method data?");
-
   set_method_data(NULL);
   clear_method_counters();
 }

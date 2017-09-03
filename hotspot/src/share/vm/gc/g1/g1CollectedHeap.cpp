@@ -1719,7 +1719,6 @@ jint G1CollectedHeap::initialize() {
                              G1BlockOffsetTable::compute_size(g1_rs.size() / HeapWordSize),
                              G1BlockOffsetTable::heap_map_factor());
 
-  ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card Table",
                              G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),

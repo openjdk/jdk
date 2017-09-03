@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
 
   void pd_initialize() {
     _anchor.clear();
-    _last_interpreter_fp = NULL;
   }
 
   // The `last' frame is the youngest Java frame on the thread's stack.
@@ -60,23 +59,5 @@
   static void disable_register_stack_guard() {}
 
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava);
-
- protected:
-
-  // -Xprof support
-  //
-  // In order to find the last Java fp from an async profile
-  // tick, we store the current interpreter fp in the thread.
-  // This value is only valid while we are in the C++ interpreter
-  // and profiling.
-  intptr_t *_last_interpreter_fp;
-
- public:
-
-  static ByteSize last_interpreter_fp_offset() {
-    return byte_offset_of(JavaThread, _last_interpreter_fp);
-  }
-
-  intptr_t* last_interpreter_fp() { return _last_interpreter_fp; }
 
 #endif // OS_CPU_LINUX_S390_VM_THREAD_LINUX_S390_HPP
