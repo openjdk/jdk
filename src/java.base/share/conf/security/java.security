@@ -985,3 +985,24 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    java.rmi.dgc.VMID;\
 #    java.rmi.dgc.Lease;\
 #    maxdepth=5;maxarray=10000
+
+# CORBA ORBIorTypeCheckRegistryFilter
+# Type check enhancement for ORB::string_to_object processing
+#
+# An IOR type check filter, if configured, is used by an ORB during
+# an ORB::string_to_object invocation to check the veracity of the type encoded
+# in the ior string. 
+#
+# The filter pattern consists of a semi-colon separated list of class names.
+# The configured list contains the binary class names of the IDL interface types 
+# corresponding to the IDL stub class to be instantiated.
+# As such, a filter specifies a list of IDL stub classes that will be
+# allowed by an ORB when an ORB::string_to_object is invoked.
+# It is used to specify a white list configuration of acceptable
+# IDL stub types which may be contained in a stringified IOR
+# parameter passed as input to an ORB::string_to_object method.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#com.sun.CORBA.ORBIorTypeCheckRegistryFilter=binary_class_name;binary_class_name
