@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,12 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      * Marks the variable declaration block for case clauses of a switch statement.
      */
     public static final int IS_SWITCH_BLOCK    = 1 << 7;
+
+    /**
+     * Is this block tagged as breakable based on its contents
+     * (block having labelled break statement)
+     */
+    public static final int IS_BREAKABLE       = 1 << 8;
 
     /**
      * Constructor
@@ -315,7 +321,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      */
     @Override
     public boolean isTerminal() {
-        return getFlag(IS_TERMINAL);
+        return getFlag(IS_TERMINAL) && !getFlag(IS_BREAKABLE);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,11 +307,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
             this.flags = new boolean[NUM_FLAGS];
         }
 
-        if (this.flags[RENEWABLE_TICKET_FLAG]) {
-           if (renewTill == null) {
-               throw new IllegalArgumentException("The renewable period "
-                       + "end time cannot be null for renewable tickets.");
-           }
+        if (this.flags[RENEWABLE_TICKET_FLAG] && renewTill != null) {
            this.renewTill = new Date(renewTill.getTime());
         }
 
@@ -579,6 +575,12 @@ public class KerberosTicket implements Destroyable, Refreshable,
         if (!isRenewable()) {
             throw new RefreshFailedException("This ticket is not renewable");
         }
+
+        if (getRenewTill() == null) {
+            // Renewable ticket without renew-till. Illegal and ignored.
+            return;
+        }
+
         if (System.currentTimeMillis() > getRenewTill().getTime()) {
             throw new RefreshFailedException("This ticket is past "
                                            + "its last renewal time.");

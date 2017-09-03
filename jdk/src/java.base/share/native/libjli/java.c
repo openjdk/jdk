@@ -1296,7 +1296,7 @@ ParseArguments(int *pargc, char ***pargv,
         } else if (JLI_StrCmp(arg, "--show-resolved-modules") == 0) {
             showResolvedModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--validate-modules") == 0) {
-            AddOption("-Djdk.module.minimumBoot=true", NULL);
+            AddOption("-Djdk.module.validation=true", NULL);
             validateModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--describe-module") == 0 ||
                    JLI_StrCCmp(arg, "--describe-module=") == 0 ||

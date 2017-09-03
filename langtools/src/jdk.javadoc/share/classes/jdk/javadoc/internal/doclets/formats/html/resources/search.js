@@ -78,6 +78,7 @@ function getHighlightedText(item) {
 }
 var watermark = 'Search';
 $(function() {
+    $("#search").val('');
     $("#search").prop("disabled", false);
     $("#reset").prop("disabled", false);
     $("#search").val(watermark).addClass('watermark');

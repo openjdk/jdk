@@ -55,7 +55,6 @@ import jdk.internal.jline.TerminalSupport;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
-import jdk.internal.jline.console.Operation;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.internal.jline.console.history.History;
 import jdk.internal.jline.console.history.MemoryHistory;
@@ -94,14 +93,14 @@ class ConsoleIOContext extends IOContext {
             term = new JShellUnixTerminal(input);
         }
         term.init();
-        List<CompletionTask> completionTODO = new ArrayList<>();
+        CompletionState completionState = new CompletionState();
         in = new ConsoleReader(cmdin, cmdout, term) {
             @Override public KeyMap getKeys() {
-                return new CheckCompletionKeyMap(super.getKeys(), completionTODO);
+                return new CheckCompletionKeyMap(super.getKeys(), completionState);
             }
             @Override
             protected boolean complete() throws IOException {
-                return ConsoleIOContext.this.complete(completionTODO);
+                return ConsoleIOContext.this.complete(completionState);
             }
         };
         in.setExpandEvents(false);
@@ -201,15 +200,19 @@ class ConsoleIOContext extends IOContext {
     private static final String LINE_SEPARATORS2 = LINE_SEPARATOR + LINE_SEPARATOR;
 
     @SuppressWarnings("fallthrough")
-    private boolean complete(List<CompletionTask> todo) {
+    private boolean complete(CompletionState completionState) {
         //The completion has multiple states (invoked by subsequent presses of <tab>).
         //On the first invocation in a given sequence, all steps are precomputed
-        //and placed into the todo list. The todo list is then followed on both the first
-        //and subsequent <tab> presses:
+        //and placed into the todo list (completionState.todo). The todo list is
+        //then followed on both the first and subsequent completion invocations:
         try {
             String text = in.getCursorBuffer().toString();
             int cursor = in.getCursorBuffer().cursor;
-            if (todo.isEmpty()) {
+
+            List<CompletionTask> todo = completionState.todo;
+
+            if (todo.isEmpty() || completionState.actionCount != 1) {
+                ConsoleIOContextTestSupport.willComputeCompletion();
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
                 List<String> doc;
@@ -236,6 +239,8 @@ class ConsoleIOContext extends IOContext {
                 boolean tooManyItems = suggestions.size() > in.getAutoprintThreshold();
                 CompletionTask ordinaryCompletion = new OrdinaryCompletionTask(suggestions, anchor[0], !command && !doc.isEmpty(), hasSmart);
                 CompletionTask allCompletion = new AllSuggestionsCompletionTask(suggestions, anchor[0]);
+
+                todo = new ArrayList<>();
 
                 //the main decission tree:
                 if (command) {
@@ -309,6 +314,9 @@ class ConsoleIOContext extends IOContext {
                         break OUTER;
                 }
             }
+
+            completionState.actionCount = 0;
+            completionState.todo = todo;
 
             if (repaint) {
                 in.redrawLine();
@@ -1203,12 +1211,12 @@ class ConsoleIOContext extends IOContext {
     private static final class CheckCompletionKeyMap extends KeyMap {
 
         private final KeyMap del;
-        private final List<CompletionTask> completionTODO;
+        private final CompletionState completionState;
 
-        public CheckCompletionKeyMap(KeyMap del, List<CompletionTask> completionTODO) {
+        public CheckCompletionKeyMap(KeyMap del, CompletionState completionState) {
             super(del.getName(), del.isViKeyMap());
             this.del = del;
-            this.completionTODO = completionTODO;
+            this.completionState = completionState;
         }
 
         @Override
@@ -1233,13 +1241,9 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Object getBound(CharSequence keySeq) {
-            Object res = del.getBound(keySeq);
+            this.completionState.actionCount++;
 
-            if (res != Operation.COMPLETE) {
-                completionTODO.clear();
-            }
-
-            return res;
+            return del.getBound(keySeq);
         }
 
         @Override
@@ -1252,4 +1256,12 @@ class ConsoleIOContext extends IOContext {
             return "check: " + del.toString();
         }
     }
+
+    private static final class CompletionState {
+        /**The number of actions since the last completion invocation. Will be 1 when completion is
+         * invoked immediately after the last completion invocation.*/
+        public int actionCount;
+        /**Precomputed completion actions. Should only be reused if actionCount == 1.*/
+        public List<CompletionTask> todo = Collections.emptyList();
     }
+}

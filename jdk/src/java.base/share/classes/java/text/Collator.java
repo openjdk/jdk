@@ -88,7 +88,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * comparisons. Four strengths are provided: <code>PRIMARY</code>,
  * <code>SECONDARY</code>, <code>TERTIARY</code>, and <code>IDENTICAL</code>.
  * The exact assignment of strengths to language features is
- * locale dependant.  For example, in Czech, "e" and "f" are considered
+ * locale dependent.  For example, in Czech, "e" and "f" are considered
  * primary differences, while "e" and "&#283;" are secondary differences,
  * "e" and "E" are tertiary differences and "e" and "e" are identical.
  * The following shows how both case and accents could be ignored for
@@ -132,7 +132,7 @@ public abstract class Collator
     /**
      * Collator strength value.  When set, only PRIMARY differences are
      * considered significant during comparison. The assignment of strengths
-     * to language features is locale dependant. A common example is for
+     * to language features is locale dependent. A common example is for
      * different base letters ("a" vs "b") to be considered a PRIMARY difference.
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
@@ -141,7 +141,7 @@ public abstract class Collator
     /**
      * Collator strength value.  When set, only SECONDARY and above differences are
      * considered significant during comparison. The assignment of strengths
-     * to language features is locale dependant. A common example is for
+     * to language features is locale dependent. A common example is for
      * different accented forms of the same base letter ("a" vs "\u00E4") to be
      * considered a SECONDARY difference.
      * @see java.text.Collator#setStrength
@@ -151,7 +151,7 @@ public abstract class Collator
     /**
      * Collator strength value.  When set, only TERTIARY and above differences are
      * considered significant during comparison. The assignment of strengths
-     * to language features is locale dependant. A common example is for
+     * to language features is locale dependent. A common example is for
      * case differences ("a" vs "A") to be considered a TERTIARY difference.
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
@@ -161,7 +161,7 @@ public abstract class Collator
     /**
      * Collator strength value.  When set, all differences are
      * considered significant during comparison. The assignment of strengths
-     * to language features is locale dependant. A common example is for control
+     * to language features is locale dependent. A common example is for control
      * characters ("&#092;u0001" vs "&#092;u0002") to be considered equal at the
      * PRIMARY, SECONDARY, and TERTIARY levels but different at the IDENTICAL
      * level.  Additionally, differences between pre-composed accents such as

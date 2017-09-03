@@ -31,18 +31,19 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 
-class ISO_8859_1
+public class ISO_8859_1
     extends Charset
     implements HistoricallyNamedCharset
 {
 
+    public static final ISO_8859_1 INSTANCE = new ISO_8859_1();
+
     public ISO_8859_1() {
-        super(StandardCharsets.ISO_8859_1, StandardCharsets.aliases_ISO_8859_1);
+        super("ISO-8859-1", StandardCharsets.aliases_ISO_8859_1());
     }
 
     public String historicalName() {

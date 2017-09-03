@@ -50,7 +50,7 @@ import jdk.internal.misc.VM;
  * machine. If the process of loading or initializing the default provider fails
  * then an unspecified error is thrown.
  *
- * <p> The first invocation of the {@link FileSystemProvider#installedProviders
+ * <p> The first invocation of the {@link FileSystemProvider#installedProviders()
  * installedProviders} method, by way of invoking any of the {@code
  * newFileSystem} methods defined by this class, locates and loads all
  * installed file system providers. Installed providers are loaded using the

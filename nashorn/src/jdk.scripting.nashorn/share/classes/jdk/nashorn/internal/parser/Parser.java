@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2274,6 +2274,11 @@ public class Parser extends AbstractParser implements Loggable {
         //targetNode is what we are breaking out from.
         final String labelName = labelNode == null ? null : labelNode.getLabelName();
         final ParserContextBreakableNode targetNode = lc.getBreakable(labelName);
+
+        if( targetNode instanceof ParserContextBlockNode) {
+            targetNode.setFlag(Block.IS_BREAKABLE);
+        }
+
         if (targetNode == null) {
             throw error(AbstractParser.message("illegal.break.stmt"), breakToken);
         }

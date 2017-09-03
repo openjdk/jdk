@@ -93,21 +93,28 @@ public class SPI {
                                  .filter(cs -> cs.pkgName.equals("sun.nio.cs"))
                                  .forEach( cs -> {
                              if (cs.aliases == null || cs.aliases.length == 0) {
-                                 out.printf("    static final String[] aliases_%s = null;%n%n",
+                                 out.printf("    static String[] aliases_%s() { return null; }%n%n",
                                             cs.clzName);
                              } else {
+                                 boolean methodEnd = true;
                                  // non-final for SJIS and MS932 to support sun.nio.cs.map
                                  if (cs.clzName.equals("SJIS") || cs.clzName.equals("MS932")) {
+                                     out.printf("    static String[] aliases_%s() { return aliases_%s; }%n%n",
+                                                cs.clzName, cs.clzName);
                                      out.printf("    static String[] aliases_%s = new String[] {%n",
                                                 cs.clzName);
+                                     methodEnd = false;
                                  } else {
-                                     out.printf("    static final String[] aliases_%s = new String[] {%n",
+                                     out.printf("    static String[] aliases_%s() { return new String[] {%n",
                                                 cs.clzName);
                                  }
                                  for (String alias : cs.aliases) {
-                                     out.printf("        \"%s\",%n", alias);
+                                     out.printf("            \"%s\",%n", alias);
                                  }
-                                 out.printf("    };%n%n");
+                                 out.printf("        };%n%n");
+                                 if (methodEnd) {
+                                     out.printf("    }%n%n");
+                                 }
                              }
                          });
                          Charset cs = charsets.get("SJIS");

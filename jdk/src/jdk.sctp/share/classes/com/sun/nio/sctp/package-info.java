@@ -42,9 +42,9 @@
  * entire address list at an endpoint for a specific session.
  *
  * <P> SCTP is message based. I/O operations operate upon messages and message
- * boundaries are preserved. Each association may support multiple independant
+ * boundaries are preserved. Each association may support multiple independent
  * logical streams. Each stream represents a sequence of messages within a single
- * association and streams are independant of one another, meaning that stream
+ * association and streams are independent of one another, meaning that stream
  * identifiers and sequence numbers are included in the data packet to allow
  * sequencing of messages on a per-stream basis.
  *
