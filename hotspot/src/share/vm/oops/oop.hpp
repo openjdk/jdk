@@ -287,9 +287,9 @@ class oopDesc {
   inline bool is_unlocked() const;
   inline bool has_bias_pattern() const;
 
-  // asserts
-  inline bool is_oop(bool ignore_mark_word = false) const;
-  inline bool is_oop_or_null(bool ignore_mark_word = false) const;
+  // asserts and guarantees
+  static bool is_oop(oop obj, bool ignore_mark_word = false);
+  static bool is_oop_or_null(oop obj, bool ignore_mark_word = false);
 #ifndef PRODUCT
   inline bool is_unlocked_oop() const;
 #endif

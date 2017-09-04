@@ -94,7 +94,7 @@ void oopDesc::release_set_mark(markOop m) {
 }
 
 markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
-  return (markOop) Atomic::cmpxchg_ptr(new_mark, &_mark, old_mark);
+  return Atomic::cmpxchg(new_mark, &_mark, old_mark);
 }
 
 void oopDesc::init_mark() {
@@ -408,14 +408,14 @@ oop oopDesc::atomic_compare_exchange_oop(oop exchange_value,
     narrowOop val = encode_heap_oop(exchange_value);
     narrowOop cmp = encode_heap_oop(compare_value);
 
-    narrowOop old = (narrowOop) Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
+    narrowOop old = Atomic::cmpxchg(val, (narrowOop*)dest, cmp);
     // decode old from T to oop
     return decode_heap_oop(old);
   } else {
     if (prebarrier) {
       update_barrier_set_pre((oop*)dest, exchange_value);
     }
-    return (oop)Atomic::cmpxchg_ptr(exchange_value, (oop*)dest, compare_value);
+    return Atomic::cmpxchg(exchange_value, (oop*)dest, compare_value);
   }
 }
 
@@ -533,41 +533,6 @@ bool oopDesc::has_bias_pattern() const {
   return mark()->has_bias_pattern();
 }
 
-// used only for asserts
-bool oopDesc::is_oop(bool ignore_mark_word) const {
-  oop obj = (oop) this;
-  if (!check_obj_alignment(obj)) return false;
-  if (!Universe::heap()->is_in_reserved(obj)) return false;
-  // obj is aligned and accessible in heap
-  if (Universe::heap()->is_in_reserved(obj->klass_or_null())) return false;
-
-  // Header verification: the mark is typically non-NULL. If we're
-  // at a safepoint, it must not be null.
-  // Outside of a safepoint, the header could be changing (for example,
-  // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
-    return true;
-  }
-  if (mark() != NULL) {
-    return true;
-  }
-  return !SafepointSynchronize::is_at_safepoint();
-}
-
-
-// used only for asserts
-bool oopDesc::is_oop_or_null(bool ignore_mark_word) const {
-  return this == NULL ? true : is_oop(ignore_mark_word);
-}
-
-#ifndef PRODUCT
-// used only for asserts
-bool oopDesc::is_unlocked_oop() const {
-  if (!Universe::heap()->is_in_reserved(this)) return false;
-  return mark()->is_unlocked();
-}
-#endif // PRODUCT
-
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark()->is_marked();
@@ -619,7 +584,7 @@ oop oopDesc::forward_to_atomic(oop p) {
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
   while (!oldMark->is_marked()) {
-    curMark = (markOop)Atomic::cmpxchg_ptr(forwardPtrMark, &_mark, oldMark);
+    curMark = Atomic::cmpxchg(forwardPtrMark, &_mark, oldMark);
     assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
       return NULL;

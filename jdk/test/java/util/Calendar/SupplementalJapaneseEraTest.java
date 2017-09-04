@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat;
 import java.time.chrono.JapaneseChronology;
 import java.time.chrono.JapaneseDate;
 import java.time.chrono.JapaneseEra;
-import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.Calendar;
 import java.util.Date;
@@ -166,17 +166,15 @@ public class SupplementalJapaneseEraTest {
             errors++;
         }
 
-        // test long/abbreviated names with java.time.format
-        got = new DateTimeFormatterBuilder()
-            .appendPattern("GGGG")
-            .appendLiteral(" ")
-            .appendPattern("G")
-            .toFormatter(Locale.US)
+        // test full/short/narrow names with java.time.format
+        got = DateTimeFormatter
+            .ofPattern("GGGG G GGGGG")
+            .withLocale(Locale.US)
             .withChronology(JapaneseChronology.INSTANCE)
             .format(jdate);
-        expected = NEW_ERA_NAME + " " + NEW_ERA_ABBR;
+        expected = NEW_ERA_NAME + " " + NEW_ERA_NAME + " " + NEW_ERA_ABBR;
         if (!expected.equals(got)) {
-            System.err.printf("java.time formatter long/abbr names: got=\"%s\", expected=\"%s\"%n", got, expected);
+            System.err.printf("java.time formatter full/short/narrow names: got=\"%s\", expected=\"%s\"%n", got, expected);
             errors++;
         }
     }

@@ -80,62 +80,64 @@ import java.util.Properties;
  *
 <table class="striped"><caption style="display:none">examples showing string
  form of composite name and its corresponding structural form (CompositeName)</caption>
-
+<thead>
 <tr>
-<th>String Name</th>
-<th>CompositeName</th>
+<th scope="col">String Name</th>
+<th scope="col">CompositeName</th>
 </tr>
-
+</thead>
+<tbody style="text-align:left">
 <tr>
-<td>
+<th scope="row">
 ""
-</td>
+</th>
 <td>{} (the empty name == new CompositeName("") == new CompositeName())
 </td>
 </tr>
 
 <tr>
-<td>
+<th scope="row">
 "x"
-</td>
+</th>
 <td>{"x"}
 </td>
 </tr>
 
 <tr>
-<td>
+<th scope="row">
 "x/y"
-</td>
+</th>
 <td>{"x", "y"}</td>
 </tr>
 
 <tr>
-<td>"x/"</td>
+<th scope="row">"x/"</th>
 <td>{"x", ""}</td>
 </tr>
 
 <tr>
-<td>"/x"</td>
+<th scope="row">"/x"</th>
 <td>{"", "x"}</td>
 </tr>
 
 <tr>
-<td>"/"</td>
+<th scope="row">"/"</th>
 <td>{""}</td>
 </tr>
 
 <tr>
-<td>"//"</td>
+<th scope="row">"//"</th>
 <td>{"", ""}</td>
 </tr>
 
-<tr><td>"/x/"</td>
+<tr><th scope="row">"/x/"</th>
 <td>{"", "x", ""}</td>
 </tr>
 
-<tr><td>"x//y"</td>
+<tr><th scope="row">"x//y"</th>
 <td>{"x", "", "y"}</td>
 </tr>
+</tbody>
 </table>
  *
  *<h1>Composition Examples</h1>
@@ -147,48 +149,50 @@ import java.util.Properties;
 
 <table class="striped"><caption style="display:none">composition examples
  showing string names and composite names</caption>
-
+<thead>
 <tr>
-<th>String Names</th>
-<th>CompositeNames</th>
+<th scope="col">String Names</th>
+<th scope="col">CompositeNames</th>
 </tr>
+</thead>
 
+<tbody style="text-align:left">
 <tr>
-<td>
+<th scope="row">
 "x/y"           + "/"   = x/y/
-</td>
+</th>
 <td>
 {"x", "y"}      + {""}  = {"x", "y", ""}
 </td>
 </tr>
 
 <tr>
-<td>
+<th scope="row">
 ""              + "x"   = "x"
-</td>
+</th>
 <td>
 {}              + {"x"} = {"x"}
 </td>
 </tr>
 
 <tr>
-<td>
+<th scope="row">
 "/"             + "x"   = "/x"
-</td>
+</th>
 <td>
 {""}            + {"x"} = {"", "x"}
 </td>
 </tr>
 
 <tr>
-<td>
+<th scope="row">
 "x"   + ""      + ""    = "x"
-</td>
+</th>
 <td>
 {"x"} + {}      + {}    = {"x"}
 </td>
 </tr>
-
+</tbody>
 </table>
  *
  *<h1>Multithreaded Access</h1>

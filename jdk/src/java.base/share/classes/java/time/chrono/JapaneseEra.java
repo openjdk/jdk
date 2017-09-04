@@ -73,6 +73,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
@@ -253,7 +254,12 @@ public final class JapaneseEra
             Objects.requireNonNull(locale, "locale");
             return style.asNormal() == TextStyle.NARROW ? getAbbreviation() : getName();
         }
-        return Era.super.getDisplayName(style, locale);
+
+        return new DateTimeFormatterBuilder()
+            .appendText(ERA, style)
+            .toFormatter(locale)
+            .withChronology(JapaneseChronology.INSTANCE)
+            .format(this == MEIJI ? MEIJI_6_ISODATE : since);
     }
 
     //-----------------------------------------------------------------------

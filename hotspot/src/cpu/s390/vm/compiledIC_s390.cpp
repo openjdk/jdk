@@ -105,15 +105,18 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + NativeCall::get_IC_pos_in_java_to_interp_stub());
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
 
+#ifdef ASSERT
   // A generated lambda form might be deleted from the Lambdaform
   // cache in MethodTypeForm.  If a jit compiled lambdaform method
   // becomes not entrant and the cache access returns null, the new
   // resolve will lead to a new generated LambdaForm.
-
-  assert(method_holder->data() == 0 || method_holder->data() == (intptr_t)callee() || callee->is_compiled_lambda_form(),
+  volatile intptr_t data = method_holder->data();
+  volatile address destination = jump->jump_destination();
+  assert(data == 0 || data == (intptr_t)callee() || callee->is_compiled_lambda_form(),
          "a) MT-unsafe modification of inline cache");
-  assert(jump->jump_destination() == (address)-1 || jump->jump_destination() == entry,
+  assert(destination == (address)-1 || destination == entry,
          "b) MT-unsafe modification of inline cache");
+#endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());

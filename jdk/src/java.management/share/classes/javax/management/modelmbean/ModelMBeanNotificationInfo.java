@@ -58,28 +58,32 @@ import javax.management.RuntimeOperationsException;
  *
  * <table class="striped">
  * <caption style="display:none">ModelMBeanNotificationInfo Fields</caption>
- * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
- * <tr><td>name</td><td>String</td>
+ * <thead>
+ * <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Meaning</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">name</th><td>String</td>
  *     <td>Notification name.</td></tr>
- * <tr><td>descriptorType</td><td>String</td>
+ * <tr><th scope="row">descriptorType</th><td>String</td>
  *     <td>Must be "notification".</td></tr>
- * <tr><td>severity</td><td>Number</td>
+ * <tr><th scope="row">severity</th><td>Number</td>
  *     <td>0-6 where 0: unknown; 1: non-recoverable;
  *         2: critical, failure; 3: major, severe;
  *         4: minor, marginal, error; 5: warning;
  *         6: normal, cleared, informative</td></tr>
- * <tr><td>messageID</td><td>String</td>
+ * <tr><th scope="row">messageID</th><td>String</td>
  *     <td>Unique key for message text (to allow translation, analysis).</td></tr>
- * <tr><td>messageText</td><td>String</td>
+ * <tr><th scope="row">messageText</th><td>String</td>
  *     <td>Text of notification.</td></tr>
- * <tr><td>log</td><td>String</td>
+ * <tr><th scope="row">log</th><td>String</td>
  *     <td>T - log message, F - do not log message.</td></tr>
- * <tr><td>logfile</td><td>String</td>
+ * <tr><th scope="row">logfile</th><td>String</td>
  *     <td>fully qualified file name appropriate for operating system.</td></tr>
- * <tr><td>visibility</td><td>Number</td>
+ * <tr><th scope="row">visibility</th><td>Number</td>
  *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
- * <tr><td>presentationString</td><td>String</td>
+ * <tr><th scope="row">presentationString</th><td>String</td>
  *     <td>XML formatted string to allow presentation of data.</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>The default descriptor contains the name, descriptorType,

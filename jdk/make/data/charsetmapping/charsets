@@ -681,7 +681,7 @@ charset x-euc-jp-linux EUC_JP_LINUX
     alias   euc_jp_linux         # JDK historical
     alias   euc-jp-linux
 
-charset x-eucjp-open EUC_JP_Open
+charset x-eucJP-Open EUC_JP_Open
     package sun.nio.cs.ext
     type    template
     hisname EUC_JP_Solari

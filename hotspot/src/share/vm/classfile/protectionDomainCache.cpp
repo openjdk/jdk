@@ -97,7 +97,7 @@ void ProtectionDomainCacheTable::verify() {
 }
 
 void ProtectionDomainCacheEntry::verify() {
-  guarantee(literal()->is_oop(), "must be an oop");
+  guarantee(oopDesc::is_oop(literal()), "must be an oop");
 }
 
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {

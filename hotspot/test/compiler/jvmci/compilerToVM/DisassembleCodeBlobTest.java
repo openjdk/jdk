@@ -61,7 +61,6 @@ public class DisassembleCodeBlobTest {
                 = new DisassembleCodeBlobTest();
         List<CompileCodeTestCase> testCases
                 = CompileCodeTestCase.generate(/* bci = */ -1);
-        testCases.addAll(CompileCodeTestCase.generate(/* bci = */ 0));
         testCases.forEach(test::check);
         testCases.stream().findAny().ifPresent(test::checkZero);
         test.checkNull();

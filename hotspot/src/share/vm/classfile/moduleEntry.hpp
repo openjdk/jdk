@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jni.h"
 #include "runtime/jniHandles.hpp"
@@ -56,8 +57,8 @@ class ModuleClosure;
 // data structure.
 class ModuleEntry : public HashtableEntry<Symbol*, mtModule> {
 private:
-  jobject _module;                     // java.lang.Module
-  jobject _pd;                         // java.security.ProtectionDomain, cached
+  OopHandle _module;                   // java.lang.Module
+  OopHandle _pd;                       // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   ClassLoaderData* _loader_data;
   GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
@@ -89,16 +90,16 @@ public:
   Symbol*          name() const                        { return literal(); }
   void             set_name(Symbol* n)                 { set_literal(n); }
 
-  oop              module() const                      { return JNIHandles::resolve(_module); }
-  jobject          module_handle() const               { return _module; }
-  void             set_module(jobject j)               { _module = j; }
+  oop              module() const                      { return _module.resolve(); }
+  OopHandle        module_handle() const               { return _module; }
+  void             set_module(OopHandle j)             { _module = j; }
 
   // The shared ProtectionDomain reference is set once the VM loads a shared class
   // originated from the current Module. The referenced ProtectionDomain object is
   // created by the ClassLoader when loading a class (shared or non-shared) from the
   // Module for the first time. This ProtectionDomain object is used for all
   // classes from the Module loaded by the same ClassLoader.
-  Handle           shared_protection_domain();
+  oop              shared_protection_domain();
   void             set_shared_protection_domain(ClassLoaderData *loader_data, Handle pd);
 
   ClassLoaderData* loader_data() const                 { return _loader_data; }
@@ -246,7 +247,7 @@ public:
   static void set_javabase_moduleEntry(ModuleEntry* java_base) { _javabase_module = java_base; }
 
   static bool javabase_defined() { return ((_javabase_module != NULL) &&
-                                           (_javabase_module->module_handle() != NULL)); }
+                                           (_javabase_module->module() != NULL)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
   static void patch_javabase_entries(Handle module_handle);
 

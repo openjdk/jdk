@@ -165,18 +165,6 @@ Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
     return (jlong)where.QuadPart;
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
-{
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-    if (h != INVALID_HANDLE_VALUE) {
-        BOOL result = CloseHandle(h);
-        if (result == 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
-        }
-    }
-}
-
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFD,

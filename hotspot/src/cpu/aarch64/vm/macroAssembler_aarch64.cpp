@@ -3279,6 +3279,12 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   }
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  ldr(result, Address(result, 0));
+}
+
 void MacroAssembler::load_mirror(Register dst, Register method) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));

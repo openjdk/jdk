@@ -858,6 +858,164 @@ public final class IntegerStamp extends PrimitiveStamp {
                         }
                     },
 
+                    new BinaryOp.MulHigh(true, true) {
+
+                        @Override
+                        public Constant foldConstant(Constant const1, Constant const2) {
+                            PrimitiveConstant a = (PrimitiveConstant) const1;
+                            PrimitiveConstant b = (PrimitiveConstant) const2;
+                            assert a.getJavaKind() == b.getJavaKind();
+                            return JavaConstant.forIntegerKind(a.getJavaKind(), multiplyHigh(a.asLong(), b.asLong(), a.getJavaKind()));
+                        }
+
+                        @Override
+                        public Stamp foldStamp(Stamp stamp1, Stamp stamp2) {
+                            IntegerStamp a = (IntegerStamp) stamp1;
+                            IntegerStamp b = (IntegerStamp) stamp2;
+                            JavaKind javaKind = a.getStackKind();
+
+                            assert a.getBits() == b.getBits();
+                            assert javaKind == b.getStackKind();
+                            assert (javaKind == JavaKind.Int || javaKind == JavaKind.Long);
+
+                            if (a.isEmpty() || b.isEmpty()) {
+                                return a.empty();
+                            } else if (a.isUnrestricted() || b.isUnrestricted()) {
+                                return a.unrestricted();
+                            }
+
+                            long[] xExtremes = {a.lowerBound(), a.upperBound()};
+                            long[] yExtremes = {b.lowerBound(), b.upperBound()};
+                            long min = Long.MAX_VALUE;
+                            long max = Long.MIN_VALUE;
+                            for (long x : xExtremes) {
+                                for (long y : yExtremes) {
+                                    long result = multiplyHigh(x, y, javaKind);
+                                    min = Math.min(min, result);
+                                    max = Math.max(max, result);
+                                }
+                            }
+                            return StampFactory.forInteger(javaKind, min, max);
+                        }
+
+                        @Override
+                        public boolean isNeutral(Constant value) {
+                            return false;
+                        }
+
+                        private long multiplyHigh(long x, long y, JavaKind javaKind) {
+                            if (javaKind == JavaKind.Int) {
+                                return (x * y) >> 32;
+                            } else {
+                                assert javaKind == JavaKind.Long;
+                                long x0 = x & 0xFFFFFFFFL;
+                                long x1 = x >> 32;
+
+                                long y0 = y & 0xFFFFFFFFL;
+                                long y1 = y >> 32;
+
+                                long z0 = x0 * y0;
+                                long t = x1 * y0 + (z0 >>> 32);
+                                long z1 = t & 0xFFFFFFFFL;
+                                long z2 = t >> 32;
+                                z1 += x0 * y1;
+
+                                return x1 * y1 + z2 + (z1 >> 32);
+                            }
+                        }
+                    },
+
+                    new BinaryOp.UMulHigh(true, true) {
+
+                        @Override
+                        public Constant foldConstant(Constant const1, Constant const2) {
+                            PrimitiveConstant a = (PrimitiveConstant) const1;
+                            PrimitiveConstant b = (PrimitiveConstant) const2;
+                            assert a.getJavaKind() == b.getJavaKind();
+                            return JavaConstant.forIntegerKind(a.getJavaKind(), multiplyHighUnsigned(a.asLong(), b.asLong(), a.getJavaKind()));
+                        }
+
+                        @Override
+                        public Stamp foldStamp(Stamp stamp1, Stamp stamp2) {
+                            IntegerStamp a = (IntegerStamp) stamp1;
+                            IntegerStamp b = (IntegerStamp) stamp2;
+                            JavaKind javaKind = a.getStackKind();
+
+                            assert a.getBits() == b.getBits();
+                            assert javaKind == b.getStackKind();
+                            assert (javaKind == JavaKind.Int || javaKind == JavaKind.Long);
+
+                            if (a.isEmpty() || b.isEmpty()) {
+                                return a.empty();
+                            } else if (a.isUnrestricted() || b.isUnrestricted()) {
+                                return a.unrestricted();
+                            }
+
+                            // Note that the minima and maxima are calculated using signed min/max
+                            // functions, while the values themselves are unsigned.
+                            long[] xExtremes = getUnsignedExtremes(a);
+                            long[] yExtremes = getUnsignedExtremes(b);
+                            long min = Long.MAX_VALUE;
+                            long max = Long.MIN_VALUE;
+                            for (long x : xExtremes) {
+                                for (long y : yExtremes) {
+                                    long result = multiplyHighUnsigned(x, y, javaKind);
+                                    min = Math.min(min, result);
+                                    max = Math.max(max, result);
+                                }
+                            }
+
+                            // if min is negative, then the value can reach into the unsigned range
+                            if (min == max || min >= 0) {
+                                return StampFactory.forInteger(javaKind, min, max);
+                            } else {
+                                return StampFactory.forKind(javaKind);
+                            }
+                        }
+
+                        @Override
+                        public boolean isNeutral(Constant value) {
+                            return false;
+                        }
+
+                        private long[] getUnsignedExtremes(IntegerStamp stamp) {
+                            if (stamp.lowerBound() < 0 && stamp.upperBound() >= 0) {
+                                /*
+                                 * If -1 and 0 are both in the signed range, then we can't say
+                                 * anything about the unsigned range, so we have to return [0,
+                                 * MAX_UNSIGNED].
+                                 */
+                                return new long[]{0, -1L};
+                            } else {
+                                return new long[]{stamp.lowerBound(), stamp.upperBound()};
+                            }
+                        }
+
+                        private long multiplyHighUnsigned(long x, long y, JavaKind javaKind) {
+                            if (javaKind == JavaKind.Int) {
+                                long xl = x & 0xFFFFFFFFL;
+                                long yl = y & 0xFFFFFFFFL;
+                                long r = xl * yl;
+                                return (int) (r >>> 32);
+                            } else {
+                                assert javaKind == JavaKind.Long;
+                                long x0 = x & 0xFFFFFFFFL;
+                                long x1 = x >>> 32;
+
+                                long y0 = y & 0xFFFFFFFFL;
+                                long y1 = y >>> 32;
+
+                                long z0 = x0 * y0;
+                                long t = x1 * y0 + (z0 >>> 32);
+                                long z1 = t & 0xFFFFFFFFL;
+                                long z2 = t >>> 32;
+                                z1 += x0 * y1;
+
+                                return x1 * y1 + z2 + (z1 >>> 32);
+                            }
+                        }
+                    },
+
                     new BinaryOp.Div(true, false) {
 
                         @Override
@@ -1046,10 +1204,14 @@ public final class IntegerStamp extends PrimitiveStamp {
                         public Stamp foldStamp(Stamp stamp, IntegerStamp shift) {
                             IntegerStamp value = (IntegerStamp) stamp;
                             int bits = value.getBits();
-                            long defaultMask = CodeUtil.mask(bits);
-                            if (value.upMask() == 0) {
+                            if (value.isEmpty()) {
+                                return value;
+                            } else if (shift.isEmpty()) {
+                                return StampFactory.forInteger(bits).empty();
+                            } else if (value.upMask() == 0) {
                                 return value;
                             }
+
                             int shiftMask = getShiftAmountMask(stamp);
                             int shiftBits = Integer.bitCount(shiftMask);
                             if (shift.lowerBound() == shift.upperBound()) {
@@ -1068,6 +1230,7 @@ public final class IntegerStamp extends PrimitiveStamp {
                                 }
                             }
                             if ((shift.lowerBound() >>> shiftBits) == (shift.upperBound() >>> shiftBits)) {
+                                long defaultMask = CodeUtil.mask(bits);
                                 long downMask = defaultMask;
                                 long upMask = 0;
                                 for (long i = shift.lowerBound(); i <= shift.upperBound(); i++) {
@@ -1109,7 +1272,11 @@ public final class IntegerStamp extends PrimitiveStamp {
                         public Stamp foldStamp(Stamp stamp, IntegerStamp shift) {
                             IntegerStamp value = (IntegerStamp) stamp;
                             int bits = value.getBits();
-                            if (shift.lowerBound() == shift.upperBound()) {
+                            if (value.isEmpty()) {
+                                return value;
+                            } else if (shift.isEmpty()) {
+                                return StampFactory.forInteger(bits).empty();
+                            } else if (shift.lowerBound() == shift.upperBound()) {
                                 long shiftCount = shift.lowerBound() & getShiftAmountMask(stamp);
                                 if (shiftCount == 0) {
                                     return stamp;
@@ -1153,6 +1320,12 @@ public final class IntegerStamp extends PrimitiveStamp {
                         public Stamp foldStamp(Stamp stamp, IntegerStamp shift) {
                             IntegerStamp value = (IntegerStamp) stamp;
                             int bits = value.getBits();
+                            if (value.isEmpty()) {
+                                return value;
+                            } else if (shift.isEmpty()) {
+                                return StampFactory.forInteger(bits).empty();
+                            }
+
                             if (shift.lowerBound() == shift.upperBound()) {
                                 long shiftCount = shift.lowerBound() & getShiftAmountMask(stamp);
                                 if (shiftCount == 0) {

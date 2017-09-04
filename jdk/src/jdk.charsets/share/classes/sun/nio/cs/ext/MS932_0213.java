@@ -34,7 +34,7 @@ import static sun.nio.cs.CharsetMapping.*;
 
 public class MS932_0213 extends Charset {
     public MS932_0213() {
-        super("x-MS932_0213", ExtendedCharsets.aliasesFor("MS932_0213"));
+        super("x-MS932_0213", ExtendedCharsets.aliasesFor("x-MS932_0213"));
     }
 
     public boolean contains(Charset cs) {

@@ -24,50 +24,42 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.symtab_command;
 import jdk.tools.jaotc.binformat.macho.MachO.nlist_64;
 import jdk.tools.jaotc.binformat.macho.MachOSymbol;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachOSymtab {
+final class MachOSymtab {
 
     /**
      * ByteBuffer holding the LC_SYMTAB command contents
      */
-    ByteBuffer symtabCmd;
+    private final ByteBuffer symtabCmd;
 
-    /**
-     * ByteBuffer holding the symbol table entries and strings
-     */
-    ByteBuffer symtabData;
+    private int symtabDataSize;
 
-    int symtabDataSize;
-
-    ArrayList<MachOSymbol>localSymbols = new ArrayList<MachOSymbol>();
-    ArrayList<MachOSymbol>globalSymbols = new ArrayList<MachOSymbol>();
-    ArrayList<MachOSymbol>undefSymbols = new ArrayList<MachOSymbol>();
+    private final ArrayList<MachOSymbol> localSymbols = new ArrayList<>();
+    private final ArrayList<MachOSymbol> globalSymbols = new ArrayList<>();
+    private final ArrayList<MachOSymbol> undefSymbols = new ArrayList<>();
 
     /**
      * number of symbols added
      */
-    int symbolCount;
+    private int symbolCount;
 
     /**
      * String holding symbol table strings
      */
-    private StringBuilder strTabContent = new StringBuilder();
+    private final StringBuilder strTabContent = new StringBuilder();
 
     /**
-     * Keeps track of bytes in string table since strTabContent.length()
-     * is number of chars, not bytes.
+     * Keeps track of bytes in string table since strTabContent.length() is number of chars, not bytes.
      */
     private int strTabNrOfBytes = 0;
 
-    public MachOSymtab() {
+    MachOSymtab() {
         symtabCmd = MachOByteBuffer.allocate(symtab_command.totalsize);
 
         symtabCmd.putInt(symtab_command.cmd.off, symtab_command.LC_SYMTAB);
@@ -77,11 +69,11 @@ public class MachOSymtab {
 
     }
 
-    public int getAlign() {
+    static int getAlign() {
         return (4);
     }
 
-    public MachOSymbol addSymbolEntry(String name, byte type, byte secHdrIndex, long offset) {
+    MachOSymbol addSymbolEntry(String name, byte type, byte secHdrIndex, long offset) {
         // Get the current symbol index and append symbol name to string table.
         int index;
         MachOSymbol sym;
@@ -109,7 +101,7 @@ public class MachOSymtab {
                 case nlist_64.N_UNDF:  // null symbol
                     localSymbols.add(sym);
                     break;
-                case nlist_64.N_SECT|nlist_64.N_EXT:
+                case nlist_64.N_SECT | nlist_64.N_EXT:
                     globalSymbols.add(sym);
                     break;
                 default:
@@ -121,30 +113,30 @@ public class MachOSymtab {
         return (sym);
     }
 
-    public void setOffset(int symoff) {
+    void setOffset(int symoff) {
         symtabCmd.putInt(symtab_command.symoff.off, symoff);
     }
 
     // Update the symbol indexes once all symbols have been added.
     // This is required since we'll be reordering the symbols in the
     // file to be in the order of Local, global and Undefined.
-    public void updateIndexes() {
+    void updateIndexes() {
         int index = 0;
 
         // Update the local symbol indexes
-        for (int i = 0; i < localSymbols.size(); i++ ) {
+        for (int i = 0; i < localSymbols.size(); i++) {
             MachOSymbol sym = localSymbols.get(i);
             sym.setIndex(index++);
         }
 
         // Update the global symbol indexes
-        for (int i = 0; i < globalSymbols.size(); i++ ) {
+        for (int i = 0; i < globalSymbols.size(); i++) {
             MachOSymbol sym = globalSymbols.get(i);
             sym.setIndex(index++);
         }
 
         // Update the undefined symbol indexes
-        for (int i = index; i < undefSymbols.size(); i++ ) {
+        for (int i = index; i < undefSymbols.size(); i++) {
             MachOSymbol sym = undefSymbols.get(i);
             sym.setIndex(index++);
         }
@@ -152,7 +144,7 @@ public class MachOSymtab {
 
     // Update LC_SYMTAB command fields based on the number of symbols added
     // return the file size taken up by symbol table entries and strings
-    public int calcSizes() {
+    int calcSizes() {
         int stroff;
 
         stroff = symtabCmd.getInt(symtab_command.symoff.off) + (nlist_64.totalsize * symbolCount);
@@ -164,42 +156,49 @@ public class MachOSymtab {
         return (symtabDataSize);
     }
 
-    public int getNumLocalSyms()  { return localSymbols.size();  }
-    public int getNumGlobalSyms() { return globalSymbols.size(); }
-    public int getNumUndefSyms()  { return undefSymbols.size();  }
+    int getNumLocalSyms() {
+        return localSymbols.size();
+    }
 
-    public byte[] getCmdArray() {
+    int getNumGlobalSyms() {
+        return globalSymbols.size();
+    }
+
+    int getNumUndefSyms() {
+        return undefSymbols.size();
+    }
+
+    byte[] getCmdArray() {
         return symtabCmd.array();
     }
 
     // Create a single byte array that contains the symbol table entries
     // and string table
-    public byte[] getDataArray() {
-        int index = 0;
-        symtabData = MachOByteBuffer.allocate(symtabDataSize);
-        byte [] retarray;
+    byte[] getDataArray() {
+        ByteBuffer symtabData = MachOByteBuffer.allocate(symtabDataSize);
+        byte[] retarray;
 
         // Add the local symbols
-        for (int i = 0; i < localSymbols.size(); i++ ) {
+        for (int i = 0; i < localSymbols.size(); i++) {
             MachOSymbol sym = localSymbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
         // Add the global symbols
-        for (int i = 0; i < globalSymbols.size(); i++ ) {
+        for (int i = 0; i < globalSymbols.size(); i++) {
             MachOSymbol sym = globalSymbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
         // Add the undefined symbols
-        for (int i = 0; i < undefSymbols.size(); i++ ) {
+        for (int i = 0; i < undefSymbols.size(); i++) {
             MachOSymbol sym = undefSymbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
 
         // Add the stringtable
-        byte [] strs = strTabContent.toString().getBytes();
+        byte[] strs = strTabContent.toString().getBytes();
         symtabData.put(strs);
 
         retarray = symtabData.array();
@@ -207,5 +206,3 @@ public class MachOSymtab {
         return (retarray);
     }
 }
-
-

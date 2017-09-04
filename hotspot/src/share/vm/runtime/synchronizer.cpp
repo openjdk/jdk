@@ -1407,7 +1407,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
       assert(inf->header()->is_neutral(), "invariant");
       assert(inf->object() == object, "invariant");
       assert(ObjectSynchronizer::verify_objmon_isinpool(inf), "monitor is invalid");
-      event.cancel(); // let's not post an inflation event, unless we did the deed ourselves
       return inf;
     }
 

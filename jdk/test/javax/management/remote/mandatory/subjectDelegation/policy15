@@ -1,4 +1,4 @@
-grant codebase "file:/-" {
+grant {
     permission javax.management.remote.SubjectDelegationPermission "javax.management.remote.JMXPrincipal.monitorRole";
 };
 

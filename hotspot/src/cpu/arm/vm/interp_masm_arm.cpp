@@ -300,8 +300,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // load pointer for resolved_references[] objArray
   ldr(cache, Address(result, ConstantPool::cache_offset_in_bytes()));
   ldr(cache, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  // JNIHandles::resolve(result)
-  ldr(cache, Address(cache, 0));
+  resolve_oop_handle(cache);
   // Add in the index
   // convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed

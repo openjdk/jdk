@@ -82,7 +82,7 @@ public class EUC_TW {
 
     static void genClass(String pkg, String args[]) throws Exception
     {
-        InputStream is = new FileInputStream(new File(args[0], "euc_tw.map"));
+        InputStream is = new FileInputStream(new File(args[0], "EUC_TW.map"));
         PrintStream ps = new PrintStream(new File(args[1], "EUC_TWMapping.java"),
                                          "ISO-8859-1");
         String copyright = getCopyright(new File(args[7], "EUC_TW.java"));

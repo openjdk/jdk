@@ -2514,6 +2514,9 @@ void JavaThread::create_stack_guard_pages() {
   address low_addr = stack_end();
   size_t len = stack_guard_zone_size();
 
+  assert(is_aligned(low_addr, os::vm_page_size()), "Stack base should be the start of a page");
+  assert(is_aligned(len, os::vm_page_size()), "Stack size should be a multiple of page size");
+
   int must_commit = os::must_commit_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
 
@@ -3187,7 +3190,7 @@ class PrintAndVerifyOopClosure: public OopClosure {
     oop obj = oopDesc::load_decode_heap_oop(p);
     if (obj == NULL) return;
     tty->print(INTPTR_FORMAT ": ", p2i(p));
-    if (obj->is_oop_or_null()) {
+    if (oopDesc::is_oop_or_null(obj)) {
       if (obj->is_objArray()) {
         tty->print_cr("valid objArray: " INTPTR_FORMAT, p2i(obj));
       } else {

@@ -198,9 +198,22 @@ public final class DebugContext implements AutoCloseable {
 
         private Immutable(OptionValues options) {
             this.options = options;
+            String timeValue = Time.getValue(options);
+            String trackMemUseValue = TrackMemUse.getValue(options);
             this.unscopedCounters = parseUnscopedMetricSpec(Counters.getValue(options), "".equals(Count.getValue(options)), false);
-            this.unscopedTimers = parseUnscopedMetricSpec(Timers.getValue(options), "".equals(Time.getValue(options)), true);
-            this.unscopedMemUseTrackers = parseUnscopedMetricSpec(MemUseTrackers.getValue(options), "".equals(TrackMemUse.getValue(options)), true);
+            this.unscopedTimers = parseUnscopedMetricSpec(Timers.getValue(options), "".equals(timeValue), true);
+            this.unscopedMemUseTrackers = parseUnscopedMetricSpec(MemUseTrackers.getValue(options), "".equals(trackMemUseValue), true);
+
+            if (unscopedTimers != null ||
+                            unscopedMemUseTrackers != null ||
+                            timeValue != null ||
+                            trackMemUseValue != null) {
+                try {
+                    Class.forName("java.lang.management.ManagementFactory");
+                } catch (ClassNotFoundException ex) {
+                    throw new IllegalArgumentException("Time, Timers, MemUseTrackers and TrackMemUse options require java.management module");
+                }
+            }
 
             this.scopesEnabled = DumpOnError.getValue(options) ||
                             Dump.getValue(options) != null ||

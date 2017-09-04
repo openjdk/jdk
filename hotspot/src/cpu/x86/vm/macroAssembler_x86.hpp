@@ -327,6 +327,7 @@ class MacroAssembler: public Assembler {
   void movbool(Address dst, Register src);
   void testbool(Register dst);
 
+  void resolve_oop_handle(Register result);
   void load_mirror(Register mirror, Register method);
 
   // oop manipulations

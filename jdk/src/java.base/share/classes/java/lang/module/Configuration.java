@@ -47,7 +47,8 @@ import jdk.internal.module.ModuleTarget;
 
 /**
  * A configuration that is the result of <a href="package-summary.html#resolution">
- * resolution</a> or resolution with <a href="#service-binding">service binding</a>.
+ * resolution</a> or resolution with
+ * <a href="{@docRoot}/java/lang/module/Configuration.html#service-binding">service binding</a>.
  *
  * <p> A configuration encapsulates the <em>readability graph</em> that is the
  * output of resolution. A readability graph is a directed graph whose vertices
@@ -421,7 +422,7 @@ public final class Configuration {
      * resolve} except that the graph of resolved modules is augmented
      * with modules induced by the service-use dependence relation. </p>
      *
-     * <p id="service-binding"> More specifically, the root modules are
+     * <p><a id="service-binding"></a>More specifically, the root modules are
      * resolved as if by calling {@code resolve}. The resolved modules, and
      * all modules in the parent configurations, with {@link ModuleDescriptor#uses()
      * service dependences} are then examined. All modules found by the given
@@ -520,7 +521,7 @@ public final class Configuration {
 
     /**
      * Finds a resolved module in this configuration, or if not in this
-     * configuration, the {@linkplain #parents parent} configurations.
+     * configuration, the {@linkplain #parents() parent} configurations.
      * Finding a module in parent configurations is equivalent to invoking
      * {@code findModule} on each parent, in search order, until the module
      * is found or all parents have been searched. In a <em>tree of
