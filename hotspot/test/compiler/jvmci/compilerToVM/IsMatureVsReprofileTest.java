@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires vm.jvmci
+ * @requires vm.jvmci & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library / /test/lib
  *          ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -38,7 +38,6 @@
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbatch
- *     -Djvmci.Compiler=null
  *     compiler.jvmci.compilerToVM.IsMatureVsReprofileTest
  */
 

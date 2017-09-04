@@ -20,17 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.classname;
 
 import jdk.tools.jaotc.collect.ClassSource;
 
 import java.util.function.BiConsumer;
 
-public class ClassNameSource implements ClassSource {
+public final class ClassNameSource implements ClassSource {
     private final String name;
     private final ClassLoader classLoader;
 
-    public ClassNameSource(String name, ClassLoader classLoader) {
+    ClassNameSource(String name, ClassLoader classLoader) {
         this.name = name;
         this.classLoader = classLoader;
     }

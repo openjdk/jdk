@@ -113,6 +113,9 @@ public class AotCompiler {
             args.add("--linker-path");
             args.add(linker);
         }
+        // Execute with asserts
+        args.add("-J-ea");
+        args.add("-J-esa");
         return launchJaotc(args, extraopts);
     }
 

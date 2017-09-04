@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,14 @@ import jdk.tools.jaotc.binformat.Relocation;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 
 import jdk.vm.ci.code.BytecodePosition;
-import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.VirtualObject;
 import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.InvokeTarget;
 
-class InfopointProcessor {
+final class InfopointProcessor {
 
     private final DataBuilder dataBuilder;
 
@@ -70,9 +68,13 @@ class InfopointProcessor {
             default:
                 throw new InternalError("Unknown info point reason: " + info.reason);
         }
-        if (info.debugInfo == null) return;
+        if (info.debugInfo == null) {
+            return;
+        }
         BytecodePosition bcp = info.debugInfo.getBytecodePosition();
-        if (bcp == null) return;
+        if (bcp == null) {
+            return;
+        }
         recordScopeKlasses(methodInfo, bcp, info.debugInfo.getVirtualObjectMapping());
     }
 
@@ -82,14 +84,15 @@ class InfopointProcessor {
             recordScopeKlasses(methodInfo, caller, vos);
         }
 
-        HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod)bcp.getMethod();
+        HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) bcp.getMethod();
         HotSpotResolvedObjectType klass = m.getDeclaringClass();
         methodInfo.addDependentKlassData(binaryContainer, klass);
 
-        if (vos == null) return;
-
+        if (vos == null) {
+            return;
+        }
         for (VirtualObject vo : vos) {
-            HotSpotResolvedObjectType vk = (HotSpotResolvedObjectType)vo.getType();
+            HotSpotResolvedObjectType vk = (HotSpotResolvedObjectType) vo.getType();
             methodInfo.addDependentKlassData(binaryContainer, vk);
         }
 
@@ -116,12 +119,12 @@ class InfopointProcessor {
     /**
      * Get information about the call site. Name of the callee and relocation call type.
      */
-    private CallSiteRelocationInfo getCallSiteRelocationInfo(Call call) {
+    private static CallSiteRelocationInfo getCallSiteRelocationInfo(Call call) {
         InvokeTarget callTarget = call.target;
         if (callTarget instanceof HotSpotResolvedJavaMethod) {
             return new JavaCallSiteRelocationInfo(call, (HotSpotResolvedJavaMethod) callTarget);
         } else if (callTarget instanceof HotSpotForeignCallLinkage) {
-            return new ForeignCallSiteRelocationInfo(call, (HotSpotForeignCallLinkage) callTarget, dataBuilder);
+            return new ForeignCallSiteRelocationInfo(call, (HotSpotForeignCallLinkage) callTarget);
         } else {
             throw new InternalError("Unhandled call type found in infopoint: " + callTarget);
         }
@@ -136,10 +139,6 @@ class InfopointProcessor {
                 return new StubDirectCallSiteRelocationSymbol(callSiteRelocation, binaryContainer);
             case FOREIGN_CALL_INDIRECT_GOT:
                 return new ForeignGotCallSiteRelocationSymbol(mi, call, callSiteRelocation, dataBuilder);
-            case FOREIGN_CALL_DIRECT:
-            case FOREIGN_CALL_DIRECT_FAR:
-            case FOREIGN_CALL_INDIRECT:
-                return new ForeignCallSiteRelocationSymbol(callSiteRelocation, binaryContainer);
             default:
                 return new JavaCallSiteRelocationSymbol(mi, call, callSiteRelocation, binaryContainer);
         }

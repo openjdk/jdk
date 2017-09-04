@@ -239,7 +239,6 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   }
 #ifdef ASSERT
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
-  assert(exception->is_oop(), "just checking");
   // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
   if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     if (ExitVMOnVerifyError) vm_exit(-1);
@@ -385,7 +384,6 @@ JRT_ENTRY_NO_ASYNC(void, JVMCIRuntime::monitorenter(JavaThread* thread, oopDesc*
   }
 #endif
   Handle h_obj(thread, obj);
-  assert(h_obj()->is_oop(), "must be NULL or an object");
   if (UseBiasedLocking) {
     // Retry fast entry if bias is revoked to avoid unnecessary inflation
     ObjectSynchronizer::fast_enter(h_obj, lock, true, CHECK);
@@ -407,7 +405,7 @@ JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* thread, oopDesc* obj, Basic
   EXCEPTION_MARK;
 
 #ifdef DEBUG
-  if (!obj->is_oop()) {
+  if (!oopDesc::is_oop(obj)) {
     ResetNoHandleMark rhm;
     nmethod* method = thread->last_frame().cb()->as_nmethod_or_null();
     if (method != NULL) {
@@ -455,8 +453,8 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
 
   if (obj == NULL) {
     tty->print("NULL");
-  } else if (obj->is_oop_or_null(true) && (!as_string || !java_lang_String::is_instance(obj))) {
-    if (obj->is_oop_or_null(true)) {
+  } else if (oopDesc::is_oop_or_null(obj, true) && (!as_string || !java_lang_String::is_instance(obj))) {
+    if (oopDesc::is_oop_or_null(obj, true)) {
       char buf[O_BUFLEN];
       tty->print("%s@" INTPTR_FORMAT, obj->klass()->name()->as_C_string(buf, O_BUFLEN), p2i(obj));
     } else {

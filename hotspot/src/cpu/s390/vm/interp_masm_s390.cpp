@@ -364,8 +364,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   z_lg(result, ConstantPool::cache_offset_in_bytes(), result);
   z_lg(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  // JNIHandles::resolve(result)
-  z_lg(result, 0, result); // Load resolved references array itself.
+  resolve_oop_handle(result); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
   z_lgf(Z_R0, Address(result, arrayOopDesc::length_offset_in_bytes()));

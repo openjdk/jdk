@@ -34,7 +34,7 @@
 oop* HandleArea::allocate_handle(oop obj) {
   assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
-  assert(obj->is_oop(), "not an oop: " INTPTR_FORMAT, p2i(obj));
+  assert(oopDesc::is_oop(obj), "not an oop: " INTPTR_FORMAT, p2i(obj));
   return real_allocate_handle(obj);
 }
 #endif
@@ -99,7 +99,7 @@ static uintx chunk_oops_do(OopClosure* f, Chunk* chunk, char* chunk_top) {
   while (bottom < top) {
     // This test can be moved up but for now check every oop.
 
-    assert((*bottom)->is_oop(), "handle should point to oop");
+    assert(oopDesc::is_oop(*bottom), "handle should point to oop");
 
     f->do_oop(bottom++);
   }

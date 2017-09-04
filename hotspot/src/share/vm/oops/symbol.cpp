@@ -219,7 +219,7 @@ void Symbol::increment_refcount() {
 
 void Symbol::decrement_refcount() {
   if (_refcount >= 0) { // not a permanent symbol
-    jshort new_value = Atomic::add(-1, &_refcount);
+    short new_value = Atomic::add(short(-1), &_refcount);
 #ifdef ASSERT
     if (new_value == -1) { // we have transitioned from 0 -> -1
       print();

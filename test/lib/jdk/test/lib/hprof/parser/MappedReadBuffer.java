@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,31 +98,31 @@ class MappedReadBuffer implements ReadBuffer {
         buf.position((int)pos);
     }
 
-    public synchronized void get(long pos, byte[] res) throws IOException {
-        seek(pos);
-        buf.get(res);
-    }
-
+    @Override
     public synchronized char getChar(long pos) throws IOException {
         seek(pos);
         return buf.getChar();
     }
 
+    @Override
     public synchronized byte getByte(long pos) throws IOException {
         seek(pos);
         return buf.get();
     }
 
+    @Override
     public synchronized short getShort(long pos) throws IOException {
         seek(pos);
         return buf.getShort();
     }
 
+    @Override
     public synchronized int getInt(long pos) throws IOException {
         seek(pos);
         return buf.getInt();
     }
 
+    @Override
     public synchronized long getLong(long pos) throws IOException {
         seek(pos);
         return buf.getLong();

@@ -189,9 +189,7 @@ public class StandardGraphBuilderPlugins {
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", short[].class, short[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", char[].class, char[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", int[].class, int[].class);
-        r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", float[].class, float[].class);
         r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", long[].class, long[].class);
-        r.registerMethodSubstitution(ArraysSubstitutions.class, "equals", double[].class, double[].class);
     }
 
     private static void registerArrayPlugins(InvocationPlugins plugins, BytecodeProvider bytecodeProvider) {
