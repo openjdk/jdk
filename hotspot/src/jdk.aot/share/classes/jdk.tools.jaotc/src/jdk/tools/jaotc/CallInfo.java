@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,28 +30,16 @@ import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class MiscUtils {
+final class CallInfo {
 
-    /**
-     * Name a java method with class and signature to make it unique.
-     *
-     * @param method to generate unique identifier for
-     * @return Unique name for this method including class and signature
-     **/
-    public static String uniqueMethodName(ResolvedJavaMethod method) {
-        String className = method.getDeclaringClass().toClassName();
-        String name = className + "." + method.getName() + method.getSignature().toMethodDescriptor();
-        return name;
-    }
-
-    public static boolean isStaticCall(Call call) {
+    static boolean isStaticCall(Call call) {
         if (isJavaCall(call)) {
             return ((getByteCode(call) & 0xFF) == Bytecodes.INVOKESTATIC);
         }
         return false;
     }
 
-    public static boolean isSpecialCall(Call call) {
+    static boolean isSpecialCall(Call call) {
         if (isJavaCall(call)) {
             return ((getByteCode(call) & 0xFF) == Bytecodes.INVOKESPECIAL);
         }
@@ -65,11 +53,11 @@ public class MiscUtils {
         return false;
     }
 
-    public static boolean isVirtualCall(CompiledMethodInfo methodInfo, Call call) {
+    static boolean isVirtualCall(CompiledMethodInfo methodInfo, Call call) {
         return isInvokeVirtual(call) && !methodInfo.hasMark(call, MarkId.INVOKESPECIAL);
     }
 
-    public static boolean isOptVirtualCall(CompiledMethodInfo methodInfo, Call call) {
+    static boolean isOptVirtualCall(CompiledMethodInfo methodInfo, Call call) {
         return isInvokeVirtual(call) && methodInfo.hasMark(call, MarkId.INVOKESPECIAL);
     }
 

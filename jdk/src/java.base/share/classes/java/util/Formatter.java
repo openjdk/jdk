@@ -1229,7 +1229,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
- *     using the {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     Float#toString(float)} or {@link Double#toString(double)} as
@@ -1298,7 +1298,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link Float#toString(float)} or {@link
  *     Double#toString(double)} respectively, then the value will be rounded
- *     using the {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     Float#toString(float)} or {@link Double#toString(double)} as
@@ -1461,7 +1461,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     specified then the default value is {@code 6}.  If the precision is
  *     less than the number of digits to the right of the decimal point then
  *     the value will be rounded using the
- *     {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.
@@ -1524,7 +1524,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     specified then the default value is {@code 6}.  If the precision is
  *     less than the number of digits to the right of the decimal point
  *     then the value will be rounded using the
- *     {@linkplain java.math.BigDecimal#ROUND_HALF_UP round half up
+ *     {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.

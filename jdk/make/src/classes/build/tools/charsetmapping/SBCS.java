@@ -161,7 +161,7 @@ public class SBCS {
             if (line.indexOf("$NAME_ALIASES$", i) != -1) {
                 if ("sun.nio.cs".equals(pkgName))
                     line = line.replace("$NAME_ALIASES$",
-                                        "StandardCharsets.aliases_" + clzName);
+                                        "StandardCharsets.aliases_" + clzName + "()");
                 else
                     line = line.replace("$NAME_ALIASES$",
                                         "ExtendedCharsets.aliasesFor(\"" + csName + "\")");

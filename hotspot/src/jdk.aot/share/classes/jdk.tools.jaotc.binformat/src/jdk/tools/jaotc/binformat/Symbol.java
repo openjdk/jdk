@@ -39,7 +39,6 @@ public class Symbol {
         UNDEFINED,
         NATIVE_FUNCTION,
         JAVA_FUNCTION,
-        STATIC_STUB_CALL, // static call stub inside the text section
         OBJECT,
         NOTYPE
     }

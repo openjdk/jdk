@@ -24,14 +24,13 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteOrder;
-import jdk.tools.jaotc.binformat.elf.Elf;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 
 /**
  * Class that abstracts MACH-O target details.
  *
  */
-public class ElfTargetInfo {
+final class ElfTargetInfo {
     /**
      * Target architecture.
      */
@@ -68,16 +67,15 @@ public class ElfTargetInfo {
         }
     }
 
-    public static char getElfArch() {
+    static char getElfArch() {
         return arch;
     }
 
-    public static int getElfEndian() {
+    static int getElfEndian() {
         return endian;
     }
 
-    public static String getOsName() {
+    static String getOsName() {
         return osName;
     }
 }
-

@@ -243,7 +243,7 @@ public:
 
     bool marked_as_dirty = Atomic::cmpxchg(Dirty, &_in_dirty_region_buffer[region], Clean) == Clean;
     if (marked_as_dirty) {
-      size_t allocated = Atomic::add(1, &_cur_dirty_region) - 1;
+      size_t allocated = Atomic::add(1u, &_cur_dirty_region) - 1;
       _dirty_region_buffer[allocated] = region;
     }
   }

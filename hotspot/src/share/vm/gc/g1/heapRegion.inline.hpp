@@ -337,7 +337,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prevMarkBitMap();
   do {
     oop obj = oop(cur);
-    assert(obj->is_oop(true), "Not an oop at " PTR_FORMAT, p2i(cur));
+    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
     assert(obj->klass_or_null() != NULL,
            "Unparsable heap at " PTR_FORMAT, p2i(cur));
 

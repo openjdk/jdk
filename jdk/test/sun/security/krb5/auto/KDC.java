@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.lang.reflect.Method;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -734,7 +732,7 @@ public class KDC {
             if (till == null) {
                 throw new KrbException(Krb5.KDC_ERR_NEVER_VALID); // TODO
             } else if (till.isZero()) {
-                till = new KerberosTime(new Date().getTime() + 1000 * 3600 * 11);
+                till = new KerberosTime(new Date().getTime() + 1000 * DEFAULT_LIFETIME);
             }
 
             boolean[] bFlags = new boolean[Krb5.TKT_OPTS_MAX+1];
@@ -811,6 +809,18 @@ public class KDC {
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
 
+            KerberosTime renewTill = etp.renewTill;
+            if (renewTill != null && body.kdcOptions.get(KDCOptions.RENEW)) {
+                // till should never pass renewTill
+                if (till.greaterThan(renewTill)) {
+                    till = renewTill;
+                }
+                if (System.getProperty("test.set.null.renew") != null) {
+                    // Testing 8186576, see NullRenewUntil.java.
+                    renewTill = null;
+                }
+            }
+
             TicketFlags tFlags = new TicketFlags(bFlags);
             EncTicketPart enc = new EncTicketPart(
                     tFlags,
@@ -819,7 +829,7 @@ public class KDC {
                     new TransitedEncoding(1, new byte[0]),  // TODO
                     new KerberosTime(new Date()),
                     body.from,
-                    till, etp.renewTill,
+                    till, renewTill,
                     body.addresses != null ? body.addresses
                             : etp.caddr,
                     null);
@@ -844,7 +854,7 @@ public class KDC {
                     tFlags,
                     new KerberosTime(new Date()),
                     body.from,
-                    till, etp.renewTill,
+                    till, renewTill,
                     service,
                     body.addresses
                     );

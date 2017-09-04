@@ -433,26 +433,15 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
     }
 }
 
-static void closeFile(JNIEnv *env, jlong fd) {
-    HANDLE h = (HANDLE)fd;
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    HANDLE h = (HANDLE)handleval(env, fdo);
     if (h != INVALID_HANDLE_VALUE) {
         int result = CloseHandle(h);
         if (result == 0)
             JNU_ThrowIOExceptionWithLastError(env, "Close failed");
     }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo)
-{
-    jlong fd = handleval(env, fdo);
-    closeFile(env, fd);
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_closeByHandle(JNIEnv *env, jclass clazz, jlong fd)
-{
-    closeFile(env, fd);
 }
 
 JNIEXPORT jlong JNICALL

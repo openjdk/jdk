@@ -42,6 +42,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
+import sun.nio.cs.StandardCharsets;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -61,9 +62,9 @@ class StringCoding {
     private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
 
-    private static final Charset ISO_8859_1 = Charset.forName("iso-8859-1");
-    private static final Charset US_ASCII = Charset.forName("us-ascii");
-    private static final Charset UTF_8 = Charset.forName("utf-8");
+    private static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
+    private static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
+    private static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
 
     private static boolean warnUnsupportedCharset = true;
 

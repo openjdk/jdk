@@ -25,12 +25,10 @@ package org.graalvm.compiler.nodes.test;
 import static org.graalvm.compiler.core.test.GraalCompilerTest.getInitialOptions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaKind;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.math.BigInteger;
 
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.ShiftOp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
@@ -42,6 +40,12 @@ import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 
 /**
  * This class tests that integer stamps are created correctly for constants.
@@ -365,10 +369,187 @@ public class IntegerStampTest extends GraphTest {
         assertEquals(IntegerStamp.create(32, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
         assertEquals(IntegerStamp.create(32, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
         assertEquals(IntegerStamp.create(32, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, -4096, -4096, -4096, -4096), shl.foldStamp(IntegerStamp.create(32, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Int), shl.foldStamp(StampFactory.empty(JavaKind.Int), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Int), shl.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
 
         assertEquals(IntegerStamp.create(64, 0, 0x1ff, 0, 0x1ff), shl.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
         assertEquals(IntegerStamp.create(64, 0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
         assertEquals(IntegerStamp.create(64, 0x1e0, 0x1fe0, 0, 0x1fe0), shl.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, -4096, -4096, -4096, -4096), shl.foldStamp(IntegerStamp.create(64, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Long), shl.foldStamp(StampFactory.empty(JavaKind.Long), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Long), shl.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
+    }
 
+    @Test
+    public void testUnsignedShiftRight() {
+        ShiftOp<?> ushr = IntegerStamp.OPS.getUShr();
+        assertEquals(IntegerStamp.create(32, 0, 0xff, 0, 0xff), ushr.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(32, 0, 0x07, 0, 0x07), ushr.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, 0x0, 0x07, 0, 0x07), ushr.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, 0xffffff, 0xffffff, 0xffffff, 0xffffff), ushr.foldStamp(IntegerStamp.create(32, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Int), ushr.foldStamp(StampFactory.empty(JavaKind.Int), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Int), ushr.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
+
+        assertEquals(IntegerStamp.create(64, 0, 0xff, 0, 0xff), ushr.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(64, 0, 0x07, 0, 0x07), ushr.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, 0x0, 0x07, 0, 0x07), ushr.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, 0xffffffffffffffL, 0xffffffffffffffL, 0xffffffffffffffL, 0xffffffffffffffL),
+                        ushr.foldStamp(IntegerStamp.create(64, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Long), ushr.foldStamp(StampFactory.empty(JavaKind.Long), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Long), ushr.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
+    }
+
+    @Test
+    public void testShiftRight() {
+        ShiftOp<?> shr = IntegerStamp.OPS.getShr();
+        assertEquals(IntegerStamp.create(32, 0, 0xff, 0, 0xff), shr.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(32, 0, 0x07, 0, 0x07), shr.foldStamp(IntegerStamp.create(32, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, 0x0, 0x07, 0, 0x07), shr.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(32, -1, -1, -1, -1), shr.foldStamp(IntegerStamp.create(32, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Int), shr.foldStamp(StampFactory.empty(JavaKind.Int), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Int), shr.foldStamp(IntegerStamp.create(32, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
+
+        assertEquals(IntegerStamp.create(64, 0, 0xff, 0, 0xff), shr.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 0, 1, 0, 1)));
+        assertEquals(IntegerStamp.create(64, 0, 0x07, 0, 0x07), shr.foldStamp(IntegerStamp.create(64, 0, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, 0x0, 0x07, 0, 0x07), shr.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(IntegerStamp.create(64, -1, -1, -1, -1), shr.foldStamp(IntegerStamp.create(64, -16, -16, -16, -16), IntegerStamp.create(32, 8, 8, 8, 8)));
+        assertEquals(StampFactory.empty(JavaKind.Long), shr.foldStamp(StampFactory.empty(JavaKind.Long), IntegerStamp.create(32, 5, 5, 5, 5)));
+        assertEquals(StampFactory.empty(JavaKind.Long), shr.foldStamp(IntegerStamp.create(64, 0xf, 0xff, 0, 0xff), (IntegerStamp) StampFactory.empty(JavaKind.Int)));
+    }
+
+    @Test
+    public void testMulHigh() {
+        testSomeMulHigh(IntegerStamp.OPS.getMulHigh());
+    }
+
+    @Test
+    public void testUMulHigh() {
+        testSomeMulHigh(IntegerStamp.OPS.getUMulHigh());
+    }
+
+    private static void testSomeMulHigh(BinaryOp<?> someMulHigh) {
+        // 32 bits
+        testMulHigh(someMulHigh, 0, 0, 32);
+
+        testMulHigh(someMulHigh, 1, 1, 32);
+        testMulHigh(someMulHigh, 1, 5, 32);
+        testMulHigh(someMulHigh, 256, 256, 32);
+        testMulHigh(someMulHigh, 0xFFFFFFF, 0xFFFFFFA, 32);
+        testMulHigh(someMulHigh, Integer.MAX_VALUE, 2, 32);
+
+        testMulHigh(someMulHigh, -1, -1, 32);
+        testMulHigh(someMulHigh, -1, -5, 32);
+        testMulHigh(someMulHigh, -256, -256, 32);
+        testMulHigh(someMulHigh, -0xFFFFFFF, -0xFFFFFFA, 32);
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, -2, 32);
+
+        testMulHigh(someMulHigh, -1, 1, 32);
+        testMulHigh(someMulHigh, -1, 5, 32);
+        testMulHigh(someMulHigh, -256, 256, 32);
+        testMulHigh(someMulHigh, -0xFFFFFFF, 0xFFFFFFA, 32);
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, 2, 32);
+
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, Integer.MIN_VALUE, 32);
+        testMulHigh(someMulHigh, Integer.MAX_VALUE, Integer.MAX_VALUE, 32);
+
+        assertEquals(StampFactory.forKind(JavaKind.Int).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).empty(), StampFactory.forKind(JavaKind.Int).empty()));
+        assertEquals(StampFactory.forKind(JavaKind.Int).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).empty(), StampFactory.forKind(JavaKind.Int).unrestricted()));
+        assertEquals(StampFactory.forKind(JavaKind.Int).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).empty(), IntegerStamp.create(32, 0, 0)));
+        assertEquals(StampFactory.forKind(JavaKind.Int).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).empty(), IntegerStamp.create(32, 1, 1)));
+        assertEquals(StampFactory.forKind(JavaKind.Int).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).empty(), IntegerStamp.create(32, -1, -1)));
+
+        assertEquals(StampFactory.forKind(JavaKind.Int).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).unrestricted(), StampFactory.forKind(JavaKind.Int).unrestricted()));
+        assertEquals(StampFactory.forKind(JavaKind.Int).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).unrestricted(), IntegerStamp.create(32, 0, 0)));
+        assertEquals(StampFactory.forKind(JavaKind.Int).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).unrestricted(), IntegerStamp.create(32, 1, 1)));
+        assertEquals(StampFactory.forKind(JavaKind.Int).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Int).unrestricted(), IntegerStamp.create(32, -1, -1)));
+
+        // 64 bits
+        testMulHigh(someMulHigh, 0, 0, 64);
+
+        testMulHigh(someMulHigh, 1, 1, 64);
+        testMulHigh(someMulHigh, 1, 5, 64);
+        testMulHigh(someMulHigh, 256, 256, 64);
+        testMulHigh(someMulHigh, 0xFFFFFFF, 0xFFFFFFA, 64);
+        testMulHigh(someMulHigh, 0xFFFFFFFFFFFFFFL, 0xFFFFFFFFFFFFFAL, 64);
+        testMulHigh(someMulHigh, Integer.MAX_VALUE, 2, 64);
+        testMulHigh(someMulHigh, Long.MAX_VALUE, 2, 64);
+
+        testMulHigh(someMulHigh, -1, -1, 64);
+        testMulHigh(someMulHigh, -1, -5, 64);
+        testMulHigh(someMulHigh, -256, -256, 64);
+        testMulHigh(someMulHigh, -0xFFFFFFF, -0xFFFFFFA, 64);
+        testMulHigh(someMulHigh, -0xFFFFFFFFFFFFFFL, -0xFFFFFFFFFFFFFAL, 64);
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, -2, 64);
+        testMulHigh(someMulHigh, Long.MIN_VALUE, -2, 64);
+
+        testMulHigh(someMulHigh, -1, 1, 64);
+        testMulHigh(someMulHigh, -1, 5, 64);
+        testMulHigh(someMulHigh, -256, 256, 64);
+        testMulHigh(someMulHigh, -0xFFFFFFF, 0xFFFFFFA, 64);
+        testMulHigh(someMulHigh, -0xFFFFFFFFFFFFFFL, 0xFFFFFFFFFFFFFAL, 64);
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, 2, 64);
+        testMulHigh(someMulHigh, Long.MIN_VALUE, 2, 64);
+
+        testMulHigh(someMulHigh, Integer.MIN_VALUE, Integer.MIN_VALUE, 64);
+        testMulHigh(someMulHigh, Long.MIN_VALUE, Long.MIN_VALUE, 64);
+        testMulHigh(someMulHigh, Integer.MAX_VALUE, Integer.MAX_VALUE, 64);
+        testMulHigh(someMulHigh, Long.MAX_VALUE, Long.MAX_VALUE, 64);
+
+        assertEquals(StampFactory.forKind(JavaKind.Long).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).empty(), StampFactory.forKind(JavaKind.Long).empty()));
+        assertEquals(StampFactory.forKind(JavaKind.Long).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).empty(), StampFactory.forKind(JavaKind.Long).unrestricted()));
+        assertEquals(StampFactory.forKind(JavaKind.Long).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).empty(), IntegerStamp.create(64, 0, 0)));
+        assertEquals(StampFactory.forKind(JavaKind.Long).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).empty(), IntegerStamp.create(64, 1, 1)));
+        assertEquals(StampFactory.forKind(JavaKind.Long).empty(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).empty(), IntegerStamp.create(64, -1, -1)));
+
+        assertEquals(StampFactory.forKind(JavaKind.Long).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).unrestricted(), StampFactory.forKind(JavaKind.Long).unrestricted()));
+        assertEquals(StampFactory.forKind(JavaKind.Long).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).unrestricted(), IntegerStamp.create(64, 0, 0)));
+        assertEquals(StampFactory.forKind(JavaKind.Long).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).unrestricted(), IntegerStamp.create(64, 1, 1)));
+        assertEquals(StampFactory.forKind(JavaKind.Long).unrestricted(), someMulHigh.foldStamp(StampFactory.forKind(JavaKind.Long).unrestricted(), IntegerStamp.create(64, -1, -1)));
+    }
+
+    private static void testMulHigh(BinaryOp<?> someMulHigh, long a, long b, int bits) {
+        long expectedResult = getExpectedValue(someMulHigh, a, b, bits);
+        assertEquals(IntegerStamp.create(bits, expectedResult, expectedResult), someMulHigh.foldStamp(IntegerStamp.create(bits, a, a), IntegerStamp.create(bits, b, b)));
+    }
+
+    private static long getExpectedValue(BinaryOp<?> someMulHigh, long a, long b, int bits) {
+        if (someMulHigh == IntegerStamp.OPS.getMulHigh()) {
+            return mulHigh(a, b, bits);
+        } else {
+            assertEquals(IntegerStamp.OPS.getUMulHigh(), someMulHigh);
+            return umulHigh(a, b, bits);
+        }
+    }
+
+    private static long mulHigh(long a, long b, int bits) {
+        BigInteger valA = BigInteger.valueOf(a);
+        BigInteger valB = BigInteger.valueOf(b);
+        BigInteger result = valA.multiply(valB).shiftRight(bits);
+        if (bits == 32) {
+            return result.intValue();
+        } else {
+            assertEquals(64, bits);
+            return result.longValue();
+        }
+    }
+
+    private static long umulHigh(long a, long b, int bits) {
+        Assert.assertTrue(bits == 32 || bits == 64);
+        BigInteger valA = BigInteger.valueOf(a);
+        if (valA.compareTo(BigInteger.valueOf(0)) < 0) {
+            valA = valA.add(BigInteger.ONE.shiftLeft(bits));
+        }
+        BigInteger valB = BigInteger.valueOf(b);
+        if (valB.compareTo(BigInteger.valueOf(0)) < 0) {
+            valB = valB.add(BigInteger.ONE.shiftLeft(bits));
+        }
+
+        BigInteger result = valA.multiply(valB).shiftRight(bits);
+        if (bits == 32) {
+            return result.intValue();
+        } else {
+            return result.longValue();
+        }
     }
 }
