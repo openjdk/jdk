@@ -51,7 +51,7 @@ public class HotspotSnippetsOptions {
     @Option(help = "Enable profiling of allocation sites.", type = OptionType.Debug)
     public static final OptionKey<Boolean> ProfileAllocations = new OptionKey<>(false);
 
-    @Option(help = "Control the naming of the counters when using ProfileAllocations.", type = OptionType.Debug)
+    @Option(help = "file:doc-files/ProfileAllocationsContextHelp.txt", type = OptionType.Debug)
     public static final EnumOptionKey<ProfileContext> ProfileAllocationsContext = new EnumOptionKey<>(ProfileContext.AllocatingMethod);
 
     @Option(help = "Enable profiling of monitor operations.", type = OptionType.Debug)

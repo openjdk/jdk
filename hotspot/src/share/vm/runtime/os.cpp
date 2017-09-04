@@ -755,9 +755,9 @@ int os::random() {
   // Make updating the random seed thread safe.
   while (true) {
     unsigned int seed = _rand_seed;
-    int rand = random_helper(seed);
+    unsigned int rand = random_helper(seed);
     if (Atomic::cmpxchg(rand, &_rand_seed, seed) == seed) {
-      return rand;
+      return static_cast<int>(rand);
     }
   }
 }
@@ -988,7 +988,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     // See if we were just given an oop directly
     if (p != NULL && Universe::heap()->block_is_obj(p)) {
       print = true;
-    } else if (p == NULL && ((oopDesc*)addr)->is_oop()) {
+    } else if (p == NULL && oopDesc::is_oop(oop(addr))) {
       p = (HeapWord*) addr;
       print = true;
     }

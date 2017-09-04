@@ -602,7 +602,7 @@ public class Net {
 
     /**
      * Event masks for the various poll system calls.
-     * They will be set platform dependant in the static initializer below.
+     * They will be set platform dependent in the static initializer below.
      */
     public static final short POLLIN;
     public static final short POLLOUT;

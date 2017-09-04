@@ -302,7 +302,7 @@ public class FloatStamp extends PrimitiveStamp {
         return null;
     }
 
-    private static final ArithmeticOpTable OPS = new ArithmeticOpTable(
+    public static final ArithmeticOpTable OPS = new ArithmeticOpTable(
 
                     new UnaryOp.Neg() {
 
@@ -436,6 +436,10 @@ public class FloatStamp extends PrimitiveStamp {
                             }
                         }
                     },
+
+                    null,
+
+                    null,
 
                     new BinaryOp.Div(false, false) {
 

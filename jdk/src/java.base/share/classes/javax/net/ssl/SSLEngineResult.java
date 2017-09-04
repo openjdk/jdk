@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class SSLEngineResult {
      *
      * @param   sequenceNumber
      *          the sequence number (unsigned long) of the produced or
-     *          consumed SSL/TLS/DTLS record, or ${@code -1L} if no record
+     *          consumed SSL/TLS/DTLS record, or {@code -1L} if no record
      *          produced or consumed
      *
      * @throws  IllegalArgumentException
@@ -299,7 +299,7 @@ public class SSLEngineResult {
      *           implementation.
      *
      * @return  the sequence number of the produced or consumed SSL/TLS/DTLS
-     *          record; or ${@code -1L} if no record is produced or consumed,
+     *          record; or {@code -1L} if no record is produced or consumed,
      *          or this operation is not supported by the underlying provider
      *
      * @see     java.lang.Long#compareUnsigned(long, long)

@@ -283,7 +283,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_weakCompareAndSetIntAcquire:
   case vmIntrinsics::_weakCompareAndSetIntRelease:
   case vmIntrinsics::_weakCompareAndSetInt:
-    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapL)) return false;
+    if (!Matcher::match_rule_supported(Op_WeakCompareAndSwapI)) return false;
     break;
 
   /* CompareAndSet, Byte: */

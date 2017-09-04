@@ -93,28 +93,26 @@ import javax.management.openmbean.TabularType;
       Standard MBean concept.  Here is how a managed object might be
       represented as a Standard MBean, and as an MXBean:</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 public interface MemoryPool<b>MBean</b> {
     String getName();
     MemoryUsage getUsage();
     // ...
 }
-          </pre></td>
-        <td><pre>
+          </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 public interface MemoryPool<b>MXBean</b> {
     String getName();
     MemoryUsage getUsage();
     // ...
 }
-          </pre></td>
-      </tr>
-    </table>
+          </pre>
+    </div>
 
     <p>As you can see, the definitions are very similar.  The only
       difference is that the convention for naming the interface is to use
@@ -134,13 +132,9 @@ public interface MemoryPool<b>MXBean</b> {
 
     <p>So, we might define <code>MemoryUsage</code> like this:</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 public class MemoryUsage <b>implements Serializable</b> {
     // standard JavaBean conventions with getters
 
@@ -151,8 +145,11 @@ public class MemoryUsage <b>implements Serializable</b> {
     long getCommitted() {...}
     long getMax() {...}
 }
-          </pre></td>
-        <td><pre>
+        </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 public class MemoryUsage {
     // standard JavaBean conventions with getters
     <b>&#64;ConstructorParameters({"init", "used", "committed", "max"})</b>
@@ -163,9 +160,8 @@ public class MemoryUsage {
     long getCommitted() {...}
     long getMax() {...}
 }
-          </pre></td>
-      </tr>
-    </table>
+        </pre>
+    </div>
 
     <p>The definitions are the same in the two cases, except
       that with the MXBean, <code>MemoryUsage</code> no longer needs to
@@ -197,29 +193,28 @@ public class MemoryUsage {
     <p>This becomes clearer if we compare what the clients of the two
       models might look like:</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 String name = (String)
     mbeanServer.{@link MBeanServer#getAttribute
     getAttribute}(objectName, "Name");
 <b>MemoryUsage</b> usage = (<b>MemoryUsage</b>)
     mbeanServer.getAttribute(objectName, "Usage");
 <b>long used = usage.getUsed();</b>
-          </pre></td>
-        <td><pre>
+        </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 String name = (String)
     mbeanServer.{@link MBeanServer#getAttribute
     getAttribute}(objectName, "Name");
 <b>{@link CompositeData}</b> usage = (<b>CompositeData</b>)
     mbeanServer.getAttribute(objectName, "Usage");
 <b>long used = (Long) usage.{@link CompositeData#get get}("used");</b>
-          </pre></td>
-    </table>
+        </pre>
+    </div>
 
     <p>For attributes with simple types like <code>String</code>, the
       code is the same.  But for attributes with complex types, the
@@ -235,13 +230,9 @@ String name = (String)
       managed objects when you know the model beforehand, regardless
       of whether you are using Standard MBeans or MXBeans:</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 MemoryPool<b>MBean</b> proxy =
     JMX.<b>{@link JMX#newMBeanProxy(MBeanServerConnection, ObjectName,
               Class) newMBeanProxy}</b>(
@@ -251,8 +242,11 @@ MemoryPool<b>MBean</b> proxy =
 String name = proxy.getName();
 MemoryUsage usage = proxy.getUsage();
 long used = usage.getUsed();
-          </pre></td>
-        <td><pre>
+          </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 MemoryPool<b>MXBean</b> proxy =
     JMX.<b>{@link JMX#newMXBeanProxy(MBeanServerConnection, ObjectName,
               Class) newMXBeanProxy}</b>(
@@ -262,63 +256,58 @@ MemoryPool<b>MXBean</b> proxy =
 String name = proxy.getName();
 MemoryUsage usage = proxy.getUsage();
 long used = usage.getUsed();
-          </pre></td>
-      </tr>
-    </table>
+          </pre>
+    </div>
 
     <p>Implementing the MemoryPool object works similarly for both
       Standard MBeans and MXBeans.</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 public class MemoryPool
         implements MemoryPool<b>MBean</b> {
     public String getName() {...}
     public MemoryUsage getUsage() {...}
     // ...
 }
-          </pre></td>
-        <td><pre>
+        </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 public class MemoryPool
         implements MemoryPool<b>MXBean</b> {
     public String getName() {...}
     public MemoryUsage getUsage() {...}
     // ...
 }
-          </pre></td>
-      </tr>
-    </table>
+        </pre>
+    </div>
 
     <p>Registering the MBean in the MBean Server works in the same way
       in both cases:</p>
 
-    <table class="plain">
-    <caption style="display:none">Standard Bean vs. MXBean</caption>
-      <tr>
-        <th>Standard MBean</th><th>MXBean</th>
-      </tr>
-      <tr>
-        <td><pre>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>Standard MBean</h4>
+        <pre>
 {
     MemoryPool<b>MBean</b> pool = new MemoryPool();
     mbeanServer.{@link MBeanServer#registerMBean
     registerMBean}(pool, objectName);
 }
-          </pre></td>
-        <td><pre>
+        </pre>
+    </div>
+    <div style="display:inline-block; margin: 0 3em">
+        <h4>MXBean</h4>
+        <pre>
 {
     MemoryPool<b>MXBean</b> pool = new MemoryPool();
     mbeanServer.{@link MBeanServer#registerMBean
     registerMBean}(pool, objectName);
 }
-          </pre></td>
-      </tr>
-    </table>
+        </pre>
+    </div>
 
 
     <h2 id="mxbean-def">Definition of an MXBean</h2>
@@ -486,70 +475,71 @@ public class MemoryPool
 
     <table class="striped">
     <caption style="display:none">Type Mapping Rules</caption>
+      <thead>
       <tr>
-        <th>Java type <em>J</em></th>
-        <th><em>opentype(J)</em></th>
-        <th><em>opendata(J)</em></th>
+        <th scope="col">Java type <em>J</em></th>
+        <th scope="col"><em>opentype(J)</em></th>
+        <th scope="col"><em>opendata(J)</em></th>
       </tr>
-      <tbody style="vertical-align:top">
+      </thead>
+      <tbody style="text-align:left; vertical-align:top">
         <tr>
-          <td>{@code int}, {@code boolean}, etc<br>
-            (the 8 primitive Java types)</td>
+          <th scope="row">{@code int}, {@code boolean}, etc<br>
+            (the 8 primitive Java types)</th>
           <td>{@code SimpleType.INTEGER},<br>
             {@code SimpleType.BOOLEAN}, etc</td>
           <td>{@code Integer}, {@code Boolean}, etc<br>
             (the corresponding boxed types)</td>
         </tr>
         <tr>
-          <td>{@code Integer}, {@code ObjectName}, etc<br>
-            (the types covered by {@link SimpleType})</td>
+          <th scope="row">{@code Integer}, {@code ObjectName}, etc<br>
+            (the types covered by {@link SimpleType})</th>
           <td>the corresponding {@code SimpleType}</td>
           <td><em>J</em>, the same type</td>
         </tr>
         <tr>
-          <td>{@code int[]} etc<br>
-            (a one-dimensional array with<br>
-            primitive element type)</td>
+          <th scope="row">{@code int[]} etc<br>
+            (a one-dimensional array with primitive element type)</th>
           <td>{@code ArrayType.getPrimitiveArrayType(int[].class)} etc</td>
           <td><em>J</em>, the same type</td>
         <tr>
-          <td><em>E</em>{@code []}<br>
+          <th scope="row"><em>E</em>{@code []}<br>
             (an array with non-primitive element type <em>E</em>;
-              this includes {@code int[][]}, where <em>E</em> is {@code int[]})</td>
+              this includes {@code int[][]}, where <em>E</em> is {@code int[]})</th>
           <td>{@code ArrayType.getArrayType(}<em>opentype(E)</em>{@code )}</td>
           <td><em>opendata(E)</em>{@code []}</td>
         </tr>
         <tr>
-          <td>{@code List<}<em>E</em>{@code >}<br>
+          <th scope="row">{@code List<}<em>E</em>{@code >}<br>
             {@code Set<}<em>E</em>{@code >}<br>
-            {@code SortedSet<}<em>E</em>{@code >} (see below)</td>
+            {@code SortedSet<}<em>E</em>{@code >} (see below)</th>
           <td>same as for <em>E</em>{@code []}</td>
           <td>same as for <em>E</em>{@code []}</td>
         </tr>
         <tr>
-          <td>An enumeration <em>E</em><br>
+          <th scope="row">An enumeration <em>E</em><br>
             (declared in Java as {@code enum }<em>E</em>
-            {@code {...}})</td>
+            {@code {...}})</th>
           <td>{@code SimpleType.STRING}</td>
           <td>{@code String}</td>
         </tr>
         <tr>
-          <td>{@code Map<}<em>K</em>,<em>V</em>{@code >}<br>
-            {@code SortedMap<}<em>K</em>,<em>V</em>{@code >}</td>
+          <th scope="row">{@code Map<}<em>K</em>,<em>V</em>{@code >}<br>
+            {@code SortedMap<}<em>K</em>,<em>V</em>{@code >}</th>
           <td>{@link TabularType}<br>
             (see below)</td>
           <td>{@link TabularData}<br>
             (see below)</td>
         </tr>
         <tr>
-          <td>An MXBean interface</td>
+          <th scope="row">An MXBean interface</th>
           <td>{@code SimpleType.OBJECTNAME}<br>
             (see below)</td>
           <td>{@link ObjectName}<br>
             (see below)</td>
         </tr>
         <tr>
-          <td>Any other type</td>
+          <th scope="row">Any other type</th>
           <td>{@link CompositeType},
             if possible<br>
             (see below)</td>

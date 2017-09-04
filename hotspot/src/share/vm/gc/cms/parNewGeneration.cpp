@@ -684,7 +684,7 @@ void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
-    assert(obj->is_oop(), "expected an oop while scanning weak refs");
+    assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 
@@ -711,7 +711,7 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
-    assert(obj->is_oop(), "expected an oop while scanning weak refs");
+    assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 

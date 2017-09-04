@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
@@ -96,11 +97,16 @@ class MetaspaceShared : AllStatic {
     return p1 == p2;
   }
   static unsigned obj_hash(oop const& p) {
-    unsigned hash = (unsigned)((uintptr_t)&p);
-    return hash ^ (hash >> LogMinObjAlignment);
+    assert(!p->mark()->has_bias_pattern(),
+           "this object should never have been locked");  // so identity_hash won't safepoin
+    unsigned hash = (unsigned)p->identity_hash();
+    return hash;
   }
   typedef ResourceHashtable<oop, oop,
-      MetaspaceShared::obj_hash, MetaspaceShared::obj_equals> ArchivedObjectCache;
+      MetaspaceShared::obj_hash,
+      MetaspaceShared::obj_equals,
+      15889, // prime number
+      ResourceObj::C_HEAP> ArchivedObjectCache;
   static ArchivedObjectCache* _archive_object_cache;
 
  public:
@@ -115,7 +121,10 @@ class MetaspaceShared : AllStatic {
     NOT_CDS_JAVA_HEAP(return false;)
   }
   static void create_archive_object_cache() {
-    CDS_JAVA_HEAP_ONLY(_archive_object_cache = new ArchivedObjectCache(););
+    CDS_JAVA_HEAP_ONLY(_archive_object_cache = new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache(););
+  }
+  static void destroy_archive_object_cache() {
+    CDS_JAVA_HEAP_ONLY(delete _archive_object_cache; _archive_object_cache = NULL;);
   }
   static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,6 @@ public class TCPChannel implements Channel {
     /** frees cached connections that have expired (guarded by freeList) */
     private Future<?> reaper = null;
 
-    /** using multiplexer (for bi-directional applet communication */
-    private boolean usingMultiplexer = false;
-    /** connection multiplexer, if used */
-    private ConnectionMultiplexer multiplexer = null;
     /** connection acceptor (should be in TCPTransport) */
     private ConnectionAcceptor acceptor;
 
@@ -210,113 +206,99 @@ public class TCPChannel implements Channel {
 
         TCPTransport.tcpLog.log(Log.BRIEF, "create connection");
 
-        if (!usingMultiplexer) {
-            Socket sock = ep.newSocket();
-            conn = new TCPConnection(this, sock);
+        Socket sock = ep.newSocket();
+        conn = new TCPConnection(this, sock);
 
-            try {
-                DataOutputStream out =
-                    new DataOutputStream(conn.getOutputStream());
-                writeTransportHeader(out);
+        try {
+            DataOutputStream out =
+                new DataOutputStream(conn.getOutputStream());
+            writeTransportHeader(out);
 
-                // choose protocol (single op if not reusable socket)
-                if (!conn.isReusable()) {
-                    out.writeByte(TransportConstants.SingleOpProtocol);
-                } else {
-                    out.writeByte(TransportConstants.StreamProtocol);
-                    out.flush();
+            // choose protocol (single op if not reusable socket)
+            if (!conn.isReusable()) {
+                out.writeByte(TransportConstants.SingleOpProtocol);
+            } else {
+                out.writeByte(TransportConstants.StreamProtocol);
+                out.flush();
 
-                    /*
-                     * Set socket read timeout to configured value for JRMP
-                     * connection handshake; this also serves to guard against
-                     * non-JRMP servers that do not respond (see 4322806).
-                     */
-                    int originalSoTimeout = 0;
-                    try {
-                        originalSoTimeout = sock.getSoTimeout();
-                        sock.setSoTimeout(handshakeTimeout);
-                    } catch (Exception e) {
-                        // if we fail to set this, ignore and proceed anyway
-                    }
-
-                    DataInputStream in =
-                        new DataInputStream(conn.getInputStream());
-                    byte ack = in.readByte();
-                    if (ack != TransportConstants.ProtocolAck) {
-                        throw new ConnectIOException(
-                            ack == TransportConstants.ProtocolNack ?
-                            "JRMP StreamProtocol not supported by server" :
-                            "non-JRMP server at remote endpoint");
-                    }
-
-                    String suggestedHost = in.readUTF();
-                    int    suggestedPort = in.readInt();
-                    if (TCPTransport.tcpLog.isLoggable(Log.VERBOSE)) {
-                        TCPTransport.tcpLog.log(Log.VERBOSE,
-                            "server suggested " + suggestedHost + ":" +
-                            suggestedPort);
-                    }
-
-                    // set local host name, if unknown
-                    TCPEndpoint.setLocalHost(suggestedHost);
-                    // do NOT set the default port, because we don't
-                    // know if we can't listen YET...
-
-                    // write out default endpoint to match protocol
-                    // (but it serves no purpose)
-                    TCPEndpoint localEp =
-                        TCPEndpoint.getLocalEndpoint(0, null, null);
-                    out.writeUTF(localEp.getHost());
-                    out.writeInt(localEp.getPort());
-                    if (TCPTransport.tcpLog.isLoggable(Log.VERBOSE)) {
-                        TCPTransport.tcpLog.log(Log.VERBOSE, "using " +
-                            localEp.getHost() + ":" + localEp.getPort());
-                    }
-
-                    /*
-                     * After JRMP handshake, set socket read timeout to value
-                     * configured for the rest of the lifetime of the
-                     * connection.  NOTE: this timeout, if configured to a
-                     * finite duration, places an upper bound on the time
-                     * that a remote method call is permitted to execute.
-                     */
-                    try {
-                        /*
-                         * If socket factory had set a non-zero timeout on its
-                         * own, then restore it instead of using the property-
-                         * configured value.
-                         */
-                        sock.setSoTimeout((originalSoTimeout != 0 ?
-                                           originalSoTimeout :
-                                           responseTimeout));
-                    } catch (Exception e) {
-                        // if we fail to set this, ignore and proceed anyway
-                    }
-
-                    out.flush();
-                }
-            } catch (IOException e) {
+                /*
+                 * Set socket read timeout to configured value for JRMP
+                 * connection handshake; this also serves to guard against
+                 * non-JRMP servers that do not respond (see 4322806).
+                 */
+                int originalSoTimeout = 0;
                 try {
-                    conn.close();
-                } catch (Exception ex) {}
-                if (e instanceof RemoteException) {
-                    throw (RemoteException) e;
-                } else {
+                    originalSoTimeout = sock.getSoTimeout();
+                    sock.setSoTimeout(handshakeTimeout);
+                } catch (Exception e) {
+                    // if we fail to set this, ignore and proceed anyway
+                }
+
+                DataInputStream in =
+                    new DataInputStream(conn.getInputStream());
+                byte ack = in.readByte();
+                if (ack != TransportConstants.ProtocolAck) {
                     throw new ConnectIOException(
-                        "error during JRMP connection establishment", e);
+                        ack == TransportConstants.ProtocolNack ?
+                        "JRMP StreamProtocol not supported by server" :
+                        "non-JRMP server at remote endpoint");
                 }
+
+                String suggestedHost = in.readUTF();
+                int    suggestedPort = in.readInt();
+                if (TCPTransport.tcpLog.isLoggable(Log.VERBOSE)) {
+                    TCPTransport.tcpLog.log(Log.VERBOSE,
+                        "server suggested " + suggestedHost + ":" +
+                        suggestedPort);
+                }
+
+                // set local host name, if unknown
+                TCPEndpoint.setLocalHost(suggestedHost);
+                // do NOT set the default port, because we don't
+                // know if we can't listen YET...
+
+                // write out default endpoint to match protocol
+                // (but it serves no purpose)
+                TCPEndpoint localEp =
+                    TCPEndpoint.getLocalEndpoint(0, null, null);
+                out.writeUTF(localEp.getHost());
+                out.writeInt(localEp.getPort());
+                if (TCPTransport.tcpLog.isLoggable(Log.VERBOSE)) {
+                    TCPTransport.tcpLog.log(Log.VERBOSE, "using " +
+                        localEp.getHost() + ":" + localEp.getPort());
+                }
+
+                /*
+                 * After JRMP handshake, set socket read timeout to value
+                 * configured for the rest of the lifetime of the
+                 * connection.  NOTE: this timeout, if configured to a
+                 * finite duration, places an upper bound on the time
+                 * that a remote method call is permitted to execute.
+                 */
+                try {
+                    /*
+                     * If socket factory had set a non-zero timeout on its
+                     * own, then restore it instead of using the property-
+                     * configured value.
+                     */
+                    sock.setSoTimeout((originalSoTimeout != 0 ?
+                                       originalSoTimeout :
+                                       responseTimeout));
+                } catch (Exception e) {
+                    // if we fail to set this, ignore and proceed anyway
+                }
+
+                out.flush();
             }
-        } else {
+        } catch (IOException e) {
             try {
-                conn = multiplexer.openConnection();
-            } catch (IOException e) {
-                synchronized (this) {
-                    usingMultiplexer = false;
-                    multiplexer = null;
-                }
+                conn.close();
+            } catch (Exception ex) {}
+            if (e instanceof RemoteException) {
+                throw (RemoteException) e;
+            } else {
                 throw new ConnectIOException(
-                    "error opening virtual connection " +
-                    "over multiplexed connection", e);
+                    "error during JRMP connection establishment", e);
             }
         }
         return conn;
@@ -385,28 +367,6 @@ public class TCPChannel implements Channel {
             throw new ConnectIOException(
                 "error writing JRMP transport header", e);
         }
-    }
-
-    /**
-     * Use given connection multiplexer object to obtain new connections
-     * through this channel.
-     */
-    synchronized void useMultiplexer(ConnectionMultiplexer newMultiplexer) {
-        // for now, always just use the last one given
-        multiplexer = newMultiplexer;
-
-        usingMultiplexer = true;
-    }
-
-    /**
-     * Accept a connection provided over a multiplexed channel.
-     */
-    void acceptMultiplexConnection(Connection conn) {
-        if (acceptor == null) {
-            acceptor = new ConnectionAcceptor(tr);
-            acceptor.startNewAcceptor();
-        }
-        acceptor.accept(conn);
     }
 
     /**
@@ -501,7 +461,7 @@ class ConnectionAcceptor implements Runnable {
     public void startNewAcceptor() {
         Thread t = AccessController.doPrivileged(
             new NewThreadAction(ConnectionAcceptor.this,
-                                "Multiplex Accept-" + ++ threadNum,
+                                "TCPChannel Accept-" + ++ threadNum,
                                 true));
         t.start();
     }

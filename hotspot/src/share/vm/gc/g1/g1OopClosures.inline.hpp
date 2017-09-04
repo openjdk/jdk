@@ -107,7 +107,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 #ifdef ASSERT
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   // can't do because of races
-  // assert(obj == NULL || obj->is_oop(), "expected an oop");
+  // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
   assert(check_obj_alignment(obj), "not oop aligned");
   assert(g1->is_in_reserved(obj), "must be in heap");
 

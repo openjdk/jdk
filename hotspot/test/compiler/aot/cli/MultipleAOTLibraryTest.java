@@ -26,7 +26,6 @@
  * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @build compiler.aot.cli.MultipleAOTLibraryTest
  *        compiler.aot.AotCompiler
  * @run driver compiler.aot.AotCompiler

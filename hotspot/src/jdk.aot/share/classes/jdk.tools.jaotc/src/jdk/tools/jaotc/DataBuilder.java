@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ByteContainer;
 import jdk.tools.jaotc.binformat.HeaderContainer;
-import jdk.tools.jaotc.utils.Timer;
+
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
@@ -42,7 +42,7 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.hotspot.VMField;
 
-class DataBuilder {
+final class DataBuilder {
 
     private final Main main;
 
@@ -55,9 +55,9 @@ class DataBuilder {
      */
     private final BinaryContainer binaryContainer;
 
-    private final HashMap<Long, String> vmAddresses = new HashMap<>();
+    private static final HashMap<Long, String> vmAddresses = new HashMap<>();
 
-    public DataBuilder(Main main, HotSpotHostBackend backend, List<AOTCompiledClass> classes, BinaryContainer binaryContainer) {
+    DataBuilder(Main main, HotSpotHostBackend backend, List<AOTCompiledClass> classes, BinaryContainer binaryContainer) {
         this.main = main;
         this.backend = backend;
         this.classes = classes;
@@ -68,7 +68,7 @@ class DataBuilder {
     /**
      * Returns a value-name map of all {@link VMField} fields.
      */
-    private void fillVMAddresses(HotSpotVMConfigStore config) {
+    private static void fillVMAddresses(HotSpotVMConfigStore config) {
         for (VMField vmField : config.getFields().values()) {
             if (vmField.value != null && vmField.value instanceof Long) {
                 final long address = (Long) vmField.value;
@@ -98,7 +98,7 @@ class DataBuilder {
      * @param address native address
      * @return C/C++ functio name associated with the native address
      */
-    public String getVMFunctionNameForAddress(long address) {
+    static String getVMFunctionNameForAddress(long address) {
         return vmAddresses.get(address);
     }
 
@@ -107,7 +107,7 @@ class DataBuilder {
      *
      * @return host backend
      */
-    public HotSpotHostBackend getBackend() {
+    HotSpotHostBackend getBackend() {
         return backend;
     }
 
@@ -116,7 +116,7 @@ class DataBuilder {
      *
      * @return binary container
      */
-    public BinaryContainer getBinaryContainer() {
+    BinaryContainer getBinaryContainer() {
         return binaryContainer;
     }
 
@@ -128,7 +128,7 @@ class DataBuilder {
      * @throws Exception
      */
     @SuppressWarnings("try")
-    public void prepareData(DebugContext debug) throws Exception {
+    void prepareData(DebugContext debug) throws Exception {
         try (Timer t = new Timer(main, "Parsing compiled code")) {
             /*
              * Copy compiled code into code section container and calls stubs (PLT trampoline).
@@ -147,7 +147,7 @@ class DataBuilder {
 
         // Free memory!
         try (Timer t = main.options.verbose ? new Timer(main, "Freeing memory") : null) {
-            main.printMemoryUsage();
+            main.printer.printMemoryUsage();
             System.gc();
         }
 
@@ -163,7 +163,7 @@ class DataBuilder {
 
         // Free memory!
         try (Timer t = main.options.verbose ? new Timer(main, "Freeing memory") : null) {
-            main.printMemoryUsage();
+            main.printer.printMemoryUsage();
             System.gc();
         }
 
@@ -172,7 +172,7 @@ class DataBuilder {
         }
         try (Timer t = new Timer(main, "Preparing compiled binary")) {
             // Should be called after Stubs because they can set dependent klasses.
-            prepareCompiledBinary(metadataBuilder);
+            prepareCompiledBinary();
         }
     }
 
@@ -203,7 +203,7 @@ class DataBuilder {
     /**
      * Prepare metaspace.offsets section.
      */
-    private void prepareCompiledBinary(MetadataBuilder metadataBuilder) {
+    private void prepareCompiledBinary() {
         for (AOTCompiledClass c : classes) {
             // Create records for compiled AOT methods.
             c.putMethodsData(binaryContainer);
@@ -216,8 +216,8 @@ class DataBuilder {
         header.setClassesCount(AOTCompiledClass.getClassesCount());
         header.setMethodsCount(CompiledMethodInfo.getMethodsCount());
         // Record size of got sections
-        ByteContainer bc = binaryContainer.getMetaspaceGotContainer();
-        header.setMetaspaceGotSize((bc.getByteStreamSize() / 8));
+        ByteContainer bc = binaryContainer.getKlassesGotContainer();
+        header.setKlassesGotSize((bc.getByteStreamSize() / 8));
         bc = binaryContainer.getMetadataGotContainer();
         header.setMetadataGotSize((bc.getByteStreamSize() / 8));
         bc = binaryContainer.getOopGotContainer();
@@ -232,7 +232,7 @@ class DataBuilder {
         // them.
         ArrayList<CompiledMethodInfo> compiledStubs = compiledClass.getCompiledMethods();
         int cntStubs = compiledStubs.size();
-        binaryContainer.addMethodsCount(cntStubs, binaryContainer.getStubsOffsetsContainer());
+        BinaryContainer.addMethodsCount(cntStubs, binaryContainer.getStubsOffsetsContainer());
         for (CompiledMethodInfo methodInfo : compiledStubs) {
             // Note, stubs have different offsets container.
             methodInfo.addMethodOffsets(binaryContainer, binaryContainer.getStubsOffsetsContainer());

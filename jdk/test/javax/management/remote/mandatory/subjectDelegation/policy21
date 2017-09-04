@@ -1,4 +1,4 @@
-grant codebase "file:/-" {
+grant {
     permission javax.security.auth.AuthPermission "createLoginContext.JMXPluggableAuthenticator";
     permission java.net.SocketPermission "*:*", "accept,connect,listen,resolve";
     permission java.security.SecurityPermission "createAccessControlContext";

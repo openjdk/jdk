@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package jdk.tools.jaotc.binformat;
 /**
  * A container that holds information about code section. This is simply a ByteContainer.
  */
-public class CodeContainer extends ByteContainer {
+public final class CodeContainer extends ByteContainer {
 
     public CodeContainer(String containerName, SymbolTable symbolTable) {
         super(containerName, symbolTable);

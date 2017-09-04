@@ -33,7 +33,7 @@ class UTF_16LE_BOM extends Unicode
 {
 
     public UTF_16LE_BOM() {
-        super("x-UTF-16LE-BOM", StandardCharsets.aliases_UTF_16LE_BOM);
+        super("x-UTF-16LE-BOM", StandardCharsets.aliases_UTF_16LE_BOM());
     }
 
     public String historicalName() {

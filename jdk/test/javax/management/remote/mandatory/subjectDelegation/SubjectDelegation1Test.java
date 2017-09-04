@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,17 +65,6 @@ import javax.security.auth.Subject;
 public class SubjectDelegation1Test {
 
     public static void main(String[] args) throws Exception {
-        // Check for supported operating systems: Solaris
-        //
-        // This test runs only on Solaris due to CR 6285916
-        //
-        String osName = System.getProperty("os.name");
-        System.out.println("os.name = " + osName);
-        if (!osName.equals("SunOS")) {
-            System.out.println("This test runs on Solaris only.");
-            System.out.println("Bye! Bye!");
-            return;
-        }
         String policyFile = args[0];
         String testResult = args[1];
         System.out.println("Policy file = " + policyFile);

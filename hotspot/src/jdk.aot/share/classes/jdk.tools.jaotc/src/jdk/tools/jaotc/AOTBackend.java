@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.TriState;
 
-public class AOTBackend {
+final class AOTBackend {
     private final Main main;
     private final OptionValues graalOptions;
     private final HotSpotBackend backend;
@@ -60,28 +60,26 @@ public class AOTBackend {
     private final HotSpotCodeCacheProvider codeCache;
     private final PhaseSuite<HighTierContext> graphBuilderSuite;
     private final HighTierContext highTierContext;
-    private final GraalFilters filters;
 
-    public AOTBackend(Main main, OptionValues graalOptions, HotSpotBackend backend, GraalFilters filters) {
+    AOTBackend(Main main, OptionValues graalOptions, HotSpotBackend backend) {
         this.main = main;
         this.graalOptions = graalOptions;
         this.backend = backend;
-        this.filters = filters;
         providers = backend.getProviders();
         codeCache = providers.getCodeCache();
         graphBuilderSuite = initGraphBuilderSuite(backend, main.options.compileWithAssertions);
         highTierContext = new HighTierContext(providers, graphBuilderSuite, OptimisticOptimizations.ALL);
     }
 
-    public PhaseSuite<HighTierContext> getGraphBuilderSuite() {
+    PhaseSuite<HighTierContext> getGraphBuilderSuite() {
         return graphBuilderSuite;
     }
 
-    public HotSpotBackend getBackend() {
+    HotSpotBackend getBackend() {
         return backend;
     }
 
-    public HotSpotProviders getProviders() {
+    HotSpotProviders getProviders() {
         return providers;
     }
 
@@ -96,7 +94,7 @@ public class AOTBackend {
     }
 
     @SuppressWarnings("try")
-    public CompilationResult compileMethod(ResolvedJavaMethod resolvedMethod, DebugContext debug) {
+    CompilationResult compileMethod(ResolvedJavaMethod resolvedMethod, DebugContext debug) {
         StructuredGraph graph = buildStructuredGraph(resolvedMethod, debug);
         if (graph != null) {
             return compileGraph(resolvedMethod, graph, debug);
@@ -118,7 +116,7 @@ public class AOTBackend {
             graphBuilderSuite.apply(graph, highTierContext);
             return graph;
         } catch (Throwable e) {
-            handleError(javaMethod, e, " (building graph)");
+            main.handleError(javaMethod, e, " (building graph)");
         }
         return null;
     }
@@ -135,18 +133,9 @@ public class AOTBackend {
                             compilationResult, CompilationResultBuilderFactory.Default);
 
         } catch (Throwable e) {
-            handleError(resolvedMethod, e, " (compiling graph)");
+            main.handleError(resolvedMethod, e, " (compiling graph)");
         }
         return null;
-    }
-
-    /**
-     * Returns whether the VM is a debug build.
-     *
-     * @return true is debug VM, false otherwise
-     */
-    public boolean isDebugVM() {
-        return backend.getRuntime().getVMConfig().cAssertions;
     }
 
     private static PhaseSuite<HighTierContext> initGraphBuilderSuite(HotSpotBackend backend, boolean compileWithAssertions) {
@@ -165,39 +154,12 @@ public class AOTBackend {
         return graphBuilderSuite;
     }
 
-    private void handleError(ResolvedJavaMethod resolvedMethod, Throwable e, String message) {
-        String methodName = MiscUtils.uniqueMethodName(resolvedMethod);
-
-        if (main.options.debug) {
-            main.printError("Failed compilation: " + methodName + ": " + e);
-        }
-
-        // Ignore some exceptions when meta-compiling Graal.
-        if (filters.shouldIgnoreException(e)) {
-            return;
-        }
-
-        Main.writeLog("Failed compilation of method " + methodName + message);
-
-        if (!main.options.debug) {
-            main.printError("Failed compilation: " + methodName + ": " + e);
-        }
-
-        if (main.options.verbose) {
-            e.printStackTrace(main.log);
-        }
-
-        if (main.options.exitOnError) {
-            System.exit(1);
-        }
-    }
-
-    public void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
+    void printCompiledMethod(HotSpotResolvedJavaMethod resolvedMethod, CompilationResult compResult) {
         // This is really not installing the method.
         InstalledCode installedCode = codeCache.addCode(resolvedMethod, HotSpotCompiledCodeBuilder.createCompiledCode(codeCache, null, null, compResult), null, null);
         String disassembly = codeCache.disassemble(installedCode);
         if (disassembly != null) {
-            main.printlnDebug(disassembly);
+            main.printer.printlnDebug(disassembly);
         }
     }
 }

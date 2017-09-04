@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4868820
  * @key intermittent
  * @summary IPv6 support for Windows XP and 2003 server
+ * @run main TcpTest -d
  */
 
 import java.net.*;
@@ -126,6 +127,9 @@ public class TcpTest extends Tests {
         } catch (IOException e) { }
         server.close ();
         c1.close ();
+        if (c2 != null) {
+            c2.close();
+        }
 
         /* now try IPv6 only */
 
@@ -137,11 +141,15 @@ public class TcpTest extends Tests {
 
         c1 = new Socket (ia6addr, port);
         try {
+            dprintln ("connecting to " + ia4addr);
             c2 = new Socket (ia4addr, port);
             throw new RuntimeException ("connect to IPv4 address should be refused");
         } catch (IOException e) { }
         server.close ();
         c1.close ();
+        if (c2 != null) {
+            c2.close();
+        }
 
         System.out.println ("Test2: OK");
     }

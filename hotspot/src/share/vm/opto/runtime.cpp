@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1563,7 +1563,7 @@ const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
 
 
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThread* thread))
-  assert(obj->is_oop(), "must be a valid oop");
+  assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END

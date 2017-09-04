@@ -158,7 +158,7 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
                 }
                 break;
             default:
-                throw GraalError.shouldNotReachHere();
+                throw GraalError.shouldNotReachHere(input.getPlatformKind().toString());
         }
         return result;
     }
@@ -451,7 +451,7 @@ public class AMD64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implemen
     protected Value emitZeroExtendMemory(AMD64Kind memoryKind, int resultBits, AMD64AddressValue address, LIRFrameState state) {
         // Issue a zero extending load of the proper bit size and set the result to
         // the proper kind.
-        Variable result = getLIRGen().newVariable(LIRKind.value(resultBits == 32 ? AMD64Kind.DWORD : AMD64Kind.QWORD));
+        Variable result = getLIRGen().newVariable(LIRKind.value(resultBits <= 32 ? AMD64Kind.DWORD : AMD64Kind.QWORD));
         switch (memoryKind) {
             case BYTE:
                 getLIRGen().append(new AMD64Unary.MemoryOp(MOVZXB, DWORD, result, address, state));
