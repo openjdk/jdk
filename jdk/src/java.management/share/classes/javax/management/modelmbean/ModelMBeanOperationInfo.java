@@ -61,32 +61,36 @@ import javax.management.RuntimeOperationsException;
  *
  * <table class="striped">
  * <caption style="display:none">ModelMBeanOperationInfo Fields</caption>
- * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
- * <tr><td>name</td><td>String</td>
+ * <thead>
+ * <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Meaning</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">name</th><td>String</td>
  *     <td>Operation name.</td></tr>
- * <tr><td>descriptorType</td><td>String</td>
+ * <tr><th scope="row">descriptorType</th><td>String</td>
  *     <td>Must be "operation".</td></tr>
- * <tr><td>class</td><td>String</td>
+ * <tr><th scope="row">class</th><td>String</td>
  *     <td>Class where method is defined (fully qualified).</td></tr>
- * <tr><td>role</td><td>String</td>
+ * <tr><th scope="row">role</th><td>String</td>
  *     <td>Must be "operation", "getter", or "setter".</td></tr>
- * <tr><td>targetObject</td><td>Object</td>
+ * <tr><th scope="row">targetObject</th><td>Object</td>
  *     <td>Object on which to execute this method.</td></tr>
- * <tr><td>targetType</td><td>String</td>
+ * <tr><th scope="row">targetType</th><td>String</td>
  *     <td>type of object reference for targetObject. Can be:
  *         ObjectReference | Handle | EJBHandle | IOR | RMIReference.</td></tr>
- * <tr><td>value</td><td>Object</td>
+ * <tr><th scope="row">value</th><td>Object</td>
  *     <td>Cached value for operation.</td></tr>
- * <tr><td>displayName</td><td>String</td>
+ * <tr><th scope="row">displayName</th><td>String</td>
  *     <td>Human readable display name of the operation.</td>
- * <tr><td>currencyTimeLimit</td><td>Number</td>
+ * <tr><th scope="row">currencyTimeLimit</th><td>Number</td>
  *     <td>How long cached value is valid.</td></tr>
- * <tr><td>lastUpdatedTimeStamp</td><td>Number</td>
+ * <tr><th scope="row">lastUpdatedTimeStamp</th><td>Number</td>
  *     <td>When cached value was set.</td></tr>
- * <tr><td>visibility</td><td>Number</td>
+ * <tr><th scope="row">visibility</th><td>Number</td>
  *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
- * <tr><td>presentationString</td><td>String</td>
+ * <tr><th scope="row">presentationString</th><td>String</td>
  *     <td>XML formatted string to describe how to present operation</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>The default descriptor will have name, descriptorType, displayName and

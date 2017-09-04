@@ -1318,8 +1318,6 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   int vtable_index = Method::invalid_vtable_index;
   methodHandle selected_method;
 
-  assert(recv.is_null() || recv->is_oop(), "receiver is not an oop");
-
   // runtime method resolution
   if (check_null_and_abstract && recv.is_null()) { // check if receiver exists
     THROW(vmSymbols::java_lang_NullPointerException());

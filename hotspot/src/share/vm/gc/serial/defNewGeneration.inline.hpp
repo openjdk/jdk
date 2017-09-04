@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
     // as a weak reference.
     assert (!oopDesc::is_null(*p), "expected non-null ref");
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
-    assert (obj->is_oop(), "expected an oop while scanning weak refs");
+    assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 
@@ -74,7 +74,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
     // as a weak reference.
     assert (!oopDesc::is_null(*p), "expected non-null ref");
     oop obj = oopDesc::load_decode_heap_oop_not_null(p);
-    assert (obj->is_oop(), "expected an oop while scanning weak refs");
+    assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 

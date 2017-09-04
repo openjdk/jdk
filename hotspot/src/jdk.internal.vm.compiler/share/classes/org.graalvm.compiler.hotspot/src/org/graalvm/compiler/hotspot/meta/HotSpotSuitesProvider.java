@@ -25,6 +25,7 @@ package org.graalvm.compiler.hotspot.meta;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import static org.graalvm.compiler.core.common.GraalOptions.VerifyPhases;
+import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 
 import java.util.ListIterator;
 
@@ -98,10 +99,12 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
                 midTierLowering.add(new ReplaceConstantNodesPhase());
 
                 // Replace inlining policy
-                ListIterator<BasePhase<? super HighTierContext>> iter = ret.getHighTier().findPhase(InliningPhase.class);
-                InliningPhase inlining = (InliningPhase) iter.previous();
-                CanonicalizerPhase canonicalizer = inlining.getCanonicalizer();
-                iter.set(new InliningPhase(new AOTInliningPolicy(null), canonicalizer));
+                if (Inline.getValue(options)) {
+                    ListIterator<BasePhase<? super HighTierContext>> iter = ret.getHighTier().findPhase(InliningPhase.class);
+                    InliningPhase inlining = (InliningPhase) iter.previous();
+                    CanonicalizerPhase canonicalizer = inlining.getCanonicalizer();
+                    iter.set(new InliningPhase(new AOTInliningPolicy(null), canonicalizer));
+                }
             }
         }
 

@@ -40,20 +40,12 @@ import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.test.SubprocessUtil;
 import org.graalvm.compiler.test.SubprocessUtil.Subprocess;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
 /**
  * Tests support for dumping graphs and other info useful for debugging a compiler crash.
  */
 public class CompilationWrapperTest extends GraalCompilerTest {
-    public CompilationWrapperTest() {
-        try {
-            Class.forName("java.lang.management.ManagementFactory");
-        } catch (ClassNotFoundException ex) {
-            Assume.assumeNoException("skip this test if there is no java.management JDK9 module around", ex);
-        }
-    }
 
     /**
      * Tests compilation requested by the VM.

@@ -57,7 +57,7 @@ public final class ExplodeLoopNode extends FixedWithNextNode {
             for (Node n : currentNext.cfgSuccessors()) {
                 succs.add(n);
             }
-            if (succs.size() == 1) {
+            if (succs.size() == 1 && succs.get(0) != currentNext) {
                 currentNext = succs.get(0);
             } else {
                 return null;

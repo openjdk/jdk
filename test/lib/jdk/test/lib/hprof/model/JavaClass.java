@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,7 +403,8 @@ public class JavaClass extends JavaHeapObject {
     /**
      * @return the size of this object
      */
-    public int getSize() {
+    @Override
+    public long getSize() {
         JavaClass cl = mySnapshot.getJavaLangClass();
         if (cl == null) {
             return 0;

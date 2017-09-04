@@ -82,7 +82,7 @@ public class GetClassInitializerTest {
         System.out.println(tcase);
         String className = tcase.holder.getName();
         HotSpotResolvedObjectType resolvedClazz = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.holder),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.holder),
                         getClass(), /* resolve = */ true);
         HotSpotResolvedJavaMethod initializer = CompilerToVMHelper
                 .getClassInitializer(resolvedClazz);

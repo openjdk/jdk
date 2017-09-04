@@ -52,7 +52,7 @@ import java.nio.charset.CodingErrorAction;
 class CESU_8 extends Unicode
 {
     public CESU_8() {
-        super("CESU-8", StandardCharsets.aliases_CESU_8);
+        super("CESU-8", StandardCharsets.aliases_CESU_8());
     }
 
     public String historicalName() {

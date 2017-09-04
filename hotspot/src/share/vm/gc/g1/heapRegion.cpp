@@ -610,7 +610,7 @@ public:
           LogStream ls(log.error());
           _containing_obj->print_on(&ls);
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
-          if (obj->is_oop()) {
+          if (oopDesc::is_oop(obj)) {
             obj->print_on(&ls);
           }
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
@@ -657,7 +657,7 @@ void HeapRegion::verify(VerifyOption vo,
     object_num += 1;
 
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
-      if (obj->is_oop()) {
+      if (oopDesc::is_oop(obj)) {
         Klass* klass = obj->klass();
         bool is_metaspace_object = Metaspace::contains(klass) ||
                                    (vo == VerifyOption_G1UsePrevMarking &&
@@ -803,7 +803,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
     size_t obj_size = block_size(p);
 
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
-      if (obj->is_oop()) {
+      if (oopDesc::is_oop(obj)) {
         vr_cl.set_containing_obj(obj);
         obj->oop_iterate_no_header(&vr_cl);
 

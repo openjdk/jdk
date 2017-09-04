@@ -47,9 +47,9 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * Method handles are dynamically and strongly typed according to their parameter and return types.
  * They are not distinguished by the name or the defining class of their underlying methods.
  * A method handle must be invoked using a symbolic type descriptor which matches
- * the method handle's own {@linkplain #type type descriptor}.
+ * the method handle's own {@linkplain #type() type descriptor}.
  * <p>
- * Every method handle reports its type descriptor via the {@link #type type} accessor.
+ * Every method handle reports its type descriptor via the {@link #type() type} accessor.
  * This type descriptor is a {@link java.lang.invoke.MethodType MethodType} object,
  * whose structure is a series of classes, one of which is
  * the return type of the method (or {@code void.class} if none).
@@ -468,7 +468,7 @@ public abstract class MethodHandle {
     /**
      * Invokes the method handle, allowing any caller type descriptor, but requiring an exact type match.
      * The symbolic type descriptor at the call site of {@code invokeExact} must
-     * exactly match this method handle's {@link #type type}.
+     * exactly match this method handle's {@link #type() type}.
      * No conversions are allowed on arguments or return values.
      * <p>
      * When this method is observed via the Core Reflection API,
@@ -489,7 +489,7 @@ public abstract class MethodHandle {
      * Invokes the method handle, allowing any caller type descriptor,
      * and optionally performing conversions on arguments and return values.
      * <p>
-     * If the call site's symbolic type descriptor exactly matches this method handle's {@link #type type},
+     * If the call site's symbolic type descriptor exactly matches this method handle's {@link #type() type},
      * the call proceeds as if by {@link #invokeExact invokeExact}.
      * <p>
      * Otherwise, the call proceeds as if this method handle were first

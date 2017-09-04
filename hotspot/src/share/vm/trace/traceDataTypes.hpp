@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <stddef.h>
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
 enum {
   CONTENT_TYPE_NONE             = 0,
@@ -54,10 +55,11 @@ enum ReservedEvent {
   NUM_RESERVED_EVENTS = JVM_CONTENT_TYPES_END
 };
 
-typedef enum ReservedEvent ReservedEvent;
-
 typedef u8 traceid;
 
+class ClassLoaderData;
+class Klass;
+class Method;
 class ModuleEntry;
 class PackageEntry;
 class Symbol;

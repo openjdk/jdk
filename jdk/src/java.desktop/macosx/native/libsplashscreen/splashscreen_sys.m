@@ -192,7 +192,7 @@ SplashInitPlatform(Splash * splash) {
 
     
     //TODO: the following is too much of a hack but should work in 90% cases.
-    //      besides we don't use device-dependant drawing, so probably
+    //      besides we don't use device-dependent drawing, so probably
     //      that's very fine indeed
     splash->byteAlignment = 1;
     initFormat(&splash->screenFormat, 0xff << 8,
