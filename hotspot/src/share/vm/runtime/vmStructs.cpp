@@ -83,6 +83,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -235,7 +236,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
   nonstatic_field(ConstantPool,                _resolved_klasses,                             Array<Klass*>*)                        \
   nonstatic_field(ConstantPool,                _length,                                       int)                                   \
-  nonstatic_field(ConstantPoolCache,           _resolved_references,                          jobject)                               \
+  nonstatic_field(ConstantPoolCache,           _resolved_references,                          OopHandle)                             \
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
@@ -1438,6 +1439,7 @@ typedef RehashableHashtable<Symbol*, mtSymbol>   RehashableSymbolHashtable;
   declare_oop_type(oop)                                                   \
   declare_oop_type(narrowOop)                                             \
   declare_oop_type(typeArrayOop)                                          \
+  declare_oop_type(OopHandle)                                             \
                                                                           \
   /*************************************/                                 \
   /* MethodOop-related data structures */                                 \

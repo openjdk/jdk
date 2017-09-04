@@ -68,6 +68,8 @@ public final class AArch64ArrayEqualsOp extends AArch64LIRInstruction {
 
     public AArch64ArrayEqualsOp(LIRGeneratorTool tool, JavaKind kind, Value result, Value array1, Value array2, Value length) {
         super(TYPE);
+
+        assert !kind.isNumericFloat() : "Float arrays comparison (bitwise_equal || both_NaN) isn't supported";
         this.kind = kind;
 
         Class<?> arrayClass = Array.newInstance(kind.toJavaClass(), 0).getClass();

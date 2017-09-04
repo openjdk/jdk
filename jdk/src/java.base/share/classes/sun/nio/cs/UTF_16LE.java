@@ -33,7 +33,7 @@ class UTF_16LE extends Unicode
 {
 
     public UTF_16LE() {
-        super("UTF-16LE", StandardCharsets.aliases_UTF_16LE);
+        super("UTF-16LE", StandardCharsets.aliases_UTF_16LE());
     }
 
     public String historicalName() {

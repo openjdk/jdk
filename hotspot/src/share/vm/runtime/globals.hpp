@@ -715,9 +715,6 @@ public:
   product(bool, PrintVMQWaitTime, false,                                    \
           "Print out the waiting time in VM operation queue")               \
                                                                             \
-  develop(bool, TraceOopMapGeneration, false,                               \
-          "Show OopMapGeneration")                                          \
-                                                                            \
   product(bool, MethodFlushing, true,                                       \
           "Reclamation of zombie and not-entrant methods")                  \
                                                                             \

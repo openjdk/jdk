@@ -59,7 +59,7 @@ import sun.nio.cs.*;
 
 public class SJIS_0213 extends Charset {
     public SJIS_0213() {
-        super("x-SJIS_0213", ExtendedCharsets.aliasesFor("SJIS_0213"));
+        super("x-SJIS_0213", ExtendedCharsets.aliasesFor("x-SJIS_0213"));
     }
 
     public boolean contains(Charset cs) {

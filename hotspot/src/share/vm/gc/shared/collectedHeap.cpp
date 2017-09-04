@@ -350,7 +350,7 @@ void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
       assert(is_in(old_obj), "Not in allocated heap");
       assert(!can_elide_initializing_store_barrier(old_obj),
              "Else should have been filtered in new_store_pre_barrier()");
-      assert(old_obj->is_oop(true), "Not an oop");
+      assert(oopDesc::is_oop(old_obj, true), "Not an oop");
       assert(deferred.word_size() == (size_t)(old_obj->size()),
              "Mismatch: multiple objects?");
     }

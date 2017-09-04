@@ -39,7 +39,7 @@ inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, uint tid) {
 
 #ifdef ASSERT
   // can't do because of races
-  // assert(obj == NULL || obj->is_oop(), "expected an oop");
+  // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
   assert(check_obj_alignment(obj), "not oop aligned");
   assert(_g1->is_in_reserved(obj), "must be in heap");
 #endif // ASSERT

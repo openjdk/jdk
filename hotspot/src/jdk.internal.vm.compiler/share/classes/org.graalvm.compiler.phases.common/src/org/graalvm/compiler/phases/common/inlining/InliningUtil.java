@@ -30,6 +30,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
@@ -351,7 +352,7 @@ public class InliningUtil extends ValueMergeUtil {
             }
         }
 
-        updateSourcePositions(invoke, inlineGraph, duplicates);
+        updateSourcePositions(invoke, inlineGraph, duplicates, !Objects.equals(inlineGraph.method(), inlineeMethod));
         if (stateAfter != null) {
             processFrameStates(invoke, inlineGraph, duplicates, stateAtExceptionEdge, returnNodes.size() > 1);
             int callerLockDepth = stateAfter.nestedLockDepth();
@@ -569,14 +570,14 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     @SuppressWarnings("try")
-    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates) {
+    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, boolean isSubstitution) {
         if (inlineGraph.mayHaveNodeSourcePosition() && invoke.stateAfter() != null) {
             if (invoke.asNode().getNodeSourcePosition() == null) {
                 // Temporarily ignore the assert below.
                 return;
             }
 
-            JavaConstant constantReceiver = invoke.getInvokeKind().hasReceiver() ? invoke.getReceiver().asJavaConstant() : null;
+            JavaConstant constantReceiver = invoke.getInvokeKind().hasReceiver() && !isSubstitution ? invoke.getReceiver().asJavaConstant() : null;
             NodeSourcePosition invokePos = invoke.asNode().getNodeSourcePosition();
             assert invokePos != null : "missing source information";
 

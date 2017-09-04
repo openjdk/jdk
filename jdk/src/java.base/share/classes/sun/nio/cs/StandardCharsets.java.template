@@ -33,6 +33,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.action.GetPropertyAction;
 
 public class StandardCharsets extends CharsetProvider {
@@ -43,29 +45,50 @@ public class StandardCharsets extends CharsetProvider {
     _INCLUDE_CACHE_MAP_
 
     // Maps canonical names to class names
-    private final Map<String,String> classMap;
+    private @Stable Map<String,String> classMap;
+
     // Maps alias names to canonical names
-    private final Map<String,String> aliasMap;
+    private @Stable Map<String,String> aliasMap;
+
     // Maps canonical names to cached instances
-    private final Map<String,Charset> cache;
+    private @Stable Map<String,Charset> cache;
 
-    private static final String packagePrefix = "sun.nio.cs";
-
-    public static final String US_ASCII = "US-ASCII";
-
-    public static final String ISO_8859_1 = "ISO-8859-1";
-
-    public static final String UTF_8 = "UTF-8";
+    private static final String packagePrefix = "sun.nio.cs.";
 
     public StandardCharsets() {
-        this.aliasMap = new Aliases();
-        this.classMap = new Classes();
-        this.cache = new Cache();
     }
 
     private String canonicalize(String csn) {
-        String acn = aliasMap.get(csn);
+        String acn = aliasMap().get(csn);
         return (acn != null) ? acn : csn;
+    }
+
+    private Map<String,String> aliasMap() {
+        Map<String,String> map = aliasMap;
+        if (map == null) {
+            aliasMap = map = new Aliases();
+        }
+        return map;
+    }
+
+    private Map<String,String> classMap() {
+        Map<String,String> map = classMap;
+        if (map == null) {
+            classMap = map = new Classes();
+        }
+        return map;
+    }
+
+    private Map<String,Charset> cache() {
+        Map<String,Charset> map = cache;
+        if (map == null) {
+            map = new Cache();
+            map.put("utf-8", UTF_8.INSTANCE);
+            map.put("iso-8859-1", ISO_8859_1.INSTANCE);
+            map.put("us-ascii", US_ASCII.INSTANCE);
+            cache = map;
+        }
+        return map;
     }
 
     // Private ASCII-only version, optimized for interpretation during startup
@@ -82,47 +105,47 @@ public class StandardCharsets extends CharsetProvider {
         }
         if (allLower)
             return s;
-        char[] ca = new char[n];
+        StringBuilder sb = new StringBuilder(n);
         for (int i = 0; i < n; i++) {
             int c = s.charAt(i);
             if (((c - 'A') | ('Z' - c)) >= 0)
-                ca[i] = (char)(c + 0x20);
+                sb.append((char)(c + 0x20));
             else
-                ca[i] = (char)c;
+                sb.append((char)c);
         }
-        return new String(ca);
+        return sb.toString();
     }
 
     private Charset lookup(String charsetName) {
         init();
-        String csn = canonicalize(toLower(charsetName));
+
+        // By checking these built-ins we can avoid initializing Aliases and
+        // Classes eagerly during bootstrap
+        String csn;
+        if (charsetName.equals("UTF-8")) {
+            return UTF_8.INSTANCE;
+        } else if (charsetName.equals("US-ASCII")) {
+            return US_ASCII.INSTANCE;
+        } else if (charsetName.equals("ISO-8859-1")) {
+            return ISO_8859_1.INSTANCE;
+        } else {
+            csn = canonicalize(toLower(charsetName));
+        }
 
         // Check cache first
-        Charset cs = cache.get(csn);
+        Charset cs = cache().get(csn);
         if (cs != null)
             return cs;
 
         // Do we even support this charset?
-        String cln = classMap.get(csn);
+        String cln = classMap().get(csn);
         if (cln == null)
             return null;
-
-        // As all charset class names added to classMap are string literals we
-        // can check identity here as an optimization
-        if (cln == US_ASCII) {
-            return cache(csn, new US_ASCII());
-        }
-        if (cln == ISO_8859_1) {
-            return cache(csn, new ISO_8859_1());
-        }
-        if (cln == UTF_8) {
-            return cache(csn, new UTF_8());
-        }
 
         // Instantiate the charset and cache it
         try {
             @SuppressWarnings("deprecation")
-            Object o = Class.forName(packagePrefix + "." + cln,
+            Object o = Class.forName(packagePrefix + cln,
                                      true,
                                      this.getClass().getClassLoader()).newInstance();
             return cache(csn, (Charset)o);
@@ -134,23 +157,28 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private Charset cache(String csn, Charset cs) {
-        cache.put(csn, cs);
+        cache().put(csn, cs);
         return cs;
     }
 
     public final Charset charsetForName(String charsetName) {
         synchronized (this) {
-            return lookup(canonicalize(charsetName));
+            return lookup(charsetName);
         }
     }
 
     public final Iterator<Charset> charsets() {
+        Set<String> charsetNames;
         synchronized (this) {
             init();
+            // Ensure initialized in synchronized block
+            charsetNames = classMap().keySet();
+            aliasMap();
+            cache();
         }
         return new Iterator<Charset>() {
 
-                Iterator<String> i = classMap.keySet().iterator();
+                Iterator<String> i = charsetNames.iterator();
 
                 public boolean hasNext() {
                     return i.hasNext();
@@ -181,6 +209,8 @@ public class StandardCharsets extends CharsetProvider {
 
         String map = GetPropertyAction.privilegedGetProperty("sun.nio.cs.map");
         if (map != null) {
+            Map<String,String> aliasMap = aliasMap();
+            Map<String,String> classMap = classMap();
             String[] maps = map.split(",");
             for (int i = 0; i < maps.length; i++) {
                 if (maps[i].equalsIgnoreCase("Windows-31J/Shift_JIS")) {
@@ -207,7 +237,7 @@ public class StandardCharsets extends CharsetProvider {
                     for (String alias : aliases_MS932) {
                         aliasMap.put(toLower(alias), "windows-31j");
                     }
-                    cache.put("shift_jis", null);
+                    cache().put("shift_jis", null);
                     break;
                 }
             }

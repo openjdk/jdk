@@ -167,40 +167,44 @@ public interface ModelMBeanInfo
      *
      * <table class="striped">
      * <caption style="display:none">ModelMBean Fields</caption>
-     * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
-     * <tr><td>name</td><td>String</td>
+     * <thead>
+     * <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Meaning</th></tr>
+     * </thead>
+     * <tbody style="text-align:left">
+     * <tr><th scope="row">name</th><td>String</td>
      *     <td>MBean name.</td></tr>
-     * <tr><td>descriptorType</td><td>String</td>
+     * <tr><th scope="row">descriptorType</th><td>String</td>
      *     <td>Must be "mbean".</td></tr>
-     * <tr><td>displayName</td><td>String</td>
+     * <tr><th scope="row">displayName</th><td>String</td>
      *     <td>Name of MBean to be used in displays.</td></tr>
-     * <tr><td>persistPolicy</td><td>String</td>
+     * <tr><th scope="row">persistPolicy</th><td>String</td>
      *     <td>One of: OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never.
      *         See the section "MBean Descriptor Fields" in the JMX specification
      *         document.</td></tr>
-     * <tr><td>persistLocation</td><td>String</td>
+     * <tr><th scope="row">persistLocation</th><td>String</td>
      *     <td>The fully qualified directory name where the MBean should be
      *         persisted (if appropriate).</td></tr>
-     * <tr><td>persistFile</td><td>String</td>
+     * <tr><th scope="row">persistFile</th><td>String</td>
      *     <td>File name into which the MBean should be persisted.</td></tr>
-     * <tr><td>persistPeriod</td><td>Number</td>
+     * <tr><th scope="row">persistPeriod</th><td>Number</td>
      *     <td>Frequency of persist cycle in seconds, for OnTime and
      *         NoMoreOftenThan PersistPolicy</td></tr>
-     * <tr><td>currencyTimeLimit</td><td>Number</td>
+     * <tr><th scope="row">currencyTimeLimit</th><td>Number</td>
      *     <td>How long cached value is valid: &lt;0 never, =0 always,
      *         &gt;0 seconds.</td></tr>
-     * <tr><td>log</td><td>String</td>
+     * <tr><th scope="row">log</th><td>String</td>
      *     <td>t: log all notifications, f: log no notifications.</td></tr>
-     * <tr><td>logfile</td><td>String</td>
+     * <tr><th scope="row">logfile</th><td>String</td>
      *     <td>Fully qualified filename to log events to.</td></tr>
-     * <tr><td>visibility</td><td>Number</td>
+     * <tr><th scope="row">visibility</th><td>Number</td>
      *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
-     * <tr><td>export</td><td>String</td>
+     * <tr><th scope="row">export</th><td>String</td>
      *     <td>Name to be used to export/expose this MBean so that it is
      *         findable by other JMX Agents.</td></tr>
-     * <tr><td>presentationString</td><td>String</td>
+     * <tr><th scope="row">presentationString</th><td>String</td>
      *     <td>XML formatted string to allow presentation of data to be
      *         associated with the MBean.</td></tr>
+     * </tbody>
      * </table>
      *
      * <P>

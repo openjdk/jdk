@@ -25,17 +25,16 @@ package jdk.tools.jaotc.binformat.pecoff;
 
 /**
  *
- * Support for the creation of Coff files.
- * Current support is limited to 64 bit x86_64.
+ * Support for the creation of Coff files. Current support is limited to 64 bit x86_64.
  *
  */
 
-public class PECoff {
-
+final class PECoff {
+    //@formatter:off
     /**
      * IMAGE_FILE_HEADER structure defines
      */
-    public enum IMAGE_FILE_HEADER {
+    enum IMAGE_FILE_HEADER {
                      Machine( 0, 2),
             NumberOfSections( 2, 2),
                TimeDateStamp( 4, 4),
@@ -44,15 +43,15 @@ public class PECoff {
         SizeOfOptionalHeader(16, 2),
              Characteristics(18, 2);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         IMAGE_FILE_HEADER(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 20;
+        static int totalsize = 20;
 
         /**
          * IMAGE_FILE_HEADER defines
@@ -61,15 +60,15 @@ public class PECoff {
         /**
          * Machine
          */
-        public static final char IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
-        public static final char IMAGE_FILE_MACHINE_AMD64   = 0x8664;
+        static final char IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
+        static final char IMAGE_FILE_MACHINE_AMD64   = 0x8664;
 
     }
 
     /**
      * IMAGE_SECTION_HEADER structure defines
      */
-    public enum IMAGE_SECTION_HEADER {
+    enum IMAGE_SECTION_HEADER {
                         Name( 0, 8),
              PhysicalAddress( 8, 4),
                  VirtualSize( 8, 4),
@@ -82,15 +81,15 @@ public class PECoff {
          NumberOfLinenumbers(34, 2),
              Characteristics(36, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         IMAGE_SECTION_HEADER(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 40;
+        static int totalsize = 40;
 
         /**
          * IMAGE_SECTION_HEADER defines
@@ -99,29 +98,33 @@ public class PECoff {
         /**
          * Characteristics
          */
-        public static final int IMAGE_SCN_CNT_CODE               = 0x20;
-        public static final int IMAGE_SCN_CNT_INITIALIZED_DATA   = 0x40;
-        public static final int IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x80;
-        public static final int IMAGE_SCN_LNK_COMDAT             = 0x1000;
-        public static final int IMAGE_SCN_LNK_INFO               = 0x200;
-        public static final int IMAGE_SCN_LNK_REMOVE             = 0x800;
+        static final int IMAGE_SCN_CNT_CODE               = 0x20;
+        static final int IMAGE_SCN_CNT_INITIALIZED_DATA   = 0x40;
+        static final int IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x80;
+        static final int IMAGE_SCN_LNK_COMDAT             = 0x1000;
+        static final int IMAGE_SCN_LNK_INFO               = 0x200;
+        static final int IMAGE_SCN_LNK_REMOVE             = 0x800;
 
-        public static final int IMAGE_SCN_ALIGN_1BYTES           = 0x100000;
-        public static final int IMAGE_SCN_ALIGN_2BYTES           = 0x200000;
-        public static final int IMAGE_SCN_ALIGN_4BYTES           = 0x300000;
-        public static final int IMAGE_SCN_ALIGN_8BYTES           = 0x400000;
-        public static final int IMAGE_SCN_ALIGN_16BYTES          = 0x500000;
-        public static final int IMAGE_SCN_ALIGN_32BYTES          = 0x600000;
-        public static final int IMAGE_SCN_ALIGN_64BYTES          = 0x700000;
-        public static final int IMAGE_SCN_ALIGN_MASK             = 0xf00000;
-        public static final int IMAGE_SCN_ALIGN_SHIFT            = 20;
+        static final int IMAGE_SCN_ALIGN_1BYTES           = 0x100000;
+        static final int IMAGE_SCN_ALIGN_2BYTES           = 0x200000;
+        static final int IMAGE_SCN_ALIGN_4BYTES           = 0x300000;
+        static final int IMAGE_SCN_ALIGN_8BYTES           = 0x400000;
+        static final int IMAGE_SCN_ALIGN_16BYTES          = 0x500000;
+        static final int IMAGE_SCN_ALIGN_32BYTES          = 0x600000;
+        static final int IMAGE_SCN_ALIGN_64BYTES          = 0x700000;
+        static final int IMAGE_SCN_ALIGN_128BYTES         = 0x800000;
+        static final int IMAGE_SCN_ALIGN_256BYTES         = 0x900000;
+        static final int IMAGE_SCN_ALIGN_512BYTES         = 0xa00000;
+        static final int IMAGE_SCN_ALIGN_1024BYTES        = 0xb00000;
+        static final int IMAGE_SCN_ALIGN_MASK             = 0xf00000;
+        static final int IMAGE_SCN_ALIGN_SHIFT            = 20;
 
-        public static final int IMAGE_SCN_LNK_NRELOC_OVFL        = 0x01000000;
+        static final int IMAGE_SCN_LNK_NRELOC_OVFL        = 0x01000000;
 
-        public static final int IMAGE_SCN_MEM_SHARED             = 0x10000000;
-        public static final int IMAGE_SCN_MEM_EXECUTE            = 0x20000000;
-        public static final int IMAGE_SCN_MEM_READ               = 0x40000000;
-        public static final int IMAGE_SCN_MEM_WRITE              = 0x80000000;
+        static final int IMAGE_SCN_MEM_SHARED             = 0x10000000;
+        static final int IMAGE_SCN_MEM_EXECUTE            = 0x20000000;
+        static final int IMAGE_SCN_MEM_READ               = 0x40000000;
+        static final int IMAGE_SCN_MEM_WRITE              = 0x80000000;
 
     }
 
@@ -130,7 +133,7 @@ public class PECoff {
      *
      * IMAGE_SYMBOL structure defines
      */
-    public enum IMAGE_SYMBOL {
+    enum IMAGE_SYMBOL {
                    ShortName( 0, 8),
                        Short( 0, 4),
                         Long( 4, 4),
@@ -140,63 +143,63 @@ public class PECoff {
                 StorageClass(16, 1),
           NumberOfAuxSymbols(17, 1);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         IMAGE_SYMBOL(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 18;
+        static int totalsize = 18;
 
         /**
          * Type
          */
-        public static final int IMAGE_SYM_DTYPE_NONE     = 0x0;
-        public static final int IMAGE_SYM_DTYPE_FUNCTION = 0x20;
+        static final int IMAGE_SYM_DTYPE_NONE     = 0x0;
+        static final int IMAGE_SYM_DTYPE_FUNCTION = 0x20;
 
         /**
          * StorageClass
          */
-        public static final int IMAGE_SYM_CLASS_NULL     = 0x0;
-        public static final int IMAGE_SYM_CLASS_EXTERNAL = 0x2;
-        public static final int IMAGE_SYM_CLASS_STATIC   = 0x3;
-        public static final int IMAGE_SYM_CLASS_LABEL    = 0x6;
+        static final int IMAGE_SYM_CLASS_NULL     = 0x0;
+        static final int IMAGE_SYM_CLASS_EXTERNAL = 0x2;
+        static final int IMAGE_SYM_CLASS_STATIC   = 0x3;
+        static final int IMAGE_SYM_CLASS_LABEL    = 0x6;
 
     }
 
     /**
      * IMAGE_RELOCATION structure defines
      */
-    public enum IMAGE_RELOCATION {
+    enum IMAGE_RELOCATION {
               VirtualAddress( 0, 4),
             SymbolTableIndex( 4, 4),
                         Type( 8, 2);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         IMAGE_RELOCATION(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 10;
+        static int totalsize = 10;
 
         /**
          * Relocation types
          */
-        public static final int IMAGE_REL_AMD64_ABSOLUTE = 0x0;
-        public static final int IMAGE_REL_AMD64_ADDR32   = 0x2;
-        public static final int IMAGE_REL_AMD64_ADDR64   = 0x1;
-        public static final int IMAGE_REL_AMD64_REL32    = 0x4;
-        public static final int IMAGE_REL_AMD64_REL32_1  = 0x5;
-        public static final int IMAGE_REL_AMD64_REL32_2  = 0x6;
-        public static final int IMAGE_REL_AMD64_REL32_3  = 0x7;
-        public static final int IMAGE_REL_AMD64_REL32_4  = 0x8;
-        public static final int IMAGE_REL_AMD64_REL32_5  = 0x9;
+        static final int IMAGE_REL_AMD64_ABSOLUTE = 0x0;
+        static final int IMAGE_REL_AMD64_ADDR32   = 0x2;
+        static final int IMAGE_REL_AMD64_ADDR64   = 0x1;
+        static final int IMAGE_REL_AMD64_REL32    = 0x4;
+        static final int IMAGE_REL_AMD64_REL32_1  = 0x5;
+        static final int IMAGE_REL_AMD64_REL32_2  = 0x6;
+        static final int IMAGE_REL_AMD64_REL32_3  = 0x7;
+        static final int IMAGE_REL_AMD64_REL32_4  = 0x8;
+        static final int IMAGE_REL_AMD64_REL32_5  = 0x9;
 
     }
-
+    //@formatter:on
 }

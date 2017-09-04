@@ -26,14 +26,13 @@ package jdk.tools.jaotc.binformat.macho;
 import java.io.File;
 import java.io.FileOutputStream;
 
-public class MachOContainer {
+final class MachOContainer {
 
-    File outputFile;
-    FileOutputStream outputStream;
-    long fileOffset;
+    private final File outputFile;
+    private FileOutputStream outputStream;
+    private long fileOffset;
 
-    public MachOContainer(String fileName) {
-        String baseName;
+    MachOContainer(String fileName) {
 
         outputFile = new File(fileName);
         if (outputFile.exists()) {
@@ -48,7 +47,7 @@ public class MachOContainer {
         fileOffset = 0;
     }
 
-    public void close() {
+    void close() {
         try {
             outputStream.close();
         } catch (Exception e) {
@@ -56,7 +55,7 @@ public class MachOContainer {
         }
     }
 
-    public void writeBytes(byte [] bytes) {
+    void writeBytes(byte[] bytes) {
         try {
             outputStream.write(bytes);
         } catch (Exception e) {
@@ -66,10 +65,10 @@ public class MachOContainer {
     }
 
     // Write bytes to output file with up front alignment padding
-    public void writeBytes(byte [] bytes, int alignment) {
+    void writeBytes(byte[] bytes, int alignment) {
         try {
             // Pad to alignment
-            while ((fileOffset & (long)(alignment-1)) != 0) {
+            while ((fileOffset & (alignment - 1)) != 0) {
                 outputStream.write(0);
                 fileOffset++;
             }
@@ -80,4 +79,3 @@ public class MachOContainer {
         fileOffset += bytes.length;
     }
 }
-

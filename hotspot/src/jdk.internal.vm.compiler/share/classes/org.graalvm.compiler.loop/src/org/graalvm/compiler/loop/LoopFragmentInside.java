@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.loop;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -142,18 +143,49 @@ public class LoopFragmentInside extends LoopFragment {
         end.setNext(loop.entryPoint());
     }
 
+    /**
+     * Duplicate the body within the loop after the current copy copy of the body, updating the
+     * iteration limit to account for the duplication.
+     *
+     * @param loop
+     */
     public void insertWithinAfter(LoopEx loop) {
+        insertWithinAfter(loop, true);
+    }
+
+    /**
+     * Duplicate the body within the loop after the current copy copy of the body.
+     *
+     * @param loop
+     * @param updateLimit true if the iteration limit should be adjusted.
+     */
+    public void insertWithinAfter(LoopEx loop, boolean updateLimit) {
         assert isDuplicate() && original().loop() == loop;
 
         patchNodes(dataFixWithinAfter);
 
+        /*
+         * Collect any new back edges values before updating them since they might reference each
+         * other.
+         */
         LoopBeginNode mainLoopBegin = loop.loopBegin();
+        ArrayList<ValueNode> backedgeValues = new ArrayList<>();
         for (PhiNode mainPhiNode : mainLoopBegin.phis()) {
             ValueNode duplicatedNode = getDuplicatedNode(mainPhiNode.valueAt(1));
+            if (duplicatedNode == null) {
+                if (mainLoopBegin.isPhiAtMerge(mainPhiNode.valueAt(1))) {
+                    duplicatedNode = ((PhiNode) (mainPhiNode.valueAt(1))).valueAt(1);
+                } else {
+                    assert mainPhiNode.valueAt(1).isConstant() : mainPhiNode.valueAt(1);
+                }
+            }
+            backedgeValues.add(duplicatedNode);
+        }
+        int index = 0;
+        for (PhiNode mainPhiNode : mainLoopBegin.phis()) {
+            ValueNode duplicatedNode = backedgeValues.get(index++);
             if (duplicatedNode != null) {
                 mainPhiNode.setValueAt(1, duplicatedNode);
-            } else {
-                assert mainPhiNode.valueAt(1).isConstant() || mainLoopBegin.isPhiAtMerge(mainPhiNode.valueAt(1)) : mainPhiNode.valueAt(1);
             }
         }
 
@@ -166,27 +198,29 @@ public class LoopFragmentInside extends LoopFragment {
         }
 
         int unrollFactor = mainLoopBegin.getUnrollFactor();
-
-        // Now use the previous unrollFactor to update the exit condition to power of two
         StructuredGraph graph = mainLoopBegin.graph();
-        InductionVariable iv = loop.counted().getCounter();
-        CompareNode compareNode = (CompareNode) loop.counted().getLimitTest().condition();
-        ValueNode compareBound;
-        if (compareNode.getX() == iv.valueNode()) {
-            compareBound = compareNode.getY();
-        } else if (compareNode.getY() == iv.valueNode()) {
-            compareBound = compareNode.getX();
-        } else {
-            throw GraalError.shouldNotReachHere();
-        }
-        if (iv.direction() == InductionVariable.Direction.Up) {
-            ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * iv.constantStride()));
-            ValueNode newLimit = graph.addWithoutUnique(new SubNode(compareBound, aboveVal));
-            compareNode.replaceFirstInput(compareBound, newLimit);
-        } else if (iv.direction() == InductionVariable.Direction.Down) {
-            ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * -iv.constantStride()));
-            ValueNode newLimit = graph.addWithoutUnique(new AddNode(compareBound, aboveVal));
-            compareNode.replaceFirstInput(compareBound, newLimit);
+        if (updateLimit) {
+            // Now use the previous unrollFactor to update the exit condition to power of two
+            InductionVariable iv = loop.counted().getCounter();
+            CompareNode compareNode = (CompareNode) loop.counted().getLimitTest().condition();
+            ValueNode compareBound;
+            if (compareNode.getX() == iv.valueNode()) {
+                compareBound = compareNode.getY();
+            } else if (compareNode.getY() == iv.valueNode()) {
+                compareBound = compareNode.getX();
+            } else {
+                throw GraalError.shouldNotReachHere();
+            }
+            long originalStride = unrollFactor == 1 ? iv.constantStride() : iv.constantStride() / unrollFactor;
+            if (iv.direction() == InductionVariable.Direction.Up) {
+                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * originalStride));
+                ValueNode newLimit = graph.addWithoutUnique(new SubNode(compareBound, aboveVal));
+                compareNode.replaceFirstInput(compareBound, newLimit);
+            } else if (iv.direction() == InductionVariable.Direction.Down) {
+                ConstantNode aboveVal = graph.unique(ConstantNode.forIntegerStamp(iv.initNode().stamp(), unrollFactor * -originalStride));
+                ValueNode newLimit = graph.addWithoutUnique(new AddNode(compareBound, aboveVal));
+                compareNode.replaceFirstInput(compareBound, newLimit);
+            }
         }
         mainLoopBegin.setUnrollFactor(unrollFactor * 2);
         mainLoopBegin.setLoopFrequency(mainLoopBegin.loopFrequency() / 2);

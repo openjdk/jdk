@@ -799,7 +799,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
     // If java.base was already defined then patch this particular class with java.base.
     if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
-      assert(javabase_entry != NULL && javabase_entry->module_handle() != NULL,
+      assert(javabase_entry != NULL && javabase_entry->module() != NULL,
              "Setting class module field, " JAVA_BASE_NAME " should be defined");
       Handle javabase_handle(THREAD, javabase_entry->module());
       set_module(mirror(), javabase_handle());
@@ -1430,7 +1430,7 @@ int java_lang_ThreadGroup::_nthreads_offset = 0;
 int java_lang_ThreadGroup::_ngroups_offset = 0;
 
 oop  java_lang_ThreadGroup::parent(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return java_thread_group->obj_field(_parent_offset);
 }
 
@@ -1446,7 +1446,7 @@ const char* java_lang_ThreadGroup::name(oop java_thread_group) {
 }
 
 int java_lang_ThreadGroup::nthreads(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return java_thread_group->int_field(_nthreads_offset);
 }
 
@@ -1458,7 +1458,7 @@ objArrayOop java_lang_ThreadGroup::threads(oop java_thread_group) {
 }
 
 int java_lang_ThreadGroup::ngroups(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return java_thread_group->int_field(_ngroups_offset);
 }
 
@@ -1469,17 +1469,17 @@ objArrayOop java_lang_ThreadGroup::groups(oop java_thread_group) {
 }
 
 ThreadPriority java_lang_ThreadGroup::maxPriority(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return (ThreadPriority) java_thread_group->int_field(_maxPriority_offset);
 }
 
 bool java_lang_ThreadGroup::is_destroyed(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return java_thread_group->bool_field(_destroyed_offset) != 0;
 }
 
 bool java_lang_ThreadGroup::is_daemon(oop java_thread_group) {
-  assert(java_thread_group->is_oop(), "thread group must be oop");
+  assert(oopDesc::is_oop(java_thread_group), "thread group must be oop");
   return java_thread_group->bool_field(_daemon_offset) != 0;
 }
 
@@ -2868,7 +2868,7 @@ void java_lang_Module::set_name(oop module, oop value) {
 ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
   assert(_module_entry_offset != -1, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
-  assert(module->is_oop(), "module must be oop");
+  assert(oopDesc::is_oop(module), "module must be oop");
 
   ModuleEntry* module_entry = (ModuleEntry*)module->address_field(_module_entry_offset);
   if (module_entry == NULL) {
@@ -2885,7 +2885,7 @@ ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
 void java_lang_Module::set_module_entry(oop module, ModuleEntry* module_entry) {
   assert(_module_entry_offset != -1, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
-  assert(module->is_oop(), "module must be oop");
+  assert(oopDesc::is_oop(module), "module must be oop");
   module->address_field_put(_module_entry_offset, (address)module_entry);
 }
 
@@ -3088,12 +3088,9 @@ int java_lang_invoke_DirectMethodHandle::_member_offset;
 
 oop java_lang_invoke_DirectMethodHandle::member(oop dmh) {
   oop member_name = NULL;
-  bool is_dmh = dmh->is_oop() && java_lang_invoke_DirectMethodHandle::is_instance(dmh);
-  assert(is_dmh, "a DirectMethodHandle oop is expected");
-  if (is_dmh) {
-    member_name = dmh->obj_field(member_offset_in_bytes());
-  }
-  return member_name;
+  assert(oopDesc::is_oop(dmh) && java_lang_invoke_DirectMethodHandle::is_instance(dmh),
+         "a DirectMethodHandle oop is expected");
+  return dmh->obj_field(member_offset_in_bytes());
 }
 
 void java_lang_invoke_DirectMethodHandle::compute_offsets() {
@@ -3476,7 +3473,7 @@ int  java_lang_ClassLoader::name_offset = -1;
 int  java_lang_ClassLoader::unnamedModule_offset = -1;
 
 ClassLoaderData** java_lang_ClassLoader::loader_data_addr(oop loader) {
-    assert(loader != NULL && loader->is_oop(), "loader must be oop");
+    assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
     return (ClassLoaderData**) loader->address_field_addr(_loader_data_offset);
 }
 

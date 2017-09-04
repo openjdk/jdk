@@ -1331,7 +1331,7 @@ public class ModuleDescriptor
     /**
      * <p> Returns {@code true} if this is an open module. </p>
      *
-     * <p> This method is equivalent to testing if the set of {@link #modifiers
+     * <p> This method is equivalent to testing if the set of {@link #modifiers()
      * modifiers} contains the {@link Modifier#OPEN OPEN} modifier. </p>
      *
      * @return  {@code true} if this is an open module
@@ -1343,7 +1343,7 @@ public class ModuleDescriptor
     /**
      * <p> Returns {@code true} if this is an automatic module. </p>
      *
-     * <p> This method is equivalent to testing if the set of {@link #modifiers
+     * <p> This method is equivalent to testing if the set of {@link #modifiers()
      * modifiers} contains the {@link Modifier#OPEN AUTOMATIC} modifier. </p>
      *
      * @return  {@code true} if this is an automatic module
@@ -1689,7 +1689,7 @@ public class ModuleDescriptor
          * @return This builder
          *
          * @throws IllegalStateException
-         *         If the {@link Exports#source package} is already declared as
+         *         If the {@link Exports#source() package} is already declared as
          *         exported or this builder is for an automatic module
          */
         public Builder exports(Exports e) {
