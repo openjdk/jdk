@@ -45,7 +45,7 @@ import java.util.List;
  * exit cleanly. Implicit opening is done by calling
  * {@link MidiSystem#getReceiver} and {@link MidiSystem#getTransmitter}. The
  * {@code MidiDevice} used by {@code MidiSystem.getReceiver} and
- * {@code MidiSystem.getTransmitter} is implementation-dependant unless the
+ * {@code MidiSystem.getTransmitter} is implementation-dependent unless the
  * properties {@code javax.sound.midi.Receiver} and
  * {@code javax.sound.midi.Transmitter} are used (see the description of
  * properties to select default providers in {@link MidiSystem}). A

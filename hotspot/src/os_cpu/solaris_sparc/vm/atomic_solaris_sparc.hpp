@@ -25,8 +25,6 @@
 #ifndef OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_HPP
 #define OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_HPP
 
-#include "runtime/os.hpp"
-
 // Implementation of class atomic
 
 inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
@@ -64,26 +62,21 @@ inline jlong Atomic::load(const volatile jlong* src) { return *src; }
 extern "C" jint     _Atomic_swap32(jint     exchange_value, volatile jint*     dest);
 extern "C" intptr_t _Atomic_swap64(intptr_t exchange_value, volatile intptr_t* dest);
 
-extern "C" jint     _Atomic_cas32(jint     exchange_value, volatile jint*     dest, jint     compare_value);
-extern "C" intptr_t _Atomic_cas64(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value);
-extern "C" jlong    _Atomic_casl (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value);
-
-extern "C" jint     _Atomic_add32(jint     inc,       volatile jint*     dest);
-extern "C" intptr_t _Atomic_add64(intptr_t add_value, volatile intptr_t* dest);
-
-
-inline jint     Atomic::add     (jint    add_value, volatile jint*     dest) {
-  return _Atomic_add32(add_value, dest);
-}
-
-inline intptr_t Atomic::add_ptr(intptr_t add_value, volatile intptr_t* dest) {
-  return _Atomic_add64(add_value, dest);
-}
-
-inline void*    Atomic::add_ptr(intptr_t add_value, volatile void*     dest) {
-  return (void*)add_ptr((intptr_t)add_value, (volatile intptr_t*)dest);
-}
-
+// Implement ADD using a CAS loop.
+template<size_t byte_size>
+struct Atomic::PlatformAdd VALUE_OBJ_CLASS_SPEC {
+  template<typename I, typename D>
+  inline D operator()(I add_value, D volatile* dest) const {
+    D old_value = *dest;
+    while (true) {
+      D new_value = old_value + add_value;
+      D result = cmpxchg(new_value, dest, old_value);
+      if (result == old_value) break;
+      old_value = result;
+    }
+    return old_value + add_value;
+  }
+};
 
 inline jint     Atomic::xchg    (jint     exchange_value, volatile jint*     dest) {
   return _Atomic_swap32(exchange_value, dest);
@@ -97,22 +90,40 @@ inline void*    Atomic::xchg_ptr(void*    exchange_value, volatile void*     des
   return (void*)xchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest);
 }
 
+// No direct support for cmpxchg of bytes; emulate using int.
+template<>
+struct Atomic::PlatformCmpxchg<1> : Atomic::CmpxchgByteUsingInt {};
 
-inline jint     Atomic::cmpxchg    (jint     exchange_value, volatile jint*     dest, jint     compare_value, cmpxchg_memory_order order) {
-  return _Atomic_cas32(exchange_value, dest, compare_value);
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
+  T rv;
+  __asm__ volatile(
+    " cas    [%2], %3, %0"
+    : "=r" (rv)
+    : "0" (exchange_value), "r" (dest), "r" (compare_value)
+    : "memory");
+  return rv;
 }
 
-inline jlong    Atomic::cmpxchg    (jlong    exchange_value, volatile jlong*    dest, jlong    compare_value, cmpxchg_memory_order order) {
-  // Return 64 bit value in %o0
-  return _Atomic_cas64((intptr_t)exchange_value, (intptr_t *)dest, (intptr_t)compare_value);
-}
-
-inline intptr_t Atomic::cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value, cmpxchg_memory_order order) {
-  return _Atomic_cas64(exchange_value, dest, compare_value);
-}
-
-inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value, cmpxchg_memory_order order) {
-  return (void*)cmpxchg_ptr((intptr_t)exchange_value, (volatile intptr_t*)dest, (intptr_t)compare_value, order);
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
+                                                T volatile* dest,
+                                                T compare_value,
+                                                cmpxchg_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  T rv;
+  __asm__ volatile(
+    " casx   [%2], %3, %0"
+    : "=r" (rv)
+    : "0" (exchange_value), "r" (dest), "r" (compare_value)
+    : "memory");
+  return rv;
 }
 
 #endif // OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_HPP

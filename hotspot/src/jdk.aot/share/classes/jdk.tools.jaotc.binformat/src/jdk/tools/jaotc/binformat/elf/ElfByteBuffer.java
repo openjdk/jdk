@@ -23,20 +23,20 @@
 
 package jdk.tools.jaotc.binformat.elf;
 
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
 
-public class ElfByteBuffer {
+final class ElfByteBuffer {
 
-    public static ByteBuffer allocate(int size) {
+    static ByteBuffer allocate(int size) {
         ByteBuffer buf = ByteBuffer.allocate(size);
-        if (ElfTargetInfo.getElfEndian() == Elf64_Ehdr.ELFDATA2LSB)
+        if (ElfTargetInfo.getElfEndian() == Elf64_Ehdr.ELFDATA2LSB) {
             buf.order(ByteOrder.LITTLE_ENDIAN);
-        else
+        } else {
             buf.order(ByteOrder.BIG_ENDIAN);
+        }
         return (buf);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
     return card_ptr;
   }
   // Otherwise, the card is hot.
-  size_t index = Atomic::add(1, &_hot_cache_idx) - 1;
+  size_t index = Atomic::add(1u, &_hot_cache_idx) - 1;
   size_t masked_index = index & (_hot_cache_size - 1);
   jbyte* current_ptr = _hot_cache[masked_index];
 

@@ -140,96 +140,102 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * A Java virtual machine has a single instance of the following management
  * interfaces:
  *
- * <blockquote>
- * <table border="1">
+ * <table class="striped" style="margin-left:2em">
  * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
+ * <thead>
  * <tr>
- * <th>Management Interface</th>
- * <th>ObjectName</th>
+ * <th scope="col">Management Interface</th>
+ * <th scope="col">ObjectName</th>
  * </tr>
+ * </thead>
+ * <tbody style="text-align:left;">
  * <tr>
- * <td> {@link ClassLoadingMXBean} </td>
+ * <th scope="row"> {@link ClassLoadingMXBean} </th>
  * <td> {@link #CLASS_LOADING_MXBEAN_NAME
  *             java.lang:type=ClassLoading}</td>
  * </tr>
  * <tr>
- * <td> {@link MemoryMXBean} </td>
+ * <th scope="row"> {@link MemoryMXBean} </th>
  * <td> {@link #MEMORY_MXBEAN_NAME
  *             java.lang:type=Memory}</td>
  * </tr>
  * <tr>
- * <td> {@link ThreadMXBean} </td>
+ * <th scope="row"> {@link ThreadMXBean} </th>
  * <td> {@link #THREAD_MXBEAN_NAME
  *             java.lang:type=Threading}</td>
  * </tr>
  * <tr>
- * <td> {@link RuntimeMXBean} </td>
+ * <th scope="row"> {@link RuntimeMXBean} </th>
  * <td> {@link #RUNTIME_MXBEAN_NAME
  *             java.lang:type=Runtime}</td>
  * </tr>
  * <tr>
- * <td> {@link OperatingSystemMXBean} </td>
+ * <th scope="row"> {@link OperatingSystemMXBean} </th>
  * <td> {@link #OPERATING_SYSTEM_MXBEAN_NAME
  *             java.lang:type=OperatingSystem}</td>
  * </tr>
  * <tr>
- * <td> {@link PlatformLoggingMXBean} </td>
+ * <th scope="row"> {@link PlatformLoggingMXBean} </th>
  * <td> {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME
  *             java.util.logging:type=Logging}</td>
  * </tr>
+ * </tbody>
  * </table>
- * </blockquote>
  *
  * <p>
  * A Java virtual machine has zero or a single instance of
  * the following management interfaces.
  *
- * <blockquote>
- * <table border="1">
+ * <table class="striped" style="margin-left:2em">
  * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
+ * <thead>
  * <tr>
- * <th>Management Interface</th>
- * <th>ObjectName</th>
+ * <th scope="col">Management Interface</th>
+ * <th scope="col">ObjectName</th>
  * </tr>
+ * </thead>
+ * <tbody style="text-align:left;">
  * <tr>
- * <td> {@link CompilationMXBean} </td>
+ * <th scope="row"> {@link CompilationMXBean} </th>
  * <td> {@link #COMPILATION_MXBEAN_NAME
  *             java.lang:type=Compilation}</td>
  * </tr>
+ * </tbody>
  * </table>
- * </blockquote>
  *
  * <p>
  * A Java virtual machine may have one or more instances of the following
  * management interfaces.
- * <blockquote>
- * <table border="1">
+ * <table class="striped" style="margin-left:2em">
  * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
+ * <thead>
  * <tr>
- * <th>Management Interface</th>
- * <th>ObjectName</th>
+ * <th scope="col">Management Interface</th>
+ * <th scope="col">ObjectName</th>
  * </tr>
+ * </thead>
+ * <tbody style="text-align:left;">
  * <tr>
- * <td> {@link GarbageCollectorMXBean} </td>
+ * <th scope="row"> {@link GarbageCollectorMXBean} </th>
  * <td> {@link #GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE
  *             java.lang:type=GarbageCollector}{@code ,name=}<i>collector's name</i></td>
  * </tr>
  * <tr>
- * <td> {@link MemoryManagerMXBean} </td>
+ * <th scope="row"> {@link MemoryManagerMXBean} </th>
  * <td> {@link #MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE
  *             java.lang:type=MemoryManager}{@code ,name=}<i>manager's name</i></td>
  * </tr>
  * <tr>
- * <td> {@link MemoryPoolMXBean} </td>
+ * <th scope="row"> {@link MemoryPoolMXBean} </th>
  * <td> {@link #MEMORY_POOL_MXBEAN_DOMAIN_TYPE
  *             java.lang:type=MemoryPool}{@code ,name=}<i>pool's name</i></td>
  * </tr>
  * <tr>
- * <td> {@link BufferPoolMXBean} </td>
+ * <th scope="row"> {@link BufferPoolMXBean} </th>
  * <td> {@code java.nio:type=BufferPool,name=}<i>pool name</i></td>
  * </tr>
+ * </tbody>
  * </table>
- * </blockquote>
  *
  * @see <a href="../../../javax/management/package-summary.html">
  *      JMX Specification</a>

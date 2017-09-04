@@ -80,19 +80,16 @@ void ModuleEntry::set_version(Symbol* version) {
 }
 
 // Returns the shared ProtectionDomain
-Handle ModuleEntry::shared_protection_domain() {
-  return Handle(Thread::current(), JNIHandles::resolve(_pd));
+oop ModuleEntry::shared_protection_domain() {
+  return _pd.resolve();
 }
 
 // Set the shared ProtectionDomain atomically
 void ModuleEntry::set_shared_protection_domain(ClassLoaderData *loader_data,
                                                Handle pd_h) {
   // Create a handle for the shared ProtectionDomain and save it atomically.
-  // If someone beats us setting the _pd cache, the created handle is destroyed.
-  jobject obj = loader_data->add_handle(pd_h);
-  if (Atomic::cmpxchg_ptr(obj, &_pd, NULL) != NULL) {
-    loader_data->remove_handle_unsafe(obj);
-  }
+  // init_handle_locked checks if someone beats us setting the _pd cache.
+  loader_data->init_handle_locked(_pd, pd_h);
 }
 
 // Returns true if this module can read module m

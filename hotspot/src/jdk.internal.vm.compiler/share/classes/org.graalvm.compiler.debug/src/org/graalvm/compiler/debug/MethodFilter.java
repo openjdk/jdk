@@ -31,66 +31,7 @@ import jdk.vm.ci.meta.Signature;
 
 /**
  * This class implements a method filter that can filter based on class name, method name and
- * parameters. The syntax for the source pattern that is passed to the constructor is as follows:
- *
- * <pre>
- * SourcePatterns = SourcePattern ["," SourcePatterns] .
- * SourcePattern = [ Class "." ] method [ "(" [ Parameter { ";" Parameter } ] ")" ] .
- * Parameter = Class | "int" | "long" | "float" | "double" | "short" | "char" | "boolean" .
- * Class = { package "." } class .
- * </pre>
- *
- *
- * Glob pattern matching (*, ?) is allowed in all parts of the source pattern. Examples for valid
- * filters are:
- *
- * <ul>
- * <li>
- *
- * <pre>
- * visit(Argument;BlockScope)
- * </pre>
- *
- * Matches all methods named "visit", with the first parameter of type "Argument", and the second
- * parameter of type "BlockScope". The packages of the parameter types are irrelevant.</li>
- * <li>
- *
- * <pre>
- * arraycopy(Object;;;;)
- * </pre>
- *
- * Matches all methods named "arraycopy", with the first parameter of type "Object", and four more
- * parameters of any type. The packages of the parameter types are irrelevant.</li>
- * <li>
- *
- * <pre>
- * org.graalvm.compiler.core.graph.PostOrderNodeIterator.*
- * </pre>
- *
- * Matches all methods in the class "org.graalvm.compiler.core.graph.PostOrderNodeIterator".</li>
- * <li>
- *
- * <pre>
- * *
- * </pre>
- *
- * Matches all methods in all classes</li>
- * <li>
- *
- * <pre>
- * org.graalvm.compiler.core.graph.*.visit
- * </pre>
- *
- * Matches all methods named "visit" in classes in the package "org.graalvm.compiler.core.graph".
- * <li>
- *
- * <pre>
- * arraycopy,toString
- * </pre>
- *
- * Matches all methods named "arraycopy" or "toString", meaning that ',' acts as an <i>or</i>
- * operator.</li>
- * </ul>
+ * parameters. The syntax for a filter is explained <a href="MethodFilterHelp.txt">here</a>.
  */
 public class MethodFilter {
 

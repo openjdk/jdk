@@ -107,7 +107,7 @@ public class FindUniqueConcreteMethodTest {
         HotSpotResolvedJavaMethod testMethod = CTVMUtilities.getResolvedMethod(method);
 
         HotSpotResolvedObjectType resolvedType = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.receiver), getClass(),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.receiver), getClass(),
                 /* resolve = */ true);
         HotSpotResolvedJavaMethod concreteMethod = CompilerToVMHelper
                 .findUniqueConcreteMethod(resolvedType, testMethod);

@@ -22,9 +22,12 @@
  */
 package org.graalvm.compiler.options.processor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +53,9 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionDescriptor;
@@ -117,22 +122,13 @@ public class OptionProcessor extends AbstractProcessor {
             return;
         }
 
-        String help = annotation.help();
-        if (help.length() != 0) {
-            char firstChar = help.charAt(0);
-            if (!Character.isUpperCase(firstChar)) {
-                processingEnv.getMessager().printMessage(Kind.ERROR, "Option help text must start with upper case letter", element);
-                return;
-            }
-        }
-
         String optionName = annotation.name();
         if (optionName.equals("")) {
             optionName = fieldName;
         }
 
         if (!Character.isUpperCase(optionName.charAt(0))) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "Option name must start with capital letter", element);
+            processingEnv.getMessager().printMessage(Kind.ERROR, "Option name must start with an upper case letter", element);
             return;
         }
 
@@ -154,6 +150,7 @@ public class OptionProcessor extends AbstractProcessor {
         String separator = "";
         Set<Element> originatingElementsList = info.originatingElements;
         originatingElementsList.add(field);
+        PackageElement enclosingPackage = null;
         while (enclosing != null) {
             if (enclosing.getKind() == ElementKind.CLASS || enclosing.getKind() == ElementKind.INTERFACE) {
                 if (enclosing.getModifiers().contains(Modifier.PRIVATE)) {
@@ -164,13 +161,64 @@ public class OptionProcessor extends AbstractProcessor {
                 originatingElementsList.add(enclosing);
                 declaringClass = enclosing.getSimpleName() + separator + declaringClass;
                 separator = ".";
-            } else {
-                assert enclosing.getKind() == ElementKind.PACKAGE;
+            } else if (enclosing.getKind() == ElementKind.PACKAGE) {
+                enclosingPackage = (PackageElement) enclosing;
             }
             enclosing = enclosing.getEnclosingElement();
         }
+        if (enclosingPackage == null) {
+            processingEnv.getMessager().printMessage(Kind.ERROR, "Option field cannot be declared in the unnamed package", element);
+            return;
+        }
+        String[] helpValue = annotation.help();
+        String help = "";
+        String[] extraHelp = {};
 
-        info.options.add(new OptionInfo(optionName, help, optionType, declaringClass, field));
+        if (helpValue.length == 1) {
+            help = helpValue[0];
+            if (help.startsWith("file:")) {
+                String path = help.substring("file:".length());
+                Filer filer = processingEnv.getFiler();
+                try {
+                    FileObject file;
+                    try {
+                        file = filer.getResource(StandardLocation.SOURCE_PATH, enclosingPackage.getQualifiedName(), path);
+                    } catch (IllegalArgumentException | IOException e) {
+                        // Handle the case when a compiler doesn't support the SOURCE_PATH location
+                        file = filer.getResource(StandardLocation.CLASS_OUTPUT, enclosingPackage.getQualifiedName(), path);
+                    }
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(file.openInputStream()))) {
+                        help = br.readLine();
+                        if (help == null) {
+                            help = "";
+                        }
+                        String line = br.readLine();
+                        List<String> lines = new ArrayList<>();
+                        while (line != null) {
+                            lines.add(line);
+                            line = br.readLine();
+                        }
+                        extraHelp = lines.toArray(new String[lines.size()]);
+                    }
+                } catch (IOException e) {
+                    String msg = String.format("Error reading %s containing the help text for option field: %s", path, e);
+                    processingEnv.getMessager().printMessage(Kind.ERROR, msg, element);
+                    return;
+                }
+            }
+        } else if (helpValue.length > 1) {
+            help = helpValue[0];
+            extraHelp = Arrays.copyOfRange(helpValue, 1, helpValue.length);
+        }
+        if (help.length() != 0) {
+            char firstChar = help.charAt(0);
+            if (!Character.isUpperCase(firstChar)) {
+                processingEnv.getMessager().printMessage(Kind.ERROR, "Option help text must start with an upper case letter", element);
+                return;
+            }
+        }
+
+        info.options.add(new OptionInfo(optionName, help, extraHelp, optionType, declaringClass, field));
     }
 
     private void createFiles(OptionsInfo info) {
@@ -200,11 +248,11 @@ public class OptionProcessor extends AbstractProcessor {
 
             String desc = OptionDescriptor.class.getSimpleName();
 
-            int i = 0;
             Collections.sort(info.options);
 
             out.println("    @Override");
             out.println("    public OptionDescriptor get(String value) {");
+            out.println("        switch (value) {");
             out.println("        // CheckStyle: stop line length check");
             for (OptionInfo option : info.options) {
                 String name = option.name;
@@ -214,41 +262,52 @@ public class OptionProcessor extends AbstractProcessor {
                 } else {
                     optionField = option.declaringClass + "." + option.field.getSimpleName();
                 }
+                out.println("        case \"" + name + "\": {");
                 String type = option.type;
                 String help = option.help;
+                String[] extraHelp = option.extraHelp;
                 String declaringClass = option.declaringClass;
                 Name fieldName = option.field.getSimpleName();
-                out.println("        if (value.equals(\"" + name + "\")) {");
-                out.printf("            return %s.create(\"%s\", %s.class, \"%s\", %s.class, \"%s\", %s);\n", desc, name, type, help, declaringClass, fieldName, optionField);
+                out.printf("            return " + desc + ".create(\n");
+                out.printf("                /*name*/ \"%s\",\n", name);
+                out.printf("                /*type*/ %s.class,\n", type);
+                out.printf("                /*help*/ \"%s\",\n", help);
+                if (extraHelp.length != 0) {
+                    out.printf("                /*extraHelp*/ new String[] {\n");
+                    for (String line : extraHelp) {
+                        out.printf("                         \"%s\",\n", line.replace("\\", "\\\\").replace("\"", "\\\""));
+                    }
+                    out.printf("                              },\n");
+                }
+                out.printf("                /*declaringClass*/ %s.class,\n", declaringClass);
+                out.printf("                /*fieldName*/ \"%s\",\n", fieldName);
+                out.printf("                /*option*/ %s);\n", optionField);
                 out.println("        }");
             }
             out.println("        // CheckStyle: resume line length check");
+            out.println("        }");
             out.println("        return null;");
             out.println("    }");
             out.println();
             out.println("    @Override");
             out.println("    public Iterator<" + desc + "> iterator() {");
-            out.println("        // CheckStyle: stop line length check");
-            out.println("        List<" + desc + "> options = Arrays.asList(");
-            for (OptionInfo option : info.options) {
-                String optionField;
-                if (option.field.getModifiers().contains(Modifier.PRIVATE)) {
-                    throw new InternalError();
-                } else {
-                    optionField = option.declaringClass + "." + option.field.getSimpleName();
-                }
-                String name = option.name;
-                String type = option.type;
-                String help = option.help;
-                String declaringClass = option.declaringClass;
-                Name fieldName = option.field.getSimpleName();
-                String comma = i == info.options.size() - 1 ? "" : ",";
-                out.printf("            %s.create(\"%s\", %s.class, \"%s\", %s.class, \"%s\", %s)%s\n", desc, name, type, help, declaringClass, fieldName, optionField, comma);
-                i++;
+            out.println("        return new Iterator<OptionDescriptor>() {");
+            out.println("            int i = 0;");
+            out.println("            @Override");
+            out.println("            public boolean hasNext() {");
+            out.println("                return i < " + info.options.size() + ";");
+            out.println("            }");
+            out.println("            @Override");
+            out.println("            public OptionDescriptor next() {");
+            out.println("                switch (i++) {");
+            for (int i = 0; i < info.options.size(); i++) {
+                OptionInfo option = info.options.get(i);
+                out.println("                    case " + i + ": return get(\"" + option.name + "\");");
             }
-            out.println("        );");
-            out.println("        // CheckStyle: resume line length check");
-            out.println("        return options.iterator();");
+            out.println("                }");
+            out.println("                throw new NoSuchElementException();");
+            out.println("            }");
+            out.println("        };");
             out.println("    }");
             out.println("}");
         }
@@ -274,13 +333,15 @@ public class OptionProcessor extends AbstractProcessor {
 
         final String name;
         final String help;
+        final String[] extraHelp;
         final String type;
         final String declaringClass;
         final VariableElement field;
 
-        OptionInfo(String name, String help, String type, String declaringClass, VariableElement field) {
+        OptionInfo(String name, String help, String[] extraHelp, String type, String declaringClass, VariableElement field) {
             this.name = name;
             this.help = help;
+            this.extraHelp = extraHelp;
             this.type = type;
             this.declaringClass = declaringClass;
             this.field = field;

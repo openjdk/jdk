@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ package jdk.test.lib.hprof.model;
 public class HackJavaValue extends JavaValue {
 
     private String value;
-    private int size;
+    private long size;
 
-    public HackJavaValue(String value, int size) {
+    public HackJavaValue(String value, long size) {
         this.value = value;
         this.size = size;
     }
@@ -58,7 +58,8 @@ public class HackJavaValue extends JavaValue {
         return value;
     }
 
-    public int getSize() {
+    @Override
+    public long getSize() {
         return size;
     }
 

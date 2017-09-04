@@ -31,7 +31,7 @@ import java.nio.charset.CharsetEncoder;
 public class UTF_32 extends Unicode
 {
     public UTF_32() {
-        super("UTF-32", StandardCharsets.aliases_UTF_32);
+        super("UTF-32", StandardCharsets.aliases_UTF_32());
     }
 
     public String historicalName() {

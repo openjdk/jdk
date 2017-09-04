@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,18 +139,6 @@ Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
     return handle(env, result, "Position failed");
 }
 
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
-{
-    jint fd = fdval(env, fdo);
-    if (fd != -1) {
-        jlong result = close(fd);
-        if (result < 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
-        }
-    }
-}
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
