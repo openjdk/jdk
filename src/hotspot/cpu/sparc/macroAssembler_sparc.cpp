@@ -3575,20 +3575,6 @@ static void generate_satb_log_enqueue(bool with_frame) {
 #undef __
 }
 
-static inline void generate_satb_log_enqueue_if_necessary(bool with_frame) {
-  if (with_frame) {
-    if (satb_log_enqueue_with_frame == 0) {
-      generate_satb_log_enqueue(with_frame);
-      assert(satb_log_enqueue_with_frame != 0, "postcondition.");
-    }
-  } else {
-    if (satb_log_enqueue_frameless == 0) {
-      generate_satb_log_enqueue(with_frame);
-      assert(satb_log_enqueue_frameless != 0, "postcondition.");
-    }
-  }
-}
-
 void MacroAssembler::g1_write_barrier_pre(Register obj,
                                           Register index,
                                           int offset,
@@ -3658,13 +3644,9 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
             "Or we need to think harder.");
 
   if (pre_val->is_global() && !preserve_o_regs) {
-    generate_satb_log_enqueue_if_necessary(true); // with frame
-
     call(satb_log_enqueue_with_frame);
     delayed()->mov(pre_val, O0);
   } else {
-    generate_satb_log_enqueue_if_necessary(false); // frameless
-
     save_frame(0);
     call(satb_log_enqueue_frameless);
     delayed()->mov(pre_val->after_save(), O0);
@@ -3768,15 +3750,6 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
 }
 
-static inline void
-generate_dirty_card_log_enqueue_if_necessary(jbyte* byte_map_base) {
-  if (dirty_card_log_enqueue == 0) {
-    generate_dirty_card_log_enqueue(byte_map_base);
-    assert(dirty_card_log_enqueue != 0, "postcondition.");
-  }
-}
-
-
 void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
 
   Label filtered;
@@ -3806,7 +3779,6 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
   } else {
     post_filter_masm->nop();
   }
-  generate_dirty_card_log_enqueue_if_necessary(bs->byte_map_base);
   save_frame(0);
   call(dirty_card_log_enqueue);
   if (use_scr) {
@@ -3817,6 +3789,28 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
   restore();
 
   bind(filtered);
+}
+
+// Called from init_globals() after universe_init() and before interpreter_init()
+void g1_barrier_stubs_init() {
+  CollectedHeap* heap = Universe::heap();
+  if (heap->kind() == CollectedHeap::G1CollectedHeap) {
+    // Only needed for G1
+    if (dirty_card_log_enqueue == 0) {
+      G1SATBCardTableLoggingModRefBS* bs =
+        barrier_set_cast<G1SATBCardTableLoggingModRefBS>(heap->barrier_set());
+      generate_dirty_card_log_enqueue(bs->byte_map_base);
+      assert(dirty_card_log_enqueue != 0, "postcondition.");
+    }
+    if (satb_log_enqueue_with_frame == 0) {
+      generate_satb_log_enqueue(true);
+      assert(satb_log_enqueue_with_frame != 0, "postcondition.");
+    }
+    if (satb_log_enqueue_frameless == 0) {
+      generate_satb_log_enqueue(false);
+      assert(satb_log_enqueue_frameless != 0, "postcondition.");
+    }
+  }
 }
 
 #endif // INCLUDE_ALL_GCS

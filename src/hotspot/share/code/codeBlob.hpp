@@ -156,6 +156,13 @@ public:
   int relocation_size() const                    { return (address) relocation_end() - (address) relocation_begin(); }
   int content_size() const                       { return           content_end()    -           content_begin();    }
   int code_size() const                          { return           code_end()       -           code_begin();       }
+  // Only used from CodeCache::free_unused_tail() after the Interpreter blob was trimmed
+  void adjust_size(size_t used) {
+    _size = (int)used;
+    _data_offset = (int)used;
+    _code_end = (address)this + used;
+    _data_end = (address)this + used;
+  }
 
   // Containment
   bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
