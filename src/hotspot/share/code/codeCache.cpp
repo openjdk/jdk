@@ -569,6 +569,21 @@ void CodeCache::free(CodeBlob* cb) {
   assert(heap->blob_count() >= 0, "sanity check");
 }
 
+void CodeCache::free_unused_tail(CodeBlob* cb, size_t used) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  guarantee(cb->is_buffer_blob() && strncmp("Interpreter", cb->name(), 11) == 0, "Only possible for interpreter!");
+  print_trace("free_unused_tail", cb);
+
+  // We also have to account for the extra space (i.e. header) used by the CodeBlob
+  // which provides the memory (see BufferBlob::create() in codeBlob.cpp).
+  used += CodeBlob::align_code_offset(cb->header_size());
+
+  // Get heap for given CodeBlob and deallocate its unused tail
+  get_code_heap(cb)->deallocate_tail(cb, used);
+  // Adjust the sizes of the CodeBlob
+  cb->adjust_size(used);
+}
+
 void CodeCache::commit(CodeBlob* cb) {
   // this is called by nmethod::nmethod, which must already own CodeCache_lock
   assert_locked_or_safepoint(CodeCache_lock);
