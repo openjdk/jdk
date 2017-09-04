@@ -131,7 +131,7 @@ public class GetVtableIndexForInterfaceTest {
         System.out.println(tcase);
         Method method = tcase.holder.getDeclaredMethod(tcase.methodName);
         HotSpotResolvedObjectType metaspaceKlass = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.receiver),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.receiver),
                         getClass(), /* resolve = */ true);
         HotSpotResolvedJavaMethod metaspaceMethod = CTVMUtilities
                 .getResolvedMethod(tcase.holder, method);

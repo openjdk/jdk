@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ import java.nio.file.*;
 import java.util.HashMap;
 
 public class FileSupport {
-    public boolean exists(Path path)  {
+    public boolean exists(Path path) {
         return Files.exists(path);
     }
 
@@ -36,7 +37,7 @@ public class FileSupport {
         return Files.isDirectory(path);
     }
 
-    private FileSystem makeJarFileSystem(Path path) {
+    private static FileSystem makeJarFileSystem(Path path) {
         try {
             return FileSystems.newFileSystem(makeJarFileURI(path), new HashMap<>());
         } catch (IOException e) {
@@ -44,10 +45,10 @@ public class FileSupport {
         }
     }
 
-    private URI makeJarFileURI(Path path) {
+    private static URI makeJarFileURI(Path path) {
         try {
             String name = path.toAbsolutePath().toString();
-            name = name.replace('\\','/');
+            name = name.replace('\\', '/');
             return new URI("jar:file:///" + name + "!/");
         } catch (URISyntaxException e) {
             throw new InternalError(e);
@@ -66,8 +67,8 @@ public class FileSupport {
         return URLClassLoader.newInstance(buildUrls(path));
     }
 
-    private URL[] buildUrls(Path path) throws MalformedURLException {
-        return new URL[] { path.toUri().toURL() };
+    private static URL[] buildUrls(Path path) throws MalformedURLException {
+        return new URL[]{path.toUri().toURL()};
     }
 
     public Path getJarFileSystemRoot(Path jarFile) {
@@ -80,7 +81,7 @@ public class FileSupport {
     }
 
     public Path getSubDirectory(FileSystem fileSystem, Path root, Path path) throws IOException {
-        DirectoryStream<Path> paths = fileSystem.provider().newDirectoryStream(root,null);
+        DirectoryStream<Path> paths = fileSystem.provider().newDirectoryStream(root, null);
         for (Path entry : paths) {
             Path relative = root.relativize(entry);
             if (relative.equals(path)) {

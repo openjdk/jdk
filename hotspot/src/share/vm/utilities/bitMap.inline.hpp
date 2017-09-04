@@ -49,9 +49,7 @@ inline bool BitMap::par_set_bit(idx_t bit) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = (bm_word_t) Atomic::cmpxchg_ptr((void*) new_val,
-                                                      (volatile void*) addr,
-                                                      (void*) old_val);
+    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val);
     if (cur_val == old_val) {
       return true;      // Success.
     }
@@ -70,9 +68,7 @@ inline bool BitMap::par_clear_bit(idx_t bit) {
     if (new_val == old_val) {
       return false;     // Someone else beat us to it.
     }
-    const bm_word_t cur_val = (bm_word_t) Atomic::cmpxchg_ptr((void*) new_val,
-                                                      (volatile void*) addr,
-                                                      (void*) old_val);
+    const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val);
     if (cur_val == old_val) {
       return true;      // Success.
     }

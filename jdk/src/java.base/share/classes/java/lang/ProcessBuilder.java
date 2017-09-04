@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1149,7 +1149,7 @@ public final class ProcessBuilder
      * The {@link Process#getInputStream standard output} of all processes
      * except the last process are <i>null input streams</i>.
      * <p>
-     * The {@link #redirectErrorStream} of each ProcessBuilder applies to the
+     * The {@link #redirectErrorStream()} of each ProcessBuilder applies to the
      * respective process.  If set to {@code true}, the error stream is written
      * to the same stream as standard output.
      * <p>

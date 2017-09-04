@@ -25,52 +25,47 @@ package jdk.tools.jaotc.binformat.pecoff;
 
 import java.util.ArrayList;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_RELOCATION;
 import jdk.tools.jaotc.binformat.pecoff.PECoffRelocEntry;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffRelocTable {
+final class PECoffRelocTable {
     ArrayList<ArrayList<PECoffRelocEntry>> relocEntries;
 
-    public PECoffRelocTable(int numsects) {
-        relocEntries = new ArrayList<ArrayList<PECoffRelocEntry>>(numsects);
-        for (int i = 0; i < numsects; i++)
+    PECoffRelocTable(int numsects) {
+        relocEntries = new ArrayList<>(numsects);
+        for (int i = 0; i < numsects; i++) {
             relocEntries.add(new ArrayList<PECoffRelocEntry>());
+        }
     }
 
-    public void createRelocationEntry(int sectindex,
-                                      int offset,
-                                      int symno,
-                                      int type) {
-
-        PECoffRelocEntry entry = new PECoffRelocEntry(offset,
-                                                symno,
-                                                type);
+    void createRelocationEntry(int sectindex, int offset, int symno, int type) {
+        PECoffRelocEntry entry = new PECoffRelocEntry(offset, symno, type);
         relocEntries.get(sectindex).add(entry);
     }
 
-    public int getAlign() { return (4); }
+    static int getAlign() {
+        return (4);
+    }
 
-    public int getNumRelocs(int section_index) {
+    int getNumRelocs(int section_index) {
         return relocEntries.get(section_index).size();
     }
 
     // Return the relocation entries for a single section
-    //   or null if no entries added to section
-    public byte [] getRelocData(int section_index) {
+    // or null if no entries added to section
+    byte[] getRelocData(int section_index) {
         ArrayList<PECoffRelocEntry> entryList = relocEntries.get(section_index);
         int entryCount = entryList.size();
         int allocCount = entryCount;
 
-        if (entryCount == 0)
+        if (entryCount == 0) {
             return null;
-
-        if (entryCount > 0xFFFF)
+        }
+        if (entryCount > 0xFFFF) {
             allocCount++;
-
+        }
         ByteBuffer relocData = PECoffByteBuffer.allocate(allocCount * IMAGE_RELOCATION.totalsize);
 
         // If number of relocs exceeds 65K, add the real size
@@ -89,4 +84,3 @@ public class PECoffRelocTable {
         return (relocData.array());
     }
 }
-

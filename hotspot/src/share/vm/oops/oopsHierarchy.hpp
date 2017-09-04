@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_OOPS_OOPSHIERARCHY_HPP
 #define SHARE_VM_OOPS_OOPSHIERARCHY_HPP
 
+#include "metaprogramming/integralConstant.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -140,6 +142,15 @@ public:
   // from parNewGeneration and other things that want to get to the end of
   // an oop for stuff (like ObjArrayKlass.cpp)
   operator oop* () const              { return (oop *)obj(); }
+};
+
+template<>
+struct PrimitiveConversions::Translate<oop> : public TrueType {
+  typedef oop Value;
+  typedef oopDesc* Decayed;
+
+  static Decayed decay(Value x) { return x.obj(); }
+  static Value recover(Decayed x) { return oop(x); }
 };
 
 #define DEF_OOP(type)                                                      \

@@ -326,8 +326,8 @@ JVM_ENTRY(void, JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src
   }
   arrayOop s = arrayOop(JNIHandles::resolve_non_null(src));
   arrayOop d = arrayOop(JNIHandles::resolve_non_null(dst));
-  assert(s->is_oop(), "JVM_ArrayCopy: src not an oop");
-  assert(d->is_oop(), "JVM_ArrayCopy: dst not an oop");
+  assert(oopDesc::is_oop(s), "JVM_ArrayCopy: src not an oop");
+  assert(oopDesc::is_oop(d), "JVM_ArrayCopy: dst not an oop");
   // Do copy
   s->klass()->copy_array(s, src_pos, d, dst_pos, length, thread);
 JVM_END

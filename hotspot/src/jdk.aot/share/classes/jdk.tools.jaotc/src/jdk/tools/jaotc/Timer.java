@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.microbenchmarks.graal;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Warmup;
+package jdk.tools.jaotc;
 
-@Warmup(iterations = 1)
-@Measurement(iterations = 1)
-@Fork(1)
-/**
- * This dummy class is used to verify that the JMH microbenchmarking environment is set up properly.
- */
-public class TestJMH {
+final class Timer implements AutoCloseable {
 
-    @Benchmark
-    public void testJMH() {
-        // This method was intentionally left blank.
+    private final Main main;
+    private final long start;
+
+    Timer(Main main, String message) {
+        this.main = main;
+        start = System.currentTimeMillis();
+        main.printer.printInfo(message);
+    }
+
+    public void close() {
+        final long end = System.currentTimeMillis();
+        main.printer.printlnInfo(" (" + (end - start) + " ms)");
     }
 
 }

@@ -2090,7 +2090,7 @@ public:
   VerifyOopsClosure(nmethod* nm) : _nm(nm), _ok(true) { }
   bool ok() { return _ok; }
   virtual void do_oop(oop* p) {
-    if ((*p) == NULL || (*p)->is_oop())  return;
+    if (oopDesc::is_oop_or_null(*p)) return;
     if (_ok) {
       _nm->print_nmethod(true);
       _ok = false;
@@ -2112,7 +2112,7 @@ void nmethod::verify() {
   // Make sure all the entry points are correctly aligned for patching.
   NativeJump::check_verified_entry_alignment(entry_point(), verified_entry_point());
 
-  // assert(method()->is_oop(), "must be valid");
+  // assert(oopDesc::is_oop(method()), "must be valid");
 
   ResourceMark rm;
 

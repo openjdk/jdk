@@ -33,7 +33,7 @@ class UTF_16BE extends Unicode
 {
 
     public UTF_16BE() {
-        super("UTF-16BE", StandardCharsets.aliases_UTF_16BE);
+        super("UTF-16BE", StandardCharsets.aliases_UTF_16BE());
     }
 
     public String historicalName() {

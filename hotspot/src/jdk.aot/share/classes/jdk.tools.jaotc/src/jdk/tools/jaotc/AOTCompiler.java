@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-public class AOTCompiler {
+final class AOTCompiler {
 
     private final Main main;
 
@@ -68,7 +68,7 @@ public class AOTCompiler {
         /**
          * Create a compile queue with the given number of threads.
          */
-        public CompileQueue(final int threads) {
+        CompileQueue(final int threads) {
             super(threads, threads, 0L, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<>());
             startTime = System.currentTimeMillis();
         }
@@ -79,7 +79,7 @@ public class AOTCompiler {
             if (task.getResult() != null) {
                 final int count = successfulMethodCount.incrementAndGet();
                 if (count % 100 == 0) {
-                    main.printInfo(".");
+                    main.printer.printInfo(".");
                 }
                 CompiledMethodInfo result = task.getResult();
                 if (result != null) {
@@ -87,9 +87,9 @@ public class AOTCompiler {
                 }
             } else {
                 failedMethodCount.incrementAndGet();
-                main.printlnVerbose("");
+                main.printer.printlnVerbose("");
                 ResolvedJavaMethod method = task.getMethod();
-                main.printlnVerbose(" failed " + method.getName() + method.getSignature().toMethodDescriptor());
+                main.printer.printlnVerbose(" failed " + method.getName() + method.getSignature().toMethodDescriptor());
             }
         }
 
@@ -98,8 +98,8 @@ public class AOTCompiler {
             final long endTime = System.currentTimeMillis();
             final int success = successfulMethodCount.get();
             final int failed = failedMethodCount.get();
-            main.printlnInfo("");
-            main.printlnInfo(success + " methods compiled, " + failed + " methods failed (" + (endTime - startTime) + " ms)");
+            main.printer.printlnInfo("");
+            main.printer.printlnInfo(success + " methods compiled, " + failed + " methods failed (" + (endTime - startTime) + " ms)");
         }
 
     }
@@ -110,7 +110,7 @@ public class AOTCompiler {
      * @param aotBackend
      * @param threads number of compilation threads
      */
-    public AOTCompiler(Main main, OptionValues graalOptions, AOTBackend aotBackend, final int threads) {
+    AOTCompiler(Main main, OptionValues graalOptions, AOTBackend aotBackend, final int threads) {
         this.main = main;
         this.graalOptions = graalOptions;
         this.compileQueue = new CompileQueue(threads);
@@ -123,9 +123,9 @@ public class AOTCompiler {
      * @param classes a list of class to compile
      * @throws InterruptedException
      */
-    public List<AOTCompiledClass> compileClasses(List<AOTCompiledClass> classes) throws InterruptedException {
-        main.printlnInfo("Compiling with " + compileQueue.getCorePoolSize() + " threads");
-        main.printInfo("."); // Compilation progress indication.
+    List<AOTCompiledClass> compileClasses(List<AOTCompiledClass> classes) throws InterruptedException {
+        main.printer.printlnInfo("Compiling with " + compileQueue.getCorePoolSize() + " threads");
+        main.printer.printInfo("."); // Compilation progress indication.
 
         for (AOTCompiledClass c : classes) {
             for (ResolvedJavaMethod m : c.getMethods()) {
@@ -160,8 +160,8 @@ public class AOTCompiler {
         }
     }
 
-    public static void logCompilation(String methodName, String message) {
-        Main.writeLog(message + " " + methodName);
+    static void logCompilation(String methodName, String message) {
+        LogPrinter.writeLog(message + " " + methodName);
     }
 
 }

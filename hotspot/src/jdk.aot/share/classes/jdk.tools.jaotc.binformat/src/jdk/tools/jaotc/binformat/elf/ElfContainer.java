@@ -26,14 +26,13 @@ package jdk.tools.jaotc.binformat.elf;
 import java.io.File;
 import java.io.FileOutputStream;
 
-public class ElfContainer {
+final class ElfContainer {
 
-    File outputFile;
-    FileOutputStream outputStream;
-    long fileOffset;
+    private final File outputFile;
+    private FileOutputStream outputStream;
+    private long fileOffset;
 
-    public ElfContainer(String fileName, String aotVersion) {
-        String baseName;
+    ElfContainer(String fileName) {
 
         outputFile = new File(fileName);
         if (outputFile.exists()) {
@@ -48,7 +47,7 @@ public class ElfContainer {
         fileOffset = 0;
     }
 
-    public void close() {
+    void close() {
         try {
             outputStream.close();
         } catch (Exception e) {
@@ -56,8 +55,10 @@ public class ElfContainer {
         }
     }
 
-    public void writeBytes(byte [] bytes) {
-        if (bytes == null) return;
+    void writeBytes(byte[] bytes) {
+        if (bytes == null) {
+            return;
+        }
         try {
             outputStream.write(bytes);
         } catch (Exception e) {
@@ -67,11 +68,13 @@ public class ElfContainer {
     }
 
     // Write bytes to output file with up front alignment padding
-    public void writeBytes(byte [] bytes, int alignment) {
-        if (bytes == null) return;
+    void writeBytes(byte[] bytes, int alignment) {
+        if (bytes == null) {
+            return;
+        }
         try {
             // Pad to alignment
-            while ((fileOffset & (long)(alignment-1)) != 0) {
+            while ((fileOffset & (alignment - 1)) != 0) {
                 outputStream.write(0);
                 fileOffset++;
             }
@@ -82,4 +85,3 @@ public class ElfContainer {
         fileOffset += bytes.length;
     }
 }
-
