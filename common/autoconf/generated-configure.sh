@@ -5151,7 +5151,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1503411624
+DATE_WHEN_GENERATED=1504187184
 
 ###############################################################################
 #
@@ -15719,6 +15719,12 @@ test -n "$target_alias" &&
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
+    alpha*)
+      VAR_CPU=alpha
+      VAR_CPU_ARCH=alpha
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
@@ -15728,6 +15734,36 @@ test -n "$target_alias" &&
     aarch64)
       VAR_CPU=aarch64
       VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    m68k)
+      VAR_CPU=m68k
+      VAR_CPU_ARCH=m68k
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips)
+      VAR_CPU=mips
+      VAR_CPU_ARCH=mips
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mipsel)
+      VAR_CPU=mipsel
+      VAR_CPU_ARCH=mipsel
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    mips64)
+      VAR_CPU=mips64
+      VAR_CPU_ARCH=mips64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips64el)
+      VAR_CPU=mips64el
+      VAR_CPU_ARCH=mips64el
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -15760,6 +15796,18 @@ test -n "$target_alias" &&
       VAR_CPU_ARCH=s390
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
+      ;;
+    sh*eb)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    sh*)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
       ;;
     sparc)
       VAR_CPU=sparc
@@ -15858,6 +15906,12 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
+    alpha*)
+      VAR_CPU=alpha
+      VAR_CPU_ARCH=alpha
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     arm*)
       VAR_CPU=arm
       VAR_CPU_ARCH=arm
@@ -15867,6 +15921,36 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
     aarch64)
       VAR_CPU=aarch64
       VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    m68k)
+      VAR_CPU=m68k
+      VAR_CPU_ARCH=m68k
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips)
+      VAR_CPU=mips
+      VAR_CPU_ARCH=mips
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    mipsel)
+      VAR_CPU=mipsel
+      VAR_CPU_ARCH=mipsel
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    mips64)
+      VAR_CPU=mips64
+      VAR_CPU_ARCH=mips64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=big
+      ;;
+    mips64el)
+      VAR_CPU=mips64el
+      VAR_CPU_ARCH=mips64el
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -15899,6 +15983,18 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ARCH=s390
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=big
+      ;;
+    sh*eb)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=big
+      ;;
+    sh*)
+      VAR_CPU=sh
+      VAR_CPU_ARCH=sh
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
       ;;
     sparc)
       VAR_CPU=sparc
@@ -16045,6 +16141,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_TARGET_OS" != xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
     OPENJDK_TARGET_CPU_LEGACY="amd64"
+  elif test "x$OPENJDK_TARGET_CPU" = xalpha; then
+    # Avoid name collisions with variables named alpha
+    OPENJDK_TARGET_CPU_LEGACY="_alpha_"
+  elif test "x$OPENJDK_TARGET_CPU" = xsh; then
+    # Avoid name collisions with variables named sh
+    OPENJDK_TARGET_CPU_LEGACY="_sh_"
   fi
 
 
@@ -16197,6 +16299,12 @@ $as_echo "$COMPILE_TYPE" >&6; }
   elif test "x$OPENJDK_BUILD_OS" != xmacosx && test "x$OPENJDK_BUILD_CPU" = xx86_64; then
     # On all platforms except MacOSX replace x86_64 with amd64.
     OPENJDK_BUILD_CPU_LEGACY="amd64"
+  elif test "x$OPENJDK_BUILD_CPU" = xalpha; then
+    # Avoid name collisions with variables named alpha
+    OPENJDK_BUILD_CPU_LEGACY="_alpha_"
+  elif test "x$OPENJDK_BUILD_CPU" = xsh; then
+    # Avoid name collisions with variables named sh
+    OPENJDK_BUILD_CPU_LEGACY="_sh_"
   fi
 
 
@@ -51563,7 +51671,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Set some additional per-CPU defines.
   if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xwindows-x86; then
     JVM_CFLAGS="$JVM_CFLAGS -arch:IA32"
-  elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
+  elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xsolaris-sparcv9; then
     JVM_CFLAGS="$JVM_CFLAGS -xarch=sparc"
   elif test "x$OPENJDK_TARGET_CPU" = xppc64; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -51968,7 +52076,7 @@ LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} ${JAVA_BASE_LDFLAGS}"
       SOLARIS_LIBM_LIBS="/usr/lib/sparcv9/libm.so.1"
     fi
     JVM_LIBS="$JVM_LIBS -lsocket -lsched -ldl $SOLARIS_LIBM_LIBS -lCrun \
-        -lthread -ldoor -lc -ldemangle -lnsl -lkstat -lrt"
+        -lthread -ldoor -lc -ldemangle -lnsl -lrt"
   elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
     JVM_LIBS="$JVM_LIBS -lm"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
@@ -52442,7 +52550,7 @@ $as_echo "$as_me: GCC >= 6 detected; adding ${NO_DELETE_NULL_POINTER_CHECKS_CFLA
   # Set some additional per-CPU defines.
   if test "x$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" = xwindows-x86; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -arch:IA32"
-  elif test "x$OPENJDK_BUILD_CPU" = xsparcv9; then
+  elif test "x$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" = xsolaris-sparcv9; then
     OPENJDK_BUILD_JVM_CFLAGS="$OPENJDK_BUILD_JVM_CFLAGS -xarch=sparc"
   elif test "x$OPENJDK_BUILD_CPU" = xppc64; then
     if test "x$OPENJDK_BUILD_OS" = xlinux; then
@@ -52847,7 +52955,7 @@ OPENJDK_BUILD_LDFLAGS_JDKLIB="${OPENJDK_BUILD_LDFLAGS_JDKLIB} ${OPENJDK_BUILD_JA
       OPENJDK_BUILD_SOLARIS_LIBM_LIBS="/usr/lib/sparcv9/libm.so.1"
     fi
     OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lsocket -lsched -ldl $SOLARIS_LIBM_LIBS -lCrun \
-        -lthread -ldoor -lc -ldemangle -lnsl -lkstat -lrt"
+        -lthread -ldoor -lc -ldemangle -lnsl -lrt"
   elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
     OPENJDK_BUILD_JVM_LIBS="$OPENJDK_BUILD_JVM_LIBS -lm"
   elif test "x$OPENJDK_BUILD_OS" = xaix; then
