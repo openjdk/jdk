@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NativeOrderOutputStream {
+public final class NativeOrderOutputStream {
     private final PatchableByteOutputStream os = new PatchableByteOutputStream();
     private final byte[] backingArray = new byte[8];
     private final ByteBuffer buffer;
@@ -181,7 +181,7 @@ public class NativeOrderOutputStream {
     private static class PatchableByteOutputStream extends ByteArrayOutputStream {
 
         public void writeAt(byte[] data, int length, int position) {
-            long end = (long)position + (long)length;
+            long end = (long) position + (long) length;
             if (buf.length < end) {
                 throw new IllegalArgumentException("Array not properly sized");
             }

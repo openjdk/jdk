@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect;
 
 import jdk.tools.jaotc.LoadedClass;
@@ -27,8 +28,8 @@ import jdk.tools.jaotc.LoadedClass;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClassSearch {
-    private List<SourceProvider> providers = new ArrayList<>();
+public final class ClassSearch {
+    private final List<SourceProvider> providers = new ArrayList<>();
 
     public void addProvider(SourceProvider provider) {
         providers.add(provider);
@@ -50,7 +51,7 @@ public class ClassSearch {
         return loaded;
     }
 
-    private LoadedClass loadClass(String name, ClassLoader loader) {
+    private static LoadedClass loadClass(String name, ClassLoader loader) {
         try {
             Class<?> clzz = loader.loadClass(name);
             return new LoadedClass(name, clzz);

@@ -26,7 +26,6 @@
  * @requires vm.aot
  * @library /test/lib /testlibrary /
  * @ignore 8132547
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeDynamic

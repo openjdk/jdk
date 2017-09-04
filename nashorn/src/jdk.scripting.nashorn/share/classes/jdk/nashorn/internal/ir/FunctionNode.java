@@ -722,7 +722,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      */
     public boolean needsCallee() {
         // NOTE: we only need isSplit() here to ensure that :scope can never drop below slot 2 for splitting array units.
-        return needsParentScope() || usesSelfSymbol() || isSplit() || (needsArguments() && !isStrict()) || hasApplyToCallSpecialization();
+        return needsParentScope() || usesSelfSymbol() || isSplit() || ((needsArguments() || hasApplyToCallSpecialization()) && !isStrict());
     }
 
     /**

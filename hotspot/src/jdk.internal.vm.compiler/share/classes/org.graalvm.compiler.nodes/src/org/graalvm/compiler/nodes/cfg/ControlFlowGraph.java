@@ -562,7 +562,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
                 if (pred.getSuccessorCount() > 1) {
                     assert pred.getEndNode() instanceof ControlSplitNode;
                     ControlSplitNode controlSplit = (ControlSplitNode) pred.getEndNode();
-                    probability *= controlSplit.probability(block.getBeginNode());
+                    probability = multiplyProbabilities(probability, controlSplit.probability(block.getBeginNode()));
                 }
             } else {
                 probability = predecessors[0].probability;
@@ -572,7 +572,7 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
 
                 if (block.getBeginNode() instanceof LoopBeginNode) {
                     LoopBeginNode loopBegin = (LoopBeginNode) block.getBeginNode();
-                    probability *= loopBegin.loopFrequency();
+                    probability = multiplyProbabilities(probability, loopBegin.loopFrequency());
                 }
             }
             if (probability < MIN_PROBABILITY) {
@@ -754,5 +754,21 @@ public final class ControlFlowGraph implements AbstractControlFlowGraph<Block> {
 
     public void setNodeToBlock(NodeMap<Block> nodeMap) {
         this.nodeToBlock = nodeMap;
+    }
+
+    /**
+     * Multiplies a and b and clamps the between {@link ControlFlowGraph#MIN_PROBABILITY} and
+     * {@link ControlFlowGraph#MAX_PROBABILITY}.
+     */
+    public static double multiplyProbabilities(double a, double b) {
+        assert !Double.isNaN(a) && !Double.isNaN(b) && Double.isFinite(a) && Double.isFinite(b) : a + " " + b;
+        double r = a * b;
+        if (r > MAX_PROBABILITY) {
+            return MAX_PROBABILITY;
+        }
+        if (r < MIN_PROBABILITY) {
+            return MIN_PROBABILITY;
+        }
+        return r;
     }
 }

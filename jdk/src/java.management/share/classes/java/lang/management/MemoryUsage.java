@@ -36,10 +36,14 @@ import sun.management.MemoryUsageCompositeData;
  * the heap or non-heap memory of the Java virtual machine as a whole.
  *
  * <p> A {@code MemoryUsage} object contains four values:
- * <table>
+ * <table class="striped">
  * <caption style="display:none">Describes the MemoryUsage object content</caption>
+ * <thead>
+ * <tr><th scope="col">Value</th><th scope="col">Description</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
  * <tr>
- * <td style="vertical-align:top"> {@code init} </td>
+ * <th scope="row" style="vertical-align:top"> {@code init} </th>
  * <td style="vertical-align:top"> represents the initial amount of memory (in bytes) that
  *      the Java virtual machine requests from the operating system
  *      for memory management during startup.  The Java virtual machine
@@ -49,12 +53,12 @@ import sun.management.MemoryUsageCompositeData;
  * </td>
  * </tr>
  * <tr>
- * <td style="vertical-align:top"> {@code used} </td>
+ * <th scope="row" style="vertical-align:top"> {@code used} </th>
  * <td style="vertical-align:top"> represents the amount of memory currently used (in bytes).
  * </td>
  * </tr>
  * <tr>
- * <td style="vertical-align:top"> {@code committed} </td>
+ * <th scope="row" style="vertical-align:top"> {@code committed} </th>
  * <td style="vertical-align:top"> represents the amount of memory (in bytes) that is
  *      guaranteed to be available for use by the Java virtual machine.
  *      The amount of committed memory may change over time (increase
@@ -65,7 +69,7 @@ import sun.management.MemoryUsageCompositeData;
  * </td>
  * </tr>
  * <tr>
- * <td style="vertical-align:top"> {@code max} </td>
+ * <th scope="row" style="vertical-align:top"> {@code max} </th>
  * <td style="vertical-align:top"> represents the maximum amount of memory (in bytes)
  *      that can be used for memory management. Its value may be undefined.
  *      The maximum amount of memory may change over time if defined.
@@ -77,6 +81,7 @@ import sun.management.MemoryUsageCompositeData;
  *      when the system is low on virtual memory).
  * </td>
  * </tr>
+ * </tbody>
  * </table>
  *
  * Below is a picture showing an example of a memory pool:
@@ -252,31 +257,33 @@ public class MemoryUsage {
      * given {@code CompositeData}. The given {@code CompositeData}
      * must contain the following attributes:
      *
-     * <blockquote>
-     * <table border="1">
+     * <table class="striped" style="margin-left:2em;">
      * <caption style="display:none">The attributes and the types the given CompositeData contains</caption>
+     * <thead>
      * <tr>
-     *   <th style="text-align:left">Attribute Name</th>
-     *   <th style="text-align:left">Type</th>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
      * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
      * <tr>
-     *   <td>init</td>
+     *   <th scope="row">init</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>used</td>
+     *   <th scope="row">used</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>committed</td>
+     *   <th scope="row">committed</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
      * <tr>
-     *   <td>max</td>
+     *   <th scope="row">max</th>
      *   <td>{@code java.lang.Long}</td>
      * </tr>
+     * </tbody>
      * </table>
-     * </blockquote>
      *
      * @param cd {@code CompositeData} representing a {@code MemoryUsage}
      *

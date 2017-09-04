@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.calc;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Mul;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -108,6 +109,27 @@ public class MulNode extends BinaryArithmeticNode<Mul> implements NarrowableArit
                         return AddNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i - 1))), forX);
                     } else if (CodeUtil.isPowerOf2(i + 1)) {
                         return SubNode.create(new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(i + 1))), forX);
+                    } else {
+                        int bitCount = Long.bitCount(i);
+                        long highestBitValue = Long.highestOneBit(i);
+                        if (bitCount == 2) {
+                            // e.g., 0b1000_0010
+                            long lowerBitValue = i - highestBitValue;
+                            assert highestBitValue > 0 && lowerBitValue > 0;
+                            ValueNode left = new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(highestBitValue)));
+                            ValueNode right = lowerBitValue == 1 ? forX : new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(lowerBitValue)));
+                            return AddNode.create(left, right);
+                        } else {
+                            // e.g., 0b1111_1101
+                            int shiftToRoundUpToPowerOf2 = CodeUtil.log2(highestBitValue) + 1;
+                            long subValue = (1 << shiftToRoundUpToPowerOf2) - i;
+                            if (CodeUtil.isPowerOf2(subValue) && shiftToRoundUpToPowerOf2 < ((IntegerStamp) stamp).getBits()) {
+                                assert CodeUtil.log2(subValue) >= 1;
+                                ValueNode left = new LeftShiftNode(forX, ConstantNode.forInt(shiftToRoundUpToPowerOf2));
+                                ValueNode right = new LeftShiftNode(forX, ConstantNode.forInt(CodeUtil.log2(subValue)));
+                                return SubNode.create(left, right);
+                            }
+                        }
                     }
                 } else if (i < 0) {
                     if (CodeUtil.isPowerOf2(-i)) {

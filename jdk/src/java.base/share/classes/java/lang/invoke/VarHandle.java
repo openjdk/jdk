@@ -1826,7 +1826,7 @@ public abstract class VarHandle {
          *         value associated with method name (indicating the method
          *         name does not correspond to a {@code VarHandle}
          *         signature-polymorphic method name).
-         * @see #methodName
+         * @see #methodName()
          */
         public static AccessMode valueFromMethodName(String methodName) {
             AccessMode am = methodNameToAccessMode.get(methodName);

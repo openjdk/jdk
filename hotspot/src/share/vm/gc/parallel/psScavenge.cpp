@@ -95,7 +95,7 @@ public:
 
   template <class T> void do_oop_work(T* p) {
     assert (!oopDesc::is_null(*p), "expected non-null ref");
-    assert ((oopDesc::load_decode_heap_oop_not_null(p))->is_oop(),
+    assert (oopDesc::is_oop(oopDesc::load_decode_heap_oop_not_null(p)),
             "expected an oop while scanning weak refs");
 
     // Weak refs may be visited more than once.

@@ -94,13 +94,17 @@ import java.lang.annotation.*;
  * <p>then the resulting {@code Descriptor} will contain the following
  * fields:</p>
  *
- * <table border="1">
+ * <table class="striped">
  * <caption style="display:none">Descriptor Fields</caption>
- * <tr><th>Name</th><th>Value</th></tr>
- * <tr><td>units</td><td>"bytes"</td></tr>
- * <tr><td>descriptionResourceKey</td><td>"bytes.key"</td></tr>
- * <tr><td>descriptionResourceBundleBaseName</td>
+ * <thead>
+ * <tr><th scope="col">Name</th><th scope="col">Value</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">units</th><td>"bytes"</td></tr>
+ * <tr><th scope="row">descriptionResourceKey</th><td>"bytes.key"</td></tr>
+ * <tr><th scope="row">descriptionResourceBundleBaseName</th>
  *     <td>"com.example.foo.MBeanResources"</td></tr>
+ * </tbody>
  * </table>
  *
  * <p>An annotation such as {@code @Units} can be applied to:</p>
@@ -144,24 +148,28 @@ import java.lang.annotation.*;
  * or an array of annotations.  The value of the field is derived from
  * the value of the annotation element as follows:</p>
  *
- * <table border="1">
+ * <table class="striped">
  * <caption style="display:none">Descriptor Field Types</caption>
- * <tr><th>Annotation element</th><th>Descriptor field</th></tr>
- * <tr><td>Primitive value ({@code 5}, {@code false}, etc)</td>
+ * <thead>
+ * <tr><th scope="col">Annotation element</th><th scope="col">Descriptor field</th></tr>
+ * </thead>
+ * <tbody style="text-align:left">
+ * <tr><th scope="row">Primitive value ({@code 5}, {@code false}, etc)</th>
  *     <td>Wrapped value ({@code Integer.valueOf(5)},
  *         {@code Boolean.FALSE}, etc)</td></tr>
- * <tr><td>Class constant (e.g. {@code Thread.class})</td>
+ * <tr><th scope="row">Class constant (e.g. {@code Thread.class})</th>
  *     <td>Class name from {@link Class#getName()}
  *         (e.g. {@code "java.lang.Thread"})</td></tr>
- * <tr><td>Enum constant (e.g. {@link ElementType#FIELD})</td>
+ * <tr><th scope="row">Enum constant (e.g. {@link ElementType#FIELD})</th>
  *     <td>Constant name from {@link Enum#name()}
  *         (e.g. {@code "FIELD"})</td></tr>
- * <tr><td>Array of class constants or enum constants</td>
+ * <tr><th scope="row">Array of class constants or enum constants</th>
  *     <td>String array derived by applying these rules to each
  *         element</td></tr>
- * <tr><td>Value of any other type<br>
- *         ({@code String}, {@code String[]}, {@code int[]}, etc)</td>
+ * <tr><th scope="row">Value of any other type<br>
+ *         ({@code String}, {@code String[]}, {@code int[]}, etc)</th>
  *     <td>The same value</td></tr>
+ * </tbody>
  * </table>
  *
  * @since 1.6

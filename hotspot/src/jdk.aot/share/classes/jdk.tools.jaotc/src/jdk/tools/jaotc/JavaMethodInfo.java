@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 package jdk.tools.jaotc;
 
 import org.graalvm.compiler.code.CompilationResult;
-import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 
-public interface JavaMethodInfo {
+import jdk.vm.ci.hotspot.HotSpotCompiledCode;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+interface JavaMethodInfo {
 
     /**
      * @return unique symbol name for this method.
@@ -41,5 +43,17 @@ public interface JavaMethodInfo {
     String getNameAndSignature();
 
     HotSpotCompiledCode compiledCode(CompilationResult result);
+
+    /**
+     * Name a java method with class and signature to make it unique.
+     *
+     * @param method to generate unique identifier for
+     * @return Unique name for this method including class and signature
+     **/
+    static String uniqueMethodName(ResolvedJavaMethod method) {
+        String className = method.getDeclaringClass().toClassName();
+        String name = className + "." + method.getName() + method.getSignature().toMethodDescriptor();
+        return name;
+    }
 
 }

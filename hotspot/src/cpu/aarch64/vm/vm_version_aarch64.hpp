@@ -56,6 +56,17 @@ public:
   static void assert_is_initialized() {
   }
 
+  static bool expensive_load(int ld_size, int scale) {
+    if (cpu_family() == CPU_ARM) {
+      // Half-word load with index shift by 1 (aka scale is 2) has
+      // extra cycle latency, e.g. ldrsh w0, [x1,w2,sxtw #1].
+      if (ld_size == 2 && scale == 2) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   enum Family {
     CPU_ARM       = 'A',
     CPU_BROADCOM  = 'B',

@@ -47,7 +47,7 @@ void check_ThreadShadow() {
 
 
 void ThreadShadow::set_pending_exception(oop exception, const char* file, int line) {
-  assert(exception != NULL && exception->is_oop(), "invalid exception oop");
+  assert(exception != NULL && oopDesc::is_oop(exception), "invalid exception oop");
   _pending_exception = exception;
   _exception_file    = file;
   _exception_line    = line;

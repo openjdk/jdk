@@ -24,26 +24,23 @@
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_RELOCATION;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffRelocEntry {
-    ByteBuffer entry;
+final class PECoffRelocEntry {
+    private final ByteBuffer entry;
 
-    public PECoffRelocEntry(int offset, int symno, int type) {
+    PECoffRelocEntry(int offset, int symno, int type) {
 
         entry = PECoffByteBuffer.allocate(IMAGE_RELOCATION.totalsize);
 
         entry.putInt(IMAGE_RELOCATION.VirtualAddress.off, offset);
         entry.putInt(IMAGE_RELOCATION.SymbolTableIndex.off, symno);
-        entry.putChar(IMAGE_RELOCATION.Type.off, (char)type);
+        entry.putChar(IMAGE_RELOCATION.Type.off, (char) type);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return entry.array();
     }
 }
-

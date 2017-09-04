@@ -79,8 +79,17 @@ public class CompilerToVMHelper {
     }
 
     public static HotSpotResolvedObjectType lookupType(String name,
-            Class<?> accessingClass, boolean resolve) {
+            Class<?> accessingClass, boolean resolve) throws ClassNotFoundException {
         return CTVM.lookupType(name, accessingClass, resolve);
+    }
+
+    public static HotSpotResolvedObjectType lookupTypeHelper(String name,
+            Class<?> accessingClass, boolean resolve) {
+        try {
+            return lookupType(name, accessingClass, resolve);
+        } catch (ClassNotFoundException e) {
+            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
+        }
     }
 
     public static Object resolveConstantInPool(ConstantPool constantPool, int cpi) {

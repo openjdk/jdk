@@ -24,16 +24,14 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.dysymtab_command;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachODySymtab {
-    ByteBuffer dysymtab;
+final class MachODySymtab {
+    private final ByteBuffer dysymtab;
 
-    public MachODySymtab(int nlocal, int nglobal, int nundef) {
+    MachODySymtab(int nlocal, int nglobal, int nundef) {
         dysymtab = MachOByteBuffer.allocate(dysymtab_command.totalsize);
 
         dysymtab.putInt(dysymtab_command.cmd.off, dysymtab_command.LC_DYSYMTAB);
@@ -42,13 +40,11 @@ public class MachODySymtab {
         dysymtab.putInt(dysymtab_command.nlocalsym.off, nlocal);
         dysymtab.putInt(dysymtab_command.iextdefsym.off, nlocal);
         dysymtab.putInt(dysymtab_command.nextdefsym.off, nglobal);
-        dysymtab.putInt(dysymtab_command.iundefsym.off, nlocal+nglobal);
+        dysymtab.putInt(dysymtab_command.iundefsym.off, nlocal + nglobal);
         dysymtab.putInt(dysymtab_command.nundefsym.off, nundef);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return dysymtab.array();
     }
 }
-
-

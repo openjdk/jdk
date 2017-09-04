@@ -23,10 +23,10 @@
 
 package jdk.tools.jaotc.binformat.macho;
 
+//@formatter:off
 /**
  *
- * Support for the creation of Mach-o Object files.
- * Current support is limited to 64 bit x86_64.
+ * Support for the creation of Mach-o Object files. Current support is limited to 64 bit x86_64.
  *
  * File Format Overview:
  *
@@ -38,12 +38,12 @@ package jdk.tools.jaotc.binformat.macho;
  *      (which each include multiple Sections)
  */
 
-public class MachO {
+final class MachO {
 
     /**
      * mach_header_64 structure defines
      */
-    public enum mach_header_64 {
+    enum mach_header_64 {
                  magic( 0, 4),
                cputype( 4, 4),
             cpusubtype( 8, 4),
@@ -53,49 +53,49 @@ public class MachO {
                  flags(24, 4),
               reserved(28, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         mach_header_64(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 32;
+        static int totalsize = 32;
 
         /**
          * mach_header_64 defines
          */
-        public static final int MH_MAGIC                   = 0xfeedface;
-        public static final int MH_MAGIC_64                = 0xfeedfacf;
-        public static final int MH_SUBSECTIONS_VIA_SYMBOLS = 0x2000;
+        static final int MH_MAGIC                   = 0xfeedface;
+        static final int MH_MAGIC_64                = 0xfeedfacf;
+        static final int MH_SUBSECTIONS_VIA_SYMBOLS = 0x2000;
 
         /**
          * filetype
          */
-        public static final int MH_OBJECT = 0x1;
+        static final int MH_OBJECT = 0x1;
 
         /**
          * cputype
          */
-        public static final int CPU_TYPE_ANY              = -1;
-        public static final int CPU_ARCH_ABI64            = 0x1000000;
-        public static final int CPU_TYPE_X86_64           = 0x1000007;
-        public static final int CPU_TYPE_ARM64            = 0x100000c;
+        static final int CPU_TYPE_ANY              = -1;
+        static final int CPU_ARCH_ABI64            = 0x1000000;
+        static final int CPU_TYPE_X86_64           = 0x1000007;
+        static final int CPU_TYPE_ARM64            = 0x100000c;
         /**
          * cpusubtype
          */
-        public static final int CPU_SUBTYPE_I386_ALL      = 3;
-        public static final int CPU_SUBTYPE_ARM64_ALL     = 0;
-        public static final int CPU_SUBTYPE_LITTLE_ENDIAN = 0;
-        public static final int CPU_SUBTYPE_BIG_ENDIAN    = 1;
+        static final int CPU_SUBTYPE_I386_ALL      = 3;
+        static final int CPU_SUBTYPE_ARM64_ALL     = 0;
+        static final int CPU_SUBTYPE_LITTLE_ENDIAN = 0;
+        static final int CPU_SUBTYPE_BIG_ENDIAN    = 1;
 
     }
 
     /**
      * segment_command_64 structure defines
      */
-    public enum segment_command_64 {
+    enum segment_command_64 {
                    cmd( 0, 4),
                cmdsize( 4, 4),
                segname( 8,16),
@@ -108,23 +108,23 @@ public class MachO {
                 nsects(64, 4),
                  flags(68, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         segment_command_64(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 72;
+        static int totalsize = 72;
 
-        public static final int LC_SEGMENT_64           = 0x19;
+        static final int LC_SEGMENT_64           = 0x19;
     }
 
     /**
      * section_64 structure defines
      */
-    public enum section_64 {
+    enum section_64 {
               sectname( 0,16),
                segname(16,16),
                   addr(32, 8),
@@ -138,49 +138,49 @@ public class MachO {
              reserved2(72, 4),
              reserved3(76, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         section_64(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 80;
+        static int totalsize = 80;
 
-        public static int S_REGULAR                = 0x0;
-        public static int S_CSTRING_LITERALS       = 0x2;
-        public static int S_ATTR_PURE_INSTRUCTIONS = 0x80000000;
-        public static int S_ATTR_SOME_INSTRUCTIONS = 0x400;
+        static int S_REGULAR                = 0x0;
+        static int S_CSTRING_LITERALS       = 0x2;
+        static int S_ATTR_PURE_INSTRUCTIONS = 0x80000000;
+        static int S_ATTR_SOME_INSTRUCTIONS = 0x400;
     }
 
     /**
      * version_min_command structure defines
      */
-    public enum version_min_command {
+    enum version_min_command {
                    cmd( 0, 4),
                cmdsize( 4, 4),
                version( 8, 4),
                    sdk(12, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         version_min_command(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 16;
+        static int totalsize = 16;
 
-        public static final int LC_VERSION_MIN_MACOSX   = 0x24;
-        public static final int LC_VERSION_MIN_IPHONEOS = 0x25;
+        static final int LC_VERSION_MIN_MACOSX   = 0x24;
+        static final int LC_VERSION_MIN_IPHONEOS = 0x25;
     }
 
     /**
      * symtab_command structure defines
      */
-    public enum symtab_command {
+    enum symtab_command {
                    cmd( 0, 4),
                cmdsize( 4, 4),
                 symoff( 8, 4),
@@ -188,17 +188,17 @@ public class MachO {
                 stroff(16, 4),
                strsize(20, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         symtab_command(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 24;
+        static int totalsize = 24;
 
-        public static final int LC_SYMTAB               = 0x2;
+        static final int LC_SYMTAB               = 0x2;
     }
 
     /**
@@ -206,33 +206,33 @@ public class MachO {
      *
      * nlist_64 structure defines
      */
-    public enum nlist_64 {
+    enum nlist_64 {
                 n_strx( 0, 4),
                 n_type( 4, 1),
                 n_sect( 5, 1),
                 n_desc( 6, 2),
                n_value( 8, 8);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         nlist_64(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 16;
+        static int totalsize = 16;
 
-        public static final int N_EXT                = 0x1;
-        public static final int N_TYPE               = 0xe;
-        public static final int N_UNDF               = 0x0;
-        public static final int N_SECT               = 0xe;
+        static final int N_EXT                = 0x1;
+        static final int N_TYPE               = 0xe;
+        static final int N_UNDF               = 0x0;
+        static final int N_SECT               = 0xe;
     }
 
     /**
      * dysymtab_command structure defines
      */
-    public enum dysymtab_command {
+    enum dysymtab_command {
                    cmd( 0, 4),
                cmdsize( 4, 4),
              ilocalsym( 8, 4),
@@ -254,54 +254,55 @@ public class MachO {
              locreloff(72, 4),
                nlocrel(76, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         dysymtab_command(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 80;
+        static int totalsize = 80;
 
-        public static final int LC_DYSYMTAB             = 0xb;
+        static final int LC_DYSYMTAB             = 0xb;
     }
 
     /**
      * relocation_info structure defines
      */
-    public enum reloc_info {
+    enum reloc_info {
              r_address( 0, 4),
            r_relocinfo( 4, 4);
 
-        public final int off;
-        public final int sz;
+        final int off;
+        final int sz;
 
         reloc_info(int offset, int size) {
             this.off = offset;
             this.sz = size;
         }
 
-        public static int totalsize = 8;
+        static int totalsize = 8;
 
-        public static final int REL_SYMNUM_MASK         = 0xffffff;
-        public static final int REL_SYMNUM_SHIFT        = 0x0;
-        public static final int REL_PCREL_MASK          = 0x1;
-        public static final int REL_PCREL_SHIFT         = 0x18;
-        public static final int REL_LENGTH_MASK         = 0x3;
-        public static final int REL_LENGTH_SHIFT        = 0x19;
-        public static final int REL_EXTERN_MASK         = 0x1;
-        public static final int REL_EXTERN_SHIFT        = 0x1b;
-        public static final int REL_TYPE_MASK           = 0xf;
-        public static final int REL_TYPE_SHIFT          = 0x1c;
+        static final int REL_SYMNUM_MASK         = 0xffffff;
+        static final int REL_SYMNUM_SHIFT        = 0x0;
+        static final int REL_PCREL_MASK          = 0x1;
+        static final int REL_PCREL_SHIFT         = 0x18;
+        static final int REL_LENGTH_MASK         = 0x3;
+        static final int REL_LENGTH_SHIFT        = 0x19;
+        static final int REL_EXTERN_MASK         = 0x1;
+        static final int REL_EXTERN_SHIFT        = 0x1b;
+        static final int REL_TYPE_MASK           = 0xf;
+        static final int REL_TYPE_SHIFT          = 0x1c;
 
         /* reloc_type_x86_64 defines */
 
-        public static final int X86_64_RELOC_NONE      = 0x0;
-        public static final int X86_64_RELOC_BRANCH    = 0x2;
-        public static final int X86_64_RELOC_GOT       = 0x4;
-        public static final int X86_64_RELOC_GOT_LOAD  = 0x3;
-        public static final int X86_64_RELOC_SIGNED    = 0x1;
-        public static final int X86_64_RELOC_UNSIGNED  = 0x0;
+        static final int X86_64_RELOC_NONE      = 0x0;
+        static final int X86_64_RELOC_BRANCH    = 0x2;
+        static final int X86_64_RELOC_GOT       = 0x4;
+        static final int X86_64_RELOC_GOT_LOAD  = 0x3;
+        static final int X86_64_RELOC_SIGNED    = 0x1;
+        static final int X86_64_RELOC_UNSIGNED  = 0x0;
     }
 }
+//@formatter:on

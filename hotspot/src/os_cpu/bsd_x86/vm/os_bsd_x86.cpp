@@ -908,6 +908,12 @@ static void current_stack_region(address * bottom, size_t * size) {
   // workaround for OS X 10.9.0 (Mavericks)
   // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
   if (pthread_main_np() == 1) {
+    // At least on Mac OS 10.12 we have observed stack sizes not aligned
+    // to pages boundaries. This can be provoked by e.g. setrlimit() (ulimit -s xxxx in the
+    // shell). Apparently Mac OS actually rounds upwards to next multiple of page size,
+    // however, we round downwards here to be on the safe side.
+    *size = align_down(*size, getpagesize());
+
     if ((*size) < (DEFAULT_MAIN_THREAD_STACK_PAGES * (size_t)getpagesize())) {
       char kern_osrelease[256];
       size_t kern_osrelease_size = sizeof(kern_osrelease);

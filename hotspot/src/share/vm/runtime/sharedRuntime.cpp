@@ -209,7 +209,7 @@ JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
     assert(false, "should be optimized out");
     return;
   }
-  assert(orig->is_oop(true /* ignore mark word */), "Error");
+  assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
   // store the original value that was in the field reference
   thread->satb_mark_queue().enqueue(orig);
 JRT_END
@@ -585,7 +585,7 @@ oop SharedRuntime::retrieve_receiver( Symbol* sig, frame caller ) {
   int args_size = ArgumentSizeComputer(sig).size() + 1;
   assert(args_size <= caller.interpreter_frame_expression_stack_size(), "receiver must be on interpreter stack");
   oop result = cast_to_oop(*caller.interpreter_frame_tos_at(args_size - 1));
-  assert(Universe::heap()->is_in(result) && result->is_oop(), "receiver must be an oop");
+  assert(Universe::heap()->is_in(result) && oopDesc::is_oop(result), "receiver must be an oop");
   return result;
 }
 
@@ -638,20 +638,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     if (t != NULL) {
       return cm->code_begin() + t->pco();
     } else {
-      // there is no exception handler for this pc => deoptimize
-      cm->make_not_entrant();
-
-      // Use Deoptimization::deoptimize for all of its side-effects:
-      // revoking biases of monitors, gathering traps statistics, logging...
-      // it also patches the return pc but we do not care about that
-      // since we return a continuation to the deopt_blob below.
-      JavaThread* thread = JavaThread::current();
-      RegisterMap reg_map(thread, UseBiasedLocking);
-      frame runtime_frame = thread->last_frame();
-      frame caller_frame = runtime_frame.sender(&reg_map);
-      Deoptimization::deoptimize(thread, caller_frame, &reg_map, Deoptimization::Reason_not_compiled_exception_handler);
-
-      return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
+      return Deoptimization::deoptimize_for_missing_exception_handler(cm);
     }
   }
 #endif // INCLUDE_JVMCI
@@ -997,7 +984,7 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* thread, o
     return;
   }
 #endif // INCLUDE_JVMCI
-  assert(obj->is_oop(), "must be a valid oop");
+  assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);
 JRT_END
@@ -1164,8 +1151,6 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
       THROW_(vmSymbols::java_lang_NullPointerException(), nullHandle);
     }
   }
-
-  assert(receiver.is_null() || receiver->is_oop(), "wrong receiver");
 
   // Resolve method
   if (attached_method.not_null()) {

@@ -30,6 +30,7 @@
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.inline.hpp"
@@ -704,12 +705,12 @@ class JvmtiMonitorClosure: public MonitorClosure {
 // Jvmti module closure to collect all modules loaded to the system.
 class JvmtiModuleClosure : public StackObj {
 private:
-  static GrowableArray<jobject> *_tbl; // Protected with Module_lock
+  static GrowableArray<OopHandle> *_tbl; // Protected with Module_lock
 
   static void do_module(ModuleEntry* entry) {
     assert_locked_or_safepoint(Module_lock);
-    jobject module = entry->module_handle();
-    guarantee(module != NULL, "module object is NULL");
+    OopHandle module = entry->module_handle();
+    guarantee(module.resolve() != NULL, "module object is NULL");
     _tbl->push(module);
   }
 
