@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,6 @@ import java.io.IOException;
  * @author A. Sundararajan
  */
 public interface ReadBuffer extends AutoCloseable {
-    // read methods - only byte array and int primitive types.
-    // read position has to be specified always.
-    public void  get(long pos, byte[] buf) throws IOException;
     public char  getChar(long pos) throws IOException;
     public byte  getByte(long pos) throws IOException;
     public short getShort(long pos) throws IOException;

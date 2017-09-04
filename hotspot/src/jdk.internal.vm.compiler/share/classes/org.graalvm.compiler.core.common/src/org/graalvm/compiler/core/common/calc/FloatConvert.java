@@ -25,16 +25,26 @@ package org.graalvm.compiler.core.common.calc;
 import org.graalvm.compiler.debug.GraalError;
 
 public enum FloatConvert {
-    F2I,
-    D2I,
-    F2L,
-    D2L,
-    I2F,
-    L2F,
-    D2F,
-    I2D,
-    L2D,
-    F2D;
+    F2I(FloatConvertCategory.FloatingPointToInteger),
+    D2I(FloatConvertCategory.FloatingPointToInteger),
+    F2L(FloatConvertCategory.FloatingPointToInteger),
+    D2L(FloatConvertCategory.FloatingPointToInteger),
+    I2F(FloatConvertCategory.IntegerToFloatingPoint),
+    L2F(FloatConvertCategory.IntegerToFloatingPoint),
+    D2F(FloatConvertCategory.FloatingPointToFloatingPoint),
+    I2D(FloatConvertCategory.IntegerToFloatingPoint),
+    L2D(FloatConvertCategory.IntegerToFloatingPoint),
+    F2D(FloatConvertCategory.FloatingPointToFloatingPoint);
+
+    private FloatConvertCategory category;
+
+    FloatConvert(FloatConvertCategory category) {
+        this.category = category;
+    }
+
+    public FloatConvertCategory getCategory() {
+        return category;
+    }
 
     public FloatConvert reverse() {
         switch (this) {

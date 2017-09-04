@@ -45,7 +45,9 @@ public class HotSpotSignature implements Signature {
 
     public HotSpotSignature(HotSpotJVMCIRuntimeProvider runtime, String signature) {
         this.runtime = runtime;
-        assert signature.length() > 0;
+        if (signature.length() == 0) {
+            throw new IllegalArgumentException("Signature cannot be empty");
+        }
         this.originalString = signature;
 
         if (signature.charAt(0) == '(') {
@@ -59,9 +61,11 @@ public class HotSpotSignature implements Signature {
             cur++;
             int nextCur = parseSignature(signature, cur);
             returnType = signature.substring(cur, nextCur);
-            assert nextCur == signature.length();
+            if (nextCur != signature.length()) {
+                throw new IllegalArgumentException("Extra characters at end of signature: " + signature);
+            }
         } else {
-            returnType = null;
+            throw new IllegalArgumentException("Signature must start with a '(': " + signature);
         }
     }
 
@@ -81,33 +85,41 @@ public class HotSpotSignature implements Signature {
     }
 
     private static int parseSignature(String signature, int start) {
-        int cur = start;
-        char first;
-        do {
-            first = signature.charAt(cur++);
-        } while (first == '[');
-
-        switch (first) {
-            case 'L':
-                while (signature.charAt(cur) != ';') {
-                    cur++;
-                }
+        try {
+            int cur = start;
+            char first;
+            do {
+                first = signature.charAt(cur);
                 cur++;
-                break;
-            case 'V':
-            case 'I':
-            case 'B':
-            case 'C':
-            case 'D':
-            case 'F':
-            case 'J':
-            case 'S':
-            case 'Z':
-                break;
-            default:
-                throw new JVMCIError("Invalid character at index %d in signature: %s", cur, signature);
+            } while (first == '[');
+
+            switch (first) {
+                case 'L':
+                    while (signature.charAt(cur) != ';') {
+                        if (signature.charAt(cur) == '.') {
+                            throw new IllegalArgumentException("Class name in signature contains '.' at index " + cur + ": " + signature);
+                        }
+                        cur++;
+                    }
+                    cur++;
+                    break;
+                case 'V':
+                case 'I':
+                case 'B':
+                case 'C':
+                case 'D':
+                case 'F':
+                case 'J':
+                case 'S':
+                case 'Z':
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid character '" + signature.charAt(cur - 1) + "' at index " + (cur - 1) + " in signature: " + signature);
+            }
+            return cur;
+        } catch (StringIndexOutOfBoundsException e) {
+            throw new IllegalArgumentException("Truncated signature: " + signature);
         }
-        return cur;
     }
 
     @Override

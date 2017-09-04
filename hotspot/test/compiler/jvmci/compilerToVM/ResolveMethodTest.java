@@ -134,13 +134,13 @@ public class ResolveMethodTest {
                 .getResolvedMethod(tcase.holder,
                         tcase.holder.getDeclaredMethod(tcase.methodName));
         HotSpotResolvedObjectType holderMetaspace = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.holder),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.holder),
                         getClass(), /* resolve = */ true);
         HotSpotResolvedObjectType callerMetaspace = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.caller),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.caller),
                         getClass(), /* resolve = */ true);
         HotSpotResolvedObjectType receiverMetaspace = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.receiver),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.receiver),
                         getClass(), /* resolve = */ true);
 
         // Can only resolve methods on a linked class so force initialization

@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.graalvm.compiler.core.common.RetryableBailoutException;
+import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Graph.Mark;
@@ -145,9 +146,9 @@ public abstract class LoopTransformations {
         // TODO (gd) probabilities need some amount of fixup.. (probably also in other transforms)
     }
 
-    public static void partialUnroll(LoopEx loop, StructuredGraph graph) {
+    public static void partialUnroll(LoopEx loop) {
         assert loop.loopBegin().isMainLoop();
-        graph.getDebug().log("LoopPartialUnroll %s", loop);
+        loop.loopBegin().graph().getDebug().log("LoopPartialUnroll %s", loop);
 
         LoopFragmentInside newSegment = loop.inside().duplicate();
         newSegment.insertWithinAfter(loop);
@@ -222,72 +223,73 @@ public abstract class LoopTransformations {
     // The pre loop is constrained to one iteration for now and will likely
     // be updated to produce vector alignment if applicable.
 
-    public static void insertPrePostLoops(LoopEx loop, StructuredGraph graph) {
+    public static LoopBeginNode insertPrePostLoops(LoopEx loop) {
+        StructuredGraph graph = loop.loopBegin().graph();
         graph.getDebug().log("LoopTransformations.insertPrePostLoops %s", loop);
         LoopFragmentWhole preLoop = loop.whole();
         CountedLoopInfo preCounted = loop.counted();
         IfNode preLimit = preCounted.getLimitTest();
-        if (preLimit != null) {
-            LoopBeginNode preLoopBegin = loop.loopBegin();
-            InductionVariable preIv = preCounted.getCounter();
-            LoopExitNode preLoopExitNode = preLoopBegin.getSingleLoopExit();
-            FixedNode continuationNode = preLoopExitNode.next();
+        assert preLimit != null;
+        LoopBeginNode preLoopBegin = loop.loopBegin();
+        InductionVariable preIv = preCounted.getCounter();
+        LoopExitNode preLoopExitNode = preLoopBegin.getSingleLoopExit();
+        FixedNode continuationNode = preLoopExitNode.next();
 
-            // Each duplication is inserted after the original, ergo create the post loop first
-            LoopFragmentWhole mainLoop = preLoop.duplicate();
-            LoopFragmentWhole postLoop = preLoop.duplicate();
-            preLoopBegin.incrementSplits();
-            preLoopBegin.incrementSplits();
-            preLoopBegin.setPreLoop();
-            graph.getDebug().dump(DebugContext.VERBOSE_LEVEL, graph, "After duplication");
-            LoopBeginNode mainLoopBegin = mainLoop.getDuplicatedNode(preLoopBegin);
-            mainLoopBegin.setMainLoop();
-            LoopBeginNode postLoopBegin = postLoop.getDuplicatedNode(preLoopBegin);
-            postLoopBegin.setPostLoop();
+        // Each duplication is inserted after the original, ergo create the post loop first
+        LoopFragmentWhole mainLoop = preLoop.duplicate();
+        LoopFragmentWhole postLoop = preLoop.duplicate();
+        preLoopBegin.incrementSplits();
+        preLoopBegin.incrementSplits();
+        preLoopBegin.setPreLoop();
+        graph.getDebug().dump(DebugContext.VERBOSE_LEVEL, graph, "After duplication");
+        LoopBeginNode mainLoopBegin = mainLoop.getDuplicatedNode(preLoopBegin);
+        mainLoopBegin.setMainLoop();
+        LoopBeginNode postLoopBegin = postLoop.getDuplicatedNode(preLoopBegin);
+        postLoopBegin.setPostLoop();
 
-            EndNode postEndNode = getBlockEndAfterLoopExit(postLoopBegin);
-            AbstractMergeNode postMergeNode = postEndNode.merge();
-            LoopExitNode postLoopExitNode = postLoopBegin.getSingleLoopExit();
+        EndNode postEndNode = getBlockEndAfterLoopExit(postLoopBegin);
+        AbstractMergeNode postMergeNode = postEndNode.merge();
+        LoopExitNode postLoopExitNode = postLoopBegin.getSingleLoopExit();
 
-            // Update the main loop phi initialization to carry from the pre loop
-            for (PhiNode prePhiNode : preLoopBegin.phis()) {
-                PhiNode mainPhiNode = mainLoop.getDuplicatedNode(prePhiNode);
-                mainPhiNode.setValueAt(0, prePhiNode);
-            }
+        // Update the main loop phi initialization to carry from the pre loop
+        for (PhiNode prePhiNode : preLoopBegin.phis()) {
+            PhiNode mainPhiNode = mainLoop.getDuplicatedNode(prePhiNode);
+            mainPhiNode.setValueAt(0, prePhiNode);
+        }
 
-            EndNode mainEndNode = getBlockEndAfterLoopExit(mainLoopBegin);
-            AbstractMergeNode mainMergeNode = mainEndNode.merge();
-            AbstractEndNode postEntryNode = postLoopBegin.forwardEnd();
+        EndNode mainEndNode = getBlockEndAfterLoopExit(mainLoopBegin);
+        AbstractMergeNode mainMergeNode = mainEndNode.merge();
+        AbstractEndNode postEntryNode = postLoopBegin.forwardEnd();
 
-            // In the case of no Bounds tests, we just flow right into the main loop
-            AbstractBeginNode mainLandingNode = BeginNode.begin(postEntryNode);
-            LoopExitNode mainLoopExitNode = mainLoopBegin.getSingleLoopExit();
-            mainLoopExitNode.setNext(mainLandingNode);
-            preLoopExitNode.setNext(mainLoopBegin.forwardEnd());
+        // In the case of no Bounds tests, we just flow right into the main loop
+        AbstractBeginNode mainLandingNode = BeginNode.begin(postEntryNode);
+        LoopExitNode mainLoopExitNode = mainLoopBegin.getSingleLoopExit();
+        mainLoopExitNode.setNext(mainLandingNode);
+        preLoopExitNode.setNext(mainLoopBegin.forwardEnd());
 
-            // Add and update any phi edges as per merge usage as needed and update usages
-            processPreLoopPhis(loop, mainLoop, postLoop);
-            continuationNode.predecessor().clearSuccessors();
-            postLoopExitNode.setNext(continuationNode);
-            cleanupMerge(postMergeNode, postLoopExitNode);
-            cleanupMerge(mainMergeNode, mainLandingNode);
+        // Add and update any phi edges as per merge usage as needed and update usages
+        processPreLoopPhis(loop, mainLoop, postLoop);
+        continuationNode.predecessor().clearSuccessors();
+        postLoopExitNode.setNext(continuationNode);
+        cleanupMerge(postMergeNode, postLoopExitNode);
+        cleanupMerge(mainMergeNode, mainLandingNode);
 
-            // Change the preLoop to execute one iteration for now
-            updateMainLoopLimit(preLimit, preIv, mainLoop);
-            updatePreLoopLimit(preLimit, preIv, preCounted);
-            preLoopBegin.setLoopFrequency(1);
-            mainLoopBegin.setLoopFrequency(Math.max(0.0, mainLoopBegin.loopFrequency() - 2));
-            postLoopBegin.setLoopFrequency(Math.max(0.0, postLoopBegin.loopFrequency() - 1));
+        // Change the preLoop to execute one iteration for now
+        updateMainLoopLimit(preLimit, preIv, mainLoop);
+        updatePreLoopLimit(preLimit, preIv, preCounted);
+        preLoopBegin.setLoopFrequency(1);
+        mainLoopBegin.setLoopFrequency(Math.max(0.0, mainLoopBegin.loopFrequency() - 2));
+        postLoopBegin.setLoopFrequency(Math.max(0.0, postLoopBegin.loopFrequency() - 1));
 
-            // The pre and post loops don't require safepoints at all
-            for (SafepointNode safepoint : preLoop.nodes().filter(SafepointNode.class)) {
-                graph.removeFixed(safepoint);
-            }
-            for (SafepointNode safepoint : postLoop.nodes().filter(SafepointNode.class)) {
-                graph.removeFixed(safepoint);
-            }
+        // The pre and post loops don't require safepoints at all
+        for (SafepointNode safepoint : preLoop.nodes().filter(SafepointNode.class)) {
+            graph.removeFixed(safepoint);
+        }
+        for (SafepointNode safepoint : postLoop.nodes().filter(SafepointNode.class)) {
+            graph.removeFixed(safepoint);
         }
         graph.getDebug().dump(DebugContext.DETAILED_LEVEL, graph, "InsertPrePostLoops %s", loop);
+        return mainLoopBegin;
     }
 
     /**
@@ -373,7 +375,7 @@ public abstract class LoopTransformations {
             throw GraalError.shouldNotReachHere();
         }
 
-        // Preloop always performs at least once iteration, so remove that from the main loop.
+        // Preloop always performs at least one iteration, so remove that from the main loop.
         ValueNode newLimit = sub(graph, ub, mainStride);
 
         // Re-wire the condition with the new limit
@@ -445,6 +447,14 @@ public abstract class LoopTransformations {
             return false;
         }
         LoopBeginNode loopBegin = loop.loopBegin();
+        LogicNode condition = loop.counted().getLimitTest().condition();
+        if (!(condition instanceof CompareNode)) {
+            return false;
+        }
+        if (((CompareNode) condition).condition() == Condition.EQ || ((CompareNode) condition).condition() == Condition.NE) {
+            condition.getDebug().log(DebugContext.VERBOSE_LEVEL, "isUnrollableLoop %s condition unsupported %s ", loopBegin, ((CompareNode) condition).condition());
+            return false;
+        }
         if (loopBegin.isMainLoop() || loopBegin.isSimpleLoop()) {
             // Flow-less loops to partial unroll for now. 3 blocks corresponds to an if that either
             // exits or continues the loop. There might be fixed and floating work within the loop
@@ -452,6 +462,7 @@ public abstract class LoopTransformations {
             if (loop.loop().getBlocks().size() < 3) {
                 return true;
             }
+            condition.getDebug().log(DebugContext.VERBOSE_LEVEL, "isUnrollableLoop %s too large to unroll %s ", loopBegin, loop.loop().getBlocks().size());
         }
         return false;
     }

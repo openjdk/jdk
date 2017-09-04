@@ -24,14 +24,13 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteOrder;
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.mach_header_64;
 
 /**
  * Class that abstracts MACH-O target details.
  *
  */
-public class MachOTargetInfo {
+final class MachOTargetInfo {
     /**
      * Target architecture and subtype.
      */
@@ -68,20 +67,19 @@ public class MachOTargetInfo {
         osName = System.getProperty("os.name").toLowerCase();
     }
 
-    public static int getMachOArch() {
+    static int getMachOArch() {
         return arch;
     }
 
-    public static int getMachOSubArch() {
+    static int getMachOSubArch() {
         return subarch;
     }
 
-    public static int getMachOEndian() {
+    static int getMachOEndian() {
         return endian;
     }
 
-    public static String getOsName() {
+    static String getOsName() {
         return osName;
     }
 }
-

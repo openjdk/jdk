@@ -464,8 +464,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Load pointer for resolved_references[] objArray.
   ld(result, ConstantPool::cache_offset_in_bytes(), result);
   ld(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
-  // JNIHandles::resolve(result)
-  ld(result, 0, result);
+  resolve_oop_handle(result);
 #ifdef ASSERT
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);

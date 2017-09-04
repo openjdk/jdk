@@ -905,8 +905,15 @@ typedef struct {
         </td>
         <td>
           <a>
-            <xsl:attribute name="name">
-              <xsl:value-of select="@id"/>
+            <xsl:attribute name="id">
+              <xsl:choose>
+                <xsl:when test="count(@name)=1">
+                  <xsl:value-of select="@name"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="@id"/>
+                </xsl:otherwise>
+              </xsl:choose>
             </xsl:attribute>
           </a>
           <xsl:apply-templates select="description" mode="brief"/>
@@ -922,7 +929,7 @@ typedef struct {
         </td>
         <td>
           <a>
-            <xsl:attribute name="name">
+            <xsl:attribute name="id">
               <xsl:value-of select="@id"/>
             </xsl:attribute>
           </a>

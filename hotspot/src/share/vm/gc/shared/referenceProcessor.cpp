@@ -401,7 +401,7 @@ void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
-  assert(_discovered_addr && discovered->is_oop_or_null(),
+  assert(_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next = discovered;
   _referent_addr = java_lang_ref_Reference::referent_addr(_ref);
@@ -409,15 +409,15 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(Universe::heap()->is_in_reserved_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
   assert(allow_null_referent ?
-             _referent->is_oop_or_null()
-           : _referent->is_oop(),
+             oopDesc::is_oop_or_null(_referent)
+           : oopDesc::is_oop(_referent),
          "Expected an oop%s for referent field at " PTR_FORMAT,
          (allow_null_referent ? " or NULL" : ""),
          p2i(_referent));
 }
 
 void DiscoveredListIterator::remove() {
-  assert(_ref->is_oop(), "Dropping a bad reference");
+  assert(oopDesc::is_oop(_ref), "Dropping a bad reference");
   oop_store_raw(_discovered_addr, NULL);
 
   // First _prev_next ref actually points into DiscoveredList (gross).
@@ -534,7 +534,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
     oop next = java_lang_ref_Reference::next(iter.obj());
     if ((iter.referent() == NULL || iter.is_referent_alive() ||
          next != NULL)) {
-      assert(next->is_oop_or_null(), "Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next));
+      assert(oopDesc::is_oop_or_null(next), "Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next));
       // Remove Reference object from list
       iter.remove();
       // Trace the cohorts
@@ -582,7 +582,7 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     }
     log_develop_trace(gc, ref)("Adding %sreference (" INTPTR_FORMAT ": %s) as pending",
                                clear_referent ? "cleared " : "", p2i(iter.obj()), iter.obj()->klass()->internal_name());
-    assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
+    assert(oopDesc::is_oop(iter.obj(), UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
   }
   // Close the reachable set
@@ -979,7 +979,7 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
 void ReferenceProcessor::verify_referent(oop obj) {
   bool da = discovery_is_atomic();
   oop referent = java_lang_ref_Reference::referent(obj);
-  assert(da ? referent->is_oop() : referent->is_oop_or_null(),
+  assert(da ? oopDesc::is_oop(referent) : oopDesc::is_oop_or_null(referent),
          "Bad referent " INTPTR_FORMAT " found in Reference "
          INTPTR_FORMAT " during %satomic discovery ",
          p2i(referent), p2i(obj), da ? "" : "non-");
@@ -1057,7 +1057,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
-  assert(discovered->is_oop_or_null(), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
+  assert(oopDesc::is_oop_or_null(discovered), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
@@ -1118,7 +1118,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
     log_develop_trace(gc, ref)("Discovered reference (" INTPTR_FORMAT ": %s)", p2i(obj), obj->klass()->internal_name());
   }
-  assert(obj->is_oop(), "Discovered a bad reference");
+  assert(oopDesc::is_oop(obj), "Discovered a bad reference");
   verify_referent(obj);
   return true;
 }

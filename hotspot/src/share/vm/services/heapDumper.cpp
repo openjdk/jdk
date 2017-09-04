@@ -764,7 +764,7 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
 
       // reflection and Unsafe classes may have a reference to a
       // Klass* so filter it out.
-      assert(o->is_oop_or_null(), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
+      assert(oopDesc::is_oop_or_null(o), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
       break;
     }

@@ -58,7 +58,7 @@ import org.graalvm.compiler.options.OptionValues;
  * <p>
  * Methods to record and access code section contents, symbols and relocations are provided.
  */
-public class BinaryContainer implements SymbolTable {
+public final class BinaryContainer implements SymbolTable {
     private final OptionValues graalOptions;
 
     private final int codeSegmentSize;
@@ -71,19 +71,19 @@ public class BinaryContainer implements SymbolTable {
     private final CodeContainer codeContainer;
 
     /**
-     * Container holding external hotspot linkage bits (PLT entries).
-     */
-    private final CodeContainer extLinkageContainer;
-
-    /**
      * Container holding global offset data for hotspot linkage.
      */
     private final ByteContainer extLinkageGOTContainer;
 
     /**
-     * Patched by HotSpot, contains metaspace pointers.
+     * Patched by HotSpot, contains Klass pointers.
      */
-    private final ByteContainer metaspaceGotContainer;
+    private final ByteContainer klassesGotContainer;
+
+    /**
+     * Patched by HotSpot, contains MethodCounters pointers.
+     */
+    private final ByteContainer countersGotContainer;
 
     /**
      * Patched lazily by hotspot, contains klass/method pointers.
@@ -268,33 +268,41 @@ public class BinaryContainer implements SymbolTable {
         this.graalOptions = graalOptions;
 
         this.codeSegmentSize = graalHotSpotVMConfig.codeSegmentSize;
+        if (codeSegmentSize < 1 || codeSegmentSize > 1024) {
+            throw new InternalError("codeSegmentSize is not in range [1, 1024] bytes: (" + codeSegmentSize + "), update JPECoffRelocObject");
+        }
+        if ((codeSegmentSize & (codeSegmentSize - 1)) != 0) {
+            throw new InternalError("codeSegmentSize is not power of 2: (" + codeSegmentSize + "), update JPECoffRelocObject");
+        }
+
         this.codeEntryAlignment = graalHotSpotVMConfig.codeEntryAlignment;
+
+        // Section unique name is limited to 8 characters due to limitation on Windows.
+        // Name could be longer but only first 8 characters are stored on Windows.
 
         // read only, code
         codeContainer = new CodeContainer(".text", this);
-        extLinkageContainer = new CodeContainer(".hs.plt.linkage", this);
 
         // read only, info
+        headerContainer = new HeaderContainer(jvmVersion, new ReadOnlyDataContainer(".header", this));
         configContainer = new ReadOnlyDataContainer(".config", this);
         metaspaceNamesContainer = new ReadOnlyDataContainer(".meta.names", this);
-        methodsOffsetsContainer = new ReadOnlyDataContainer(".methods.offsets", this);
+        methodsOffsetsContainer = new ReadOnlyDataContainer(".meth.offsets", this);
         klassesOffsetsContainer = new ReadOnlyDataContainer(".kls.offsets", this);
         klassesDependenciesContainer = new ReadOnlyDataContainer(".kls.dependencies", this);
 
-        headerContainer = new HeaderContainer(jvmVersion, new ReadOnlyDataContainer(".header", this));
         stubsOffsetsContainer = new ReadOnlyDataContainer(".stubs.offsets", this);
         codeSegmentsContainer = new ReadOnlyDataContainer(".code.segments", this);
         constantDataContainer = new ReadOnlyDataContainer(".meth.constdata", this);
-
-        // needs relocation patching at load time by the loader
         methodMetadataContainer = new ReadOnlyDataContainer(".meth.metadata", this);
 
         // writable sections
-        metaspaceGotContainer = new ByteContainer(".meta.got", this);
-        metadataGotContainer = new ByteContainer(".metadata.got", this);
-        methodStateContainer = new ByteContainer(".meth.state", this);
         oopGotContainer = new ByteContainer(".oop.got", this);
-        extLinkageGOTContainer = new ByteContainer(".hs.got.linkage", this);
+        klassesGotContainer = new ByteContainer(".kls.got", this);
+        countersGotContainer = new ByteContainer(".cnt.got", this);
+        metadataGotContainer = new ByteContainer(".meta.got", this);
+        methodStateContainer = new ByteContainer(".meth.state", this);
+        extLinkageGOTContainer = new ByteContainer(".got.linkage", this);
 
         addGlobalSymbols();
 
@@ -368,51 +376,51 @@ public class BinaryContainer implements SymbolTable {
      * in the named GOT cell.
      */
 
-    public String getCardTableAddressSymbolName() {
+    public static String getCardTableAddressSymbolName() {
         return "_aot_card_table_address";
     }
 
-    public String getHeapTopAddressSymbolName() {
+    public static String getHeapTopAddressSymbolName() {
         return "_aot_heap_top_address";
     }
 
-    public String getHeapEndAddressSymbolName() {
+    public static String getHeapEndAddressSymbolName() {
         return "_aot_heap_end_address";
     }
 
-    public String getCrcTableAddressSymbolName() {
+    public static String getCrcTableAddressSymbolName() {
         return "_aot_stub_routines_crc_table_adr";
     }
 
-    public String getPollingPageSymbolName() {
+    public static String getPollingPageSymbolName() {
         return "_aot_polling_page";
     }
 
-    public String getResolveStaticEntrySymbolName() {
+    public static String getResolveStaticEntrySymbolName() {
         return "_resolve_static_entry";
     }
 
-    public String getResolveVirtualEntrySymbolName() {
+    public static String getResolveVirtualEntrySymbolName() {
         return "_resolve_virtual_entry";
     }
 
-    public String getResolveOptVirtualEntrySymbolName() {
+    public static String getResolveOptVirtualEntrySymbolName() {
         return "_resolve_opt_virtual_entry";
     }
 
-    public String getNarrowKlassBaseAddressSymbolName() {
+    public static String getNarrowKlassBaseAddressSymbolName() {
         return "_aot_narrow_klass_base_address";
     }
 
-    public String getNarrowOopBaseAddressSymbolName() {
+    public static String getNarrowOopBaseAddressSymbolName() {
         return "_aot_narrow_oop_base_address";
     }
 
-    public String getLogOfHeapRegionGrainBytesSymbolName() {
+    public static String getLogOfHeapRegionGrainBytesSymbolName() {
         return "_aot_log_of_heap_region_grain_bytes";
     }
 
-    public String getInlineContiguousAllocationSupportedSymbolName() {
+    public static String getInlineContiguousAllocationSupportedSymbolName() {
         return "_aot_inline_contiguous_allocation_supported";
     }
 
@@ -430,7 +438,7 @@ public class BinaryContainer implements SymbolTable {
      * @param functionName function name
      * @return AOT symbol for the given function name, or null if there is no mapping.
      */
-    public String getAOTSymbolForVMFunctionName(String functionName) {
+    public static String getAOTSymbolForVMFunctionName(String functionName) {
         return functionNamesToAOTSymbols.get(functionName);
     }
 
@@ -441,7 +449,8 @@ public class BinaryContainer implements SymbolTable {
         createContainerSymbol(methodsOffsetsContainer);
         createContainerSymbol(klassesOffsetsContainer);
         createContainerSymbol(klassesDependenciesContainer);
-        createContainerSymbol(metaspaceGotContainer);
+        createContainerSymbol(klassesGotContainer);
+        createContainerSymbol(countersGotContainer);
         createContainerSymbol(metadataGotContainer);
         createContainerSymbol(methodStateContainer);
         createContainerSymbol(oopGotContainer);
@@ -469,12 +478,13 @@ public class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Creates a global symbol of the form {@code "JVM" + container name}.
+     * Creates a global symbol of the form {@code "A" + container name}.
+     * Note, linker on Windows does not allow names which start with '.'
      *
      * @param container container to create a symbol for
      */
     private static void createContainerSymbol(ByteContainer container) {
-        container.createSymbol(0, Kind.OBJECT, Binding.GLOBAL, 0, "JVM" + container.getContainerName());
+        container.createSymbol(0, Kind.OBJECT, Binding.GLOBAL, 0, "A" + container.getContainerName());
     }
 
     /**
@@ -499,12 +509,12 @@ public class BinaryContainer implements SymbolTable {
      *
      * @throws IOException in case of file creation failure
      */
-    public void createBinary(String outputFileName, String aotVersion) throws IOException {
+    public void createBinary(String outputFileName) throws IOException {
         String osName = System.getProperty("os.name");
         switch (osName) {
             case "Linux":
             case "SunOS":
-                JELFRelocObject elfobj = new JELFRelocObject(this, outputFileName, aotVersion);
+                JELFRelocObject elfobj = new JELFRelocObject(this, outputFileName);
                 elfobj.createELFRelocObject(relocationTable, symbolTable.values());
                 break;
             case "Mac OS X":
@@ -513,7 +523,7 @@ public class BinaryContainer implements SymbolTable {
                 break;
             default:
                 if (osName.startsWith("Windows")) {
-                    JPECoffRelocObject pecoffobj = new JPECoffRelocObject(this, outputFileName, aotVersion);
+                    JPECoffRelocObject pecoffobj = new JPECoffRelocObject(this, outputFileName);
                     pecoffobj.createPECoffRelocObject(relocationTable, symbolTable.values());
                     break;
                 } else
@@ -626,12 +636,6 @@ public class BinaryContainer implements SymbolTable {
         return startOffset;
     }
 
-    public int appendMetaspaceGotBytes(byte[] bytes, int offset, int size) {
-        int startOffset = metaspaceGotContainer.getByteStreamSize();
-        appendBytes(metaspaceGotContainer, bytes, offset, size);
-        return startOffset;
-    }
-
     public void addMetadataGotEntry(int offset) {
         metadataGotContainer.appendLong(offset);
     }
@@ -681,8 +685,7 @@ public class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Add oop symbol by as follows. Extend the oop.got section with another slot for the VM to
-     * patch.
+     * Add oop symbol by as follows. Extend the oop.got section with another slot for the VM to patch.
      *
      * @param oopName name of the oop symbol
      */
@@ -708,13 +711,13 @@ public class BinaryContainer implements SymbolTable {
         return relocationSymbol.getOffset();
     }
 
-    public int addMetaspaceSymbol(String metaspaceName) {
+    public int addCountersSymbol(String metaspaceName) {
         String gotName = "got." + metaspaceName;
         Symbol relocationSymbol = getGotSymbol(gotName);
         int metaspaceOffset = -1;
         if (relocationSymbol == null) {
             // Add slots when asked in the .metaspace.got section:
-            metaspaceGotContainer.createGotSymbol(gotName);
+            countersGotContainer.createGotSymbol(gotName);
         }
         return metaspaceOffset;
     }
@@ -725,29 +728,30 @@ public class BinaryContainer implements SymbolTable {
     }
 
     /**
-     * Add metaspace symbol by as follows. - Adding the symbol name to the metaspace.names section -
-     * Add the offset of the name in metaspace.names to metaspace.offsets - Extend the metaspace.got
-     * section with another slot for the VM to patch
+     * Add klass symbol by as follows.
+     *   - Adding the symbol name to the metaspace.names section
+     *   - Add the offset of the name in metaspace.names to metaspace.offsets
+     *   - Extend the klasses.got section with another slot for the VM to patch
      *
-     * @param metaspaceName name of the metaspace symbol
-     * @return the got offset in the metaspace.got of the metaspace symbol
+     * @param klassName name of the metaspace symbol
+     * @return the got offset in the klasses.got of the metaspace symbol
      */
-    public int addTwoSlotMetaspaceSymbol(String metaspaceName) {
-        String gotName = "got." + metaspaceName;
+    public int addTwoSlotKlassSymbol(String klassName) {
+        String gotName = "got." + klassName;
         Symbol previous = getGotSymbol(gotName);
-        assert previous == null : "should be called only once for: " + metaspaceName;
+        assert previous == null : "should be called only once for: " + klassName;
         // Add slots when asked in the .metaspace.got section:
         // First slot
-        String gotInitName = "got.init." + metaspaceName;
-        GotSymbol slot1Symbol = metaspaceGotContainer.createGotSymbol(gotInitName);
-        GotSymbol slot2Symbol = metaspaceGotContainer.createGotSymbol(gotName);
+        String gotInitName = "got.init." + klassName;
+        GotSymbol slot1Symbol = klassesGotContainer.createGotSymbol(gotInitName);
+        GotSymbol slot2Symbol = klassesGotContainer.createGotSymbol(gotName);
 
         slot1Symbol.getIndex(); // check alignment and ignore result
         // Get the index (offset/8) to the got in the .metaspace.got section
         return slot2Symbol.getIndex();
     }
 
-    public int addMethodsCount(int count, ReadOnlyDataContainer container) {
+    public static int addMethodsCount(int count, ReadOnlyDataContainer container) {
         return appendInt(count, container);
     }
 
@@ -772,7 +776,7 @@ public class BinaryContainer implements SymbolTable {
         return constantDataOffset;
     }
 
-    public int alignUp(ByteContainer container, int alignment) {
+    public static int alignUp(ByteContainer container, int alignment) {
         if (Integer.bitCount(alignment) != 1) {
             throw new IllegalArgumentException("Must be a power of 2");
         }
@@ -814,15 +818,11 @@ public class BinaryContainer implements SymbolTable {
         appendBytes(codeSegmentsContainer, segments, 0, segmentsCount);
     }
 
-    public CodeContainer getExtLinkageContainer() {
-        return extLinkageContainer;
-    }
-
     public ByteContainer getExtLinkageGOTContainer() {
         return extLinkageGOTContainer;
     }
 
-    public ByteContainer getMethodMetadataContainer() {
+    public ReadOnlyDataContainer getMethodMetadataContainer() {
         return methodMetadataContainer;
     }
 
@@ -854,8 +854,12 @@ public class BinaryContainer implements SymbolTable {
         return constantDataContainer;
     }
 
-    public ByteContainer getMetaspaceGotContainer() {
-        return metaspaceGotContainer;
+    public ByteContainer getKlassesGotContainer() {
+        return klassesGotContainer;
+    }
+
+    public ByteContainer getCountersGotContainer() {
+        return countersGotContainer;
     }
 
     public ByteContainer getMetadataGotContainer() {

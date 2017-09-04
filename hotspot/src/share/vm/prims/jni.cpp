@@ -4028,7 +4028,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 }
 
 _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, void *args) {
-  jint result = 0;
+  jint result = JNI_ERR;
   // On Windows, let CreateJavaVM run with SEH protection
 #ifdef _WIN32
   __try {
@@ -4063,7 +4063,7 @@ extern "C" {
 DT_RETURN_MARK_DECL(DestroyJavaVM, jint
                     , HOTSPOT_JNI_DESTROYJAVAVM_RETURN(_ret_ref));
 
-jint JNICALL jni_DestroyJavaVM(JavaVM *vm) {
+static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
   HOTSPOT_JNI_DESTROYJAVAVM_ENTRY(vm);
   jint res = JNI_ERR;
   DT_RETURN_MARK(DestroyJavaVM, jint, (const jint&)res);
@@ -4099,6 +4099,20 @@ jint JNICALL jni_DestroyJavaVM(JavaVM *vm) {
   }
 }
 
+jint JNICALL jni_DestroyJavaVM(JavaVM *vm) {
+  jint result = JNI_ERR;
+  // On Windows, we need SEH protection
+#ifdef _WIN32
+  __try {
+#endif
+    result = jni_DestroyJavaVM_inner(vm);
+#ifdef _WIN32
+  } __except(topLevelExceptionFilter((_EXCEPTION_POINTERS*)_exception_info())) {
+    // Nothing to do.
+  }
+#endif
+  return result;
+}
 
 static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool daemon) {
   JavaVMAttachArgs *args = (JavaVMAttachArgs *) _args;
