@@ -215,10 +215,10 @@ public final class ModuleBootstrap {
 
 
         // Step 2a: If --validate-modules is specified then the VM needs to
-        // start with only java.base, all other options are ignored.
+        // start with only system modules, all other options are ignored.
 
-        if (getAndRemoveProperty("jdk.module.minimumBoot") != null) {
-            return createMinimalBootLayer();
+        if (getAndRemoveProperty("jdk.module.validation") != null) {
+            return createBootLayerForValidation();
         }
 
 
@@ -421,12 +421,19 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Create a "minimal" boot module layer that only contains java.base.
+     * Create a boot module layer for validation that resolves all
+     * system modules.
      */
-    private static ModuleLayer createMinimalBootLayer() {
+    private static ModuleLayer createBootLayerForValidation() {
+        Set<String> allSystem = ModuleFinder.ofSystem().findAll()
+            .stream()
+            .map(ModuleReference::descriptor)
+            .map(ModuleDescriptor::name)
+            .collect(Collectors.toSet());
+
         Configuration cf = SharedSecrets.getJavaLangModuleAccess()
             .resolveAndBind(ModuleFinder.ofSystem(),
-                            Set.of(JAVA_BASE),
+                            allSystem,
                             null);
 
         Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);

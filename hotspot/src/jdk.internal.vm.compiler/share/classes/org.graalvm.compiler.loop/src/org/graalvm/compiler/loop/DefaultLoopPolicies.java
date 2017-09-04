@@ -100,11 +100,12 @@ public class DefaultLoopPolicies implements LoopPolicies {
 
     @Override
     public boolean shouldPartiallyUnroll(LoopEx loop) {
+        LoopBeginNode loopBegin = loop.loopBegin();
         if (!loop.isCounted()) {
+            loopBegin.getDebug().log(DebugContext.VERBOSE_LEVEL, "shouldPartiallyUnroll %s isn't counted", loopBegin);
             return false;
         }
         OptionValues options = loop.entryPoint().getOptions();
-        LoopBeginNode loopBegin = loop.loopBegin();
         int maxNodes = ExactPartialUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
@@ -112,6 +113,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
         if (unrollFactor == 1) {
             double loopFrequency = loopBegin.loopFrequency();
             if (loopBegin.isSimpleLoop() && loopFrequency < 5.0) {
+                loopBegin.getDebug().log(DebugContext.VERBOSE_LEVEL, "shouldPartiallyUnroll %s frequency too low %s ", loopBegin, loopFrequency);
                 return false;
             }
             loopBegin.setLoopOrigFrequency(loopFrequency);
@@ -136,6 +138,7 @@ public class DefaultLoopPolicies implements LoopPolicies {
             }
             return true;
         } else {
+            loopBegin.getDebug().log(DebugContext.VERBOSE_LEVEL, "shouldPartiallyUnroll %s unrolled loop is too large %s ", loopBegin, size);
             return false;
         }
     }

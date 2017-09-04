@@ -24,41 +24,38 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import jdk.tools.jaotc.binformat.elf.Elf;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
 import jdk.tools.jaotc.binformat.elf.ElfSymbol;
 import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
-public class ElfSymtab {
+final class ElfSymtab {
 
-    ArrayList<ElfSymbol>localSymbols = new ArrayList<ElfSymbol>();
-    ArrayList<ElfSymbol>globalSymbols = new ArrayList<ElfSymbol>();
+    private final ArrayList<ElfSymbol> localSymbols = new ArrayList<>();
+    private final ArrayList<ElfSymbol> globalSymbols = new ArrayList<>();
 
     /**
      * number of symbols added
      */
-    int symbolCount;
+    private int symbolCount;
 
     /**
      * String holding symbol table strings
      */
-    private StringBuilder strTabContent = new StringBuilder();
+    private final StringBuilder strTabContent = new StringBuilder();
 
     /**
-     * Keeps track of bytes in string table since strTabContent.length()
-     * is number of chars, not bytes.
+     * Keeps track of bytes in string table since strTabContent.length() is number of chars, not
+     * bytes.
      */
     private int strTabNrOfBytes = 0;
 
-    public ElfSymtab() {
+    ElfSymtab() {
         symbolCount = 0;
     }
 
-    public ElfSymbol addSymbolEntry(String name, byte type, byte bind,
-                                    byte secHdrIndex, long offset, long size) {
+    ElfSymbol addSymbolEntry(String name, byte type, byte bind, byte secHdrIndex, long offset, long size) {
         // Get the current symbol index and append symbol name to string table.
         int index;
         ElfSymbol sym;
@@ -76,7 +73,7 @@ public class ElfSymtab {
             // strTabContent.append("_").append(name).append('\0');
             strTabContent.append(name).append('\0');
             // + 1 for null, + 1 for "_"
-            //strTabNrOfBytes += (name.getBytes().length + 1 + 1);
+            // strTabNrOfBytes += (name.getBytes().length + 1 + 1);
             strTabNrOfBytes += (name.getBytes().length + 1);
 
             sym = new ElfSymbol(symbolCount, index, type, bind, secHdrIndex, offset, size);
@@ -92,44 +89,47 @@ public class ElfSymtab {
     // Update the symbol indexes once all symbols have been added.
     // This is required since we'll be reordering the symbols in the
     // file to be in the order of Local then global.
-    public void updateIndexes() {
+    void updateIndexes() {
         int index = 0;
 
         // Update the local symbol indexes
-        for (int i = 0; i < localSymbols.size(); i++ ) {
+        for (int i = 0; i < localSymbols.size(); i++) {
             ElfSymbol sym = localSymbols.get(i);
             sym.setIndex(index++);
         }
 
         // Update the global symbol indexes
-        for (int i = 0; i < globalSymbols.size(); i++ ) {
+        for (int i = 0; i < globalSymbols.size(); i++) {
             ElfSymbol sym = globalSymbols.get(i);
             sym.setIndex(index++);
         }
     }
 
-    public int getNumLocalSyms()  { return localSymbols.size();  }
-    public int getNumGlobalSyms() { return globalSymbols.size(); }
+    int getNumLocalSyms() {
+        return localSymbols.size();
+    }
 
+    int getNumGlobalSyms() {
+        return globalSymbols.size();
+    }
 
     // Create a single byte array that contains the symbol table entries
-    public byte[] getSymtabArray() {
-        int index = 0;
-        ByteBuffer symtabData = ElfByteBuffer.allocate(symbolCount*Elf64_Sym.totalsize);
-        byte [] retarray;
+    byte[] getSymtabArray() {
+        ByteBuffer symtabData = ElfByteBuffer.allocate(symbolCount * Elf64_Sym.totalsize);
+        byte[] retarray;
 
         updateIndexes();
 
         // Add the local symbols
-        for (int i = 0; i < localSymbols.size(); i++ ) {
+        for (int i = 0; i < localSymbols.size(); i++) {
             ElfSymbol sym = localSymbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
         // Add the global symbols
-        for (int i = 0; i < globalSymbols.size(); i++ ) {
+        for (int i = 0; i < globalSymbols.size(); i++) {
             ElfSymbol sym = globalSymbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
         retarray = symtabData.array();
@@ -138,10 +138,8 @@ public class ElfSymtab {
     }
 
     // Return the string table array
-    public byte[] getStrtabArray() {
-        byte [] strs = strTabContent.toString().getBytes();
+    byte[] getStrtabArray() {
+        byte[] strs = strTabContent.toString().getBytes();
         return (strs);
     }
 }
-
-

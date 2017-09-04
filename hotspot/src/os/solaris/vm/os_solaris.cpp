@@ -1197,7 +1197,7 @@ inline hrtime_t getTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
+  const hrtime_t obsv = Atomic::cmpxchg(now, &max_hrtime, prev);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then

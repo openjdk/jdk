@@ -217,7 +217,7 @@ inline void G1ConcurrentMark::markPrev(oop p) {
 }
 
 bool G1ConcurrentMark::isPrevMarked(oop p) const {
-  assert(p != NULL && p->is_oop(), "expected an oop");
+  assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
   return _prevMarkBitMap->is_marked((HeapWord*)p);
 }
 

@@ -338,17 +338,20 @@ public abstract class ScriptFunctionData implements Serializable {
      * @return apply to call that perfectly fits this callsite or null if none found
      */
     CompiledFunction lookupExactApplyToCall(final MethodType type) {
+        // Callsite type always has callee, drop it if this function doesn't need it.
+        final MethodType adaptedType = needsCallee() ? type : type.dropParameterTypes(0, 1);
+
         for (final CompiledFunction cf : code) {
             if (!cf.isApplyToCall()) {
                 continue;
             }
 
             final MethodType cftype = cf.type();
-            if (cftype.parameterCount() != type.parameterCount()) {
+            if (cftype.parameterCount() != adaptedType.parameterCount()) {
                 continue;
             }
 
-            if (widen(cftype).equals(widen(type))) {
+            if (widen(cftype).equals(widen(adaptedType))) {
                 return cf;
             }
         }

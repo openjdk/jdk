@@ -227,7 +227,8 @@
                        label CDATA #REQUIRED>
 
    <!ELEMENT basetype (definition?,description)>
-   <!ATTLIST basetype id CDATA #REQUIRED>
+   <!ATTLIST basetype id CDATA #REQUIRED
+                      name CDATA #IMPLIED>
 
    <!ELEMENT definition (#PCDATA|jvmti)*>
 
@@ -438,7 +439,7 @@
     The details of how this is initiated are implementation specific.
   </intro>
 
-    <intro id="entry point" label="Statically Linked Agents (since version 1.2.3)">
+    <intro id="entryPoint" label="Statically Linked Agents (since version 1.2.3)">
 
       A native JVMTI Agent may be <i>statically linked</i> with the VM.
       The manner in which the library and VM image are combined is
@@ -6647,7 +6648,7 @@ class C2 extends C1 implements I2 {
           If <paramlink id="module"></paramlink> is not a module object.
         </error>
         <error id="JVMTI_ERROR_INVALID_MODULE">
-          If <paramlink id="to_modules"></paramlink> is not a module object.
+          If <paramlink id="to_module"></paramlink> is not a module object.
         </error>
         <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
           If the package <paramlink id="pkg_name"></paramlink>
@@ -6702,7 +6703,7 @@ class C2 extends C1 implements I2 {
           If <paramlink id="module"></paramlink> is not a module object.
         </error>
         <error id="JVMTI_ERROR_INVALID_MODULE">
-          If <paramlink id="to_modules"></paramlink> is not a module object.
+          If <paramlink id="to_module"></paramlink> is not a module object.
         </error>
         <error id="JVMTI_ERROR_ILLEGAL_ARGUMENT">
           If the package <paramlink id="pkg_name"></paramlink>
@@ -13786,7 +13787,7 @@ typedef enum {
 </example>
       </description>
     </basetype>
-    <basetype id="jvmtiEventCallbacks">
+    <basetype id="jvmtiEventCallbacks" name="eventCallbacks">
       <description>
         The callbacks used for events.
 <example>

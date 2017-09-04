@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,7 +428,7 @@ bool SubTasksDone::is_task_claimed(uint t) {
   assert(t < _n_tasks, "bad task id.");
   uint old = _tasks[t];
   if (old == 0) {
-    old = Atomic::cmpxchg(1, &_tasks[t], 0);
+    old = Atomic::cmpxchg(1u, &_tasks[t], 0u);
   }
   assert(_tasks[t] == 1, "What else?");
   bool res = old != 0;
@@ -442,15 +442,15 @@ bool SubTasksDone::is_task_claimed(uint t) {
 }
 
 void SubTasksDone::all_tasks_completed(uint n_threads) {
-  jint observed = _threads_completed;
-  jint old;
+  uint observed = _threads_completed;
+  uint old;
   do {
     old = observed;
     observed = Atomic::cmpxchg(old+1, &_threads_completed, old);
   } while (observed != old);
   // If this was the last thread checking in, clear the tasks.
   uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
-  if (observed + 1 == (jint)adjusted_thread_count) {
+  if (observed + 1 == adjusted_thread_count) {
     clear();
   }
 }
@@ -474,8 +474,8 @@ bool SequentialSubTasksDone::valid() {
 bool SequentialSubTasksDone::is_task_claimed(uint& t) {
   t = _n_claimed;
   while (t < _n_tasks) {
-    jint res = Atomic::cmpxchg(t+1, &_n_claimed, t);
-    if (res == (jint)t) {
+    uint res = Atomic::cmpxchg(t+1, &_n_claimed, t);
+    if (res == t) {
       return false;
     }
     t = res;

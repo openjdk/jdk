@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/mutex.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/growableArray.hpp"
@@ -362,8 +363,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void verify();
   const char* loader_name();
 
-  jobject add_handle(Handle h);
-  void remove_handle_unsafe(jobject h);
+  OopHandle add_handle(Handle h);
+  void init_handle_locked(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field
   void add_class(Klass* k, bool publicize = true);
   void remove_class(Klass* k);
   bool contains_klass(Klass* k);

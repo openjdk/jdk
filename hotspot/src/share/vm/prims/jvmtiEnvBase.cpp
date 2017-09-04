@@ -1490,14 +1490,14 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
   }
 }
 
-GrowableArray<jobject>* JvmtiModuleClosure::_tbl = NULL;
+GrowableArray<OopHandle>* JvmtiModuleClosure::_tbl = NULL;
 
 jvmtiError
 JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobject** modules_ptr) {
   ResourceMark rm;
   MutexLocker ml(Module_lock);
 
-  _tbl = new GrowableArray<jobject>(77);
+  _tbl = new GrowableArray<OopHandle>(77);
   if (_tbl == NULL) {
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
@@ -1513,7 +1513,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
   for (jint idx = 0; idx < len; idx++) {
-    array[idx] = _tbl->at(idx);
+    array[idx] = JNIHandles::make_local(Thread::current(), _tbl->at(idx).resolve());
   }
   _tbl = NULL;
   *modules_ptr = array;

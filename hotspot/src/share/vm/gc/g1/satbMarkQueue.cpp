@@ -95,7 +95,7 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
     return false;
   }
 
-  assert(((oop)entry)->is_oop(true /* ignore mark word */),
+  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
          "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;

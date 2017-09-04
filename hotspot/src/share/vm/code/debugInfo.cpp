@@ -48,7 +48,7 @@ void DebugInfoWriteStream::write_metadata(Metadata* h) {
 
 oop DebugInfoReadStream::read_oop() {
   oop o = code()->oop_at(read_int());
-  assert(o->is_oop_or_null(), "oop only");
+  assert(oopDesc::is_oop_or_null(o), "oop only");
   return o;
 }
 

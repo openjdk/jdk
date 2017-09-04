@@ -136,7 +136,7 @@ JRT_END
 
 JRT_ENTRY(void, SharkRuntime::register_finalizer(JavaThread* thread,
                                                  oop         object))
-  assert(object->is_oop(), "should be");
+  assert(oopDesc::is_oop(object), "should be");
   assert(object->klass()->has_finalizer(), "should have");
   InstanceKlass::register_finalizer(instanceOop(object), CHECK);
 JRT_END

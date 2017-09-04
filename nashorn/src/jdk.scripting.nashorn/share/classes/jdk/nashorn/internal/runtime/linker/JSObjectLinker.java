@@ -213,7 +213,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
 
     @SuppressWarnings("unused")
     private static Object callToApply(final MethodHandle mh, final JSObject obj, final Object thiz, final Object... args) {
-        assert args.length >= 2;
+        assert args.length >= 1;
         final Object   receiver  = args[0];
         final Object[] arguments = new Object[args.length - 1];
         System.arraycopy(args, 1, arguments, 0, arguments.length);
