@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,21 +37,20 @@ import jdk.vm.ci.code.site.Call;
  */
 final class ForeignCallSiteRelocationInfo extends CallSiteRelocationInfo {
 
-    ForeignCallSiteRelocationInfo(Call call, HotSpotForeignCallLinkage callTarget, DataBuilder dataBuilder) {
-        super(getTargetSymbol(call, callTarget, dataBuilder), getRelocType(callTarget));
+    ForeignCallSiteRelocationInfo(Call call, HotSpotForeignCallLinkage callTarget) {
+        super(getTargetSymbol(call, callTarget), getRelocType(callTarget));
     }
 
-    private static String getTargetSymbol(Call call, HotSpotForeignCallLinkage callTarget, DataBuilder dataBuilder) {
+    private static String getTargetSymbol(Call call, HotSpotForeignCallLinkage callTarget) {
         // If it specifies a foreign call linkage, find the symbol corresponding to the address in
         // HotSpotVMConfig's fields.
         final long foreignCallTargetAddress = callTarget.getAddress();
 
         // Get the C/C++ function name associated with the foreign call target address.
-        String functionName = dataBuilder.getVMFunctionNameForAddress(foreignCallTargetAddress);
+        String functionName = DataBuilder.getVMFunctionNameForAddress(foreignCallTargetAddress);
         if (functionName != null) {
             // Use the known global AOT symbol associated with function name, if one exists
-            BinaryContainer binaryContainer = dataBuilder.getBinaryContainer();
-            String aotSymbol = binaryContainer.getAOTSymbolForVMFunctionName(functionName);
+            String aotSymbol = BinaryContainer.getAOTSymbolForVMFunctionName(functionName);
             if (aotSymbol == null) {
                 throw new InternalError("no global symbol found for: " + functionName);
             }

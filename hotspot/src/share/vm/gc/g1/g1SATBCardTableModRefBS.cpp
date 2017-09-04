@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
-  assert(pre_val->is_oop(true), "Error");
+  assert(oopDesc::is_oop(pre_val, true), "Error");
 
   if (!JavaThread::satb_mark_queue_set().is_active()) return;
   Thread* thr = Thread::current();

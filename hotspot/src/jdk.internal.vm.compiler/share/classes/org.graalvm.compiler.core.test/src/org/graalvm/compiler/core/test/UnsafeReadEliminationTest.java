@@ -46,6 +46,16 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
     public static double SideEffectD;
     public static double SideEffectL;
 
+    private static final long byteArrayBaseOffset;
+    private static final long intArrayBaseOffset;
+    private static final long longArrayBaseOffset;
+
+    static {
+        byteArrayBaseOffset = UNSAFE.arrayBaseOffset(byte[].class);
+        intArrayBaseOffset = UNSAFE.arrayBaseOffset(int[].class);
+        longArrayBaseOffset = UNSAFE.arrayBaseOffset(long[].class);
+    }
+
     public static long test1Snippet(double a) {
         final Object m = Memory;
         if (a > 0) {
@@ -128,6 +138,78 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
         new PartialEscapePhase(true, true, canonicalizer, null, options).apply(graph, context);
         Assert.assertEquals(reads, graph.getNodes().filter(ReadNode.class).count());
         Assert.assertEquals(writes, graph.getNodes().filter(WriteNode.class).count());
+    }
+
+    public static int testWriteIntToByteArraySnippet() {
+        byte[] array = new byte[4];
+        UNSAFE.putInt(array, byteArrayBaseOffset, 0x01020304);
+        return array[0];
+    }
+
+    @Test
+    public void testWriteIntToByteArray() {
+        test("testWriteIntToByteArraySnippet");
+    }
+
+    public static byte testWriteSignedExtendedByteToByteArraySnippet(byte b) {
+        byte[] array = new byte[4];
+        array[0] = 0x01;
+        array[1] = 0x02;
+        array[2] = 0x03;
+        array[3] = 0x04;
+        UNSAFE.putInt(array, byteArrayBaseOffset, b);
+        return array[3];
+    }
+
+    @Test
+    public void testWriteSignedExtendedByteToByteArray() {
+        test("testWriteSignedExtendedByteToByteArraySnippet", (byte) 0);
+    }
+
+    public static int testWriteLongToIntArraySnippet() {
+        int[] array = new int[2];
+        UNSAFE.putLong(array, intArrayBaseOffset, 0x0102030405060708L);
+        return array[0];
+    }
+
+    @Test
+    public void testWriteLongToIntArray() {
+        test("testWriteLongToIntArraySnippet");
+    }
+
+    public static int testWriteByteToIntArraySnippet() {
+        int[] array = new int[1];
+        array[0] = 0x01020304;
+        UNSAFE.putByte(array, intArrayBaseOffset, (byte) 0x05);
+        return array[0];
+    }
+
+    @Test
+    public void testWriteByteToIntArray() {
+        test("testWriteByteToIntArraySnippet");
+    }
+
+    public static long testWriteIntToLongArraySnippet() {
+        long[] array = new long[1];
+        array[0] = 0x0102030405060708L;
+        UNSAFE.putInt(array, longArrayBaseOffset, 0x04030201);
+        return array[0];
+    }
+
+    @Test
+    public void testWriteIntToLongArray() {
+        test("testWriteIntToLongArraySnippet");
+    }
+
+    public static float testWriteFloatToIntArraySnippet() {
+        float[] array = new float[1];
+        UNSAFE.putInt(array, intArrayBaseOffset, Float.floatToRawIntBits(0.5f));
+        return array[0];
+    }
+
+    @Test
+    public void testWriteFloatToIntArray() {
+        test("testWriteFloatToIntArraySnippet");
     }
 
 }

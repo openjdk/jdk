@@ -31,7 +31,7 @@ import java.nio.charset.CharsetEncoder;
 public class UTF_32BE extends Unicode
 {
     public UTF_32BE() {
-        super("UTF-32BE", StandardCharsets.aliases_UTF_32BE);
+        super("UTF-32BE", StandardCharsets.aliases_UTF_32BE());
     }
 
     public String historicalName() {

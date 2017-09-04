@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@
 // INCLUDE_TRACE
 
 #include "tracefiles/traceTypes.hpp"
-#include "trace/traceEvent.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/ticks.hpp"
+
 #if INCLUDE_TRACE
+#include "trace/traceEvent.hpp"
 #include "trace/traceStream.hpp"
 #include "utilities/ostream.hpp"
 
@@ -57,7 +57,6 @@ public:
   bool should_commit() const { return false; }
   static bool is_enabled() { return false; }
   void commit() {}
-  void cancel() {}
 };
 
   <xsl:apply-templates select="trace/events/struct" mode="empty"/>

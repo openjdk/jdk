@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.directory;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -32,7 +33,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
-public class DirectorySourceProvider implements SourceProvider {
+public final class DirectorySourceProvider implements SourceProvider {
     private final FileSupport fileSupport;
     private final FileSystem fileSystem;
     public final static String TYPE = "directory";

@@ -25,7 +25,6 @@
  * @test
  * @requires vm.aot
  * @library /test/lib /testlibrary /
- * @requires vm.bits == "64" & (os.arch == "amd64" | os.arch == "x86_64")
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.RecompilationTest
  *        compiler.aot.AotCompiler
@@ -38,7 +37,7 @@
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
  *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
- * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation
+ * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation -XX:CompilationPolicyChoice=2
  *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:-Inline
  *     -XX:AOTLibrary=./libRecompilationTest1.so -Xbootclasspath/a:.
@@ -51,7 +50,7 @@
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
  *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
- * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation
+ * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation -XX:CompilationPolicyChoice=2
  *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:-Inline
  *     -XX:AOTLibrary=./libRecompilationTest2.so -Xbootclasspath/a:.

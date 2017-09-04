@@ -33,9 +33,11 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Add;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.And;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Div;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Mul;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.MulHigh;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Or;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Rem;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Sub;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.UMulHigh;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Xor;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.Narrow;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.SignExtend;
@@ -62,6 +64,8 @@ public final class ArithmeticOpTable {
     private final BinaryOp<Sub> sub;
 
     private final BinaryOp<Mul> mul;
+    private final BinaryOp<MulHigh> mulHigh;
+    private final BinaryOp<UMulHigh> umulHigh;
     private final BinaryOp<Div> div;
     private final BinaryOp<Rem> rem;
 
@@ -92,7 +96,7 @@ public final class ArithmeticOpTable {
         }
     }
 
-    public static final ArithmeticOpTable EMPTY = new ArithmeticOpTable(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    public static final ArithmeticOpTable EMPTY = new ArithmeticOpTable(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
     public interface ArithmeticOpWrapper {
 
@@ -121,6 +125,8 @@ public final class ArithmeticOpTable {
         BinaryOp<Sub> sub = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getSub());
 
         BinaryOp<Mul> mul = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getMul());
+        BinaryOp<MulHigh> mulHigh = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getMulHigh());
+        BinaryOp<UMulHigh> umulHigh = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getUMulHigh());
         BinaryOp<Div> div = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getDiv());
         BinaryOp<Rem> rem = wrapIfNonNull(wrapper::wrapBinaryOp, inner.getRem());
 
@@ -141,16 +147,18 @@ public final class ArithmeticOpTable {
         IntegerConvertOp<Narrow> narrow = wrapIfNonNull(wrapper::wrapIntegerConvertOp, inner.getNarrow());
 
         FloatConvertOp[] floatConvert = CollectionsUtil.filterAndMapToArray(inner.floatConvert, Objects::nonNull, wrapper::wrapFloatConvertOp, FloatConvertOp[]::new);
-        return new ArithmeticOpTable(neg, add, sub, mul, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow, floatConvert);
+        return new ArithmeticOpTable(neg, add, sub, mul, mulHigh, umulHigh, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow, floatConvert);
     }
 
-    protected ArithmeticOpTable(UnaryOp<Neg> neg, BinaryOp<Add> add, BinaryOp<Sub> sub, BinaryOp<Mul> mul, BinaryOp<Div> div, BinaryOp<Rem> rem, UnaryOp<Not> not, BinaryOp<And> and, BinaryOp<Or> or,
-                    BinaryOp<Xor> xor, ShiftOp<Shl> shl, ShiftOp<Shr> shr, ShiftOp<UShr> ushr, UnaryOp<Abs> abs, UnaryOp<Sqrt> sqrt, IntegerConvertOp<ZeroExtend> zeroExtend,
-                    IntegerConvertOp<SignExtend> signExtend, IntegerConvertOp<Narrow> narrow, FloatConvertOp... floatConvert) {
+    protected ArithmeticOpTable(UnaryOp<Neg> neg, BinaryOp<Add> add, BinaryOp<Sub> sub, BinaryOp<Mul> mul, BinaryOp<MulHigh> mulHigh, BinaryOp<UMulHigh> umulHigh, BinaryOp<Div> div, BinaryOp<Rem> rem,
+                    UnaryOp<Not> not, BinaryOp<And> and, BinaryOp<Or> or, BinaryOp<Xor> xor, ShiftOp<Shl> shl, ShiftOp<Shr> shr, ShiftOp<UShr> ushr, UnaryOp<Abs> abs, UnaryOp<Sqrt> sqrt,
+                    IntegerConvertOp<ZeroExtend> zeroExtend, IntegerConvertOp<SignExtend> signExtend, IntegerConvertOp<Narrow> narrow, FloatConvertOp... floatConvert) {
         this.neg = neg;
         this.add = add;
         this.sub = sub;
         this.mul = mul;
+        this.mulHigh = mulHigh;
+        this.umulHigh = umulHigh;
         this.div = div;
         this.rem = rem;
         this.not = not;
@@ -204,6 +212,20 @@ public final class ArithmeticOpTable {
      */
     public BinaryOp<Mul> getMul() {
         return mul;
+    }
+
+    /**
+     * Describes a signed operation that multiples the upper 32-bits of two long values.
+     */
+    public BinaryOp<MulHigh> getMulHigh() {
+        return mulHigh;
+    }
+
+    /**
+     * Describes an unsigned operation that multiples the upper 32-bits of two long values.
+     */
+    public BinaryOp<UMulHigh> getUMulHigh() {
+        return umulHigh;
     }
 
     /**
@@ -321,6 +343,8 @@ public final class ArithmeticOpTable {
                Objects.equals(add, that.add) &&
                Objects.equals(sub, that.sub) &&
                Objects.equals(mul, that.mul) &&
+               Objects.equals(mulHigh, that.mulHigh) &&
+               Objects.equals(umulHigh, that.umulHigh) &&
                Objects.equals(div, that.div) &&
                Objects.equals(rem, that.rem) &&
                Objects.equals(not, that.not) &&
@@ -360,8 +384,8 @@ public final class ArithmeticOpTable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + toString(neg, add, sub, mul, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow) + ",floatConvert[" +
-                        toString(floatConvert) + "]]";
+        return getClass().getSimpleName() + "[" + toString(neg, add, sub, mul, mulHigh, umulHigh, div, rem, not, and, or, xor, shl, shr, ushr, abs, sqrt, zeroExtend, signExtend, narrow) +
+                        ",floatConvert[" + toString(floatConvert) + "]]";
     }
 
     public abstract static class Op {
@@ -476,6 +500,20 @@ public final class ArithmeticOpTable {
 
             protected Mul(boolean associative, boolean commutative) {
                 super("*", associative, commutative);
+            }
+        }
+
+        public abstract static class MulHigh extends BinaryOp<MulHigh> {
+
+            protected MulHigh(boolean associative, boolean commutative) {
+                super("*H", associative, commutative);
+            }
+        }
+
+        public abstract static class UMulHigh extends BinaryOp<UMulHigh> {
+
+            protected UMulHigh(boolean associative, boolean commutative) {
+                super("|*H|", associative, commutative);
             }
         }
 

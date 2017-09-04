@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.tools.jaotc.collect.module;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -33,7 +34,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
-public class ModuleSourceProvider implements SourceProvider {
+public final class ModuleSourceProvider implements SourceProvider {
     private final FileSystem fileSystem;
     private final ClassLoader classLoader;
     private final FileSupport fileSupport;

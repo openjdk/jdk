@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "runtime/handles.inline.hpp"
@@ -111,6 +112,9 @@ bool VM_GC_Operation::doit_prologue() {
 
 void VM_GC_Operation::doit_epilogue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
+  // Clean up old interpreter OopMap entries that were replaced
+  // during the GC thread root traversal.
+  OopMapCache::cleanup_old_entries();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }

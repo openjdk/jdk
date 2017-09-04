@@ -27,36 +27,35 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import jdk.tools.jaotc.binformat.pecoff.PECoff;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SYMBOL;
 import jdk.tools.jaotc.binformat.pecoff.PECoffSymbol;
 import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
-public class PECoffSymtab {
-    ArrayList<PECoffSymbol>symbols = new ArrayList<PECoffSymbol>();
+final class PECoffSymtab {
+    ArrayList<PECoffSymbol> symbols = new ArrayList<>();
 
     /**
      * number of symbols added
      */
-    int symbolCount;
+    private int symbolCount;
 
     /**
      * String holding symbol table strings
      */
-    private StringBuilder strTabContent;
+    private final StringBuilder strTabContent;
 
     /**
-     * Keeps track of bytes in string table since strTabContent.length()
-     * is number of chars, not bytes.
+     * Keeps track of bytes in string table since strTabContent.length() is number of chars, not
+     * bytes.
      */
     private int strTabNrOfBytes;
 
     /**
      * String holding Linker Directives
      */
-    private StringBuilder directives;
+    private final StringBuilder directives;
 
-    public PECoffSymtab() {
+    PECoffSymtab() {
         symbolCount = 0;
         strTabContent = new StringBuilder();
         directives = new StringBuilder();
@@ -72,8 +71,7 @@ public class PECoffSymtab {
         directives.append("   ");
     }
 
-    public PECoffSymbol addSymbolEntry(String name, byte type, byte storageclass,
-                                    byte secHdrIndex, long offset, long size) {
+    PECoffSymbol addSymbolEntry(String name, byte type, byte storageclass, byte secHdrIndex, long offset) {
         // Get the current symbol index and append symbol name to string table.
         int index;
         PECoffSymbol sym;
@@ -82,7 +80,7 @@ public class PECoffSymtab {
             index = 0;
             strTabContent.append('\0');
             strTabNrOfBytes += 1;
-            sym = new PECoffSymbol(symbolCount, index, type, storageclass, secHdrIndex, offset, size);
+            sym = new PECoffSymbol(symbolCount, index, type, storageclass, secHdrIndex, offset);
             symbols.add(sym);
         } else {
             int nameSize = name.getBytes().length;
@@ -94,10 +92,11 @@ public class PECoffSymtab {
             strTabContent.append(name).append('\0');
             strTabNrOfBytes += (nameSize + 1);
 
-            sym = new PECoffSymbol(symbolCount, index, type, storageclass, secHdrIndex, offset, size);
+            sym = new PECoffSymbol(symbolCount, index, type, storageclass, secHdrIndex, offset);
             symbols.add(sym);
-            if (storageclass == IMAGE_SYMBOL.IMAGE_SYM_CLASS_EXTERNAL)
+            if (storageclass == IMAGE_SYMBOL.IMAGE_SYM_CLASS_EXTERNAL) {
                 addDirective(name, type);
+            }
         }
         symbolCount++;
         return (sym);
@@ -105,37 +104,37 @@ public class PECoffSymtab {
 
     private void addDirective(String name, byte type) {
         directives.append("/EXPORT:" + name);
-        if(type != IMAGE_SYMBOL.IMAGE_SYM_DTYPE_FUNCTION) {
+        if (type != IMAGE_SYMBOL.IMAGE_SYM_DTYPE_FUNCTION) {
             directives.append(",DATA");
         }
         directives.append(" ");
     }
 
-    public int getSymtabCount() {
+    int getSymtabCount() {
         return symbolCount;
     }
 
-    public int getStrtabSize() {
+    int getStrtabSize() {
         return strTabNrOfBytes;
     }
 
     // Return a byte array that contains the symbol table entries
-    public byte[] getSymtabArray() {
-        ByteBuffer symtabData = PECoffByteBuffer.allocate(symbolCount*IMAGE_SYMBOL.totalsize);
+    byte[] getSymtabArray() {
+        ByteBuffer symtabData = PECoffByteBuffer.allocate(symbolCount * IMAGE_SYMBOL.totalsize);
         symtabData.order(ByteOrder.LITTLE_ENDIAN);
 
         // copy all symbols
-        for (int i = 0; i < symbolCount; i++ ) {
+        for (int i = 0; i < symbolCount; i++) {
             PECoffSymbol sym = symbols.get(i);
-            byte [] arr = sym.getArray();
+            byte[] arr = sym.getArray();
             symtabData.put(arr);
         }
         return (symtabData.array());
     }
 
     // Return the string table array
-    public byte[] getStrtabArray() {
-        byte [] strs = strTabContent.toString().getBytes();
+    byte[] getStrtabArray() {
+        byte[] strs = strTabContent.toString().getBytes();
 
         // Update the size of the string table
         ByteBuffer buff = ByteBuffer.wrap(strs);
@@ -145,7 +144,7 @@ public class PECoffSymtab {
         return (strs);
     }
 
-    public byte[] getDirectiveArray() {
+    byte[] getDirectiveArray() {
         return (directives.toString().getBytes());
     }
 }

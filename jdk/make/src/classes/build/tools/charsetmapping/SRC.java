@@ -51,7 +51,7 @@ public class SRC {
                 } else if (line.indexOf("$ALIASES$") != -1) {
                     if ("sun.nio.cs".equals(pkgName))
                         out.println(line.replace("$ALIASES$",
-                                                 "StandardCharsets.aliases_" + clzName));
+                                                 "StandardCharsets.aliases_" + clzName + "()"));
                     else
                         out.println(line.replace("$ALIASES$",
                                                  "ExtendedCharsets.aliasesFor(\"" + csName + "\")"));

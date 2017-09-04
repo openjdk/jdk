@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ PromotedObject* PromotedObject::next() const {
   } else {
     res = (PromotedObject*)(_next & next_mask);
   }
-  assert(oop(res)->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(res)));
+  assert(oopDesc::is_oop_or_null(oop(res), true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(res)));
   return res;
 }
 
@@ -299,7 +299,7 @@ void PromotionInfo::verify() const {
   for (PromotedObject* curObj = _promoHead; curObj != NULL; curObj = curObj->next()) {
     guarantee(space()->is_in_reserved((HeapWord*)curObj), "Containment");
     // the last promoted object may fail the mark() != NULL test of is_oop().
-    guarantee(curObj->next() == NULL || oop(curObj)->is_oop(), "must be an oop");
+    guarantee(curObj->next() == NULL || oopDesc::is_oop(oop(curObj)), "must be an oop");
     if (curObj->hasDisplacedMark()) {
       numObjsWithDisplacedHdrs++;
     }

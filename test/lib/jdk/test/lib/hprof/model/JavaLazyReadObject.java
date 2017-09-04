@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
         this.offset = offset;
     }
 
-    public final int getSize() {
+    @Override
+    public final long getSize() {
         return getValueLength() + getClazz().getMinimumObjectSize();
     }
 
@@ -55,8 +56,16 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
         return offset;
     }
 
+    protected ReadBuffer buf() {
+        return getClazz().getReadBuffer();
+    }
+
+    protected int idSize() {
+        return getClazz().getIdentifierSize();
+    }
+
     // return the length of the data for this object
-    protected final int getValueLength() {
+    protected final long getValueLength() {
         try {
             return readValueLength();
         } catch (IOException exp) {
@@ -67,25 +76,23 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
     }
 
     // get this object's content as byte array
-    protected final byte[] getValue() {
+    protected final JavaThing[] getValue() {
         try {
             return readValue();
         } catch (IOException exp) {
             System.err.println("lazy read failed at offset " + offset);
             exp.printStackTrace();
-            return Snapshot.EMPTY_BYTE_ARRAY;
+            return Snapshot.EMPTY_JAVATHING_ARRAY;
         }
     }
 
     // get ID of this object
     public final long getId() {
         try {
-            ReadBuffer buf = getClazz().getReadBuffer();
-            int idSize = getClazz().getIdentifierSize();
-            if (idSize == 4) {
-                return ((long)buf.getInt(offset)) & Snapshot.SMALL_ID_MASK;
+        if (idSize() == 4) {
+                return ((long)buf().getInt(offset)) & Snapshot.SMALL_ID_MASK;
             } else {
-                return buf.getLong(offset);
+                return buf().getLong(offset);
             }
         } catch (IOException exp) {
             System.err.println("lazy read failed at offset " + offset);
@@ -94,8 +101,8 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
         }
     }
 
-    protected abstract int readValueLength() throws IOException;
-    protected abstract byte[] readValue() throws IOException;
+    protected abstract long readValueLength() throws IOException;
+    protected abstract JavaThing[] readValue() throws IOException;
 
     // make Integer or Long for given object ID
     protected static Number makeId(long id) {
@@ -116,61 +123,46 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
     }
 
     // read object ID from given index from given byte array
-    protected final long objectIdAt(int index, byte[] data) {
-        int idSize = getClazz().getIdentifierSize();
-        if (idSize == 4) {
-            return ((long)intAt(index, data)) & Snapshot.SMALL_ID_MASK;
+    protected final long objectIdAt(long offset) throws IOException {
+        if (idSize() == 4) {
+            return ((long)intAt(offset)) & Snapshot.SMALL_ID_MASK;
         } else {
-            return longAt(index, data);
+            return longAt(offset);
         }
     }
 
     // utility methods to read primitive types from byte array
-    protected static byte byteAt(int index, byte[] value) {
-        return value[index];
+    protected byte byteAt(long offset) throws IOException {
+        return buf().getByte(offset);
     }
 
-    protected static boolean booleanAt(int index, byte[] value) {
-        return (value[index] & 0xff) == 0? false: true;
+    protected boolean booleanAt(long offset) throws IOException {
+        return byteAt(offset) == 0 ? false : true;
     }
 
-    protected static char charAt(int index, byte[] value) {
-        int b1 = ((int) value[index++] & 0xff);
-        int b2 = ((int) value[index++] & 0xff);
-        return (char) ((b1 << 8) + b2);
+    protected char charAt(long offset) throws IOException {
+        return buf().getChar(offset);
     }
 
-    protected static short shortAt(int index, byte[] value) {
-        int b1 = ((int) value[index++] & 0xff);
-        int b2 = ((int) value[index++] & 0xff);
-        return (short) ((b1 << 8) + b2);
+    protected short shortAt(long offset) throws IOException {
+        return buf().getShort(offset);
     }
 
-    protected static int intAt(int index, byte[] value) {
-        int b1 = ((int) value[index++] & 0xff);
-        int b2 = ((int) value[index++] & 0xff);
-        int b3 = ((int) value[index++] & 0xff);
-        int b4 = ((int) value[index++] & 0xff);
-        return ((b1 << 24) + (b2 << 16) + (b3 << 8) + b4);
+    protected int intAt(long offset) throws IOException {
+        return buf().getInt(offset);
     }
 
-    protected static long longAt(int index, byte[] value) {
-        long val = 0;
-        for (int j = 0; j < 8; j++) {
-            val = val << 8;
-            int b = ((int)value[index++]) & 0xff;
-            val |= b;
-        }
-        return val;
+    protected long longAt(long offset) throws IOException {
+        return buf().getLong(offset);
     }
 
-    protected static float floatAt(int index, byte[] value) {
-        int val = intAt(index, value);
+    protected float floatAt(long offset) throws IOException {
+        int val = intAt(offset);
         return Float.intBitsToFloat(val);
     }
 
-    protected static double doubleAt(int index, byte[] value) {
-        long val = longAt(index, value);
+    protected double doubleAt(long offset) throws IOException {
+        long val = longAt(offset);
         return Double.longBitsToDouble(val);
     }
 }

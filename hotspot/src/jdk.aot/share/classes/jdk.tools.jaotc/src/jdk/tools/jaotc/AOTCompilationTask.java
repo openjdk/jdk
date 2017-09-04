@@ -48,7 +48,7 @@ import jdk.vm.ci.runtime.JVMCICompiler;
  * compilation of classes. It also defines methods that parse compilation result of Graal to create
  * target-independent representation {@code BinaryContainer} of the intended target binary.
  */
-public class AOTCompilationTask implements Runnable, Comparable<Object> {
+final class AOTCompilationTask implements Runnable, Comparable<Object> {
 
     private static final AtomicInteger ids = new AtomicInteger();
 
@@ -77,7 +77,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
      */
     private CompiledMethodInfo result;
 
-    public AOTCompilationTask(Main main, OptionValues graalOptions, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
+    AOTCompilationTask(Main main, OptionValues graalOptions, AOTCompiledClass holder, ResolvedJavaMethod method, AOTBackend aotBackend) {
         this.main = main;
         this.graalOptions = graalOptions;
         this.id = ids.incrementAndGet();
@@ -95,7 +95,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
         // may include processing command line options used by the latter.
         HotSpotJVMCIRuntime.runtime();
 
-        AOTCompiler.logCompilation(MiscUtils.uniqueMethodName(method), "Compiling");
+        AOTCompiler.logCompilation(JavaMethodInfo.uniqueMethodName(method), "Compiling");
 
         final long threadId = Thread.currentThread().getId();
 
@@ -137,7 +137,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
         }
 
         // For now precision to the nearest second is sufficient.
-        Main.writeLog("    Compile Time: " + TimeUnit.MILLISECONDS.toSeconds(endTime - startTime) + "secs");
+        LogPrinter.writeLog("    Compile Time: " + TimeUnit.MILLISECONDS.toSeconds(endTime - startTime) + "secs");
         if (main.options.debug) {
             aotBackend.printCompiledMethod((HotSpotResolvedJavaMethod) method, compResult);
         }
@@ -146,7 +146,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
     }
 
     private String getMethodDescription() {
-        return String.format("%-6d aot %s %s", getId(), MiscUtils.uniqueMethodName(method),
+        return String.format("%-6d aot %s %s", getId(), JavaMethodInfo.uniqueMethodName(method),
                         getEntryBCI() == JVMCICompiler.INVOCATION_ENTRY_BCI ? "" : "(OSR@" + getEntryBCI() + ") ");
     }
 
@@ -154,11 +154,11 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
         return id;
     }
 
-    public int getEntryBCI() {
+    private static int getEntryBCI() {
         return JVMCICompiler.INVOCATION_ENTRY_BCI;
     }
 
-    public ResolvedJavaMethod getMethod() {
+    ResolvedJavaMethod getMethod() {
         return method;
     }
 
@@ -167,7 +167,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
      *
      * @return the holder of this method
      */
-    public AOTCompiledClass getHolder() {
+    AOTCompiledClass getHolder() {
         return holder;
     }
 
@@ -176,7 +176,7 @@ public class AOTCompilationTask implements Runnable, Comparable<Object> {
      *
      * @return result of this compilation task
      */
-    public CompiledMethodInfo getResult() {
+    CompiledMethodInfo getResult() {
         return result;
     }
 

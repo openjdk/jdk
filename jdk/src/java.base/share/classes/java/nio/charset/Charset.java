@@ -609,7 +609,7 @@ public abstract class Charset
                 if (cs != null)
                     defaultCharset = cs;
                 else
-                    defaultCharset = forName("UTF-8");
+                    defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
             }
         }
         return defaultCharset;
@@ -639,11 +639,10 @@ public abstract class Charset
         String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
 
         // Skip checks for the standard, built-in Charsets we always load
-        // during initialization.  Use of identity is intentional to be
-        // consistent with sun.nio.cs.StandardCharsets
-        if (canonicalName != StandardCharsets.ISO_8859_1
-                && canonicalName != StandardCharsets.US_ASCII
-                && canonicalName != StandardCharsets.UTF_8) {
+        // during initialization.
+        if (canonicalName != "ISO-8859-1"
+                && canonicalName != "US-ASCII"
+                && canonicalName != "UTF-8") {
             checkName(canonicalName);
             for (int i = 0; i < as.length; i++) {
                 checkName(as[i]);
