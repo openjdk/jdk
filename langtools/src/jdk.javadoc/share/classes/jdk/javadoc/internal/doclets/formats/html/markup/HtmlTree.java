@@ -474,14 +474,28 @@ public class HtmlTree extends Content {
      *
      * @param type the type of input
      * @param id id for the tag
+     * @param value value for the tag
      * @return an HtmlTree object for the INPUT tag
      */
-    public static HtmlTree INPUT(String type, String id) {
+    public static HtmlTree INPUT(String type, String id, String value) {
         HtmlTree htmltree = new HtmlTree(HtmlTag.INPUT);
         htmltree.addAttr(HtmlAttr.TYPE, nullCheck(type));
         htmltree.addAttr(HtmlAttr.ID, nullCheck(id));
-        htmltree.addAttr(HtmlAttr.VALUE, " ");
+        htmltree.addAttr(HtmlAttr.VALUE, nullCheck(value));
         htmltree.addAttr(HtmlAttr.DISABLED, "disabled");
+        return htmltree;
+    }
+
+    /**
+     * Generates a LABEL tag with some content.
+     *
+     * @param forLabel value of "for" attribute of the LABEL tag
+     * @param body content for the tag
+     * @return an HtmlTree object for the LABEL tag
+     */
+    public static HtmlTree LABEL(String forLabel, Content body) {
+        HtmlTree htmltree = new HtmlTree(HtmlTag.LABEL, nullCheck(body));
+        htmltree.addAttr(HtmlAttr.FOR, nullCheck(forLabel));
         return htmltree;
     }
 

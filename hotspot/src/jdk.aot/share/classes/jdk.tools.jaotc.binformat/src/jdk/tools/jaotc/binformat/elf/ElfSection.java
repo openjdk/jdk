@@ -24,40 +24,36 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.elf.Elf;
-import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rel;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rela;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
 import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
-public class ElfSection {
-    String name;
-    ByteBuffer section;
-    byte [] data;
-    boolean hasrelocations;
-    int sectionIndex;
+final class ElfSection {
+    private final String name;
+    private final ByteBuffer section;
+    private final byte[] data;
+    private final boolean hasrelocations;
+    private final int sectionIndex;
 
     /**
      * String holding section name strings
      */
-    private static StringBuilder sectNameTab = new StringBuilder();
+    private final static StringBuilder sectNameTab = new StringBuilder();
 
     /**
-     * Keeps track of bytes in section string table since strTabContent.length()
-     * is number of chars, not bytes.
+     * Keeps track of bytes in section string table since strTabContent.length() is number of chars,
+     * not bytes.
      */
     private static int shStrTabNrOfBytes = 0;
 
-    public ElfSection(String sectName, byte [] sectData, int sectFlags,
-                      int sectType, boolean hasRelocations, int align,
-                      int sectIndex) {
+    ElfSection(String sectName, byte[] sectData, int sectFlags, int sectType,
+               boolean hasRelocations, int align, int sectIndex) {
 
         section = ElfByteBuffer.allocate(Elf64_Shdr.totalsize);
-
+        name = sectName;
         // Return all 0's for NULL section
         if (sectIndex == 0) {
             sectNameTab.append('\0');
@@ -71,7 +67,6 @@ public class ElfSection {
         section.putInt(Elf64_Shdr.sh_name.off, shStrTabNrOfBytes);
         sectNameTab.append(sectName).append('\0');
         shStrTabNrOfBytes += (sectName.getBytes().length + 1);
-        name = sectName;
 
         section.putInt(Elf64_Shdr.sh_type.off, sectType);
         section.putLong(Elf64_Shdr.sh_flags.off, sectFlags);
@@ -81,8 +76,7 @@ public class ElfSection {
         if (sectName.equals(".shstrtab")) {
             section.putLong(Elf64_Shdr.sh_size.off, shStrTabNrOfBytes);
             data = sectNameTab.toString().getBytes();
-        }
-        else {
+        } else {
             data = sectData;
             section.putLong(Elf64_Shdr.sh_size.off, sectData.length);
         }
@@ -110,55 +104,53 @@ public class ElfSection {
         sectionIndex = sectIndex;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public long getSize() {
+    long getSize() {
         return section.getLong(Elf64_Shdr.sh_size.off);
     }
 
-    public int getDataAlign() {
-        return ((int)section.getLong(Elf64_Shdr.sh_addralign.off));
+    int getDataAlign() {
+        return ((int) section.getLong(Elf64_Shdr.sh_addralign.off));
     }
 
     // Alignment requirements for the Elf64_Shdr structures
-    public static int getShdrAlign() {
+    static int getShdrAlign() {
         return (4);
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return section.array();
     }
 
-    public byte[] getDataArray() {
+    byte[] getDataArray() {
         return data;
     }
 
-    public void setOffset(long offset) {
+    void setOffset(long offset) {
         section.putLong(Elf64_Shdr.sh_offset.off, offset);
     }
 
-    public void setLink(int link) {
+    void setLink(int link) {
         section.putInt(Elf64_Shdr.sh_link.off, link);
     }
 
-    public void setInfo(int info) {
+    void setInfo(int info) {
         section.putInt(Elf64_Shdr.sh_info.off, info);
     }
 
-    public long getOffset() {
+    long getOffset() {
         return (section.getLong(Elf64_Shdr.sh_offset.off));
     }
 
-    public boolean hasRelocations() {
+    boolean hasRelocations() {
         return hasrelocations;
     }
 
-    public int getSectionId() {
+    int getSectionId() {
         return sectionIndex;
     }
 
 }
-
-

@@ -91,7 +91,7 @@ class FileOutputStream extends OutputStream
      * If the file exists but is a directory rather than a regular file, does
      * not exist but cannot be created, or cannot be opened for any other
      * reason then a <code>FileNotFoundException</code> is thrown.
-     * <p>
+     *
      * @implSpec Invoking this constructor with the parameter {@code name} is
      * equivalent to invoking {@link #FileOutputStream(String,boolean)
      * new FileOutputStream(name, false)}.

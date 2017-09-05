@@ -25,6 +25,7 @@ package org.graalvm.compiler.hotspot.test;
 import java.util.ArrayList;
 
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.junit.Test;
 
 /**
@@ -83,5 +84,21 @@ public class ObjectCloneTest extends GraalCompilerTest {
             list.add(i);
         }
         test("cloneList", list);
+    }
+
+    @Override
+    protected GraphBuilderConfiguration editGraphBuilderConfiguration(GraphBuilderConfiguration conf) {
+        return super.editGraphBuilderConfiguration(conf.withNodeSourcePosition(true));
+    }
+
+    static final int[] ARRAY = new int[]{1, 2, 4, 3};
+
+    public static int[] cloneConstantArray() {
+        return ARRAY.clone();
+    }
+
+    @Test
+    public void testCloneConstantArray() {
+        test("cloneConstantArray");
     }
 }

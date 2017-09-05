@@ -24,13 +24,11 @@
 package jdk.tools.jaotc.binformat.elf;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import jdk.tools.jaotc.binformat.Container;
 import jdk.tools.jaotc.binformat.BinaryContainer;
 import jdk.tools.jaotc.binformat.ByteContainer;
 import jdk.tools.jaotc.binformat.CodeContainer;
@@ -38,17 +36,14 @@ import jdk.tools.jaotc.binformat.ReadOnlyDataContainer;
 import jdk.tools.jaotc.binformat.Relocation;
 import jdk.tools.jaotc.binformat.Relocation.RelocType;
 import jdk.tools.jaotc.binformat.Symbol;
-import jdk.tools.jaotc.binformat.NativeSymbol;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
 
-import jdk.tools.jaotc.binformat.elf.Elf;
 import jdk.tools.jaotc.binformat.elf.ElfSymbol;
 import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
-import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rel;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rela;
 
 public class JELFRelocObject {
@@ -59,34 +54,29 @@ public class JELFRelocObject {
 
     private final int segmentSize;
 
-    public JELFRelocObject(BinaryContainer binContainer, String outputFileName, String aotVersion) {
+    public JELFRelocObject(BinaryContainer binContainer, String outputFileName) {
         this.binContainer = binContainer;
-        this.elfContainer = new ElfContainer(outputFileName, aotVersion);
+        this.elfContainer = new ElfContainer(outputFileName);
         this.segmentSize = binContainer.getCodeSegmentSize();
     }
 
-    private ElfSection createByteSection(ArrayList<ElfSection>sections,
-                                         String sectName,
-                                         byte [] scnData,
-                                         boolean hasRelocs,
-                                         int align,
-                                         int scnFlags,
-                                         int scnType) {
+    private static ElfSection createByteSection(ArrayList<ElfSection> sections,
+                                                String sectName,
+                                                byte[] scnData,
+                                                boolean hasRelocs,
+                                                int align,
+                                                int scnFlags,
+                                                int scnType) {
 
-        ElfSection sect = new ElfSection(sectName,
-                                         scnData,
-                                         scnFlags,
-                                         scnType,
-                                         hasRelocs,
-                                         align,
-                                         sections.size());
+        ElfSection sect = new ElfSection(sectName, scnData, scnFlags, scnType,
+                                         hasRelocs, align, sections.size());
         // Add this section to our list
         sections.add(sect);
 
         return (sect);
     }
 
-    private void createByteSection(ArrayList<ElfSection>sections,
+    private void createByteSection(ArrayList<ElfSection> sections,
                                    ByteContainer c, int scnFlags) {
         ElfSection sect;
         boolean hasRelocs = c.hasRelocations();
@@ -112,15 +102,15 @@ public class JELFRelocObject {
         c.setSectionId(sect.getSectionId());
     }
 
-    private void createCodeSection(ArrayList<ElfSection>sections, CodeContainer c) {
+    private void createCodeSection(ArrayList<ElfSection> sections, CodeContainer c) {
         createByteSection(sections, c, Elf64_Shdr.SHF_ALLOC | Elf64_Shdr.SHF_EXECINSTR);
     }
 
-    private void createReadOnlySection(ArrayList<ElfSection>sections, ReadOnlyDataContainer c) {
+    private void createReadOnlySection(ArrayList<ElfSection> sections, ReadOnlyDataContainer c) {
         createByteSection(sections, c, Elf64_Shdr.SHF_ALLOC);
     }
 
-    private void createReadWriteSection(ArrayList<ElfSection>sections, ByteContainer c) {
+    private void createReadWriteSection(ArrayList<ElfSection> sections, ByteContainer c) {
         createByteSection(sections, c, Elf64_Shdr.SHF_ALLOC | Elf64_Shdr.SHF_WRITE);
     }
 
@@ -135,7 +125,7 @@ public class JELFRelocObject {
         // Allocate ELF Header
         ElfHeader eh = new ElfHeader();
 
-        ArrayList<ElfSection> sections = new ArrayList<ElfSection>();
+        ArrayList<ElfSection> sections = new ArrayList<>();
 
         // Create the null section
         createByteSection(sections, null, null, false, 1, 0, 0);
@@ -146,63 +136,49 @@ public class JELFRelocObject {
         createReadOnlySection(sections, binContainer.getKlassesOffsetsContainer());
         createReadOnlySection(sections, binContainer.getMethodsOffsetsContainer());
         createReadOnlySection(sections, binContainer.getKlassesDependenciesContainer());
-        createReadWriteSection(sections, binContainer.getMetaspaceGotContainer());
-        createReadWriteSection(sections, binContainer.getMetadataGotContainer());
-        createReadWriteSection(sections, binContainer.getMethodStateContainer());
-        createReadWriteSection(sections, binContainer.getOopGotContainer());
-        createReadWriteSection(sections, binContainer.getMethodMetadataContainer());
+        createReadOnlySection(sections, binContainer.getMethodMetadataContainer());
         createReadOnlySection(sections, binContainer.getStubsOffsetsContainer());
         createReadOnlySection(sections, binContainer.getHeaderContainer().getContainer());
         createReadOnlySection(sections, binContainer.getCodeSegmentsContainer());
         createReadOnlySection(sections, binContainer.getConstantDataContainer());
         createReadOnlySection(sections, binContainer.getConfigContainer());
-
-        // createExternalLinkage();
-
-        createCodeSection(sections, binContainer.getExtLinkageContainer());
+        createReadWriteSection(sections, binContainer.getKlassesGotContainer());
+        createReadWriteSection(sections, binContainer.getCountersGotContainer());
+        createReadWriteSection(sections, binContainer.getMetadataGotContainer());
+        createReadWriteSection(sections, binContainer.getOopGotContainer());
+        createReadWriteSection(sections, binContainer.getMethodStateContainer());
         createReadWriteSection(sections, binContainer.getExtLinkageGOTContainer());
 
         // Get ELF symbol data from BinaryContainer object's symbol tables
-        ElfSymtab symtab = createELFSymbolTables(sections, symbols);
+        ElfSymtab symtab = createELFSymbolTables(symbols);
 
         // Create string table section and symbol table sections in
         // that order since symtab section needs to set the index of
         // strtab in sh_link field
-        ElfSection strTabSection = createByteSection(sections,
-                                                     ".strtab",
+        ElfSection strTabSection = createByteSection(sections, ".strtab",
                                                      symtab.getStrtabArray(),
-                                                     false,
-                                                     1,
-                                                     0,
+                                                     false, 1, 0,
                                                      Elf64_Shdr.SHT_STRTAB);
 
         // Now create .symtab section with the symtab data constructed.
         // On Linux, sh_link of symtab contains the index of string table
         // its symbols reference and sh_info contains the index of first
         // non-local symbol
-        ElfSection symTabSection = createByteSection(sections,
-                                                    ".symtab",
-                                                    symtab.getSymtabArray(),
-                                                    false,
-                                                    8,
-                                                    0,
-                                                    Elf64_Shdr.SHT_SYMTAB);
+        ElfSection symTabSection = createByteSection(sections, ".symtab",
+                                                     symtab.getSymtabArray(),
+                                                     false, 8, 0,
+                                                     Elf64_Shdr.SHT_SYMTAB);
         symTabSection.setLink(strTabSection.getSectionId());
         symTabSection.setInfo(symtab.getNumLocalSyms());
 
-        ElfRelocTable elfRelocTable = createElfRelocTable(sections,
-                                                          relocationTable);
+        ElfRelocTable elfRelocTable = createElfRelocTable(sections, relocationTable);
 
         createElfRelocSections(sections, elfRelocTable, symTabSection.getSectionId());
 
         // Now, finally, after creating all sections, create shstrtab section
-        ElfSection shStrTabSection = createByteSection(sections,
-                                                    ".shstrtab",
-                                                    null,
-                                                    false,
-                                                    1,
-                                                    0,
-                                                    Elf64_Shdr.SHT_STRTAB);
+        ElfSection shStrTabSection = createByteSection(sections, ".shstrtab",
+                                                       null, false, 1, 0,
+                                                       Elf64_Shdr.SHT_STRTAB);
         eh.setSectionStrNdx(shStrTabSection.getSectionId());
 
         // Update all section offsets and the Elf header section offset
@@ -211,21 +187,21 @@ public class JELFRelocObject {
         int file_offset = Elf64_Ehdr.totalsize;
 
         // and round it up
-        file_offset = (file_offset + (sections.get(1).getDataAlign()-1)) &
-                      ~((sections.get(1).getDataAlign()-1));
+        file_offset = (file_offset + (sections.get(1).getDataAlign() - 1)) &
+                      ~((sections.get(1).getDataAlign() - 1));
 
         // Calc file offsets for section data skipping null section
         for (int i = 1; i < sections.size(); i++) {
             ElfSection sect = sections.get(i);
-            file_offset = (file_offset + (sect.getDataAlign()-1)) &
-                           ~((sect.getDataAlign()-1));
+            file_offset = (file_offset + (sect.getDataAlign() - 1)) &
+                          ~((sect.getDataAlign() - 1));
             sect.setOffset(file_offset);
             file_offset += sect.getSize();
         }
 
         // Align the section table
-        file_offset = (file_offset + (ElfSection.getShdrAlign()-1)) &
-                      ~((ElfSection.getShdrAlign()-1));
+        file_offset = (file_offset + (ElfSection.getShdrAlign() - 1)) &
+                      ~((ElfSection.getShdrAlign() - 1));
 
         // Update the Elf Header with the offset of the first Elf64_Shdr
         // and the number of sections.
@@ -249,24 +225,25 @@ public class JELFRelocObject {
 
         elfContainer.close();
     }
+
     /**
-     * Construct ELF symbol data from BinaryContainer object's symbol tables. Both dynamic ELF
-     * symbol table and ELF symbol table are created from BinaryContainer's symbol info.
+     * Construct ELF symbol data from BinaryContainer object's symbol tables. Both dynamic ELF symbol
+     * table and ELF symbol table are created from BinaryContainer's symbol info.
      *
      * @param symbols
      */
-    private ElfSymtab createELFSymbolTables(ArrayList<ElfSection> sections, Collection<Symbol> symbols) {
+    private static ElfSymtab createELFSymbolTables(Collection<Symbol> symbols) {
         ElfSymtab symtab = new ElfSymtab();
 
         // First, create the initial null symbol. This is a local symbol.
-        symtab.addSymbolEntry("", (byte)0, (byte)0, Elf64_Shdr.SHN_UNDEF, 0, 0);
+        symtab.addSymbolEntry("", (byte) 0, (byte) 0, Elf64_Shdr.SHN_UNDEF, 0, 0);
 
         // Now create ELF symbol entries for all symbols.
         for (Symbol symbol : symbols) {
             // Get the index of section this symbol is defined in.
             int secHdrIndex = symbol.getSection().getSectionId();
-            ElfSymbol elfSymbol = symtab.addSymbolEntry(symbol.getName(), getELFTypeOf(symbol), getELFBindOf(symbol), (byte)secHdrIndex, symbol.getOffset(), symbol.getSize());
-            symbol.setNativeSymbol((NativeSymbol)elfSymbol);
+            ElfSymbol elfSymbol = symtab.addSymbolEntry(symbol.getName(), getELFTypeOf(symbol), getELFBindOf(symbol), (byte) secHdrIndex, symbol.getOffset(), symbol.getSize());
+            symbol.setNativeSymbol(elfSymbol);
         }
         return (symtab);
     }
@@ -300,8 +277,7 @@ public class JELFRelocObject {
 
         ElfRelocTable elfRelocTable = new ElfRelocTable(sections.size());
         /*
-         * For each of the symbols with associated relocation records, create a Elf relocation
-         * entry.
+         * For each of the symbols with associated relocation records, create a Elf relocation entry.
          */
         for (Map.Entry<Symbol, List<Relocation>> entry : relocationTable.entrySet()) {
             List<Relocation> relocs = entry.getValue();
@@ -319,69 +295,39 @@ public class JELFRelocObject {
         return (elfRelocTable);
     }
 
-    private void createRelocation(Symbol symbol, Relocation reloc, ElfRelocTable elfRelocTable) {
+    private static void createRelocation(Symbol symbol, Relocation reloc, ElfRelocTable elfRelocTable) {
         RelocType relocType = reloc.getType();
 
         int elfRelocType = getELFRelocationType(relocType);
-        ElfSymbol sym = (ElfSymbol)symbol.getNativeSymbol();
+        ElfSymbol sym = (ElfSymbol) symbol.getNativeSymbol();
         int symno = sym.getIndex();
         int sectindex = reloc.getSection().getSectionId();
         int offset = reloc.getOffset();
         int addend = 0;
 
         switch (relocType) {
-            case FOREIGN_CALL_DIRECT:
             case JAVA_CALL_DIRECT:
             case STUB_CALL_DIRECT:
             case FOREIGN_CALL_INDIRECT_GOT: {
                 // Create relocation entry
-                // System.out.println("getELFRelocationType: PLT relocation type using X86_64_RELOC_BRANCH");
                 addend = -4; // Size in bytes of the patch location
                 // Relocation should be applied at the location after call operand
                 offset = offset + reloc.getSize() + addend;
                 break;
             }
-            case FOREIGN_CALL_DIRECT_FAR: {
-                // Create relocation entry
-                addend = -8; // Size in bytes of the patch location
-                // Relocation should be applied at the location after call operand
-                // 10 = 2 (jmp [r]) + 8 (imm64)
-                offset = offset + reloc.getSize() + addend - 2;
-                break;
-            }
-            case FOREIGN_CALL_INDIRECT:
             case JAVA_CALL_INDIRECT:
-            case STUB_CALL_INDIRECT: {
-                // Do nothing.
-                return;
-            }
-            case EXTERNAL_DATA_REFERENCE_FAR: {
-                // Create relocation entry
+            case METASPACE_GOT_REFERENCE:
+            case EXTERNAL_PLT_TO_GOT: {
                 addend = -4; // Size of 32-bit address of the GOT
                 /*
                  * Relocation should be applied before the test instruction to the move instruction.
-                 * offset points to the test instruction after the instruction that loads
-                 * the address of polling page. So set the offset appropriately.
+                 * reloc.getOffset() points to the test instruction after the instruction that loads the address of
+                 * polling page. So set the offset appropriately.
                  */
                 offset = offset + addend;
                 break;
             }
-            case METASPACE_GOT_REFERENCE:
-            case EXTERNAL_PLT_TO_GOT:
-            case STATIC_STUB_TO_STATIC_METHOD:
-            case STATIC_STUB_TO_HOTSPOT_LINKAGE_GOT: {
-                addend = -4; // Size of 32-bit address of the GOT
-                /*
-                 * Relocation should be applied before the test instruction to
-                 * the move instruction. reloc.getOffset() points to the
-                 * test instruction after the instruction that loads the
-                 * address of polling page. So set the offset appropriately.
-                 */
-                offset = offset + addend;
-                break;
-            }
-            case EXTERNAL_GOT_TO_PLT:
-            case LOADTIME_ADDRESS: {
+            case EXTERNAL_GOT_TO_PLT: {
                 // this is load time relocations
                 break;
             }
@@ -396,27 +342,17 @@ public class JELFRelocObject {
         switch (ElfTargetInfo.getElfArch()) {
             case Elf64_Ehdr.EM_X86_64:
                 // Return R_X86_64_* entries based on relocType
-                if (relocType == RelocType.FOREIGN_CALL_DIRECT ||
-                    relocType == RelocType.JAVA_CALL_DIRECT ||
+                if (relocType == RelocType.JAVA_CALL_DIRECT ||
                     relocType == RelocType.FOREIGN_CALL_INDIRECT_GOT) {
                     elfRelocType = Elf64_Rela.R_X86_64_PLT32;
                 } else if (relocType == RelocType.STUB_CALL_DIRECT) {
                     elfRelocType = Elf64_Rela.R_X86_64_PC32;
-                } else if (relocType == RelocType.FOREIGN_CALL_DIRECT_FAR) {
-                    elfRelocType = Elf64_Rela.R_X86_64_64;
-                } else if (relocType == RelocType.FOREIGN_CALL_INDIRECT ||
-                           relocType == RelocType.JAVA_CALL_INDIRECT ||
-                           relocType == RelocType.STUB_CALL_INDIRECT) {
+                } else if (relocType == RelocType.JAVA_CALL_INDIRECT) {
                     elfRelocType = Elf64_Rela.R_X86_64_NONE;
-                } else if ((relocType == RelocType.EXTERNAL_DATA_REFERENCE_FAR)) {
-                    elfRelocType = Elf64_Rela.R_X86_64_GOTPCREL;
                 } else if (relocType == RelocType.METASPACE_GOT_REFERENCE ||
-                           relocType == RelocType.EXTERNAL_PLT_TO_GOT ||
-                           relocType == RelocType.STATIC_STUB_TO_STATIC_METHOD ||
-                           relocType == RelocType.STATIC_STUB_TO_HOTSPOT_LINKAGE_GOT) {
+                           relocType == RelocType.EXTERNAL_PLT_TO_GOT) {
                     elfRelocType = Elf64_Rela.R_X86_64_PC32;
-                } else if (relocType == RelocType.EXTERNAL_GOT_TO_PLT ||
-                           relocType == RelocType.LOADTIME_ADDRESS) {
+                } else if (relocType == RelocType.EXTERNAL_GOT_TO_PLT) {
                     elfRelocType = Elf64_Rela.R_X86_64_64;
                 } else {
                     assert false : "Unhandled relocation type: " + relocType;
@@ -428,9 +364,9 @@ public class JELFRelocObject {
         return elfRelocType;
     }
 
-    private void createElfRelocSections(ArrayList<ElfSection> sections,
-                                        ElfRelocTable elfRelocTable,
-                                        int symtabsectidx) {
+    private static void createElfRelocSections(ArrayList<ElfSection> sections,
+                                               ElfRelocTable elfRelocTable,
+                                               int symtabsectidx) {
 
         // Grab count before we create new sections
         int count = sections.size();
@@ -439,15 +375,11 @@ public class JELFRelocObject {
             if (elfRelocTable.getNumRelocs(i) > 0) {
                 ElfSection sect = sections.get(i);
                 String relname = ".rela" + sect.getName();
-                ElfSection relocSection = createByteSection(sections,
-                                                                    relname,
-                                                                    elfRelocTable.getRelocData(i),
-                                                                    false,
-                                                                    8,
-                                                                    0,
-                                                                    Elf64_Shdr.SHT_RELA);
-                        relocSection.setLink(symtabsectidx);
-                        relocSection.setInfo(sect.getSectionId());
+                ElfSection relocSection = createByteSection(sections, relname,
+                                                            elfRelocTable.getRelocData(i),
+                                                            false, 8, 0, Elf64_Shdr.SHT_RELA);
+                relocSection.setLink(symtabsectidx);
+                relocSection.setInfo(sect.getSectionId());
             }
         }
     }

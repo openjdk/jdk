@@ -559,7 +559,7 @@ void trace_method_handle_stub(const char* adaptername,
     values.print(p);
   }
   if (Verbose) {
-    if (has_mh && mh->is_oop()) {
+    if (has_mh && oopDesc::is_oop(mh)) {
       mh->print();
       if (java_lang_invoke_MethodHandle::is_instance(mh)) {
         if (java_lang_invoke_MethodHandle::form_offset_in_bytes() != 0)

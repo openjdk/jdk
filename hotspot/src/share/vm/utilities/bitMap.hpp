@@ -114,7 +114,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   void verify_range(idx_t beg_index, idx_t end_index) const NOT_DEBUG_RETURN;
 
   // Statistics.
-  static idx_t* _pop_count_table;
+  static const idx_t* _pop_count_table;
   static void init_pop_count_table();
   static idx_t num_set_bits(bm_word_t w);
   static idx_t num_set_bits_from_table(unsigned char c);

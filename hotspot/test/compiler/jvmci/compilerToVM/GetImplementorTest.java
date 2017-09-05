@@ -101,13 +101,13 @@ public class GetImplementorTest {
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
         HotSpotResolvedObjectType resolvedIface = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.anInterface),
+                .lookupTypeHelper(Utils.toJVMTypeSignature(tcase.anInterface),
                         getClass(), /* resolve = */ true);
         HotSpotResolvedObjectType resolvedImplementer = CompilerToVMHelper
                 .getImplementor(resolvedIface);
         HotSpotResolvedObjectType resolvedExpected = null;
         if (tcase.expectedImplementer != null) {
-            resolvedExpected = CompilerToVMHelper.lookupType(Utils
+            resolvedExpected = CompilerToVMHelper.lookupTypeHelper(Utils
                     .toJVMTypeSignature(tcase.expectedImplementer),
                     getClass(), /* resolve = */ true);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package jdk.tools.jaotc;
 
-import jdk.tools.jaotc.CompiledMethodInfo.StubInformation;
+import jdk.tools.jaotc.StubInformation;
 import jdk.tools.jaotc.amd64.AMD64ELFMacroAssembler;
 
 import jdk.vm.ci.amd64.AMD64;

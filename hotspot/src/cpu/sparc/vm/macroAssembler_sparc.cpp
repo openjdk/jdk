@@ -3822,6 +3822,12 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   card_table_write(bs->byte_map_base, tmp, store_addr);
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  ld_ptr(result, 0, result);
+}
+
 void MacroAssembler::load_mirror(Register mirror, Register method) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld_ptr(method, in_bytes(Method::const_offset()), mirror);

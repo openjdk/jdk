@@ -3207,7 +3207,7 @@ class VerifyFieldClosure: public OopClosure {
  protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
-    if (!obj->is_oop_or_null()) {
+    if (!oopDesc::is_oop_or_null(obj)) {
       tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p2i(p), p2i(obj));
       Universe::print_on(tty);
       guarantee(false, "boom");
