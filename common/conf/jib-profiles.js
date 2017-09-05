@@ -818,6 +818,49 @@ var getJibProfilesProfiles = function (input, common, data) {
             }
         },
 
+        "macosx-x64-open": {
+            artifacts: {
+                jdk: {
+                    local: "bundles/\\(jdk.*bin.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/osx-x64/jdk-" + data.version
+                            + "_osx-x64_bin.tar.gz",
+                        "bundles/openjdk/GPL/osx-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
+                },
+                jre: {
+                    local: "bundles/\\(jre.*bin.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/osx-x64/\\1",
+                },
+                test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/osx-x64/jdk-" + data.version
+                            + "_osx-x64_bin-tests.tar.gz",
+                        "bundles/openjdk/GPL/osx-x64/\\1"
+                    ]
+                },
+                jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/openjdk/GPL/osx-x64/jdk-" + data.version
+                            + "_osx-x64_bin-symbols.tar.gz",
+                        "bundles/openjdk/GPL/osx-x64/\\1"
+                    ],
+                    subdir: "jdk-" + data.version
+                },
+                jre_symbols: {
+                    local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/osx-x64/\\1",
+                },
+                doc_api_spec: {
+                    local: "bundles/\\(jdk.*doc-api-spec.tar.gz\\)",
+                    remote: "bundles/openjdk/GPL/osx-x64/\\1",
+                },
+            }
+        },
+
         "windows-x86-open": {
             artifacts: {
                 jdk: {
@@ -884,10 +927,11 @@ var getJibProfilesProfiles = function (input, common, data) {
     profiles["linux-x64-ri"] = clone(profiles["linux-x64-open"]);
     profiles["linux-x86-ri"] = clone(profiles["linux-x86-open"]);
     profiles["linux-x86-ri-debug"] = clone(profiles["linux-x86-open-debug"]);
+    profiles["macosx-x64-ri"] = clone(profiles["macosx-x64-open"]);
     profiles["windows-x86-ri"] = clone(profiles["windows-x86-open"]);
 
     // Generate artifacts for ri profiles
-    [ "linux-x64-ri", "linux-x86-ri", "linux-x86-ri-debug", "windows-x86-ri" ]
+    [ "linux-x64-ri", "linux-x86-ri", "linux-x86-ri-debug", "macosx-x64-ri", "windows-x86-ri" ]
         .forEach(function (name) {
             // Rewrite all remote dirs to "bundles/openjdk/BCL/..."
             for (artifactName in profiles[name].artifacts) {

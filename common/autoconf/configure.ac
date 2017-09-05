@@ -209,6 +209,7 @@ JDKOPT_SETUP_CODE_COVERAGE
 # Need toolchain to setup dtrace
 HOTSPOT_SETUP_DTRACE
 HOTSPOT_ENABLE_DISABLE_AOT
+HOTSPOT_ENABLE_DISABLE_CDS
 HOTSPOT_ENABLE_DISABLE_GTEST
 
 ###############################################################################
