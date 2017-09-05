@@ -83,8 +83,9 @@ public interface MetaAccessProvider {
     /**
      * Parses a
      * <a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3.3">method
-     * descriptor</a> into a {@link Signature}. The behavior of this method is undefined if the
-     * method descriptor is not well formed.
+     * descriptor</a> into a {@link Signature}.
+     *
+     * @throws IllegalArgumentException if the method descriptor is not well formed
      */
     Signature parseMethodDescriptor(String methodDescriptor);
 

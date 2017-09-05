@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,104 +37,7 @@ import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 
-public class CompiledMethodInfo {
-
-    public static class StubInformation {
-        int stubOffset;         // the offset inside the code (text + stubOffset)
-        int stubSize;           // the stub size
-        int dispatchJumpOffset; // offset after main dispatch jump instruction
-        int resolveJumpOffset;  // offset after jump instruction to runtime call resolution
-                               // function.
-        int resolveJumpStart;   // offset of jump instruction to VM runtime call resolution
-                              // function.
-        int c2iJumpOffset;      // offset after jump instruction to c2i adapter for static calls.
-        int movOffset; // offset after move instruction which loads from got cell:
-                       // - Method* for static call
-                       // - Klass* for virtual call
-
-        boolean isVirtual;  // virtual call stub
-
-        // maybe add type of stub as well, right now we only have static stubs
-
-        public StubInformation(int stubOffset, boolean isVirtual) {
-            this.stubOffset = stubOffset;
-            this.isVirtual = isVirtual;
-            this.stubSize = -1;
-            this.movOffset = -1;
-            this.c2iJumpOffset = -1;
-            this.resolveJumpOffset = -1;
-            this.resolveJumpStart = -1;
-            this.dispatchJumpOffset = -1;
-        }
-
-        public int getOffset() {
-            return stubOffset;
-        }
-
-        public boolean isVirtual() {
-            return isVirtual;
-        }
-
-        public void setSize(int stubSize) {
-            this.stubSize = stubSize;
-        }
-
-        public int getSize() {
-            return stubSize;
-        }
-
-        public void setMovOffset(int movOffset) {
-            this.movOffset = movOffset + stubOffset;
-        }
-
-        public int getMovOffset() {
-            return movOffset;
-        }
-
-        public void setC2IJumpOffset(int c2iJumpOffset) {
-            this.c2iJumpOffset = c2iJumpOffset + stubOffset;
-        }
-
-        public int getC2IJumpOffset() {
-            return c2iJumpOffset;
-        }
-
-        public void setResolveJumpOffset(int resolveJumpOffset) {
-            this.resolveJumpOffset = resolveJumpOffset + stubOffset;
-        }
-
-        public int getResolveJumpOffset() {
-            return resolveJumpOffset;
-        }
-
-        public void setResolveJumpStart(int resolveJumpStart) {
-            this.resolveJumpStart = resolveJumpStart + stubOffset;
-        }
-
-        public int getResolveJumpStart() {
-            return resolveJumpStart;
-        }
-
-        public void setDispatchJumpOffset(int dispatchJumpOffset) {
-            this.dispatchJumpOffset = dispatchJumpOffset + stubOffset;
-        }
-
-        public int getDispatchJumpOffset() {
-            return dispatchJumpOffset;
-        }
-
-        public void verify() {
-            assert stubOffset > 0 : "incorrect stubOffset: " + stubOffset;
-            assert stubSize > 0 : "incorrect stubSize: " + stubSize;
-            assert movOffset > 0 : "incorrect movOffset: " + movOffset;
-            assert dispatchJumpOffset > 0 : "incorrect dispatchJumpOffset: " + dispatchJumpOffset;
-            assert resolveJumpStart > 0 : "incorrect resolveJumpStart: " + resolveJumpStart;
-            assert resolveJumpOffset > 0 : "incorrect resolveJumpOffset: " + resolveJumpOffset;
-            if (!isVirtual) {
-                assert c2iJumpOffset > 0 : "incorrect c2iJumpOffset: " + c2iJumpOffset;
-            }
-        }
-    }
+final class CompiledMethodInfo {
 
     private static final int UNINITIALIZED_OFFSET = -1;
 
@@ -169,7 +72,7 @@ public class CompiledMethodInfo {
          */
         private int codeId;
 
-        public AOTMethodOffsets() {
+        AOTMethodOffsets() {
             this.nameOffset = UNINITIALIZED_OFFSET;
             this.textSectionOffset = UNINITIALIZED_OFFSET;
             this.metadataOffset = UNINITIALIZED_OFFSET;
@@ -178,7 +81,7 @@ public class CompiledMethodInfo {
             this.codeId = -1;
         }
 
-        protected void addMethodOffsets(ReadOnlyDataContainer container, String name) {
+        void addMethodOffsets(ReadOnlyDataContainer container, String name) {
             verify(name);
             // @formatter:off
             /*
@@ -291,7 +194,7 @@ public class CompiledMethodInfo {
      */
     private static final AtomicInteger methodsCount = new AtomicInteger();
 
-    public CompiledMethodInfo(CompilationResult compilationResult, JavaMethodInfo methodInfo) {
+    CompiledMethodInfo(CompilationResult compilationResult, JavaMethodInfo methodInfo) {
         this.name = methodInfo.getNameAndSignature();
         this.compilationResult = compilationResult;
         this.methodInfo = methodInfo;
@@ -299,11 +202,11 @@ public class CompiledMethodInfo {
         this.methodOffsets = new AOTMethodOffsets();
     }
 
-    public String name() {
+    String name() {
         return name;
     }
 
-    public void addMethodOffsets(BinaryContainer binaryContainer, ReadOnlyDataContainer container) {
+    void addMethodOffsets(BinaryContainer binaryContainer, ReadOnlyDataContainer container) {
         this.methodOffsets.setNameOffset(binaryContainer.addMetaspaceName(name));
         this.methodOffsets.addMethodOffsets(container, name);
         for (AOTKlassData data : dependentKlasses.values()) {
@@ -311,15 +214,15 @@ public class CompiledMethodInfo {
         }
     }
 
-    public CompilationResult getCompilationResult() {
+    CompilationResult getCompilationResult() {
         return compilationResult;
     }
 
-    public JavaMethodInfo getMethodInfo() {
+    JavaMethodInfo getMethodInfo() {
         return methodInfo;
     }
 
-    public void setTextSectionOffset(int textSectionOffset) {
+    void setTextSectionOffset(int textSectionOffset) {
         methodOffsets.setTextSectionOffset(textSectionOffset);
     }
 
@@ -327,66 +230,66 @@ public class CompiledMethodInfo {
         return methodOffsets.getTextSectionOffset();
     }
 
-    public void setCodeId() {
+    void setCodeId() {
         methodOffsets.setCodeId(CompiledMethodInfo.getNextCodeId());
     }
 
-    public int getCodeId() {
+    int getCodeId() {
         return this.methodOffsets.getCodeId();
     }
 
-    public static int getMethodsCount() {
+    static int getMethodsCount() {
         return methodsCount.get();
     }
 
-    public static int getNextCodeId() {
+    static int getNextCodeId() {
         return methodsCount.getAndIncrement();
     }
 
-    public int getCodeSize() {
+    int getCodeSize() {
         return stubsOffset + getStubCodeSize();
     }
 
-    public int getStubCodeSize() {
+    int getStubCodeSize() {
         return totalStubSize;
     }
 
-    public void setMetadataOffset(int offset) {
+    void setMetadataOffset(int offset) {
         this.methodOffsets.setMetadataOffset(offset);
     }
 
     /**
      * Offset into the code of this method where the stub section starts.
      */
-    public void setStubsOffset(int offset) {
+    void setStubsOffset(int offset) {
         stubsOffset = offset;
     }
 
-    public int getStubsOffset() {
+    int getStubsOffset() {
         return stubsOffset;
     }
 
-    public void setMetadataGotOffset(int metadataGotOffset) {
+    void setMetadataGotOffset(int metadataGotOffset) {
         this.methodOffsets.setMetadataGotOffset(metadataGotOffset);
     }
 
-    public void setMetadataGotSize(int length) {
+    void setMetadataGotSize(int length) {
         this.methodOffsets.setMetadataGotSize(length);
     }
 
-    public void addStubCode(String call, StubInformation stub) {
+    void addStubCode(String call, StubInformation stub) {
         stubs.put(call, stub);
         totalStubSize += stub.getSize();
     }
 
-    public StubInformation getStubFor(String call) {
+    StubInformation getStubFor(String call) {
         StubInformation stub = stubs.get(call);
         assert stub != null : "missing stub for call " + call;
         stub.verify();
         return stub;
     }
 
-    public void addDependentKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
+    void addDependentKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
         AOTKlassData klassData = AOTCompiledClass.addFingerprintKlassData(binaryContainer, type);
         String klassName = type.getName();
 
@@ -397,11 +300,11 @@ public class CompiledMethodInfo {
         }
     }
 
-    public AOTKlassData getDependentKlassData(String klassName) {
+    AOTKlassData getDependentKlassData(String klassName) {
         return dependentKlasses.get(klassName);
     }
 
-    public boolean hasMark(Site call, MarkId id) {
+    boolean hasMark(Site call, MarkId id) {
         for (Mark m : compilationResult.getMarks()) {
             // TODO: X64-specific code.
             // Call instructions are aligned to 8
@@ -415,11 +318,11 @@ public class CompiledMethodInfo {
         return false;
     }
 
-    public String asTag() {
+    String asTag() {
         return "[" + methodInfo.getSymbolName() + "]";
     }
 
-    public HotSpotCompiledCode compiledCode() {
+    HotSpotCompiledCode compiledCode() {
         if (code == null) {
             code = methodInfo.compiledCode(compilationResult);
         }
@@ -427,12 +330,12 @@ public class CompiledMethodInfo {
     }
 
     // Free memory
-    public void clear() {
+    void clear() {
         this.dependentKlasses = null;
         this.name = null;
     }
 
-    public void clearCompileData() {
+    void clearCompileData() {
         this.code = null;
         this.stubs = null;
         this.compilationResult = null;

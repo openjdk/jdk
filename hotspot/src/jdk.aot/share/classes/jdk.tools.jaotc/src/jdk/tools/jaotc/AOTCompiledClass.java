@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,16 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Class encapsulating Graal-compiled output of a Java class. The compilation result of all methods
  * of a class {@code className} are maintained in an array list.
  */
-public class AOTCompiledClass {
+final class AOTCompiledClass {
 
-    public static class AOTKlassData {
-        int gotIndex; // Index (offset/8) to the got in the .metaspace.got section
-        int classId;  // Unique ID
+    static class AOTKlassData {
+        private int gotIndex; // Index (offset/8) to the got in the .metaspace.got section
+        private int classId;  // Unique ID
         // Offset to compiled methods data in the .methods.offsets section.
-        int compiledMethodsOffset;
+        private int compiledMethodsOffset;
         // Offset to dependent methods data.
-        int dependentMethodsOffset;
-        long fingerprint;           // Class fingerprint
+        private int dependentMethodsOffset;
+        private long fingerprint;           // Class fingerprint
 
         private final String name;
         private boolean isArray;
@@ -60,25 +60,25 @@ public class AOTCompiledClass {
          */
         private ArrayList<CompiledMethodInfo> dependentMethods;
 
-        public AOTKlassData(BinaryContainer binaryContainer, String name, long fingerprint, int classId) {
+        AOTKlassData(BinaryContainer binaryContainer, String name, long fingerprint, int classId) {
             this.dependentMethods = new ArrayList<>();
             this.classId = classId;
             this.fingerprint = fingerprint;
-            this.gotIndex = binaryContainer.addTwoSlotMetaspaceSymbol(name);
+            this.gotIndex = binaryContainer.addTwoSlotKlassSymbol(name);
             this.compiledMethodsOffset = -1; // Not compiled classes do not have compiled methods.
             this.dependentMethodsOffset = -1;
             this.name = name;
             this.isArray = name.length() > 0 && name.charAt(0) == '[';
         }
 
-        public long getFingerprint() {
+        long getFingerprint() {
             return fingerprint;
         }
 
         /**
          * Add a method to the list of dependent methods.
          */
-        public synchronized boolean addDependentMethod(CompiledMethodInfo cm) {
+        synchronized boolean addDependentMethod(CompiledMethodInfo cm) {
             return dependentMethods.add(cm);
         }
 
@@ -87,7 +87,7 @@ public class AOTCompiledClass {
          *
          * @return array list of dependent methods
          */
-        public ArrayList<CompiledMethodInfo> getDependentMethods() {
+        ArrayList<CompiledMethodInfo> getDependentMethods() {
             return dependentMethods;
         }
 
@@ -96,11 +96,11 @@ public class AOTCompiledClass {
          *
          * @return true if dependent methods exist, false otherwise
          */
-        public boolean hasDependentMethods() {
+        boolean hasDependentMethods() {
             return !dependentMethods.isEmpty();
         }
 
-        public void setCompiledMethodsOffset(int offset) {
+        void setCompiledMethodsOffset(int offset) {
             compiledMethodsOffset = offset;
         }
 
@@ -108,7 +108,7 @@ public class AOTCompiledClass {
             int cntDepMethods = dependentMethods.size();
             // Create array of dependent methods IDs. First word is count.
             ReadOnlyDataContainer dependenciesContainer = binaryContainer.getKlassesDependenciesContainer();
-            this.dependentMethodsOffset = binaryContainer.addMethodsCount(cntDepMethods, dependenciesContainer);
+            this.dependentMethodsOffset = BinaryContainer.addMethodsCount(cntDepMethods, dependenciesContainer);
             for (CompiledMethodInfo methodInfo : dependentMethods) {
                 dependenciesContainer.appendInt(methodInfo.getCodeId());
             }
@@ -176,7 +176,7 @@ public class AOTCompiledClass {
      *
      * @param compiledMethods AOT compiled methods
      */
-    public AOTCompiledClass(ArrayList<CompiledMethodInfo> compiledMethods) {
+    AOTCompiledClass(ArrayList<CompiledMethodInfo> compiledMethods) {
         this.resolvedJavaType = null;
         this.compiledMethods = compiledMethods;
         this.representsStubs = true;
@@ -185,7 +185,7 @@ public class AOTCompiledClass {
     /**
      * Construct an object with compiled versions of the named class.
      */
-    public AOTCompiledClass(ResolvedJavaType resolvedJavaType) {
+    AOTCompiledClass(ResolvedJavaType resolvedJavaType) {
         this.resolvedJavaType = (HotSpotResolvedObjectType) resolvedJavaType;
         this.compiledMethods = new ArrayList<>();
         this.representsStubs = false;
@@ -194,14 +194,14 @@ public class AOTCompiledClass {
     /**
      * @return the ResolvedJavaType of this class
      */
-    public ResolvedJavaType getResolvedJavaType() {
+    ResolvedJavaType getResolvedJavaType() {
         return resolvedJavaType;
     }
 
     /**
      * Get the list of methods which should be compiled.
      */
-    public ArrayList<ResolvedJavaMethod> getMethods() {
+    ArrayList<ResolvedJavaMethod> getMethods() {
         ArrayList<ResolvedJavaMethod> m = methods;
         methods = null; // Free - it is not used after that.
         return m;
@@ -210,7 +210,7 @@ public class AOTCompiledClass {
     /**
      * Get the number of all AOT classes.
      */
-    public static int getClassesCount() {
+    static int getClassesCount() {
         return classesCount;
     }
 
@@ -219,14 +219,14 @@ public class AOTCompiledClass {
      *
      * @return number of methods which should be compiled
      */
-    public int getMethodCount() {
+    int getMethodCount() {
         return methods.size();
     }
 
     /**
      * Add a method to the list of methods to be compiled.
      */
-    public void addMethod(ResolvedJavaMethod method) {
+    void addMethod(ResolvedJavaMethod method) {
         methods.add(method);
     }
 
@@ -235,14 +235,14 @@ public class AOTCompiledClass {
      *
      * @return true if this class contains methods which should be compiled, false otherwise
      */
-    public boolean hasMethods() {
+    boolean hasMethods() {
         return !methods.isEmpty();
     }
 
     /**
      * Add a method to the list of compiled methods. This method needs to be thread-safe.
      */
-    public synchronized boolean addCompiledMethod(CompiledMethodInfo cm) {
+    synchronized boolean addCompiledMethod(CompiledMethodInfo cm) {
         return compiledMethods.add(cm);
     }
 
@@ -251,7 +251,7 @@ public class AOTCompiledClass {
      *
      * @return array list of compiled methods
      */
-    public ArrayList<CompiledMethodInfo> getCompiledMethods() {
+    ArrayList<CompiledMethodInfo> getCompiledMethods() {
         return compiledMethods;
     }
 
@@ -260,14 +260,14 @@ public class AOTCompiledClass {
      *
      * @return true if methods were compiled, false otherwise
      */
-    public boolean hasCompiledMethods() {
+    boolean hasCompiledMethods() {
         return !compiledMethods.isEmpty();
     }
 
     /**
      * Add a klass data.
      */
-    public synchronized static AOTKlassData addAOTKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
+    synchronized static AOTKlassData addAOTKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
         String name = type.getName();
         long fingerprint = type.getFingerprint();
         AOTKlassData data = klassData.get(name);
@@ -280,15 +280,15 @@ public class AOTCompiledClass {
         return data;
     }
 
-    public synchronized static AOTKlassData getAOTKlassData(String name) {
+    synchronized static AOTKlassData getAOTKlassData(String name) {
         return klassData.get(name);
     }
 
-    public synchronized static AOTKlassData getAOTKlassData(HotSpotResolvedObjectType type) {
+    synchronized static AOTKlassData getAOTKlassData(HotSpotResolvedObjectType type) {
         return getAOTKlassData(type.getName());
     }
 
-    public void addAOTKlassData(BinaryContainer binaryContainer) {
+    void addAOTKlassData(BinaryContainer binaryContainer) {
         for (CompiledMethodInfo methodInfo : compiledMethods) {
             // Record methods holder
             methodInfo.addDependentKlassData(binaryContainer, resolvedJavaType);
@@ -309,7 +309,7 @@ public class AOTCompiledClass {
         }
     }
 
-    public synchronized static AOTKlassData addFingerprintKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
+    synchronized static AOTKlassData addFingerprintKlassData(BinaryContainer binaryContainer, HotSpotResolvedObjectType type) {
         if (type.isArray()) {
             return addAOTKlassData(binaryContainer, type);
         }
@@ -317,14 +317,15 @@ public class AOTCompiledClass {
         AOTKlassData old = getAOTKlassData(type);
         if (old != null) {
             boolean assertsEnabled = false;
+            // Next assignment will be executed when asserts are enabled.
             assert assertsEnabled = true;
             if (assertsEnabled) {
                 HotSpotResolvedObjectType s = type.getSuperclass();
                 if (s != null) {
-                    assert getAOTKlassData(s) != null : "fingerprint super " + s.getName() + " needed for " + type.getName();
+                    assert getAOTKlassData(s) != null : "fingerprint for super " + s.getName() + " needed for " + type.getName();
                 }
                 for (HotSpotResolvedObjectType i : type.getInterfaces()) {
-                    assert getAOTKlassData(i) != null : "fingerprint super " + i.getName() + " needed for " + type.getName();
+                    assert getAOTKlassData(i) != null : "fingerprint for interface " + i.getName() + " needed for " + type.getName();
                 }
             }
             return old;
@@ -345,10 +346,10 @@ public class AOTCompiledClass {
     /*
      * Put methods data to contained.
      */
-    public void putMethodsData(BinaryContainer binaryContainer) {
+    void putMethodsData(BinaryContainer binaryContainer) {
         ReadOnlyDataContainer container = binaryContainer.getMethodsOffsetsContainer();
         int cntMethods = compiledMethods.size();
-        int startMethods = binaryContainer.addMethodsCount(cntMethods, container);
+        int startMethods = BinaryContainer.addMethodsCount(cntMethods, container);
         for (CompiledMethodInfo methodInfo : compiledMethods) {
             methodInfo.addMethodOffsets(binaryContainer, container);
         }
@@ -361,18 +362,18 @@ public class AOTCompiledClass {
         data.setCompiledMethodsOffset(startMethods);
     }
 
-    public static void putAOTKlassData(BinaryContainer binaryContainer) {
+    static void putAOTKlassData(BinaryContainer binaryContainer) {
         ReadOnlyDataContainer container = binaryContainer.getKlassesOffsetsContainer();
         for (AOTKlassData data : klassData.values()) {
             data.putAOTKlassData(binaryContainer, container);
         }
     }
 
-    public boolean representsStubs() {
+    boolean representsStubs() {
         return representsStubs;
     }
 
-    public void clear() {
+    void clear() {
         for (CompiledMethodInfo c : compiledMethods) {
             c.clear();
         }

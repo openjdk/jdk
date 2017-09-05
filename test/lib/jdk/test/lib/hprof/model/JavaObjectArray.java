@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,18 +87,7 @@ public class JavaObjectArray extends JavaLazyReadObject {
     }
 
     public JavaThing[] getElements() {
-        Snapshot snapshot = getClazz().getSnapshot();
-        byte[] data = getValue();
-        final int idSize = snapshot.getIdentifierSize();
-        final int numElements = data.length / idSize;
-        JavaThing[] elements = new JavaThing[numElements];
-        int index = 0;
-        for (int i = 0; i < elements.length; i++) {
-            long id = objectIdAt(index, data);
-            index += idSize;
-            elements[i] = snapshot.findThing(id);
-        }
-        return elements;
+        return getValue();
     }
 
     public int compareTo(JavaThing other) {
@@ -109,7 +98,7 @@ public class JavaObjectArray extends JavaLazyReadObject {
     }
 
     public int getLength() {
-        return getValueLength() / getClazz().getIdentifierSize();
+        return (int)(getValueLength() / idSize());
     }
 
     public void visitReferencedObjects(JavaHeapObjectVisitor v) {
@@ -146,27 +135,31 @@ public class JavaObjectArray extends JavaLazyReadObject {
      *     array class ID
      *     array element IDs
      */
-    protected final int readValueLength() throws IOException {
-        JavaClass cl = getClazz();
-        ReadBuffer buf = cl.getReadBuffer();
-        int idSize = cl.getIdentifierSize();
-        long offset = getOffset() + idSize + 4;
-        int len = buf.getInt(offset);
-        return len * cl.getIdentifierSize();
+    @Override
+    protected final long readValueLength() throws IOException {
+        long offset = getOffset() + idSize() + 4;
+        // length of the array in elements
+        long len = buf().getInt(offset);
+        // byte length of array
+        return len * idSize();
+        }
+
+    private long dataStartOffset() {
+        return getOffset() + idSize() + 4 + 4 + idSize();
     }
 
-    protected final byte[] readValue() throws IOException {
-        JavaClass cl = getClazz();
-        ReadBuffer buf = cl.getReadBuffer();
-        int idSize = cl.getIdentifierSize();
-        long offset = getOffset() + idSize + 4;
-        int len = buf.getInt(offset);
-        if (len == 0) {
-            return Snapshot.EMPTY_BYTE_ARRAY;
-        } else {
-            byte[] res = new byte[len * idSize];
-            buf.get(offset + 4 + idSize, res);
-            return res;
-        }
+    @Override
+    protected final JavaThing[] readValue() throws IOException {
+        Snapshot snapshot = getClazz().getSnapshot();
+        int len = getLength();
+        long offset = dataStartOffset();
+
+        JavaThing[] res = new JavaThing[len];
+        for (int i = 0; i < len; i++) {
+            long id = objectIdAt(offset);
+            res[i] = snapshot.findThing(id);
+            offset += idSize();
+         }
+         return res;
     }
 }

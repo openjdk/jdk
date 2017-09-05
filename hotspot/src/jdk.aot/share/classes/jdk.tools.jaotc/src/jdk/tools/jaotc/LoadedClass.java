@@ -1,4 +1,4 @@
-package jdk.tools.jaotc;/*
+/*
  * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,6 +20,8 @@ package jdk.tools.jaotc;/*
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package jdk.tools.jaotc;
 
 public class LoadedClass {
     private final String name;
@@ -45,12 +47,17 @@ public class LoadedClass {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LoadedClass)) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof LoadedClass)) {
+            return false;
+        }
         LoadedClass that = (LoadedClass) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
         return clz != null ? clz.equals(that.clz) : that.clz == null;
 
     }

@@ -6604,6 +6604,12 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 #endif // _LP64
 }
 
+// ((OopHandle)result).resolve();
+void MacroAssembler::resolve_oop_handle(Register result) {
+  // OopHandle::resolve is an indirection.
+  movptr(result, Address(result, 0));
+}
+
 void MacroAssembler::load_mirror(Register mirror, Register method) {
   // get mirror
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
@@ -7029,7 +7035,6 @@ void MacroAssembler::reinit_heapbase() {
 }
 
 #endif // _LP64
-
 
 // C2 compiled method's prolog code.
 void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ inline void ParMarkRefsIntoAndScanClosure::trim_queue(uint max) {
   while (_work_queue->size() > max) {
     oop newOop;
     if (_work_queue->pop_local(newOop)) {
-      assert(newOop->is_oop(), "Expected an oop");
+      assert(oopDesc::is_oop(newOop), "Expected an oop");
       assert(_bit_map->isMarked((HeapWord*)newOop),
              "only grey objects on this stack");
       // iterate over the oops in this oop, marking and pushing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ typedef struct TransportSpec {
     char *name;
     char *address;
     long timeout;
+    char *allow;
 } TransportSpec;
 
 /*
@@ -564,7 +565,8 @@ startTransport(void *item, void *arg)
 
     LOG_MISC(("Begin startTransport"));
     serror = transport_startTransport(enumArg->isServer, transport->name,
-                                     transport->address, transport->timeout);
+                                      transport->address, transport->timeout,
+                                      transport->allow);
     if (serror != JDWP_ERROR(NONE)) {
         ERROR_MESSAGE(("JDWP Transport %s failed to initialize, %s(%d)",
                 transport->name, jdwpErrorText(serror), serror));
@@ -1060,7 +1062,6 @@ parseOptions(char *options)
         if (transports == NULL) {
             EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"transports");
         }
-
     }
 
     current = names;
@@ -1080,6 +1081,9 @@ parseOptions(char *options)
                 goto syntax_error;
             }
             currentTransport->name = current;
+            currentTransport->address = NULL;
+            currentTransport->allow = NULL;
+            currentTransport->timeout = 0L;
             current += strlen(current) + 1;
         } else if (strcmp(buf, "address") == 0) {
             if (currentTransport == NULL) {
@@ -1092,7 +1096,18 @@ parseOptions(char *options)
             }
             currentTransport->address = current;
             current += strlen(current) + 1;
-        } else if (strcmp(buf, "timeout") == 0) {
+        } else if (strcmp(buf, "allow") == 0) {
+            if (currentTransport == NULL) {
+                errmsg = "allow specified without transport";
+                goto bad_option_with_errmsg;
+            }
+            /*LINTED*/
+            if (!get_tok(&str, current, (int)(end - current), ',')) {
+                goto syntax_error;
+            }
+            currentTransport->allow = current;
+            current += strlen(current) + 1;
+         } else if (strcmp(buf, "timeout") == 0) {
             if (currentTransport == NULL) {
                 errmsg = "timeout specified without transport";
                 goto bad_option_with_errmsg;

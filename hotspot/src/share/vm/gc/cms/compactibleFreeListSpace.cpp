@@ -929,7 +929,7 @@ size_t CompactibleFreeListSpace::block_size(const HeapWord* p) const {
       if (k != NULL) {
         assert(k->is_klass(), "Should really be klass oop.");
         oop o = (oop)p;
-        assert(o->is_oop(true /* ignore mark word */), "Should be an oop.");
+        assert(oopDesc::is_oop(o, true /* ignore mark word */), "Should be an oop.");
 
         size_t res = o->size_given_klass(k);
         res = adjustObjectSize(res);
@@ -979,7 +979,7 @@ const {
       if (k != NULL) {
         assert(k->is_klass(), "Should really be klass oop.");
         oop o = (oop)p;
-        assert(o->is_oop(), "Should be an oop");
+        assert(oopDesc::is_oop(o), "Should be an oop");
 
         size_t res = o->size_given_klass(k);
         res = adjustObjectSize(res);
@@ -1005,7 +1005,7 @@ size_t CompactibleFreeListSpace::block_size_nopar(const HeapWord* p) const {
     // Ignore mark word because this may be a recently promoted
     // object whose mark word is used to chain together grey
     // objects (the last one would have a null value).
-    assert(oop(p)->is_oop(true), "Should be an oop");
+    assert(oopDesc::is_oop(oop(p), true), "Should be an oop");
     return adjustObjectSize(oop(p)->size());
   }
 }
@@ -1022,7 +1022,7 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
     // Ignore mark word because it may have been used to
     // chain together promoted objects (the last one
     // would have a null value).
-    assert(oop(p)->is_oop(true), "Should be an oop");
+    assert(oopDesc::is_oop(oop(p), true), "Should be an oop");
     return true;
   } else {
     return false;  // Was not an object at the start of collection.
@@ -1066,7 +1066,7 @@ bool CompactibleFreeListSpace::block_is_obj_nopar(const HeapWord* p) const {
     // Ignore mark word because it may have been used to
     // chain together promoted objects (the last one
     // would have a null value).
-    assert(oop(p)->is_oop(true), "Should be an oop");
+    assert(oopDesc::is_oop(oop(p), true), "Should be an oop");
     return true;
   }
   return false;
@@ -2174,7 +2174,7 @@ class VerifyAllBlksClosure: public BlkClosure {
     if (_sp->block_is_obj(addr)) {
       was_obj = true;
       oop p = oop(addr);
-      guarantee(p->is_oop(), "Should be an oop");
+      guarantee(oopDesc::is_oop(p), "Should be an oop");
       res = _sp->adjustObjectSize(p->size());
       if (_sp->obj_is_alive(addr)) {
         was_live = true;
@@ -2226,7 +2226,7 @@ class VerifyAllOopsClosure: public OopClosure {
         guarantee(!_sp->is_in_reserved(obj) ||
                   _sp->block_is_obj((HeapWord*)obj),
                   "Should be an object");
-        guarantee(obj->is_oop(), "Should be an oop");
+        guarantee(oopDesc::is_oop(obj), "Should be an oop");
         obj->verify();
         if (_past_remark) {
           // Remark has been completed, the object should be marked
@@ -2243,7 +2243,7 @@ class VerifyAllOopsClosure: public OopClosure {
       }
     } else if (_sp->is_in_reserved(p)) {
       // the reference is from FLS, and points out of FLS
-      guarantee(obj->is_oop(), "Should be an oop");
+      guarantee(oopDesc::is_oop(obj), "Should be an oop");
       obj->verify();
     }
   }

@@ -34,6 +34,9 @@
 #ifdef _WIN32
  #include <winsock2.h>
  #include <ws2tcpip.h>
+#else
+ #include <arpa/inet.h>
+ #include <sys/socket.h>
 #endif
 
 /*
@@ -72,6 +75,19 @@ static jdwpTransportEnv single_env = (jdwpTransportEnv)&interface;
 
 static jint recv_fully(int, char *, int);
 static jint send_fully(int, char *, int);
+
+/* version >= JDWPTRANSPORT_VERSION_1_1 */
+typedef struct {
+    uint32_t subnet;
+    uint32_t netmask;
+} AllowedPeerInfo;
+
+#define STR(x) #x
+#define MAX_PEER_ENTRIES 32
+#define MAX_PEERS_STR STR(MAX_PEER_ENTRIES)
+static AllowedPeerInfo _peers[MAX_PEER_ENTRIES];
+static int _peers_cnt = 0;
+
 
 /*
  * Record the last error for this thread.
@@ -260,7 +276,7 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
     char *colon;
     int port;
 
-    memset((void *)sa,0,sizeof(struct sockaddr_in));
+    memset((void *)sa, 0, sizeof(struct sockaddr_in));
     sa->sin_family = AF_INET;
 
     /* check for host:port or port */
@@ -274,7 +290,7 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
     if (colon == NULL) {
         // bind to localhost only if no address specified
         sa->sin_addr.s_addr = getLocalHostAddress();
-    } else if (strncmp(address,"localhost:",10) == 0) {
+    } else if (strncmp(address, "localhost:", 10) == 0) {
         // optimize for common case
         sa->sin_addr.s_addr = getLocalHostAddress();
     } else if (*address == '*' && *(address+1) == ':') {
@@ -286,7 +302,7 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
         char *hostname;
         uint32_t addr;
 
-        buf = (*callback->alloc)((int)strlen(address)+1);
+        buf = (*callback->alloc)((int)strlen(address) + 1);
         if (buf == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
         }
@@ -320,6 +336,131 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+static const char *
+ip_s2u(const char *instr, uint32_t *ip) {
+    // Convert string representation of ip to integer
+    // in network byte order (big-endian)
+    char t[4] = { 0, 0, 0, 0 };
+    const char *s = instr;
+    int i = 0;
+
+    while (1) {
+        if (*s == '.') {
+            ++i;
+            ++s;
+            continue;
+        }
+        if (*s == 0 || *s == '+' || *s == '/') {
+            break;
+        }
+        if (*s < '0' || *s > '9') {
+            return instr;
+        }
+        t[i] = (t[i] * 10) + (*s - '0');
+        ++s;
+    }
+
+    *ip = *(uint32_t*)(t);
+    return s;
+}
+
+static const char *
+mask_s2u(const char *instr, uint32_t *mask) {
+    // Convert the number of bits to a netmask
+    // in network byte order (big-endian)
+    unsigned char m = 0;
+    const char *s = instr;
+
+    while (1) {
+        if (*s == 0 || *s == '+') {
+            break;
+        }
+        if (*s < '0' || *s > '9') {
+            return instr;
+        }
+        m = (m * 10) + (*s - '0');
+        ++s;
+    }
+
+    if (m == 0 || m > 32) {
+       // Drop invalid input
+       return instr;
+    }
+
+    *mask = htonl(-1 << (32 - m));
+    return s;
+}
+
+static int
+ip_in_subnet(uint32_t subnet, uint32_t mask, uint32_t ipaddr) {
+    return (ipaddr & mask) == subnet;
+}
+
+static jdwpTransportError
+parseAllowedPeers(const char *allowed_peers) {
+    // Build a list of allowed peers from char string
+    // of format 192.168.0.10+192.168.0.0/24
+    const char *s = NULL;
+    const char *p = allowed_peers;
+    uint32_t   ip = 0;
+    uint32_t mask = 0xFFFFFFFF;
+
+    while (1) {
+        s = ip_s2u(p, &ip);
+        if (s == p) {
+            _peers_cnt = 0;
+            fprintf(stderr, "Error in allow option: '%s'\n", s);
+            RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                         "invalid IP address in allow option");
+        }
+
+        if (*s == '/') {
+            // netmask specified
+            s = mask_s2u(s + 1, &mask);
+            if (*(s - 1) == '/') {
+                // Input is not consumed, something bad happened
+                _peers_cnt = 0;
+                fprintf(stderr, "Error in allow option: '%s'\n", s);
+                RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                             "invalid netmask in allow option");
+            }
+        } else {
+            // reset netmask
+            mask = 0xFFFFFFFF;
+        }
+
+        if (*s == '+' || *s == 0) {
+            if (_peers_cnt >= MAX_PEER_ENTRIES) {
+                fprintf(stderr, "Error in allow option: '%s'\n", allowed_peers);
+                RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                             "exceeded max number of allowed peers: " MAX_PEERS_STR);
+            }
+            _peers[_peers_cnt].subnet = ip;
+            _peers[_peers_cnt].netmask = mask;
+            _peers_cnt++;
+            if (*s == 0) {
+                // end of options
+                break;
+            }
+            // advance to next IP block
+            p = s + 1;
+        }
+    }
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
+static int
+isPeerAllowed(struct sockaddr_in *peer) {
+    int i;
+    for (i = 0; i < _peers_cnt; ++i) {
+        int peer_ip = peer->sin_addr.s_addr;
+        if (ip_in_subnet(_peers[i].subnet, _peers[i].netmask, peer_ip)) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 static jdwpTransportError JNICALL
 socketTransport_getCapabilities(jdwpTransportEnv* env,
@@ -412,7 +553,7 @@ static jdwpTransportError JNICALL
 socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handshakeTimeout)
 {
     socklen_t socketLen;
-    int err;
+    int err = JDWPTRANSPORT_ERROR_NONE;
     struct sockaddr_in socket;
     jlong startTime = (jlong)0;
 
@@ -474,14 +615,34 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
             return JDWPTRANSPORT_ERROR_IO_ERROR;
         }
 
-        /* handshake with the debugger */
-        err = handshake(socketFD, handshakeTimeout);
+        /*
+         * version >= JDWPTRANSPORT_VERSION_1_1:
+         * Verify that peer is allowed to connect.
+         */
+        if (_peers_cnt > 0) {
+            if (!isPeerAllowed(&socket)) {
+                char ebuf[64] = { 0 };
+                char buf[INET_ADDRSTRLEN] = { 0 };
+                const char* addr_str = inet_ntop(AF_INET, &(socket.sin_addr), buf, INET_ADDRSTRLEN);
+                sprintf(ebuf, "ERROR: Peer not allowed to connect: %s\n",
+                        (addr_str == NULL) ? "<bad address>" : addr_str);
+                dbgsysSocketClose(socketFD);
+                socketFD = -1;
+                err = JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
+                setLastError(err, ebuf);
+            }
+        }
+
+        if (socketFD > 0) {
+          /* handshake with the debugger */
+          err = handshake(socketFD, handshakeTimeout);
+        }
 
         /*
          * If the handshake fails then close the connection. If there if an accept
          * timeout then we must adjust the timeout for the next poll.
          */
-        if (err) {
+        if (err != JDWPTRANSPORT_ERROR_NONE) {
             fprintf(stderr, "Debugger failed to attach: %s\n", getLastError());
             dbgsysSocketClose(socketFD);
             socketFD = -1;
@@ -743,20 +904,20 @@ socketTransport_readPacket(jdwpTransportEnv* env, jdwpPacket* packet) {
     packet->type.cmd.len = length;
 
 
-    n = recv_fully(socketFD,(char *)&(packet->type.cmd.id),sizeof(jint));
+    n = recv_fully(socketFD,(char *)&(packet->type.cmd.id), sizeof(jint));
     if (n < (int)sizeof(jint)) {
         RETURN_RECV_ERROR(n);
     }
 
     packet->type.cmd.id = (jint)dbgsysNetworkToHostLong(packet->type.cmd.id);
 
-    n = recv_fully(socketFD,(char *)&(packet->type.cmd.flags),sizeof(jbyte));
+    n = recv_fully(socketFD,(char *)&(packet->type.cmd.flags), sizeof(jbyte));
     if (n < (int)sizeof(jbyte)) {
         RETURN_RECV_ERROR(n);
     }
 
     if (packet->type.cmd.flags & JDWPTRANSPORT_FLAGS_REPLY) {
-        n = recv_fully(socketFD,(char *)&(packet->type.reply.errorCode),sizeof(jbyte));
+        n = recv_fully(socketFD,(char *)&(packet->type.reply.errorCode), sizeof(jbyte));
         if (n < (int)sizeof(jshort)) {
             RETURN_RECV_ERROR(n);
         }
@@ -765,12 +926,12 @@ socketTransport_readPacket(jdwpTransportEnv* env, jdwpPacket* packet) {
 
 
     } else {
-        n = recv_fully(socketFD,(char *)&(packet->type.cmd.cmdSet),sizeof(jbyte));
+        n = recv_fully(socketFD,(char *)&(packet->type.cmd.cmdSet), sizeof(jbyte));
         if (n < (int)sizeof(jbyte)) {
             RETURN_RECV_ERROR(n);
         }
 
-        n = recv_fully(socketFD,(char *)&(packet->type.cmd.cmd),sizeof(jbyte));
+        n = recv_fully(socketFD,(char *)&(packet->type.cmd.cmd), sizeof(jbyte));
         if (n < (int)sizeof(jbyte)) {
             RETURN_RECV_ERROR(n);
         }
@@ -814,11 +975,44 @@ socketTransport_getLastError(jdwpTransportEnv* env, char** msgP) {
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
+static jdwpTransportError JNICALL
+socketTransport_setConfiguration(jdwpTransportEnv* env, jdwpTransportConfiguration* cfg) {
+    const char* allowed_peers = NULL;
+
+    if (cfg == NULL) {
+        RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                     "NULL pointer to transport configuration is invalid");
+    }
+    allowed_peers = cfg->allowed_peers;
+    _peers_cnt = 0;
+    if (allowed_peers != NULL) {
+        size_t len = strlen(allowed_peers);
+        if (len == 0) { /* Impossible: parseOptions() would reject it */
+            fprintf(stderr, "Error in allow option: '%s'\n", allowed_peers);
+            RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                         "allow option should not be empty");
+        } else if (*allowed_peers == '*') {
+            if (len != 1) {
+                fprintf(stderr, "Error in allow option: '%s'\n", allowed_peers);
+                RETURN_ERROR(JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT,
+                             "allow option '*' cannot be expanded");
+            }
+        } else {
+            int err = parseAllowedPeers(allowed_peers);
+            if (err != JDWPTRANSPORT_ERROR_NONE) {
+                return err;
+            }
+        }
+    }
+    return JDWPTRANSPORT_ERROR_NONE;
+}
+
 jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
-                     jint version, jdwpTransportEnv** result)
+                     jint version, jdwpTransportEnv** env)
 {
-    if (version != JDWPTRANSPORT_VERSION_1_0) {
+    if (version < JDWPTRANSPORT_VERSION_1_0 ||
+        version > JDWPTRANSPORT_VERSION_1_1) {
         return JNI_EVERSION;
     }
     if (initialized) {
@@ -842,7 +1036,10 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
     interface.ReadPacket = &socketTransport_readPacket;
     interface.WritePacket = &socketTransport_writePacket;
     interface.GetLastError = &socketTransport_getLastError;
-    *result = &single_env;
+    if (version >= JDWPTRANSPORT_VERSION_1_1) {
+        interface.SetTransportConfiguration = &socketTransport_setConfiguration;
+    }
+    *env = &single_env;
 
     /* initialized TLS */
     tlsIndex = dbgsysTlsAlloc();

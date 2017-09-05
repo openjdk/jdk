@@ -720,44 +720,49 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
     // At this point it may be possible that no osthread was created for the
     // JavaThread due to lack of memory. We would have to throw an exception
     // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
+    // exceptions anyway, check and abort if this fails. But first release the
+    // lock.
 
-    if (thread == NULL || thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
+    if (thread != NULL && thread->osthread() != NULL) {
 
-    java_lang_Thread::set_thread(thread_oop(), thread);
+      java_lang_Thread::set_thread(thread_oop(), thread);
 
-    // Note that this only sets the JavaThread _priority field, which by
-    // definition is limited to Java priorities and not OS priorities.
-    // The os-priority is set in the CompilerThread startup code itself
+      // Note that this only sets the JavaThread _priority field, which by
+      // definition is limited to Java priorities and not OS priorities.
+      // The os-priority is set in the CompilerThread startup code itself
 
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
+      java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
 
-    // Note that we cannot call os::set_priority because it expects Java
-    // priorities and we are *explicitly* using OS priorities so that it's
-    // possible to set the compiler thread priority higher than any Java
-    // thread.
+      // Note that we cannot call os::set_priority because it expects Java
+      // priorities and we are *explicitly* using OS priorities so that it's
+      // possible to set the compiler thread priority higher than any Java
+      // thread.
 
-    int native_prio = CompilerThreadPriority;
-    if (native_prio == -1) {
-      if (UseCriticalCompilerThreadPriority) {
-        native_prio = os::java_to_os_priority[CriticalPriority];
-      } else {
-        native_prio = os::java_to_os_priority[NearMaxPriority];
+      int native_prio = CompilerThreadPriority;
+      if (native_prio == -1) {
+        if (UseCriticalCompilerThreadPriority) {
+          native_prio = os::java_to_os_priority[CriticalPriority];
+        } else {
+          native_prio = os::java_to_os_priority[NearMaxPriority];
+        }
       }
-    }
-    os::set_native_priority(thread, native_prio);
+      os::set_native_priority(thread, native_prio);
 
-    java_lang_Thread::set_daemon(thread_oop());
+      java_lang_Thread::set_daemon(thread_oop());
 
-    thread->set_threadObj(thread_oop());
-    if (compiler_thread) {
-      thread->as_CompilerThread()->set_compiler(comp);
+      thread->set_threadObj(thread_oop());
+      if (compiler_thread) {
+        thread->as_CompilerThread()->set_compiler(comp);
+      }
+      Threads::add(thread);
+      Thread::start(thread);
     }
-    Threads::add(thread);
-    Thread::start(thread);
+  }
+
+  // First release lock before aborting VM.
+  if (thread == NULL || thread->osthread() == NULL) {
+    vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                  os::native_thread_creation_failed_msg());
   }
 
   // Let go of Threads_lock before yielding

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.rmi.transport.tcp;
+package jdk.internal.jshell.tool;
 
-/**
- * MultiplexConnectionInfo groups related information about a
- * virtual connection managed by a ConnectionMultiplexer object.
- *
- * @author Peter Jones
+/**A support class to the ConsoleIOContext, containing callbacks called
+ * on important points in ConsoleIOContext.
  */
-class MultiplexConnectionInfo {
+public abstract class ConsoleIOContextTestSupport {
 
-    /** integer that uniquely identifies this connection */
-    int id;
+    public static ConsoleIOContextTestSupport IMPL;
 
-    /** input stream for reading from connection */
-    MultiplexInputStream in = null;
-
-    /** output stream for writing to connection */
-    MultiplexOutputStream out = null;
-
-    /** true if this connection has been closed */
-    boolean closed = false;
-
-    /**
-     * Create information structure for given connection identifier.
-     * @param id connection identifier
-     */
-    MultiplexConnectionInfo(int id)
-    {
-        this.id  = id;
+    public static void willComputeCompletion() {
+        if (IMPL != null)
+            IMPL.willComputeCompletionCallback();
     }
+
+    protected abstract void willComputeCompletionCallback();
+
 }

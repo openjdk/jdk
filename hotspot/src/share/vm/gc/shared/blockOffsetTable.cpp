@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,7 +343,7 @@ void BlockOffsetArray::verify() const {
     oop o = oop(start);
     assert(!Universe::is_fully_initialized() ||
            _sp->is_free_block(start) ||
-           o->is_oop_or_null(), "Bad object was found");
+           oopDesc::is_oop_or_null(o), "Bad object was found");
     next_index++;
     last_p = p;
     last_start = start;

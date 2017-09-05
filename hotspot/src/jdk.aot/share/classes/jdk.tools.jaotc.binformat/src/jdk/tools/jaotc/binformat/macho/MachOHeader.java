@@ -24,17 +24,15 @@
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import jdk.tools.jaotc.binformat.macho.MachO;
 import jdk.tools.jaotc.binformat.macho.MachO.mach_header_64;
 import jdk.tools.jaotc.binformat.macho.MachOTargetInfo;
 import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
-public class MachOHeader {
-    ByteBuffer header;
+final class MachOHeader {
+    private final ByteBuffer header;
 
-    public MachOHeader() {
+    MachOHeader() {
         header = MachOByteBuffer.allocate(mach_header_64.totalsize);
 
         header.putInt(mach_header_64.magic.off, mach_header_64.MH_MAGIC_64);
@@ -44,17 +42,16 @@ public class MachOHeader {
         header.putInt(mach_header_64.filetype.off, mach_header_64.MH_OBJECT);
     }
 
-    public void setCmdSizes(int ncmds, int sizeofcmds) {
+    void setCmdSizes(int ncmds, int sizeofcmds) {
         header.putInt(mach_header_64.ncmds.off, ncmds);
         header.putInt(mach_header_64.sizeofcmds.off, sizeofcmds);
     }
 
-    public int getCmdSize() {
+    int getCmdSize() {
         return (header.getInt(mach_header_64.sizeofcmds.off));
     }
 
-    public byte[] getArray() {
+    byte[] getArray() {
         return header.array();
     }
 }
-

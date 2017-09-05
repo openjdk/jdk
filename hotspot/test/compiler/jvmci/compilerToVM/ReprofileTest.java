@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8136421
- * @requires vm.jvmci & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 3)
+ * @requires vm.jvmci & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
@@ -40,7 +40,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   -Xmixed -Xbatch -Djvmci.Compiler=null
+ *                   -Xmixed -Xbatch
  *                   compiler.jvmci.compilerToVM.ReprofileTest
  */
 

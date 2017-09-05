@@ -246,8 +246,8 @@ inline void Assembler::z_mvcle(Register r1, Register r3, int64_t d2, Register b2
 inline void Assembler::z_mvhhi( int64_t d1, Register b1, int64_t i2) { emit_48( MVHHI_ZOPC | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
 inline void Assembler::z_mvhi ( int64_t d1, Register b1, int64_t i2) { emit_48( MVHI_ZOPC  | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
 inline void Assembler::z_mvghi( int64_t d1, Register b1, int64_t i2) { emit_48( MVGHI_ZOPC | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
-inline void Assembler::z_mvhhi( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHHI"); z_mvghi( d.disp(), d.baseOrR0(), i2); }
-inline void Assembler::z_mvhi ( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHI");  z_mvghi( d.disp(), d.baseOrR0(), i2); }
+inline void Assembler::z_mvhhi( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHHI"); z_mvhhi( d.disp(), d.baseOrR0(), i2); }
+inline void Assembler::z_mvhi ( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHI");  z_mvhi(  d.disp(), d.baseOrR0(), i2); }
 inline void Assembler::z_mvghi( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVGHI"); z_mvghi( d.disp(), d.baseOrR0(), i2); }
 
 inline void Assembler::z_ex(Register r1, int64_t d2, Register x2, Register b2) { emit_32( EX_ZOPC | regz(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
