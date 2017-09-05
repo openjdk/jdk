@@ -5115,7 +5115,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1508136203
+DATE_WHEN_GENERATED=1508320135
 
 ###############################################################################
 #
@@ -52028,7 +52028,7 @@ fi
       JVM_LDFLAGS="$JVM_LDFLAGS -xarch=sparc"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok -btextpsize:64K -bdatapsize:64K -bstackpsize:64K"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
     JVM_LDFLAGS="$JVM_LDFLAGS $LDFLAGS_XLC"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
@@ -52909,7 +52909,7 @@ fi
       OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -xarch=sparc"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok -btextpsize:64K -bdatapsize:64K -bstackpsize:64K"
     OPENJDK_BUILD_LDFLAGS_JDK="${OPENJDK_BUILD_LDFLAGS_JDK} $LDFLAGS_XLC"
     OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $LDFLAGS_XLC"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.

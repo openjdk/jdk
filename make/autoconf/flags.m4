@@ -1279,7 +1279,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
       $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS -xarch=sparc"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok -btextpsize:64K -bdatapsize:64K -bstackpsize:64K"
     $2LDFLAGS_JDK="${$2LDFLAGS_JDK} $LDFLAGS_XLC"
     $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_XLC"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
