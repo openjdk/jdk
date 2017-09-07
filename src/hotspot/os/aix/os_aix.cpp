@@ -889,8 +889,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
   }
 
-  // Configure libc guard page.
-  ret = pthread_attr_setguardsize(&attr, os::Aix::default_guard_size(thr_type));
+  // Save some cycles and a page by disabling OS guard pages where we have our own
+  // VM guard pages (in java threads). For other threads, keep system default guard
+  // pages in place.
+  if (thr_type == java_thread || thr_type == compiler_thread) {
+    ret = pthread_attr_setguardsize(&attr, 0);
+  }
 
   pthread_t tid = 0;
   if (ret == 0) {
@@ -3017,19 +3021,6 @@ bool os::Aix::chained_handler(int sig, siginfo_t* siginfo, void* context) {
     }
   }
   return chained;
-}
-
-size_t os::Aix::default_guard_size(os::ThreadType thr_type) {
-  // Creating guard page is very expensive. Java thread has HotSpot
-  // guard pages, only enable glibc guard page for non-Java threads.
-  // (Remember: compiler thread is a Java thread, too!)
-  //
-  // Aix can have different page sizes for stack (4K) and heap (64K).
-  // As Hotspot knows only one page size, we assume the stack has
-  // the same page size as the heap. Returning page_size() here can
-  // cause 16 guard pages which we want to avoid.  Thus we return 4K
-  // which will be rounded to the real page size by the OS.
-  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : 4 * K);
 }
 
 struct sigaction* os::Aix::get_preinstalled_handler(int sig) {
