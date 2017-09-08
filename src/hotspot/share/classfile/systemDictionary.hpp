@@ -32,6 +32,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
 #include "runtime/reflectionUtils.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
 
@@ -527,6 +528,28 @@ public:
   static methodHandle find_method_handle_intrinsic(vmIntrinsics::ID iid,
                                                    Symbol* signature,
                                                    TRAPS);
+
+  // compute java_mirror (java.lang.Class instance) for a type ("I", "[[B", "LFoo;", etc.)
+  // Either the accessing_klass or the CL/PD can be non-null, but not both.
+  static Handle    find_java_mirror_for_type(Symbol* signature,
+                                             Klass* accessing_klass,
+                                             Handle class_loader,
+                                             Handle protection_domain,
+                                             SignatureStream::FailureMode failure_mode,
+                                             TRAPS);
+  static Handle    find_java_mirror_for_type(Symbol* signature,
+                                             Klass* accessing_klass,
+                                             SignatureStream::FailureMode failure_mode,
+                                             TRAPS) {
+    // callee will fill in CL/PD from AK, if they are needed
+    return find_java_mirror_for_type(signature, accessing_klass, Handle(), Handle(),
+                                     failure_mode, THREAD);
+  }
+
+
+  // fast short-cut for the one-character case:
+  static oop       find_java_mirror_for_type(char signature_char);
+
   // find a java.lang.invoke.MethodType object for a given signature
   // (asks Java to compute it if necessary, except in a compiler thread)
   static Handle    find_method_handle_type(Symbol* signature,
@@ -546,8 +569,17 @@ public:
                                                Symbol* signature,
                                                TRAPS);
 
+  // ask Java to compute a constant by invoking a BSM given a Dynamic_info CP entry
+  static Handle    link_dynamic_constant(Klass* caller,
+                                         int condy_index,
+                                         Handle bootstrap_specifier,
+                                         Symbol* name,
+                                         Symbol* type,
+                                         TRAPS);
+
   // ask Java to create a dynamic call site, while linking an invokedynamic op
   static methodHandle find_dynamic_call_site_invoker(Klass* caller,
+                                                     int indy_index,
                                                      Handle bootstrap_method,
                                                      Symbol* name,
                                                      Symbol* type,

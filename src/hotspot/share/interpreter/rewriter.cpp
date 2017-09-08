@@ -48,7 +48,11 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_Methodref         : // fall through
         add_cp_cache_entry(i);
         break;
-      case JVM_CONSTANT_String:
+      case JVM_CONSTANT_Dynamic:
+        assert(_pool->has_dynamic_constant(), "constant pool's _has_dynamic_constant flag not set");
+        add_resolved_references_entry(i);
+        break;
+      case JVM_CONSTANT_String            : // fall through
       case JVM_CONSTANT_MethodHandle      : // fall through
       case JVM_CONSTANT_MethodType        : // fall through
         add_resolved_references_entry(i);
@@ -321,7 +325,14 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
     address p = bcp + offset;
     int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
     constantTag tag = _pool->tag_at(cp_index).value();
-    if (tag.is_method_handle() || tag.is_method_type() || tag.is_string()) {
+
+    if (tag.is_method_handle() ||
+        tag.is_method_type() ||
+        tag.is_string() ||
+        (tag.is_dynamic_constant() &&
+         // keep regular ldc interpreter logic for condy primitives
+         is_reference_type(FieldType::basic_type(_pool->uncached_signature_ref_at(cp_index))))
+        ) {
       int ref_index = cp_entry_to_resolved_references(cp_index);
       if (is_wide) {
         (*bcp) = Bytecodes::_fast_aldc_w;

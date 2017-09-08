@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,11 @@ BasicType constantTag::basic_type() const {
     case JVM_CONSTANT_MethodType :
     case JVM_CONSTANT_MethodTypeInError :
       return T_OBJECT;
+
+    case JVM_CONSTANT_Dynamic :
+    case JVM_CONSTANT_DynamicInError :
+      assert(false, "Dynamic constant has no fixed basic type");
+
     default:
       ShouldNotReachHere();
       return T_ILLEGAL;
@@ -71,6 +76,8 @@ jbyte constantTag::non_error_value() const {
     return JVM_CONSTANT_MethodHandle;
   case JVM_CONSTANT_MethodTypeInError:
     return JVM_CONSTANT_MethodType;
+  case JVM_CONSTANT_DynamicInError:
+    return JVM_CONSTANT_Dynamic;
   default:
     return _tag;
   }
@@ -85,6 +92,8 @@ jbyte constantTag::error_value() const {
     return JVM_CONSTANT_MethodHandleInError;
   case JVM_CONSTANT_MethodType:
     return JVM_CONSTANT_MethodTypeInError;
+  case JVM_CONSTANT_Dynamic:
+    return JVM_CONSTANT_DynamicInError;
   default:
     ShouldNotReachHere();
     return JVM_CONSTANT_Invalid;
@@ -123,6 +132,10 @@ const char* constantTag::internal_name() const {
       return "MethodType";
     case JVM_CONSTANT_MethodTypeInError :
       return "MethodType Error";
+    case JVM_CONSTANT_Dynamic :
+      return "Dynamic";
+    case JVM_CONSTANT_DynamicInError :
+      return "Dynamic Error";
     case JVM_CONSTANT_InvokeDynamic :
       return "InvokeDynamic";
     case JVM_CONSTANT_Utf8 :

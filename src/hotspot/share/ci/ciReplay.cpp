@@ -721,6 +721,7 @@ class CompileReplay : public StackObj {
         case JVM_CONSTANT_Float:
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
+        case JVM_CONSTANT_Dynamic:
         case JVM_CONSTANT_InvokeDynamic:
           if (tag != cp->tag_at(i).value()) {
             report_error("tag mismatch: wrong class files?");

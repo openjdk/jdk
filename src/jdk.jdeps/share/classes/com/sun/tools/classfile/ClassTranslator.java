@@ -28,6 +28,7 @@ package com.sun.tools.classfile;
 import java.util.Map;
 
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Dynamic_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Double_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info;
 import com.sun.tools.classfile.ConstantPool.CONSTANT_Float_info;
@@ -325,6 +326,20 @@ public class ClassTranslator
                 info2 = info;
             } else {
                 info2 = new CONSTANT_InvokeDynamic_info(cp2, info.bootstrap_method_attr_index, info.name_and_type_index);
+            }
+            translations.put(info, info2);
+        }
+        return info;
+    }
+
+    public CPInfo visitDynamicConstant(CONSTANT_Dynamic_info info, Map<Object, Object> translations) {
+        CONSTANT_Dynamic_info info2 = (CONSTANT_Dynamic_info) translations.get(info);
+        if (info2 == null) {
+            ConstantPool cp2 = translate(info.cp, translations);
+            if (cp2 == info.cp) {
+                info2 = info;
+            } else {
+                info2 = new CONSTANT_Dynamic_info(cp2, info.bootstrap_method_attr_index, info.name_and_type_index);
             }
             translations.put(info, info2);
         }

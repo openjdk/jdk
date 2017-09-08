@@ -41,6 +41,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -53,7 +54,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
-
 
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of CallInfo
@@ -284,20 +284,32 @@ void LinkInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Klass resolution
 
-void LinkResolver::check_klass_accessability(Klass* ref_klass, Klass* sel_klass, TRAPS) {
+void LinkResolver::check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
+                                             bool fold_type_to_class, TRAPS) {
+  Klass* base_klass = sel_klass;
+  if (fold_type_to_class) {
+    if (sel_klass->is_objArray_klass()) {
+      base_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
+    }
+    // The element type could be a typeArray - we only need the access
+    // check if it is an reference to another class.
+    if (!base_klass->is_instance_klass()) {
+      return;  // no relevant check to do
+    }
+  }
   Reflection::VerifyClassAccessResults vca_result =
-    Reflection::verify_class_access(ref_klass, InstanceKlass::cast(sel_klass), true);
+    Reflection::verify_class_access(ref_klass, InstanceKlass::cast(base_klass), true);
   if (vca_result != Reflection::ACCESS_OK) {
     ResourceMark rm(THREAD);
     char* msg = Reflection::verify_class_access_msg(ref_klass,
-                                                    InstanceKlass::cast(sel_klass),
+                                                    InstanceKlass::cast(base_klass),
                                                     vca_result);
     if (msg == NULL) {
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_IllegalAccessError(),
         "failed to access class %s from class %s",
-        sel_klass->external_name(),
+        base_klass->external_name(),
         ref_klass->external_name());
     } else {
       // Use module specific message returned by verify_class_access_msg().
@@ -1663,31 +1675,6 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
   result.set_handle(resolved_klass, resolved_method, resolved_appendix, resolved_method_type, CHECK);
 }
 
-static void wrap_invokedynamic_exception(TRAPS) {
-  if (HAS_PENDING_EXCEPTION) {
-    // See the "Linking Exceptions" section for the invokedynamic instruction
-    // in JVMS 6.5.
-    if (PENDING_EXCEPTION->is_a(SystemDictionary::Error_klass())) {
-      // Pass through an Error, including BootstrapMethodError, any other form
-      // of linkage error, or say ThreadDeath/OutOfMemoryError
-      if (TraceMethodHandles) {
-        tty->print_cr("invokedynamic passes through an Error for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
-        PENDING_EXCEPTION->print();
-      }
-      return;
-    }
-
-    // Otherwise wrap the exception in a BootstrapMethodError
-    if (TraceMethodHandles) {
-      tty->print_cr("invokedynamic throws BSME for " INTPTR_FORMAT, p2i((void *)PENDING_EXCEPTION));
-      PENDING_EXCEPTION->print();
-    }
-    Handle nested_exception(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
-  }
-}
-
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   Symbol* method_name       = pool->name_ref_at(index);
   Symbol* method_signature  = pool->signature_ref_at(index);
@@ -1714,7 +1701,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
     // set the indy_rf flag since any subsequent invokedynamic instruction which shares
     // this bootstrap method will encounter the resolution of MethodHandleInError.
     oop bsm_info = pool->resolve_bootstrap_specifier_at(pool_index, THREAD);
-    wrap_invokedynamic_exception(CHECK);
+    Exceptions::wrap_dynamic_exception(CHECK);
     assert(bsm_info != NULL, "");
     // FIXME: Cache this once per BootstrapMethods entry, not once per CONSTANT_InvokeDynamic.
     bootstrap_specifier = Handle(THREAD, bsm_info);
@@ -1724,7 +1711,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
     Handle       appendix(   THREAD, cpce->appendix_if_resolved(pool));
     Handle       method_type(THREAD, cpce->method_type_if_resolved(pool));
     result.set_handle(method, appendix, method_type, THREAD);
-    wrap_invokedynamic_exception(CHECK);
+    Exceptions::wrap_dynamic_exception(CHECK);
     return;
   }
 
@@ -1737,7 +1724,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
     tty->print("  BSM info: "); bootstrap_specifier->print();
   }
 
-  resolve_dynamic_call(result, bootstrap_specifier, method_name,
+  resolve_dynamic_call(result, pool_index, bootstrap_specifier, method_name,
                        method_signature, current_klass, THREAD);
   if (HAS_PENDING_EXCEPTION && PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(index);
@@ -1753,7 +1740,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
         Handle       appendix(   THREAD, cpce->appendix_if_resolved(pool));
         Handle       method_type(THREAD, cpce->method_type_if_resolved(pool));
         result.set_handle(method, appendix, method_type, THREAD);
-        wrap_invokedynamic_exception(CHECK);
+        Exceptions::wrap_dynamic_exception(CHECK);
       } else {
         assert(cpce->indy_resolution_failed(), "Resolution failure flag not set");
         ConstantPool::throw_resolution_error(pool, encoded_index, CHECK);
@@ -1765,6 +1752,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 }
 
 void LinkResolver::resolve_dynamic_call(CallInfo& result,
+                                        int pool_index,
                                         Handle bootstrap_specifier,
                                         Symbol* method_name, Symbol* method_signature,
                                         Klass* current_klass,
@@ -1775,12 +1763,13 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   Handle       resolved_method_type;
   methodHandle resolved_method =
     SystemDictionary::find_dynamic_call_site_invoker(current_klass,
+                                                     pool_index,
                                                      bootstrap_specifier,
                                                      method_name, method_signature,
                                                      &resolved_appendix,
                                                      &resolved_method_type,
                                                      THREAD);
-  wrap_invokedynamic_exception(CHECK);
+  Exceptions::wrap_dynamic_exception(CHECK);
   result.set_handle(resolved_method, resolved_appendix, resolved_method_type, THREAD);
-  wrap_invokedynamic_exception(CHECK);
+  Exceptions::wrap_dynamic_exception(CHECK);
 }

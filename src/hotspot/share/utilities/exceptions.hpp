@@ -166,6 +166,8 @@ class Exceptions {
 
   static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, const methodHandle& method);
 
+  static void wrap_dynamic_exception(Thread* thread);
+
   // Exception counting for error files of interesting exceptions that may have
   // caused a problem for the jvm
   static volatile int _stack_overflow_errors;

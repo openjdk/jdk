@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,6 +526,22 @@ public class ByteCodeTest {
 
         @Override
         public String visitInvokeDynamic(CONSTANT_InvokeDynamic_info c, Integer p) {
+
+            String value = slist.get(p);
+            if (value == null) {
+                try {
+                    value = bsmMap.get(c.bootstrap_method_attr_index) + " "
+                            + visit(cfpool.get(c.name_and_type_index), c.name_and_type_index);
+                    slist.set(p, value);
+                } catch (ConstantPoolException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return value;
+        }
+
+        @Override
+        public String visitDynamicConstant(CONSTANT_Dynamic_info c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
