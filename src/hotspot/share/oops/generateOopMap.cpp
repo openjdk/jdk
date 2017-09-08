@@ -1878,13 +1878,15 @@ void GenerateOopMap::do_ldc(int bci) {
   ConstantPool* cp  = method()->constants();
   constantTag tag = cp->tag_at(ldc.pool_index()); // idx is index in resolved_references
   BasicType       bt  = ldc.result_type();
+#ifdef ASSERT
+  BasicType   tag_bt = tag.is_dynamic_constant() ? bt : tag.basic_type();
+  assert(bt == tag_bt, "same result");
+#endif
   CellTypeState   cts;
-  if (tag.basic_type() == T_OBJECT) {
+  if (is_reference_type(bt)) {  // could be T_ARRAY with condy
     assert(!tag.is_string_index() && !tag.is_klass_index(), "Unexpected index tag");
-    assert(bt == T_OBJECT, "Guard is incorrect");
     cts = CellTypeState::make_line_ref(bci);
   } else {
-    assert(bt != T_OBJECT, "Guard is incorrect");
     cts = valCTS;
   }
   ppush1(cts);

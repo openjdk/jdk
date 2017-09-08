@@ -283,6 +283,12 @@ public class ClassWriter {
             return 1;
         }
 
+        public Integer visitDynamicConstant(CONSTANT_Dynamic_info info, ClassOutputStream out) {
+            out.writeShort(info.bootstrap_method_attr_index);
+            out.writeShort(info.name_and_type_index);
+            return 1;
+        }
+
         @Override
         public Integer visitLong(CONSTANT_Long_info info, ClassOutputStream out) {
             out.writeLong(info.value);

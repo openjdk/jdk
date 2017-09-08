@@ -296,6 +296,18 @@ public class ClassWriter implements /* imports */ ClassConstants
                      break;
                 }
 
+                case JVM_CONSTANT_Dynamic: {
+                    dos.writeByte(cpConstType);
+                    int value = cpool.getIntAt(ci);
+                    short bsmIndex = (short) extractLowShortFromInt(value);
+                    short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                    dos.writeShort(bsmIndex);
+                    dos.writeShort(nameAndTypeIndex);
+                    if (DEBUG) debugMessage("CP[" + ci + "] = CONDY bsm = " +
+                                            bsmIndex + ", N&T = " + nameAndTypeIndex);
+                    break;
+                }
+
                 case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);

@@ -42,7 +42,7 @@ public class ConstantTag {
   private static final int JVM_CONSTANT_NameAndType             = 12;
   private static final int JVM_CONSTANT_MethodHandle            = 15;  // JSR 292
   private static final int JVM_CONSTANT_MethodType              = 16;  // JSR 292
-  //      static final int JVM_CONSTANT_(unused)                = 17;  // JSR 292 early drafts only
+  private static final int JVM_CONSTANT_Dynamic                 = 17;  // JSR 292 early drafts only
   private static final int JVM_CONSTANT_InvokeDynamic           = 18;  // JSR 292
   private static final int JVM_CONSTANT_Invalid                 = 0;   // For bad value initialization
   private static final int JVM_CONSTANT_UnresolvedClass         = 100; // Temporary tag until actual use
@@ -84,6 +84,7 @@ public class ConstantTag {
   public boolean isUtf8()             { return tag == JVM_CONSTANT_Utf8; }
   public boolean isMethodHandle()     { return tag == JVM_CONSTANT_MethodHandle; }
   public boolean isMethodType()       { return tag == JVM_CONSTANT_MethodType; }
+  public boolean isDynamicConstant()  { return tag == JVM_CONSTANT_Dynamic; }
   public boolean isInvokeDynamic()    { return tag == JVM_CONSTANT_InvokeDynamic; }
 
   public boolean isInvalid()          { return tag == JVM_CONSTANT_Invalid; }

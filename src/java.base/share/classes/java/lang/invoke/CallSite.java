@@ -302,65 +302,10 @@ public class CallSite {
                              Object info,
                              // Caller information:
                              Class<?> callerClass) {
-        MethodHandles.Lookup caller = IMPL_LOOKUP.in(callerClass);
         CallSite site;
         try {
-            Object binding;
-            info = maybeReBox(info);
-            if (info == null) {
-                binding = bootstrapMethod.invoke(caller, name, type);
-            } else if (!info.getClass().isArray()) {
-                binding = bootstrapMethod.invoke(caller, name, type, info);
-            } else {
-                Object[] argv = (Object[]) info;
-                maybeReBoxElements(argv);
-                switch (argv.length) {
-                    case 0:
-                        binding = bootstrapMethod.invoke(caller, name, type);
-                        break;
-                    case 1:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0]);
-                        break;
-                    case 2:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0], argv[1]);
-                        break;
-                    case 3:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0], argv[1], argv[2]);
-                        break;
-                    case 4:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0], argv[1], argv[2], argv[3]);
-                        break;
-                    case 5:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0], argv[1], argv[2], argv[3], argv[4]);
-                        break;
-                    case 6:
-                        binding = bootstrapMethod.invoke(caller, name, type,
-                                                         argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-                        break;
-                    default:
-                        final int NON_SPREAD_ARG_COUNT = 3;  // (caller, name, type)
-                        final int MAX_SAFE_SIZE = MethodType.MAX_MH_ARITY / 2 - NON_SPREAD_ARG_COUNT;
-                        if (argv.length >= MAX_SAFE_SIZE) {
-                            // to be on the safe side, use invokeWithArguments which handles jumbo lists
-                            Object[] newargv = new Object[NON_SPREAD_ARG_COUNT + argv.length];
-                            newargv[0] = caller;
-                            newargv[1] = name;
-                            newargv[2] = type;
-                            System.arraycopy(argv, 0, newargv, NON_SPREAD_ARG_COUNT, argv.length);
-                            binding = bootstrapMethod.invokeWithArguments(newargv);
-                        } else {
-                            MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argv.length);
-                            MethodHandle typedBSM = bootstrapMethod.asType(invocationType);
-                            MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
-                            binding = spreader.invokeExact(typedBSM, (Object) caller, (Object) name, (Object) type, argv);
-                        }
-                }
-            }
+            Object binding = BootstrapMethodInvoker.invoke(
+                    CallSite.class, bootstrapMethod, name, type, info, callerClass);
             if (binding instanceof CallSite) {
                 site = (CallSite) binding;
             } else {
@@ -369,7 +314,7 @@ public class CallSite {
                 // Throws a runtime exception defining the cause that is then
                 // in the "catch (Throwable ex)" a few lines below wrapped in
                 // BootstrapMethodError
-                throw new ClassCastException("bootstrap method failed to produce a CallSite");
+                throw new ClassCastException("CallSite bootstrap method failed to produce an instance of CallSite");
             }
             if (!site.getTarget().type().equals(type)) {
                 // See the "Linking Exceptions" section for the invokedynamic
@@ -388,22 +333,8 @@ public class CallSite {
             throw e;
         } catch (Throwable ex) {
             // Wrap anything else in BootstrapMethodError
-            throw new BootstrapMethodError("call site initialization exception", ex);
+            throw new BootstrapMethodError("CallSite bootstrap method initialization exception", ex);
         }
         return site;
-    }
-
-    private static Object maybeReBox(Object x) {
-        if (x instanceof Integer) {
-            int xi = (int) x;
-            if (xi == (byte) xi)
-                x = xi;  // must rebox; see JLS 5.1.7
-        }
-        return x;
-    }
-    private static void maybeReBoxElements(Object[] xa) {
-        for (int i = 0; i < xa.length; i++) {
-            xa[i] = maybeReBox(xa[i]);
-        }
     }
 }

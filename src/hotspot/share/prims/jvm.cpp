@@ -2212,6 +2212,8 @@ JVM_ENTRY(jbyte, JVM_ConstantPoolGetTagAt(JNIEnv *env, jobject obj, jobject unus
       result = JVM_CONSTANT_MethodType;
   } else if (tag.is_method_handle_in_error()) {
       result = JVM_CONSTANT_MethodHandle;
+  } else if (tag.is_dynamic_constant_in_error()) {
+      result = JVM_CONSTANT_Dynamic;
   }
   return result;
 }

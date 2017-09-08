@@ -84,6 +84,7 @@ public class ClassFile {
     public final static int CONSTANT_NameandType = 12;
     public final static int CONSTANT_MethodHandle = 15;
     public final static int CONSTANT_MethodType = 16;
+    public final static int CONSTANT_Dynamic = 17;
     public final static int CONSTANT_InvokeDynamic = 18;
     public final static int CONSTANT_Module = 19;
     public final static int CONSTANT_Package = 20;

@@ -3961,6 +3961,14 @@ public:
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
                                                                             \
+  diagnostic(int, UseBootstrapCallInfo, 1,                                  \
+          "0: when resolving InDy or ConDy, force all BSM arguments to be " \
+          "resolved before the bootstrap method is called; 1: when a BSM "  \
+          "that may accept a BootstrapCallInfo is detected, use that API "  \
+          "to pass BSM arguments, which allows the BSM to delay their "     \
+          "resolution; 2+: stress test the BCI API by calling more BSMs "   \
+          "via that API, instead of with the eagerly-resolved array.")      \
+                                                                            \
   diagnostic(bool, PauseAtStartup,      false,                              \
           "Causes the VM to pause at startup time and wait for the pause "  \
           "file to be removed (default: ./vm.paused.<pid>)")                \
