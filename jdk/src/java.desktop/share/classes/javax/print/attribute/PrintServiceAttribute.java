@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@
 package javax.print.attribute;
 
 /**
- * Interface PrintServiceAttribute is a tagging interface which a printing
- * attribute class implements to indicate the attribute describes the status
- * of a Print Service or some other characteristic of a Print Service. A Print
- * Service instance adds a number of PrintServiceAttributes to a Print
- * service's attribute set to report the Print Service's status.
+ * Interface {@code PrintServiceAttribute} is a tagging interface which a
+ * printing attribute class implements to indicate the attribute describes the
+ * status of a Print Service or some other characteristic of a Print Service. A
+ * Print Service instance adds a number of {@code PrintServiceAttributes} to a
+ * Print service's attribute set to report the Print Service's status.
  *
+ * @author Alan Kaminsky
  * @see PrintServiceAttributeSet
- *
- * @author  Alan Kaminsky
  */
 public interface PrintServiceAttribute extends Attribute {
 }

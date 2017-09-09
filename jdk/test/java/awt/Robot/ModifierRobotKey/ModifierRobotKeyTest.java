@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
+import static jdk.testlibrary.Asserts.assertNull;
 import static jdk.testlibrary.Asserts.assertTrue;
 
 /*
@@ -57,9 +58,8 @@ public class ModifierRobotKeyTest extends KeyAdapter {
     private int[] textKeys, modifierKeys, inputMasks;
     private boolean[] modifierStatus, textStatus;
 
-    private final static int waitDelay = 5000;
-    private Object tempLock = new Object();
-    private Object keyLock = new Object();
+    private final static int WAIT_DELAY = 5000;
+    private final Object lock = new Object();
 
     public static void main(String[] args) throws Exception {
         ModifierRobotKeyTest test = new ModifierRobotKeyTest();
@@ -99,27 +99,28 @@ public class ModifierRobotKeyTest extends KeyAdapter {
     }
 
     public void keyPressed(KeyEvent event) {
+        synchronized (lock) {
+            tempPress = true;
+            lock.notifyAll();
 
-        tempPress = true;
-        synchronized (tempLock) { tempLock.notifyAll(); }
-
-        if (! startTest) {
-            return;
-        }
-        for (int x = 0; x < inputMasks.length; x++) {
-            if ((event.getModifiers() & inputMasks[x]) != 0) {
-                System.out.println("Modifier set: " + event.getKeyModifiersText(inputMasks[x]));
-                modifierStatus[x] = true;
+            if (! startTest) {
+                return;
+            }
+            for (int x = 0; x < inputMasks.length; x++) {
+                if ((event.getModifiers() & inputMasks[x]) != 0) {
+                    System.out.println("Modifier set: " +
+                                      event.getKeyModifiersText(inputMasks[x]));
+                    modifierStatus[x] = true;
+                }
+            }
+            for (int x = 0; x < textKeys.length; x++) {
+                if (event.getKeyCode() == textKeys[x]) {
+                    System.out.println("Text set: " +
+                                                 event.getKeyText(textKeys[x]));
+                    textStatus[x] = true;
+                }
             }
         }
-        for (int x = 0; x < textKeys.length; x++) {
-            if (event.getKeyCode() == textKeys[x]) {
-                System.out.println("Text set: " + event.getKeyText(textKeys[x]));
-                textStatus[x] = true;
-            }
-        }
-
-        synchronized (keyLock) { keyLock.notifyAll(); }
     }
 
     private void initializeGUI() {
@@ -131,100 +132,115 @@ public class ModifierRobotKeyTest extends KeyAdapter {
         canvas.addKeyListener(this);
         frame.setLayout(new BorderLayout());
         frame.add(canvas);
-        frame.setSize(200, 200);
+        frame.setBounds(200, 200, 200, 200);
         frame.setVisible(true);
     }
 
     public void doTest() throws Exception {
         robot = new ExtendedRobot();
-
-        robot.mouseMove((int) frame.getLocationOnScreen().getX() + frame.getSize().width / 2,
-                        (int) frame.getLocationOnScreen().getY() + frame.getSize().height / 2);
-        robot.click(MouseEvent.BUTTON1_MASK);
+        robot.setAutoDelay(20);
         robot.waitForIdle();
 
+        robot.mouseMove((int) frame.getLocationOnScreen().getX() +
+                                                    frame.getSize().width / 2,
+                        (int) frame.getLocationOnScreen().getY() +
+                                                    frame.getSize().height / 2);
+        robot.click(MouseEvent.BUTTON1_MASK);
+        robot.waitForIdle();
         assertTrue(focusGained, "FAIL: Canvas gained focus!");
 
+        String error = null;
+        exit1:
         for (int i = 0; i < modifierKeys.length; i++) {
             for (int j = 0; j < textKeys.length; j++) {
-                tempPress = false;
-                robot.keyPress(modifierKeys[i]);
-                robot.waitForIdle();
-                if (! tempPress) {
-                    synchronized (tempLock) { tempLock.wait(waitDelay); }
+                if (error != null) {
+                    break exit1;
                 }
-                assertTrue(tempPress, "FAIL: keyPressed triggered for i=" + i);
-
-                resetStatus();
-                startTest = true;
-                robot.keyPress(textKeys[j]);
-                robot.waitForIdle();
-                if (! modifierStatus[i] || ! textStatus[j]) {
-                    synchronized (keyLock) { keyLock.wait(waitDelay); }
+                robot.waitForIdle(100);
+                synchronized (lock) {
+                    tempPress = false;
+                    robot.keyPress(modifierKeys[i]);
+                    lock.wait(WAIT_DELAY);
+                }
+                if (!tempPress) {
+                    error ="FAIL: keyPressed triggered for i=" + i;
                 }
 
+                synchronized (lock) {
+                    resetStatus();
+                    startTest = true;
+                    robot.keyPress(textKeys[j]);
+                    lock.wait(WAIT_DELAY);
+                }
 
-                assertTrue(modifierStatus[i] && textStatus[j],
-                        "FAIL: KeyEvent not proper!"+
-                        "Key checked: i=" + i + "; j=" + j+
-                        "ModifierStatus = " + modifierStatus[i]+
-                        "TextStatus = " + textStatus[j]);
+                if (!(modifierStatus[i] && textStatus[j])) {
+                    error = "FAIL: KeyEvent not proper!"+
+                            "Key checked: i=" + i + "; j=" + j+
+                            "ModifierStatus = " + modifierStatus[i]+
+                            "TextStatus = " + textStatus[j];
+                }
+
                 startTest = false;
                 robot.keyRelease(textKeys[j]);
-                robot.waitForIdle();
                 robot.keyRelease(modifierKeys[i]);
-                robot.waitForIdle();
             }
         }
 
+        exit2:
         for (int i = 0; i < modifierKeys.length; i++) {
             for (int j = i + 1; j < modifierKeys.length; j++) {
                 for (int k = 0; k < textKeys.length; k++) {
-                    tempPress = false;
-                    robot.keyPress(modifierKeys[i]);
-                    robot.waitForIdle();
-                    if (! tempPress) {
-                        synchronized (tempLock) { tempLock.wait(waitDelay); }
+                    if (error != null) {
+                        break exit2;
+                    }
+                    robot.waitForIdle(100);
+                    synchronized (lock) {
+                        tempPress = false;
+                        robot.keyPress(modifierKeys[i]);
+                        lock.wait(WAIT_DELAY);
                     }
 
-                    assertTrue(tempPress, "FAIL: MultiKeyTest: keyPressed triggered for i=" + i);
-
-                    tempPress = false;
-                    robot.keyPress(modifierKeys[j]);
-                    robot.waitForIdle();
-                    if (! tempPress) {
-                        synchronized (tempLock) { tempLock.wait(waitDelay); }
+                    if (!tempPress) {
+                        error = "FAIL: MultiKeyTest: keyPressed " +
+                                                         "triggered for i=" + i;
                     }
-                    assertTrue(tempPress, "FAIL: MultiKeyTest keyPressed triggered for j=" + j);
 
-                    resetStatus();
-                    startTest = true;
-                    robot.keyPress(textKeys[k]);
-                    robot.waitForIdle();
-                    if (! modifierStatus[i] || ! modifierStatus[j] || ! textStatus[k]) {
-                        synchronized (keyLock) {
-                            keyLock.wait(waitDelay);
-                        }
+                    synchronized (lock) {
+                        tempPress = false;
+                        robot.keyPress(modifierKeys[j]);
+                        lock.wait(WAIT_DELAY);
                     }
-                    assertTrue(modifierStatus[i] && modifierStatus[j] && textStatus[k],
-                            "FAIL: KeyEvent not proper!"+
-                            "Key checked: i=" + i + "; j=" + j + "; k=" + k+
-                            "Modifier1Status = " + modifierStatus[i]+
-                            "Modifier2Status = " + modifierStatus[j]+
-                            "TextStatus = " + textStatus[k]);
+                    if (!tempPress) {
+                        error = "FAIL: MultiKeyTest keyPressed " +
+                                                         "triggered for j=" + j;
+                    };
+
+                    synchronized (lock) {
+                        resetStatus();
+                        startTest = true;
+                        robot.keyPress(textKeys[k]);
+                        lock.wait(WAIT_DELAY);
+                    }
+                    if (!(modifierStatus[i] && modifierStatus[j]
+                                                              && textStatus[k]))
+                    {
+                        error = "FAIL: KeyEvent not proper!" +
+                               "Key checked: i=" + i + "; j=" + j + "; k=" + k +
+                               "Modifier1Status = " + modifierStatus[i] +
+                               "Modifier2Status = " + modifierStatus[j] +
+                               "TextStatus = " + textStatus[k];
+                    }
 
                     startTest = false;
                     robot.keyRelease(textKeys[k]);
-                    robot.waitForIdle();
                     robot.keyRelease(modifierKeys[j]);
-                    robot.waitForIdle();
                     robot.keyRelease(modifierKeys[i]);
-                    robot.waitForIdle();
                 }
             }
         }
 
         frame.dispose();
+        assertNull(error, error);
     }
 
     private void resetStatus() {

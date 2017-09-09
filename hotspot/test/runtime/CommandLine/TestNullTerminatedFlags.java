@@ -42,7 +42,6 @@ public class TestNullTerminatedFlags {
             "-green",
             "-native",
             "-Xrs",
-            "-Xprof",
             "-Xconcurrentio",
             "-Xinternalversion",
             "-Xprintflags",

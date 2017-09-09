@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/mutex.hpp"
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
@@ -268,13 +267,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_i);
     if (!_process_strong_tasks.is_task_claimed(G1RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
-    }
-  }
-
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::FlatProfilerRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_FlatProfiler_oops_do)) {
-      FlatProfiler::oops_do(strong_roots);
     }
   }
 

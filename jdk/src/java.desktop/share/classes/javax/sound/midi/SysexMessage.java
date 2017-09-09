@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ package javax.sound.midi;
  * As dictated by the Standard MIDI Files specification, two status byte values
  * are legal for a {@code SysexMessage} read from a MIDI file:
  * <ul>
- * <li>0xF0: System Exclusive message (same as in MIDI wire protocol)</li>
- * <li>0xF7: Special System Exclusive message</li>
+ *   <li>0xF0: System Exclusive message (same as in MIDI wire protocol)
+ *   <li>0xF7: Special System Exclusive message
  * </ul>
  * When Java Sound is used to handle system exclusive data that is being
  * received using MIDI wire protocol, it should place the data in one or more
@@ -49,8 +49,8 @@ package javax.sound.midi;
  * is not known in advance; the end of the system exclusive data is marked by an
  * end-of-exclusive flag (0xF7) in the MIDI wire byte stream.
  * <ul>
- * <li>0xF0: System Exclusive message (same as in MIDI wire protocol)</li>
- * <li>0xF7: End of Exclusive (EOX)</li>
+ *   <li>0xF0: System Exclusive message (same as in MIDI wire protocol)
+ *   <li>0xF7: End of Exclusive (EOX)
  * </ul>
  * The first {@code SysexMessage} object containing data for a particular system
  * exclusive message should have the status value 0xF0. If this message contains
@@ -148,7 +148,7 @@ public class SysexMessage extends MidiMessage {
      *         should be non-negative and less than or equal to
      *         {@code data.length}
      * @throws InvalidMidiDataException if the parameter values do not specify a
-     *         valid MIDI meta message
+     *         valid MIDI system exclusive message
      * @see #setMessage(byte[], int)
      * @see #setMessage(int, byte[], int)
      * @see #getData()
@@ -178,6 +178,8 @@ public class SysexMessage extends MidiMessage {
      * @param  data the system exclusive message data
      * @param  length the length of the valid message data in the array,
      *         including the status byte
+     * @throws InvalidMidiDataException if the parameter values do not specify a
+     *         valid MIDI system exclusive message
      */
     @Override
     public void setMessage(byte[] data, int length) throws InvalidMidiDataException {
@@ -195,7 +197,7 @@ public class SysexMessage extends MidiMessage {
      * @param  data the system exclusive message data
      * @param  length the length of the valid message data in the array
      * @throws InvalidMidiDataException if the status byte is invalid for a
-     *         sysex message
+     *         system exclusive message
      */
     public void setMessage(int status, byte[] data, int length) throws InvalidMidiDataException {
         if ( (status != 0xF0) && (status != 0xF7) ) {

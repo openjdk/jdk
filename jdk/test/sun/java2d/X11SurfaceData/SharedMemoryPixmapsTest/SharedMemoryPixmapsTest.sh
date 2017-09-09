@@ -38,9 +38,8 @@ cd ${TESTSRC}
 ${TESTJAVA}/bin/javac -d ${TESTCLASSES} SharedMemoryPixmapsTest.java
 cd ${TESTCLASSES}
 
-NO_J2D_DGA=true
 J2D_PIXMAPS=shared
-export NO_J2D_DGA J2D_PIXMAPS
+export J2D_PIXMAPS
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} SharedMemoryPixmapsTest
 

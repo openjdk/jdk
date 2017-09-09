@@ -40,6 +40,7 @@ import java.util.Objects;
  * data line expects to receive for output. For a target (capture) data line,
  * the audio format specifies the kind of the data that can be read from the
  * line.
+ * <p>
  * Sound files also have audio formats, of course. The {@link AudioFileFormat}
  * class encapsulates an {@code AudioFormat} in addition to other, file-specific
  * information. Similarly, an {@link AudioInputStream} has an
@@ -92,29 +93,24 @@ import java.util.Objects;
  * <table class="striped">
  * <caption>Audio Format Properties</caption>
  * <thead>
- *  <tr>
- *   <th>Property key</th>
- *   <th>Value type</th>
- *   <th>Description</th>
- *  </tr>
+ *   <tr>
+ *     <th>Property key
+ *     <th>Value type
+ *     <th>Description
  * </thead>
  * <tbody>
- *  <tr>
- *   <td>&quot;bitrate&quot;</td>
- *   <td>{@link java.lang.Integer Integer}</td>
- *   <td>average bit rate in bits per second</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;vbr&quot;</td>
- *   <td>{@link java.lang.Boolean Boolean}</td>
- *   <td>{@code true}, if the file is encoded in variable bit
- *       rate (VBR)</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;quality&quot;</td>
- *   <td>{@link java.lang.Integer Integer}</td>
- *   <td>encoding/conversion quality, 1..100</td>
- *  </tr>
+ *   <tr>
+ *     <td>&quot;bitrate&quot;
+ *     <td>{@link java.lang.Integer Integer}
+ *     <td>average bit rate in bits per second
+ *   <tr>
+ *     <td>&quot;vbr&quot;
+ *     <td>{@link java.lang.Boolean Boolean}
+ *     <td>{@code true}, if the file is encoded in variable bit rate (VBR)
+ *   <tr>
+ *     <td>&quot;quality&quot;
+ *     <td>{@link java.lang.Integer Integer}
+ *     <td>encoding/conversion quality, 1..100
  * </tbody>
  * </table>
  * <p>
@@ -183,8 +179,8 @@ public class AudioFormat {
      * @param  encoding the audio encoding technique
      * @param  sampleRate the number of samples per second
      * @param  sampleSizeInBits the number of bits in each sample
-     * @param  channels the number of channels (1 for mono, 2 for stereo,
-     *         and so on)
+     * @param  channels the number of channels (1 for mono, 2 for stereo, and so
+     *         on)
      * @param  frameSize the number of bytes in each frame
      * @param  frameRate the number of frames per second
      * @param  bigEndian indicates whether the data for a single sample is
@@ -217,7 +213,8 @@ public class AudioFormat {
      * @param  frameSize the number of bytes in each frame
      * @param  frameRate the number of frames per second
      * @param  bigEndian indicates whether the data for a single sample is
-     *         stored in big-endian byte order ({@code false} means little-endian)
+     *         stored in big-endian byte order ({@code false} means
+     *         little-endian)
      * @param  properties a {@code Map<String, Object>} object containing format
      *         properties
      * @since 1.5
@@ -276,9 +273,10 @@ public class AudioFormat {
 
     /**
      * Obtains the sample rate. For compressed formats, the return value is the
-     * sample rate of the uncompressed audio data. When this AudioFormat is used
-     * for queries (e.g. {@link AudioSystem#isConversionSupported(AudioFormat,
-     * AudioFormat) AudioSystem.isConversionSupported}) or capabilities (e.g.
+     * sample rate of the uncompressed audio data. When this {@code AudioFormat}
+     * is used for queries (e.g.
+     * {@link AudioSystem#isConversionSupported(AudioFormat, AudioFormat)
+     * AudioSystem.isConversionSupported}) or capabilities (e.g.
      * {@link DataLine.Info#getFormats DataLine.Info.getFormats}), a sample rate
      * of {@code AudioSystem.NOT_SPECIFIED} means that any sample rate is
      * acceptable. {@code AudioSystem.NOT_SPECIFIED} is also returned when the
@@ -296,10 +294,10 @@ public class AudioFormat {
 
     /**
      * Obtains the size of a sample. For compressed formats, the return value is
-     * the sample size of the uncompressed audio data. When this AudioFormat is
-     * used for queries (e.g. {@link AudioSystem#isConversionSupported(
-     * AudioFormat,AudioFormat) AudioSystem.isConversionSupported}) or
-     * capabilities (e.g.
+     * the sample size of the uncompressed audio data. When this
+     * {@code AudioFormat} is used for queries (e.g.
+     * {@link AudioSystem#isConversionSupported(AudioFormat,AudioFormat)
+     * AudioSystem.isConversionSupported}) or capabilities (e.g.
      * {@link DataLine.Info#getFormats DataLine.Info.getFormats}), a sample size
      * of {@code AudioSystem.NOT_SPECIFIED} means that any sample size is
      * acceptable. {@code AudioSystem.NOT_SPECIFIED} is also returned when the
@@ -316,9 +314,9 @@ public class AudioFormat {
     }
 
     /**
-     * Obtains the number of channels. When this AudioFormat is used for queries
-     * (e.g. {@link AudioSystem#isConversionSupported(AudioFormat, AudioFormat)
-     * AudioSystem.isConversionSupported}) or capabilities (e.g.
+     * Obtains the number of channels. When this {@code AudioFormat} is used for
+     * queries (e.g. {@link AudioSystem#isConversionSupported(AudioFormat,
+     * AudioFormat) AudioSystem.isConversionSupported}) or capabilities (e.g.
      * {@link DataLine.Info#getFormats DataLine.Info.getFormats}), a return
      * value of {@code AudioSystem.NOT_SPECIFIED} means that any (positive)
      * number of channels is acceptable.
@@ -333,8 +331,8 @@ public class AudioFormat {
     }
 
     /**
-     * Obtains the frame size in bytes. When this AudioFormat is used for
-     * queries (e.g. {@link AudioSystem#isConversionSupported(AudioFormat,
+     * Obtains the frame size in bytes. When this {@code AudioFormat} is used
+     * for queries (e.g. {@link AudioSystem#isConversionSupported(AudioFormat,
      * AudioFormat) AudioSystem.isConversionSupported}) or capabilities (e.g.
      * {@link DataLine.Info#getFormats DataLine.Info.getFormats}), a frame size
      * of {@code AudioSystem.NOT_SPECIFIED} means that any frame size is
@@ -352,10 +350,10 @@ public class AudioFormat {
     }
 
     /**
-     * Obtains the frame rate in frames per second. When this AudioFormat is
-     * used for queries (e.g. {@link AudioSystem#isConversionSupported(
-     * AudioFormat,AudioFormat) AudioSystem.isConversionSupported}) or
-     * capabilities (e.g.
+     * Obtains the frame rate in frames per second. When this
+     * {@code AudioFormat} is used for queries (e.g.
+     * {@link AudioSystem#isConversionSupported(AudioFormat,AudioFormat)
+     * AudioSystem.isConversionSupported}) or capabilities (e.g.
      * {@link DataLine.Info#getFormats DataLine.Info.getFormats}), a frame rate
      * of {@code AudioSystem.NOT_SPECIFIED} means that any frame rate is
      * acceptable. {@code AudioSystem.NOT_SPECIFIED} is also returned when the
@@ -551,9 +549,10 @@ public class AudioFormat {
      * the sound amplitude that are often used for recording speech.
      * <p>
      * You can use a predefined encoding by referring to one of the static
-     * objects created by this class, such as PCM_SIGNED or PCM_UNSIGNED.
-     * Service providers can create new encodings, such as compressed audio
-     * formats, and make these available through the {@link AudioSystem} class.
+     * objects created by this class, such as {@code PCM_SIGNED} or
+     * {@code PCM_UNSIGNED}. Service providers can create new encodings, such as
+     * compressed audio formats, and make these available through the
+     * {@link AudioSystem} class.
      * <p>
      * The {@code Encoding} class is static, so that all {@code AudioFormat}
      * objects that have the same encoding will refer to the same object (rather
@@ -609,7 +608,12 @@ public class AudioFormat {
         }
 
         /**
-         * Finalizes the equals method.
+         * Indicates whether the specified object is equal to this encoding,
+         * returning {@code true} if the objects are equal.
+         *
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this
+         *         encoding; {@code false} otherwise
          */
         @Override
         public final boolean equals(final Object obj) {
@@ -623,7 +627,9 @@ public class AudioFormat {
         }
 
         /**
-         * Finalizes the hashCode method.
+         * Returns a hash code value for this encoding.
+         *
+         * @return a hash code value for this encoding
          */
         @Override
         public final int hashCode() {

@@ -39,10 +39,6 @@
 #include <dlfcn.h>
 
 #ifndef HEADLESS
-static JDgaLibInfo DgaLibInfoStub;
-static JDgaLibInfo theJDgaInfo;
-static JDgaLibInfo *pJDgaInfo = &DgaLibInfoStub;
-
 
 /**
  * This file contains support code for loops using the SurfaceData
@@ -82,8 +78,6 @@ static XImage * X11SD_GetImage(JNIEnv *env, X11SDOps *xsdo,
 extern jfieldID validID;
 
 static int nativeByteOrder;
-static jboolean dgaAvailable = JNI_FALSE;
-static jboolean useDGAWithPixmaps = JNI_FALSE;
 static jclass xorCompClass;
 
 jint useMitShmExt = CANT_USE_MITSHM;
@@ -106,8 +100,6 @@ jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps)
 
     endian.i = 0xff000000;
     nativeByteOrder = (endian.c[0]) ? MSBFirst : LSBFirst;
-
-    dgaAvailable = JNI_FALSE;
 
     cachedXImage = NULL;
 
@@ -158,38 +150,12 @@ jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps)
  */
 JNIEXPORT void JNICALL
 Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
-                                           jclass XORComp, jboolean tryDGA)
+                                           jclass XORComp)
 {
 #ifndef HEADLESS
   if(XShared_initIDs(env, JNI_TRUE))
   {
-    void *lib = 0;
-
     xorCompClass = (*env)->NewGlobalRef(env, XORComp);
-
-    if (tryDGA && (getenv("NO_J2D_DGA") == NULL)) {
-    /* we use RTLD_NOW because of bug 4032715 */
-        lib = dlopen(JNI_LIB_NAME("sunwjdga"), RTLD_NOW);
-    }
-
-    if (lib != NULL) {
-        JDgaStatus ret = JDGA_FAILED;
-        void *sym = dlsym(lib, "JDgaLibInit");
-        if (sym != NULL) {
-            theJDgaInfo.display = awt_display;
-            AWT_LOCK();
-            ret = (*(JDgaLibInitFunc *)sym)(env, &theJDgaInfo);
-            AWT_UNLOCK();
-        }
-        if (ret == JDGA_SUCCESS) {
-            pJDgaInfo = &theJDgaInfo;
-            dgaAvailable = JNI_TRUE;
-            useDGAWithPixmaps = (getenv("USE_DGA_PIXMAPS") != NULL);
-        } else {
-            dlclose(lib);
-            lib = NULL;
-        }
-    }
   }
 #endif /* !HEADLESS */
 }
@@ -234,21 +200,6 @@ Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable(JNIEnv *env, jobject this)
 
 /*
  * Class:     sun_java2d_x11_X11SurfaceData
- * Method:    isDgaAvailable
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_java2d_x11_X11SurfaceData_isDgaAvailable(JNIEnv *env, jobject this)
-{
-#if defined(HEADLESS) || defined(__linux__)
-    return JNI_FALSE;
-#else
-    return dgaAvailable;
-#endif /* HEADLESS */
-}
-
-/*
- * Class:     sun_java2d_x11_X11SurfaceData
  * Method:    initOps
  * Signature: (Ljava/lang/Object;I)V
  */
@@ -279,7 +230,6 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
         xsdo->drawable = 0;
     }
     xsdo->depth = depth;
-    xsdo->dgaAvailable = dgaAvailable;
     xsdo->isPixmap = JNI_FALSE;
     xsdo->bitmask = 0;
     xsdo->bgPixel = 0;
@@ -447,10 +397,6 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
             return JNI_FALSE;
         }
         xsdo->isPixmap = JNI_TRUE;
-        /* REMIND: workaround for bug 4420220 on pgx32 boards:
-           don't use DGA with pixmaps unless USE_DGA_PIXMAPS is set.
-         */
-        xsdo->dgaAvailable = useDGAWithPixmaps;
 
         xsdo->pmWidth = width;
         xsdo->pmHeight = height;
@@ -847,29 +793,6 @@ static jint X11SD_Lock(JNIEnv *env,
         }
         return SD_FAILURE;
     }
-    if (xsdo->dgaAvailable && (lockflags & (SD_LOCK_RD_WR))) {
-        int dgaret;
-
-        dgaret = (*pJDgaInfo->pGetLock)(env, awt_display, &xsdo->dgaDev,
-                                        xsdo->drawable, &xsdo->surfInfo,
-                                        pRasInfo->bounds.x1,
-                                        pRasInfo->bounds.y1,
-                                        pRasInfo->bounds.x2,
-                                        pRasInfo->bounds.y2);
-        if (dgaret == JDGA_SUCCESS) {
-            int wx = xsdo->surfInfo.window.lox;
-            int wy = xsdo->surfInfo.window.loy;
-            pRasInfo->bounds.x1 = xsdo->surfInfo.visible.lox - wx;
-            pRasInfo->bounds.y1 = xsdo->surfInfo.visible.loy - wy;
-            pRasInfo->bounds.x2 = xsdo->surfInfo.visible.hix - wx;
-            pRasInfo->bounds.y2 = xsdo->surfInfo.visible.hiy - wy;
-            xpriv->lockType = X11SD_LOCK_BY_DGA;
-            xpriv->lockFlags = lockflags;
-            return SD_SUCCESS;
-        } else if (dgaret == JDGA_UNAVAILABLE) {
-            xsdo->dgaAvailable = JNI_FALSE;
-        }
-    }
     if (lockflags & SD_LOCK_RD_WR) {
         if (lockflags & SD_LOCK_FASTEST) {
             ret = SD_SLOWLOCK;
@@ -915,43 +838,9 @@ static void X11SD_GetRasInfo(JNIEnv *env,
     jint depth = xsdo->depth;
     int mult = xsdo->configData->pixelStride;
 
-    if (xsdo->dgaAvailable &&
-        xpriv->lockType == X11SD_LOCK_BY_XIMAGE &&
-        (lockFlags & SD_LOCK_FASTEST))
-    {
-        /* Try one more time to use DGA (now with smaller bounds)... */
-        int dgaret;
 
-        dgaret = (*pJDgaInfo->pGetLock)(env, awt_display, &xsdo->dgaDev,
-                                        xsdo->drawable, &xsdo->surfInfo,
-                                        pRasInfo->bounds.x1,
-                                        pRasInfo->bounds.y1,
-                                        pRasInfo->bounds.x2,
-                                        pRasInfo->bounds.y2);
-        if (dgaret == JDGA_SUCCESS) {
-            int wx = xsdo->surfInfo.window.lox;
-            int wy = xsdo->surfInfo.window.loy;
-            pRasInfo->bounds.x1 = xsdo->surfInfo.visible.lox - wx;
-            pRasInfo->bounds.y1 = xsdo->surfInfo.visible.loy - wy;
-            pRasInfo->bounds.x2 = xsdo->surfInfo.visible.hix - wx;
-            pRasInfo->bounds.y2 = xsdo->surfInfo.visible.hiy - wy;
-            xpriv->lockType = X11SD_LOCK_BY_DGA;
-        } else if (dgaret == JDGA_UNAVAILABLE) {
-            xsdo->dgaAvailable = JNI_FALSE;
-        }
-    }
-
-    if (xpriv->lockType == X11SD_LOCK_BY_DGA) {
-        int scan = xsdo->surfInfo.surfaceScan;
-        int wx = xsdo->surfInfo.window.lox;
-        int wy = xsdo->surfInfo.window.loy;
-        pRasInfo->rasBase =
-            (void *)(((uintptr_t) xsdo->surfInfo.basePtr) + (scan*wy + wx) * mult);
-        pRasInfo->pixelStride = mult;
-        pRasInfo->pixelBitOffset = 0;
-        pRasInfo->scanStride = scan * mult;
 #ifdef MITSHM
-    } else if (xpriv->lockType == X11SD_LOCK_BY_SHMEM) {
+    if (xpriv->lockType == X11SD_LOCK_BY_SHMEM) {
         if (xsdo->shmPMData.xRequestSent == JNI_TRUE) {
             /* need to sync before using shared mem pixmap
              if any x calls were issued for this pixmap */
@@ -964,8 +853,9 @@ static void X11SD_GetRasInfo(JNIEnv *env,
         pRasInfo->pixelStride = mult;
         pRasInfo->pixelBitOffset = 0;
         pRasInfo->scanStride = xsdo->shmPMData.bytesPerLine;
+    } else
 #endif /* MITSHM */
-    } else if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE) {
+    if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE) {
         int x, y, w, h;
         x = pRasInfo->bounds.x1;
         y = pRasInfo->bounds.y1;
@@ -1026,9 +916,7 @@ static void X11SD_Unlock(JNIEnv *env,
     X11SDOps *xsdo = (X11SDOps *) ops;
     X11RIPrivate *xpriv = (X11RIPrivate *) &(pRasInfo->priv);
 
-    if (xpriv->lockType == X11SD_LOCK_BY_DGA) {
-        (*pJDgaInfo->pReleaseLock)(env, xsdo->dgaDev, xsdo->drawable);
-    } else if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE &&
+    if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE &&
                xpriv->img != NULL)
     {
         if (xpriv->lockFlags & SD_LOCK_WRITE) {
@@ -1069,7 +957,6 @@ static void X11SD_Unlock(JNIEnv *env,
                       xpriv->img, 0, 0, x, y, w, h);
 #endif /* MITSHM */
 
-            (*pJDgaInfo->pXRequestSent)(env, xsdo->dgaDev, drawable);
         }
         X11SD_DisposeOrCacheXImage(xpriv->img);
         xpriv->img = (XImage *)NULL;
@@ -1392,47 +1279,6 @@ void X11SD_DisposeXImage(XImage * image) {
     }
 }
 
-static JDgaStatus
-    GetLockStub(JNIEnv *env, Display *display, void **dgaDev,
-                Drawable d, JDgaSurfaceInfo *pSurface,
-                jint lox, jint loy, jint hix, jint hiy)
-{
-    return JDGA_UNAVAILABLE;
-}
-
-static JDgaStatus
-    ReleaseLockStub(JNIEnv *env, void *dgaDev, Drawable d)
-{
-    return JDGA_FAILED;
-}
-
-static void
-    XRequestSentStub(JNIEnv *env, void *dgaDev, Drawable d)
-{
-}
-
-static void
-    LibDisposeStub(JNIEnv *env)
-{
-}
-
-static JDgaLibInfo DgaLibInfoStub = {
-    NULL,
-    GetLockStub,
-    ReleaseLockStub,
-    XRequestSentStub,
-    LibDisposeStub,
-};
-
-void X11SD_LibDispose(JNIEnv *env) {
-    AWT_LOCK();
-    if (pJDgaInfo != NULL) {
-        pJDgaInfo->pLibDispose(env);
-        pJDgaInfo = &DgaLibInfoStub;
-    }
-    AWT_UNLOCK();
-}
-
 void
 X11SD_DirectRenderNotify(JNIEnv *env, X11SDOps *xsdo)
 {
@@ -1441,7 +1287,6 @@ X11SD_DirectRenderNotify(JNIEnv *env, X11SDOps *xsdo)
         xsdo->shmPMData.xRequestSent = JNI_TRUE;
     }
 #endif /* MITSHM */
-    (*pJDgaInfo->pXRequestSent)(env, xsdo->dgaDev, xsdo->drawable);
     awt_output_flush();
 }
 

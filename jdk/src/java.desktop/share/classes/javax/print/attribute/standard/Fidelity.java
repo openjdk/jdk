@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
@@ -30,27 +31,27 @@ import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class Fidelity is a printing attribute class, an enumeration,
- * that indicates whether total fidelity to client supplied print request
- * attributes is required.
- * If FIDELITY_TRUE is specified and a service cannot print the job exactly
- * as specified it must reject the job.
- * If FIDELITY_FALSE is specified a reasonable attempt to print the job is
- * acceptable. If not supplied the default is FIDELITY_FALSE.
- *
- * <P>
- * <B>IPP Compatibility:</B> The IPP boolean value is "true" for FIDELITY_TRUE
- * and "false" for FIDELITY_FALSE. The category name returned by
- * {@code getName()} is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The {@code toString()} method
- * returns the IPP string representation of the attribute value.
- * See <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a> Section 15.1 for
- * a fuller description of the IPP fidelity attribute.
- *
+ * Class {@code Fidelity} is a printing attribute class, an enumeration, that
+ * indicates whether total fidelity to client supplied print request attributes
+ * is required. If {@code FIDELITY_TRUE} is specified and a service cannot print
+ * the job exactly as specified it must reject the job. If
+ * {@code FIDELITY_FALSE} is specified a reasonable attempt to print the job is
+ * acceptable. If not supplied the default is {@code FIDELITY_FALSE}.
+ * <p>
+ * <b>IPP Compatibility:</b> The IPP boolean value is "true" for
+ * {@code FIDELITY_TRUE} and "false" for {@code FIDELITY_FALSE}. The category
+ * name returned by {@code getName()} is the IPP attribute name. The
+ * enumeration's integer value is the IPP enum value. The {@code toString()}
+ * method returns the IPP string representation of the attribute value. See
+ * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a> Section 15.1 for a
+ * fuller description of the IPP fidelity attribute.
  */
 public final class Fidelity extends EnumSyntax
         implements PrintJobAttribute, PrintRequestAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 6320827847329172308L;
 
     /**
@@ -60,53 +61,60 @@ public final class Fidelity extends EnumSyntax
         FIDELITY_TRUE = new Fidelity(0);
 
     /**
-     * The printer should make reasonable attempts to print the job,
-     * even if it cannot print it exactly as specified.
+     * The printer should make reasonable attempts to print the job, even if it
+     * cannot print it exactly as specified.
      */
     public static final Fidelity
         FIDELITY_FALSE = new Fidelity(1);
 
     /**
-     * Construct a new fidelity enumeration value with the
-     * given integer value.
+     * Construct a new fidelity enumeration value with the given integer value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected Fidelity(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code Fidelity}.
+     */
     private static final String[] myStringTable = {
         "true",
         "false"
     };
 
-
+    /**
+     * The enumeration value table for class {@code Fidelity}.
+     */
     private static final Fidelity[] myEnumValueTable = {
         FIDELITY_TRUE,
         FIDELITY_FALSE
     };
 
     /**
-     * Returns the string table for class Fidelity.
+     * Returns the string table for class {@code Fidelity}.
      */
     protected String[] getStringTable() {
         return myStringTable;
     }
 
     /**
-     * Returns the enumeration value table for class Fidelity.
+     * Returns the enumeration value table for class {@code Fidelity}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return myEnumValueTable;
-    }   /**
+    }
+
+    /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class Fidelity the category is class Fidelity itself.
+     * <p>
+     * For class {@code Fidelity} the category is class
+     * {@code Fidelity} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return Fidelity.class;
@@ -115,14 +123,13 @@ public final class Fidelity extends EnumSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class Fidelity the category name is
+     * <p>
+     * For class {@code Fidelity} the category name is
      * {@code "ipp-attribute-fidelity"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "ipp-attribute-fidelity";
     }
-
 }

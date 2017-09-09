@@ -890,6 +890,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("printing native decoder state")
+
+     if (_verbose) {
+       Decoder::print_state_on(st);
+       st->cr();
+     }
+
   STEP("printing VM options")
 
      if (_verbose) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.Iterator;
 
 import javax.imageio.ImageIO;
@@ -34,10 +35,17 @@ import javax.imageio.stream.ImageOutputStream;
 
 /**
  * @test
- * @bug 4958064
- * @author Sergey Bylokhov
+ * @bug     4958064 8183349
+ * @summary Test verifies that when we try to forcefully run
+ *          prepareWriteSequence() where it is not supported
+ *          will ImageIO throws an UnsupportedOperationException
+ *          or not.
+ * @run     main CanWriteSequence
  */
 public final class CanWriteSequence {
+
+    private static File file;
+    private static FileOutputStream fos;
 
     public static void main(final String[] args) throws Exception {
         final IIORegistry registry = IIORegistry.getDefaultInstance();
@@ -54,25 +62,33 @@ public final class CanWriteSequence {
     }
 
     private static void test(final ImageWriter writer) throws Exception {
-        final File file = File.createTempFile("temp", ".img");
-        file.deleteOnExit();
-        final FileOutputStream fos = new FileOutputStream(file);
-        final ImageOutputStream ios = ImageIO.createImageOutputStream(fos);
-        writer.setOutput(ios);
-        final IIOMetadata data = writer.getDefaultStreamMetadata(null);
+        try {
+            file = File.createTempFile("temp", ".img");
+            fos = new FileOutputStream(file);
+            final ImageOutputStream ios = ImageIO.createImageOutputStream(fos);
+            writer.setOutput(ios);
+            final IIOMetadata data = writer.getDefaultStreamMetadata(null);
 
-        if (writer.canWriteSequence()) {
-            writer.prepareWriteSequence(data);
-        } else {
-            try {
+            if (writer.canWriteSequence()) {
                 writer.prepareWriteSequence(data);
-                throw new RuntimeException(
-                        "UnsupportedOperationException was not thrown");
-            } catch (final UnsupportedOperationException ignored) {
+            } else {
+                try {
+                    writer.prepareWriteSequence(data);
+                    throw new RuntimeException(
+                            "UnsupportedOperationException was not thrown");
+                } catch (final UnsupportedOperationException ignored) {
                 // expected
+                }
+            }
+        } finally {
+            writer.dispose();
+            if (file != null) {
+                if (fos != null) {
+                    fos.close();
+                }
+                Files.delete(file.toPath());
             }
         }
-        writer.dispose();
-        ios.close();
     }
 }
+

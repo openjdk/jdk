@@ -273,33 +273,62 @@ _hb_jdk_get_font_funcs (void)
 static void _do_nothing(void) {
 }
 
+static void _free_nothing(void*) {
+}
+
 static hb_blob_t *
 reference_table(hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data) {
 
   JDKFontInfo *jdkFontInfo = (JDKFontInfo*)user_data;
   JNIEnv* env = jdkFontInfo->env;
   jobject font2D = jdkFontInfo->font2D;
-  jsize length;
-  jbyte* buffer;
+  jsize length = 0;
+  void* buffer = NULL;
+  int cacheIdx = 0;
 
   // HB_TAG_NONE is 0 and is used to get the whole font file.
-  // It is not expected not be needed for JDK.
-  if (tag == 0) {
+  // It is not expected to be needed for JDK.
+  if (tag == 0 || jdkFontInfo->layoutTables == NULL) {
       return NULL;
   }
-  jbyteArray tableBytes = (jbyteArray)
-     env->CallObjectMethod(font2D, sunFontIDs.getTableBytesMID, tag);
-  if (tableBytes == NULL) {
-      return NULL;
+
+  for (cacheIdx=0; cacheIdx<LAYOUTCACHE_ENTRIES; cacheIdx++) {
+    if (tag == jdkFontInfo->layoutTables->entries[cacheIdx].tag) break;
   }
-  length = env->GetArrayLength(tableBytes);
-  buffer = (jbyte *)calloc(length, sizeof(jbyte));
-  env->GetByteArrayRegion(tableBytes, 0, length, buffer);
+
+  if (cacheIdx < LAYOUTCACHE_ENTRIES) { // if found
+      if (jdkFontInfo->layoutTables->entries[cacheIdx].len != -1) {
+          length = jdkFontInfo->layoutTables->entries[cacheIdx].len;
+          buffer = (void*)jdkFontInfo->layoutTables->entries[cacheIdx].ptr;
+      }
+  }
+
+  if (buffer == NULL) {
+      jbyteArray tableBytes = (jbyteArray)
+         env->CallObjectMethod(font2D, sunFontIDs.getTableBytesMID, tag);
+      if (tableBytes == NULL) {
+          return NULL;
+      }
+      length = env->GetArrayLength(tableBytes);
+      buffer = calloc(length, sizeof(jbyte));
+      env->GetByteArrayRegion(tableBytes, 0, length, (jbyte*)buffer);
+
+     if (cacheIdx >= LAYOUTCACHE_ENTRIES) { // not a cacheable table
+          return hb_blob_create((const char *)buffer, length,
+                                 HB_MEMORY_MODE_WRITABLE,
+                                 buffer, free);
+      } else {
+        jdkFontInfo->layoutTables->entries[cacheIdx].len = length;
+        jdkFontInfo->layoutTables->entries[cacheIdx].ptr = buffer;
+      }
+  }
 
   return hb_blob_create((const char *)buffer, length,
-                         HB_MEMORY_MODE_WRITABLE,
-                         buffer, free);
+                         HB_MEMORY_MODE_READONLY,
+                         NULL, _free_nothing);
 }
+
+
 
 hb_face_t*
 hb_jdk_face_create(JDKFontInfo *jdkFontInfo,

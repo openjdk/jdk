@@ -123,7 +123,7 @@ public class InvokeGraal {
             ProfilingInfo profilingInfo = graph.getProfilingInfo(method);
 
             /* The default class and configuration for compilation results. */
-            CompilationResult compilationResult = new CompilationResult();
+            CompilationResult compilationResult = new CompilationResult(graph.compilationId());
             CompilationResultBuilderFactory factory = CompilationResultBuilderFactory.Default;
 
             /* Invoke the whole Graal compilation pipeline. */

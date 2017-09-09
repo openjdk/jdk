@@ -23,6 +23,7 @@
 
  /*
  * @test
+ * @key headful
  * @bug 8162959
  * @summary Validate output of createMultiResolutionScreenCapture
  *          new API which returns MultiResolutionImage.

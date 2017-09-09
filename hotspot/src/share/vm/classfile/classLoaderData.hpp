@@ -364,6 +364,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   const char* loader_name();
 
   OopHandle add_handle(Handle h);
+  void remove_handle(OopHandle h);
   void init_handle_locked(OopHandle& pd, Handle h);  // used for concurrent access to ModuleEntry::_pd field
   void add_class(Klass* k, bool publicize = true);
   void remove_class(Klass* k);

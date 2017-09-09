@@ -275,7 +275,8 @@ private:
       address, bool,
       UniqueMetaspaceClosure::my_hash,   // solaris compiler doesn't like: primitive_hash<address>
       UniqueMetaspaceClosure::my_equals, // solaris compiler doesn't like: primitive_equals<address>
-    16384> _has_been_visited;
+      15889,                             // prime number
+      ResourceObj::C_HEAP> _has_been_visited;
 };
 
 #endif // SHARE_VM_MEMORY_METASPACE_ITERATOR_HPP

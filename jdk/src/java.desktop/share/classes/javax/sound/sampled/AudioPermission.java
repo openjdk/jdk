@@ -45,34 +45,30 @@ import java.security.BasicPermission;
  * <caption>Permission target name, what the permission allows, and associated
  * risks</caption>
  * <thead>
- * <tr>
- * <th>Permission Target Name</th>
- * <th>What the Permission Allows</th>
- * <th>Risks of Allowing this Permission</th>
- * </tr>
+ *   <tr>
+ *     <th>Permission Target Name
+ *     <th>What the Permission Allows
+ *     <th>Risks of Allowing this Permission
  * </thead>
  * <tbody>
- * <tr>
- * <td>play</td>
- * <td>Audio playback through the audio device or devices on the system.
- * Allows the application to obtain and manipulate lines and mixers for
- * audio playback (rendering).</td>
- * <td>In some cases use of this permission may affect other
- * applications because the audio from one line may be mixed with other audio
- * being played on the system, or because manipulation of a mixer affects the
- * audio for all lines using that mixer.</td>
- * </tr>
- *
- * <tr>
- * <td>record</td>
- * <td>Audio recording through the audio device or devices on the system.
- * Allows the application to obtain and manipulate lines and mixers for
- * audio recording (capture).</td>
- * <td>In some cases use of this permission may affect other
- * applications because manipulation of a mixer affects the audio for all lines
- * using that mixer.
- * This permission can enable an applet or application to eavesdrop on a user.</td>
- * </tr>
+ *   <tr>
+ *     <td>play
+ *     <td>Audio playback through the audio device or devices on the system.
+ *     Allows the application to obtain and manipulate lines and mixers for
+ *     audio playback (rendering).
+ *     <td>In some cases use of this permission may affect other
+ *     applications because the audio from one line may be mixed with other
+ *     audio being played on the system, or because manipulation of a mixer
+ *     affects the audio for all lines using that mixer.
+ *   <tr>
+ *     <td>record
+ *     <td>Audio recording through the audio device or devices on the system.
+ *     Allows the application to obtain and manipulate lines and mixers for
+ *     audio recording (capture).
+ *     <td>In some cases use of this permission may affect other applications
+ *     because manipulation of a mixer affects the audio for all lines using
+ *     that mixer. This permission can enable an applet or application to
+ *     eavesdrop on a user.
  * </tbody>
  * </table>
  *
@@ -81,6 +77,9 @@ import java.security.BasicPermission;
  */
 public class AudioPermission extends BasicPermission {
 
+    /**
+     * Use serialVersionUID from JDK 1.3 for interoperability.
+     */
     private static final long serialVersionUID = -5518053473477801126L;
 
     /**

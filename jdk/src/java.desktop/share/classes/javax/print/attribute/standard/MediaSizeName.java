@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,161 +22,192 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
-import java.util.Locale;
-
 import javax.print.attribute.EnumSyntax;
-import javax.print.attribute.Attribute;
 
 /**
- * Class MediaSizeName is a subclass of Media.
- * <P>
- * This attribute can be used instead of specifying MediaName or MediaTray.
+ * Class {@code MediaSizeName} is a subclass of {@code Media}.
  * <p>
- * Class MediaSizeName currently declares a few standard media
- * name values.
- * <P>
- * <B>IPP Compatibility:</B> MediaSizeName is a representation class for
- * values of the IPP "media" attribute which names media sizes.
- * The names of the media sizes correspond to those in the IPP 1.1 RFC
- * <a HREF="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a>
- *
+ * This attribute can be used instead of specifying {@code MediaName} or
+ * {@code MediaTray}.
+ * <p>
+ * Class {@code MediaSizeName} currently declares a few standard media name
+ * values.
+ * <p>
+ * <b>IPP Compatibility:</b> {@code MediaSizeName} is a representation class for
+ * values of the IPP "media" attribute which names media sizes. The names of the
+ * media sizes correspond to those in the IPP 1.1 RFC
+ * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a>
  */
 public class MediaSizeName extends Media {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 2778798329756942747L;
 
     /**
      * A0 size.
      */
     public static final MediaSizeName ISO_A0 = new MediaSizeName(0);
+
     /**
      * A1 size.
      */
     public static final MediaSizeName ISO_A1 = new MediaSizeName(1);
+
     /**
      * A2 size.
      */
     public static final MediaSizeName ISO_A2 = new MediaSizeName(2);
+
     /**
      * A3 size.
      */
     public static final MediaSizeName ISO_A3 = new MediaSizeName(3);
+
     /**
      * A4 size.
      */
     public static final MediaSizeName ISO_A4 = new MediaSizeName(4);
+
     /**
      * A5 size.
      */
     public static final MediaSizeName ISO_A5 = new MediaSizeName(5);
+
     /**
      * A6 size.
      */
     public static final MediaSizeName ISO_A6 = new MediaSizeName(6);
+
     /**
      * A7 size.
      */
     public static final MediaSizeName ISO_A7 = new MediaSizeName(7);
+
     /**
      * A8 size.
      */
     public static final MediaSizeName ISO_A8 = new MediaSizeName(8);
+
     /**
      * A9 size.
      */
     public static final MediaSizeName ISO_A9 = new MediaSizeName(9);
+
     /**
      * A10 size.
      */
     public static final MediaSizeName ISO_A10 = new MediaSizeName(10);
 
-   /**
+    /**
      * ISO B0 size.
      */
     public static final MediaSizeName ISO_B0 = new MediaSizeName(11);
+
     /**
      * ISO B1 size.
      */
     public static final MediaSizeName ISO_B1 = new MediaSizeName(12);
+
     /**
      * ISO B2 size.
      */
     public static final MediaSizeName ISO_B2 = new MediaSizeName(13);
+
     /**
      * ISO B3 size.
      */
     public static final MediaSizeName ISO_B3 = new MediaSizeName(14);
+
     /**
      * ISO B4 size.
      */
     public static final MediaSizeName ISO_B4 = new MediaSizeName(15);
+
     /**
      * ISO B5 size.
      */
     public static final MediaSizeName ISO_B5 = new MediaSizeName(16);
+
     /**
      * ISO B6 size.
      */
     public static final MediaSizeName ISO_B6 = new MediaSizeName(17);
+
     /**
      * ISO B7 size.
      */
     public static final MediaSizeName ISO_B7 = new MediaSizeName(18);
+
     /**
      * ISO B8 size.
      */
     public static final MediaSizeName ISO_B8 = new MediaSizeName(19);
+
     /**
      * ISO B9 size.
      */
     public static final MediaSizeName ISO_B9 = new MediaSizeName(20);
+
     /**
      * ISO B10 size.
      */
     public static final MediaSizeName ISO_B10 = new MediaSizeName(21);
 
-   /**
+    /**
      * JIS B0 size.
      */
     public static final MediaSizeName JIS_B0 = new MediaSizeName(22);
+
     /**
      * JIS B1 size.
      */
     public static final MediaSizeName JIS_B1 = new MediaSizeName(23);
+
     /**
      * JIS B2 size.
      */
     public static final MediaSizeName JIS_B2 = new MediaSizeName(24);
+
     /**
      * JIS B3 size.
      */
     public static final MediaSizeName JIS_B3 = new MediaSizeName(25);
+
     /**
      * JIS B4 size.
      */
     public static final MediaSizeName JIS_B4 = new MediaSizeName(26);
+
     /**
      * JIS B5 size.
      */
     public static final MediaSizeName JIS_B5 = new MediaSizeName(27);
+
     /**
      * JIS B6 size.
      */
     public static final MediaSizeName JIS_B6 = new MediaSizeName(28);
+
     /**
      * JIS B7 size.
      */
     public static final MediaSizeName JIS_B7 = new MediaSizeName(29);
+
     /**
      * JIS B8 size.
      */
     public static final MediaSizeName JIS_B8 = new MediaSizeName(30);
+
     /**
      * JIS B9 size.
      */
     public static final MediaSizeName JIS_B9 = new MediaSizeName(31);
+
     /**
      * JIS B10 size.
      */
@@ -186,198 +217,216 @@ public class MediaSizeName extends Media {
      * ISO C0 size.
      */
     public static final MediaSizeName ISO_C0 = new MediaSizeName(33);
+
     /**
      * ISO C1 size.
      */
     public static final MediaSizeName ISO_C1 = new MediaSizeName(34);
+
     /**
      * ISO C2 size.
      */
     public static final MediaSizeName ISO_C2 = new MediaSizeName(35);
+
     /**
      * ISO C3 size.
      */
     public static final MediaSizeName ISO_C3 = new MediaSizeName(36);
+
     /**
      * ISO C4 size.
      */
     public static final MediaSizeName ISO_C4 = new MediaSizeName(37);
+
     /**
      * ISO C5 size.
      */
     public static final MediaSizeName ISO_C5 = new MediaSizeName(38);
+
     /**
-     *   letter size.
+     * letter size.
      */
     public static final MediaSizeName ISO_C6 = new MediaSizeName(39);
+
     /**
-     *   letter size.
+     * letter size.
      */
     public static final MediaSizeName NA_LETTER = new MediaSizeName(40);
 
     /**
-     *  legal size .
+     * legal size.
      */
     public static final MediaSizeName NA_LEGAL = new MediaSizeName(41);
 
     /**
-     *  executive size .
+     * executive size.
      */
     public static final MediaSizeName EXECUTIVE = new MediaSizeName(42);
 
     /**
-     *  ledger size .
+     * ledger size.
      */
     public static final MediaSizeName LEDGER = new MediaSizeName(43);
 
     /**
-     *  tabloid size .
+     * tabloid size.
      */
     public static final MediaSizeName TABLOID = new MediaSizeName(44);
 
     /**
-     *  invoice size .
+     * invoice size.
      */
     public static final MediaSizeName INVOICE = new MediaSizeName(45);
 
     /**
-     *  folio size .
+     * folio size.
      */
     public static final MediaSizeName FOLIO = new MediaSizeName(46);
 
     /**
-     *  quarto size .
+     * quarto size.
      */
     public static final MediaSizeName QUARTO = new MediaSizeName(47);
 
     /**
-     *  Japanese Postcard size.
+     * Japanese Postcard size.
      */
     public static final MediaSizeName
         JAPANESE_POSTCARD = new MediaSizeName(48);
-   /**
-     *  Japanese Double Postcard size.
+
+    /**
+     * Japanese Double Postcard size.
      */
     public static final MediaSizeName
         JAPANESE_DOUBLE_POSTCARD = new MediaSizeName(49);
 
     /**
-     *  A size .
+     * A size.
      */
     public static final MediaSizeName A = new MediaSizeName(50);
 
     /**
-     *  B size .
+     * B size.
      */
     public static final MediaSizeName B = new MediaSizeName(51);
 
     /**
-     *  C size .
+     * C size.
      */
     public static final MediaSizeName C = new MediaSizeName(52);
 
     /**
-     *  D size .
+     * D size.
      */
     public static final MediaSizeName D = new MediaSizeName(53);
 
     /**
-     *  E size .
+     * E size.
      */
     public static final MediaSizeName E = new MediaSizeName(54);
 
     /**
-     *  ISO designated long size .
+     * ISO designated long size.
      */
     public static final MediaSizeName
         ISO_DESIGNATED_LONG = new MediaSizeName(55);
 
     /**
-     *  Italy envelope size .
+     * Italy envelope size.
      */
     public static final MediaSizeName
         ITALY_ENVELOPE = new MediaSizeName(56);  // DESIGNATED_LONG?
 
     /**
-     *  monarch envelope size .
+     * monarch envelope size.
      */
     public static final MediaSizeName
         MONARCH_ENVELOPE = new MediaSizeName(57);
+
     /**
-     * personal envelope size .
+     * personal envelope size.
      */
     public static final MediaSizeName
         PERSONAL_ENVELOPE = new MediaSizeName(58);
+
     /**
-     *  number 9 envelope size .
+     * number 9 envelope size.
      */
     public static final MediaSizeName
         NA_NUMBER_9_ENVELOPE = new MediaSizeName(59);
+
     /**
-     *  number 10 envelope size .
+     * number 10 envelope size.
      */
     public static final MediaSizeName
         NA_NUMBER_10_ENVELOPE = new MediaSizeName(60);
+
     /**
-     *  number 11 envelope size .
+     * number 11 envelope size.
      */
     public static final MediaSizeName
         NA_NUMBER_11_ENVELOPE = new MediaSizeName(61);
+
     /**
-     *  number 12 envelope size .
+     * number 12 envelope size.
      */
     public static final MediaSizeName
         NA_NUMBER_12_ENVELOPE = new MediaSizeName(62);
+
     /**
-     *  number 14 envelope size .
+     * number 14 envelope size.
      */
     public static final MediaSizeName
         NA_NUMBER_14_ENVELOPE = new MediaSizeName(63);
-   /**
-     *  6x9 North American envelope size.
+
+    /**
+     * 6x9 North American envelope size.
      */
     public static final MediaSizeName
         NA_6X9_ENVELOPE = new MediaSizeName(64);
-   /**
-     *  7x9 North American envelope size.
+
+    /**
+     * 7x9 North American envelope size.
      */
     public static final MediaSizeName
         NA_7X9_ENVELOPE = new MediaSizeName(65);
-   /**
-     *  9x11 North American envelope size.
+
+    /**
+     * 9x11 North American envelope size.
      */
     public static final MediaSizeName
         NA_9X11_ENVELOPE = new MediaSizeName(66);
+
     /**
-     *  9x12 North American envelope size.
+     * 9x12 North American envelope size.
      */
     public static final MediaSizeName
         NA_9X12_ENVELOPE = new MediaSizeName(67);
 
     /**
-     *  10x13 North American envelope size .
+     * 10x13 North American envelope size.
      */
     public static final MediaSizeName
         NA_10X13_ENVELOPE = new MediaSizeName(68);
     /**
-     *  10x14North American  envelope size .
+     * 10x14North American envelope size.
      */
     public static final MediaSizeName
         NA_10X14_ENVELOPE = new MediaSizeName(69);
     /**
-     *  10x15 North American envelope size.
+     * 10x15 North American envelope size.
      */
     public static final MediaSizeName
         NA_10X15_ENVELOPE = new MediaSizeName(70);
 
     /**
-     *  5x7 North American paper.
+     * 5x7 North American paper.
      */
     public static final MediaSizeName
         NA_5X7 = new MediaSizeName(71);
 
     /**
-     *  8x10 North American paper.
+     * 8x10 North American paper.
      */
     public static final MediaSizeName
         NA_8X10 = new MediaSizeName(72);
@@ -386,12 +435,15 @@ public class MediaSizeName extends Media {
      * Construct a new media size enumeration value with the given integer
      * value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected MediaSizeName(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code MediaSizeName}.
+     */
     private static final String[] myStringTable = {
                 "iso-a0",
                 "iso-a1",
@@ -468,6 +520,9 @@ public class MediaSizeName extends Media {
                 "na-8x10",
         };
 
+    /**
+     * The enumeration value table for class {@code MediaSizeName}.
+     */
     private static final MediaSizeName[] myEnumValueTable = {
                 ISO_A0,
                 ISO_A1,
@@ -544,9 +599,8 @@ public class MediaSizeName extends Media {
                 NA_8X10,
         };
 
-
     /**
-     * Returns the string table for class MediaSizeName.
+     * Returns the string table for class {@code MediaSizeName}.
      */
     protected String[] getStringTable()
     {
@@ -554,11 +608,9 @@ public class MediaSizeName extends Media {
     }
 
     /**
-     * Returns the enumeration value table for class MediaSizeName.
+     * Returns the enumeration value table for class {@code MediaSizeName}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
-
-
 }

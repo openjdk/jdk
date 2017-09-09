@@ -170,7 +170,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
           // G1 barrier needs uncompressed oop for region cross check.
           Register new_val = val;
           if (UseCompressedOops) {
-            new_val = rscratch1;
+            new_val = rscratch2;
             __ mov(new_val, val);
           }
           __ store_heap_oop(Address(r3, 0), val);
