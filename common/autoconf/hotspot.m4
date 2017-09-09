@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero shark minimal dtrace jvmti jvmci \
-    graal fprof vm-structs jni-check services management all-gcs nmt cds \
+    graal vm-structs jni-check services management all-gcs nmt cds \
     static-build link-time-opt aot"
 
 # All valid JVM variants
@@ -240,6 +240,25 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
   AC_SUBST(ENABLE_AOT)
 ])
 
+################################################################################
+# Allow to disable CDS
+#
+AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_CDS],
+[
+  AC_ARG_ENABLE([cds], [AS_HELP_STRING([--enable-cds@<:@=yes/no@:>@],
+      [enable class data sharing feature in non-minimal VM. Default is yes.])])
+
+  if test "x$enable_cds" = "x" || test "x$enable_cds" = "xyes"; then
+    ENABLE_CDS="true"
+  elif test "x$enable_cds" = "xno"; then
+    ENABLE_CDS="false"
+  else
+    AC_MSG_ERROR([Invalid value for --enable-cds: $enable_cds])
+  fi
+
+  AC_SUBST(ENABLE_CDS)
+])
+
 ###############################################################################
 # Set up all JVM features for each JVM variant.
 #
@@ -335,8 +354,12 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
     INCLUDE_GRAAL="true"
   else
-    # By default enable graal build where AOT is available
-    if test "x$ENABLE_AOT" = "xtrue"; then
+    # By default enable graal build on linux-x64 or where AOT is available.
+    # graal build requires jvmci.
+    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && \
+        (test "x$OPENJDK_TARGET_CPU" = "xx86_64" && \
+         test "x$OPENJDK_TARGET_OS" = "xlinux" || \
+         test "x$ENABLE_AOT" = "xtrue") ; then
       AC_MSG_RESULT([yes])
       JVM_FEATURES_graal="graal"
       INCLUDE_GRAAL="true"
@@ -374,7 +397,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti fprof vm-structs jni-check services management all-gcs nmt cds"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti vm-structs jni-check services management all-gcs nmt"
+  if test "x$ENABLE_CDS" = "xtrue"; then
+    NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
+  fi                                            
 
   # Enable features depending on variant.
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
