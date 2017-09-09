@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,21 +68,21 @@ public final class MarlinProperties {
     /**
      * Return the log(2) corresponding to subpixel on x-axis (
      *
-     * @return 1 (2 subpixels) < initial pixel size < 4 (256 subpixels)
+     * @return 0 (1 subpixels) < initial pixel size < 8 (256 subpixels)
      * (3 by default ie 8 subpixels)
      */
     public static int getSubPixel_Log2_X() {
-        return getInteger("sun.java2d.renderer.subPixel_log2_X", 3, 1, 8);
+        return getInteger("sun.java2d.renderer.subPixel_log2_X", 3, 0, 8);
     }
 
     /**
      * Return the log(2) corresponding to subpixel on y-axis (
      *
-     * @return 1 (2 subpixels) < initial pixel size < 8 (256 subpixels)
+     * @return 0 (1 subpixels) < initial pixel size < 8 (256 subpixels)
      * (3 by default ie 8 subpixels)
      */
     public static int getSubPixel_Log2_Y() {
-        return getInteger("sun.java2d.renderer.subPixel_log2_Y", 3, 1, 8);
+        return getInteger("sun.java2d.renderer.subPixel_log2_Y", 3, 0, 8);
     }
 
     /**
@@ -92,7 +92,18 @@ public final class MarlinProperties {
      * (5 by default ie 32x32 pixels)
      */
     public static int getTileSize_Log2() {
-        return getInteger("sun.java2d.renderer.tileSize_log2", 5, 3, 8);
+        return getInteger("sun.java2d.renderer.tileSize_log2", 5, 3, 10);
+    }
+
+    /**
+     * Return the log(2) corresponding to the tile width in pixels
+     *
+     * @return 3 (8 pixels) < tile with < 8 (256 pixels)
+     * (by default is given by the square tile size)
+     */
+    public static int getTileWidth_Log2() {
+        final int tileSize = getTileSize_Log2();
+        return getInteger("sun.java2d.renderer.tileWidth_log2", tileSize, 3, 10);
     }
 
     /**
@@ -166,6 +177,20 @@ public final class MarlinProperties {
         return getBoolean("sun.java2d.renderer.logUnsafeMalloc", "false");
     }
 
+    // quality settings
+
+    public static float getCubicDecD2() {
+        return getFloat("sun.java2d.renderer.cubic_dec_d2", 1.0f, 0.01f, 4.0f);
+    }
+
+    public static float getCubicIncD1() {
+        return getFloat("sun.java2d.renderer.cubic_inc_d1", 0.4f, 0.01f, 2.0f);
+    }
+
+    public static float getQuadDecD2() {
+        return getFloat("sun.java2d.renderer.quad_dec_d2", 0.5f, 0.01f, 4.0f);
+    }
+
     // system property utilities
     static boolean getBoolean(final String key, final String def) {
         return Boolean.valueOf(AccessController.doPrivileged(
@@ -197,7 +222,36 @@ public final class MarlinProperties {
     }
 
     static int align(final int val, final int norm) {
-        final int ceil = FloatMath.ceil_int( ((float)val) / norm);
+        final int ceil = FloatMath.ceil_int( ((float) val) / norm);
         return ceil * norm;
+    }
+
+    public static double getDouble(final String key, final double def,
+                                   final double min, final double max)
+    {
+        double value = def;
+        final String property = AccessController.doPrivileged(
+                                    new GetPropertyAction(key));
+
+        if (property != null) {
+            try {
+                value = Double.parseDouble(property);
+            } catch (NumberFormatException nfe) {
+                logInfo("Invalid value for " + key + " = " + property + " !");
+            }
+        }
+        // check for invalid values
+        if (value < min || value > max) {
+            logInfo("Invalid value for " + key + " = " + value
+                    + "; expect value in range[" + min + ", " + max + "] !");
+            value = def;
+        }
+        return value;
+    }
+
+    public static float getFloat(final String key, final float def,
+                                 final float min, final float max)
+    {
+        return (float)getDouble(key, def, min, max);
     }
 }

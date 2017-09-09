@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,70 +22,69 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
+import java.util.Calendar;
 import java.util.Date;
+
 import javax.print.attribute.Attribute;
 import javax.print.attribute.DateTimeSyntax;
 import javax.print.attribute.PrintJobAttribute;
 
 /**
- * Class DateTimeAtCreation is a printing attribute class, a date-time
+ * Class {@code DateTimeAtCreation} is a printing attribute class, a date-time
  * attribute, that indicates the date and time at which the Print Job was
  * created.
- * <P>
- * To construct a DateTimeAtCreation attribute from separate values of the year,
- * month, day, hour, minute, and so on, use a {@link java.util.Calendar
- * Calendar} object to construct a {@link java.util.Date Date} object, then use
- * the {@link java.util.Date Date} object to construct the DateTimeAtCreation
- * attribute. To convert a DateTimeAtCreation attribute to separate values of
- * the year, month, day, hour, minute, and so on, create a {@link
- * java.util.Calendar Calendar} object and set it to the {@link java.util.Date
- * Date} from the DateTimeAtCreation attribute.
- * <P>
- * <B>IPP Compatibility:</B> The information needed to construct an IPP
+ * <p>
+ * To construct a {@code DateTimeAtCreation} attribute from separate values of
+ * the year, month, day, hour, minute, and so on, use a
+ * {@link Calendar Calendar} object to construct a {@link Date Date} object,
+ * then use the {@link Date Date} object to construct the DateTimeAtCreation
+ * attribute. To convert a {@code DateTimeAtCreation} attribute to separate
+ * values of the year, month, day, hour, minute, and so on, create a
+ * {@link Calendar Calendar} object and set it to the {@link Date Date} from the
+ * {@code DateTimeAtCreation} attribute.
+ * <p>
+ * <b>IPP Compatibility:</b> The information needed to construct an IPP
  * "date-time-at-creation" attribute can be obtained as described above. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class DateTimeAtCreation   extends DateTimeSyntax
         implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -2923732231056647903L;
 
     /**
-     * Construct a new date-time at creation attribute with the given {@link
-     * java.util.Date Date} value.
+     * Construct a new date-time at creation attribute with the given
+     * {@link Date Date} value.
      *
-     * @param  dateTime  {@link java.util.Date Date} value.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code dateTime} is null.
+     * @param  dateTime {@link Date Date} value
+     * @throws NullPointerException if {@code dateTime} is {@code null}
      */
     public DateTimeAtCreation(Date dateTime) {
         super (dateTime);
     }
 
     /**
-     * Returns whether this date-time at creation attribute is equivalent to
-     * the passed in object. To be equivalent, all of the following conditions
-     * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class DateTimeAtCreation.
-     * <LI>
-     * This date-time at creation attribute's {@link java.util.Date Date} value
-     * and {@code object}'s {@link java.util.Date Date} value are equal.
-     * </OL>
+     * Returns whether this date-time at creation attribute is equivalent to the
+     * passed in object. To be equivalent, all of the following conditions must
+     * be true:
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code DateTimeAtCreation}.
+     *   <li>This date-time at creation attribute's {@link Date Date}
+     *   value and {@code object}'s {@link Date Date} value are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this date-time
-     *          at creation attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this date-time at
+     *         creation attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return(super.equals (object) &&
@@ -95,12 +94,12 @@ public final class DateTimeAtCreation   extends DateTimeSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class DateTimeAtCreation, the category is class
-     * DateTimeAtCreation itself.
+     * <p>
+     * For class {@code DateTimeAtCreation}, the category is class
+     * {@code DateTimeAtCreation} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return DateTimeAtCreation.class;
@@ -109,14 +108,13 @@ public final class DateTimeAtCreation   extends DateTimeSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class DateTimeAtCreation, the category name is
+     * <p>
+     * For class {@code DateTimeAtCreation}, the category name is
      * {@code "date-time-at-creation"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "date-time-at-creation";
     }
-
 }

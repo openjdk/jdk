@@ -85,6 +85,7 @@ DictionaryEntry* Dictionary::new_entry(unsigned int hash, InstanceKlass* klass) 
 
 void Dictionary::free_entry(DictionaryEntry* entry) {
   // avoid recursion when deleting linked list
+  // pd_set is accessed during a safepoint.
   while (entry->pd_set() != NULL) {
     ProtectionDomainEntry* to_delete = entry->pd_set();
     entry->set_pd_set(to_delete->next());
@@ -101,7 +102,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   if (protection_domain == instance_klass()->protection_domain()) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
-    for (ProtectionDomainEntry* current = _pd_set;
+    for (ProtectionDomainEntry* current = pd_set_acquire();
                                 current != NULL;
                                 current = current->next()) {
       if (current->protection_domain() == protection_domain) {
@@ -121,7 +122,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     return true;
   }
 
-  for (ProtectionDomainEntry* current = _pd_set;
+  for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
                               current = current->next()) {
     if (current->protection_domain() == protection_domain) return true;
@@ -135,12 +136,12 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_
   if (!contains_protection_domain(protection_domain())) {
     ProtectionDomainCacheEntry* entry = SystemDictionary::cache_get(protection_domain);
     ProtectionDomainEntry* new_head =
-                new ProtectionDomainEntry(entry, _pd_set);
+                new ProtectionDomainEntry(entry, pd_set());
     // Warning: Preserve store ordering.  The SystemDictionary is read
     //          without locks.  The new ProtectionDomainEntry must be
     //          complete before other threads can be allowed to see it
     //          via a store to _pd_set.
-    OrderAccess::release_store_ptr(&_pd_set, new_head);
+    release_set_pd_set(new_head);
   }
   LogTarget(Trace, protectiondomain) lt;
   if (lt.is_enabled()) {
@@ -365,11 +366,21 @@ void Dictionary::reorder_dictionary_for_sharing() {
   for (int i = 0; i < table_size(); ++i) {
     DictionaryEntry* p = bucket(i);
     while (p != NULL) {
-      DictionaryEntry* tmp;
-      tmp = p->next();
-      p->set_next(master_list);
-      master_list = p;
-      p = tmp;
+      DictionaryEntry* next = p->next();
+      InstanceKlass*ik = p->instance_klass();
+      // we cannot include signed classes in the archive because the certificates
+      // used during dump time may be different than those used during
+      // runtime (due to expiration, etc).
+      if (ik->signers() != NULL) {
+        ResourceMark rm;
+        tty->print_cr("Preload Warning: Skipping %s from signed JAR",
+                       ik->name()->as_C_string());
+        free_entry(p);
+      } else {
+        p->set_next(master_list);
+        master_list = p;
+      }
+      p = next;
     }
     set_entry(i, NULL);
   }

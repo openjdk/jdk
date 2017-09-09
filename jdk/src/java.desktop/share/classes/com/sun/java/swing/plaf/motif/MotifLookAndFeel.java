@@ -1246,6 +1246,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                    "RIGHT", "selectChild",
                 "KP_RIGHT", "selectChild",
                    "ENTER", "return",
+                   "ctrl ENTER", "return",
                    "SPACE", "return"
             },
 

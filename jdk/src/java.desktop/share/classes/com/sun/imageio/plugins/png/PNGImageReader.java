@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,6 +472,14 @@ public class PNGImageReader extends ImageReader {
             text = new String(b, "UTF8");
         }
         metadata.iTXt_text.add(text);
+
+        // Check if the text chunk contains image creation time
+        if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+            // Update Standard/Document/ImageCreationTime from text chunk
+            int index = metadata.iTXt_text.size() - 1;
+            metadata.decodeImageCreationTimeFromTextChunk(
+                    metadata.iTXt_text.listIterator(index));
+        }
     }
 
     private void parse_pHYs_chunk() throws IOException {
@@ -555,6 +563,14 @@ public class PNGImageReader extends ImageReader {
         byte[] b = new byte[chunkLength - keyword.length() - 1];
         stream.readFully(b);
         metadata.tEXt_text.add(new String(b, "ISO-8859-1"));
+
+        // Check if the text chunk contains image creation time
+        if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+            // Update Standard/Document/ImageCreationTime from text chunk
+            int index = metadata.tEXt_text.size() - 1;
+            metadata.decodeImageCreationTimeFromTextChunk(
+                    metadata.tEXt_text.listIterator(index));
+        }
     }
 
     private void parse_tIME_chunk() throws IOException {
@@ -644,6 +660,14 @@ public class PNGImageReader extends ImageReader {
         byte[] b = new byte[chunkLength - keyword.length() - 2];
         stream.readFully(b);
         metadata.zTXt_text.add(new String(inflate(b), "ISO-8859-1"));
+
+        // Check if the text chunk contains image creation time
+        if (keyword.equals(PNGMetadata.tEXt_creationTimeKey)) {
+            // Update Standard/Document/ImageCreationTime from text chunk
+            int index = metadata.zTXt_text.size() - 1;
+            metadata.decodeImageCreationTimeFromTextChunk(
+                    metadata.zTXt_text.listIterator(index));
+        }
     }
 
     private void readMetadata() throws IIOException {
@@ -713,8 +737,32 @@ public class PNGImageReader extends ImageReader {
                 switch (chunkType) {
                 case IDAT_TYPE:
                     // If chunk type is 'IDAT', we've reached the image data.
-                    stream.skipBytes(-8);
-                    imageStartPosition = stream.getStreamPosition();
+                    if (imageStartPosition == -1L) {
+                        /*
+                         * PNGs may contain multiple IDAT chunks containing
+                         * a portion of image data. We store the position of
+                         * the first IDAT chunk and continue with iteration
+                         * of other chunks that follow image data.
+                         */
+                        imageStartPosition = stream.getStreamPosition() - 8;
+                    }
+                    // Move to the CRC byte location.
+                    stream.skipBytes(chunkLength);
+                    break;
+                case IEND_TYPE:
+                    /*
+                     * If the chunk type is 'IEND', we've reached end of image.
+                     * Seek to the first IDAT chunk for subsequent decoding.
+                     */
+                    stream.seek(imageStartPosition);
+
+                    /*
+                     * flushBefore discards the portion of the stream before
+                     * the indicated position. Hence this should be used after
+                     * we complete iteration over available chunks including
+                     * those that appear after the IDAT.
+                     */
+                    stream.flushBefore(stream.getStreamPosition());
                     break loop;
                 case PLTE_TYPE:
                     parse_PLTE_chunk(chunkLength);
@@ -796,7 +844,6 @@ public class PNGImageReader extends ImageReader {
                     throw new IIOException("Failed to read a chunk of type " +
                             chunkType);
                 }
-                stream.flushBefore(stream.getStreamPosition());
             }
         } catch (IOException e) {
             throw new IIOException("Error reading PNG metadata", e);

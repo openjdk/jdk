@@ -46,6 +46,9 @@ public:
   OopHandle(oop* w) : _obj(w) {}
 
   oop resolve() const { return (_obj == NULL) ? (oop)NULL : *_obj; }
+
+  // Used only for removing handle.
+  oop* ptr_raw() { return _obj; }
 };
 
 #endif // SHARE_VM_OOPS_OOPHANDLE_HPP

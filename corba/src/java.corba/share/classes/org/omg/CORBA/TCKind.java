@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,175 +237,175 @@ public class TCKind {
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_null</code>.
+     * initialized with {@code TCKind._tk_null}.
      */
     public static final TCKind tk_null = new TCKind(_tk_null);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_void</code>.
+     * initialized with {@code TCKind._tk_void}.
      */
     public static final TCKind tk_void = new TCKind(_tk_void);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_short</code>.
+     * initialized with {@code TCKind._tk_short}.
      */
     public static final TCKind tk_short = new TCKind(_tk_short);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_long</code>.
+     * initialized with {@code TCKind._tk_long}.
      */
     public static final TCKind tk_long = new TCKind(_tk_long);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_ushort</code>.
+     * initialized with {@code TCKind._tk_ushort}.
      */
     public static final TCKind tk_ushort = new TCKind(_tk_ushort);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_ulong</code>.
+     * initialized with {@code TCKind._tk_ulong}.
      */
     public static final TCKind tk_ulong = new TCKind(_tk_ulong);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_float</code>.
+     * initialized with {@code TCKind._tk_float}.
      */
     public static final TCKind tk_float = new TCKind(_tk_float);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_double</code>.
+     * initialized with {@code TCKind._tk_double}.
      */
     public static final TCKind tk_double = new TCKind(_tk_double);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_boolean</code>.
+     * initialized with {@code TCKind._tk_boolean}.
      */
     public static final TCKind tk_boolean = new TCKind(_tk_boolean);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_char</code>.
+     * initialized with {@code TCKind._tk_char}.
      */
     public static final TCKind tk_char = new TCKind(_tk_char);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_octet</code>.
+     * initialized with {@code TCKind._tk_octet}.
      */
     public static final TCKind tk_octet = new TCKind(_tk_octet);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_any</code>.
+     * initialized with {@code TCKind._tk_any}.
      */
     public static final TCKind tk_any = new TCKind(_tk_any);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_TypeCode</code>.
+     * initialized with {@code TCKind._tk_TypeCode}.
      */
     public static final TCKind tk_TypeCode = new TCKind(_tk_TypeCode);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_Principal</code>.
+     * initialized with {@code TCKind._tk_Principal}.
      */
     public static final TCKind tk_Principal = new TCKind(_tk_Principal);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_objref</code>.
+     * initialized with {@code TCKind._tk_objref}.
      */
     public static final TCKind tk_objref = new TCKind(_tk_objref);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_struct</code>.
+     * initialized with {@code TCKind._tk_struct}.
      */
     public static final TCKind tk_struct = new TCKind(_tk_struct);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_union</code>.
+     * initialized with {@code TCKind._tk_union}.
      */
     public static final TCKind tk_union = new TCKind(_tk_union);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_enum</code>.
+     * initialized with {@code TCKind._tk_enum}.
      */
     public static final TCKind tk_enum = new TCKind(_tk_enum);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_string</code>.
+     * initialized with {@code TCKind._tk_string}.
      */
     public static final TCKind tk_string = new TCKind(_tk_string);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_sequence</code>.
+     * initialized with {@code TCKind._tk_sequence}.
      */
     public static final TCKind tk_sequence = new TCKind(_tk_sequence);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_array</code>.
+     * initialized with {@code TCKind._tk_array}.
      */
     public static final TCKind tk_array = new TCKind(_tk_array);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_alias</code>.
+     * initialized with {@code TCKind._tk_alias}.
      */
     public static final TCKind tk_alias = new TCKind(_tk_alias);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_except</code>.
+     * initialized with {@code TCKind._tk_except}.
      */
     public static final TCKind tk_except = new TCKind(_tk_except);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_longlong</code>.
+     * initialized with {@code TCKind._tk_longlong}.
      */
     public static final TCKind tk_longlong = new TCKind(_tk_longlong);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_ulonglong</code>.
+     * initialized with {@code TCKind._tk_ulonglong}.
      */
     public static final TCKind tk_ulonglong = new TCKind(_tk_ulonglong);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_longdouble</code>.
+     * initialized with {@code TCKind._tk_longdouble}.
      */
     public static final TCKind tk_longdouble = new TCKind(_tk_longdouble);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_wchar</code>.
+     * initialized with {@code TCKind._tk_wchar}.
      */
     public static final TCKind tk_wchar = new TCKind(_tk_wchar);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_wstring</code>.
+     * initialized with {@code TCKind._tk_wstring}.
      */
     public static final TCKind tk_wstring = new TCKind(_tk_wstring);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_fixed</code>.
+     * initialized with {@code TCKind._tk_fixed}.
      */
     public static final TCKind tk_fixed = new TCKind(_tk_fixed);
 
@@ -413,26 +413,26 @@ public class TCKind {
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_value</code>.
+     * initialized with {@code TCKind._tk_value}.
      */
     public static final TCKind tk_value = new TCKind(_tk_value);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_value_box</code>.
+     * initialized with {@code TCKind._tk_value_box}.
      */
     public static final TCKind tk_value_box = new TCKind(_tk_value_box);
     // orbos 98-01-18: Objects By Value -- end
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_native</code>.
+     * initialized with {@code TCKind._tk_native}.
      */
     public static final TCKind tk_native = new TCKind(_tk_native);
 
     /**
      * The <code>TCKind</code> constant whose <code>value</code> field is
-     * initialized with <code>TCKind._tk_abstract_interface</code>.
+     * initialized with {@code TCKind._tk_abstract_interface}.
      */
     public static final TCKind tk_abstract_interface = new TCKind(_tk_abstract_interface);
 

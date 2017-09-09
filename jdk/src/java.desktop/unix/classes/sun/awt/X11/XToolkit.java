@@ -2174,8 +2174,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Returns one of XConstants: NotUseful, WhenMapped or Always.
      * If backing store is not available on at least one screen, or
-     * java2d uses DGA(which conflicts with backing store) on at least one screen,
-     * or the string system property "sun.awt.backingStore" is neither "Always"
+     * the string system property "sun.awt.backingStore" is neither "Always"
      * nor "WhenMapped", then the method returns XConstants.NotUseful.
      * Otherwise, if the system property "sun.awt.backingStore" is "WhenMapped",
      * then the method returns XConstants.WhenMapped.
@@ -2216,16 +2215,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                                    ( backingStoreType == XConstants.NotUseful ? "NotUseful"
                                      : backingStoreType == XConstants.WhenMapped ?
                                      "WhenMapped" : "Always") );
-        }
-
-        if (sun.java2d.x11.X11SurfaceData.isDgaAvailable()) {
-            backingStoreType = XConstants.NotUseful;
-
-            if (backingStoreLog.isLoggable(PlatformLogger.Level.CONFIG)) {
-                backingStoreLog.config("DGA is available, backingStore=NotUseful");
-            }
-
-            return;
         }
 
         awtLock();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
 
 void transport_initialize(void);
 void transport_reset(void);
-jdwpError transport_startTransport(jboolean isServer, char *name, char *address, long timeout);
+jdwpError transport_startTransport(jboolean isServer, char *name, char *address,
+                                   long timeout, char *allowed_peers);
 
 jint transport_receivePacket(jdwpPacket *);
 jint transport_sendPacket(jdwpPacket *);

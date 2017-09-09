@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,14 @@ package javax.sound.sampled;
  */
 public class UnsupportedAudioFileException extends Exception {
 
+    /**
+     * Use serialVersionUID from JDK 1.3 for interoperability.
+     */
     private static final long serialVersionUID = -139127412623160368L;
 
     /**
-     * Constructs an {@code UnsupportedAudioFileException} that has
-     * {@code null} as its error detail message.
+     * Constructs an {@code UnsupportedAudioFileException} that has {@code null}
+     * as its error detail message.
      */
     public UnsupportedAudioFileException() {
         super();

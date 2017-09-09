@@ -109,6 +109,16 @@ static jfieldID FID_folderType;
 static IMalloc* pMalloc;
 static IShellFolder* pDesktop;
 
+// locale sensitive folder info
+static jfieldID FID_lsName;
+static jfieldID FID_lsSize;
+static jfieldID FID_lsType;
+static jfieldID FID_lsDate;
+static jstring lsName;
+static jstring lsSize;
+static jstring lsType;
+static jstring lsDate;
+
 // Some macros from awt.h, because it is not included in release
 #ifndef IS_WIN2000
 #define IS_WIN2000 (LOBYTE(LOWORD(::GetVersion())) >= 5)
@@ -246,6 +256,36 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolder2_initIDs
     CHECK_NULL(FID_displayName);
     FID_folderType = env->GetFieldID(cls, "folderType", "Ljava/lang/String;");
     CHECK_NULL(FID_folderType);
+
+    FID_lsName = env->GetStaticFieldID(cls, "FNAME", "Ljava/lang/String;");
+    CHECK_NULL(FID_lsName);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return;
+    }
+    FID_lsSize = env->GetStaticFieldID(cls, "FSIZE", "Ljava/lang/String;");
+    CHECK_NULL(FID_lsSize);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return;
+    }
+    FID_lsType = env->GetStaticFieldID(cls, "FTYPE", "Ljava/lang/String;");
+    CHECK_NULL(FID_lsType);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return;
+    }
+    FID_lsDate = env->GetStaticFieldID(cls, "FDATE", "Ljava/lang/String;");
+    CHECK_NULL(FID_lsDate);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return;
+    }
+
+    lsName = (jstring) (env->NewGlobalRef(env->GetStaticObjectField(cls, FID_lsName)));
+    lsSize = (jstring) (env->NewGlobalRef(env->GetStaticObjectField(cls, FID_lsSize)));
+    lsType = (jstring) (env->NewGlobalRef(env->GetStaticObjectField(cls, FID_lsType)));
+    lsDate = (jstring) (env->NewGlobalRef(env->GetStaticObjectField(cls, FID_lsDate)));
 }
 
 
@@ -1105,11 +1145,21 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
  */
 static jobject CreateColumnInfo(JNIEnv *pEnv,
                                 jclass *pClass, jmethodID *pConstructor,
-                                SHELLDETAILS *psd, ULONG visible)
+                                int colNum, SHELLDETAILS *psd, ULONG visible)
 {
     jstring str = jstringFromSTRRET(pEnv, NULL, &(psd->str));
     JNU_CHECK_EXCEPTION_RETURN(pEnv, NULL);
 
+    // Convert ShellFolder column names to locale-sensitive names
+    if (colNum == 0) {
+        str = lsName;
+    } else if (colNum == 1) {
+        str = lsSize;
+    } else if (colNum == 2) {
+        str = lsType;
+    } else if (colNum == 3) {
+        str = lsDate;
+    }
     return pEnv->NewObject(*pClass, *pConstructor,
                     str,
                     (jint)(psd->cxChar * 6), // TODO: is 6 OK for converting chars to pixels?
@@ -1178,7 +1228,7 @@ JNIEXPORT jobjectArray JNICALL
                     if(!(csFlags & SHCOLSTATE_HIDDEN)) {
                         jobject column = CreateColumnInfo(env,
                                             &columnClass, &columnConstructor,
-                                            &sd, csFlags & SHCOLSTATE_ONBYDEFAULT);
+                                            colNum, &sd, csFlags & SHCOLSTATE_ONBYDEFAULT);
                         if(!column){
                             pIShellFolder2->Release();
                             return NULL;
@@ -1222,7 +1272,7 @@ JNIEXPORT jobjectArray JNICALL
             if (SUCCEEDED (hr)) {
                 jobject column = CreateColumnInfo(env,
                                     &columnClass, &columnConstructor,
-                                    &sd, 1);
+                                    colNum, &sd, 1);
                 if(!column){
                     pIShellDetails->Release();
                     return NULL;

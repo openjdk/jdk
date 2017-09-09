@@ -328,9 +328,9 @@ define SetupRunJtregTestBody
     $1_JTREG_JOBS := 50
   endif
 
-  # Make sure MaxRAMFraction is high enough to not cause OOM or swapping since
+  # Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since
   # we may end up with a lot of JVM's
-  $1_JTREG_MAX_RAM_FRACTION := $$(shell $$(EXPR) $$($1_JTREG_JOBS) \* 4)
+  $1_JTREG_MAX_RAM_PERCENTAGE := $$(shell $$(EXPR) 25 / $$($1_JTREG_JOBS))
 
   JTREG_TIMEOUT ?= 4
   JTREG_VERBOSE ?= fail,error,summary
@@ -344,7 +344,7 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
       -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT) \
-      -vmoption:-XX:MaxRAMFraction=$$($1_JTREG_MAX_RAM_FRACTION)
+      -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE)
 
   $1_JTREG_BASIC_OPTIONS += -automatic -keywords:\!ignore -ignore:quiet
 

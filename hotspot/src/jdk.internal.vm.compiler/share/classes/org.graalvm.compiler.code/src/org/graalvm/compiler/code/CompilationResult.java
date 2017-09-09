@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.util.EconomicSet;
 
@@ -190,6 +191,8 @@ public class CompilationResult {
 
     private final String name;
 
+    private final CompilationIdentifier compilationId;
+
     /**
      * The buffer containing the emitted machine code.
      */
@@ -222,21 +225,26 @@ public class CompilationResult {
 
     private boolean isImmutablePIC;
 
-    public CompilationResult() {
-        this(null, false);
+    public CompilationResult(CompilationIdentifier compilationId) {
+        this(compilationId, compilationId.toString(CompilationIdentifier.Verbosity.NAME), false);
+    }
+
+    public CompilationResult(CompilationIdentifier compilationId, String name) {
+        this(compilationId, name, false);
+    }
+
+    public CompilationResult(CompilationIdentifier compilationId, boolean isImmutablePIC) {
+        this(compilationId, null, isImmutablePIC);
+    }
+
+    public CompilationResult(CompilationIdentifier compilationId, String name, boolean isImmutablePIC) {
+        this.compilationId = compilationId;
+        this.name = name;
+        this.isImmutablePIC = isImmutablePIC;
     }
 
     public CompilationResult(String name) {
-        this(name, false);
-    }
-
-    public CompilationResult(boolean isImmutablePIC) {
-        this(null, isImmutablePIC);
-    }
-
-    public CompilationResult(String name, boolean isImmutablePIC) {
-        this.name = name;
-        this.isImmutablePIC = isImmutablePIC;
+        this(null, name);
     }
 
     @Override
@@ -266,6 +274,7 @@ public class CompilationResult {
                 this.totalFrameSize == that.totalFrameSize &&
                 this.targetCodeSize == that.targetCodeSize &&
                 Objects.equals(this.name, that.name) &&
+                Objects.equals(this.compilationId, that.compilationId) &&
                 Objects.equals(this.annotations, that.annotations) &&
                 Objects.equals(this.dataSection, that.dataSection) &&
                 Objects.equals(this.exceptionHandlers, that.exceptionHandlers) &&
@@ -668,6 +677,10 @@ public class CompilationResult {
 
     public String getName() {
         return name;
+    }
+
+    public CompilationIdentifier getCompilationId() {
+        return compilationId;
     }
 
     public void setHasUnsafeAccess(boolean hasUnsafeAccess) {

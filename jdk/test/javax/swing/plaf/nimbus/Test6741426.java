@@ -25,12 +25,12 @@
    @bug 6741426
    @summary Tests reusing Nimbus borders across different components (JComboBox border set on a JTextField)
    @author Peter Zhelezniakov
-   @modules java.desktop/com.sun.java.swing.plaf.nimbus
    @run main Test6741426
 */
 
-import com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel;
 import javax.swing.*;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
+
 import java.awt.image.BufferedImage;
 
 

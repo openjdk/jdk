@@ -41,20 +41,44 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
+
 /*
  * @test
  * @key headful
- * @bug 8134917
+ * @bug 8134917 8139050
  * @summary [macosx] JOptionPane doesn't receive mouse events when opened from a drop event
- * @author Alexandr Scherbatiy
+ * @run main MissingEventsOnModalDialogTest RUN_PROCESS
  */
 public class MissingEventsOnModalDialogTest {
 
+    private static final String RUN_PROCESS = "RUN_PROCESS";
+    private static final String RUN_TEST = "RUN_TEST";
+    private static boolean exception = false;
     private static volatile boolean passed = false;
 
     public static void main(String[] args) throws Exception {
-        Frame sourceFrame = createFrame("Source Frame", 0, 0);
-        Frame targetFrame = createFrame("Target Frame", 250, 250);
+        String command = args.length < 1 ? RUN_TEST : args[0];
+        switch (command) {
+            case RUN_PROCESS:
+                runProcess();
+                break;
+            case RUN_TEST:
+                runTest();
+                break;
+            default:
+                throw new RuntimeException("Unknown command: " + command);
+        }
+    }
+
+    private static void runTest() throws Exception {
+        Frame sourceFrame = createFrame("Source Frame", 100, 100);
+        Frame targetFrame = createFrame("Target Frame", 350, 350);
 
         DragSource defaultDragSource
                 = DragSource.getDefaultDragSource();
@@ -235,6 +259,52 @@ public class MissingEventsOnModalDialogTest {
 
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void runProcess() throws Exception {
+        String javaPath = System.getProperty("java.home", "");
+        String command = javaPath + File.separator + "bin" + File.separator + "java"
+                + " " + MissingEventsOnModalDialogTest.class.getName() + " " + RUN_TEST;
+
+        Process process = Runtime.getRuntime().exec(command);
+        boolean processExit = process.waitFor(20, TimeUnit.SECONDS);
+
+        StringBuilder inStream = new StringBuilder();
+        StringBuilder errStream = new StringBuilder();
+        checkErrors(process.getErrorStream(), errStream);
+        checkErrors(process.getInputStream(), inStream);
+
+        if (exception) {
+            System.out.println(inStream);
+            System.err.println(errStream);
+            throw new RuntimeException("Exception in the output!");
+        }
+
+        if (!processExit) {
+            process.destroy();
+            throw new RuntimeException(""
+                    + "The sub process has not exited!");
+        }
+    }
+
+    private static boolean containsError(String line) {
+        line = line.toLowerCase();
+        return line.contains("exception") || line.contains("error")
+                || line.contains("selector");
+    }
+
+    private static void checkErrors(InputStream in, StringBuilder stream) throws IOException {
+        try (BufferedReader bufferedReader
+                = new BufferedReader(new InputStreamReader(in))) {
+
+            String line = null;
+            while ((line = bufferedReader.readLine()) != null) {
+                if (!exception) {
+                    exception = containsError(line);
+                }
+                stream.append(line).append("\n");
+            }
         }
     }
 }

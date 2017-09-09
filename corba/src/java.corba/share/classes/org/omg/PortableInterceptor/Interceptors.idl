@@ -584,7 +584,7 @@ module PortableInterceptor {
    * <caption style="display:none">Shows the validity of each attribute or operation</caption>
    *  <thead>
    *    <tr>
-   *      <th>&nbsp;</th>
+   *      <td></td>
    *      <th id="send_req">send_request</th>
    *      <th id="send_poll">send_poll</th>
    *      <th id="rec_reply">receive_reply</th>
@@ -592,182 +592,176 @@ module PortableInterceptor {
    *      <th id="rec_oth">receive_other</th>
    *    </tr>
    *  </thead>
-   *  <tbody>
+   *  <tbody style="text-align:left">
    *
    *  <tr>
-   *     <td id="ri" colspan=6><i>Inherited from RequestInfo:</i></td>
+   *     <th id="ri" colspan=6><i>Inherited from RequestInfo:</i></th>
    *  </tr>
    * 
-   *  <tr><th id="req_id"><p style="text-align:left">request_id</p></th>
+   *  <tr><th id="req_id">request_id</th>
    *  <td headers="ri req_id send_req">yes</td> 
    *  <td headers="ri req_id send_poll">yes</td> 
    *  <td headers="ri req_id rec_reply">yes</td> 
    *  <td headers="ri req_id rec_ex">yes</td> 
    *  <td headers="ri req_id rec_oth">yes</td></tr>
    * 
-   *  <tr><th id="op"><p style="text-align:left">operation</p></th>
+   *  <tr><th id="op">operation</th>
    *  <td headers="ri op send_req">yes</td> 
    *  <td headers="ri op send_poll">yes</td> 
    *  <td headers="ri op rec_reply">yes</td> 
    *  <td headers="ri op rec_ex">yes</td> 
    *  <td headers="ri op rec_oth">yes</td></tr>
    *
-   *  <tr><th id="arg"><p style="text-align:left">arguments</p></th>
+   *  <tr><th id="arg">arguments</th>
    *  <td headers="ri arg send_req">yes<sub>1</sub></td>
    *  <td headers="ri arg send_poll">no </td> 
    *  <td headers="ri arg rec_reply">yes</td> 
    *  <td headers="ri arg rec_ex">no </td> 
    *  <td headers="ri arg rec_oth">no </td></tr>
    *
-   *  <tr><th id="exc"><p style="text-align:left">exceptions</p></th>
+   *  <tr><th id="exc">exceptions</th>
    *  <td headers="ri exc send_req">yes</td> 
    *  <td headers="ri exc send_poll">no </td> 
    *  <td headers="ri exc rec_reply">yes</td> 
    *  <td headers="ri exc rec_ex">yes</td> 
    *  <td headers="ri exc rec_oth">yes</td></tr>
    *
-   *  <tr><th id="con"><p style="text-align:left">contexts</p></th>
+   *  <tr><th id="con">contexts</th>
    *  <td headers="ri con send_req">yes</td> 
    *  <td headers="ri con send_poll">no </td> 
    *  <td headers="ri con rec_reply">yes</td> 
    *  <td headers="ri con rec_ex">yes</td> 
    *  <td headers="ri con rec_oth">yes</td></tr>
    *
-   *  <tr><th id="op_con"><p style="text-align:left">operation_context</p></th>
+   *  <tr><th id="op_con">operation_context</th>
    *  <td headers="ri op_con send_req">yes</td> 
    *  <td headers="ri op_con send_poll">no </td> 
    *  <td headers="ri op_con rec_reply">yes</td> 
    *  <td headers="ri op_con rec_ex">yes</td> 
-   *  <td headers="ri op_con rec_oth">yes</td>
-   *  </tr>
+   *  <td headers="ri op_con rec_oth">yes</td></tr>
    *
-   *  <tr><th id="result"><p style="text-align:left">result</p></th>
+   *  <tr><th id="result">result</th>
    *  <td headers="ri result send_req">no </td> 
    *  <td headers="ri result send_poll">no </td> 
    *  <td headers="ri result rec_reply">yes</td> 
    *  <td headers="ri result rec_ex">no </td> 
-   *  <td headers="ri result rec_oth">no </td>
-   *  </tr>
+   *  <td headers="ri result rec_oth">no </td></tr>
    *
-   *  <tr><th id="res_exp"><p style="text-align:left">response_expected</p></th>
+   *  <tr><th id="res_exp">response_expected</th>
    *  <td headers="ri res_exp send_req">yes</td> 
    *  <td headers="ri res_exp send_poll">yes</td> 
    *  <td headers="ri res_exp rec_reply">yes</td> 
    *  <td headers="ri res_exp rec_ex">yes</td> 
    *  <td headers="ri res_exp rec_oth">yes</td></tr>
    *
-   *  <tr><th id="sync_sco"><p style="text-align:left">sync_scope</p></th>
+   *  <tr><th id="sync_sco">sync_scope</th>
    *  <td headers="ri sync_sco send_req">yes</td> 
    *  <td headers="ri sync_sco send_poll">no </td> 
    *  <td headers="ri sync_sco rec_reply">yes</td> 
    *  <td headers="ri sync_sco rec_ex">yes</td> 
-   *  <td headers="ri sync_sco rec_oth">yes</td>
-   *  </tr>
+   *  <td headers="ri sync_sco rec_oth">yes</td></tr>
    *
-   *  <tr><th id="rep_stat"><p style="text-align:left">reply_status</p></th>
+   *  <tr><th id="rep_stat">reply_status</th>
    *  <td headers="ri rep_stat send_req">no </td> 
    *  <td headers="ri rep_stat send_poll">no </td> 
    *  <td headers="ri rep_stat rec_reply">yes</td> 
    *  <td headers="ri rep_stat rec_ex">yes</td> 
    *  <td headers="ri rep_stat rec_oth">yes</td></tr>
    *
-   *  <tr><th id="for_ref"><p style="text-align:left">forward_reference</p></th>
+   *  <tr><th id="for_ref">forward_reference</th>
    *  <td headers="ri for_ref send_req">no </td>
    *  <td headers="ri for_ref send_poll">no </td> 
    *  <td headers="ri for_ref rec_reply">no </td> 
    *  <td headers="ri for_ref rec_ex">no </td> 
-   *  <td headers="ri for_ref rec_oth">yes<sub>2</sub>
-   *  </td></tr>
+   *  <td headers="ri for_ref rec_oth">yes<sub>2</sub></td></tr>
    *
-   *  <tr><th id="get_slot"><p style="text-align:left">get_slot</p></th>
+   *  <tr><th id="get_slot">get_slot</th>
    *  <td headers="ri get_slot send_req">yes</td> 
    *  <td headers="ri get_slot send_poll">yes</td> 
    *  <td headers="ri get_slot rec_reply">yes</td> 
    *  <td headers="ri get_slot rec_ex">yes</td> 
    *  <td headers="ri get_slot rec_oth">yes</td></tr>
    *
-   *  <tr><th id="grsc"><p style="text-align:left">get_request_service_context</p></th>
+   *  <tr><th id="grsc">get_request_service_context</th>
    *  <td headers="ri grsc send_req">yes</td> 
    *  <td headers="ri grsc send_poll">no </td> 
    *  <td headers="ri grsc rec_reply">yes</td> 
    *  <td headers="ri grsc rec_ex">yes</td> 
    *  <td headers="ri grsc rec_oth">yes</td></tr>
    *
-   *  <tr><th id="gpsc"><p style="text-align:left">get_reply_service_context</p></th>
+   *  <tr><th id="gpsc">get_reply_service_context</th>
    *  <td headers="ri gpsc send_req">no </td> 
    *  <td headers="ri gpsc send_poll">no </td> 
    *  <td headers="ri gpsc rec_reply">yes</td> 
    *  <td headers="ri gpsc rec_ex">yes</td> 
-   *  <td headers="ri gpsc rec_oth">yes</td>
-   *  </tr>
+   *  <td headers="ri gpsc rec_oth">yes</td></tr>
    *
    *  <tr>
-   *    <td id="cri" colspan=6><i>ClientRequestInfo-specific:</i></td>
+   *    <th id="cri" colspan=6><i>ClientRequestInfo-specific:</i></th>
    *  </tr>
    *
-   *  <tr><th id="target"><p style="text-align:left">target</p></th>
+   *  <tr><th id="target">target</th>
    *  <td headers="cri target send_req">yes</td> 
    *  <td headers="cri target send_poll">yes</td> 
    *  <td headers="cri target rec_reply">yes</td> 
    *  <td headers="cri target rec_ex">yes</td> 
    *  <td headers="cri target rec_oth">yes</td></tr>
    *
-   *  <tr><th id="eftarget"><p style="text-align:left">effective_target</p></th>
+   *  <tr><th id="eftarget">effective_target</th>
    *  <td headers="cri eftarget send_req">yes</td> 
    *  <td headers="cri eftarget send_poll">yes</td> 
    *  <td headers="cri eftarget rec_reply">yes</td> 
    *  <td headers="cri eftarget rec_ex">yes</td> 
-   *  <td headers="cri eftarget rec_oth">yes</td>
-   *  </tr>
+   *  <td headers="cri eftarget rec_oth">yes</td></tr>
    *
-   *  <tr><th id="efprof"><p style="text-align:left">effective_profile</p></th>
+   *  <tr><th id="efprof">effective_profile</th>
    *  <td headers="cri efprof send_req">yes</td> 
    *  <td headers="cri efprof send_poll">yes</td> 
    *  <td headers="cri efprof rec_reply">yes</td> 
    *  <td headers="cri efprof rec_ex">yes</td> 
    *  <td headers="cri efprof rec_oth">yes</td></tr>
    *
-   *  <tr><th id="rxp"><p style="text-align:left">received_exception</p></th>
+   *  <tr><th id="rxp">received_exception</th>
    *  <td headers="cri rxp send_req">no </td> 
    *  <td headers="cri rxp send_poll">no </td> 
    *  <td headers="cri rxp rec_reply">no </td> 
    *  <td headers="cri rxp rec_ex">yes</td> 
    *  <td headers="cri rxp rec_oth">no </td></tr>
    *
-   *  <tr><th id="rei"><p style="text-align:left">received_exception_id</p></th>
+   *  <tr><th id="rei">received_exception_id</th>
    *  <td headers="cri rei send_req">no </td> 
    *  <td headers="cri rei send_poll">no </td> 
    *  <td headers="cri rei rec_reply">no </td> 
    *  <td headers="cri rei rec_ex">yes</td> 
    *  <td headers="cri rei rec_oth">no </td></tr>
    *
-   *  <tr><th id="gec"><p style="text-align:left">get_effective_component</p></th>
+   *  <tr><th id="gec">get_effective_component</th>
    *  <td headers="cri gec send_req">yes</td> 
    *  <td headers="cri gec send_poll">no </td> 
    *  <td headers="cri gec rec_reply">yes</td> 
    *  <td headers="cri gec rec_ex">yes</td> 
    *  <td headers="cri gec rec_oth">yes</td></tr>
    *
-   *  <tr><th id="gecs"><p style="text-align:left">get_effective_components</p></th>
+   *  <tr><th id="gecs">get_effective_components</th>
    *  <td headers="cri gecs send_req">yes</td> 
    *  <td headers="cri gecs send_poll">no </td> 
    *  <td headers="cri gecs rec_reply">yes</td> 
    *  <td headers="cri gecs rec_ex">yes</td> 
    *  <td headers="cri gecs rec_oth">yes</td></tr>
    *
-   *  <tr><th id="grpcy"><p style="text-align:left">get_request_policy</p></th>
+   *  <tr><th id="grpcy">get_request_policy</th>
    *  <td headers="cri grpcy send_req">yes</td>
    *  <td headers="cri grpcy send_poll">no </td> 
    *  <td headers="cri grpcy rec_reply">yes</td> 
    *  <td headers="cri grpcy rec_ex">yes</td> 
    *  <td headers="cri grpcy rec_oth">yes</td></tr>
    *
-   *  <tr><th id="arsc"><p style="text-align:left">add_request_service_context</p></th>
-   *    <td headers="cri arsc send_req">yes</td> 
-   *    <td headers="cri arsc send_poll">no </td> 
-   *    <td headers="cri arsc rec_reply">no </td> 
-   *    <td headers="cri arsc rec_ex">no </td> 
-   *    <td headers="cri arsc rec_oth">no </td></tr>
+   *  <tr><th id="arsc">add_request_service_context</th>
+   *  <td headers="cri arsc send_req">yes</td> 
+   *  <td headers="cri arsc send_poll">no </td> 
+   *  <td headers="cri arsc rec_reply">no </td> 
+   *  <td headers="cri arsc rec_ex">no </td> 
+   *  <td headers="cri arsc rec_oth">no </td></tr>
    *
    *   </tbody>
    * </table>
@@ -940,7 +934,7 @@ module PortableInterceptor {
    *   <caption style="display:none">Shows the validity of each attribute or operation</caption>
    *   <thead>
    *     <tr>
-   *       <th>&nbsp;</th>
+   *       <td></td>
    *       <th id="rec_req_ser_con" valign="bottom">receive_request_<br>service_contexts</th>
    *       <th id="rec_req"  valign="bottom">receive_request</th>
    *       <th id="send_rep" valign="bottom">send_reply</th>
@@ -948,28 +942,28 @@ module PortableInterceptor {
    *       <th id="send_oth" valign="bottom">send_other</th>
    *     </tr>
    *   </thead>
-   *  <tbody>
+   *  <tbody style="text-align:left">
    *
    *
    * <tr>
-   *   <td id="ri" colspan=6><i>Inherited from RequestInfo:</i></td>
+   *   <th id="ri" colspan=6><i>Inherited from RequestInfo:</i></th>
    * </tr>
    *
-   * <tr><th id="req_id"><p style="text-align:left">request_id</p></th>
+   * <tr><th id="req_id">request_id</th>
    * <td headers="ri req_id rec_req_ser_con">yes</td> 
    * <td headers="ri req_id rec_req">yes</td> 
    * <td headers="ri req_id send_rep">yes</td> 
    * <td headers="ri req_id send_exc">yes</td> 
    * <td headers="ri req_id send_oth">yes</td></tr>
    *
-   * <tr><th id="op"><p style="text-align:left">operation</p></th>
+   * <tr><th id="op">operation</th>
    * <td headers="ri op rec_req_ser_con">yes</td> 
    * <td headers="ri op rec_req">yes</td> 
    * <td headers="ri op send_rep">yes</td> 
    * <td headers="ri op send_exc">yes</td> 
    * <td headers="ri op send_oth">yes</td></tr>
    *
-   * <tr><th id="args"><p style="text-align:left">arguments</p></th>
+   * <tr><th id="args">arguments</th>
    * <td headers="ri args rec_req_ser_con">no </td> 
    * <td headers="ri args rec_req">yes<sub>1</sub></td>
    * <td headers="ri args send_rep">yes</td> 
@@ -977,21 +971,21 @@ module PortableInterceptor {
    * <td headers="ri args send_oth">no<sub>2</sub>
    * </td></tr>
    *
-   * <tr><th id="exps"><p style="text-align:left">exceptions</p></th>
+   * <tr><th id="exps">exceptions</th>
    * <td headers="ri exps rec_req_ser_con">no </td> 
    * <td headers="ri exps rec_req">yes</td> 
    * <td headers="ri exps send_rep">yes</td> 
    * <td headers="ri exps send_exc">yes</td> 
    * <td headers="ri exps send_oth">yes</td></tr>
    *
-   * <tr><th id="contexts"><p style="text-align:left">contexts</p></th>
+   * <tr><th id="contexts">contexts</th>
    * <td headers="ri contexts rec_req_ser_con">no </td> 
    * <td headers="ri contexts rec_req">yes</td> 
    * <td headers="ri contexts send_rep">yes</td> 
    * <td headers="ri contexts send_exc">yes</td> 
    * <td headers="ri contexts send_oth">yes</td></tr>
    *
-   * <tr><th id="op_con"><p style="text-align:left">operation_context</p></th>
+   * <tr><th id="op_con">operation_context</th>
    * <td headers="ri op_con rec_req_ser_con">no </td> 
    * <td headers="ri op_con rec_req">yes</td> 
    * <td headers="ri op_con send_rep">yes</td> 
@@ -999,7 +993,7 @@ module PortableInterceptor {
    * <td headers="ri op_con send_oth">no </td>
    * </tr>
    * 
-   * <tr><th id="result"><p style="text-align:left">result</p></th>
+   * <tr><th id="result">result</th>
    * <td headers="ri result rec_req_ser_con">no </td> 
    * <td headers="ri result rec_req">no </td> 
    * <td headers="ri result send_rep">yes</td> 
@@ -1007,113 +1001,136 @@ module PortableInterceptor {
    * <td headers="ri result send_oth">no </td>
    * </tr>
    *
-   * <tr><th id="res_ex"><p style="text-align:left">response_expected</p></th>
+   * <tr><th id="res_ex">response_expected</th>
    * <td headers="ri res_ex rec_req_ser_con">yes</td> 
    * <td headers="ri res_ex rec_req">yes</td> 
    * <td headers="ri res_ex send_rep">yes</td> 
    * <td headers="ri res_ex send_exc">yes</td> 
    * <td headers="ri res_ex send_oth">yes</td></tr>
    *
-   * <tr><th id="syn_scp"><p style="text-align:left">sync_scope</p></th>
+   * <tr><th id="syn_scp">sync_scope</th>
    * <td headers="ri syn_scp rec_req_ser_con">yes</td> 
    * <td headers="ri syn_scp rec_req">yes</td> 
    * <td headers="ri syn_scp send_rep">yes</td> 
    * <td headers="ri syn_scp send_exc">yes</td> 
    * <td headers="ri syn_scp send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>request_id</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="rep_status">reply_status</th>
+   * <td headers="ri rep_status rec_req_ser_con">no </td>
+   * <td headers="ri rep_status rec_req">no </td>
+   * <td headers="ri rep_status send_rep">yes</td>
+   * <td headers="ri rep_status send_exc">yes</td>
+   * <td headers="ri rep_status send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>operation</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="fwd_ref">forward_reference</th>
+   * <td headers="ri fwd_ref rec_req_ser_con">no </td>
+   * <td headers="ri fwd_ref rec_req">no </td>
+   * <td headers="ri fwd_ref send_rep">no </td>
+   * <td headers="ri fwd_ref send_exc">no </td>
+   * <td headers="ri fwd_ref send_oth">yes<sub>2</sub></td></tr>
    * 
-   *    <tr><td><b>arguments</b></td>
-   *    <td>no </td> <td>yes<sub>1</sub></td>
-   *                              <td>yes</td> <td>no<sub>2</sub></td> 
-   *                                                        <td>no<sub>2</sub>
-   *                                                        </td></tr>
+   * <tr><th id="get_slt">get_slot</th>
+   * <td headers="ri get_slt rec_req_ser_con">yes</td>
+   * <td headers="ri get_slt rec_req">yes</td>
+   * <td headers="ri get_slt send_rep">yes</td>
+   * <td headers="ri get_slt send_exc">yes</td>
+   * <td headers="ri get_slt send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>exceptions</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="get_req_sc">get_request_service_context</th>
+   * <td headers="ri get_req_sc rec_req_ser_con">yes</td>
+   * <td headers="ri get_req_sc rec_req">no </td>
+   * <td headers="ri get_req_sc send_rep">yes</td>
+   * <td headers="ri get_req_sc send_exc">yes</td>
+   * <td headers="ri get_req_sc send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>contexts</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="get_rep_sc">get_reply_service_context</th>
+   * <td headers="ri get_rep_sc rec_req_ser_con">no </td>
+   * <td headers="ri get_rep_sc rec_req">no </td>
+   * <td headers="ri get_rep_sc send_rep">yes</td>
+   * <td headers="ri get_rep_sc send_exc">yes</td>
+   * <td headers="ri get_rep_sc send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>operation_context</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>no </td> <td>no </td></tr>
+   * <tr>
+   *   <th id="sri" colspan=6><i>ServerRequestInfo-specific:</i></th>
+   * </tr>
    * 
-   *    <tr><td><b>result</b></td>
-   *    <td>no </td> <td>no </td> <td>yes</td> <td>no </td> <td>no </td></tr>
+   * <tr><th id="sndg_exc">sending_exception</th>
+   * <td headers="sri sndg_exc rec_req_ser_con">no </td>
+   * <td headers="sri sndg_exc rec_req">no </td>
+   * <td headers="sri sndg_exc send_rep">no </td>
+   * <td headers="sri sndg_exc send_exc">yes</td>
+   * <td headers="sri sndg_exc send_oth">no </td></tr>
    * 
-   *    <tr><td><b>response_expected</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="obj_id">object_id</th>
+   * <td headers="sri obj_id rec_req_ser_con">no </td>
+   * <td headers="sri obj_id rec_req">yes</td>
+   * <td headers="sri obj_id send_rep">yes</td>
+   * <td headers="sri obj_id send_exc">yes<sub>3</sub></td>
+   * <td headers="sri obj_id send_oth">yes<sub>3</sub></td></tr>
    * 
-   *    <tr><td><b>sync_scope</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="ada_id">adapter_id</th>
+   * <td headers="sri ada_id rec_req_ser_con">no </td>
+   * <td headers="sri ada_id rec_req">yes</td>
+   * <td headers="sri ada_id send_rep">yes</td>
+   * <td headers="sri ada_id send_exc">yes<sub>3</sub></td>
+   * <td headers="sri ada_id send_oth">yes<sub>3</sub></td></tr>
    * 
-   *    <tr><td><b>reply_status</b></td>
-   *    <td>no </td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
-   * 
-   *    <tr><td><b>forward_reference</b></td>
-   *    <td>no </td> <td>no </td> <td>no </td> <td>no </td> <td>yes<sub>2</sub>
-   * 								</td></tr>
-   * 
-   *    <tr><td><b>get_slot</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
-   * 
-   *    <tr><td><b>get_request_service_context</b></td>
-   *    <td>yes</td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
-   * 
-   *    <tr><td><b>get_reply_service_context</b></td>
-   *    <td>no </td> <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
-   * 
-   *    <tr>
-   *      <td colspan=6><i>ServerRequestInfo-specific:</i></td>
-   *    </tr>
-   * 
-   *    <tr><td><b>sending_exception</b></td>
-   *    <td>no </td> <td>no </td> <td>no </td> <td>yes</td> <td>no </td></tr>
-   * 
-   *    <tr><td><b>object_id</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes<sub>3</sub></td> 
-   * 						       <td>yes<sub>3</sub>
-   * 						                </td></tr>
-   * 
-   *    <tr><td><b>adapter_id</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes<sub>3</sub></td> 
-   * 						       <td>yes<sub>3</sub>
-   * 								</td></tr>
-   * 
-   *    <tr><td><b>server_id</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="srv_id">server_id</th>
+   * <td headers="sri srv_id rec_req_ser_con">no </td>
+   * <td headers="sri srv_id rec_req">yes</td>
+   * <td headers="sri srv_id send_rep">yes</td>
+   * <td headers="sri srv_id send_exc">yes</td>
+   * <td headers="sri srv_id send_oth">yes</td></tr>
    *
-   *    <tr><td><b>orb_id</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="orb_id">orb_id</th>
+   * <td headers="sri orb_id rec_req_ser_con">no </td>
+   * <td headers="sri orb_id rec_req">yes</td>
+   * <td headers="sri orb_id send_rep">yes</td>
+   * <td headers="sri orb_id send_exc">yes</td>
+   * <td headers="sri orb_id send_oth">yes</td></tr>
    *
-   *    <tr><td><b>adapter_name</b></td>
-   *    <td>no </td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="ada_nam">adapter_name</th>
+   * <td headers="sri ada_nam rec_req_ser_con">no </td>
+   * <td headers="sri ada_nam rec_req">yes</td>
+   * <td headers="sri ada_nam send_rep">yes</td>
+   * <td headers="sri ada_nam send_exc">yes</td>
+   * <td headers="sri ada_nam send_oth">yes</td></tr>
    *
-   *    <tr><td><b>target_most_derived_interface</b></td>
-   *    <td>no </td> <td>yes</td> <td>no<sub>4</sub></td> 
-   * 					  <td>no<sub>4</sub></td> 
-   * 						       <td>no<sub>4</sub>
-   * 							       </td></tr>
+   * <tr><th id="tmdi">target_most_derived_interface</th>
+   * <td headers="sri tmdi rec_req_ser_con">no </td>
+   * <td headers="sri tmdi rec_req">yes</td>
+   * <td headers="sri tmdi send_rep">no<sub>4</sub></td>
+   * <td headers="sri tmdi send_exc">no<sub>4</sub></td>
+   * <td headers="sri tmdi send_oth">no<sub>4</sub></td></tr>
    * 
-   *    <tr><td><b>get_server_policy</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="gsp">get_server_policy</th>
+   * <td headers="sri gsp rec_req_ser_con">yes</td>
+   * <td headers="sri gsp rec_req">yes</td>
+   * <td headers="sri gsp send_rep">yes</td>
+   * <td headers="sri gsp send_exc">yes</td>
+   * <td headers="sri gsp send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>set_slot</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
+   * <tr><th id="set_slt">set_slot</th>
+   * <td headers="sri set_slt rec_req_ser_con">yes</td>
+   * <td headers="sri set_slt rec_req">yes</td>
+   * <td headers="sri set_slt send_rep">yes</td>
+   * <td headers="sri set_slt send_exc">yes</td>
+   * <td headers="sri set_slt send_oth">yes</td></tr>
    * 
-   *    <tr><td><b>target_is_a</b></td>
-   *    <td>no </td> <td>yes</td> <td>no<sub>4</sub></td> 
-   * 					  <td>no<sub>4</sub></td> 
-   * 						       <td>no<sub>4</sub>
-   * 							       </td></tr>
+   * <tr><th id="tar_isa">target_is_a</th>
+   * <td headers="sri tar_isa rec_req_ser_con">no </td>
+   * <td headers="sri tar_isa rec_req">yes</td>
+   * <td headers="sri tar_isa send_rep">no<sub>4</sub></td>
+   * <td headers="sri tar_isa send_exc">no<sub>4</sub></td>
+   * <td headers="sri tar_isa send_oth">no<sub>4</sub></td></tr>
    * 
-   *    <tr><td><b>add_reply_service_context</b></td>
-   *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
-   *   </tbody>
+   * <tr><th id="add_rep_sc">add_reply_service_context</th>
+   * <td headers="sri add_rep_sc rec_req_ser_con">yes</td>
+   * <td headers="sri add_rep_sc rec_req">yes</td>
+   * <td headers="sri add_rep_sc send_rep">yes</td>
+   * <td headers="sri add_rep_sc send_exc">yes</td>
+   * <td headers="sri add_rep_sc send_oth">yes</td></tr>
+   * </tbody>
    * </table>
    *
    * <ol>

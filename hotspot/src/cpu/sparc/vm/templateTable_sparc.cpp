@@ -2928,7 +2928,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ br(Assembler::zero, false, Assembler::pt, notFinal);
   __ delayed()->and3(Rret, 0xFF, G4_scratch);      // gets number of parameters
 
-  if (RewriteBytecodes && !UseSharedSpaces) {
+  if (RewriteBytecodes && !UseSharedSpaces && !DumpSharedSpaces) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rscratch, Rtemp);
   }
 

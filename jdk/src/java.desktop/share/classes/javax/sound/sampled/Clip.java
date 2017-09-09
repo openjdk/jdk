@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,13 +178,13 @@ public interface Clip extends DataLine {
     /**
      * Sets the first and last sample frames that will be played in the loop.
      * The ending point must be greater than or equal to the starting point, and
-     * both must fall within the size of the loaded media. A value of 0 for
-     * the starting point means the beginning of the loaded media. Similarly, a
+     * both must fall within the size of the loaded media. A value of 0 for the
+     * starting point means the beginning of the loaded media. Similarly, a
      * value of -1 for the ending point indicates the last frame of the media.
      *
      * @param  start the loop's starting position, in sample frames (zero-based)
-     * @param  end the loop's ending position, in sample frames (zero-based),
-     *         or -1 to indicate the final frame
+     * @param  end the loop's ending position, in sample frames (zero-based), or
+     *         -1 to indicate the final frame
      * @throws IllegalArgumentException if the requested loop points cannot be
      *         set, usually because one or both falls outside the media's
      *         duration or because the ending point is before the starting point

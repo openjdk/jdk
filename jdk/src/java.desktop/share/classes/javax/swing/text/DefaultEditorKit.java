@@ -1496,6 +1496,15 @@ public class DefaultEditorKit extends EditorKit {
                                     target.setCaretPosition(newIndex);
                                 }
                             }
+                        } else {
+                            // If the caret index is same as the visible offset
+                            // then correct newVis.y so that it won't cause
+                            // unnecessary scrolling upward/downward when
+                            // page-down/page-up is received after ctrl-END/ctrl-HOME
+                            if (direction == -1 && newVis.y <= initialY ||
+                                direction == 1 && newVis.y >= initialY) {
+                                newVis.y = initialY;
+                            }
                         }
                     } catch (BadLocationException ble) { }
                 } else {

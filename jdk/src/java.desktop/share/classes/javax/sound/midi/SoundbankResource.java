@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,24 @@ import javax.sound.sampled.AudioInputStream;
  * A {@code SoundbankResource} represents any audio resource stored in a
  * {@link Soundbank}. Common soundbank resources include:
  * <ul>
- * <li>Instruments. An instrument may be specified in a variety of ways.
- * However, all soundbanks have some mechanism for defining instruments. In
- * doing so, they may reference other resources stored in the soundbank. Each
- * instrument has a {@code Patch} which specifies the MIDI program and bank by
- * which it may be referenced in MIDI messages. Instrument information may be
- * stored in {@link Instrument} objects.</li>
- * <li>Audio samples. A sample typically is a sampled audio waveform which
- * contains a short sound recording whose duration is a fraction of a second, or
- * at most a few seconds. These audio samples may be used by a
- * {@link Synthesizer} to synthesize sound in response to MIDI commands, or
- * extracted for use by an application. (The terminology reflects musicians' use
- * of the word "sample" to refer collectively to a series of contiguous audio
- * samples or frames, rather than to a single, instantaneous sample.) The data
- * class for an audio sample will be an object that encapsulates the audio
- * sample data itself and information about how to interpret it (the format of
- * the audio data), such as an {@link AudioInputStream}.</li>
- * <li>Embedded sequences. A sound bank may contain built-in song data stored in
- * a data object such as a {@link Sequence}.</li>
+ *   <li>Instruments. An instrument may be specified in a variety of ways.
+ *   However, all soundbanks have some mechanism for defining instruments. In
+ *   doing so, they may reference other resources stored in the soundbank.
+ *   Each instrument has a {@code Patch} which specifies the MIDI program and
+ *   bank by which it may be referenced in MIDI messages. Instrument information
+ *   may be stored in {@link Instrument} objects.
+ *   <li>Audio samples. A sample typically is a sampled audio waveform which
+ *   contains a short sound recording whose duration is a fraction of a
+ *   second, or at most a few seconds. These audio samples may be used by a
+ *   {@link Synthesizer} to synthesize sound in response to MIDI commands, or
+ *   extracted for use by an application. (The terminology reflects musicians'
+ *   use of the word "sample" to refer collectively to a series of contiguous
+ *   audio samples or frames, rather than to a single, instantaneous sample.)
+ *   The data class for an audio sample will be an object that encapsulates
+ *   the audio sample data itself and information about how to interpret it
+ *   (the format of the audio data), such as an {@link AudioInputStream}.
+ *   <li>Embedded sequences. A sound bank may contain built-in song data stored
+ *   in a data object such as a {@link Sequence}.
  * </ul>
  * Synthesizers that use wavetable synthesis or related techniques play back the
  * audio in a sample when synthesizing notes, often when emulating the
