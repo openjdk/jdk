@@ -38,7 +38,7 @@ package javax.sound.sampled;
  * delay time and intensity of early reflections, the delay time and intensity
  * of late reflections, and an overall decay time. Early reflections are the
  * initial individual low-order reflections of the direct signal off the
- * surfaces in the room. The late Reflections are the dense, high-order
+ * surfaces in the room. The late reflections are the dense, high-order
  * reflections that characterize the room's reverberation. The delay times for
  * the start of these two reflection types give the listener a sense of the
  * overall size and complexity of the room's shape and contents. The larger the
@@ -63,8 +63,8 @@ package javax.sound.sampled;
  * <p>
  * If implementing JavaSound on a I3DL2-compliant device:
  * <ul>
- * <li>Filtering is disabled (high-frequency attenuations are set to 0.0 dB)
- * <li>Density parameters are set to midway between minimum and maximum
+ *   <li>Filtering is disabled (high-frequency attenuations are set to 0.0 dB)
+ *   <li>Density parameters are set to midway between minimum and maximum
  * </ul>
  * <p>
  * The following table shows what parameter values an implementation might use
@@ -74,60 +74,50 @@ package javax.sound.sampled;
  * <caption>Reverb types and params: decay time, late intensity, late delay,
  * early intensity, and early delay</caption>
  * <thead>
- * <tr>
- *  <th>Type</th>
- *  <th>Decay Time (ms)</th>
- *  <th>Late Intensity (dB)</th>
- *  <th>Late Delay (ms)</th>
- *  <th>Early Intensity (dB)</th>
- *  <th>Early Delay(ms)</th>
- * </tr>
+ *   <tr>
+ *     <th>Type
+ *     <th>Decay Time (ms)
+ *     <th>Late Intensity (dB)
+ *     <th>Late Delay (ms)
+ *     <th>Early Intensity (dB)
+ *     <th>Early Delay(ms)
  * </thead>
  * <tbody>
- * <tr>
- *  <td>Cavern</td>
- *  <td>2250</td>
- *  <td>-2.0</td>
- *  <td>41.3</td>
- *  <td>-1.4</td>
- *  <td>10.3</td>
- * </tr>
- *
- * <tr>
- *  <td>Dungeon</td>
- *  <td>1600</td>
- *  <td>-1.0</td>
- *  <td>10.3</td>
- *  <td>-0.7</td>
- *  <td>2.6</td>
- * </tr>
- *
- * <tr>
- *  <td>Garage</td>
- *  <td>900</td>
- *  <td>-6.0</td>
- *  <td>14.7</td>
- *  <td>-4.0</td>
- *  <td>3.9</td>
- * </tr>
- *
- * <tr>
- *  <td>Acoustic Lab</td>
- *  <td>280</td>
- *  <td>-3.0</td>
- *  <td>8.0</td>
- *  <td>-2.0</td>
- *  <td>2.0</td>
- * </tr>
- *
- * <tr>
- *  <td>Closet</td>
- *  <td>150</td>
- *  <td>-10.0</td>
- *  <td>2.5</td>
- *  <td>-7.0</td>
- *  <td>0.6</td>
- * </tr>
+ *   <tr>
+ *     <td>Cavern
+ *     <td>2250
+ *     <td>-2.0
+ *     <td>41.3
+ *     <td>-1.4
+ *     <td>10.3
+ *   <tr>
+ *     <td>Dungeon
+ *     <td>1600
+ *     <td>-1.0
+ *     <td>10.3
+ *     <td>-0.7
+ *     <td>2.6
+ *   <tr>
+ *     <td>Garage
+ *     <td>900
+ *     <td>-6.0
+ *     <td>14.7
+ *     <td>-4.0
+ *     <td>3.9
+ *   <tr>
+ *     <td>Acoustic Lab
+ *     <td>280
+ *     <td>-3.0
+ *     <td>8.0
+ *     <td>-2.0
+ *     <td>2.0
+ *   <tr>
+ *     <td>Closet
+ *     <td>150
+ *     <td>-10.0
+ *     <td>2.5
+ *     <td>-7.0
+ *     <td>0.6
  * </tbody>
  * </table>
  *
@@ -199,7 +189,7 @@ public class ReverbType {
      * @since 1.5
      */
     public String getName() {
-            return name;
+        return name;
     }
 
     /**
@@ -257,11 +247,11 @@ public class ReverbType {
 
     /**
      * Indicates whether the specified object is equal to this reverb type,
-     * returning {@code true} if the objects are identical.
+     * returning {@code true} if the objects are the same.
      *
      * @param  obj the reference object with which to compare
-     * @return {@code true} if this reverb type is the same as {@code obj};
-     *         {@code false} otherwise
+     * @return {@code true} if the specified object is equal to this reverb
+     *         type; {@code false} otherwise
      */
     @Override
     public final boolean equals(Object obj) {
@@ -269,7 +259,9 @@ public class ReverbType {
     }
 
     /**
-     * Finalizes the hashcode method.
+     * Returns a hash code value for this reverb type.
+     *
+     * @return a hash code value for this reverb type
      */
     @Override
     public final int hashCode() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ final class Curve {
 
     float ax, ay, bx, by, cx, cy, dx, dy;
     float dax, day, dbx, dby;
-    // shared iterator instance
-    private final BreakPtrIterator iterator = new BreakPtrIterator();
 
     Curve() {
     }
@@ -58,31 +56,31 @@ final class Curve {
              float x3, float y3,
              float x4, float y4)
     {
-        ax = 3f * (x2 - x3) + x4 - x1;
-        ay = 3f * (y2 - y3) + y4 - y1;
-        bx = 3f * (x1 - 2f * x2 + x3);
-        by = 3f * (y1 - 2f * y2 + y3);
-        cx = 3f * (x2 - x1);
-        cy = 3f * (y2 - y1);
+        ax = 3.0f * (x2 - x3) + x4 - x1;
+        ay = 3.0f * (y2 - y3) + y4 - y1;
+        bx = 3.0f * (x1 - 2.0f * x2 + x3);
+        by = 3.0f * (y1 - 2.0f * y2 + y3);
+        cx = 3.0f * (x2 - x1);
+        cy = 3.0f * (y2 - y1);
         dx = x1;
         dy = y1;
-        dax = 3f * ax; day = 3f * ay;
-        dbx = 2f * bx; dby = 2f * by;
+        dax = 3.0f * ax; day = 3.0f * ay;
+        dbx = 2.0f * bx; dby = 2.0f * by;
     }
 
     void set(float x1, float y1,
              float x2, float y2,
              float x3, float y3)
     {
-        ax = 0f; ay = 0f;
-        bx = x1 - 2f * x2 + x3;
-        by = y1 - 2f * y2 + y3;
-        cx = 2f * (x2 - x1);
-        cy = 2f * (y2 - y1);
+        ax = 0.0f; ay = 0.0f;
+        bx = x1 - 2.0f * x2 + x3;
+        by = y1 - 2.0f * y2 + y3;
+        cx = 2.0f * (x2 - x1);
+        cy = 2.0f * (y2 - y1);
         dx = x1;
         dy = y1;
-        dax = 0f; day = 0f;
-        dbx = 2f * bx; dby = 2f * by;
+        dax = 0.0f; day = 0.0f;
+        dbx = 2.0f * bx; dby = 2.0f * by;
     }
 
     float xat(float t) {
@@ -113,7 +111,7 @@ final class Curve {
         // Fortunately, this turns out to be quadratic, so there are at
         // most 2 inflection points.
         final float a = dax * dby - dbx * day;
-        final float b = 2f * (cy * dax - day * cx);
+        final float b = 2.0f * (cy * dax - day * cx);
         final float c = cy * dbx - cx * dby;
 
         return Helpers.quadraticRoots(a, b, c, pts, off);
@@ -128,11 +126,11 @@ final class Curve {
         // these are the coefficients of some multiple of g(t) (not g(t),
         // because the roots of a polynomial are not changed after multiplication
         // by a constant, and this way we save a few multiplications).
-        final float a = 2f * (dax*dax + day*day);
-        final float b = 3f * (dax*dbx + day*dby);
-        final float c = 2f * (dax*cx + day*cy) + dbx*dbx + dby*dby;
+        final float a = 2.0f * (dax*dax + day*day);
+        final float b = 3.0f * (dax*dbx + day*dby);
+        final float c = 2.0f * (dax*cx + day*cy) + dbx*dbx + dby*dby;
         final float d = dbx*cx + dby*cy;
-        return Helpers.cubicRootsInAB(a, b, c, d, pts, off, 0f, 1f);
+        return Helpers.cubicRootsInAB(a, b, c, d, pts, off, 0.0f, 1.0f);
     }
 
     // Tries to find the roots of the function ROC(t)-w in [0, 1). It uses
@@ -153,14 +151,14 @@ final class Curve {
         assert off <= 6 && roots.length >= 10;
         int ret = off;
         int numPerpdfddf = perpendiculardfddf(roots, off);
-        float t0 = 0, ft0 = ROCsq(t0) - w*w;
-        roots[off + numPerpdfddf] = 1f; // always check interval end points
+        float t0 = 0.0f, ft0 = ROCsq(t0) - w*w;
+        roots[off + numPerpdfddf] = 1.0f; // always check interval end points
         numPerpdfddf++;
         for (int i = off; i < off + numPerpdfddf; i++) {
             float t1 = roots[i], ft1 = ROCsq(t1) - w*w;
-            if (ft0 == 0f) {
+            if (ft0 == 0.0f) {
                 roots[ret++] = t0;
-            } else if (ft1 * ft0 < 0f) { // have opposite signs
+            } else if (ft1 * ft0 < 0.0f) { // have opposite signs
                 // (ROC(t)^2 == w^2) == (ROC(t) == w) is true because
                 // ROC(t) >= 0 for all t.
                 roots[ret++] = falsePositionROCsqMinusX(t0, t1, w*w, err);
@@ -220,7 +218,7 @@ final class Curve {
 
     private static boolean sameSign(float x, float y) {
         // another way is to test if x*y > 0. This is bad for small x, y.
-        return (x < 0f && y < 0f) || (x > 0f && y > 0f);
+        return (x < 0.0f && y < 0.0f) || (x > 0.0f && y > 0.0f);
     }
 
     // returns the radius of curvature squared at t of this curve
@@ -229,76 +227,11 @@ final class Curve {
         // dx=xat(t) and dy=yat(t). These calls have been inlined for efficiency
         final float dx = t * (t * dax + dbx) + cx;
         final float dy = t * (t * day + dby) + cy;
-        final float ddx = 2f * dax * t + dbx;
-        final float ddy = 2f * day * t + dby;
+        final float ddx = 2.0f * dax * t + dbx;
+        final float ddy = 2.0f * day * t + dby;
         final float dx2dy2 = dx*dx + dy*dy;
         final float ddx2ddy2 = ddx*ddx + ddy*ddy;
         final float ddxdxddydy = ddx*dx + ddy*dy;
         return dx2dy2*((dx2dy2*dx2dy2) / (dx2dy2 * ddx2ddy2 - ddxdxddydy*ddxdxddydy));
     }
-
-    // curve to be broken should be in pts
-    // this will change the contents of pts but not Ts
-    // TODO: There's no reason for Ts to be an array. All we need is a sequence
-    // of t values at which to subdivide. An array statisfies this condition,
-    // but is unnecessarily restrictive. Ts should be an Iterator<Float> instead.
-    // Doing this will also make dashing easier, since we could easily make
-    // LengthIterator an Iterator<Float> and feed it to this function to simplify
-    // the loop in Dasher.somethingTo.
-    BreakPtrIterator breakPtsAtTs(final float[] pts, final int type,
-                                  final float[] Ts, final int numTs)
-    {
-        assert pts.length >= 2*type && numTs <= Ts.length;
-
-        // initialize shared iterator:
-        iterator.init(pts, type, Ts, numTs);
-
-        return iterator;
-    }
-
-    static final class BreakPtrIterator {
-        private int nextCurveIdx;
-        private int curCurveOff;
-        private float prevT;
-        private float[] pts;
-        private int type;
-        private float[] ts;
-        private int numTs;
-
-        void init(final float[] pts, final int type,
-                  final float[] ts, final int numTs) {
-            this.pts = pts;
-            this.type = type;
-            this.ts = ts;
-            this.numTs = numTs;
-
-            nextCurveIdx = 0;
-            curCurveOff = 0;
-            prevT = 0f;
-        }
-
-        public boolean hasNext() {
-            return nextCurveIdx <= numTs;
-        }
-
-        public int next() {
-            int ret;
-            if (nextCurveIdx < numTs) {
-                float curT = ts[nextCurveIdx];
-                float splitT = (curT - prevT) / (1f - prevT);
-                Helpers.subdivideAt(splitT,
-                                    pts, curCurveOff,
-                                    pts, 0,
-                                    pts, type, type);
-                prevT = curT;
-                ret = 0;
-                curCurveOff = type;
-            } else {
-                ret = curCurveOff;
-            }
-            nextCurveIdx++;
-            return ret;
-        }
-    }
 }
-

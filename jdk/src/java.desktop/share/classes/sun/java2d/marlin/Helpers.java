@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,27 +52,27 @@ final class Helpers implements MarlinConst {
     {
         int ret = off;
         float t;
-        if (a != 0f) {
+        if (a != 0.0f) {
             final float dis = b*b - 4*a*c;
-            if (dis > 0f) {
-                final float sqrtDis = (float)Math.sqrt(dis);
+            if (dis > 0.0f) {
+                final float sqrtDis = (float) Math.sqrt(dis);
                 // depending on the sign of b we use a slightly different
                 // algorithm than the traditional one to find one of the roots
                 // so we can avoid adding numbers of different signs (which
                 // might result in loss of precision).
-                if (b >= 0f) {
-                    zeroes[ret++] = (2f * c) / (-b - sqrtDis);
-                    zeroes[ret++] = (-b - sqrtDis) / (2f * a);
+                if (b >= 0.0f) {
+                    zeroes[ret++] = (2.0f * c) / (-b - sqrtDis);
+                    zeroes[ret++] = (-b - sqrtDis) / (2.0f * a);
                 } else {
-                    zeroes[ret++] = (-b + sqrtDis) / (2f * a);
-                    zeroes[ret++] = (2f * c) / (-b + sqrtDis);
+                    zeroes[ret++] = (-b + sqrtDis) / (2.0f * a);
+                    zeroes[ret++] = (2.0f * c) / (-b + sqrtDis);
                 }
-            } else if (dis == 0f) {
-                t = (-b) / (2f * a);
+            } else if (dis == 0.0f) {
+                t = (-b) / (2.0f * a);
                 zeroes[ret++] = t;
             }
         } else {
-            if (b != 0f) {
+            if (b != 0.0f) {
                 t = (-c) / b;
                 zeroes[ret++] = t;
             }
@@ -85,7 +85,7 @@ final class Helpers implements MarlinConst {
                               float[] pts, final int off,
                               final float A, final float B)
     {
-        if (d == 0f) {
+        if (d == 0.0f) {
             int num = quadraticRoots(a, b, c, pts, off);
             return filterOutNotInAB(pts, off, num, A, B) - off;
         }
@@ -109,8 +109,8 @@ final class Helpers implements MarlinConst {
         // q = Q/2
         // instead and use those values for simplicity of the code.
         double sq_A = a * a;
-        double p = (1.0/3.0) * ((-1.0/3.0) * sq_A + b);
-        double q = (1.0/2.0) * ((2.0/27.0) * a * sq_A - (1.0/3.0) * a * b + c);
+        double p = (1.0d/3.0d) * ((-1.0d/3.0d) * sq_A + b);
+        double q = (1.0d/2.0d) * ((2.0d/27.0d) * a * sq_A - (1.0d/3.0d) * a * b + c);
 
         // use Cardano's formula
 
@@ -118,30 +118,30 @@ final class Helpers implements MarlinConst {
         double D = q * q + cb_p;
 
         int num;
-        if (D < 0.0) {
+        if (D < 0.0d) {
             // see: http://en.wikipedia.org/wiki/Cubic_function#Trigonometric_.28and_hyperbolic.29_method
-            final double phi = (1.0/3.0) * acos(-q / sqrt(-cb_p));
-            final double t = 2.0 * sqrt(-p);
+            final double phi = (1.0d/3.0d) * acos(-q / sqrt(-cb_p));
+            final double t = 2.0d * sqrt(-p);
 
-            pts[ off+0 ] =  (float)( t * cos(phi));
-            pts[ off+1 ] =  (float)(-t * cos(phi + (PI / 3.0)));
-            pts[ off+2 ] =  (float)(-t * cos(phi - (PI / 3.0)));
+            pts[ off+0 ] = (float) ( t * cos(phi));
+            pts[ off+1 ] = (float) (-t * cos(phi + (PI / 3.0d)));
+            pts[ off+2 ] = (float) (-t * cos(phi - (PI / 3.0d)));
             num = 3;
         } else {
             final double sqrt_D = sqrt(D);
             final double u = cbrt(sqrt_D - q);
             final double v = - cbrt(sqrt_D + q);
 
-            pts[ off ] = (float)(u + v);
+            pts[ off ] = (float) (u + v);
             num = 1;
 
-            if (within(D, 0.0, 1e-8)) {
-                pts[off+1] = -(pts[off] / 2f);
+            if (within(D, 0.0d, 1e-8d)) {
+                pts[off+1] = -(pts[off] / 2.0f);
                 num = 2;
             }
         }
 
-        final float sub = (1f/3f) * a;
+        final float sub = (1.0f/3.0f) * a;
 
         for (int i = 0; i < num; ++i) {
             pts[ off+i ] -= sub;
@@ -178,7 +178,7 @@ final class Helpers implements MarlinConst {
 
     static float polyLineLength(float[] poly, final int off, final int nCoords) {
         assert nCoords % 2 == 0 && poly.length >= off + nCoords : "";
-        float acc = 0;
+        float acc = 0.0f;
         for (int i = off + 2; i < off + nCoords; i += 2) {
             acc += linelen(poly[i], poly[i+1], poly[i-2], poly[i-1]);
         }
@@ -188,7 +188,7 @@ final class Helpers implements MarlinConst {
     static float linelen(float x1, float y1, float x2, float y2) {
         final float dx = x2 - x1;
         final float dy = y2 - y1;
-        return (float)Math.sqrt(dx*dx + dy*dy);
+        return (float) Math.sqrt(dx*dx + dy*dy);
     }
 
     static void subdivide(float[] src, int srcoff, float[] left, int leftoff,
@@ -218,8 +218,8 @@ final class Helpers implements MarlinConst {
     }
 
     // Most of these are copied from classes in java.awt.geom because we need
-    // float versions of these functions, and Line2D, CubicCurve2D,
-    // QuadCurve2D don't provide them.
+    // both single and double precision variants of these functions, and Line2D,
+    // CubicCurve2D, QuadCurve2D don't provide them.
     /**
      * Subdivides the cubic curve specified by the coordinates
      * stored in the <code>src</code> array at indices <code>srcoff</code>
@@ -268,18 +268,18 @@ final class Helpers implements MarlinConst {
             right[rightoff + 6] = x2;
             right[rightoff + 7] = y2;
         }
-        x1 = (x1 + ctrlx1) / 2f;
-        y1 = (y1 + ctrly1) / 2f;
-        x2 = (x2 + ctrlx2) / 2f;
-        y2 = (y2 + ctrly2) / 2f;
-        float centerx = (ctrlx1 + ctrlx2) / 2f;
-        float centery = (ctrly1 + ctrly2) / 2f;
-        ctrlx1 = (x1 + centerx) / 2f;
-        ctrly1 = (y1 + centery) / 2f;
-        ctrlx2 = (x2 + centerx) / 2f;
-        ctrly2 = (y2 + centery) / 2f;
-        centerx = (ctrlx1 + ctrlx2) / 2f;
-        centery = (ctrly1 + ctrly2) / 2f;
+        x1 = (x1 + ctrlx1) / 2.0f;
+        y1 = (y1 + ctrly1) / 2.0f;
+        x2 = (x2 + ctrlx2) / 2.0f;
+        y2 = (y2 + ctrly2) / 2.0f;
+        float centerx = (ctrlx1 + ctrlx2) / 2.0f;
+        float centery = (ctrly1 + ctrly2) / 2.0f;
+        ctrlx1 = (x1 + centerx) / 2.0f;
+        ctrly1 = (y1 + centery) / 2.0f;
+        ctrlx2 = (x2 + centerx) / 2.0f;
+        ctrly2 = (y2 + centery) / 2.0f;
+        centerx = (ctrlx1 + ctrlx2) / 2.0f;
+        centery = (ctrly1 + ctrly2) / 2.0f;
         if (left != null) {
             left[leftoff + 2] = x1;
             left[leftoff + 3] = y1;
@@ -367,12 +367,12 @@ final class Helpers implements MarlinConst {
             right[rightoff + 4] = x2;
             right[rightoff + 5] = y2;
         }
-        x1 = (x1 + ctrlx) / 2f;
-        y1 = (y1 + ctrly) / 2f;
-        x2 = (x2 + ctrlx) / 2f;
-        y2 = (y2 + ctrly) / 2f;
-        ctrlx = (x1 + x2) / 2f;
-        ctrly = (y1 + y2) / 2f;
+        x1 = (x1 + ctrlx) / 2.0f;
+        y1 = (y1 + ctrly) / 2.0f;
+        x2 = (x2 + ctrlx) / 2.0f;
+        y2 = (y2 + ctrly) / 2.0f;
+        ctrlx = (x1 + x2) / 2.0f;
+        ctrly = (y1 + y2) / 2.0f;
         if (left != null) {
             left[leftoff + 2] = x1;
             left[leftoff + 3] = y1;

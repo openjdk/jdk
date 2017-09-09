@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public abstract class BooleanControl extends Control {
     /**
      * Provides a string representation of the control.
      *
-     * @return a string description
+     * @return a string representation of the control
      */
     @Override
     public String toString() {
@@ -153,7 +153,7 @@ public abstract class BooleanControl extends Control {
         /**
          * Constructs a new boolean control type.
          *
-         * @param name the name of the new boolean control type
+         * @param  name the name of the new boolean control type
          */
         protected Type(final String name) {
             super(name);

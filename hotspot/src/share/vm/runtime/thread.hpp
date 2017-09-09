@@ -56,7 +56,6 @@
 #endif
 
 class ThreadSafepointState;
-class ThreadProfiler;
 
 class JvmtiThreadState;
 class JvmtiGetLoadedClassesClosure;
@@ -1719,23 +1718,6 @@ class JavaThread: public Thread {
   void make_zombies();
 
   void deoptimized_wrt_marked_nmethods();
-
-  // Profiling operation (see fprofile.cpp)
- public:
-  bool profile_last_Java_frame(frame* fr);
-
- private:
-  ThreadProfiler* _thread_profiler;
- private:
-  friend class FlatProfiler;                    // uses both [gs]et_thread_profiler.
-  friend class FlatProfilerTask;                // uses get_thread_profiler.
-  friend class ThreadProfilerMark;              // uses get_thread_profiler.
-  ThreadProfiler* get_thread_profiler()         { return _thread_profiler; }
-  ThreadProfiler* set_thread_profiler(ThreadProfiler* tp) {
-    ThreadProfiler* result = _thread_profiler;
-    _thread_profiler = tp;
-    return result;
-  }
 
  public:
   // Returns the running thread as a JavaThread

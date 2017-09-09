@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
@@ -29,41 +30,39 @@ import javax.print.attribute.SetOfIntegerSyntax;
 import javax.print.attribute.SupportedValuesAttribute;
 
 /**
- * Class NumberUpSupported is a printing attribute class, a set of integers,
- * that gives the supported values for a {@link NumberUp NumberUp} attribute.
- * <P>
- * <B>IPP Compatibility:</B> The NumberUpSupported attribute's canonical array
+ * Class {@code NumberUpSupported} is a printing attribute class, a set of
+ * integers, that gives the supported values for a {@link NumberUp NumberUp}
+ * attribute.
+ * <p>
+ * <b>IPP Compatibility:</b> The NumberUpSupported attribute's canonical array
  * form gives the lower and upper bound for each range of number-up to be
- * included in an IPP "number-up-supported" attribute. See class {@link
- * javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax} for an
- * explanation of canonical array form. The category name returned by
- * {@code getName()} gives the IPP attribute name.
+ * included in an IPP "number-up-supported" attribute. See class
+ * {@link SetOfIntegerSyntax SetOfIntegerSyntax} for an explanation of canonical
+ * array form. The category name returned by {@code getName()} gives the IPP
+ * attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class NumberUpSupported    extends SetOfIntegerSyntax
         implements SupportedValuesAttribute {
 
-     private static final long serialVersionUID = -1041573395759141805L;
-
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
+    private static final long serialVersionUID = -1041573395759141805L;
 
     /**
-     * Construct a new number up supported attribute with the given members.
-     * The supported values for NumberUp are specified in "array form;" see
-     * class
-     * {@link javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax}
-     * for an explanation of array form.
+     * Construct a new number up supported attribute with the given members. The
+     * supported values for NumberUp are specified in "array form;" see class
+     * {@link SetOfIntegerSyntax SetOfIntegerSyntax} for
+     * an explanation of array form.
      *
-     * @param  members  Set members in array form.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code members} is null or
-     *     any element of {@code members} is null.
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if any element of
-     *   {@code members} is not a length-one or length-two array. Also
-     *    thrown if {@code members} is a zero-length array or if any
-     *    member of the set is less than 1.
+     * @param  members set members in array form
+     * @throws NullPointerException if {@code members} is {@code null} or any
+     *         element of {@code members} is {@code null}
+     * @throws IllegalArgumentException if any element of {@code members} is not
+     *         a length-one or length-two array. Also if {@code members} is a
+     *         zero-length array or if any member of the set is less than 1.
      */
     public NumberUpSupported(int[][] members) {
         super (members);
@@ -86,13 +85,10 @@ public final class NumberUpSupported    extends SetOfIntegerSyntax
 
     /**
      * Construct a new number up supported attribute containing a single
-     * integer. That is, only the one value of NumberUp is supported.
+     * integer. That is, only the one value of {@code NumberUp} is supported.
      *
-     * @param  member  Set member.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code member} is less than
-     *     1.
+     * @param  member set member
+     * @throws IllegalArgumentException if {@code member < 1}
      */
     public NumberUpSupported(int member) {
         super (member);
@@ -103,16 +99,14 @@ public final class NumberUpSupported    extends SetOfIntegerSyntax
 
     /**
      * Construct a new number up supported attribute containing a single range
-     * of integers. That is, only those values of NumberUp in the one range are
-     * supported.
+     * of integers. That is, only those values of {@code NumberUp} in the one
+     * range are supported.
      *
-     * @param  lowerBound  Lower bound of the range.
-     * @param  upperBound  Upper bound of the range.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if a null range is specified or if a
-     *     non-null range is specified with {@code lowerBound} less than
-     *     1.
+     * @param  lowerBound lower bound of the range
+     * @param  upperBound upper bound of the range
+     * @throws IllegalArgumentException if a {@code null} range is specified or
+     *         if a {@code non-null} range is specified with {@code lowerBound}
+     *         less than 1
      */
     public NumberUpSupported(int lowerBound, int upperBound) {
         super (lowerBound, upperBound);
@@ -126,22 +120,18 @@ public final class NumberUpSupported    extends SetOfIntegerSyntax
 
     /**
      * Returns whether this number up supported attribute is equivalent to the
-     * passed in object. To be equivalent, all of the following conditions
-     * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class NumberUpSupported.
-     * <LI>
-     * This number up supported attribute's members and {@code object}'s
-     * members are the same.
-     * </OL>
+     * passed in object. To be equivalent, all of the following conditions must
+     * be true:
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code NumberUpSupported}.
+     *   <li>This number up supported attribute's members and {@code object}'s
+     *   members are the same.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this number up
-     *          supported attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this number up
+     *         supported attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals (object) &&
@@ -151,12 +141,12 @@ public final class NumberUpSupported    extends SetOfIntegerSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class NumberUpSupported, the
-     * category is class NumberUpSupported itself.
+     * <p>
+     * For class {@code NumberUpSupported}, the category is class
+     * {@code NumberUpSupported} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return NumberUpSupported.class;
@@ -165,14 +155,13 @@ public final class NumberUpSupported    extends SetOfIntegerSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class NumberUpSupported, the
-     * category name is {@code "number-up-supported"}.
+     * <p>
+     * For class {@code NumberUpSupported}, the category name is
+     * {@code "number-up-supported"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "number-up-supported";
     }
-
 }

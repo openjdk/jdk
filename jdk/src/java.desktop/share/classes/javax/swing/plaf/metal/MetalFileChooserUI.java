@@ -281,11 +281,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         // Home Button
         File homeDir = fsv.getHomeDirectory();
         String toolTipText = homeFolderToolTipText;
-        if (fsv.isRoot(homeDir)) {
-            toolTipText = getFileView(fc).getName(homeDir); // Probably "Desktop".
-        }
-
-
 
 
         JButton b = new JButton(homeFolderIcon);

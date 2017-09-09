@@ -21,6 +21,7 @@
  * questions.
  */
 /* @test
+   @key headful
    @bug 4633594 8172012
    @summary No way to pass focus from a JTree to a GUI placed inside the tree node
    @run main JTreeFocusTest

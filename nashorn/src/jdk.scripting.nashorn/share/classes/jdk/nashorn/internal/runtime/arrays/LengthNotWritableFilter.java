@@ -143,7 +143,7 @@ final class LengthNotWritableFilter extends ArrayFilter {
 
     @Override
     public ArrayData delete(final int index) {
-        extraElements.remove(index);
+        extraElements.remove(ArrayIndex.toLongIndex(index));
         underlying = underlying.delete(index);
         return this;
     }

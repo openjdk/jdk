@@ -26,40 +26,48 @@
 package javax.print;
 
 import java.io.OutputStream;
-
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
-import javax.print.DocFlavor;
+import javax.print.attribute.PrintRequestAttributeSet;
 
 import sun.awt.AppContext;
-import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 
 /**
  * A {@code StreamPrintServiceFactory} is the factory for
- * {@link StreamPrintService} instances,
- * which can print to an output stream in a particular
- * document format described as a mime type.
- * A typical output document format may be Postscript(TM).
+ * {@link StreamPrintService} instances, which can print to an output stream in
+ * a particular document format described as a mime type. A typical output
+ * document format may be Postscript(TM).
  * <p>
- * This class is implemented by a service and located by the
- * implementation using the {@link java.util.ServiceLoader} facility.
+ * This class is implemented by a service and located by the implementation
+ * using the {@link ServiceLoader} facility.
  * <p>
  * Applications locate instances of this class by calling the
  * {@link #lookupStreamPrintServiceFactories(DocFlavor, String)} method.
  * <p>
- * Applications can use a {@code StreamPrintService} obtained from a
- * factory in place of a {@code PrintService} which represents a
- * physical printer device.
+ * Applications can use a {@code StreamPrintService} obtained from a factory in
+ * place of a {@code PrintService} which represents a physical printer device.
  */
-
 public abstract class StreamPrintServiceFactory {
 
+    /**
+     * Contains a list of factories.
+     */
     static class Services {
+
+        /**
+         * The list of factories which will be stored per appcontext.
+         */
         private ArrayList<StreamPrintServiceFactory> listOfFactories = null;
     }
 
+    /**
+     * Returns the services from the current appcontext.
+     *
+     * @return the services
+     */
     private static Services getServices() {
         Services services =
             (Services)AppContext.getAppContext().get(Services.class);
@@ -70,10 +78,20 @@ public abstract class StreamPrintServiceFactory {
         return services;
     }
 
+    /**
+     * Returns the list of factories.
+     *
+     * @return the list of factories
+     */
     private static ArrayList<StreamPrintServiceFactory> getListOfFactories() {
         return getServices().listOfFactories;
     }
 
+    /**
+     * Initialize the list of factories.
+     *
+     * @return the list of factories
+     */
     private static ArrayList<StreamPrintServiceFactory> initListOfFactories() {
         ArrayList<StreamPrintServiceFactory> listOfFactories = new ArrayList<>();
         getServices().listOfFactories = listOfFactories;
@@ -81,26 +99,26 @@ public abstract class StreamPrintServiceFactory {
     }
 
     /**
-     * Locates factories for print services that can be used with
-     * a print job to output a stream of data in the
-     * format specified by {@code outputMimeType}.
+     * Locates factories for print services that can be used with a print job to
+     * output a stream of data in the format specified by
+     * {@code outputMimeType}.
      * <p>
-     * The {@code outputMimeType} parameter describes the document type that
-     * you want to create, whereas the {@code flavor} parameter describes the
-     * format in which the input data will be provided by the application
-     * to the {@code StreamPrintService}.
+     * The {@code outputMimeType} parameter describes the document type that you
+     * want to create, whereas the {@code flavor} parameter describes the format
+     * in which the input data will be provided by the application to the
+     * {@code StreamPrintService}.
      * <p>
-     * Although null is an acceptable value to use in the lookup of stream
-     * printing services, it's typical to search for a particular
-     * desired format, such as Postscript(TM).
+     * Although {@code null} is an acceptable value to use in the lookup of
+     * stream printing services, it's typical to search for a particular desired
+     * format, such as Postscript(TM).
      *
-     * @param flavor of the input document type - null means match all
-     * types.
-     * @param outputMimeType representing the required output format, used to
-     * identify suitable stream printer factories. A value of null means
-     * match all formats.
-     * @return   matching factories for stream print service instance,
-     *           empty if no suitable factories could be located.
+     * @param  flavor of the input document type - {@code null} means match all
+     *         types
+     * @param  outputMimeType representing the required output format, used to
+     *         identify suitable stream printer factories. A value of
+     *         {@code null} means match all formats.
+     * @return matching factories for stream print service instance, empty if no
+     *         suitable factories could be located
      */
      public static StreamPrintServiceFactory[]
          lookupStreamPrintServiceFactories(DocFlavor flavor,
@@ -110,55 +128,56 @@ public abstract class StreamPrintServiceFactory {
          return list.toArray(new StreamPrintServiceFactory[list.size()]);
      }
 
-    /** Queries the factory for the document format that is emitted
-     * by printers obtained from this factory.
+    /**
+     * Queries the factory for the document format that is emitted by printers
+     * obtained from this factory.
      *
-     * @return the output format described as a mime type.
+     * @return the output format described as a mime type
      */
     public abstract String getOutputFormat();
 
     /**
-     * Queries the factory for the document flavors that can be accepted
-     * by printers obtained from this factory.
-     * @return array of supported doc flavors.
+     * Queries the factory for the document flavors that can be accepted by
+     * printers obtained from this factory.
+     *
+     * @return array of supported doc flavors
      */
     public abstract DocFlavor[] getSupportedDocFlavors();
 
     /**
-     * Returns a {@code StreamPrintService} that can print to
-     * the specified output stream.
-     * The output stream is created and managed by the application.
-     * It is the application's responsibility to close the stream and
-     * to ensure that this Printer is not reused.
-     * The application should not close this stream until any print job
-     * created from the printer is complete. Doing so earlier may generate
-     * a {@code PrinterException} and an event indicating that the
-     * job failed.
+     * Returns a {@code StreamPrintService} that can print to the specified
+     * output stream. The output stream is created and managed by the
+     * application. It is the application's responsibility to close the stream
+     * and to ensure that this {@code Printer} is not reused. The application
+     * should not close this stream until any print job created from the printer
+     * is complete. Doing so earlier may generate a {@code PrinterException} and
+     * an event indicating that the job failed.
      * <p>
-     * Whereas a {@code PrintService} connected to a physical printer
-     * can be reused,
-     * a {@code StreamPrintService} connected to a stream cannot.
-     * The underlying {@code StreamPrintService} may be disposed by
-     * the print system with
-     * the {@link StreamPrintService#dispose() dispose} method
-     * before returning from the
-     * {@link DocPrintJob#print(Doc, javax.print.attribute.PrintRequestAttributeSet) print}
-     * method of {@code DocPrintJob} so that the print system knows
-     * this printer is no longer usable.
-     * This is equivalent to a physical printer going offline - permanently.
-     * Applications may supply a null print stream to create a queryable
-     * service. It is not valid to create a PrintJob for such a stream.
-     * Implementations which allocate resources on construction should examine
-     * the stream and may wish to only allocate resources if the stream is
-     * non-null.
+     * Whereas a {@code PrintService} connected to a physical printer can be
+     * reused, a {@code StreamPrintService} connected to a stream cannot. The
+     * underlying {@code StreamPrintService} may be disposed by the print system
+     * with the {@link StreamPrintService#dispose() dispose} method before
+     * returning from the
+     * {@link DocPrintJob#print(Doc, PrintRequestAttributeSet) print} method of
+     * {@code DocPrintJob} so that the print system knows this printer is no
+     * longer usable. This is equivalent to a physical printer going offline -
+     * permanently. Applications may supply a {@code null} print stream to
+     * create a queryable service. It is not valid to create a {@code PrintJob}
+     * for such a stream. Implementations which allocate resources on
+     * construction should examine the stream and may wish to only allocate
+     * resources if the stream is {@code non-null}.
      *
-     * @param out destination stream for generated output.
-     * @return a PrintService which will generate the format specified by the
-     * DocFlavor supported by this Factory.
+     * @param  out destination stream for generated output
+     * @return a {@code PrintService} which will generate the format specified
+     *         by the {@code DocFlavor} supported by this factory
      */
     public abstract StreamPrintService getPrintService(OutputStream out);
 
-
+    /**
+     * Returns all factories for print services.
+     *
+     * @return all factories
+     */
     private static ArrayList<StreamPrintServiceFactory> getAllFactories() {
         synchronized (StreamPrintServiceFactory.class) {
 
@@ -198,6 +217,15 @@ public abstract class StreamPrintServiceFactory {
         }
     }
 
+    /**
+     * Checks if the array of {@code flavors} contains the {@code flavor}
+     * object.
+     *
+     * @param  flavor the flavor
+     * @param  flavors the array of flavors
+     * @return {@code true} if {@code flavors} contains the {@code flavor}
+     *         object; {@code false} otherwise
+     */
     private static boolean isMember(DocFlavor flavor, DocFlavor[] flavors) {
         for (int f=0; f<flavors.length; f++ ) {
             if (flavor.equals(flavors[f])) {
@@ -207,6 +235,21 @@ public abstract class StreamPrintServiceFactory {
         return false;
     }
 
+    /**
+     * Utility method for {@link #lookupStreamPrintServiceFactories}.
+     * <p>
+     * Locates factories for print services that can be used with a print job to
+     * output a stream of data in the format specified by
+     * {@code outputMimeType}.
+     *
+     * @param  flavor of the input document type - {@code null} means match all
+     *         types
+     * @param  outType representing the required output format, used to identify
+     *         suitable stream printer factories. A value of {@code null} means
+     *         match all formats.
+     * @return matching factories for stream print service instance, empty if no
+     *         suitable factories could be located
+     */
     private static ArrayList<StreamPrintServiceFactory> getFactories(DocFlavor flavor, String outType) {
 
         if (flavor == null && outType == null) {
@@ -227,5 +270,4 @@ public abstract class StreamPrintServiceFactory {
 
         return list;
     }
-
 }

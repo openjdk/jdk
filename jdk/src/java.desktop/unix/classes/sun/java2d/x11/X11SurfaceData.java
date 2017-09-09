@@ -72,7 +72,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
     protected int depth;
 
-    private static native void initIDs(Class<?> xorComp, boolean tryDGA);
+    private static native void initIDs(Class<?> xorComp);
     protected native void initSurface(int depth, int width, int height,
                                       long drawable);
 
@@ -208,17 +208,12 @@ public abstract class X11SurfaceData extends XSurfaceData {
     protected X11Renderer x11pipe;
     protected PixelToShapeConverter x11txpipe;
     protected static TextPipe x11textpipe;
-    protected static boolean dgaAvailable;
 
     static {
        if (!isX11SurfaceDataInitialized() &&
            !GraphicsEnvironment.isHeadless()) {
-            // If a screen magnifier is present, don't attempt to use DGA
-            String magPresent = java.security.AccessController.doPrivileged
-                (new sun.security.action.GetPropertyAction("javax.accessibility.screen_magnifier_present"));
-            boolean tryDGA = magPresent == null || !"true".equals(magPresent);
 
-            initIDs(XORComposite.class, tryDGA);
+            initIDs(XORComposite.class);
 
             String xtextpipe = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetPropertyAction("sun.java2d.xtextpipe"));
@@ -239,19 +234,12 @@ public abstract class X11SurfaceData extends XSurfaceData {
                 x11textpipe = solidTextRenderer;
             }
 
-            dgaAvailable = isDgaAvailable();
-
             if (isAccelerationEnabled()) {
                 X11PMBlitLoops.register();
                 X11PMBlitBgLoops.register();
             }
        }
     }
-
-    /**
-     * Returns true if we can use DGA on any of the screens
-     */
-    public static native boolean isDgaAvailable();
 
     /**
      * Returns true if shared memory pixmaps are available
@@ -277,10 +265,9 @@ public abstract class X11SurfaceData extends XSurfaceData {
                      }
 
                     // EXA based drivers tend to place pixmaps in VRAM, slowing down readbacks.
-                    // Don't use pixmaps if dga is available,
-                    // or we are local and shared memory Pixmaps are not available.
-                    accelerationEnabled =
-                        !(isDgaAvailable() || (isDisplayLocal && !isShmPMAvailable()));
+                    // Don't use pixmaps if we are local and shared memory Pixmaps
+                    // are not available.
+                    accelerationEnabled = !(isDisplayLocal && !isShmPMAvailable());
                 }
             }
         }

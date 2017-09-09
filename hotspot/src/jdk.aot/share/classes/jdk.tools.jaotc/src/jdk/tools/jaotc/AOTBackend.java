@@ -27,6 +27,8 @@ import java.util.ListIterator;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
+import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.CompilationIdentifier.Verbosity;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
@@ -127,7 +129,13 @@ final class AOTBackend {
             ProfilingInfo profilingInfo = DefaultProfilingInfo.get(TriState.FALSE);
 
             final boolean isImmutablePIC = true;
-            CompilationResult compilationResult = new CompilationResult(resolvedMethod.getName(), isImmutablePIC);
+            CompilationIdentifier id = new CompilationIdentifier() {
+                @Override
+                public String toString(Verbosity verbosity) {
+                    return resolvedMethod.getName();
+                }
+            };
+            CompilationResult compilationResult = new CompilationResult(id, isImmutablePIC);
 
             return GraalCompiler.compileGraph(graph, resolvedMethod, providers, backend, graphBuilderSuite, OptimisticOptimizations.ALL, profilingInfo, getSuites(), getLirSuites(),
                             compilationResult, CompilationResultBuilderFactory.Default);

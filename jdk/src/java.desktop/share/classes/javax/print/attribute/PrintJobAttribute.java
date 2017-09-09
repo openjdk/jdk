@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,18 @@
 package javax.print.attribute;
 
 /**
- * PrintJobAttribute is a tagging interface which a printing attribute
+ * {@code PrintJobAttribute} is a tagging interface which a printing attribute
  * class implements to indicate the attribute describes the status of a Print
- * Job or some other characteristic of a Print Job. A Print Service
- * instance adds a number of PrintJobAttributes to a Print Job's attribute set
- * to report the Print Job's status. If an attribute implements {@link
- * PrintRequestAttribute PrintRequestAttribute} as well as PrintJobAttribute,
- * the client may include the attribute in a attribute set to
- * specify the attribute's value for the Print Job.
+ * Job or some other characteristic of a Print Job. A Print Service instance
+ * adds a number of {@code PrintJobAttributes} to a Print Job's attribute set to
+ * report the Print Job's status. If an attribute implements
+ * {@link PrintRequestAttribute PrintRequestAttribute} as well as
+ * {@code PrintJobAttribute}, the client may include the attribute in a
+ * attribute set to specify the attribute's value for the Print Job.
  *
+ * @author Alan Kaminsky
  * @see PrintRequestAttributeSet
  * @see PrintJobAttributeSet
- *
- * @author  Alan Kaminsky
  */
 public interface PrintJobAttribute extends Attribute {
 }
