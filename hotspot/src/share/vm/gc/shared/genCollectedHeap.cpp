@@ -47,7 +47,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -71,7 +70,6 @@ enum GCH_strong_roots_tasks {
   GCH_PS_Universe_oops_do,
   GCH_PS_JNIHandles_oops_do,
   GCH_PS_ObjectSynchronizer_oops_do,
-  GCH_PS_FlatProfiler_oops_do,
   GCH_PS_Management_oops_do,
   GCH_PS_SystemDictionary_oops_do,
   GCH_PS_ClassLoaderDataGraph_oops_do,
@@ -605,9 +603,6 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_ObjectSynchronizer_oops_do)) {
     ObjectSynchronizer::oops_do(strong_roots);
-  }
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_FlatProfiler_oops_do)) {
-    FlatProfiler::oops_do(strong_roots);
   }
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_Management_oops_do)) {
     Management::oops_do(strong_roots);

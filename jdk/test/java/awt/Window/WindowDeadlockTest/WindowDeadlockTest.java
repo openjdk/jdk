@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8176490
  * @summary Tests that there is no hang or deadlock when the visibility
  *      of parent and child windows is changed.

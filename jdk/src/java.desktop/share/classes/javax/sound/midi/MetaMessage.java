@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class MetaMessage extends MidiMessage {
 
     /**
      * Status byte for {@code MetaMessage} (0xFF, or 255), which is used in MIDI
-     * files. It has the same value as SYSTEM_RESET, which is used in the
-     * real-time "MIDI wire" protocol.
+     * files. It has the same value as {@link ShortMessage#SYSTEM_RESET}, which
+     * is used in the real-time "MIDI wire" protocol.
      *
      * @see MidiMessage#getStatus
      */

@@ -25,13 +25,11 @@
    @bug 6937798
    @summary Nimbus: Issues with JTable grid
    @author Alexander Potochkin
-   @modules java.desktop/com.sun.java.swing.plaf.nimbus
    @run main bug6937798
 */
 
-import com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel;
-
 import javax.swing.*;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;

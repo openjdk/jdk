@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,78 @@
  * questions.
  */
 
-
 package javax.print.attribute;
 
 import java.io.Serializable;
 
 /**
- * Class Size2DSyntax is an abstract base class providing the common
+ * Class {@code Size2DSyntax} is an abstract base class providing the common
  * implementation of all attributes denoting a size in two dimensions.
- * <P>
- * A two-dimensional size attribute's value consists of two items, the X
- * dimension and the Y dimension. A two-dimensional size attribute may be
- * constructed by supplying the two values and indicating the units in which the
- * values are measured. Methods are provided to return a two-dimensional size
- * attribute's values, indicating the units in which the values are to be
+ * <p>
+ * A two-dimensional size attribute's value consists of two items, the {@code X}
+ * dimension and the {@code Y} dimension. A two-dimensional size attribute may
+ * be constructed by supplying the two values and indicating the units in which
+ * the values are measured. Methods are provided to return a two-dimensional
+ * size attribute's values, indicating the units in which the values are to be
  * returned. The two most common size units are inches (in) and millimeters
- * (mm), and exported constants {@link #INCH INCH} and {@link #MM
- * MM} are provided for indicating those units.
- * <P>
+ * (mm), and exported constants {@link #INCH INCH} and {@link #MM MM} are
+ * provided for indicating those units.
+ * <p>
  * Once constructed, a two-dimensional size attribute's value is immutable.
- * <P>
- * <B>Design</B>
- * <P>
- * A two-dimensional size attribute's X and Y dimension values are stored
- * internally as integers in units of micrometers (&#181;m), where 1 micrometer
- * = 10<SUP>-6</SUP> meter = 1/1000 millimeter = 1/25400 inch. This permits
- * dimensions to be represented exactly to a precision of 1/1000 mm (= 1
+ * <p>
+ * <b>Design</b>
+ * <p>
+ * A two-dimensional size attribute's {@code X} and {@code Y} dimension values
+ * are stored internally as integers in units of micrometers (&#181;m), where 1
+ * micrometer = 10<SUP>-6</SUP> meter = 1/1000 millimeter = 1/25400 inch. This
+ * permits dimensions to be represented exactly to a precision of 1/1000 mm (= 1
  * &#181;m) or 1/100 inch (= 254 &#181;m). If fractional inches are expressed in
  * negative powers of two, this permits dimensions to be represented exactly to
  * a precision of 1/8 inch (= 3175 &#181;m) but not 1/16 inch (because 1/16 inch
  * does not equal an integral number of &#181;m).
- * <P>
+ * <p>
  * Storing the dimensions internally in common units of &#181;m lets two size
  * attributes be compared without regard to the units in which they were
  * created; for example, 8.5 in will compare equal to 215.9 mm, as they both are
- * stored as 215900 &#181;m. For example, a lookup service can
- * match resolution attributes based on equality of their serialized
- * representations regardless of the units in which they were created. Using
- * integers for internal storage allows precise equality comparisons to be done,
- * which would not be guaranteed if an internal floating point representation
- * were used. Note that if you're looking for U.S. letter sized media in metric
- * units, you have to search for a media size of 215.9 x 279.4 mm; rounding off
- * to an integral 216 x 279 mm will not match.
- * <P>
- * The exported constant {@link #INCH INCH} is actually the
- * conversion factor by which to multiply a value in inches to get the value in
- * &#181;m. Likewise, the exported constant {@link #MM MM} is the
- * conversion factor by which to multiply a value in mm to get the value in
- * &#181;m. A client can specify a resolution value in units other than inches
- * or mm by supplying its own conversion factor. However, since the internal
- * units of &#181;m was chosen with supporting only the external units of inch
- * and mm in mind, there is no guarantee that the conversion factor for the
- * client's units will be an exact integer. If the conversion factor isn't an
- * exact integer, resolution values in the client's units won't be stored
- * precisely.
+ * stored as 215900 &#181;m. For example, a lookup service can match resolution
+ * attributes based on equality of their serialized representations regardless
+ * of the units in which they were created. Using integers for internal storage
+ * allows precise equality comparisons to be done, which would not be guaranteed
+ * if an internal floating point representation were used. Note that if you're
+ * looking for {@code U.S. letter} sized media in metric units, you have to
+ * search for a media size of 215.9 x 279.4 mm; rounding off to an integral
+ * 216 x 279 mm will not match.
+ * <p>
+ * The exported constant {@link #INCH INCH} is actually the conversion factor by
+ * which to multiply a value in inches to get the value in &#181;m. Likewise,
+ * the exported constant {@link #MM MM} is the conversion factor by which to
+ * multiply a value in mm to get the value in &#181;m. A client can specify a
+ * resolution value in units other than inches or mm by supplying its own
+ * conversion factor. However, since the internal units of &#181;m was chosen
+ * with supporting only the external units of inch and mm in mind, there is no
+ * guarantee that the conversion factor for the client's units will be an exact
+ * integer. If the conversion factor isn't an exact integer, resolution values
+ * in the client's units won't be stored precisely.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public abstract class Size2DSyntax implements Serializable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 5584439964938660530L;
 
     /**
-     * X dimension in units of micrometers (&#181;m).
+     * {@code X} dimension in units of micrometers (&#181;m).
+     *
      * @serial
      */
     private int x;
 
     /**
-     * Y dimension in units of micrometers (&#181;m).
+     * {@code Y} dimension in units of micrometers (&#181;m).
+     *
      * @serial
      */
     private int y;
@@ -108,20 +111,16 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      */
     public static final int MM = 1000;
 
-
     /**
      * Construct a new two-dimensional size attribute from the given
      * floating-point values.
      *
-     * @param  x  X dimension.
-     * @param  y  Y dimension.
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or
-     *     {@link #MM MM}.
-     *
-     * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
-     *     {@code units < 1}.
+     * @param  x {@code X} dimension
+     * @param  y {@code Y} dimension
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
+     *         {@code units < 1}
      */
     protected Size2DSyntax(float x, float y, int units) {
         if (x < 0.0f) {
@@ -141,15 +140,12 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * Construct a new two-dimensional size attribute from the given integer
      * values.
      *
-     * @param  x  X dimension.
-     * @param  y  Y dimension.
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or
-     *     {@link #MM MM}.
-     *
-     * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0}
-     *    or {@code units < 1}.
+     * @param  x {@code X} dimension
+     * @param  y {@code Y} dimension
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @throws IllegalArgumentException if {@code x < 0} or {@code y < 0} or
+     *         {@code units < 1}
      */
     protected Size2DSyntax(int x, int y, int units) {
         if (x < 0) {
@@ -169,16 +165,11 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * Convert a value from micrometers to some other units. The result is
      * returned as a floating-point number.
      *
-     * @param  x
-     *     Value (micrometers) to convert.
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or
-     *     {@link #MM MM}.
-     *
-     * @return  The value of {@code x} converted to the desired units.
-     *
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code units} < 1.
+     * @param  x value (micrometers) to convert
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @return the value of {@code x} converted to the desired units
+     * @throws IllegalArgumentException if {@code units < 1}
      */
     private static float convertFromMicrometers(int x, int units) {
         if (units < 1) {
@@ -191,46 +182,37 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * Get this two-dimensional size attribute's dimensions in the given units
      * as floating-point values.
      *
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
-     *
-     * @return  A two-element array with the X dimension at index 0 and the Y
-     *          dimension at index 1.
-     *
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code units < 1}.
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @return a two-element array with the {@code X} dimension at index 0 and
+     *         the {@code Y} dimension at index 1
+     * @throws IllegalArgumentException if {@code units < 1}
      */
     public float[] getSize(int units) {
         return new float[] {getX(units), getY(units)};
     }
 
     /**
-     * Returns this two-dimensional size attribute's X dimension in the given
-     * units as a floating-point value.
+     * Returns this two-dimensional size attribute's {@code X} dimension in the
+     * given units as a floating-point value.
      *
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
-     *
-     * @return  X dimension.
-     *
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code units < 1}.
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @return {@code X} dimension
+     * @throws IllegalArgumentException if {@code units < 1}
      */
     public float getX(int units) {
         return convertFromMicrometers(x, units);
     }
 
     /**
-     * Returns this two-dimensional size attribute's Y dimension in the given
-     * units as a floating-point value.
+     * Returns this two-dimensional size attribute's {@code Y} dimension in the
+     * given units as a floating-point value.
      *
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
-     *
-     * @return  Y dimension.
-     *
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code units < 1}.
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @return {@code Y} dimension
+     * @throws IllegalArgumentException if {@code units < 1}
      */
     public float getY(int units) {
         return convertFromMicrometers(y, units);
@@ -238,22 +220,17 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this two-dimensional size attribute in the
-     * given units. The string takes the form <code>"<I>X</I>x<I>Y</I>
-     * <I>U</I>"</code>, where <I>X</I> is the X dimension, <I>Y</I> is the Y
-     * dimension, and <I>U</I> is the units name. The values are displayed in
-     * floating point.
+     * given units. The string takes the form <code>"<i>X</i>x<i>Y</i>
+     * <i>U</i>"</code>, where <i>X</i> is the {@code X} dimension, <i>Y</i> is
+     * the {@code Y} dimension, and <i>U</i> is the units name. The values are
+     * displayed in floating point.
      *
-     * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH INCH} or {@link #MM MM}.
-     *
-     * @param  unitsName
-     *     Units name string, e.g. {@code in} or {@code mm}. If
-     *     null, no units name is appended to the result.
-     *
-     * @return  String version of this two-dimensional size attribute.
-     *
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code units < 1}.
+     * @param  units unit conversion factor, e.g. {@link #INCH INCH} or
+     *         {@link #MM MM}
+     * @param  unitsName units name string, e.g. {@code in} or {@code mm}. If
+     *         {@code null}, no units name is appended to the result
+     * @return {@code String} version of this two-dimensional size attribute
+     * @throws IllegalArgumentException if {@code units < 1}
      */
     public String toString(int units, String unitsName) {
         StringBuilder result = new StringBuilder();
@@ -271,23 +248,18 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * Returns whether this two-dimensional size attribute is equivalent to the
      * passed in object. To be equivalent, all of the following conditions must
      * be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class Size2DSyntax.
-     * <LI>
-     * This attribute's X dimension is equal to {@code object}'s X
-     * dimension.
-     * <LI>
-     * This attribute's Y dimension is equal to {@code object}'s Y
-     * dimension.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code Size2DSyntax}
+     *   <li>This attribute's {@code X} dimension is equal to {@code object}'s
+     *   {@code X} dimension.
+     *   <li>This attribute's {@code Y} dimension is equal to {@code object}'s
+     *   {@code Y} dimension.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this
-     *          two-dimensional size attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this
+     *         two-dimensional size attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return(object != null &&
@@ -306,9 +278,9 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this two-dimensional size attribute. The
-     * string takes the form <code>"<I>X</I>x<I>Y</I> um"</code>, where
-     * <I>X</I> is the X dimension and <I>Y</I> is the Y dimension.
-     * The values are reported in the internal units of micrometers.
+     * string takes the form <code>"<i>X</i>x<i>Y</i> um"</code>, where <i>X</i>
+     * is the {@code X} dimension and <i>Y</i> is the {@code Y} dimension. The
+     * values are reported in the internal units of micrometers.
      */
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -320,23 +292,22 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
     }
 
     /**
-     * Returns this two-dimensional size attribute's X dimension in units of
-     * micrometers (&#181;m). (For use in a subclass.)
+     * Returns this two-dimensional size attribute's {@code X} dimension in
+     * units of micrometers (&#181;m). (For use in a subclass.)
      *
-     * @return  X dimension (&#181;m).
+     * @return {@code X} dimension (&#181;m)
      */
     protected int getXMicrometers(){
         return x;
     }
 
     /**
-     * Returns this two-dimensional size attribute's Y dimension in units of
-     * micrometers (&#181;m). (For use in a subclass.)
+     * Returns this two-dimensional size attribute's {@code Y} dimension in
+     * units of micrometers (&#181;m). (For use in a subclass.)
      *
-     * @return  Y dimension (&#181;m).
+     * @return {@code Y} dimension (&#181;m)
      */
     protected int getYMicrometers() {
         return y;
     }
-
 }

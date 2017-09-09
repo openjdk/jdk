@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public interface Mixer extends Line {
      * version, vendor, etc.
      *
      * @return a mixer info object that describes this mixer
-     * @see Mixer.Info
+     * @see Info
      */
     Info getMixerInfo();
 
@@ -144,19 +144,19 @@ public interface Mixer extends Line {
     /**
      * Obtains the approximate maximum number of lines of the requested type
      * that can be open simultaneously on the mixer.
-     *
+     * <p>
      * Certain types of mixers do not have a hard bound and may allow opening
      * more lines. Since certain lines are a shared resource, a mixer may not be
      * able to open the maximum number of lines if another process has opened
      * lines of this mixer.
-     *
+     * <p>
      * The requested type is any line that matches the description in the
      * provided {@code Line.Info} object. For example, if the info object
      * represents a speaker port, and the mixer supports exactly one speaker
-     * port, this method should return 1. If the info object represents a
-     * source data line and the mixer supports the use of 32 source data lines
+     * port, this method should return 1. If the info object represents a source
+     * data line and the mixer supports the use of 32 source data lines
      * simultaneously, the return value should be 32. If there is no limit, this
-     * function returns {@code AudioSystem.NOT_SPECIFIED}.
+     * function returns {@link AudioSystem#NOT_SPECIFIED}.
      *
      * @param  info a {@code Line.Info} that describes the line for which the
      *         number of supported instances is queried
@@ -215,11 +215,10 @@ public interface Mixer extends Line {
      * this mixer are unsynchronized.
      *
      * @param  lines the synchronized lines for which synchronization should be
-     *         released, or {@code null} for all this mixer's synchronized
-     *         lines
+     *         released, or {@code null} for all this mixer's synchronized lines
      * @throws IllegalArgumentException if the lines cannot be unsynchronized.
-     *         This may occur if the argument specified does not exactly match
-     *         a set of lines for which synchronization has already been
+     *         This may occur if the argument specified does not exactly match a
+     *         set of lines for which synchronization has already been
      *         established.
      */
     void unsynchronize(Line[] lines);
@@ -277,8 +276,8 @@ public interface Mixer extends Line {
          * information.
          *
          * @param  name the name of the mixer
-         * @param  vendor the company who manufactures or creates the
-         *         hardware or software mixer
+         * @param  vendor the company who manufactures or creates the hardware
+         *         or software mixer
          * @param  description descriptive text about the mixer
          * @param  version version information for the mixer
          */
@@ -291,13 +290,12 @@ public interface Mixer extends Line {
         }
 
         /**
-         * Indicates whether two info objects are equal, returning {@code true}
-         * if they are identical.
+         * Indicates whether the specified object is equal to this info object,
+         * returning {@code true} if the objects are the same.
          *
-         * @param  obj the reference object with which to compare this info
-         *         object
-         * @return {@code true} if this info object is the same as the
-         *         {@code obj} argument; {@code false} otherwise
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this info
+         *         object; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -305,9 +303,9 @@ public interface Mixer extends Line {
         }
 
         /**
-         * Finalizes the hashcode method.
+         * Returns a hash code value for this info object.
          *
-         * @return the hashcode for this object
+         * @return a hash code value for this info object
          */
         @Override
         public final int hashCode() {

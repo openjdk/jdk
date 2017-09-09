@@ -161,6 +161,23 @@ class EventDispatchThread extends Thread {
         }
     }
 
+    boolean filterAndCheckEvent(AWTEvent event) {
+        boolean eventOK = true;
+        synchronized (eventFilters) {
+            for (int i = eventFilters.size() - 1; i >= 0; i--) {
+                EventFilter f = eventFilters.get(i);
+                EventFilter.FilterAction accept = f.acceptEvent(event);
+                if (accept == EventFilter.FilterAction.REJECT) {
+                    eventOK = false;
+                    break;
+                } else if (accept == EventFilter.FilterAction.ACCEPT_IMMEDIATELY) {
+                    break;
+                }
+            }
+        }
+        return eventOK && SunDragSourceContextPeer.checkEvent(event);
+    }
+
     void pumpOneEventForFilters(int id) {
         AWTEvent event = null;
         boolean eventOK = false;
@@ -172,20 +189,7 @@ class EventDispatchThread extends Thread {
 
                 event = (id == ANY_EVENT) ? eq.getNextEvent() : eq.getNextEvent(id);
 
-                eventOK = true;
-                synchronized (eventFilters) {
-                    for (int i = eventFilters.size() - 1; i >= 0; i--) {
-                        EventFilter f = eventFilters.get(i);
-                        EventFilter.FilterAction accept = f.acceptEvent(event);
-                        if (accept == EventFilter.FilterAction.REJECT) {
-                            eventOK = false;
-                            break;
-                        } else if (accept == EventFilter.FilterAction.ACCEPT_IMMEDIATELY) {
-                            break;
-                        }
-                    }
-                }
-                eventOK = eventOK && SunDragSourceContextPeer.checkEvent(event);
+                eventOK = filterAndCheckEvent(event);
                 if (!eventOK) {
                     event.consume();
                 }

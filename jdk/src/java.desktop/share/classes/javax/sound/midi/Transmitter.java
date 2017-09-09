@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public interface Transmitter extends AutoCloseable {
      * open/close behaviour see the class description of
      * {@link MidiDevice MidiDevice}.
      *
-     * @see javax.sound.midi.MidiSystem#getTransmitter
+     * @see MidiSystem#getTransmitter
      */
     @Override
     void close();

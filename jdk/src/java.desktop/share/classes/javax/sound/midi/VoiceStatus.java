@@ -51,8 +51,8 @@ package javax.sound.midi;
  * given type of {@code Synthesizer} always has a fixed number of voices, equal
  * to the maximum number of simultaneous notes it is capable of sounding.
  * <p>
- * <a id="description_of_active"></a> If the voice is not currently processing
- * a MIDI note, it is considered inactive. A voice is inactive when it has been
+ * <a id="description_of_active"></a>If the voice is not currently processing a
+ * MIDI note, it is considered inactive. A voice is inactive when it has been
  * given no note-on commands, or when every note-on command received has been
  * terminated by a corresponding note-off (or by an "all notes off" message).
  * For example, this happens when a synthesizer capable of playing 16

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,54 +22,54 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
 import javax.print.attribute.PrintServiceAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class PrinterMessageFromOperator is a printing attribute class, a text
- * attribute, that provides a message from an operator, system administrator,
- * or "intelligent" process to indicate to the end user information about or
- * status of the printer, such as why it is unavailable or when it is
- * expected to be available.
- * <P>
- * A Print Service's attribute set includes zero instances or one instance of
- * a
- * PrinterMessageFromOperator attribute, not more than one instance. A new
- * PrinterMessageFromOperator attribute replaces an existing
- * PrinterMessageFromOperator attribute, if any. In other words,
- * PrinterMessageFromOperator is not intended to be a history log.
- * If it wishes, the client can detect changes to a Print Service's
- * PrinterMessageFromOperator
- * attribute and maintain the client's own history log of the
- * PrinterMessageFromOperator attribute values.
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code PrinterMessageFromOperator} is a printing attribute class, a
+ * text attribute, that provides a message from an operator, system
+ * administrator, or "intelligent" process to indicate to the end user
+ * information about or status of the printer, such as why it is unavailable or
+ * when it is expected to be available.
+ * <p>
+ * A Print Service's attribute set includes zero instances or one instance of a
+ * {@code PrinterMessageFromOperator} attribute, not more than one instance. A
+ * new {@code PrinterMessageFromOperator} attribute replaces an existing
+ * {@code PrinterMessageFromOperator} attribute, if any. In other words,
+ * {@code PrinterMessageFromOperator} is not intended to be a history log. If it
+ * wishes, the client can detect changes to a Print Service's
+ * {@code PrinterMessageFromOperator} attribute and maintain the client's own
+ * history log of the {@code PrinterMessageFromOperator} attribute values.
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class PrinterMessageFromOperator   extends TextSyntax
     implements PrintServiceAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     static final long serialVersionUID = -4486871203218629318L;
 
     /**
-     * Constructs a new printer message from operator attribute with the
-     * given message and locale.
+     * Constructs a new printer message from operator attribute with the given
+     * message and locale.
      *
-     * @param  message  Message.
-     * @param  locale   Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code message} is null.
+     * @param  message the message
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code message} is {@code null}
      */
     public PrinterMessageFromOperator(String message, Locale locale) {
         super (message, locale);
@@ -79,24 +79,19 @@ public final class PrinterMessageFromOperator   extends TextSyntax
      * Returns whether this printer message from operator attribute is
      * equivalent to the passed in object. To be equivalent, all of the
      * following conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class
-     * PrinterMessageFromOperator.
-     * <LI>
-     * This printer message from operator attribute's underlying string and
-     * {@code object}'s underlying string are equal.
-     * <LI>
-     * This printer message from operator attribute's locale and
-     * {@code object}'s locale are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class
+     *   {@code PrinterMessageFromOperator}.
+     *   <li>This printer message from operator attribute's underlying string
+     *   and {@code object}'s underlying string are equal.
+     *   <li>This printer message from operator attribute's locale and
+     *   {@code object}'s locale are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this printer
-     *          message from operator attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this printer
+     *         message from operator attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) &&
@@ -106,12 +101,12 @@ public final class PrinterMessageFromOperator   extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterMessageFromOperator,
-     * the category is class PrinterMessageFromOperator itself.
+     * <p>
+     * For class {@code PrinterMessageFromOperator}, the category is class
+     * {@code PrinterMessageFromOperator} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterMessageFromOperator.class;
@@ -120,14 +115,13 @@ public final class PrinterMessageFromOperator   extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterMessageFromOperator,
-     * the category name is {@code "printer-message-from-operator"}.
+     * <p>
+     * For class {@code PrinterMessageFromOperator}, the category name is
+     * {@code "printer-message-from-operator"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-message-from-operator";
     }
-
 }

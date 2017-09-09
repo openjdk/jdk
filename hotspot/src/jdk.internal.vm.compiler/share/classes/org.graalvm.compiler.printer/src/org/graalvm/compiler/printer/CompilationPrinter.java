@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.debug.LogStream;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.lir.util.IndexedValueMap;
@@ -115,12 +116,25 @@ public class CompilationPrinter implements Closeable {
     /**
      * Prints a compilation timestamp for a given method.
      *
-     * @param method the method for which a timestamp will be printed
+     * @param javaMethod the method for which a timestamp will be printed
      */
-    public void printCompilation(JavaMethod method) {
+    public void printCompilation(JavaMethod javaMethod) {
+        printCompilation(javaMethod.format("%H::%n"), javaMethod.format("%f %r %H.%n(%p)"));
+    }
+
+    /**
+     * Prints a compilation id.
+     *
+     * @param compilationId the compilation method for which an id will be printed
+     */
+    public void printCompilation(CompilationIdentifier compilationId) {
+        printCompilation(compilationId.toString(CompilationIdentifier.Verbosity.DETAILED), compilationId.toString(CompilationIdentifier.Verbosity.DETAILED));
+    }
+
+    private void printCompilation(final String name, String method) {
         begin("compilation");
-        out.print("name \" ").print(method.format("%H::%n")).println('"');
-        out.print("method \"").print(method.format("%f %r %H.%n(%p)")).println('"');
+        out.print("name \" ").print(name).println('"');
+        out.print("method \"").print(method).println('"');
         out.print("date ").println(System.currentTimeMillis());
         end("compilation");
     }

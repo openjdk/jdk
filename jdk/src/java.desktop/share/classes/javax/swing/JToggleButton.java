@@ -219,8 +219,8 @@ public class JToggleButton extends AbstractButton implements Accessible {
           case TRAVERSAL_BACKWARD:
             ButtonModel model = getModel();
             JToggleButton selection = this;
-            if (model instanceof DefaultButtonModel) {
-                ButtonGroup group = ((DefaultButtonModel) model).getGroup();
+            if (model != null) {
+                ButtonGroup group = model.getGroup();
                 if (group != null && group.getSelection() != null
                                                   && !group.isSelected(model)) {
                     Iterator<AbstractButton> iterator =

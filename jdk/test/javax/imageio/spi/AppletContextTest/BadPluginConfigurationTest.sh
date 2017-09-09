@@ -22,7 +22,7 @@
 #
 #   @test
 #
-#   @bug        6342404 7078379 8167503
+#   @bug        6342404 7078379 8167503 8183351
 #
 #   @summary    Test verifies that incorrectly configured ImageIO plugin spi
 #               does not affect registration of other ImageIO plugin in the
@@ -57,6 +57,7 @@ fail()
  { echo "The test failed :-("
    echo "$*" 1>&2
    echo "exit status was $status"
+   clean
    exit $status
  } #end of fail()
 
@@ -65,8 +66,18 @@ fail()
 pass()
  { echo "The test passed!!!"
    echo "$*" 1>&2
+   clean
    exit 0
  } #end of pass()
+
+#Clean up the test_ext directory (PLUGINDST_DIR) before leaving
+clean()
+ {
+ echo "Removing PLUGINDST_DIR ${PLUGINDST_DIR}"
+ if [ -n "${PLUGINDST_DIR}" -a -d "${PLUGINDST_DIR}" ] ; then
+ rm -rf "${PLUGINDST_DIR}"
+ fi
+ }
 
 # end of subroutines
 
@@ -169,13 +180,10 @@ echo ------ PREPARE TEST PLUGIN ---------
 # app have file read permission for all subdirs of the
 # scratch dir
 
-PLUGINDST_DIR=${TMP}/test_ext
-#PLUGINDST_DIR=${TESTJAVA}/lib/ext
-TEST_PLUGIN=dummy.jar
+PLUGINDST_DIR=$(mktemp -d ${TMP}/iio_test.XXXXXXXX)
+echo "Created PLUGINDST_DIR as ${PLUGINDST_DIR}"
 
-if [ ! -d ${PLUGINDST_DIR} ] ; then
-    mkdir ${PLUGINDST_DIR}
-fi
+TEST_PLUGIN=dummy.jar
 
 # remove old service declaration
 if [ -d META-INF ] ; then

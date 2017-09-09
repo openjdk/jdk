@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ package javax.sound.midi;
  * be used by every synthesizer, even if the synthesis technique is compatible.
  * To see whether the instruments from a certain soundbank can be played by a
  * given synthesizer, invoke the
- * {@link #isSoundbankSupported(Soundbank) isSoundbankSupported}
- * method of {@code Synthesizer}.
+ * {@link #isSoundbankSupported(Soundbank) isSoundbankSupported} method of
+ * {@code Synthesizer}.
  * <p>
  * "Loading" an instrument means that that instrument becomes available for
  * synthesizing notes. The instrument is loaded into the bank and program

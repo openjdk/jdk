@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8169589 8171909
  * @summary Activating a dialog puts to back another dialog owned by the same frame
  * @author Dmitry Markov

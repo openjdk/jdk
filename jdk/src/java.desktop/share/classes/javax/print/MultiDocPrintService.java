@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@
 
 package javax.print;
 
-
- /** Interface MultiPrintService is the factory for a MultiDocPrintJob.
-  * A MultiPrintService
-  * describes the capabilities of a Printer and can be queried regarding
-  * a printer's supported attributes.
-  */
+/**
+ * Interface {@code MultiPrintService} is the factory for a
+ * {@code MultiDocPrintJob}. A {@code MultiPrintService} describes the
+ * capabilities of a printer and can be queried regarding a printer's supported
+ * attributes.
+ */
 public interface MultiDocPrintService extends PrintService {
 
     /**
      * Create a job which can print a multiDoc.
-     * @return a MultiDocPrintJob
+     *
+     * @return a {@code MultiDocPrintJob}
      */
     public MultiDocPrintJob createMultiDocPrintJob();
-
 }

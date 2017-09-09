@@ -70,8 +70,8 @@ else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
   CONCURRENCY := 12
 endif
 
-# Make sure MaxRAMFraction is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
-JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMFraction=$(shell expr $(CONCURRENCY) \* 4)
+# Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
+JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(shell expr 25 / $(CONCURRENCY))
 
 # Include the common base file with most of the logic
 include ../../test/TestCommon.gmk

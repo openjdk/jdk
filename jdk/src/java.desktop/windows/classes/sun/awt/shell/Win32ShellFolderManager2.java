@@ -443,17 +443,12 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     public boolean isFileSystemRoot(File dir) {
         //Note: Removable drives don't "exist" but are listed in "My Computer"
         if (dir != null) {
-            Win32ShellFolder2 drives = getDrives();
+
             if (dir instanceof Win32ShellFolder2) {
                 Win32ShellFolder2 sf = (Win32ShellFolder2)dir;
-                if (sf.isFileSystem()) {
-                    if (sf.parent != null) {
-                        return sf.parent.equals(drives);
-                    }
-                    // else fall through ...
-                } else {
-                    return false;
-                }
+
+                return (sf.isFileSystem() && sf.parent != null &&
+                        sf.parent.equals(Win32ShellFolder2.listRoots()));
             }
             String path = dir.getPath();
 
@@ -461,9 +456,9 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 return false;
             }
 
-            File[] files = drives.listFiles();
+            File[] roots = Win32ShellFolder2.listRoots();
 
-            return files != null && Arrays.asList(files).contains(dir);
+            return roots != null && Arrays.asList(roots).contains(dir);
         }
         return false;
     }
@@ -561,6 +556,11 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                         ThreadGroupUtils.getRootThreadGroup(), comRun, name,
                         0, false);
                 thread.setDaemon(true);
+                /* This is important, since this thread running at lower priority
+                   leads to memory consumption when listDrives() function is called
+                   repeatedly.
+                 */
+                thread.setPriority(Thread.MAX_PRIORITY);
                 return thread;
             });
             return comThread;

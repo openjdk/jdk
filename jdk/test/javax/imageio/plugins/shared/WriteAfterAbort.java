@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.nio.file.Files;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
@@ -41,9 +42,9 @@ import static java.awt.image.BufferedImage.TYPE_BYTE_BINARY;
 
 /**
  * @test
- * @bug 4952954
+ * @bug     4952954 8183349
  * @summary abortFlag must be cleared for every ImageWriter.write operation
- * @author Sergey Bylokhov
+ * @run     main WriteAfterAbort
  */
 public final class WriteAfterAbort implements IIOWriteProgressListener {
 
@@ -54,72 +55,84 @@ public final class WriteAfterAbort implements IIOWriteProgressListener {
     private volatile boolean isStartedCalled;
     private static final int WIDTH = 100;
     private static final int HEIGHT = 100;
+    private static FileOutputStream fos;
+    private static File file;
 
     private void test(final ImageWriter writer) throws IOException {
-        // Image initialization
-        final BufferedImage imageWrite = new BufferedImage(WIDTH, HEIGHT,
-                                                           TYPE_BYTE_BINARY);
-        final Graphics2D g = imageWrite.createGraphics();
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, WIDTH, HEIGHT);
-        g.dispose();
+        try {
+            // Image initialization
+            final BufferedImage imageWrite =
+                    new BufferedImage(WIDTH, HEIGHT, TYPE_BYTE_BINARY);
+            final Graphics2D g = imageWrite.createGraphics();
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, WIDTH, HEIGHT);
+            g.dispose();
 
-        // File initialization
-        final File file = File.createTempFile("temp", ".img");
-        file.deleteOnExit();
-        final FileOutputStream fos = new SkipWriteOnAbortOutputStream(file);
-        final ImageOutputStream ios = ImageIO.createImageOutputStream(fos);
-        writer.setOutput(ios);
-        writer.addIIOWriteProgressListener(this);
+            // File initialization
+            file = File.createTempFile("temp", ".img");
+            fos = new SkipWriteOnAbortOutputStream(file);
+            final ImageOutputStream ios = ImageIO.createImageOutputStream(fos);
+            writer.setOutput(ios);
+            writer.addIIOWriteProgressListener(this);
 
-        // This write will be aborted, and file will not be touched
-        writer.write(imageWrite);
-        if (!isStartedCalled) {
-            throw new RuntimeException("Started should be called");
-        }
-        if (!isProgressCalled) {
-            throw new RuntimeException("Progress should be called");
-        }
-        if (!isAbortCalled) {
-            throw new RuntimeException("Abort should be called");
-        }
-        if (isCompleteCalled) {
-            throw new RuntimeException("Complete should not be called");
-        }
-        // Flush aborted data
-        ios.flush();
+            // This write will be aborted, and file will not be touched
+            writer.write(imageWrite);
+            if (!isStartedCalled) {
+                throw new RuntimeException("Started should be called");
+            }
+            if (!isProgressCalled) {
+                throw new RuntimeException("Progress should be called");
+            }
+            if (!isAbortCalled) {
+                throw new RuntimeException("Abort should be called");
+            }
+            if (isCompleteCalled) {
+                throw new RuntimeException("Complete should not be called");
+            }
+            // Flush aborted data
+            ios.flush();
 
-        // This write should be completed successfully and the file should
-        // contain correct image data.
-        abortFlag = false;
-        isAbortCalled = false;
-        isCompleteCalled = false;
-        isProgressCalled = false;
-        isStartedCalled = false;
-        writer.write(imageWrite);
+            /*
+             * This write should be completed successfully and the file should
+             * contain correct image data.
+             */
+            abortFlag = false;
+            isAbortCalled = false;
+            isCompleteCalled = false;
+            isProgressCalled = false;
+            isStartedCalled = false;
+            writer.write(imageWrite);
 
-        if (!isStartedCalled) {
-            throw new RuntimeException("Started should be called");
-        }
-        if (!isProgressCalled) {
-            throw new RuntimeException("Progress should be called");
-        }
-        if (isAbortCalled) {
-            throw new RuntimeException("Abort should not be called");
-        }
-        if (!isCompleteCalled) {
-            throw new RuntimeException("Complete should be called");
-        }
-        writer.dispose();
-        ios.close();
+            if (!isStartedCalled) {
+                throw new RuntimeException("Started should be called");
+            }
+            if (!isProgressCalled) {
+                throw new RuntimeException("Progress should be called");
+            }
+            if (isAbortCalled) {
+                throw new RuntimeException("Abort should not be called");
+            }
+            if (!isCompleteCalled) {
+                throw new RuntimeException("Complete should be called");
+            }
+            ios.close();
 
-        // Validates content of the file.
-        final BufferedImage imageRead = ImageIO.read(file);
-        for (int x = 0; x < WIDTH; ++x) {
-            for (int y = 0; y < HEIGHT; ++y) {
-                if (imageRead.getRGB(x, y) != imageWrite.getRGB(x, y)) {
-                    throw new RuntimeException("Test failed.");
+            // Validates content of the file.
+            final BufferedImage imageRead = ImageIO.read(file);
+            for (int x = 0; x < WIDTH; ++x) {
+                for (int y = 0; y < HEIGHT; ++y) {
+                    if (imageRead.getRGB(x, y) != imageWrite.getRGB(x, y)) {
+                        throw new RuntimeException("Test failed.");
+                    }
                 }
+            }
+        } finally {
+            writer.dispose();
+            if (file != null) {
+                if (fos != null) {
+                    fos.close();
+                }
+                Files.delete(file.toPath());
             }
         }
     }

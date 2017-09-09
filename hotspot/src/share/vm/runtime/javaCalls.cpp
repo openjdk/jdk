@@ -308,9 +308,6 @@ void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArgu
 }
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
-  // During dumping, Java execution environment is not fully initialized. Also, Java execution
-  // may cause undesirable side-effects in the class metadata.
-  assert(!DumpSharedSpaces, "must not execute Java bytecodes when dumping");
 
   JavaThread* thread = (JavaThread*)THREAD;
   assert(thread->is_Java_thread(), "must be called by a java thread");

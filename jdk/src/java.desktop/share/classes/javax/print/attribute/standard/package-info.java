@@ -24,8 +24,8 @@
  */
 
 /**
- * Package javax.print.attribute.standard contains classes for specific printing
- * attributes. The parent package, <a href="../package-summary.html">
+ * Package {@code javax.print.attribute.standard} contains classes for specific
+ * printing attributes. The parent package, <a href="../package-summary.html">
  * javax.print.attribute</a>, provides classes and interfaces that describe the
  * types of Java Print Service attributes and how they can be collected into
  * attribute sets.
@@ -43,19 +43,19 @@
  * support them. These support requirements are recorded in the documentation
  * for each attribute class.
  * <p>
- * Package javax.print.attribute.standard contains standard printing attributes
- * and standard printing attribute values that are widely used in the printing
- * domain. A print service vendor can provide new vendor-specific printing
- * attributes in addition to the standard ones. A vendor can also provide
- * vendor-specific extensions (subclasses) of the standard printing attributes
- * -- for example, to provide additional vendor-specific values for an existing
- * standard attribute. Of course, if a vendor wants clients to be able to use
- * any added or extended attributes, the vendor must publish the new attribute
- * classes.
+ * Package {@code javax.print.attribute.standard} contains standard printing
+ * attributes and standard printing attribute values that are widely used in the
+ * printing domain. A print service vendor can provide new vendor-specific
+ * printing attributes in addition to the standard ones. A vendor can also
+ * provide vendor-specific extensions (subclasses) of the standard printing
+ * attributes -- for example, to provide additional vendor-specific values for
+ * an existing standard attribute. Of course, if a vendor wants clients to be
+ * able to use any added or extended attributes, the vendor must publish the new
+ * attribute classes.
  * <p>
  * Many of the standard attribute classes extend one of the abstract syntax
- * classes of the javax.print.attribute package. These abstract syntax classes
- * each represent a different type. The <a href="../EnumSyntax.html">
+ * classes of the {@code javax.print.attribute} package. These abstract syntax
+ * classes each represent a different type. The <a href="../EnumSyntax.html">
  * EnumSyntax</a> class, for example, represents a type-safe enumeration. The
  * abstract syntax class provides a wrapper for the attribute value.
  * <p>
@@ -73,9 +73,9 @@
  * attribute classes in package javax.print.attribute.standard, just the ones
  * that pertain to the application.
  * <p>
- * The attribute classes in package javax.print.attribute.standard are based on
- * the Internet Printing Protocol (IPP) attributes as defined in the Internet
- * RFC document, <i>RFC 2911 Internet Printing Protocol/1.1: Model and
+ * The attribute classes in package {@code javax.print.attribute.standard} are
+ * based on the Internet Printing Protocol (IPP) attributes as defined in the
+ * Internet RFC document, <i>RFC 2911 Internet Printing Protocol/1.1: Model and
  * Semantics</i> dated September 2000. See
  * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a> for more
  * information. The descriptive text for each attribute class was taken largely
@@ -152,485 +152,418 @@
  * indicates the supported values for that attribute category.
  * <table border=1 cellpadding=2 cellspacing=1 summary="Lists all printing
  * attributes as described in above text">
- *     <tr style="background-color:#E5E5E5">
- *         <th valign="bottom">Attribute Class</th>
- *         <th valign="bottom">Doc<br>Attribute</th>
- *         <th valign="bottom">Print<br>Request<br>Attribute</th>
- *         <th valign="bottom">Print<br>Job<br>Attribute</th>
- *         <th valign="bottom">Print<br>Service<br>Attribute</th>
- *         <th valign="bottom">SupportedValuesAttribute</th>
- *     </tr>
- *     <tr>
- *         <td><a href="Compression.html">Compression</a></td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="DocumentName.html">DocumentName</a></td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="Chromaticity.html">Chromaticity</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="Copies.html">Copies</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="CopiesSupported.html">CopiesSupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="Finishings.html">Finishings</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobHoldUntil.html">JobHoldUntil</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobImpressions.html">JobImpressions</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="JobImpressionsSupported.html">
- *             JobImpressionsSupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobKOctets.html">JobKOctets</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="JobKOctetsSupported.html">JobKOctetsSupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobMediaSheets.html">JobMediaSheets</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="JobMediaSheetsSupported.html">
- *             JobMediaSheetsSupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobName.html">JobName</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobPriority.html">JobPriority</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="JobPrioritySupported.html">JobPrioritySupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobSheets.html">JobSheets</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="Media.html">Media</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="MediaSize.html">MediaSize</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="MultipleDocumentHandling.html">
- *             MultipleDocumentHandling</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="NumberUp.html">NumberUp</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td><a href="NumberUpSupported.html">NumberUpSupported</a></td>
- *     </tr>
- *     <tr>
- *         <td><a href="OrientationRequested.html">OrientationRequested</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PageRanges.html">PageRanges</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PresentationDirection.html">
- *             PresentationDirection</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterResolution.html">PrinterResolution</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrintQuality.html">PrintQuality</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="RequestingUserName.html">RequestingUserName</a></td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="SheetCollate.html">SheetCollate</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="Sides.html">Sides</a></td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="DateTimeAtCompleted.html">DateTimeAtCompleted</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="DateTimeAtCreation.html">DateTimeAtCreation</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="DateTimeAtProcessing.html">DateTimeAtProcessing</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobImpressionsCompleted.html">
- *             JobImpressionsCompleted</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobKOctetsProcessed.html">JobKOctetsProcessed</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobMediaSheetsCompleted.html">
- *             JobMediaSheetsCompleted</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobMessageFromOperator.html">
- *             JobMessageFromOperator</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobOriginatingUserName.html">
- *             JobOriginatingUserName</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="JobState.html">JobState</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         </tr>
- *     <tr>
- *         <td><a href="JobStateReasons.html">JobStateReasons</a><br>
- *             Contains zero or more --</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td>-- <a href="JobStateReason.html">JobStateReason</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="NumberOfDocuments.html">NumberOfDocuments</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="NumberOfInterveningJobs.html">
- *             NumberOfInterveningJobs</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="OutputDeviceAssigned.html">OutputDeviceAssigned</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="ColorSupported.html">ColorSupported</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PagesPerMinute.html">PagesPerMinute</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PagesPerMinuteColor.html">PagesPerMinuteColor</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PDLOverrideSupported.html">PDLOverrideSupported</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterIsAcceptingJobs.html">
- *             PrinterIsAcceptingJobs</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterInfo.html">PrinterInfo</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterLocation.html">PrinterLocation</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterMessageFromOperator.html">
- *             PrinterMessageFromOperator</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterMakeAndModel.html">PrinterMakeAndModel</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterMoreInfo.html">PrinterMoreInfo</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterMoreInfoManufacturer.html">
- *             PrinterMoreInfoManufacturer</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterName.html">PrinterName</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterState.html">PrinterState</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="PrinterStateReasons.html">PrinterStateReasons</a><br>
- *             Contains zero or more --</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td>-- <a href="PrinterStateReason.html">PrinterStateReason</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td>-- <a href="Severity.html">Severity</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="QueuedJobCount.html">QueuedJobCount</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td align="center">X</td>
- *         <td>&nbsp;</td>
- *     </tr>
- *     <tr>
- *         <td><a href="ReferenceUriSchemesSupported.html">
- *             ReferenceUriSchemesSupported</a></td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *         <td>&nbsp;</td>
- *     </tr>
+ *   <tr style="background-color:#E5E5E5">
+ *     <th valign="bottom">Attribute Class
+ *     <th valign="bottom">Doc<br>Attribute
+ *     <th valign="bottom">Print<br>Request<br>Attribute
+ *     <th valign="bottom">Print<br>Job<br>Attribute
+ *     <th valign="bottom">Print<br>Service<br>Attribute
+ *     <th valign="bottom">SupportedValuesAttribute
+ *   <tr>
+ *     <td><a href="Compression.html">Compression</a>
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="DocumentName.html">DocumentName</a>
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="Chromaticity.html">Chromaticity</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="Copies.html">Copies</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="CopiesSupported.html">CopiesSupported</a>
+ *   <tr>
+ *     <td><a href="Finishings.html">Finishings</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobHoldUntil.html">JobHoldUntil</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobImpressions.html">JobImpressions</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="JobImpressionsSupported.html">JobImpressionsSupported</a>
+ *   <tr>
+ *     <td><a href="JobKOctets.html">JobKOctets</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="JobKOctetsSupported.html">JobKOctetsSupported</a>
+ *   <tr>
+ *     <td><a href="JobMediaSheets.html">JobMediaSheets</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="JobMediaSheetsSupported.html">JobMediaSheetsSupported</a>
+ *   <tr>
+ *     <td><a href="JobName.html">JobName</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobPriority.html">JobPriority</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="JobPrioritySupported.html">JobPrioritySupported</a>
+ *   <tr>
+ *     <td><a href="JobSheets.html">JobSheets</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="Media.html">Media</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="MediaSize.html">MediaSize</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="MultipleDocumentHandling.html">MultipleDocumentHandling</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="NumberUp.html">NumberUp</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td><a href="NumberUpSupported.html">NumberUpSupported</a>
+ *   <tr>
+ *     <td><a href="OrientationRequested.html">OrientationRequested</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PageRanges.html">PageRanges</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PresentationDirection.html">PresentationDirection</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterResolution.html">PrinterResolution</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrintQuality.html">PrintQuality</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="RequestingUserName.html">RequestingUserName</a>
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="SheetCollate.html">SheetCollate</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="Sides.html">Sides</a>
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="DateTimeAtCompleted.html">DateTimeAtCompleted</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="DateTimeAtCreation.html">DateTimeAtCreation</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="DateTimeAtProcessing.html">DateTimeAtProcessing</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobImpressionsCompleted.html">JobImpressionsCompleted</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobKOctetsProcessed.html">JobKOctetsProcessed</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobMediaSheetsCompleted.html">JobMediaSheetsCompleted</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobMessageFromOperator.html">JobMessageFromOperator</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobOriginatingUserName.html">JobOriginatingUserName</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobState.html">JobState</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="JobStateReasons.html">JobStateReasons</a><br>
+ *             Contains zero or more --
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td>-- <a href="JobStateReason.html">JobStateReason</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="NumberOfDocuments.html">NumberOfDocuments</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="NumberOfInterveningJobs.html">NumberOfInterveningJobs</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="OutputDeviceAssigned.html">OutputDeviceAssigned</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="ColorSupported.html">ColorSupported</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PagesPerMinute.html">PagesPerMinute</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PagesPerMinuteColor.html">PagesPerMinuteColor</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PDLOverrideSupported.html">PDLOverrideSupported</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterIsAcceptingJobs.html">PrinterIsAcceptingJobs</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterInfo.html">PrinterInfo</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterLocation.html">PrinterLocation</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterMessageFromOperator.html">
+ *             PrinterMessageFromOperator</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterMakeAndModel.html">PrinterMakeAndModel</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterMoreInfo.html">PrinterMoreInfo</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterMoreInfoManufacturer.html">
+ *             PrinterMoreInfoManufacturer</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterName.html">PrinterName</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterState.html">PrinterState</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="PrinterStateReasons.html">PrinterStateReasons</a><br>
+ *             Contains zero or more --
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td>-- <a href="PrinterStateReason.html">PrinterStateReason</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td>-- <a href="Severity.html">Severity</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="QueuedJobCount.html">QueuedJobCount</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td align="center">X
+ *     <td>&nbsp;
+ *   <tr>
+ *     <td><a href="ReferenceUriSchemesSupported.html">
+ *             ReferenceUriSchemesSupported</a>
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *     <td>&nbsp;
  * </table>
  * <p>
- * Please note: In the javax.print APIs, a null reference parameter to methods
- * is incorrect unless explicitly documented on the method as having a
- * meaningful interpretation. Usage to the contrary is incorrect coding and may
- * result in a run time exception either immediately or at some later time.
- * IllegalArgumentException and NullPointerException are examples of typical and
- * acceptable run time exceptions for such cases.
+ * Please note: In the {@code javax.print} APIs, a {@code null} reference
+ * parameter to methods is incorrect unless explicitly documented on the method
+ * as having a meaningful interpretation. Usage to the contrary is incorrect
+ * coding and may result in a run time exception either immediately or at some
+ * later time. {@code IllegalArgumentException} and {@code NullPointerException}
+ * are examples of typical and acceptable run time exceptions for such cases.
  *
  * @since 1.4
  */
