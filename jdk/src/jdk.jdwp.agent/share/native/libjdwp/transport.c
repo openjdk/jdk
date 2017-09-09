@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@
 #include "debugLoop.h"
 #include "sys.h"
 
-static jdwpTransportEnv *transport;
+static jdwpTransportEnv *transport = NULL;
+static unsigned transportVersion = JDWPTRANSPORT_VERSION_1_0;
+
 static jrawMonitorID listenerLock;
 static jrawMonitorID sendLock;
 
@@ -41,6 +43,8 @@ typedef struct TransportInfo {
     jdwpTransportEnv *transport;
     char *address;
     long timeout;
+    char *allowed_peers;
+    unsigned transportVersion;
 } TransportInfo;
 
 static struct jdwpTransportCallback callback = {jvmtiAllocate, jvmtiDeallocate};
@@ -135,7 +139,7 @@ loadTransportLibrary(const char *libdir, const char *name)
  * JDK 1.2 javai.c v1.61
  */
 static jdwpError
-loadTransport(const char *name, jdwpTransportEnv **transportPtr)
+loadTransport(const char *name, TransportInfo *info)
 {
     JNIEnv                 *env;
     jdwpTransport_OnLoad_t  onLoad;
@@ -145,6 +149,10 @@ loadTransport(const char *name, jdwpTransportEnv **transportPtr)
     /* Make sure library name is not empty */
     if (name == NULL) {
         ERROR_MESSAGE(("library name is empty"));
+        return JDWP_ERROR(TRANSPORT_LOAD);
+    }
+    if (info == NULL) {
+        ERROR_MESSAGE(("internal error: info should not be NULL"));
         return JDWP_ERROR(TRANSPORT_LOAD);
     }
 
@@ -192,22 +200,34 @@ loadTransport(const char *name, jdwpTransportEnv **transportPtr)
 
     /* Get transport interface */
     env = getEnv();
-    if ( env != NULL ) {
-        jdwpTransportEnv *t;
-        JavaVM           *jvm;
-        jint              ver;
+    if (env != NULL) {
+        jdwpTransportEnv *t = NULL;
+        JavaVM           *jvm = NULL;
+        jint              rc;
+        size_t            i;
+        /* If a new version is added here, update 'case JNI_EVERSION' below. */
+        jint supported_versions[2] = {JDWPTRANSPORT_VERSION_1_1, JDWPTRANSPORT_VERSION_1_0};
 
         JNI_FUNC_PTR(env,GetJavaVM)(env, &jvm);
-        ver = (*onLoad)(jvm, &callback, JDWPTRANSPORT_VERSION_1_0, &t);
-        if (ver != JNI_OK) {
-            switch (ver) {
+
+        /* Try version 1.1 first, fallback to 1.0 on error */
+        for (i = 0; i < sizeof(supported_versions); ++i) {
+            rc = (*onLoad)(jvm, &callback, supported_versions[i], &t);
+            if (rc != JNI_EVERSION) {
+                info->transportVersion = supported_versions[i];
+                break;
+            }
+        }
+
+        if (rc != JNI_OK) {
+            switch (rc) {
                 case JNI_ENOMEM :
                     ERROR_MESSAGE(("insufficient memory to complete initialization"));
                     break;
 
                 case JNI_EVERSION :
-                    ERROR_MESSAGE(("transport doesn't recognize version %x",
-                        JDWPTRANSPORT_VERSION_1_0));
+                    ERROR_MESSAGE(("transport doesn't recognize all supported versions: "
+                                   "{ 1_1, 1_0 }"));
                     break;
 
                 case JNI_EEXIST :
@@ -215,13 +235,19 @@ loadTransport(const char *name, jdwpTransportEnv **transportPtr)
                     break;
 
                 default:
-                    ERROR_MESSAGE(("unrecognized error %d from transport", ver));
+                    ERROR_MESSAGE(("unrecognized error %d from transport", rc));
                     break;
             }
 
             return JDWP_ERROR(TRANSPORT_INIT);
         }
-        *transportPtr = t;
+
+        /* Store transport version to global variable to be able to
+         * set correct transport version for subsequent connect,
+         * even if info is already deallocated.
+         */
+        transportVersion = info->transportVersion;
+        info->transport = t;
     } else {
         return JDWP_ERROR(TRANSPORT_LOAD);
     }
@@ -314,7 +340,6 @@ acceptThread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
 
     info = (TransportInfo*)(void*)arg;
     t = info->transport;
-
     rc = (*t)->Accept(t, info->timeout, 0);
 
     /* System property no longer needed */
@@ -339,8 +364,10 @@ acceptThread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
 static void JNICALL
 attachThread(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg)
 {
+    TransportInfo *info = (TransportInfo*)(void*)arg;
+
     LOG_MISC(("Begin attach thread"));
-    connectionInitiated((jdwpTransportEnv *)(void*)arg);
+    connectionInitiated(info->transport);
     LOG_MISC(("End attach thread"));
 }
 
@@ -418,13 +445,26 @@ launch(char *command, char *name, char *address)
 
 jdwpError
 transport_startTransport(jboolean isServer, char *name, char *address,
-                         long timeout)
+                         long timeout, char *allowed_peers)
 {
     jvmtiStartFunction func;
-    jdwpTransportEnv *trans;
     char threadName[MAXPATHLEN + 100];
     jint err;
     jdwpError serror;
+    jdwpTransportConfiguration cfg = {0};
+    TransportInfo *info;
+    jdwpTransportEnv *trans;
+
+    info = jvmtiAllocate(sizeof(*info));
+    if (info == NULL) {
+        return JDWP_ERROR(OUT_OF_MEMORY);
+    }
+
+    info->transport = transport;
+    info->transportVersion = transportVersion;
+    info->name = NULL;
+    info->address = NULL;
+    info->allowed_peers = NULL;
 
     /*
      * If the transport is already loaded then use it
@@ -434,28 +474,24 @@ transport_startTransport(jboolean isServer, char *name, char *address,
      * That probably means we have a bag a transport environments
      * to correspond to the transports bag.
      */
-    if (transport != NULL) {
-        trans = transport;
-    } else {
-        serror = loadTransport(name, &trans);
+    if (info->transport == NULL) {
+        serror = loadTransport(name, info);
         if (serror != JDWP_ERROR(NONE)) {
+            jvmtiDeallocate(info);
             return serror;
         }
     }
 
-    if (isServer) {
+    // Cache the value
+    trans = info->transport;
 
+    if (isServer) {
         char *retAddress;
         char *launchCommand;
-        TransportInfo *info;
         jvmtiError error;
         int len;
         char* prop_value;
 
-        info = jvmtiAllocate(sizeof(*info));
-        if (info == NULL) {
-            return JDWP_ERROR(OUT_OF_MEMORY);
-        }
         info->timeout = timeout;
 
         info->name = jvmtiAllocate((int)strlen(name)+1);
@@ -465,7 +501,6 @@ transport_startTransport(jboolean isServer, char *name, char *address,
         }
         (void)strcpy(info->name, name);
 
-        info->address = NULL;
         if (address != NULL) {
             info->address = jvmtiAllocate((int)strlen(address)+1);
             if (info->address == NULL) {
@@ -475,7 +510,32 @@ transport_startTransport(jboolean isServer, char *name, char *address,
             (void)strcpy(info->address, address);
         }
 
-        info->transport = trans;
+        if (info->transportVersion == JDWPTRANSPORT_VERSION_1_0) {
+            if (allowed_peers != NULL) {
+                ERROR_MESSAGE(("Allow parameter is specified but transport doesn't support it"));
+                serror = JDWP_ERROR(TRANSPORT_INIT);
+                goto handleError;
+            }
+        } else {
+            /* Memory is allocated only for transport versions > 1.0
+             * as the version 1.0 does not support the 'allow' option.
+             */
+            if (allowed_peers != NULL) {
+                info->allowed_peers = jvmtiAllocate((int)strlen(allowed_peers) + 1);
+                if (info->allowed_peers == NULL) {
+                    serror = JDWP_ERROR(OUT_OF_MEMORY);
+                    goto handleError;
+                }
+                (void)strcpy(info->allowed_peers, allowed_peers);
+            }
+            cfg.allowed_peers = info->allowed_peers;
+            err = (*trans)->SetTransportConfiguration(trans, &cfg);
+            if (err != JDWPTRANSPORT_ERROR_NONE) {
+                printLastError(trans, err);
+                serror = JDWP_ERROR(TRANSPORT_INIT);
+                goto handleError;
+            }
+        }
 
         err = (*trans)->StartListening(trans, address, &retAddress);
         if (err != JDWPTRANSPORT_ERROR_NONE) {
@@ -527,6 +587,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
 handleError:
         jvmtiDeallocate(info->name);
         jvmtiDeallocate(info->address);
+        jvmtiDeallocate(info->allowed_peers);
         jvmtiDeallocate(info);
     } else {
         /*
@@ -543,6 +604,10 @@ handleError:
          if (err != JDWPTRANSPORT_ERROR_NONE) {
              printLastError(trans, err);
              serror = JDWP_ERROR(TRANSPORT_INIT);
+             /* The name, address and allowed_peers fields in 'info'
+              * are not allocated in the non-server case so
+              * they do not need to be freed. */
+             jvmtiDeallocate(info);
              return serror;
          }
 
@@ -553,7 +618,7 @@ handleError:
          (void)strcat(threadName, name);
 
          func = &attachThread;
-         err = spawnNewThread(func, (void*)trans, threadName);
+         err = spawnNewThread(func, (void*)info, threadName);
          serror = map2jdwpError(err);
     }
     return serror;

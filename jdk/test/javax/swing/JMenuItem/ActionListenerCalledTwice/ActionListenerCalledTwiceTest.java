@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 /**
  * @test
  * @key headful
- * @bug 7160951 8152492
+ * @bug 7160951 8152492 8178448
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
+ * @modules java.desktop/java.awt:open
  * @library ../../../../lib/testlibrary
  * @build jdk.testlibrary.OSInfo
  * @run main ActionListenerCalledTwiceTest
@@ -39,7 +40,8 @@ import javax.swing.*;
 
 public class ActionListenerCalledTwiceTest {
 
-    static String menuItems[] = {"Item1", "Item2", "Item3", "Item4", "Item5", "Item6"};
+    static String menuItems[] = {"Item1", "Item2", "Item3",
+                                    "Item4", "Item5", "Item6"};
     static KeyStroke keyStrokes[] = {
         KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.META_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0),
@@ -48,74 +50,50 @@ public class ActionListenerCalledTwiceTest {
         KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
         KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.META_MASK)
     };
-    static JMenu menu;
+
+    static JMenuBar bar;
     static JFrame frame;
     static volatile int listenerCallCounter = 0;
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
+            System.out.println("This test is for MacOS only." +
+                    " Automatically passed on other platforms.");
             return;
         }
 
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        try {
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            SwingUtilities.invokeAndWait(
+                    ActionListenerCalledTwiceTest::createAndShowGUI);
 
-        for (int i = 0; i < menuItems.length; ++i) {
-            KeyStroke ks = keyStrokes[i];
-            int modKeyCode = getModKeyCode(ks.getModifiers());
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
-            if (modKeyCode != 0) {
-                robot.keyPress(modKeyCode);
-            }
+            testForTwice(robot, "");
 
-            robot.keyPress(ks.getKeyCode());
-            robot.keyRelease(ks.getKeyCode());
-
-            if (modKeyCode != 0) {
-                robot.keyRelease(modKeyCode);
-            }
-
+            SwingUtilities.invokeAndWait(
+                    ActionListenerCalledTwiceTest::testDefaultMenuBar);
             robot.waitForIdle();
 
-            if (listenerCallCounter != 1) {
-                throw new Exception("Test failed: ActionListener for " + menuItems[i]
-                        + " called " + listenerCallCounter + " times instead of 1!");
-            }
-
-            listenerCallCounter = 0;
+            testForTwice(robot, "DefaultMenuBar");
+        } finally {
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                frame.dispose();
-            }
-        });
     }
 
     private static void createAndShowGUI() {
-        menu = new JMenu("Menu");
+        JMenu menu = new JMenu("Menu");
 
         for (int i = 0; i < menuItems.length; ++i) {
             JMenuItem newItem = new JMenuItem(menuItems[i]);
             newItem.setAccelerator(keyStrokes[i]);
-            newItem.addActionListener(
-                    new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    listenerCallCounter++;
-                }
-            }
-            );
+            newItem.addActionListener(e -> listenerCallCounter++);
             menu.add(newItem);
         }
 
-        JMenuBar bar = new JMenuBar();
+        bar = new JMenuBar();
         bar.add(menu);
         frame = new JFrame("Test");
         frame.setJMenuBar(bar);
@@ -142,5 +120,41 @@ public class ActionListenerCalledTwiceTest {
         }
 
         return 0;
+    }
+
+    private static void testForTwice(Robot robot, String exceptionPrefix)
+                                        throws Exception{
+        for (int i = 0; i < menuItems.length; ++i) {
+            KeyStroke ks = keyStrokes[i];
+            int modKeyCode = getModKeyCode(ks.getModifiers());
+
+            if (modKeyCode != 0) {
+                robot.keyPress(modKeyCode);
+            }
+
+            robot.keyPress(ks.getKeyCode());
+            robot.keyRelease(ks.getKeyCode());
+
+            if (modKeyCode != 0) {
+                robot.keyRelease(modKeyCode);
+            }
+
+            robot.waitForIdle();
+
+            if (listenerCallCounter != 1) {
+                throw new Exception(exceptionPrefix
+                        + " Test failed: ActionListener for " + menuItems[i]
+                        + " called " + listenerCallCounter + " times instead of 1!");
+            }
+
+            listenerCallCounter = 0;
+        }
+    }
+
+    private static void testDefaultMenuBar() {
+        if (Desktop.getDesktop().isSupported(Desktop.Action.APP_MENU_BAR)) {
+            Desktop.getDesktop().setDefaultMenuBar(bar);
+            frame.setExtendedState(JFrame.ICONIFIED);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,31 @@
 package javax.print.attribute;
 
 /**
- * Thrown to indicate that the requested operation cannot be performed
- * because the set is unmodifiable.
+ * Thrown to indicate that the requested operation cannot be performed because
+ * the set is unmodifiable.
  *
- * @author  Phil Race
- * @since   1.4
+ * @author Phil Race
+ * @since 1.4
  */
 public class UnmodifiableSetException extends RuntimeException {
+
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 2255250308571511731L;
 
     /**
-     * Constructs an UnsupportedOperationException with no detail message.
+     * Constructs an {@code UnsupportedOperationException} with no detail
+     * message.
      */
     public UnmodifiableSetException() {
     }
 
     /**
-     * Constructs an UnmodifiableSetException with the specified
-     * detail message.
+     * Constructs an {@code UnmodifiableSetException} with the specified detail
+     * message.
      *
-     * @param message the detail message
+     * @param  message the detail message
      */
     public UnmodifiableSetException(String message) {
         super(message);

@@ -119,6 +119,7 @@ typedef struct GlyphInfo {
 #define GSUB_TAG 0x47535542 /* 'GSUB' */
 #define GPOS_TAG 0x47504F53 /* 'GPOS' */
 #define GDEF_TAG 0x47444546 /* 'GDEF' */
+#define HEAD_TAG 0x68656164 /* 'head' */
 #define MORT_TAG 0x6D6F7274 /* 'mort' */
 #define MORX_TAG 0x6D6F7278 /* 'morx' */
 #define KERN_TAG 0x6B65726E /* 'kern' */
@@ -126,9 +127,10 @@ typedef struct GlyphInfo {
 typedef struct TTLayoutTableCacheEntry {
   const void* ptr;
   int   len;
+  int   tag;
 } TTLayoutTableCacheEntry;
 
-#define LAYOUTCACHE_ENTRIES 6
+#define LAYOUTCACHE_ENTRIES 7
 
 typedef struct TTLayoutTableCache {
   TTLayoutTableCacheEntry entries[LAYOUTCACHE_ENTRIES];

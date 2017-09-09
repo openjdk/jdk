@@ -29,6 +29,7 @@
 #include "hb.h"
 #include <jni.h>
 #include <sunfontids.h>
+#include <fontscalerdefs.h>
 
 # ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,7 @@ typedef struct JDKFontInfo_Struct {
     jobject font2D;
     jobject fontStrike;
     long nativeFont;
+    TTLayoutTableCache *layoutTables;
     float matrix[4];
     float ptSize;
     float xPtSize;

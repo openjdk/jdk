@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,8 @@
 package sun.java2d.marlin;
 
 import java.util.Arrays;
-import static java.lang.Math.ulp;
-import static java.lang.Math.sqrt;
 
 import sun.awt.geom.PathConsumer2D;
-import sun.java2d.marlin.Curve.BreakPtrIterator;
-
 
 // TODO: some of the arithmetic here is too verbose and prone to hard to
 // debug typos. We should consider making a small Point/Vector class that
@@ -75,7 +71,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     // pisces used to use fixed point arithmetic with 16 decimal digits. I
     // didn't want to change the values of the constant below when I converted
     // it to floating point, so that's why the divisions by 2^16 are there.
-    private static final float ROUND_JOIN_THRESHOLD = 1000/65536f;
+    private static final float ROUND_JOIN_THRESHOLD = 1000.0f/65536.0f;
 
     private static final float C = 0.5522847498307933f;
 
@@ -112,9 +108,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     private final PolyStack reverse;
 
     // This is where the curve to be processed is put. We give it
-    // enough room to store 2 curves: one for the current subdivision, the
-    // other for the rest of the curve.
-    private final float[] middle = new float[2 * 8];
+    // enough room to store all curves.
+    private final float[] middle = new float[MAX_N_CURVES * 6 + 2];
     private final float[] lp = new float[8];
     private final float[] rp = new float[8];
     private final float[] subdivTs = new float[MAX_N_CURVES - 1];
@@ -158,8 +153,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     {
         this.out = pc2d;
 
-        this.lineWidth2 = lineWidth / 2f;
-        this.invHalfLineWidth2Sq = 1f / (2f * lineWidth2 * lineWidth2);
+        this.lineWidth2 = lineWidth / 2.0f;
+        this.invHalfLineWidth2Sq = 1.0f / (2.0f * lineWidth2 * lineWidth2);
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
 
@@ -182,14 +177,14 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
         if (DO_CLEAN_DIRTY) {
             // Force zero-fill dirty arrays:
-            Arrays.fill(offset0, 0f);
-            Arrays.fill(offset1, 0f);
-            Arrays.fill(offset2, 0f);
-            Arrays.fill(miter, 0f);
-            Arrays.fill(middle, 0f);
-            Arrays.fill(lp, 0f);
-            Arrays.fill(rp, 0f);
-            Arrays.fill(subdivTs, 0f);
+            Arrays.fill(offset0, 0.0f);
+            Arrays.fill(offset1, 0.0f);
+            Arrays.fill(offset2, 0.0f);
+            Arrays.fill(miter, 0.0f);
+            Arrays.fill(middle, 0.0f);
+            Arrays.fill(lp, 0.0f);
+            Arrays.fill(rp, 0.0f);
+            Arrays.fill(subdivTs, 0.0f);
         }
     }
 
@@ -197,11 +192,11 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                                       final float w, final float[] m)
     {
         float len = lx*lx + ly*ly;
-        if (len == 0f) {
-            m[0] = 0f;
-            m[1] = 0f;
+        if (len == 0.0f) {
+            m[0] = 0.0f;
+            m[1] = 0.0f;
         } else {
-            len = (float) sqrt(len);
+            len = (float) Math.sqrt(len);
             m[0] =  (ly * w) / len;
             m[1] = -(lx * w) / len;
         }
@@ -226,7 +221,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                                boolean rev,
                                float threshold)
     {
-        if ((omx == 0f && omy == 0f) || (mx == 0f && my == 0f)) {
+        if ((omx == 0.0f && omy == 0.0f) || (mx == 0.0f && my == 0.0f)) {
             return;
         }
 
@@ -258,7 +253,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // If it is >=0, we know that abs(ext) is <= 90 degrees, so we only
         // need 1 curve to approximate the circle section that joins omx,omy
         // and mx,my.
-        final int numCurves = (cosext >= 0f) ? 1 : 2;
+        final int numCurves = (cosext >= 0.0f) ? 1 : 2;
 
         switch (numCurves) {
         case 1:
@@ -280,7 +275,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             // this normal's length is at least 0.5 and at most sqrt(2)/2 (because
             // we know the angle of the arc is > 90 degrees).
             float nx = my - omy, ny = omx - mx;
-            float nlen = (float) sqrt(nx*nx + ny*ny);
+            float nlen = (float) Math.sqrt(nx*nx + ny*ny);
             float scale = lineWidth2/nlen;
             float mmx = nx * scale, mmy = ny * scale;
 
@@ -318,8 +313,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // define the bezier curve we're computing.
         // It is computed using the constraints that P1-P0 and P3-P2 are parallel
         // to the arc tangents at the endpoints, and that |P1-P0|=|P3-P2|.
-        float cv = (float) ((4.0 / 3.0) * sqrt(0.5 - cosext2) /
-                            (1.0 + sqrt(cosext2 + 0.5)));
+        float cv = (float) ((4.0d / 3.0d) * Math.sqrt(0.5d - cosext2) /
+                            (1.0d + Math.sqrt(cosext2 + 0.5d)));
         // if clockwise, we need to negate cv.
         if (rev) { // rev is equivalent to isCW(omx, omy, mx, my)
             cv = -cv;
@@ -348,25 +343,67 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                     cx - mx,       cy - my);
     }
 
-    // Put the intersection point of the lines (x0, y0) -> (x1, y1)
-    // and (x0p, y0p) -> (x1p, y1p) in m[off] and m[off+1].
-    // If the lines are parallel, it will put a non finite number in m.
-    private static void computeIntersection(final float x0, final float y0,
-                                            final float x1, final float y1,
-                                            final float x0p, final float y0p,
-                                            final float x1p, final float y1p,
-                                            final float[] m, int off)
+    // Return the intersection point of the lines (x0, y0) -> (x1, y1)
+    // and (x0p, y0p) -> (x1p, y1p) in m[off] and m[off+1]
+    private static void computeMiter(final float x0, final float y0,
+                                     final float x1, final float y1,
+                                     final float x0p, final float y0p,
+                                     final float x1p, final float y1p,
+                                     final float[] m, int off)
     {
         float x10 = x1 - x0;
         float y10 = y1 - y0;
         float x10p = x1p - x0p;
         float y10p = y1p - y0p;
 
+        // if this is 0, the lines are parallel. If they go in the
+        // same direction, there is no intersection so m[off] and
+        // m[off+1] will contain infinity, so no miter will be drawn.
+        // If they go in the same direction that means that the start of the
+        // current segment and the end of the previous segment have the same
+        // tangent, in which case this method won't even be involved in
+        // miter drawing because it won't be called by drawMiter (because
+        // (mx == omx && my == omy) will be true, and drawMiter will return
+        // immediately).
         float den = x10*y10p - x10p*y10;
         float t = x10p*(y0-y0p) - y10p*(x0-x0p);
         t /= den;
         m[off++] = x0 + t*x10;
         m[off]   = y0 + t*y10;
+    }
+
+    // Return the intersection point of the lines (x0, y0) -> (x1, y1)
+    // and (x0p, y0p) -> (x1p, y1p) in m[off] and m[off+1]
+    private static void safeComputeMiter(final float x0, final float y0,
+                                         final float x1, final float y1,
+                                         final float x0p, final float y0p,
+                                         final float x1p, final float y1p,
+                                         final float[] m, int off)
+    {
+        float x10 = x1 - x0;
+        float y10 = y1 - y0;
+        float x10p = x1p - x0p;
+        float y10p = y1p - y0p;
+
+        // if this is 0, the lines are parallel. If they go in the
+        // same direction, there is no intersection so m[off] and
+        // m[off+1] will contain infinity, so no miter will be drawn.
+        // If they go in the same direction that means that the start of the
+        // current segment and the end of the previous segment have the same
+        // tangent, in which case this method won't even be involved in
+        // miter drawing because it won't be called by drawMiter (because
+        // (mx == omx && my == omy) will be true, and drawMiter will return
+        // immediately).
+        float den = x10*y10p - x10p*y10;
+        if (den == 0.0f) {
+            m[off++] = (x0 + x0p) / 2.0f;
+            m[off]   = (y0 + y0p) / 2.0f;
+            return;
+        }
+        float t = x10p*(y0-y0p) - y10p*(x0-x0p);
+        t /= den;
+        m[off++] = x0 + t*x10;
+        m[off] = y0 + t*y10;
     }
 
     private void drawMiter(final float pdx, final float pdy,
@@ -376,8 +413,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                            boolean rev)
     {
         if ((mx == omx && my == omy) ||
-            (pdx == 0f && pdy == 0f) ||
-            (dx == 0f && dy == 0f))
+            (pdx == 0.0f && pdy == 0.0f) ||
+            (dx == 0.0f && dy == 0.0f))
         {
             return;
         }
@@ -389,9 +426,9 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             my  = -my;
         }
 
-        computeIntersection((x0 - pdx) + omx, (y0 - pdy) + omy, x0 + omx, y0 + omy,
-                            (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my,
-                            miter, 0);
+        computeMiter((x0 - pdx) + omx, (y0 - pdy) + omy, x0 + omx, y0 + omy,
+                     (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my,
+                     miter, 0);
 
         final float miterX = miter[0];
         final float miterY = miter[1];
@@ -414,8 +451,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         }
         this.sx0 = this.cx0 = x0;
         this.sy0 = this.cy0 = y0;
-        this.cdx = this.sdx = 1f;
-        this.cdy = this.sdy = 0f;
+        this.cdx = this.sdx = 1.0f;
+        this.cdy = this.sdy = 0.0f;
         this.prev = MOVE_TO;
     }
 
@@ -423,8 +460,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     public void lineTo(float x1, float y1) {
         float dx = x1 - cx0;
         float dy = y1 - cy0;
-        if (dx == 0f && dy == 0f) {
-            dx = 1f;
+        if (dx == 0.0f && dy == 0.0f) {
+            dx = 1.0f;
         }
         computeOffset(dx, dy, lineWidth2, offset0);
         final float mx = offset0[0];
@@ -454,10 +491,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                 return;
             }
             emitMoveTo(cx0, cy0 - lineWidth2);
-            this.cmx = this.smx = 0f;
+            this.cmx = this.smx = 0.0f;
             this.cmy = this.smy = -lineWidth2;
-            this.cdx = this.sdx = 1f;
-            this.cdy = this.sdy = 0f;
+            this.cdx = this.sdx = 1.0f;
+            this.cdy = this.sdy = 0.0f;
             finish();
             return;
         }
@@ -640,7 +677,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     {
         // if p1=p2 or p3=p4 it means that the derivative at the endpoint
         // vanishes, which creates problems with computeOffset. Usually
-        // this happens when this stroker object is trying to winden
+        // this happens when this stroker object is trying to widen
         // a curve with a cusp. What happens is that curveTo splits
         // the input curve at the cusp, and passes it to this function.
         // because of inaccuracies in the splitting, we consider points
@@ -657,8 +694,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
         // if p1 == p2 && p3 == p4: draw line from p1->p4, unless p1 == p4,
         // in which case ignore if p1 == p2
-        final boolean p1eqp2 = within(x1,y1,x2,y2, 6f * ulp(y2));
-        final boolean p3eqp4 = within(x3,y3,x4,y4, 6f * ulp(y4));
+        final boolean p1eqp2 = within(x1, y1, x2, y2, 6.0f * Math.ulp(y2));
+        final boolean p3eqp4 = within(x3, y3, x4, y4, 6.0f * Math.ulp(y4));
         if (p1eqp2 && p3eqp4) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
@@ -674,7 +711,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         float dotsq = (dx1 * dx4 + dy1 * dy4);
         dotsq *= dotsq;
         float l1sq = dx1 * dx1 + dy1 * dy1, l4sq = dx4 * dx4 + dy4 * dy4;
-        if (Helpers.within(dotsq, l1sq * l4sq, 4f * ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l4sq, 4.0f * Math.ulp(dotsq))) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
         }
@@ -726,8 +763,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 //      getting the inverse of the matrix above. Then we use [c1,c2] to compute
 //      p2p and p3p.
 
-        float x = (x1 + 3f * (x2 + x3) + x4) / 8f;
-        float y = (y1 + 3f * (y2 + y3) + y4) / 8f;
+        float x = (x1 + 3.0f * (x2 + x3) + x4) / 8.0f;
+        float y = (y1 + 3.0f * (y2 + y3) + y4) / 8.0f;
         // (dxm,dym) is some tangent of B at t=0.5. This means it's equal to
         // c*B'(0.5) for some constant c.
         float dxm = x3 + x4 - x1 - x2, dym = y3 + y4 - y1 - y2;
@@ -745,10 +782,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         float x4p = x4 + offset2[0]; // end
         float y4p = y4 + offset2[1]; // point
 
-        float invdet43 = 4f / (3f * (dx1 * dy4 - dy1 * dx4));
+        float invdet43 = 4.0f / (3.0f * (dx1 * dy4 - dy1 * dx4));
 
-        float two_pi_m_p1_m_p4x = 2f * xi - x1p - x4p;
-        float two_pi_m_p1_m_p4y = 2f * yi - y1p - y4p;
+        float two_pi_m_p1_m_p4x = 2.0f * xi - x1p - x4p;
+        float two_pi_m_p1_m_p4y = 2.0f * yi - y1p - y4p;
         float c1 = invdet43 * (dy4 * two_pi_m_p1_m_p4x - dx4 * two_pi_m_p1_m_p4y);
         float c2 = invdet43 * (dx1 * two_pi_m_p1_m_p4y - dy1 * two_pi_m_p1_m_p4x);
 
@@ -764,11 +801,11 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         leftOff[6] = x4p; leftOff[7] = y4p;
 
         x1p = x1 - offset0[0]; y1p = y1 - offset0[1];
-        xi = xi - 2f * offset1[0]; yi = yi - 2f * offset1[1];
+        xi = xi - 2.0f * offset1[0]; yi = yi - 2.0f * offset1[1];
         x4p = x4 - offset2[0]; y4p = y4 - offset2[1];
 
-        two_pi_m_p1_m_p4x = 2f * xi - x1p - x4p;
-        two_pi_m_p1_m_p4y = 2f * yi - y1p - y4p;
+        two_pi_m_p1_m_p4x = 2.0f * xi - x1p - x4p;
+        two_pi_m_p1_m_p4y = 2.0f * yi - y1p - y4p;
         c1 = invdet43 * (dy4 * two_pi_m_p1_m_p4x - dx4 * two_pi_m_p1_m_p4y);
         c2 = invdet43 * (dx1 * two_pi_m_p1_m_p4y - dy1 * two_pi_m_p1_m_p4x);
 
@@ -784,6 +821,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         return 8;
     }
 
+    // compute offset curves using bezier spline through t=0.5 (i.e.
+    // ComputedCurve(0.5) == IdealParallelCurve(0.5))
     // return the kind of curve in the right and left arrays.
     private int computeOffsetQuad(float[] pts, final int off,
                                   float[] leftOff, float[] rightOff)
@@ -797,169 +836,53 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         final float dx1 = x2 - x1;
         final float dy1 = y2 - y1;
 
-        // this computes the offsets at t = 0, 1
+        // if p1=p2 or p3=p4 it means that the derivative at the endpoint
+        // vanishes, which creates problems with computeOffset. Usually
+        // this happens when this stroker object is trying to widen
+        // a curve with a cusp. What happens is that curveTo splits
+        // the input curve at the cusp, and passes it to this function.
+        // because of inaccuracies in the splitting, we consider points
+        // equal if they're very close to each other.
+
+        // if p1 == p2 && p3 == p4: draw line from p1->p4, unless p1 == p4,
+        // in which case ignore.
+        final boolean p1eqp2 = within(x1, y1, x2, y2, 6.0f * Math.ulp(y2));
+        final boolean p2eqp3 = within(x2, y2, x3, y3, 6.0f * Math.ulp(y3));
+        if (p1eqp2 || p2eqp3) {
+            getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
+            return 4;
+        }
+
+        // if p2-p1 and p4-p3 are parallel, that must mean this curve is a line
+        float dotsq = (dx1 * dx3 + dy1 * dy3);
+        dotsq *= dotsq;
+        float l1sq = dx1 * dx1 + dy1 * dy1, l3sq = dx3 * dx3 + dy3 * dy3;
+        if (Helpers.within(dotsq, l1sq * l3sq, 4.0f * Math.ulp(dotsq))) {
+            getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
+            return 4;
+        }
+
+        // this computes the offsets at t=0, 0.5, 1, using the property that
+        // for any bezier curve the vectors p2-p1 and p4-p3 are parallel to
+        // the (dx/dt, dy/dt) vectors at the endpoints.
         computeOffset(dx1, dy1, lineWidth2, offset0);
         computeOffset(dx3, dy3, lineWidth2, offset1);
 
-        leftOff[0]  = x1 + offset0[0]; leftOff[1]  = y1 + offset0[1];
-        leftOff[4]  = x3 + offset1[0]; leftOff[5]  = y3 + offset1[1];
-        rightOff[0] = x1 - offset0[0]; rightOff[1] = y1 - offset0[1];
-        rightOff[4] = x3 - offset1[0]; rightOff[5] = y3 - offset1[1];
+        float x1p = x1 + offset0[0]; // start
+        float y1p = y1 + offset0[1]; // point
+        float x3p = x3 + offset1[0]; // end
+        float y3p = y3 + offset1[1]; // point
+        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff, 2);
+        leftOff[0] = x1p; leftOff[1] = y1p;
+        leftOff[4] = x3p; leftOff[5] = y3p;
 
-        float x1p = leftOff[0]; // start
-        float y1p = leftOff[1]; // point
-        float x3p = leftOff[4]; // end
-        float y3p = leftOff[5]; // point
-
-        // Corner cases:
-        // 1. If the two control vectors are parallel, we'll end up with NaN's
-        //    in leftOff (and rightOff in the body of the if below), so we'll
-        //    do getLineOffsets, which is right.
-        // 2. If the first or second two points are equal, then (dx1,dy1)==(0,0)
-        //    or (dx3,dy3)==(0,0), so (x1p, y1p)==(x1p+dx1, y1p+dy1)
-        //    or (x3p, y3p)==(x3p-dx3, y3p-dy3), which means that
-        //    computeIntersection will put NaN's in leftOff and right off, and
-        //    we will do getLineOffsets, which is right.
-        computeIntersection(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff, 2);
-        float cx = leftOff[2];
-        float cy = leftOff[3];
-
-        if (!(isFinite(cx) && isFinite(cy))) {
-            // maybe the right path is not degenerate.
-            x1p = rightOff[0];
-            y1p = rightOff[1];
-            x3p = rightOff[4];
-            y3p = rightOff[5];
-            computeIntersection(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff, 2);
-            cx = rightOff[2];
-            cy = rightOff[3];
-            if (!(isFinite(cx) && isFinite(cy))) {
-                // both are degenerate. This curve is a line.
-                getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
-                return 4;
-            }
-            // {left,right}Off[0,1,4,5] are already set to the correct values.
-            leftOff[2] = 2f * x2 - cx;
-            leftOff[3] = 2f * y2 - cy;
-            return 6;
-        }
-
-        // rightOff[2,3] = (x2,y2) - ((left_x2, left_y2) - (x2, y2))
-        // == 2*(x2, y2) - (left_x2, left_y2)
-        rightOff[2] = 2f * x2 - cx;
-        rightOff[3] = 2f * y2 - cy;
+        x1p = x1 - offset0[0]; y1p = y1 - offset0[1];
+        x3p = x3 - offset1[0]; y3p = y3 - offset1[1];
+        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff, 2);
+        rightOff[0] = x1p; rightOff[1] = y1p;
+        rightOff[4] = x3p; rightOff[5] = y3p;
         return 6;
     }
-
-    private static boolean isFinite(float x) {
-        return (Float.NEGATIVE_INFINITY < x && x < Float.POSITIVE_INFINITY);
-    }
-
-    // If this class is compiled with ecj, then Hotspot crashes when OSR
-    // compiling this function. See bugs 7004570 and 6675699
-    // TODO: until those are fixed, we should work around that by
-    // manually inlining this into curveTo and quadTo.
-/******************************* WORKAROUND **********************************
-    private void somethingTo(final int type) {
-        // need these so we can update the state at the end of this method
-        final float xf = middle[type-2], yf = middle[type-1];
-        float dxs = middle[2] - middle[0];
-        float dys = middle[3] - middle[1];
-        float dxf = middle[type - 2] - middle[type - 4];
-        float dyf = middle[type - 1] - middle[type - 3];
-        switch(type) {
-        case 6:
-            if ((dxs == 0f && dys == 0f) ||
-                (dxf == 0f && dyf == 0f)) {
-               dxs = dxf = middle[4] - middle[0];
-               dys = dyf = middle[5] - middle[1];
-            }
-            break;
-        case 8:
-            boolean p1eqp2 = (dxs == 0f && dys == 0f);
-            boolean p3eqp4 = (dxf == 0f && dyf == 0f);
-            if (p1eqp2) {
-                dxs = middle[4] - middle[0];
-                dys = middle[5] - middle[1];
-                if (dxs == 0f && dys == 0f) {
-                    dxs = middle[6] - middle[0];
-                    dys = middle[7] - middle[1];
-                }
-            }
-            if (p3eqp4) {
-                dxf = middle[6] - middle[2];
-                dyf = middle[7] - middle[3];
-                if (dxf == 0f && dyf == 0f) {
-                    dxf = middle[6] - middle[0];
-                    dyf = middle[7] - middle[1];
-                }
-            }
-        }
-        if (dxs == 0f && dys == 0f) {
-            // this happens iff the "curve" is just a point
-            lineTo(middle[0], middle[1]);
-            return;
-        }
-        // if these vectors are too small, normalize them, to avoid future
-        // precision problems.
-        if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float) sqrt(dxs*dxs + dys*dys);
-            dxs /= len;
-            dys /= len;
-        }
-        if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float) sqrt(dxf*dxf + dyf*dyf);
-            dxf /= len;
-            dyf /= len;
-        }
-
-        computeOffset(dxs, dys, lineWidth2, offset0);
-        final float mx = offset0[0];
-        final float my = offset0[1];
-        drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, mx, my);
-
-        int nSplits = findSubdivPoints(curve, middle, subdivTs, type, lineWidth2);
-
-        int kind = 0;
-        BreakPtrIterator it = curve.breakPtsAtTs(middle, type, subdivTs, nSplits);
-        while(it.hasNext()) {
-            int curCurveOff = it.next();
-
-            switch (type) {
-            case 8:
-                kind = computeOffsetCubic(middle, curCurveOff, lp, rp);
-                break;
-            case 6:
-                kind = computeOffsetQuad(middle, curCurveOff, lp, rp);
-                break;
-            }
-            emitLineTo(lp[0], lp[1]);
-            switch(kind) {
-            case 8:
-                emitCurveTo(lp[2], lp[3], lp[4], lp[5], lp[6], lp[7]);
-                emitCurveToRev(rp[0], rp[1], rp[2], rp[3], rp[4], rp[5]);
-                break;
-            case 6:
-                emitQuadTo(lp[2], lp[3], lp[4], lp[5]);
-                emitQuadToRev(rp[0], rp[1], rp[2], rp[3]);
-                break;
-            case 4:
-                emitLineTo(lp[2], lp[3]);
-                emitLineTo(rp[0], rp[1], true);
-                break;
-            }
-            emitLineTo(rp[kind - 2], rp[kind - 1], true);
-        }
-
-        this.cmx = (lp[kind - 2] - rp[kind - 2]) / 2;
-        this.cmy = (lp[kind - 1] - rp[kind - 1]) / 2;
-        this.cdx = dxf;
-        this.cdy = dyf;
-        this.cx0 = xf;
-        this.cy0 = yf;
-        this.prev = DRAWING_OP_TO;
-    }
-****************************** END WORKAROUND *******************************/
 
     // finds values of t where the curve in pts should be subdivided in order
     // to get good offset curves a distance of w away from the middle curve.
@@ -971,11 +894,11 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         final float y12 = pts[3] - pts[1];
         // if the curve is already parallel to either axis we gain nothing
         // from rotating it.
-        if (y12 != 0f && x12 != 0f) {
+        if (y12 != 0.0f && x12 != 0.0f) {
             // we rotate it so that the first vector in the control polygon is
             // parallel to the x-axis. This will ensure that rotated quarter
             // circles won't be subdivided.
-            final float hypot = (float) sqrt(x12 * x12 + y12 * y12);
+            final float hypot = (float) Math.sqrt(x12 * x12 + y12 * y12);
             final float cos = x12 / hypot;
             final float sin = y12 / hypot;
             final float x1 = cos * pts[0] + sin * pts[1];
@@ -1031,9 +954,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         mid[4] = x2;  mid[5] = y2;
         mid[6] = x3;  mid[7] = y3;
 
-        // inlined version of somethingTo(8);
-        // See the TODO on somethingTo
-
         // need these so we can update the state at the end of this method
         final float xf = mid[6], yf = mid[7];
         float dxs = mid[2] - mid[0];
@@ -1041,12 +961,12 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         float dxf = mid[6] - mid[4];
         float dyf = mid[7] - mid[5];
 
-        boolean p1eqp2 = (dxs == 0f && dys == 0f);
-        boolean p3eqp4 = (dxf == 0f && dyf == 0f);
+        boolean p1eqp2 = (dxs == 0.0f && dys == 0.0f);
+        boolean p3eqp4 = (dxf == 0.0f && dyf == 0.0f);
         if (p1eqp2) {
             dxs = mid[4] - mid[0];
             dys = mid[5] - mid[1];
-            if (dxs == 0f && dys == 0f) {
+            if (dxs == 0.0f && dys == 0.0f) {
                 dxs = mid[6] - mid[0];
                 dys = mid[7] - mid[1];
             }
@@ -1054,12 +974,12 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         if (p3eqp4) {
             dxf = mid[6] - mid[2];
             dyf = mid[7] - mid[3];
-            if (dxf == 0f && dyf == 0f) {
+            if (dxf == 0.0f && dyf == 0.0f) {
                 dxf = mid[6] - mid[0];
                 dyf = mid[7] - mid[1];
             }
         }
-        if (dxs == 0f && dys == 0f) {
+        if (dxs == 0.0f && dys == 0.0f) {
             // this happens if the "curve" is just a point
             lineTo(mid[0], mid[1]);
             return;
@@ -1068,12 +988,12 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float) sqrt(dxs*dxs + dys*dys);
+            float len = (float) Math.sqrt(dxs*dxs + dys*dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float) sqrt(dxf*dxf + dyf*dyf);
+            float len = (float) Math.sqrt(dxf*dxf + dyf*dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -1081,17 +1001,23 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         computeOffset(dxs, dys, lineWidth2, offset0);
         drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1]);
 
-        int nSplits = findSubdivPoints(curve, mid, subdivTs, 8, lineWidth2);
+        final int nSplits = findSubdivPoints(curve, mid, subdivTs, 8, lineWidth2);
+
+        float prevT = 0.0f;
+        for (int i = 0, off = 0; i < nSplits; i++, off += 6) {
+            final float t = subdivTs[i];
+            Helpers.subdivideCubicAt((t - prevT) / (1.0f - prevT),
+                                     mid, off, mid, off, mid, off + 6);
+            prevT = t;
+        }
 
         final float[] l = lp;
         final float[] r = rp;
 
         int kind = 0;
-        BreakPtrIterator it = curve.breakPtsAtTs(mid, 8, subdivTs, nSplits);
-        while(it.hasNext()) {
-            int curCurveOff = it.next();
+        for (int i = 0, off = 0; i <= nSplits; i++, off += 6) {
+            kind = computeOffsetCubic(mid, off, l, r);
 
-            kind = computeOffsetCubic(mid, curCurveOff, l, r);
             emitLineTo(l[0], l[1]);
 
             switch(kind) {
@@ -1108,8 +1034,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             emitLineToRev(r[kind - 2], r[kind - 1]);
         }
 
-        this.cmx = (l[kind - 2] - r[kind - 2]) / 2f;
-        this.cmy = (l[kind - 1] - r[kind - 1]) / 2f;
+        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
+        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
         this.cdx = dxf;
         this.cdy = dyf;
         this.cx0 = xf;
@@ -1124,20 +1050,17 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         mid[2] = x1;  mid[3] = y1;
         mid[4] = x2;  mid[5] = y2;
 
-        // inlined version of somethingTo(8);
-        // See the TODO on somethingTo
-
         // need these so we can update the state at the end of this method
         final float xf = mid[4], yf = mid[5];
         float dxs = mid[2] - mid[0];
         float dys = mid[3] - mid[1];
         float dxf = mid[4] - mid[2];
         float dyf = mid[5] - mid[3];
-        if ((dxs == 0f && dys == 0f) || (dxf == 0f && dyf == 0f)) {
+        if ((dxs == 0.0f && dys == 0.0f) || (dxf == 0.0f && dyf == 0.0f)) {
             dxs = dxf = mid[4] - mid[0];
             dys = dyf = mid[5] - mid[1];
         }
-        if (dxs == 0f && dys == 0f) {
+        if (dxs == 0.0f && dys == 0.0f) {
             // this happens if the "curve" is just a point
             lineTo(mid[0], mid[1]);
             return;
@@ -1145,12 +1068,12 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1f && Math.abs(dys) < 0.1f) {
-            float len = (float) sqrt(dxs*dxs + dys*dys);
+            float len = (float) Math.sqrt(dxs*dxs + dys*dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1f && Math.abs(dyf) < 0.1f) {
-            float len = (float) sqrt(dxf*dxf + dyf*dyf);
+            float len = (float) Math.sqrt(dxf*dxf + dyf*dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -1160,15 +1083,21 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
         int nSplits = findSubdivPoints(curve, mid, subdivTs, 6, lineWidth2);
 
+        float prevt = 0.0f;
+        for (int i = 0, off = 0; i < nSplits; i++, off += 4) {
+            final float t = subdivTs[i];
+            Helpers.subdivideQuadAt((t - prevt) / (1.0f - prevt),
+                                    mid, off, mid, off, mid, off + 4);
+            prevt = t;
+        }
+
         final float[] l = lp;
         final float[] r = rp;
 
         int kind = 0;
-        BreakPtrIterator it = curve.breakPtsAtTs(mid, 6, subdivTs, nSplits);
-        while(it.hasNext()) {
-            int curCurveOff = it.next();
+        for (int i = 0, off = 0; i <= nSplits; i++, off += 4) {
+            kind = computeOffsetQuad(mid, off, l, r);
 
-            kind = computeOffsetQuad(mid, curCurveOff, l, r);
             emitLineTo(l[0], l[1]);
 
             switch(kind) {
@@ -1185,8 +1114,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             emitLineToRev(r[kind - 2], r[kind - 1]);
         }
 
-        this.cmx = (l[kind - 2] - r[kind - 2]) / 2f;
-        this.cmy = (l[kind - 1] - r[kind - 1]) / 2f;
+        this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0f;
+        this.cmy = (l[kind - 1] - r[kind - 1]) / 2.0f;
         this.cdx = dxf;
         this.cdy = dyf;
         this.cx0 = xf;
@@ -1205,11 +1134,11 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         private static final byte TYPE_QUADTO  = (byte) 1;
         private static final byte TYPE_CUBICTO = (byte) 2;
 
-        // curves capacity = edges count (4096) = half edges x 2 (coords)
-        private static final int INITIAL_CURVES_COUNT = INITIAL_EDGES_COUNT;
+        // curves capacity = edges count (8192) = edges x 2 (coords)
+        private static final int INITIAL_CURVES_COUNT = INITIAL_EDGES_COUNT << 1;
 
-        // types capacity = half edges count (2048)
-        private static final int INITIAL_TYPES_COUNT = INITIAL_EDGES_COUNT >> 1;
+        // types capacity = edges count (4096)
+        private static final int INITIAL_TYPES_COUNT = INITIAL_EDGES_COUNT;
 
         float[] curves;
         int end;
@@ -1235,10 +1164,10 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         PolyStack(final RendererContext rdrCtx) {
             this.rdrCtx = rdrCtx;
 
-            curves_ref = rdrCtx.newDirtyFloatArrayRef(INITIAL_CURVES_COUNT); // 16K
+            curves_ref = rdrCtx.newDirtyFloatArrayRef(INITIAL_CURVES_COUNT); // 32K
             curves     = curves_ref.initial;
 
-            curveTypes_ref = rdrCtx.newDirtyByteArrayRef(INITIAL_TYPES_COUNT); // 2K
+            curveTypes_ref = rdrCtx.newDirtyByteArrayRef(INITIAL_TYPES_COUNT); // 4K
             curveTypes     = curveTypes_ref.initial;
             numCurves = 0;
             end = 0;
@@ -1369,7 +1298,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         public String toString() {
             String ret = "";
             int nc = numCurves;
-            int e  = end;
+            int last = end;
             int len;
             while (nc != 0) {
                 switch(curveTypes[--nc]) {
@@ -1388,8 +1317,8 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                 default:
                     len = 0;
                 }
-                e -= len;
-                ret += Arrays.toString(Arrays.copyOfRange(curves, e, e+len))
+                last -= len;
+                ret += Arrays.toString(Arrays.copyOfRange(curves, last, last+len))
                                        + "\n";
             }
             return ret;

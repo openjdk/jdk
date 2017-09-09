@@ -25,7 +25,6 @@
 
 package javax.sound.sampled;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,33 +74,28 @@ import com.sun.media.sound.JDK13Services;
  * <table class="striped">
  * <caption>Audio System Property Keys</caption>
  * <thead>
- *  <tr>
- *   <th>Property Key</th>
- *   <th>Interface</th>
- *   <th>Affected Method(s)</th>
- *  </tr>
+ *   <tr>
+ *     <th>Property Key
+ *     <th>Interface
+ *     <th>Affected Method(s)
  * </thead>
  * <tbody>
- *  <tr>
- *   <td>{@code javax.sound.sampled.Clip}</td>
- *   <td>{@link Clip}</td>
- *   <td>{@link #getLine}, {@link #getClip}</td>
- *  </tr>
- *  <tr>
- *   <td>{@code javax.sound.sampled.Port}</td>
- *   <td>{@link Port}</td>
- *   <td>{@link #getLine}</td>
- *  </tr>
- *  <tr>
- *   <td>{@code javax.sound.sampled.SourceDataLine}</td>
- *   <td>{@link SourceDataLine}</td>
- *   <td>{@link #getLine}, {@link #getSourceDataLine}</td>
- *  </tr>
- *  <tr>
- *   <td>{@code javax.sound.sampled.TargetDataLine}</td>
- *   <td>{@link TargetDataLine}</td>
- *   <td>{@link #getLine}, {@link #getTargetDataLine}</td>
- *  </tr>
+ *   <tr>
+ *     <td>{@code javax.sound.sampled.Clip}
+ *     <td>{@link Clip}
+ *     <td>{@link #getLine}, {@link #getClip}
+ *   <tr>
+ *     <td>{@code javax.sound.sampled.Port}
+ *     <td>{@link Port}
+ *     <td>{@link #getLine}
+ *   <tr>
+ *     <td>{@code javax.sound.sampled.SourceDataLine}
+ *     <td>{@link SourceDataLine}
+ *     <td>{@link #getLine}, {@link #getSourceDataLine}
+ *   <tr>
+ *     <td>{@code javax.sound.sampled.TargetDataLine}
+ *     <td>{@link TargetDataLine}
+ *     <td>{@link #getLine}, {@link #getTargetDataLine}
  * </tbody>
  * </table>
  *
@@ -125,20 +119,19 @@ import com.sun.media.sound.JDK13Services;
  * matching {@code Mixer.Info} object is found, or the mixer name is not
  * specified, the first mixer from the resulting list, which provides the
  * respective line interface, will be returned.
- *
+ * <p>
  * For example, the property {@code javax.sound.sampled.Clip} with a value
- * {@code "com.sun.media.sound.MixerProvider#SunClip"}
- * will have the following consequences when {@code getLine} is called
- * requesting a {@code Clip} instance: if the class
- * {@code com.sun.media.sound.MixerProvider} exists in the list of installed
- * mixer providers, the first {@code Clip} from the first mixer with name
- * {@code "SunClip"} will be returned. If it cannot be found, the
- * first {@code Clip} from the first mixer of the specified provider will be
+ * {@code "com.sun.media.sound.MixerProvider#SunClip"} will have the following
+ * consequences when {@code getLine} is called requesting a {@code Clip}
+ * instance: if the class {@code com.sun.media.sound.MixerProvider} exists in
+ * the list of installed mixer providers, the first {@code Clip} from the first
+ * mixer with name {@code "SunClip"} will be returned. If it cannot be found,
+ * the first {@code Clip} from the first mixer of the specified provider will be
  * returned, regardless of name. If there is none, the first {@code Clip} from
- * the first {@code Mixer} with name {@code "SunClip"} in the list of
- * all mixers (as returned by {@code getMixerInfo}) will be returned, or, if not
- * found, the first {@code Clip} of the first {@code Mixer} that can be found in
- * the list of all mixers is returned. If that fails, too, an
+ * the first {@code Mixer} with name {@code "SunClip"} in the list of all mixers
+ * (as returned by {@code getMixerInfo}) will be returned, or, if not found, the
+ * first {@code Clip} of the first {@code Mixer} that can be found in the list
+ * of all mixers is returned. If that fails, too, an
  * {@code IllegalArgumentException} is thrown.
  *
  * @author Kara Kytle
@@ -479,7 +472,6 @@ public class AudioSystem {
      * @param  mixerInfo a {@code Mixer.Info} object representing the desired
      *         mixer, or {@code null} for the system default mixer
      * @return a clip object from the specified mixer
-     *
      * @throws LineUnavailableException if a clip is not available from this
      *         mixer due to resource restrictions
      * @throws SecurityException if a clip is not available from this mixer due
@@ -670,9 +662,9 @@ public class AudioSystem {
      *
      * @param  sourceEncoding the encoding for which conversion support is
      *         queried
-     * @return array of encodings. If {@code sourceEncoding}is not supported, an
-     *         array of length 0 is returned. Otherwise, the array will have a
-     *         length of at least 1, representing {@code sourceEncoding}
+     * @return array of encodings. If {@code sourceEncoding} is not supported,
+     *         an array of length 0 is returned. Otherwise, the array will have
+     *         a length of at least 1, representing {@code sourceEncoding}
      *         (no conversion).
      * @throws NullPointerException if {@code sourceEncoding} is {@code null}
      */
@@ -935,15 +927,15 @@ public class AudioSystem {
     }
 
     /**
-     * Obtains the audio file format of the specified URL. The URL must point to
-     * valid audio file data.
+     * Obtains the audio file format of the specified {@code URL}. The
+     * {@code URL} must point to valid audio file data.
      *
-     * @param  url the URL from which file format information should be
+     * @param  url the {@code URL} from which file format information should be
      *         extracted
      * @return an {@code AudioFileFormat} object describing the audio file
      *         format
-     * @throws UnsupportedAudioFileException if the URL does not point to valid
-     *         audio file data recognized by the system
+     * @throws UnsupportedAudioFileException if the {@code URL} does not point
+     *         to valid audio file data recognized by the system
      * @throws IOException if an input/output exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
@@ -1021,15 +1013,15 @@ public class AudioSystem {
     }
 
     /**
-     * Obtains an audio input stream from the URL provided. The URL must point
-     * to valid audio file data.
+     * Obtains an audio input stream from the {@code URL} provided. The
+     * {@code URL} must point to valid audio file data.
      *
-     * @param  url the URL for which the {@code AudioInputStream} should be
-     *         constructed
+     * @param  url the {@code URL} for which the {@code AudioInputStream} should
+     *         be constructed
      * @return an {@code AudioInputStream} object based on the audio file data
-     *         pointed to by the URL
-     * @throws UnsupportedAudioFileException if the URL does not point to valid
-     *         audio file data recognized by the system
+     *         pointed to by the {@code URL}
+     * @throws UnsupportedAudioFileException if the {@code URL} does not point
+     *         to valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
@@ -1121,8 +1113,8 @@ public class AudioSystem {
      * Obtains the file types that the system can write from the audio input
      * stream specified.
      *
-     * @param  stream the audio input stream for which audio file type
-     *         support is queried
+     * @param  stream the audio input stream for which audio file type support
+     *         is queried
      * @return array of file types. If no file types are supported, an array of
      *         length 0 is returned.
      * @throws NullPointerException if {@code stream} is {@code null}
@@ -1175,8 +1167,8 @@ public class AudioSystem {
      * type to the output stream provided. Some file types require that the
      * length be written into the file header; such files cannot be written from
      * start to finish unless the length is known in advance. An attempt to
-     * write a file of such a type will fail with an IOException if the length
-     * in the audio file type is {@code AudioSystem.NOT_SPECIFIED}.
+     * write a file of such a type will fail with an {@code IOException} if the
+     * length in the audio file type is {@code AudioSystem.NOT_SPECIFIED}.
      *
      * @param  stream the audio input stream containing audio data to be written
      *         to the file
@@ -1250,7 +1242,9 @@ public class AudioSystem {
     // METHODS FOR INTERNAL IMPLEMENTATION USE
 
     /**
-     * Obtains the set of MixerProviders on the system.
+     * Obtains the list of MixerProviders currently installed on the system.
+     *
+     * @return the list of MixerProviders currently installed on the system
      */
     @SuppressWarnings("unchecked")
     private static List<MixerProvider> getMixerProviders() {
@@ -1331,9 +1325,12 @@ public class AudioSystem {
             }
         }
 
-        /* Provider class not specified or
-           provider class cannot be found, or
-           provider class and instance specified and instance cannot be found or is not appropriate */
+        /*
+         *  - Provider class not specified, or
+         *  - provider class cannot be found, or
+         *  - provider class and instance specified and instance cannot be found
+         *    or is not appropriate
+         */
         if (instanceName != null) {
             mixer = getNamedMixer(instanceName, providers, info);
             if (mixer != null) {
@@ -1342,8 +1339,10 @@ public class AudioSystem {
         }
 
 
-        /* No default are specified, or if something is specified, everything
-           failed. */
+        /*
+         * No defaults are specified, or if something is specified, everything
+         * failed
+         */
         return null;
     }
 
@@ -1436,10 +1435,14 @@ public class AudioSystem {
 
     /**
      * Checks if a Mixer is appropriate. A Mixer is considered appropriate if it
-     * support the given line type. If isMixingRequired is true and the line
-     * type is an output one (SourceDataLine, Clip), the mixer is appropriate if
-     * it supports at least 2 (concurrent) lines of the given type.
+     * support the given line type. If isMixingRequired is {@code true} and the
+     * line type is an output one (SourceDataLine, Clip), the mixer is
+     * appropriate if it supports at least 2 (concurrent) lines of the given
+     * type.
      *
+     * @param  mixer The mixer to check
+     * @param  lineInfo The line to check
+     * @param  isMixingRequired Is the mixing required or not
      * @return {@code true} if the mixer is considered appropriate according to
      *         the rules given above, {@code false} otherwise
      */
@@ -1461,6 +1464,10 @@ public class AudioSystem {
 
     /**
      * Like getMixerInfo, but return List.
+     *
+     * @return a List of info objects for the currently installed mixers. If no
+     *         mixers are available on the system, an empty List is returned.
+     * @see #getMixerInfo()
      */
     private static List<Mixer.Info> getMixerInfoList() {
         List<MixerProvider> providers = getMixerProviders();
@@ -1469,6 +1476,11 @@ public class AudioSystem {
 
     /**
      * Like getMixerInfo, but return List.
+     *
+     * @param  providers The list of MixerProviders
+     * @return a List of info objects for the currently installed mixers. If no
+     *         mixers are available on the system, an empty List is returned.
+     * @see #getMixerInfo()
      */
     private static List<Mixer.Info> getMixerInfoList(List<MixerProvider> providers) {
         List<Mixer.Info> infos = new ArrayList<>();
@@ -1491,6 +1503,11 @@ public class AudioSystem {
      * Obtains the set of services currently installed on the system using the
      * SPI mechanism in 1.3.
      *
+     * @param  providerClass The type of providers requested. This should be one
+     *         of AudioFileReader.class, AudioFileWriter.class,
+     *         FormatConversionProvider.class, MixerProvider.class,
+     *         MidiDeviceProvider.class, MidiFileReader.class,
+     *         MidiFileWriter.class or SoundbankReader.class.
      * @return a List of instances of providers for the requested service. If no
      *         providers are available, a vector of length 0 will be returned.
      */

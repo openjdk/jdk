@@ -64,7 +64,7 @@ public class InfopointReasonTest extends GraalCompilerTest {
         final ResolvedJavaMethod method = getResolvedJavaMethod("testMethod");
         final StructuredGraph graph = parseEager(method, AllowAssumptions.YES);
         final CompilationResult cr = compileGraph(graph, graph.method(), getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL, graph.getProfilingInfo(),
-                        createSuites(graph.getOptions()), createLIRSuites(graph.getOptions()), new CompilationResult(), CompilationResultBuilderFactory.Default);
+                        createSuites(graph.getOptions()), createLIRSuites(graph.getOptions()), new CompilationResult(graph.compilationId()), CompilationResultBuilderFactory.Default);
         for (Infopoint sp : cr.getInfopoints()) {
             assertNotNull(sp.reason);
             if (sp instanceof Call) {
@@ -86,7 +86,7 @@ public class InfopointReasonTest extends GraalCompilerTest {
         assertTrue(graphLineSPs > 0);
         PhaseSuite<HighTierContext> graphBuilderSuite = getCustomGraphBuilderSuite(GraphBuilderConfiguration.getDefault(getDefaultGraphBuilderPlugins()).withFullInfopoints(true));
         final CompilationResult cr = compileGraph(graph, graph.method(), getProviders(), getBackend(), graphBuilderSuite, OptimisticOptimizations.ALL, graph.getProfilingInfo(),
-                        createSuites(graph.getOptions()), createLIRSuites(graph.getOptions()), new CompilationResult(), CompilationResultBuilderFactory.Default);
+                        createSuites(graph.getOptions()), createLIRSuites(graph.getOptions()), new CompilationResult(graph.compilationId()), CompilationResultBuilderFactory.Default);
         int lineSPs = 0;
         for (Infopoint sp : cr.getInfopoints()) {
             assertNotNull(sp.reason);

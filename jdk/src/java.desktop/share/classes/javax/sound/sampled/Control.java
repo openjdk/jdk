@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public abstract class Control {
     private final Type type;
 
     /**
-     * Constructs a Control with the specified type.
+     * Constructs a control with the specified type.
      *
      * @param  type the kind of control desired
      */
@@ -66,9 +66,9 @@ public abstract class Control {
     }
 
     /**
-     * Obtains a String describing the control type and its current state.
+     * Obtains a string describing the control type and its current state.
      *
-     * @return a String representation of the Control
+     * @return a string representation of the control
      */
     @Override
     public String toString() {
@@ -77,7 +77,6 @@ public abstract class Control {
 
     /**
      * An instance of the {@code Type} class represents the type of the control.
-     * Static instances are provided for the common types.
      */
     public static class Type {
 
@@ -98,7 +97,12 @@ public abstract class Control {
         }
 
         /**
-         * Finalizes the equals method.
+         * Indicates whether the specified object is equal to this control type,
+         * returning {@code true} if the objects are the same.
+         *
+         * @param  obj the reference object with which to compare
+         * @return {@code true} if the specified object is equal to this control
+         *         type; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -106,7 +110,9 @@ public abstract class Control {
         }
 
         /**
-         * Finalizes the hashCode method.
+         * Returns a hash code value for this control type.
+         *
+         * @return a hash code value for this control type
          */
         @Override
         public final int hashCode() {

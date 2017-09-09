@@ -52,6 +52,9 @@ extern "C" {
 }
 #endif
 
+/* include to prevent charset problem */
+#include "PLATFORM_API_WinOS_Charset_Util.h"
+
 #ifdef USE_DEBUG_SILENCING
 #define DEBUG_SILENCING0(p) TRACE0(p)
 #define DEBUG_SILENCING1(p1,p2) TRACE1(p1,p2)
@@ -227,13 +230,13 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
 }
 
 BOOL CALLBACK DS_GetDescEnum(LPGUID lpGuid,
-                             LPCSTR lpstrDescription,
-                             LPCSTR lpstrModule,
+                             LPCWSTR lpstrDescription,
+                             LPCWSTR lpstrModule,
                              DirectAudioDeviceDescription* desc) {
 
     INT32 cacheIndex = findCacheItemByGUID(lpGuid, g_audioDeviceCache[desc->deviceID].isSource);
     if (cacheIndex == desc->deviceID) {
-        strncpy(desc->name, lpstrDescription, DAUDIO_STRING_LENGTH);
+        UnicodeToUTF8AndCopy(desc->name, lpstrDescription, DAUDIO_STRING_LENGTH);
         //strncpy(desc->description, lpstrModule, DAUDIO_STRING_LENGTH);
         desc->maxSimulLines = -1;
         /* do not continue enumeration */
@@ -257,10 +260,10 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
     }
     desc->maxSimulLines = 0;
     if (g_audioDeviceCache[desc->deviceID].isSource) {
-        DirectSoundEnumerate((LPDSENUMCALLBACK) DS_GetDescEnum, desc);
+        DirectSoundEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Playback", DAUDIO_STRING_LENGTH);
     } else {
-        DirectSoundCaptureEnumerate((LPDSENUMCALLBACK) DS_GetDescEnum, desc);
+        DirectSoundCaptureEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
     }
 

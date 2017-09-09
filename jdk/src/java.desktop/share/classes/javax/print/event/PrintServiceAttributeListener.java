@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,22 @@
 package javax.print.event;
 
 /**
-  * Implementations of this listener interface are attached to a
-  * {@link javax.print.PrintService PrintService} to monitor
-  * the status of the print service.
-  * <p>
-  * To monitor a particular job see {@link PrintJobListener} and
-  * {@link PrintJobAttributeListener}.
-  */
-
+ * Implementations of this listener interface are attached to a
+ * {@link javax.print.PrintService PrintService} to monitor the status of the
+ * print service.
+ * <p>
+ * To monitor a particular job see {@link PrintJobListener} and
+ * {@link PrintJobAttributeListener}.
+ */
 public interface PrintServiceAttributeListener {
 
     /**
-     * Called to notify a listener of an event in the print service.
-     * The service will call this method on an event notification thread.
-     * The client should not perform lengthy processing in this callback
-     * or subsequent event notifications may be blocked.
-     * @param psae the event being notified
+     * Called to notify a listener of an event in the print service. The service
+     * will call this method on an event notification thread. The client should
+     * not perform lengthy processing in this callback or subsequent event
+     * notifications may be blocked.
+     *
+     * @param  psae the event being notified
      */
     public void attributeUpdate(PrintServiceAttributeEvent psae) ;
-
 }

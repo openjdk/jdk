@@ -729,7 +729,6 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   }
 
   G1CollectedHeap::heap()->end_archive_alloc_range(string_space, os::vm_allocation_granularity());
-  assert(string_space->length() <= 2, "sanity");
   return true;
 }
 

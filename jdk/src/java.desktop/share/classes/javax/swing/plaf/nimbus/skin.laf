@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
- Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -27296,6 +27296,45 @@
                         </rectangle>
                         <rectangle x1="9.0" x2="10.0" y1="1.0" y2="9.0" rounding="0.0">
                            <matte red="146" green="151" blue="161" alpha="255" uiDefaultParentName="nimbusBorder" hueOffset="0.0" saturationOffset="0.0" brightnessOffset="0.0" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.75" y2="1.0"/>
+                        </rectangle>
+                     </shapes>
+                     <effects/>
+                  </layer>
+               </canvas>
+            </state>
+            <state stateKeys="Disabled">
+               <style>
+                  <textForeground/>
+                  <textBackground/>
+                  <background/>
+                  <uiproperties/>
+               </style>
+               <canvas>
+                  <size width="10" height="10"/>
+                  <nextLayerNameIndex>3</nextLayerNameIndex>
+                  <stretchingInsets top="1" bottom="1" left="1" right="1"/>
+                  <layer name="Layer 1">
+                     <opacity>1.0</opacity>
+                     <fillOpacity>1.0</fillOpacity>
+                     <blendingMode>NORMAL</blendingMode>
+                     <locked>false</locked>
+                     <visible>true</visible>
+                     <shapes>
+                        <rectangle x1="0.0" x2="10.0" y1="0.0" y2="1.0" rounding="0.0">
+                           <matte red="116" green="121" blue="128" alpha="255" uiDefaultParentName="nimbusBorder" hueOffset="-0.013888836" saturationOffset="5.823001E-4" brightnessOffset="-0.12941176" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.75" y2="1.0"/>
+                        </rectangle>
+                        <rectangle x1="0.0" x2="10.0" y1="9.0" y2="10.0" rounding="0.0">
+                           <matte red="116" green="121" blue="128" alpha="255" uiDefaultParentName="nimbusBorder" hueOffset="-0.013888836" saturationOffset="5.823001E-4" brightnessOffset="-0.12941176" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.75" y2="1.0"/>
+                        </rectangle>
+                        <rectangle x1="0.0" x2="1.0" y1="1.0" y2="9.0" rounding="0.0">
+                           <matte red="116" green="121" blue="128" alpha="255" uiDefaultParentName="nimbusBorder" hueOffset="-0.013888836" saturationOffset="5.823001E-4" brightnessOffset="-0.12941176" alphaOffset="0"/>
+                           <paintPoints x1="0.25" y1="0.0" x2="0.75" y2="1.0"/>
+                        </rectangle>
+                        <rectangle x1="9.0" x2="10.0" y1="1.0" y2="9.0" rounding="0.0">
+                           <matte red="116" green="121" blue="128" alpha="255" uiDefaultParentName="nimbusBorder" hueOffset="-0.013888836" saturationOffset="5.823001E-4" brightnessOffset="-0.12941176" alphaOffset="0"/>
                            <paintPoints x1="0.25" y1="0.0" x2="0.75" y2="1.0"/>
                         </rectangle>
                      </shapes>

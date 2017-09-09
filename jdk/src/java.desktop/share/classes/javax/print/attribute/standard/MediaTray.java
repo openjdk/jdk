@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.print.attribute.standard;
 
-import java.util.Locale;
+package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.EnumSyntax;
 
-
 /**
- * Class MediaTray is a subclass of Media.
- * Class MediaTray is a printing attribute class, an enumeration, that
- * specifies the media tray or bin for the job.
- * This attribute can be used instead of specifying MediaSize or MediaName.
+ * Class {@code MediaTray} is a subclass of {@code Media}. Class
+ * {@code MediaTray} is a printing attribute class, an enumeration, that
+ * specifies the media tray or bin for the job. This attribute can be used
+ * instead of specifying {@code MediaSize} or {@code MediaName}.
  * <p>
- * Class MediaTray declares keywords for standard media kind values.
- * Implementation- or site-defined names for a media kind attribute may also
- * be created by defining a subclass of class MediaTray.
- * <P>
- * <B>IPP Compatibility:</B> MediaTray is a representation class for
+ * Class {@code MediaTray} declares keywords for standard media kind values.
+ * Implementation- or site-defined names for a media kind attribute may also be
+ * created by defining a subclass of class {@code MediaTray}.
+ * <p>
+ * <b>IPP Compatibility:</b> {@code MediaTray} is a representation class for
  * values of the IPP "media" attribute which name paper trays.
  */
 public class MediaTray extends Media implements Attribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -982503611095214703L;
 
     /**
@@ -91,12 +92,15 @@ public class MediaTray extends Media implements Attribute {
      * Construct a new media tray enumeration value with the given integer
      * value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected MediaTray(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code MediaTray}.
+     */
     private static final String[] myStringTable ={
         "top",
         "middle",
@@ -108,6 +112,9 @@ public class MediaTray extends Media implements Attribute {
         "side"
     };
 
+    /**
+     * The enumeration value table for class {@code MediaTray}.
+     */
     private static final MediaTray[] myEnumValueTable = {
         TOP,
         MIDDLE,
@@ -120,7 +127,7 @@ public class MediaTray extends Media implements Attribute {
     };
 
     /**
-     * Returns the string table for class MediaTray.
+     * Returns the string table for class {@code MediaTray}.
      */
     protected String[] getStringTable()
     {
@@ -128,11 +135,9 @@ public class MediaTray extends Media implements Attribute {
     }
 
     /**
-     * Returns the enumeration value table for class MediaTray.
+     * Returns the enumeration value table for class {@code MediaTray}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
-
-
 }

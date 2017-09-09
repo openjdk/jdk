@@ -32,9 +32,9 @@ import java.nio.charset.*;
 public class CharsetContainmentTest {
     static String[] encodings =
         { "US-ASCII", "UTF-16", "UTF-16BE", "UTF-16LE", "UTF-8",
-          "windows-1252", "ISO-8859-1", "ISO-8859-15", "ISO-8859-2",
-          "ISO-8859-3", "ISO-8859-4", "ISO-8859-5", "ISO-8859-6",
-          "ISO-8859-7", "ISO-8859-8", "ISO-8859-9", "ISO-8859-13",
+          "windows-1252", "ISO-8859-1", "ISO-8859-2", "ISO-8859-3",
+          "ISO-8859-4", "ISO-8859-5", "ISO-8859-6", "ISO-8859-7",
+          "ISO-8859-8", "ISO-8859-9", "ISO-8859-13", "ISO-8859-15", "ISO-8859-16",
           "ISO-2022-JP", "ISO-2022-KR",
 
           // Temporarily remove ISO-2022-CN-* charsets until full encoder/decoder
@@ -57,7 +57,6 @@ public class CharsetContainmentTest {
            encodings,
           {"US-ASCII", "windows-1252"},
           {"US-ASCII", "ISO-8859-1"},
-          {"US-ASCII", "ISO-8859-15"},
           {"US-ASCII", "ISO-8859-2"},
           {"US-ASCII", "ISO-8859-3"},
           {"US-ASCII", "ISO-8859-4"},
@@ -67,6 +66,8 @@ public class CharsetContainmentTest {
           {"US-ASCII", "ISO-8859-8"},
           {"US-ASCII", "ISO-8859-9"},
           {"US-ASCII", "ISO-8859-13"},
+          {"US-ASCII", "ISO-8859-15"},
+          {"US-ASCII", "ISO-8859-16"},
           {"ISO-2022-JP"},
           {"ISO-2022-KR"},
           // Temporarily remove ISO-2022-CN-* charsets until full encoder/decoder

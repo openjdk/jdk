@@ -1138,7 +1138,11 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                              int tabIndex, Icon icon, Rectangle iconRect,
                              boolean isSelected ) {
         if (icon != null) {
+            // Clip the icon within iconRect bounds
+            Shape oldClip = g.getClip();
+            ((Graphics2D)g).clip(iconRect);
             icon.paintIcon(tabPane, g, iconRect.x, iconRect.y);
+            g.setClip(oldClip);
         }
     }
 
