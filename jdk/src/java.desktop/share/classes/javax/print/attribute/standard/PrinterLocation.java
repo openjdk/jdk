@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
 import javax.print.attribute.PrintServiceAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class PrinterLocation is a printing attribute class, a text attribute, that
- * identifies the location of the device. This could include things like:
- * {@code "in Room 123A, second floor of building XYZ"}.
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code PrinterLocation} is a printing attribute class, a text
+ * attribute, that identifies the location of the device. This could include
+ * things like: {@code "in Room 123A, second floor of building XYZ"}.
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class PrinterLocation extends TextSyntax
     implements PrintServiceAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -1598610039865566337L;
 
     /**
      * Constructs a new printer location attribute with the given location and
      * locale.
      *
-     * @param  location  Printer location.
-     * @param  locale    Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code location} is null.
+     * @param  location printer location
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code location} is {@code null}
      */
     public PrinterLocation(String location, Locale locale) {
         super (location, locale);
@@ -64,25 +66,20 @@ public final class PrinterLocation extends TextSyntax
 
     /**
      * Returns whether this printer location attribute is equivalent to the
-     * passed in object. To be equivalent, all of the following conditions
-     * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class PrinterLocation.
-     * <LI>
-     * This printer location attribute's underlying string and
-     * {@code object}'s underlying string are equal.
-     * <LI>
-     * This printer location attribute's locale and {@code object}'s
-     * locale are equal.
-     * </OL>
+     * passed in object. To be equivalent, all of the following conditions must
+     * be true:
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code PrinterLocation}.
+     *   <li>This printer location attribute's underlying string and
+     *   {@code object}'s underlying string are equal.
+     *   <li>This printer location attribute's locale and {@code object}'s
+     *   locale are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this printer
-     *          location attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this printer
+     *         location attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) && object instanceof PrinterLocation);
@@ -91,12 +88,12 @@ public final class PrinterLocation extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterLocation, the
-     * category is class PrinterLocation itself.
+     * <p>
+     * For class {@code PrinterLocation}, the category is class
+     * {@code PrinterLocation} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterLocation.class;
@@ -105,14 +102,13 @@ public final class PrinterLocation extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterLocation, the
-     * category name is {@code "printer-location"}.
+     * <p>
+     * For class {@code PrinterLocation}, the category name is
+     * {@code "printer-location"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-location";
     }
-
 }

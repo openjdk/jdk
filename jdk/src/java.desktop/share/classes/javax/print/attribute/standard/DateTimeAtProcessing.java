@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,47 +22,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
+import java.util.Calendar;
 import java.util.Date;
+
 import javax.print.attribute.Attribute;
 import javax.print.attribute.DateTimeSyntax;
 import javax.print.attribute.PrintJobAttribute;
 
 /**
- * Class DateTimeAtProcessing is a printing attribute class, a date-time
+ * Class {@code DateTimeAtProcessing} is a printing attribute class, a date-time
  * attribute, that indicates the date and time at which the Print Job first
  * began processing.
- * <P>
- * To construct a DateTimeAtProcessing attribute from separate values of the
- * year, month, day, hour, minute, and so on, use a {@link java.util.Calendar
- * Calendar} object to construct a {@link java.util.Date Date} object, then use
- * the {@link java.util.Date Date} object to construct the DateTimeAtProcessing
- * attribute. To convert a DateTimeAtProcessing attribute to separate values of
- * the year, month, day, hour, minute, and so on, create a {@link
- * java.util.Calendar Calendar} object and set it to the {@link java.util.Date
- * Date} from the DateTimeAtProcessing attribute.
- * <P>
- * <B>IPP Compatibility:</B> The information needed to construct an IPP
+ * <p>
+ * To construct a {@code DateTimeAtProcessing} attribute from separate values of
+ * the year, month, day, hour, minute, and so on, use a
+ * {@link Calendar Calendar} object to construct a {@link Date Date} object,
+ * then use the {@link Date Date} object to construct the DateTimeAtProcessing
+ * attribute. To convert a {@code DateTimeAtProcessing} attribute to separate
+ * values of the year, month, day, hour, minute, and so on, create a
+ * {@link Calendar Calendar} object and set it to the {@link Date Date} from the
+ * {@code DateTimeAtProcessing} attribute.
+ * <p>
+ * <b>IPP Compatibility:</b> The information needed to construct an IPP
  * "date-time-at-processing" attribute can be obtained as described above. The
- * category name returned by {@code getName()} gives the IPP attribute
- * name.
+ * category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class DateTimeAtProcessing extends DateTimeSyntax
         implements PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -3710068197278263244L;
 
     /**
-     * Construct a new date-time at processing attribute with the given {@link
-     * java.util.Date Date} value.
+     * Construct a new date-time at processing attribute with the given
+     * {@link Date Date} value.
      *
-     * @param  dateTime  {@link java.util.Date Date} value.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code dateTime} is null.
+     * @param  dateTime {@link Date Date} value
+     * @throws NullPointerException if {@code dateTime} is {@code null}
      */
     public DateTimeAtProcessing(Date dateTime) {
         super (dateTime);
@@ -72,21 +75,17 @@ public final class DateTimeAtProcessing extends DateTimeSyntax
      * Returns whether this date-time at processing attribute is equivalent to
      * the passed in object. To be equivalent, all of the following conditions
      * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class DateTimeAtProcessing.
-     * <LI>
-     * This date-time at processing attribute's {@link java.util.Date Date}
-     * value and {@code object}'s {@link java.util.Date Date} value
-     * are equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class
+     *   {@code DateTimeAtProcessing}.
+     *   <li>This date-time at processing attribute's {@link Date Date}
+     *   value and {@code object}'s {@link Date Date} value are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this date-time
-     *          at processing attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this date-time at
+     *         processing attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return(super.equals (object) &&
@@ -96,12 +95,12 @@ public final class DateTimeAtProcessing extends DateTimeSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class DateTimeAtProcessing, the category is class
-     * DateTimeAtProcessing itself.
+     * <p>
+     * For class {@code DateTimeAtProcessing}, the category is class
+     * {@code DateTimeAtProcessing} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return DateTimeAtProcessing.class;
@@ -110,14 +109,13 @@ public final class DateTimeAtProcessing extends DateTimeSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class DateTimeAtProcessing, the category name is
+     * <p>
+     * For class {@code DateTimeAtProcessing}, the category name is
      * {@code "date-time-at-processing"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "date-time-at-processing";
     }
-
 }

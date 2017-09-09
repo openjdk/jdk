@@ -393,6 +393,9 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
     assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
+
+  void verify_just_initialized(bool f2_used);
+  void reinitialize(bool f2_used);
 };
 
 
@@ -464,7 +467,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
+  // CDS support
+  void remove_unshareable_info();
+  void verify_just_initialized();
  private:
+  void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }
 
   static int header_size()                       { return sizeof(ConstantPoolCache) / wordSize; }
@@ -510,9 +517,9 @@ class ConstantPoolCache: public MetaspaceObj {
   void dump_cache();
 #endif // INCLUDE_JVMTI
 
-  // Deallocate - no fields to deallocate
+  // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })
-  void deallocate_contents(ClassLoaderData* data) {}
+  void deallocate_contents(ClassLoaderData* data);
   bool is_klass() const { return false; }
 
   // Printing

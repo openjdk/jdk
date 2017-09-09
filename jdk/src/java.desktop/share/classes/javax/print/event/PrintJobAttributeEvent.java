@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,23 +30,28 @@ import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.PrintJobAttributeSet;
 
 /**
- * Class PrintJobAttributeEvent encapsulates an event a PrintService
- * reports to let the client know that one or more printing attributes for a
- * PrintJob have changed.
+ * Class {@code PrintJobAttributeEvent} encapsulates an event a
+ * {@code PrintService} reports to let the client know that one or more printing
+ * attributes for a {@code PrintJob} have changed.
  */
-
 public class PrintJobAttributeEvent extends PrintEvent {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -6534469883874742101L;
 
+    /**
+     * The printing service attributes that changed.
+     */
     private PrintJobAttributeSet attributes;
 
     /**
-     * Constructs a PrintJobAttributeEvent object.
-     * @param source the print job generating  this event
-     * @param attributes the attribute changes being reported
-     * @throws IllegalArgumentException if {@code source} is
-     *         {@code null}.
+     * Constructs a {@code PrintJobAttributeEvent} object.
+     *
+     * @param  source the print job generating this event
+     * @param  attributes the attribute changes being reported
+     * @throws IllegalArgumentException if {@code source} is {@code null}
      */
     public PrintJobAttributeEvent (DocPrintJob source,
                                    PrintJobAttributeSet attributes)  {
@@ -55,28 +60,24 @@ public class PrintJobAttributeEvent extends PrintEvent {
         this.attributes = AttributeSetUtilities.unmodifiableView(attributes);
     }
 
-
     /**
-     * Determine the Print Job to which this print job event pertains.
+     * Determine the {@code PrintJob} to which this print job event pertains.
      *
-     * @return  Print Job object.
+     * @return {@code PrintJob} object
      */
     public DocPrintJob getPrintJob() {
 
         return (DocPrintJob) getSource();
     }
 
-
     /**
      * Determine the printing attributes that changed and their new values.
      *
-     * @return  Attributes containing the new values for the print job
-     * attributes that changed. The returned set may not be modifiable.
+     * @return attributes containing the new values for the print job attributes
+     *         that changed. The returned set may not be modifiable.
      */
     public PrintJobAttributeSet getAttributes() {
 
         return attributes;
-
     }
-
 }

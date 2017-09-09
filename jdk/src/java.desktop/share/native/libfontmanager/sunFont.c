@@ -350,6 +350,13 @@ JNIEXPORT TTLayoutTableCache* newLayoutTableCache() {
     for(i=0;i<LAYOUTCACHE_ENTRIES;i++) {
       ltc->entries[i].len = -1;
     }
+    ltc->entries[0].tag = GDEF_TAG;
+    ltc->entries[1].tag = GPOS_TAG;
+    ltc->entries[2].tag = GSUB_TAG;
+    ltc->entries[3].tag = HEAD_TAG;
+    ltc->entries[4].tag = KERN_TAG;
+    ltc->entries[5].tag = MORT_TAG;
+    ltc->entries[6].tag = MORX_TAG;
   }
   return ltc;
 }

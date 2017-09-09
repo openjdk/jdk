@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 #define SHARE_VM_CLASSFILE_CLASSLOADER_HPP
 
+#include "classfile/jimage.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
@@ -47,6 +48,7 @@
 
 class JImageFile;
 class ClassFileStream;
+class PackageEntry;
 
 class ClassPathEntry : public CHeapObj<mtClass> {
 private:
@@ -102,7 +104,6 @@ typedef struct {
   jbyte *extra;                 /* optional extra data */
   jlong pos;                    /* position of LOC header (if negative) or data */
 } jzentry;
-
 
 class ClassPathZipEntry: public ClassPathEntry {
  enum {
@@ -249,6 +250,10 @@ class ClassLoader: AllStatic {
   //       the entries on the _first_append_entry linked list.
   static int _num_entries;
 
+  // number of entries in the boot class path including the
+  // java runtime image
+  static int _num_boot_entries;
+
   // Array of module names associated with the boot class loader
   CDS_ONLY(static GrowableArray<char*>* _boot_modules_array;)
 
@@ -289,6 +294,7 @@ class ClassLoader: AllStatic {
   static bool get_canonical_path(const char* orig, char* out, int len);
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
+  static PackageEntry* get_package_entry(const char* class_name, ClassLoaderData* loader_data, TRAPS);
 
  public:
   static jboolean decompress(void *in, u8 inSize, void *out, u8 outSize, char **pmsg);
@@ -436,7 +442,10 @@ class ClassLoader: AllStatic {
   static void initialize_module_loader_map(JImageFile* jimage);
   static s2 classloader_type(Symbol* class_name, ClassPathEntry* e,
                              int classpath_index, TRAPS);
+  static void record_shared_class_loader_type(InstanceKlass* ik, const ClassFileStream* stream);
 #endif
+  static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
+                                                const char* file_name, jlong &size);
 
   static void  trace_class_path(const char* msg, const char* name = NULL);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,37 +44,31 @@ import java.util.Map;
  * implementations:
  *
  * <table border=1>
-    <caption>MIDI File Format Properties</caption>
- *  <tr>
- *   <th>Property key</th>
- *   <th>Value type</th>
- *   <th>Description</th>
- *  </tr>
- *  <tr>
- *   <td>&quot;author&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>name of the author of this file</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;title&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>title of this file</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;copyright&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>copyright message</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;date&quot;</td>
- *   <td>{@link java.util.Date Date}</td>
- *   <td>date of the recording or release</td>
- *  </tr>
- *  <tr>
- *   <td>&quot;comment&quot;</td>
- *   <td>{@link java.lang.String String}</td>
- *   <td>an arbitrary text</td>
- *  </tr>
+ * <caption>MIDI File Format Properties</caption>
+ *   <tr>
+ *     <th>Property key
+ *     <th>Value type
+ *     <th>Description
+ *   <tr>
+ *     <td>&quot;author&quot;
+ *     <td>{@link String String}
+ *     <td>name of the author of this file
+ *   <tr>
+ *     <td>&quot;title&quot;
+ *     <td>{@link String String}
+ *     <td>title of this file
+ *   <tr>
+ *     <td>&quot;copyright&quot;
+ *     <td>{@link String String}
+ *     <td>copyright message
+ *   <tr>
+ *     <td>&quot;date&quot;
+ *     <td>{@link java.util.Date Date}
+ *     <td>date of the recording or release
+ *   <tr>
+ *     <td>&quot;comment&quot;
+ *     <td>{@link String String}
+ *     <td>an arbitrary text
  * </table>
  *
  * @author Kara Kytle
@@ -135,10 +129,10 @@ public class MidiFileFormat {
      * @param  divisionType the timing division type (PPQ or one of the SMPTE
      *         types)
      * @param  resolution the timing resolution
-     * @param  bytes the length of the MIDI file in bytes, or UNKNOWN_LENGTH if
-     *         not known
+     * @param  bytes the length of the MIDI file in bytes, or
+     *         {@link #UNKNOWN_LENGTH} if not known
      * @param  microseconds the duration of the file in microseconds, or
-     *         UNKNOWN_LENGTH if not known
+     *         {@link #UNKNOWN_LENGTH} if not known
      * @see #UNKNOWN_LENGTH
      * @see Sequence#PPQ
      * @see Sequence#SMPTE_24
@@ -163,10 +157,10 @@ public class MidiFileFormat {
      * @param  divisionType the timing division type (PPQ or one of the SMPTE
      *         types)
      * @param  resolution the timing resolution
-     * @param  bytes the length of the MIDI file in bytes, or UNKNOWN_LENGTH if
-     *         not known
+     * @param  bytes the length of the MIDI file in bytes, or
+     *         {@code UNKNOWN_LENGTH} if not known
      * @param  microseconds the duration of the file in microseconds, or
-     *         UNKNOWN_LENGTH if not known
+     *         {@code UNKNOWN_LENGTH} if not known
      * @param  properties a {@code Map<String,Object>} object with properties
      * @see #UNKNOWN_LENGTH
      * @see Sequence#PPQ
@@ -224,7 +218,8 @@ public class MidiFileFormat {
     /**
      * Obtains the length of the MIDI file, expressed in 8-bit bytes.
      *
-     * @return the number of bytes in the file, or UNKNOWN_LENGTH if not known
+     * @return the number of bytes in the file, or {@code UNKNOWN_LENGTH} if not
+     *         known
      * @see #UNKNOWN_LENGTH
      */
     public int getByteLength() {
@@ -234,8 +229,8 @@ public class MidiFileFormat {
     /**
      * Obtains the length of the MIDI file, expressed in microseconds.
      *
-     * @return the file's duration in microseconds, or UNKNOWN_LENGTH if not
-     *         known
+     * @return the file's duration in microseconds, or {@code UNKNOWN_LENGTH} if
+     *         not known
      * @see Sequence#getMicrosecondLength()
      * @see #getByteLength
      * @see #UNKNOWN_LENGTH

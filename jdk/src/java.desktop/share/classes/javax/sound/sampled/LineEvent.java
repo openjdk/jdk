@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,17 @@ import java.util.EventObject;
  */
 public class LineEvent extends EventObject {
 
+    /**
+     * Use serialVersionUID from JDK 1.3 for interoperability.
+     */
     private static final long serialVersionUID = -1274246333383880410L;
 
     /**
      * The kind of line event ({@code OPEN}, {@code CLOSE}, {@code START}, or
      * {@code STOP}).
      *
-     * @serial
      * @see #getType
+     * @serial
      */
     private final Type type;
 
@@ -67,8 +70,8 @@ public class LineEvent extends EventObject {
      * this value is not known, the position value should be
      * {@link AudioSystem#NOT_SPECIFIED}.
      *
-     * @serial
      * @see #getFramePosition
+     * @serial
      */
     private final long position;
 
@@ -184,11 +187,11 @@ public class LineEvent extends EventObject {
 
         /**
          * Indicates whether the specified object is equal to this event type,
-         * returning {@code true} if the objects are identical.
+         * returning {@code true} if the objects are the same.
          *
          * @param  obj the reference object with which to compare
-         * @return {@code true} if this event type is the same as {@code obj};
-         *         {@code false} otherwise
+         * @return {@code true} if the specified object is equal to this event
+         *         type; {@code false} otherwise
          */
         @Override
         public final boolean equals(Object obj) {
@@ -196,7 +199,9 @@ public class LineEvent extends EventObject {
         }
 
         /**
-         * Finalizes the hashcode method.
+         * Returns a hash code value for this event type.
+         *
+         * @return a hash code value for this event type
          */
         @Override
         public final int hashCode() {
@@ -205,6 +210,8 @@ public class LineEvent extends EventObject {
 
         /**
          * Returns the type name as the string representation.
+         *
+         * @return the type name as the string representation
          */
         @Override
         public String toString() {
@@ -253,22 +260,24 @@ public class LineEvent extends EventObject {
 
         /**
          * A type of event that is sent when a line ceases to engage in active
-         * input or output of audio data because the end of media has been reached.
+         * input or output of audio data because the end of media has been
+         * reached.
          */
         /*
-         * ISSUE: we may want to get rid of this.  Is JavaSound
-         * responsible for reporting this??
+         * ISSUE: we may want to get rid of this. Is JavaSound responsible for
+         * reporting this??
          *
-         * [If it's decided to keep this API, the docs will need to be updated to include mention
-         * of EOM events elsewhere.]
+         * [If it's decided to keep this API, the docs will need to be updated
+         * to include mention of EOM events elsewhere.]
          */
         //public static final Type EOM  = new Type("EOM");
 
         /**
          * A type of event that is sent when a line begins to engage in active
-         * input or output of audio data.  Examples of when this happens are
-         * when a source line begins or resumes writing data to its mixer, and
-         * when a target line begins or resumes reading data from its mixer.
+         * input or output of audio data. Examples of when this happens are when
+         * a source line begins or resumes writing data to its mixer, and when a
+         * target line begins or resumes reading data from its mixer.
+         *
          * @see #STOP
          * @see SourceDataLine#write
          * @see TargetDataLine#read
@@ -277,8 +286,9 @@ public class LineEvent extends EventObject {
         //public static final Type ACTIVE       = new Type("ACTIVE");
 
         /**
-         * A type of event that is sent when a line ceases active input or output
-         * of audio data.
+         * A type of event that is sent when a line ceases active input or
+         * output of audio data.
+         *
          * @see #START
          * @see DataLine#stop
          */

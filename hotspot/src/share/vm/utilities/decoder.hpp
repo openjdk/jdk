@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/ostream.hpp"
 
 class AbstractDecoder : public CHeapObj<mtInternal> {
 public:
@@ -41,7 +42,6 @@ public:
          out_of_memory,        // out of memory
          file_invalid,         // invalid elf file
          file_not_found,       // could not found symbol file (on windows), such as jvm.pdb or jvm.map
-         helper_not_found,     // could not load dbghelp.dll (Windows only)
          helper_func_error,    // decoding functions not found (Windows only)
          helper_init_error     // SymInitialize failed (Windows only)
   };
@@ -117,6 +117,9 @@ public:
 
   // shutdown shared instance
   static void shutdown();
+
+  static void print_state_on(outputStream* st);
+
 protected:
   // shared decoder instance, _shared_instance_lock is needed
   static AbstractDecoder* get_shared_instance();

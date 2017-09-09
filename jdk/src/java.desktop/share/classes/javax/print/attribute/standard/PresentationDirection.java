@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import javax.print.attribute.Attribute;
@@ -30,81 +31,84 @@ import javax.print.attribute.PrintJobAttribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 /**
- * Class PresentationDirection is a printing attribute class, an enumeration,
- * that is used in conjunction with the {@link  NumberUp NumberUp} attribute to
- * indicate the layout of multiple print-stream pages to impose upon a
- * single side of an instance of a selected medium.
- * This is useful to mirror the text layout conventions of different scripts.
- * For example, English is "toright-tobottom", Hebrew is "toleft-tobottom"
- *  and Japanese is usually "tobottom-toleft".
- * <P>
- * <B>IPP Compatibility:</B>  This attribute is not an IPP 1.1
- * attribute; it is an attribute in the Production Printing Extension
- * (<a href="ftp://ftp.pwg.org/pub/pwg/standards/pwg5100.3.pdf">PDF</a>)
- * of IPP 1.1.  The category name returned by
- * {@code getName()} is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The {@code toString()} method
- * returns the IPP string representation of the attribute value.
+ * Class {@code PresentationDirection} is a printing attribute class, an
+ * enumeration, that is used in conjunction with the {@link NumberUp NumberUp}
+ * attribute to indicate the layout of multiple print-stream pages to impose
+ * upon a single side of an instance of a selected medium. This is useful to
+ * mirror the text layout conventions of different scripts. For example, English
+ * is "toright-tobottom", Hebrew is "toleft-tobottom" and Japanese is usually
+ * "tobottom-toleft".
+ * <p>
+ * <b>IPP Compatibility:</b> This attribute is not an IPP 1.1 attribute; it is
+ * an attribute in the Production Printing Extension
+ * (<a href="ftp://ftp.pwg.org/pub/pwg/standards/pwg5100.3.pdf">PDF</a>) of IPP
+ * 1.1. The category name returned by {@code getName()} is the IPP attribute
+ * name. The enumeration's integer value is the IPP enum value. The
+ * {@code toString()} method returns the IPP string representation of the
+ * attribute value.
  *
- * @author  Phil Race.
+ * @author Phil Race
  */
 public final class PresentationDirection extends EnumSyntax
        implements PrintJobAttribute, PrintRequestAttribute  {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 8294728067230931780L;
 
     /**
-     * Pages are laid out in columns starting at the top left,
-     * proceeding towards the bottom {@literal &} right.
+     * Pages are laid out in columns starting at the top left, proceeding
+     * towards the bottom {@literal &} right.
      */
     public static final PresentationDirection TOBOTTOM_TORIGHT =
         new PresentationDirection(0);
 
     /**
-     * Pages are laid out in columns starting at the top right,
-     * proceeding towards the bottom {@literal &} left.
+     * Pages are laid out in columns starting at the top right, proceeding
+     * towards the bottom {@literal &} left.
      */
     public static final PresentationDirection TOBOTTOM_TOLEFT =
         new PresentationDirection(1);
 
     /**
-     * Pages are laid out in columns starting at the bottom left,
-     * proceeding towards the top {@literal &} right.
+     * Pages are laid out in columns starting at the bottom left, proceeding
+     * towards the top {@literal &} right.
      */
     public static final PresentationDirection TOTOP_TORIGHT =
         new PresentationDirection(2);
 
     /**
-     * Pages are laid out in columns starting at the bottom right,
-     * proceeding towards the top {@literal &} left.
+     * Pages are laid out in columns starting at the bottom right, proceeding
+     * towards the top {@literal &} left.
      */
     public static final PresentationDirection TOTOP_TOLEFT =
         new PresentationDirection(3);
 
     /**
-     * Pages are laid out in rows starting at the top left,
-     * proceeding towards the right {@literal &} bottom.
+     * Pages are laid out in rows starting at the top left, proceeding towards
+     * the right {@literal &} bottom.
      */
     public static final PresentationDirection TORIGHT_TOBOTTOM =
         new PresentationDirection(4);
 
     /**
-     * Pages are laid out in rows starting at the bottom left,
-     * proceeding towards the right {@literal &} top.
+     * Pages are laid out in rows starting at the bottom left, proceeding
+     * towards the right {@literal &} top.
      */
     public static final PresentationDirection TORIGHT_TOTOP =
         new PresentationDirection(5);
 
     /**
-     * Pages are laid out in rows starting at the top right,
-     * proceeding towards the left {@literal &} bottom.
+     * Pages are laid out in rows starting at the top right, proceeding towards
+     * the left {@literal &} bottom.
      */
     public static final PresentationDirection TOLEFT_TOBOTTOM =
         new PresentationDirection(6);
 
     /**
-     * Pages are laid out in rows starting at the bottom right,
-     * proceeding towards the left {@literal &} top.
+     * Pages are laid out in rows starting at the bottom right, proceeding
+     * towards the left {@literal &} top.
      */
     public static final PresentationDirection TOLEFT_TOTOP =
         new PresentationDirection(7);
@@ -113,12 +117,15 @@ public final class PresentationDirection extends EnumSyntax
      * Construct a new presentation direction enumeration value with the given
      * integer value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     private PresentationDirection(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code PresentationDirection}.
+     */
     private static final String[] myStringTable = {
         "tobottom-toright",
         "tobottom-toleft",
@@ -130,6 +137,9 @@ public final class PresentationDirection extends EnumSyntax
         "toleft-totop",
     };
 
+    /**
+     * The enumeration value table for class {@code PresentationDirection}.
+     */
     private static final PresentationDirection[] myEnumValueTable = {
         TOBOTTOM_TORIGHT,
         TOBOTTOM_TOLEFT,
@@ -142,14 +152,15 @@ public final class PresentationDirection extends EnumSyntax
     };
 
     /**
-     * Returns the string table for class PresentationDirection.
+     * Returns the string table for class {@code PresentationDirection}.
      */
     protected String[] getStringTable() {
         return myStringTable;
     }
 
     /**
-     * Returns the enumeration value table for class PresentationDirection.
+     * Returns the enumeration value table for class
+     * {@code PresentationDirection}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return myEnumValueTable;
@@ -158,12 +169,12 @@ public final class PresentationDirection extends EnumSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PresentationDirection
-     * the category is class PresentationDirection itself.
+     * <p>
+     * For class {@code PresentationDirection} the category is class
+     * {@code PresentationDirection} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PresentationDirection.class;
@@ -172,14 +183,13 @@ public final class PresentationDirection extends EnumSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PresentationDirection
-     * the category name is {@code "presentation-direction"}.
+     * <p>
+     * For class {@code PresentationDirection} the category name is
+     * {@code "presentation-direction"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "presentation-direction";
     }
-
 }

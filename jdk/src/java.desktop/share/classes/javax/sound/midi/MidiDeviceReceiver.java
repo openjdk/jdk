@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,11 @@ package javax.sound.midi;
 public interface MidiDeviceReceiver extends Receiver {
 
     /**
-     * Obtains a MidiDevice object which is an owner of this Receiver.
+     * Obtains a {@code MidiDevice} object which is an owner of this
+     * {@code Receiver}.
      *
-     * @return a MidiDevice object which is an owner of this Receiver
+     * @return a {@code MidiDevice} object which is an owner of this
+     *         {@code Receiver}
      */
     MidiDevice getMidiDevice();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import sun.security.action.GetPropertyAction;
  */
 
 public abstract class GraphicsEnvironment {
-    private static GraphicsEnvironment localEnv;
 
     /**
      * The headless state of the Toolkit and GraphicsEnvironment
@@ -74,53 +73,60 @@ public abstract class GraphicsEnvironment {
     }
 
     /**
-     * Returns the local {@code GraphicsEnvironment}.
-     * @return the local {@code GraphicsEnvironment}
+     * Lazy initialization of local graphics environment using holder idiom.
      */
-    public static synchronized GraphicsEnvironment getLocalGraphicsEnvironment() {
-        if (localEnv == null) {
-            localEnv = createGE();
-        }
+    private static final class LocalGE {
 
-        return localEnv;
+        /**
+         * The instance of the local {@code GraphicsEnvironment}.
+         */
+        static final GraphicsEnvironment INSTANCE = createGE();
+
+        /**
+         * Creates and returns the GraphicsEnvironment, according to the
+         * system property 'java.awt.graphicsenv'.
+         *
+         * @return the graphics environment
+         */
+        private static GraphicsEnvironment createGE() {
+            GraphicsEnvironment ge;
+            String nm = AccessController.doPrivileged(new GetPropertyAction("java.awt.graphicsenv", null));
+            try {
+//              long t0 = System.currentTimeMillis();
+                Class<?> geCls;
+                try {
+                    // First we try if the bootstrap class loader finds the
+                    // requested class. This way we can avoid to run in a privileged
+                    // block.
+                    geCls = Class.forName(nm);
+                } catch (ClassNotFoundException ex) {
+                    // If the bootstrap class loader fails, we try again with the
+                    // application class loader.
+                    ClassLoader cl = ClassLoader.getSystemClassLoader();
+                    geCls = Class.forName(nm, true, cl);
+                }
+                ge = (GraphicsEnvironment)geCls.getConstructor().newInstance();
+//              long t1 = System.currentTimeMillis();
+//              System.out.println("GE creation took " + (t1-t0)+ "ms.");
+                if (isHeadless()) {
+                    ge = new HeadlessGraphicsEnvironment(ge);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new Error("Could not find class: "+nm);
+            } catch (ReflectiveOperationException | IllegalArgumentException e) {
+                throw new Error("Could not instantiate Graphics Environment: "
+                        + nm);
+            }
+            return ge;
+        }
     }
 
     /**
-     * Creates and returns the GraphicsEnvironment, according to the
-     * system property 'java.awt.graphicsenv'.
-     *
-     * @return the graphics environment
+     * Returns the local {@code GraphicsEnvironment}.
+     * @return the local {@code GraphicsEnvironment}
      */
-    private static GraphicsEnvironment createGE() {
-        GraphicsEnvironment ge;
-        String nm = AccessController.doPrivileged(new GetPropertyAction("java.awt.graphicsenv", null));
-        try {
-//          long t0 = System.currentTimeMillis();
-            Class<?> geCls;
-            try {
-                // First we try if the bootstrap class loader finds the
-                // requested class. This way we can avoid to run in a privileged
-                // block.
-                geCls = Class.forName(nm);
-            } catch (ClassNotFoundException ex) {
-                // If the bootstrap class loader fails, we try again with the
-                // application class loader.
-                ClassLoader cl = ClassLoader.getSystemClassLoader();
-                geCls = Class.forName(nm, true, cl);
-            }
-            ge = (GraphicsEnvironment)geCls.getConstructor().newInstance();
-//          long t1 = System.currentTimeMillis();
-//          System.out.println("GE creation took " + (t1-t0)+ "ms.");
-            if (isHeadless()) {
-                ge = new HeadlessGraphicsEnvironment(ge);
-            }
-        } catch (ClassNotFoundException e) {
-            throw new Error("Could not find class: "+nm);
-        } catch (ReflectiveOperationException | IllegalArgumentException e) {
-            throw new Error("Could not instantiate Graphics Environment: "
-                            + nm);
-        }
-        return ge;
+    public static GraphicsEnvironment getLocalGraphicsEnvironment() {
+        return LocalGE.INSTANCE;
     }
 
     /**

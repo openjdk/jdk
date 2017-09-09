@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,51 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
-import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.Attribute;
+import javax.print.attribute.EnumSyntax;
 
 /**
- * Class PrinterStateReason is a printing attribute class, an enumeration,
- * that provides additional information about the printer's current state,
- * i.e., information that augments the value of the printer's
- * {@link PrinterState PrinterState} attribute.
- * Class PrinterStateReason defines standard printer
- * state reason values. A Print Service implementation only needs to report
- * those printer state reasons which are appropriate for the particular
- * implementation; it does not have to report every defined printer state
- * reason.
- * <P>
- * Instances of PrinterStateReason do not appear in a Print Service's
- * attribute set directly.
- * Rather, a {@link PrinterStateReasons PrinterStateReasons}
- * attribute appears in the Print Service's attribute set. The {@link
- * PrinterStateReasons PrinterStateReasons} attribute contains zero, one, or
- * more than one PrinterStateReason objects which pertain to the
- * Print Service's status, and each PrinterStateReason object is
- * associated with a {@link Severity Severity} level of REPORT (least severe),
- * WARNING, or ERROR (most severe). The printer adds a PrinterStateReason
- * object to the Print Service's
+ * Class {@code PrinterStateReason} is a printing attribute class, an
+ * enumeration, that provides additional information about the printer's current
+ * state, i.e., information that augments the value of the printer's
+ * {@link PrinterState PrinterState} attribute. Class PrinterStateReason defines
+ * standard printer state reason values. A Print Service implementation only
+ * needs to report those printer state reasons which are appropriate for the
+ * particular implementation; it does not have to report every defined printer
+ * state reason.
+ * <p>
+ * Instances of {@code PrinterStateReason} do not appear in a Print Service's
+ * attribute set directly. Rather, a
+ * {@link PrinterStateReasons PrinterStateReasons} attribute appears in the
+ * Print Service's attribute set. The
+ * {@link PrinterStateReasons PrinterStateReasons} attribute contains zero, one,
+ * or more than one {@code PrinterStateReason} objects which pertain to the
+ * Print Service's status, and each PrinterStateReason object is associated with
+ * a {@link Severity Severity} level of {@code REPORT} (least severe),
+ * {@code WARNING}, or {@code ERROR} (most severe). The printer adds a
+ * {@code PrinterStateReason} object to the Print Service's
  * {@link PrinterStateReasons PrinterStateReasons} attribute when the
- * corresponding condition becomes true of the printer, and the printer
- * removes the PrinterStateReason object again when the corresponding
- * condition becomes false, regardless of whether the Print Service's overall
+ * corresponding condition becomes true of the printer, and the printer removes
+ * the {@code PrinterStateReason} object again when the corresponding condition
+ * becomes false, regardless of whether the Print Service's overall
  * {@link PrinterState PrinterState} also changed.
- * <P>
- * <B>IPP Compatibility:</B>
- * The string values returned by each individual {@link PrinterStateReason} and
- * associated {@link Severity} object's {@code toString()}
- * methods, concatenated together with a hyphen ({@code "-"}) in
- * between, gives the IPP keyword value for a {@link PrinterStateReasons}.
- * The category name returned by {@code getName()} gives the IPP
- * attribute name.
+ * <p>
+ * <b>IPP Compatibility:</b> The string values returned by each individual
+ * {@link PrinterStateReason} and associated {@link Severity} object's
+ * {@code toString()} methods, concatenated together with a hyphen ({@code "-"})
+ * in between, gives the IPP keyword value for a {@link PrinterStateReasons}.
+ * The category name returned by {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public class PrinterStateReason extends EnumSyntax implements Attribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -1623720656201472593L;
 
     /**
@@ -87,51 +88,48 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
 
     /**
      * Someone has paused the printer, but the device(s) are taking an
-     * appreciable time to stop. Later, when all output has stopped,
-     * the {@link  PrinterState PrinterState} becomes STOPPED,
-     * and the PAUSED value replaces
-     * the MOVING_TO_PAUSED value in the {@link PrinterStateReasons
-     * PrinterStateReasons} attribute. This value must be supported if the
-     * printer can be paused and the implementation takes significant time to
-     * pause a device in certain circumstances.
+     * appreciable time to stop. Later, when all output has stopped, the
+     * {@link PrinterState PrinterState} becomes {@code STOPPED}, and the
+     * {@code PAUSED} value replaces the {@code MOVING_TO_PAUSED} value in the
+     * {@link PrinterStateReasons PrinterStateReasons} attribute. This value
+     * must be supported if the printer can be paused and the implementation
+     * takes significant time to pause a device in certain circumstances.
      */
     public static final PrinterStateReason
         MOVING_TO_PAUSED = new PrinterStateReason(3);
 
     /**
-     * Someone has paused the printer and the printer's {@link PrinterState
-     * PrinterState} is STOPPED. In this state, a printer must not produce
-     * printed output, but it must perform other operations requested by a
-     * client. If a printer had been printing a job when the printer was
-     * paused,
-     * the Printer must resume printing that job when the printer is no longer
-     * paused and leave no evidence in the printed output of such a pause.
-     * This value must be supported if the printer can be paused.
+     * Someone has paused the printer and the printer's
+     * {@link PrinterState PrinterState} is {@code STOPPED}. In this state, a
+     * printer must not produce printed output, but it must perform other
+     * operations requested by a client. If a printer had been printing a job
+     * when the printer was paused, the {@code Printer} must resume printing
+     * that job when the printer is no longer paused and leave no evidence in
+     * the printed output of such a pause. This value must be supported if the
+     * printer can be paused.
      */
     public static final PrinterStateReason
         PAUSED = new PrinterStateReason(4);
 
     /**
-     * Someone has removed a printer from service, and the device may be
-     * powered down or physically removed.
-     * In this state, a printer must not produce
-     * printed output, and unless the printer is realized by a print server
-     * that is still active, the printer must perform no other operations
-     * requested by a client.
-     * If a printer had been printing a job when it was shut down,
+     * Someone has removed a printer from service, and the device may be powered
+     * down or physically removed. In this state, a printer must not produce
+     * printed output, and unless the printer is realized by a print server that
+     * is still active, the printer must perform no other operations requested
+     * by a client. If a printer had been printing a job when it was shut down,
      * the printer need not resume printing that job when the printer is no
      * longer shut down. If the printer resumes printing such a job, it may
      * leave evidence in the printed output of such a shutdown, e.g. the part
      * printed before the shutdown may be printed a second time after the
      * shutdown.
-         */
+     */
     public static final PrinterStateReason
         SHUTDOWN = new PrinterStateReason(5);
 
     /**
      * The printer has scheduled a job on the output device and is in the
-     * process of connecting to a shared network output device (and might not
-     * be able to actually start printing the job for an arbitrarily long time
+     * process of connecting to a shared network output device (and might not be
+     * able to actually start printing the job for an arbitrarily long time
      * depending on the usage of the output device by other servers on the
      * network).
      */
@@ -146,14 +144,13 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
         TIMED_OUT = new PrinterStateReason(7);
 
     /**
-     * The printer is in the process of stopping the device and will be
-     * stopped in a while.
-     * When the device is stopped, the printer will change the
-     * {@link PrinterState PrinterState} to STOPPED. The STOPPING reason is
-     * never an error, even for a printer with a single output device. When an
-     * output device ceases accepting jobs, the printer's {@link
-     * PrinterStateReasons PrinterStateReasons} will have this reason while
-     * the output device completes printing.
+     * The printer is in the process of stopping the device and will be stopped
+     * in a while. When the device is stopped, the printer will change the
+     * {@link PrinterState PrinterState} to {@code STOPPED}. The
+     * {@code STOPPING} reason is never an error, even for a printer with a
+     * single output device. When an output device ceases accepting jobs, the
+     * printer's {@link PrinterStateReasons PrinterStateReasons} will have this
+     * reason while the output device completes printing.
      */
     public static final PrinterStateReason
         STOPPING = new PrinterStateReason(8);
@@ -161,10 +158,9 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
     /**
      * When a printer controls more than one output device, this reason
      * indicates that one or more output devices are stopped. If the reason's
-     * severity is a report, fewer than half of the output devices are
-     * stopped.
-     * If the reason's severity is a warning, half or more but fewer than
-     * all of the output devices are stopped.
+     * severity is a report, fewer than half of the output devices are stopped.
+     * If the reason's severity is a warning, half or more but fewer than all of
+     * the output devices are stopped.
      */
     public static final PrinterStateReason
         STOPPED_PARTLY = new PrinterStateReason(9);
@@ -182,12 +178,10 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
         TONER_EMPTY = new PrinterStateReason(11);
 
     /**
-     * The limit of persistent storage allocated for spooling has been
-     * reached.
+     * The limit of persistent storage allocated for spooling has been reached.
      * The printer is temporarily unable to accept more jobs. The printer will
-     * remove this reason when it is able to accept more jobs.
-     * This value should  be used by a non-spooling printer that only
-     * accepts one or a small number
+     * remove this reason when it is able to accept more jobs. This value should
+     * be used by a non-spooling printer that only accepts one or a small number
      * jobs at a time or a spooling printer that has filled the spool space.
      */
     public static final PrinterStateReason
@@ -236,8 +230,7 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
         OUTPUT_TRAY_MISSING = new PrinterStateReason(19);
 
     /**
-     * One or more output areas are almost full
-     * (e.g. tray, stacker, collator).
+     * One or more output areas are almost full (e.g. tray, stacker, collator).
      */
     public static final PrinterStateReason
         OUTPUT_AREA_ALMOST_FULL = new PrinterStateReason(20);
@@ -317,15 +310,18 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
         INTERPRETER_RESOURCE_UNAVAILABLE = new PrinterStateReason(32);
 
     /**
-     * Construct a new printer state reason enumeration value with
-     * the given integer value.
+     * Construct a new printer state reason enumeration value with the given
+     * integer value.
      *
-     * @param  value  Integer value.
+     * @param  value Integer value
      */
     protected PrinterStateReason(int value) {
         super (value);
     }
 
+    /**
+     * The string table for class {@code PrinterStateReason}.
+     */
     private static final String[] myStringTable = {
         "other",
         "media-needed",
@@ -362,6 +358,9 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
         "interpreter-resource-unavailable"
     };
 
+    /**
+     * The enumeration value table for class {@code PrinterStateReason}.
+     */
     private static final PrinterStateReason[] myEnumValueTable = {
         OTHER,
         MEDIA_NEEDED,
@@ -399,29 +398,28 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
     };
 
     /**
-     * Returns the string table for class PrinterStateReason.
+     * Returns the string table for class {@code PrinterStateReason}.
      */
     protected String[] getStringTable() {
         return myStringTable.clone();
     }
 
     /**
-     * Returns the enumeration value table for class PrinterStateReason.
+     * Returns the enumeration value table for class {@code PrinterStateReason}.
      */
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
 
-
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class PrinterStateReason and any vendor-defined subclasses, the
-     * category is class PrinterStateReason itself.
+     * <p>
+     * For class {@code PrinterStateReason} and any vendor-defined subclasses,
+     * the category is class {@code PrinterStateReason} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return PrinterStateReason.class;
@@ -430,14 +428,13 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class PrinterStateReason and any vendor-defined subclasses, the
-     * category name is {@code "printer-state-reason"}.
+     * <p>
+     * For class {@code PrinterStateReason} and any vendor-defined subclasses,
+     * the category name is {@code "printer-state-reason"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "printer-state-reason";
     }
-
 }

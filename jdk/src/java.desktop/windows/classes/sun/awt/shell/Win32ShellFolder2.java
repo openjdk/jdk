@@ -240,6 +240,10 @@ final class Win32ShellFolder2 extends ShellFolder {
     private Image largeIcon = null;
     private Boolean isDir = null;
     private final boolean isLib;
+    private static final String FNAME = COLUMN_NAME;
+    private static final String FSIZE = COLUMN_SIZE;
+    private static final String FTYPE = "FileChooser.fileTypeHeaderText";
+    private static final String FDATE = COLUMN_DATE;
 
     /*
      * The following is to identify the My Documents folder as being special

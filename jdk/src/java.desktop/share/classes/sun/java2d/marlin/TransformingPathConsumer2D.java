@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ final class TransformingPathConsumer2D {
         float myx = (float) at.getShearY();
         float myy = (float) at.getScaleY();
 
-        if (mxy == 0f && myx == 0f) {
-            if (mxx == 1f && myy == 1f) {
+        if (mxy == 0.0f && myx == 0.0f) {
+            if (mxx == 1.0f && myy == 1.0f) {
                 return out;
             } else {
                 return dt_DeltaScaleFilter.init(out, mxx, myy);
@@ -84,8 +84,8 @@ final class TransformingPathConsumer2D {
         float myx = (float) at.getShearY();
         float myy = (float) at.getScaleY();
 
-        if (mxy == 0f && myx == 0f) {
-            if (mxx == 1f && myy == 1f) {
+        if (mxy == 0.0f && myx == 0.0f) {
+            if (mxx == 1.0f && myy == 1.0f) {
                 return out;
             } else {
                 return iv_DeltaScaleFilter.init(out, 1.0f/mxx, 1.0f/myy);

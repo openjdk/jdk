@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,6 @@
 #endif
   void set_lwp_id(uint id)           { _lwp_id = id; }
   void set_native_priority(int prio) { _native_priority = prio; }
-
- // ***************************************************************
- // interrupt support.  interrupts (using signals) are used to get
- // the thread context (get_thread_pc), to set the thread context
- // (set_thread_pc), and to implement java.lang.Thread.interrupt.
- // ***************************************************************
 
  public:
   os::SuspendResume sr;

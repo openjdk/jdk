@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,15 +68,15 @@ public abstract class AudioFileReader {
             throws UnsupportedAudioFileException, IOException;
 
     /**
-     * Obtains the audio file format of the URL provided. The URL must point to
-     * valid audio file data.
+     * Obtains the audio file format of the {@code URL} provided. The
+     * {@code URL} must point to valid audio file data.
      *
-     * @param  url the URL from which file format information should be
+     * @param  url the {@code URL} from which file format information should be
      *         extracted
      * @return an {@code AudioFileFormat} object describing the audio file
      *         format
-     * @throws UnsupportedAudioFileException if the URL does not point to valid
-     *         audio file data recognized by the system
+     * @throws UnsupportedAudioFileException if the {@code URL} does not point
+     *         to valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
@@ -84,11 +84,11 @@ public abstract class AudioFileReader {
             throws UnsupportedAudioFileException, IOException;
 
     /**
-     * Obtains the audio file format of the {@code File} provided.
-     * The {@code File} must point to valid audio file data.
+     * Obtains the audio file format of the {@code File} provided. The
+     * {@code File} must point to valid audio file data.
      *
-     * @param  file the {@code File} from which file format information
-     *         should be extracted
+     * @param  file the {@code File} from which file format information should
+     *         be extracted
      * @return an {@code AudioFileFormat} object describing the audio file
      *         format
      * @throws UnsupportedAudioFileException if the {@code File} does not point
@@ -123,15 +123,15 @@ public abstract class AudioFileReader {
             throws UnsupportedAudioFileException, IOException;
 
     /**
-     * Obtains an audio input stream from the URL provided. The URL must point
-     * to valid audio file data.
+     * Obtains an audio input stream from the {@code URL} provided. The
+     * {@code URL} must point to valid audio file data.
      *
-     * @param  url the URL for which the {@code AudioInputStream} should be
-     *         constructed
+     * @param  url the {@code URL} for which the {@code AudioInputStream} should
+     *         be constructed
      * @return an {@code AudioInputStream} object based on the audio file data
-     *         pointed to by the URL
-     * @throws UnsupportedAudioFileException if the URL does not point to valid
-     *         audio file data recognized by the system
+     *         pointed to by the {@code URL}
+     * @throws UnsupportedAudioFileException if the {@code URL} does not point
+     *         to valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
@@ -139,8 +139,8 @@ public abstract class AudioFileReader {
             throws UnsupportedAudioFileException, IOException;
 
     /**
-     * Obtains an audio input stream from the {@code File} provided.
-     * The {@code File} must point to valid audio file data.
+     * Obtains an audio input stream from the {@code File} provided. The
+     * {@code File} must point to valid audio file data.
      *
      * @param  file the {@code File} for which the {@code AudioInputStream}
      *         should be constructed

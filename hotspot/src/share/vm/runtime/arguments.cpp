@@ -78,7 +78,6 @@ int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
-bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 size_t Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
@@ -379,6 +378,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -1291,13 +1293,11 @@ void Arguments::check_unsupported_dumping_properties() {
                                            "jdk.module.limitmods",
                                            "jdk.module.path",
                                            "jdk.module.upgrade.path",
-                                           "jdk.module.addmods.0",
                                            "jdk.module.patch.0" };
   const char* unsupported_options[] = { "-m", // cannot use at dump time
                                         "--limit-modules", // ignored at dump time
                                         "--module-path", // ignored at dump time
                                         "--upgrade-module-path", // ignored at dump time
-                                        "--add-modules", // ignored at dump time
                                         "--patch-module" // ignored at dump time
                                       };
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
@@ -2069,20 +2069,33 @@ void Arguments::set_heap_size() {
     }
   }
 
+  // Convert deprecated flags
+  if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
+      !FLAG_IS_DEFAULT(MaxRAMFraction))
+    MaxRAMPercentage = 100.0 / MaxRAMFraction;
+
+  if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
+      !FLAG_IS_DEFAULT(MinRAMFraction))
+    MinRAMPercentage = 100.0 / MinRAMFraction;
+
+  if (FLAG_IS_DEFAULT(InitialRAMPercentage) &&
+      !FLAG_IS_DEFAULT(InitialRAMFraction))
+    InitialRAMPercentage = 100.0 / InitialRAMFraction;
+
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    julong reasonable_max = phys_mem / MaxRAMFraction;
-
-    if (phys_mem <= MaxHeapSize * MinRAMFraction) {
+    julong reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
+    if (phys_mem <= (julong)((MaxHeapSize * MinRAMPercentage) / 100)) {
       // Small physical memory, so use a minimum fraction of it for the heap
-      reasonable_max = phys_mem / MinRAMFraction;
+      reasonable_max = (julong)((phys_mem * MinRAMPercentage) / 100);
     } else {
       // Not-small physical memory, so require a heap at least
       // as large as MaxHeapSize
       reasonable_max = MAX2(reasonable_max, (julong)MaxHeapSize);
     }
+
     if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
       // Limit the heap size to ErgoHeapSizeLimit
       reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
@@ -2135,7 +2148,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      julong reasonable_initial = phys_mem / InitialRAMFraction;
+      julong reasonable_initial = (julong)((phys_mem * InitialRAMPercentage) / 100);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)min_heap_size());
       reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
@@ -2667,16 +2680,10 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   }
 
   // Do final processing now that all arguments have been parsed
-  result = finalize_vm_init_args();
+  result = finalize_vm_init_args(patch_mod_javabase);
   if (result != JNI_OK) {
     return result;
   }
-
-#if INCLUDE_CDS
-  if (UseSharedSpaces && patch_mod_javabase) {
-    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
-  }
-#endif
 
   return JNI_OK;
 }
@@ -3152,16 +3159,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(bool, ReduceSignalUsage, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xprof
+      // -Xprof
     } else if (match_option(option, "-Xprof")) {
-#if INCLUDE_FPROF
-      log_warning(arguments)("Option -Xprof was deprecated in version 9 and will likely be removed in a future release.");
-      _has_profile = true;
-#else // INCLUDE_FPROF
-      jio_fprintf(defaultStream::error_stream(),
-        "Flat profiling is not supported in this VM.\n");
-      return JNI_ERR;
-#endif // INCLUDE_FPROF
+      char version[256];
+      // Obsolete in JDK 10
+      JDK_Version::jdk(10).to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", option->optionString, version);
     // -Xconcurrentio
     } else if (match_option(option, "-Xconcurrentio")) {
       if (FLAG_SET_CMDLINE(bool, UseLWPSynchronization, true) != Flag::SUCCESS) {
@@ -3602,7 +3605,7 @@ static int check_non_empty_dirs(const char* path) {
   return nonEmptyDirs;
 }
 
-jint Arguments::finalize_vm_init_args() {
+jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -3720,6 +3723,17 @@ jint Arguments::finalize_vm_init_args() {
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
     Compilation_mode = CompMode_server;
+  }
+#endif
+
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    // Disable biased locking now as it interferes with the clean up of
+    // the archived Klasses and Java string objects (at dump time only).
+    UseBiasedLocking = false;
+  }
+  if (UseSharedSpaces && patch_mod_javabase) {
+    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
 #endif
 

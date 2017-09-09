@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,72 +22,70 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
+import java.io.File;
 import java.net.URI;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.URISyntax;
-import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
+import javax.print.attribute.URISyntax;
 
 /**
- * Class Destination is a printing attribute class, a URI, that is used to
- * indicate an alternate destination for the spooled printer formatted
- * data. Many PrintServices will not support the notion of a destination
- * other than the printer device, and so will not support this attribute.
+ * Class {@code Destination} is a printing attribute class, a {@code URI}, that
+ * is used to indicate an alternate destination for the spooled printer
+ * formatted data. Many {@code PrintServices} will not support the notion of a
+ * destination other than the printer device, and so will not support this
+ * attribute.
  * <p>
- * A common use for this attribute will be applications which want
- * to redirect output to a local disk file : eg."file:out.prn".
- * Note that proper construction of "file:" scheme URI instances should
- * be performed using the {@code toURI()} method of class
- * {@link java.io.File File}.
- * See the documentation on that class for more information.
+ * A common use for this attribute will be applications which want to redirect
+ * output to a local disk file : eg."file:out.prn". Note that proper
+ * construction of "file:" scheme {@code URI} instances should be performed
+ * using the {@code toURI()} method of class {@link File File}. See the
+ * documentation on that class for more information.
  * <p>
- * If a destination URI is specified in a PrintRequest and it is not
- * accessible for output by the PrintService, a PrintException will be thrown.
- * The PrintException may implement URIException to provide a more specific
- * cause.
- * <P>
- * <B>IPP Compatibility:</B> Destination is not an IPP attribute.
+ * If a destination {@code URI} is specified in a PrintRequest and it is not
+ * accessible for output by the {@code PrintService}, a {@code PrintException}
+ * will be thrown. The {@code PrintException} may implement {@code URIException}
+ * to provide a more specific cause.
+ * <p>
+ * <b>IPP Compatibility:</b> Destination is not an IPP attribute.
  *
- * @author  Phil Race.
+ * @author Phil Race
  */
 public final class Destination extends URISyntax
         implements PrintJobAttribute, PrintRequestAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 6776739171700415321L;
 
     /**
-     * Constructs a new destination attribute with the specified URI.
+     * Constructs a new destination attribute with the specified {@code URI}.
      *
-     * @param  uri  URI.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code uri} is null.
+     * @param  uri {@code URI}
+     * @throws NullPointerException if {@code uri} is {@code null}
      */
     public Destination(URI uri) {
         super (uri);
     }
 
     /**
-     * Returns whether this destination attribute is equivalent to the
-     * passed in object. To be equivalent, all of the following conditions
-     * must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class Destination.
-     * <LI>
-     * This destination attribute's URI and {@code object}'s URI
-     * are equal.
-     * </OL>
+     * Returns whether this destination attribute is equivalent to the passed in
+     * object. To be equivalent, all of the following conditions must be true:
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code Destination}.
+     *   <li>This destination attribute's {@code URI} and {@code object}'s
+     *   {@code URI} are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this destination
-     *         attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this destination
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) &&
@@ -97,11 +95,12 @@ public final class Destination extends URISyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class Destination, the category is class Destination itself.
+     * <p>
+     * For class {@code Destination}, the category is class {@code Destination}
+     * itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return Destination.class;
@@ -110,13 +109,13 @@ public final class Destination extends URISyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class Destination, the category name is {@code "spool-data-destination"}.
+     * <p>
+     * For class {@code Destination}, the category name is
+     * {@code "spool-data-destination"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "spool-data-destination";
     }
-
 }

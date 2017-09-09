@@ -95,9 +95,12 @@ public final class ClassSubstitutionVerifier extends AbstractVerifier {
             TypeElement typeElement = null;
             for (String className : classNames) {
                 typeElement = env.getElementUtils().getTypeElement(className);
-                if (typeElement == null && !optional) {
-                    env.getMessager().printMessage(Kind.ERROR, String.format("The class '%s' was not found on the classpath.", stringValue), sourceElement, classSubstition, stringValue);
+                if (typeElement != null) {
+                    break;
                 }
+            }
+            if (typeElement == null && !optional) {
+                env.getMessager().printMessage(Kind.ERROR, String.format("The class '%s' was not found on the classpath.", stringValue), sourceElement, classSubstition, stringValue);
             }
 
             return typeElement;

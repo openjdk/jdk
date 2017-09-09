@@ -33,10 +33,9 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
- * @bug 4946913
+ * @bug 4946913 8178403
  * @summary DirectClip doesn't kill the thread correctly, sometimes
  * @run main/othervm ClipCloseLoss
- * @key intermittent
  */
 public class ClipCloseLoss {
     static int frameCount = 441000; // lets say 10 seconds
@@ -47,7 +46,7 @@ public class ClipCloseLoss {
     static int success = 0;
     static boolean failed = false;
 
-    public static void run(Mixer m) {
+    public static void run(Mixer m, long sleep) {
         Clip clip = null;
         try {
             if (m == null) {
@@ -69,6 +68,8 @@ public class ClipCloseLoss {
             clip.open(new AudioInputStream(bais, format, frameCount));
 
             out(" clip.close()");
+            // emulates a different delay between open() and close()
+            Thread.sleep(sleep);
             //long t = System.currentTimeMillis();
             clip.close();
             //if (System.currentTimeMillis() - t > 1950) {
@@ -107,13 +108,15 @@ public class ClipCloseLoss {
     public static void main(String[] args) throws Exception    {
         if (isSoundcardInstalled()) {
             bais.mark(0);
-            run(null);
             Mixer.Info[] infos = AudioSystem.getMixerInfo();
-            for (int i = 0; i<infos.length; i++) {
-                try {
-                    Mixer m = AudioSystem.getMixer(infos[i]);
-                    run(m);
-                } catch (Exception e) {
+            for (int sleep = 0; sleep < 100; ++sleep) {
+                run(null, sleep);
+                for (int i = 0; i < infos.length; i++) {
+                    try {
+                        Mixer m = AudioSystem.getMixer(infos[i]);
+                        run(m, sleep);
+                    } catch (Exception e) {
+                    }
                 }
             }
             out("Waiting 1 second to dispose of all threads");

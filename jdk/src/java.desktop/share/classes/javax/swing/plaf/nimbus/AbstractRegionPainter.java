@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,7 +559,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
          */
         public PaintContext(Insets insets, Dimension canvasSize, boolean inverted,
                             CacheMode cacheMode, double maxH, double maxV) {
-            if (maxH < 1 || maxH < 1) {
+            if (maxH < 1 || maxV < 1) {
                 throw new IllegalArgumentException("Both maxH and maxV must be >= 1");
             }
 
