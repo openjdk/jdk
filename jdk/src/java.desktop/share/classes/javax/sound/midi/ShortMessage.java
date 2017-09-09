@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,9 +303,8 @@ public class ShortMessage extends MidiMessage {
      * @param  status the MIDI status byte
      * @param  data1 the first data byte
      * @param  data2 the second data byte
-     * @throws InvalidMidiDataException if the status byte, or all data
-     *         bytes belonging to the message, do not specify a valid MIDI
-     *         message
+     * @throws InvalidMidiDataException if the status byte, or all data bytes
+     *         belonging to the message, do not specify a valid MIDI message
      * @see #setMessage(int, int, int, int)
      * @see #setMessage(int)
      */

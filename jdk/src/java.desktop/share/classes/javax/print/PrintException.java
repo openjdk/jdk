@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,16 @@
 package javax.print;
 
 /**
- * Class PrintException encapsulates a printing-related error condition that
- * occurred while using a Print Service instance. This base class
- * furnishes only a string description of the error. Subclasses furnish more
- * detailed information if applicable.
- *
+ * Class {@code PrintException} encapsulates a printing-related error condition
+ * that occurred while using a Print Service instance. This base class furnishes
+ * only a string description of the error. Subclasses furnish more detailed
+ * information if applicable.
  */
 public class PrintException extends Exception {
+
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -5932531546705242471L;
 
     /**
@@ -45,7 +48,7 @@ public class PrintException extends Exception {
     /**
      * Construct a print exception with the given detail message.
      *
-     * @param  s  Detail message, or null if no detail message.
+     * @param  s detail message, or {@code null} if no detail message
      */
     public PrintException (String s) {
         super (s);
@@ -54,20 +57,20 @@ public class PrintException extends Exception {
     /**
      * Construct a print exception chaining the supplied exception.
      *
-     * @param  e  Chained exception.
+     * @param  e chained exception
      */
     public PrintException (Exception e) {
         super ( e);
     }
 
     /**
-     * Construct a print exception with the given detail message
-     * and chained exception.
-     * @param  s  Detail message, or null if no detail message.
-     * @param  e  Chained exception.
+     * Construct a print exception with the given detail message and chained
+     * exception.
+     *
+     * @param  s detail message, or {@code null} if no detail message
+     * @param  e chained exception
      */
     public PrintException (String s, Exception e) {
         super (s, e);
     }
-
 }

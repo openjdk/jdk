@@ -365,10 +365,6 @@ final class TraceInterval extends IntervalHint {
         return intTo;
     }
 
-    int numUsePositions() {
-        return numUsePos();
-    }
-
     public void setLocationHint(IntervalHint interval) {
         locationHint = interval;
     }
@@ -450,6 +446,10 @@ final class TraceInterval extends IntervalHint {
     public boolean inMemoryAt(int opId) {
         SpillState spillSt = spillState();
         return spillSt == SpillState.StartInMemory || (spillSt == SpillState.SpillStore && opId > spillDefinitionPos() && !canMaterialize());
+    }
+
+    public boolean preSpilledAllocated() {
+        return spillState() == SpillState.StartInMemory && numUsePos() == 0 && !hasHint();
     }
 
     // test intersection

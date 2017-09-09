@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.Arrays;
  * data, a {@code STOP} event is generated.
  * <p>
  * Mixers often support synchronized control of multiple data lines.
- * Synchronization can be established through the Mixer interface's
+ * Synchronization can be established through the {@code Mixer} interface's
  * {@link Mixer#synchronize synchronize} method. See the description of the
  * {@link Mixer Mixer} interface for a more complete description.
  *
@@ -181,7 +181,7 @@ public interface DataLine extends Line {
      * are bytes, but will always correspond to an integral number of sample
      * frames of audio data.
      *
-     * @return the size of the buffer in bytes
+     * @return the size of the buffer, in bytes
      */
     int getBufferSize();
 
@@ -260,8 +260,8 @@ public interface DataLine extends Line {
      * {@code DataLine.Info} provides additional information specific to data
      * lines. This information includes:
      * <ul>
-     * <li> the audio formats supported by the data line
-     * <li> the minimum and maximum sizes of its internal buffer
+     *   <li>the audio formats supported by the data line
+     *   <li>the minimum and maximum sizes of its internal buffer
      * </ul>
      * Because a {@code Line.Info} knows the class of the line its describes, a
      * {@code DataLine.Info} object can describe {@code DataLine} subinterfaces
@@ -270,14 +270,25 @@ public interface DataLine extends Line {
      * appropriate instance of {@code DataLine.Info} as the argument to a method
      * such as {@link Mixer#getLine(Line.Info)}.
      *
-     * @see Line.Info
      * @author Kara Kytle
+     * @see Line.Info
      * @since 1.3
      */
     class Info extends Line.Info {
 
+        /**
+         * The set of supported formats.
+         */
         private final AudioFormat[] formats;
+
+        /**
+         * Minimum buffer size supported by the data line, in bytes.
+         */
         private final int minBufferSize;
+
+        /**
+         * Maximum buffer size supported by the data line, in bytes.
+         */
         private final int maxBufferSize;
 
         /**
@@ -289,10 +300,10 @@ public interface DataLine extends Line {
          * @param  lineClass the class of the data line described by the info
          *         object
          * @param  formats set of formats supported
-         * @param  minBufferSize minimum buffer size supported by the data
-         *         line, in bytes
-         * @param  maxBufferSize maximum buffer size supported by the data
-         *         line, in bytes
+         * @param  minBufferSize minimum buffer size supported by the data line,
+         *         in bytes
+         * @param  maxBufferSize maximum buffer size supported by the data line,
+         *         in bytes
          */
         public Info(Class<?> lineClass, AudioFormat[] formats, int minBufferSize, int maxBufferSize) {
 
@@ -317,7 +328,7 @@ public interface DataLine extends Line {
          * @param  lineClass the class of the data line described by the info
          *         object
          * @param  format desired format
-         * @param  bufferSize desired buffer size in bytes
+         * @param  bufferSize desired buffer size, in bytes
          */
         public Info(Class<?> lineClass, AudioFormat format, int bufferSize) {
 
@@ -354,7 +365,7 @@ public interface DataLine extends Line {
          * {@code isFormatSupported(AudioFormat)} is guaranteed to return
          * {@code true} for all formats returned by {@code getFormats()}.
          * <p>
-         * Some fields in the AudioFormat instances can be set to
+         * Some fields in the {@code AudioFormat} instances can be set to
          * {@link AudioSystem#NOT_SPECIFIED NOT_SPECIFIED} if that field does
          * not apply to the format, or if the format supports a wide range of
          * values for that field. For example, a multi-channel device supporting
@@ -419,6 +430,7 @@ public interface DataLine extends Line {
          * large as that of the object specified, and all of its formats must
          * match formats supported by the object specified.
          *
+         * @param  info the info object which is being compared to this one
          * @return {@code true} if this object matches the one specified,
          *         otherwise {@code false}
          */

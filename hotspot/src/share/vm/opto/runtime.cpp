@@ -61,7 +61,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/javaCalls.hpp"

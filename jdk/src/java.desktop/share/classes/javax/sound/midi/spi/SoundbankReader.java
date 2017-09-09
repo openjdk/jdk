@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,18 @@ import javax.sound.midi.Synthesizer;
  * subclasses of {@code SoundbankReader} parse a given soundbank file, producing
  * a {@link Soundbank} object that can be loaded into a {@link Synthesizer}.
  *
- * @since 1.3
  * @author Kara Kytle
+ * @since 1.3
  */
 public abstract class SoundbankReader {
 
     /**
-     * Obtains a soundbank object from the URL provided.
+     * Obtains a soundbank object from the {@code URL} provided.
      *
-     * @param  url URL representing the soundbank
+     * @param  url {@code URL} representing the soundbank
      * @return soundbank object
-     * @throws InvalidMidiDataException if the URL does not point to valid MIDI
-     *         soundbank data recognized by this soundbank reader
+     * @throws InvalidMidiDataException if the {@code URL} does not point to
+     *         valid MIDI soundbank data recognized by this soundbank reader
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */

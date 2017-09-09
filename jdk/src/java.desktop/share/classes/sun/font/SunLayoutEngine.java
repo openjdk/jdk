@@ -192,7 +192,8 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
             if (font instanceof FileFont) {
                 pScaler = ((FileFont)font).getScaler().nativeScaler;
             }
-            shape(font, strike, ptSize, mat, pScaler, pNativeFont, isAAT(font),
+            shape(font, strike, ptSize, mat, pScaler, pNativeFont,
+                  layoutTables, isAAT(font),
                   tr.text, data, key.script(),
                   tr.start, tr.limit, baseIndex, pt,
                   typo_flags, gmask);
@@ -210,7 +211,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
     /* Native method to invoke harfbuzz layout engine */
     private static native boolean
         shape(Font2D font, FontStrike strike, float ptSize, float[] mat,
-              long pscaler, long pNativeFont, boolean aat,
+              long pscaler, long pNativeFont, long layoutTables, boolean aat,
               char[] chars, GVData data,
               int script, int offset, int limit,
               int baseIndex, Point2D.Float pt, int typo_flags, int slot);

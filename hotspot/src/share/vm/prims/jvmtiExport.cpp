@@ -2497,14 +2497,13 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       library = os::dll_load(agent, ebuf, sizeof ebuf);
     } else {
       // Try to load the agent from the standard dll directory
-      if (os::dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(),
+      if (os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
                              agent)) {
         library = os::dll_load(buffer, ebuf, sizeof ebuf);
       }
       if (library == NULL) {
-        // not found - try local path
-        char ns[1] = {0};
-        if (os::dll_build_name(buffer, sizeof(buffer), ns, agent)) {
+        // not found - try OS default library path
+        if (os::dll_build_name(buffer, sizeof(buffer), agent)) {
           library = os::dll_load(buffer, ebuf, sizeof ebuf);
         }
       }

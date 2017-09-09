@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8175301
  * @summary Java GUI hangs on Windows when Display set to 125%
  * @run main/othervm -Dsun.java2d.uiScale=2 ScaledFrameBackgroundTest

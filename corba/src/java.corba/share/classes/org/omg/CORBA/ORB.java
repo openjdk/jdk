@@ -85,15 +85,15 @@ import java.security.PrivilegedAction;
  * three {@code init} methods.  Two of the three methods use the properties
  * (associations of a name with a value) shown in the
  * table below.<BR>
- * <TABLE class="plain">
- * <CAPTION>Standard Java CORBA Properties:</CAPTION>
+ * <TABLE class="striped">
+ * <CAPTION>Standard Java CORBA Properties</CAPTION>
  * <thead>
- * <TR><TH>Property Name</TH>   <TH>Property Value</TH></TR>
+ * <TR><TH scope="col">Property Name</TH>   <TH scope="col">Property Value</TH></TR>
  * </thead>
- * <tbody>
- *     <TR><TD>org.omg.CORBA.ORBClass</TD>
+ * <tbody style="text-align:left">
+ *     <TR><TH scope="row">org.omg.CORBA.ORBClass</TH>
  *     <TD>class name of an ORB implementation</TD></TR>
- *     <TR><TD>org.omg.CORBA.ORBSingletonClass</TD>
+ *     <TR><TH scope="row">org.omg.CORBA.ORBSingletonClass</TH>
  *     <TD>class name of the ORB returned by {@code init()}</TD></TR>
  * </tbody>
  * </TABLE>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,37 @@
  * questions.
  */
 
-
 package javax.print.attribute;
 
 import java.io.Serializable;
 import java.net.URI;
 
 /**
- * Class URISyntax is an abstract base class providing the common
- * implementation of all attributes whose value is a Uniform Resource
- * Identifier (URI). Once constructed, a URI attribute's value is immutable.
+ * Class {@code URISyntax} is an abstract base class providing the common
+ * implementation of all attributes whose value is a Uniform Resource Identifier
+ * (URI). Once constructed, a {@code URI} attribute's value is immutable.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public abstract class URISyntax implements Serializable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -7842661210486401678L;
 
     /**
-     * URI value of this URI attribute.
+     * {@code URI} value of this {@code URI} attribute.
+     *
      * @serial
      */
     private URI uri;
 
     /**
-     * Constructs a URI attribute with the specified URI.
+     * Constructs a {@code URI} attribute with the specified {@code URI}.
      *
-     * @param  uri  URI.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code uri} is null.
+     * @param  uri the {@code URI}
+     * @throws NullPointerException if {@code uri} is {@code null}
      */
     protected URISyntax(URI uri) {
         this.uri = verify (uri);
@@ -66,40 +67,36 @@ public abstract class URISyntax implements Serializable, Cloneable {
     }
 
     /**
-     * Returns this URI attribute's URI value.
-     * @return the URI.
+     * Returns this {@code URI} attribute's {@code URI} value.
+     *
+     * @return the {@code URI}
      */
     public URI getURI()  {
         return uri;
     }
 
     /**
-     * Returns a hashcode for this URI attribute.
+     * Returns a hashcode for this {@code URI} attribute.
      *
-     * @return  A hashcode value for this object.
+     * @return a hashcode value for this object
      */
     public int hashCode() {
         return uri.hashCode();
     }
 
     /**
-     * Returns whether this URI attribute is equivalent to the passed in
-     * object.
-     * To be equivalent, all of the following conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class URISyntax.
-     * <LI>
-     * This URI attribute's underlying URI and {@code object}'s
-     * underlying URI are equal.
-     * </OL>
+     * Returns whether this {@code URI} attribute is equivalent to the passed in
+     * object. To be equivalent, all of the following conditions must be true:
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code URISyntax}.
+     *   <li>This {@code URI} attribute's underlying {@code URI} and
+     *   {@code object}'s underlying {@code URI} are equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this URI
-     *          attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this {@code URI}
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return(object != null &&
@@ -108,13 +105,13 @@ public abstract class URISyntax implements Serializable, Cloneable {
     }
 
     /**
-     * Returns a String identifying this URI attribute. The String is the
-     * string representation of the attribute's underlying URI.
+     * Returns a {@code String} identifying this {@code URI} attribute. The
+     * {@code String} is the string representation of the attribute's underlying
+     * {@code URI}.
      *
-     * @return  A String identifying this object.
+     * @return a {@code String} identifying this object
      */
     public String toString() {
         return uri.toString();
     }
-
 }

@@ -747,10 +747,10 @@ void InstanceKlass::initialize_impl(TRAPS) {
       char* message = NEW_RESOURCE_ARRAY(char, msglen);
       if (NULL == message) {
         // Out of memory: can't create detailed error message
-        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), className);
+          THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), className);
       } else {
         jio_snprintf(message, msglen, "%s%s", desc, className);
-        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), message);
+          THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), message);
       }
     }
 
@@ -2067,14 +2067,14 @@ void InstanceKlass::remove_unshareable_info() {
     m->remove_unshareable_info();
   }
 
+  // do array classes also.
+  if (array_klasses() != NULL) {
+    array_klasses()->remove_unshareable_info();
+  }
+
   // These are not allocated from metaspace, but they should should all be empty
-  // during dump time, so we don't need to worry about them in InstanceKlass::metaspace_pointers_do().
+  // during dump time, so we don't need to worry about them in InstanceKlass::iterate().
   guarantee(_source_debug_extension == NULL, "must be");
-  guarantee(_oop_map_cache == NULL, "must be");
-  guarantee(_init_thread == NULL, "must be");
-  guarantee(_oop_map_cache == NULL, "must be");
-  guarantee(_jni_ids == NULL, "must be");
-  guarantee(_methods_jmethod_ids == NULL, "must be");
   guarantee(_dep_context == DependencyContext::EMPTY, "must be");
   guarantee(_osr_nmethods_head == NULL, "must be");
 
@@ -2082,12 +2082,20 @@ void InstanceKlass::remove_unshareable_info() {
   guarantee(_breakpoints == NULL, "must be");
   guarantee(_previous_versions == NULL, "must be");
 #endif
+
+ _init_thread = NULL;
+ _methods_jmethod_ids = NULL;
+ _jni_ids = NULL;
+ _oop_map_cache = NULL;
 }
 
-static void restore_unshareable_in_class(Klass* k, TRAPS) {
-  // Array classes have null protection domain.
-  // --> see ArrayKlass::complete_create_array_klass()
-  k->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+void InstanceKlass::remove_java_mirror() {
+  Klass::remove_java_mirror();
+
+  // do array classes also.
+  if (array_klasses() != NULL) {
+    array_klasses()->remove_java_mirror();
+  }
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
@@ -2114,7 +2122,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   // restore constant pool resolved references
   constants()->restore_unshareable_info(CHECK);
 
-  array_klasses_do(restore_unshareable_in_class, CHECK);
+  if (array_klasses() != NULL) {
+    // Array classes have null protection domain.
+    // --> see ArrayKlass::complete_create_array_klass()
+    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+  }
 }
 
 // returns true IFF is_in_error_state() has been changed as a result of this call.

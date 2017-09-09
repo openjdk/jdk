@@ -168,9 +168,9 @@ public interface SourceDataLine extends DataLine {
      * {@code IllegalArgumentException}.
      *
      * @param  b a byte array containing data to be written to the data line
+     * @param  off the offset from the beginning of the array, in bytes
      * @param  len the length, in bytes, of the valid data in the array (in
      *         other words, the requested amount of data to write, in bytes)
-     * @param  off the offset from the beginning of the array, in bytes
      * @return the number of bytes actually written
      * @throws IllegalArgumentException if the requested number of bytes does
      *         not represent an integral number of sample frames, or if

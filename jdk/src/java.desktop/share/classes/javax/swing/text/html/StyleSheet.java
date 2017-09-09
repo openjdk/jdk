@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2538,7 +2538,7 @@ public class StyleSheet extends StyleContext {
                 if (pos.isHorizontalPositionRelativeToSize()) {
                     flags |= 4;
                 }
-                else if (pos.isHorizontalPositionRelativeToSize()) {
+                else if (pos.isHorizontalPositionRelativeToFontSize()) {
                     hPosition *= CSS.getFontSize(a, 12, ss);
                 }
                 if (pos.isVerticalPositionRelativeToSize()) {

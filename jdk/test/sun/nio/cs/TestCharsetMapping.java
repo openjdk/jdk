@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8186801
+ * @bug 8186801 8186751
  * @summary Test the charset mappings
  */
 

@@ -756,9 +756,8 @@ public class UIDefaults extends Hashtable<Object,Object>
      * @see #getUI
      */
     protected void getUIError(String msg) {
-        System.err.println("UIDefaults.getUI() failed: " + msg);
         try {
-            throw new Error();
+            throw new Error(msg);
         }
         catch (Throwable e) {
             e.printStackTrace();
@@ -888,7 +887,7 @@ public class UIDefaults extends Hashtable<Object,Object>
      * Adds a resource bundle to the list of resource bundles that are
      * searched for localized values. Resource bundles are searched in
      * the reverse order they were added, using the
-     * {@linkplain ClassLoader#getSystemClassLoader application class loader}.
+     * {@linkplain ClassLoader#getSystemClassLoader system class loader}.
      * In other words, the most recently added bundle is searched first.
      *
      * @param bundleName  the base name of the resource bundle to be added

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,53 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.print.attribute.standard;
 
 import java.util.Locale;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.TextSyntax;
-import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintJobAttribute;
+import javax.print.attribute.PrintRequestAttribute;
+import javax.print.attribute.TextSyntax;
 
 /**
- * Class JobName is a printing attribute class, a text attribute, that specifies
- * the name of a print job. A job's name is an arbitrary string defined by the
- * client. It does not need to be unique between different jobs. A Print Job's
- * JobName attribute is set to the value supplied by the client in the Print
- * Request's attribute set. If, however, the client does not supply a JobName
- * attribute in the Print Request, the printer, when it creates the Print Job,
- * must generate a JobName. The printer should generate the value of the Print
- * Job's JobName attribute from the first of the following sources that produces
- * a value: (1) the {@link DocumentName DocumentName} attribute of the first (or
- * only) doc in the job, (2) the URL of the first (or only) doc in the job, if
- * the doc's print data representation object is a URL, or (3) any other piece
- * of Print Job specific and/or document content information.
- * <P>
- * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
+ * Class {@code JobName} is a printing attribute class, a text attribute, that
+ * specifies the name of a print job. A job's name is an arbitrary string
+ * defined by the client. It does not need to be unique between different jobs.
+ * A Print Job's {@code JobName} attribute is set to the value supplied by the
+ * client in the Print Request's attribute set. If, however, the client does not
+ * supply a {@code JobName} attribute in the Print Request, the printer, when it
+ * creates the Print Job, must generate a {@code JobName}. The printer should
+ * generate the value of the Print Job's {@code JobName} attribute from the
+ * first of the following sources that produces a value: (1) the
+ * {@link DocumentName DocumentName} attribute of the first (or only) doc in the
+ * job, (2) the {@code URL} of the first (or only) doc in the job, if the doc's
+ * print data representation object is a {@code URL}, or (3) any other piece of
+ * Print Job specific and/or document content information.
+ * <p>
+ * <b>IPP Compatibility:</b> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * {@code getName()} gives the IPP attribute name.
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 public final class JobName extends TextSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = 4660359192078689545L;
 
     /**
      * Constructs a new job name attribute with the given job name and locale.
      *
-     * @param  jobName  Job name.
-     * @param  locale   Natural language of the text string. null
-     * is interpreted to mean the default locale as returned
-     * by {@code Locale.getDefault()}
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code jobName} is null.
+     * @param  jobName job name
+     * @param  locale natural language of the text string. {@code null} is
+     *         interpreted to mean the default locale as returned by
+     *         {@code Locale.getDefault()}
+     * @throws NullPointerException if {@code jobName} is {@code null}
      */
     public JobName(String jobName, Locale locale) {
         super (jobName, locale);
@@ -74,23 +77,18 @@ public final class JobName extends TextSyntax
     /**
      * Returns whether this job name attribute is equivalent to the passed in
      * object. To be equivalent, all of the following conditions must be true:
-     * <OL TYPE=1>
-     * <LI>
-     * {@code object} is not null.
-     * <LI>
-     * {@code object} is an instance of class JobName.
-     * <LI>
-     * This job name attribute's underlying string and {@code object}'s
-     * underlying string are equal.
-     * <LI>
-     * This job name attribute's locale and {@code object}'s locale are
-     * equal.
-     * </OL>
+     * <ol type=1>
+     *   <li>{@code object} is not {@code null}.
+     *   <li>{@code object} is an instance of class {@code JobName}.
+     *   <li>This job name attribute's underlying string and {@code object}'s
+     *   underlying string are equal.
+     *   <li>This job name attribute's locale and {@code object}'s locale are
+     *   equal.
+     * </ol>
      *
-     * @param  object  Object to compare to.
-     *
-     * @return  True if {@code object} is equivalent to this job name
-     *          attribute, false otherwise.
+     * @param  object {@code Object} to compare to
+     * @return {@code true} if {@code object} is equivalent to this job name
+     *         attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
         return (super.equals(object) && object instanceof JobName);
@@ -99,11 +97,11 @@ public final class JobName extends TextSyntax
     /**
      * Get the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
-     * <P>
-     * For class JobName, the category is class JobName itself.
+     * <p>
+     * For class {@code JobName}, the category is class {@code JobName} itself.
      *
-     * @return  Printing attribute class (category), an instance of class
-     *          {@link java.lang.Class java.lang.Class}.
+     * @return printing attribute class (category), an instance of class
+     *         {@link Class java.lang.Class}
      */
     public final Class<? extends Attribute> getCategory() {
         return JobName.class;
@@ -112,13 +110,12 @@ public final class JobName extends TextSyntax
     /**
      * Get the name of the category of which this attribute value is an
      * instance.
-     * <P>
-     * For class JobName, the category name is {@code "job-name"}.
+     * <p>
+     * For class {@code JobName}, the category name is {@code "job-name"}.
      *
-     * @return  Attribute category name.
+     * @return attribute category name
      */
     public final String getName() {
         return "job-name";
     }
-
 }

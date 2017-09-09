@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile jlong _stack_traversal_mark;
+  volatile long _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -396,8 +396,8 @@ public:
  public:
 
   // Sweeper support
-  jlong  stack_traversal_mark()                    { return OrderAccess::load_acquire(&_stack_traversal_mark); }
-  void  set_stack_traversal_mark(jlong l)          { OrderAccess::release_store(&_stack_traversal_mark, l); }
+  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
+  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
 
   // implicit exceptions support
   address continuation_for_implicit_exception(address pc);

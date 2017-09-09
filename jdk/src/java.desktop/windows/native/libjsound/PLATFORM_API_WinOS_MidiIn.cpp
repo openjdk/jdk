@@ -31,6 +31,9 @@ extern "C" {
 #include "PLATFORM_API_WinOS_Util.h"
 }
 
+/* include to prevent charset problem */
+#include "PLATFORM_API_WinOS_Charset_Util.h"
+
 #if USE_PLATFORM_MIDI_IN == TRUE
 
 #ifdef USE_ERROR
@@ -248,18 +251,17 @@ INT32 MIDI_IN_GetNumDevices() {
     return (INT32) midiInGetNumDevs();
 }
 
-INT32 getMidiInCaps(INT32 deviceID, MIDIINCAPS* caps, INT32* err) {
-    (*err) = midiInGetDevCaps(deviceID, caps, sizeof(MIDIINCAPS));
+INT32 getMidiInCaps(INT32 deviceID, MIDIINCAPSW* caps, INT32* err) {
+    (*err) = midiInGetDevCapsW(deviceID, caps, sizeof(MIDIINCAPS));
     return ((*err) == MMSYSERR_NOERROR);
 }
 
 INT32 MIDI_IN_GetDeviceName(INT32 deviceID, char *name, UINT32 nameLength) {
-    MIDIINCAPS midiInCaps;
+    MIDIINCAPSW midiInCaps;
     INT32 err;
 
     if (getMidiInCaps(deviceID, &midiInCaps, &err)) {
-        strncpy(name, midiInCaps.szPname, nameLength-1);
-        name[nameLength-1] = 0;
+        UnicodeToUTF8AndCopy(name, midiInCaps.szPname, nameLength);
         return MIDI_SUCCESS;
     }
     MIDIIN_CHECK_ERROR;
@@ -279,7 +281,7 @@ INT32 MIDI_IN_GetDeviceDescription(INT32 deviceID, char *name, UINT32 nameLength
 
 
 INT32 MIDI_IN_GetDeviceVersion(INT32 deviceID, char *name, UINT32 nameLength) {
-    MIDIINCAPS midiInCaps;
+    MIDIINCAPSW midiInCaps;
     INT32 err = MIDI_NOT_SUPPORTED;
 
     if (getMidiInCaps(deviceID, &midiInCaps, &err) && (nameLength>7)) {

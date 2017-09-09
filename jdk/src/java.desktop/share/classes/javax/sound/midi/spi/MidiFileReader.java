@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public abstract class MidiFileReader {
      * stream's read pointer to its original position. If the input stream does
      * not support this, this method may fail with an {@code IOException}.
      *
-     * @param  stream the input stream from which file format information
-     *         should be extracted
+     * @param  stream the input stream from which file format information should
+     *         be extracted
      * @return a {@code MidiFileFormat} object describing the MIDI file format
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI file data recognized by the system
@@ -68,14 +68,14 @@ public abstract class MidiFileReader {
             throws InvalidMidiDataException, IOException;
 
     /**
-     * Obtains the MIDI file format of the URL provided. The URL must point to
-     * valid MIDI file data.
+     * Obtains the MIDI file format of the {@code URL} provided. The {@code URL}
+     * must point to valid MIDI file data.
      *
-     * @param  url the URL from which file format information should be
+     * @param  url the {@code URL} from which file format information should be
      *         extracted
      * @return a {@code MidiFileFormat} object describing the MIDI file format
-     * @throws InvalidMidiDataException if the URL does not point to valid MIDI
-     *         file data recognized by the system
+     * @throws InvalidMidiDataException if the {@code URL} does not point to
+     *         valid MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
@@ -104,10 +104,10 @@ public abstract class MidiFileReader {
      * it. These parsers must be able to mark the stream, read enough data to
      * determine whether they support the stream, and, if not, reset the
      * stream's read pointer to its original position. If the input stream does
-     * not support this, this method may fail with an IOException.
+     * not support this, this method may fail with an {@code IOException}.
      *
-     * @param  stream the input stream from which the {@code Sequence} should
-     *         be constructed
+     * @param  stream the input stream from which the {@code Sequence} should be
+     *         constructed
      * @return a {@code Sequence} object based on the MIDI file data contained
      *         in the input stream
      * @throws InvalidMidiDataException if the stream does not point to valid
@@ -121,14 +121,15 @@ public abstract class MidiFileReader {
             throws InvalidMidiDataException, IOException;
 
     /**
-     * Obtains a MIDI sequence from the URL provided. The URL must point to
-     * valid MIDI file data.
+     * Obtains a MIDI sequence from the {@code URL} provided. The {@code URL}
+     * must point to valid MIDI file data.
      *
-     * @param  url the URL for which the {@code Sequence} should be constructed
+     * @param  url the {@code URL} for which the {@code Sequence} should be
+     *         constructed
      * @return a {@code Sequence} object based on the MIDI file data pointed to
-     *         by the URL
-     * @throws InvalidMidiDataException if the URL does not point to valid MIDI
-     *         file data recognized by the system
+     *         by the {@code URL}
+     * @throws InvalidMidiDataException if the {@code URL} does not point to
+     *         valid MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */

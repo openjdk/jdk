@@ -949,7 +949,7 @@ public abstract class GraalCompilerTest extends GraalTest {
 
             try (AllocSpy spy = AllocSpy.open(installedCodeOwner); DebugContext.Scope ds = debug.scope("Compiling", new DebugDumpScope(id.toString(CompilationIdentifier.Verbosity.ID), true))) {
                 CompilationPrinter printer = CompilationPrinter.begin(options, id, installedCodeOwner, INVOCATION_ENTRY_BCI);
-                CompilationResult compResult = compile(installedCodeOwner, graphToCompile, new CompilationResult(), id, options);
+                CompilationResult compResult = compile(installedCodeOwner, graphToCompile, new CompilationResult(graphToCompile.compilationId()), id, options);
                 printer.finish(compResult);
 
                 try (DebugContext.Scope s = debug.scope("CodeInstall", getCodeCache(), installedCodeOwner, compResult);
@@ -1019,17 +1019,19 @@ public abstract class GraalCompilerTest extends GraalTest {
      */
     protected final CompilationResult compile(ResolvedJavaMethod installedCodeOwner, StructuredGraph graph) {
         OptionValues options = graph == null ? getInitialOptions() : graph.getOptions();
-        return compile(installedCodeOwner, graph, new CompilationResult(), getOrCreateCompilationId(installedCodeOwner, graph), options);
+        CompilationIdentifier compilationId = getOrCreateCompilationId(installedCodeOwner, graph);
+        return compile(installedCodeOwner, graph, new CompilationResult(compilationId), compilationId, options);
     }
 
     protected final CompilationResult compile(ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, CompilationIdentifier compilationId) {
         OptionValues options = graph == null ? getInitialOptions() : graph.getOptions();
-        return compile(installedCodeOwner, graph, new CompilationResult(), compilationId, options);
+        return compile(installedCodeOwner, graph, new CompilationResult(compilationId), compilationId, options);
     }
 
     protected final CompilationResult compile(ResolvedJavaMethod installedCodeOwner, StructuredGraph graph, OptionValues options) {
         assert graph == null || graph.getOptions() == options;
-        return compile(installedCodeOwner, graph, new CompilationResult(), getOrCreateCompilationId(installedCodeOwner, graph), options);
+        CompilationIdentifier compilationId = getOrCreateCompilationId(installedCodeOwner, graph);
+        return compile(installedCodeOwner, graph, new CompilationResult(compilationId), compilationId, options);
     }
 
     /**

@@ -110,7 +110,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Universe Roots", Level.TRACE),
         new LogMessageWithLevel("JNI Handles Roots", Level.TRACE),
         new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
-        new LogMessageWithLevel("FlatProfiler Roots", Level.TRACE),
         new LogMessageWithLevel("Management Roots", Level.TRACE),
         new LogMessageWithLevel("SystemDictionary Roots", Level.TRACE),
         new LogMessageWithLevel("CLDG Roots", Level.TRACE),

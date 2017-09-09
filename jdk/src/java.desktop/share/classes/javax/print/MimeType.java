@@ -26,7 +26,6 @@
 package javax.print;
 
 import java.io.Serializable;
-
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -36,63 +35,63 @@ import java.util.Set;
 import java.util.Vector;
 
 /**
- * Class MimeType encapsulates a Multipurpose Internet Mail Extensions (MIME)
- * media type as defined in <A HREF="http://www.ietf.org/rfc/rfc2045.txt">RFC
- * 2045</A> and <A HREF="http://www.ietf.org/rfc/rfc2046.txt">RFC 2046</A>. A
- * MIME type object is part of a {@link DocFlavor DocFlavor} object and
- * specifies the format of the print data.
- * <P>
- * Class MimeType is similar to the like-named
- * class in package {@link java.awt.datatransfer java.awt.datatransfer}. Class
- * java.awt.datatransfer.MimeType is not used in the Jini Print Service API
- * for two reasons:
- * <OL TYPE=1>
- * <LI>
- * Since not all Java profiles include the AWT, the Jini Print Service should
- * not depend on an AWT class.
- * <LI>
- * The implementation of class java.awt.datatransfer.MimeType does not
- * guarantee
- * that equivalent MIME types will have the same serialized representation.
- * Thus, since the Jini Lookup Service (JLUS) matches service attributes based
- * on equality of serialized representations, JLUS searches involving MIME
- * types encapsulated in class java.awt.datatransfer.MimeType may incorrectly
- * fail to match.
- * </OL>
- * <P>
+ * Class {@code MimeType} encapsulates a Multipurpose Internet Mail Extensions
+ * (MIME) media type as defined in
+ * <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a> and
+ * <a href="http://www.ietf.org/rfc/rfc2046.txt">RFC 2046</a>. A MIME type
+ * object is part of a {@link DocFlavor DocFlavor} object and specifies the
+ * format of the print data.
+ * <p>
+ * Class {@code MimeType} is similar to the like-named class in package
+ * {@link java.awt.datatransfer java.awt.datatransfer}. Class
+ * {@link java.awt.datatransfer.MimeType} is not used in the Jini Print Service
+ * API for two reasons:
+ * <ol type=1>
+ *   <li>Since not all Java profiles include the AWT, the Jini Print Service
+ *   should not depend on an AWT class.
+ *   <li>The implementation of class {@code java.awt.datatransfer.MimeType} does
+ *   not guarantee that equivalent MIME types will have the same serialized
+ *   representation. Thus, since the Jini Lookup Service (JLUS) matches service
+ *   attributes based on equality of serialized representations, JLUS searches
+ *   involving MIME types encapsulated in class
+ *   {@code java.awt.datatransfer.MimeType} may incorrectly fail to match.
+ * </ol>
  * Class MimeType's serialized representation is based on the following
  * canonical form of a MIME type string. Thus, two MIME types that are not
- * identical but that are equivalent (that have the same canonical form) will
- * be considered equal by the JLUS's matching algorithm.
- * <UL>
- * <LI> The media type, media subtype, and parameters are retained, but all
- *      comments and whitespace characters are discarded.
- * <LI> The media type, media subtype, and parameter names are converted to
- *      lowercase.
- * <LI> The parameter values retain their original case, except a charset
- *      parameter value for a text media type is converted to lowercase.
- * <LI> Quote characters surrounding parameter values are removed.
- * <LI> Quoting backslash characters inside parameter values are removed.
- * <LI> The parameters are arranged in ascending order of parameter name.
- * </UL>
+ * identical but that are equivalent (that have the same canonical form) will be
+ * considered equal by the JLUS's matching algorithm.
+ * <ul>
+ *   <li>The media type, media subtype, and parameters are retained, but all
+ *   comments and whitespace characters are discarded.
+ *   <li>The media type, media subtype, and parameter names are converted to
+ *   lowercase.
+ *   <li>The parameter values retain their original case, except a charset
+ *   parameter value for a text media type is converted to lowercase.
+ *   <li>Quote characters surrounding parameter values are removed.
+ *   <li>Quoting backslash characters inside parameter values are removed.
+ *   <li>The parameters are arranged in ascending order of parameter name.
+ * </ul>
  *
- * @author  Alan Kaminsky
+ * @author Alan Kaminsky
  */
 class MimeType implements Serializable, Cloneable {
 
+    /**
+     * Use serialVersionUID from JDK 1.4 for interoperability.
+     */
     private static final long serialVersionUID = -2785720609362367683L;
 
     /**
-     * Array of strings that hold pieces of this MIME type's canonical form.
-     * If the MIME type has <I>n</I> parameters, <I>n</I> &gt;= 0, then the
+     * Array of strings that hold pieces of this MIME type's canonical form. If
+     * the MIME type has <i>n</i> parameters, <i>n</i> &gt;= 0, then the
      * strings in the array are:
-     * <BR>Index 0 -- Media type.
-     * <BR>Index 1 -- Media subtype.
-     * <BR>Index 2<I>i</I>+2 -- Name of parameter <I>i</I>,
-     * <I>i</I>=0,1,...,<I>n</I>-1.
-     * <BR>Index 2<I>i</I>+3 -- Value of parameter <I>i</I>,
-     * <I>i</I>=0,1,...,<I>n</I>-1.
-     * <BR>Parameters are arranged in ascending order of parameter name.
+     * <br>Index 0 -- Media type.
+     * <br>Index 1 -- Media subtype.
+     * <br>Index 2<i>i</i>+2 -- Name of parameter <i>i</i>,
+     * <i>i</i>=0,1,...,<i>n</i>-1.
+     * <br>Index 2<i>i</i>+3 -- Value of parameter <i>i</i>,
+     * <i>i</i>=0,1,...,<i>n</i>-1.
+     * <br>Parameters are arranged in ascending order of parameter name.
      * @serial
      */
     private String[] myPieces;
@@ -116,7 +115,17 @@ class MimeType implements Serializable, Cloneable {
      * Parameter map entry.
      */
     private class ParameterMapEntry implements Map.Entry<String, String> {
+
+        /**
+         * The index of the entry.
+         */
         private int myIndex;
+
+        /**
+         * Constructs a new parameter map entry.
+         *
+         * @param  theIndex the index of the entry
+         */
         public ParameterMapEntry(int theIndex) {
             myIndex = theIndex;
         }
@@ -144,6 +153,10 @@ class MimeType implements Serializable, Cloneable {
      * Parameter map entry set iterator.
      */
     private class ParameterMapEntrySetIterator implements Iterator<Map.Entry<String, String>> {
+
+        /**
+         * The current index of the iterator.
+         */
         private int myIndex = 2;
         public boolean hasNext() {
             return myIndex < myPieces.length;
@@ -187,16 +200,13 @@ class MimeType implements Serializable, Cloneable {
     }
 
     /**
-     * Construct a new MIME type object from the given string. The given
-     * string is converted into canonical form and stored internally.
+     * Construct a new MIME type object from the given string. The given string
+     * is converted into canonical form and stored internally.
      *
-     * @param  s  MIME media type string.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code s} is null.
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code s} does not obey the
-     *     syntax for a MIME media type string.
+     * @param  s MIME media type string
+     * @throws NullPointerException if {@code s} is {@code null}
+     * @throws IllegalArgumentException if {@code s} does not obey the syntax
+     *         for a MIME media type string
      */
     public MimeType(String s) {
         parse (s);
@@ -205,6 +215,8 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Returns this MIME type object's MIME type string based on the canonical
      * form. Each parameter value is enclosed in quotes.
+     *
+     * @return the mime type
      */
     public String getMimeType() {
         return getStringValue();
@@ -212,6 +224,8 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Returns this MIME type object's media type.
+     *
+     * @return the media type
      */
     public String getMediaType() {
         return myPieces[0];
@@ -219,6 +233,8 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Returns this MIME type object's media subtype.
+     *
+     * @return the media subtype
      */
     public String getMediaSubtype() {
         return myPieces[1];
@@ -226,11 +242,11 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Returns an unmodifiable map view of the parameters in this MIME type
-     * object. Each entry in the parameter map view consists of a parameter
-     * name String (key) mapping to a parameter value String. If this MIME
-     * type object has no parameters, an empty map is returned.
+     * object. Each entry in the parameter map view consists of a parameter name
+     * {@code String} (key) mapping to a parameter value {@code String}. If this
+     * MIME type object has no parameters, an empty map is returned.
      *
-     * @return  Parameter map for this MIME type object.
+     * @return parameter map for this MIME type object
      */
     public Map<String, String> getParameterMap() {
         if (myParameterMap == null) {
@@ -242,8 +258,8 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Converts this MIME type object to a string.
      *
-     * @return  MIME type string based on the canonical form. Each parameter
-     *          value is enclosed in quotes.
+     * @return MIME type string based on the canonical form. Each parameter
+     *         value is enclosed in quotes.
      */
     public String toString() {
         return getStringValue();
@@ -258,19 +274,18 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Determine if this MIME type object is equal to the given object. The two
-     * are equal if the given object is not null, is an instance of class
-     * net.jini.print.data.MimeType, and has the same canonical form as this
-     * MIME type object (that is, has the same type, subtype, and parameters).
-     * Thus, if two MIME type objects are the same except for comments, they are
-     * considered equal. However, "text/plain" and "text/plain;
-     * charset=us-ascii" are not considered equal, even though they represent
-     * the same media type (because the default character set for plain text is
-     * US-ASCII).
+     * are equal if the given object is not {@code null}, is an instance of
+     * class {@code javax.print.data.MimeType}, and has the same canonical form
+     * as this MIME type object (that is, has the same type, subtype, and
+     * parameters). Thus, if two MIME type objects are the same except for
+     * comments, they are considered equal. However, "text/plain" and
+     * "text/plain; charset=us-ascii" are not considered equal, even though they
+     * represent the same media type (because the default character set for
+     * plain text is US-ASCII).
      *
-     * @param  obj  Object to test.
-     *
-     * @return  True if this MIME type object equals {@code obj}, false
-     *          otherwise.
+     * @param  obj {@code object} to test
+     * @return {@code true} if this MIME type object equals {@code obj},
+     *         {@code false} otherwise
      */
     public boolean equals (Object obj) {
         return(obj != null &&
@@ -280,6 +295,8 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Returns this MIME type's string value in canonical form.
+     *
+     * @return the MIME type's string value in canonical form
      */
     private String getStringValue() {
         if (myStringValue == null) {
@@ -300,8 +317,8 @@ class MimeType implements Serializable, Cloneable {
         return myStringValue;
     }
 
-// Hidden classes, constants, and operations for parsing a MIME media type
-// string.
+    // Hidden classes, constants, and operations for parsing a MIME media type
+    // string.
 
     // Lexeme types.
     private static final int TOKEN_LEXEME         = 0;
@@ -310,7 +327,9 @@ class MimeType implements Serializable, Cloneable {
     private static final int EOF_LEXEME           = 3;
     private static final int ILLEGAL_LEXEME       = 4;
 
-    // Class for a lexical analyzer.
+    /**
+     *Class for a lexical analyzer.
+     */
     private static class LexicalAnalyzer {
         protected String mySource;
         protected int mySourceLength;
@@ -459,18 +478,19 @@ class MimeType implements Serializable, Cloneable {
                     break;
                 }
             }
-
         }
-
     }
 
     /**
-     * Returns a lowercase version of the given string. The lowercase version
-     * is constructed by applying Character.toLowerCase() to each character of
-     * the given string, which maps characters to lowercase using the rules of
-     * Unicode. This mapping is the same regardless of locale, whereas the
-     * mapping of String.toLowerCase() may be different depending on the
+     * Returns a lowercase version of the given string. The lowercase version is
+     * constructed by applying {@code Character.toLowerCase()} to each character
+     * of the given string, which maps characters to lowercase using the rules
+     * of Unicode. This mapping is the same regardless of locale, whereas the
+     * mapping of {@code String.toLowerCase()} may be different depending on the
      * default locale.
+     *
+     * @param  s the string
+     * @return the lowercase version of the string
      */
     private static String toUnicodeLowerCase(String s) {
         int n = s.length();
@@ -483,6 +503,9 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Returns a version of the given string with backslashes removed.
+     *
+     * @param  s the string
+     * @return the string with backslashes removed
      */
     private static String removeBackslashes(String s) {
         int n = s.length();
@@ -503,6 +526,10 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Returns a version of the string surrounded by quotes and with interior
      * quotes preceded by a backslash.
+     *
+     * @param  s the string
+     * @return the string surrounded by quotes and with interior quotes preceded
+     *         by a backslash
      */
     private static String addQuotes(String s) {
         int n = s.length();
@@ -524,20 +551,17 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Parses the given string into canonical pieces and stores the pieces in
      * {@link #myPieces myPieces}.
-     * <P>
+     * <p>
      * Special rules applied:
-     * <UL>
-     * <LI> If the media type is text, the value of a charset parameter is
-     *      converted to lowercase.
-     * </UL>
+     * <ul>
+     *   <li>If the media type is text, the value of a charset parameter is
+     *   converted to lowercase.
+     * </ul>
      *
-     * @param  s  MIME media type string.
-     *
-     * @exception  NullPointerException
-     *     (unchecked exception) Thrown if {@code s} is null.
-     * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if {@code s} does not obey the
-     *     syntax for a MIME media type string.
+     * @param  s MIME media type string
+     * @throws NullPointerException if {@code s} is {@code null}
+     * @throws IllegalArgumentException if {@code s} does not obey the syntax
+     *         for a MIME media type string
      */
     private void parse(String s) {
         // Initialize.
