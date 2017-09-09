@@ -70,11 +70,25 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       ClassLoaderData* loader_data =
         ClassLoaderData::class_loader_data(class_loader());
       int path_index = ik->shared_classpath_index();
-      SharedClassPathEntry* ent =
-        (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+      const char* pathname;
+      if (path_index < 0) {
+        // shared classes loaded by user defined class loader
+        // do not have shared_classpath_index
+        ModuleEntry* mod_entry = ik->module();
+        if (mod_entry != NULL && (mod_entry->location() != NULL)) {
+          ResourceMark rm;
+          pathname = (const char*)(mod_entry->location()->as_C_string());
+        } else {
+          pathname = "";
+        }
+      } else {
+        SharedClassPathEntry* ent =
+          (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+        pathname = ent == NULL ? NULL : ent->name();
+      }
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     end_ptr - ptr,
-                                                    ent == NULL ? NULL : ent->name(),
+                                                    pathname,
                                                     ClassFileStream::verify);
       ClassFileParser parser(stream,
                              class_name,
@@ -215,8 +229,10 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   TRACE_KLASS_CREATION(result, parser, THREAD);
 
-#if INCLUDE_CDS && INCLUDE_JVMTI
+#if INCLUDE_CDS
   if (DumpSharedSpaces) {
+    ClassLoader::record_shared_class_loader_type(result, stream);
+#if INCLUDE_JVMTI
     assert(cached_class_file == NULL, "Sanity");
     // Archive the class stream data into the optional data section
     JvmtiCachedClassFileData *p;
@@ -233,8 +249,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
     p->length = len;
     memcpy(p->data, bytes, len);
     result->set_archived_class_data(p);
+#endif // INCLUDE_JVMTI
   }
-#endif
+#endif // INCLUDE_CDS
 
   return result;
 }

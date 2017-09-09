@@ -512,11 +512,13 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
 void Klass::remove_unshareable_info() {
   assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
   TRACE_REMOVE_ID(this);
+  if (log_is_enabled(Trace, cds, unshareable)) {
+    ResourceMark rm;
+    log_trace(cds, unshareable)("remove: %s", external_name());
+  }
 
   set_subklass(NULL);
   set_next_sibling(NULL);
-  // Clear the java mirror
-  set_java_mirror(NULL);
   set_next_link(NULL);
 
   // Null out class_loader_data because we don't share that yet.
@@ -524,10 +526,23 @@ void Klass::remove_unshareable_info() {
   set_is_shared();
 }
 
+void Klass::remove_java_mirror() {
+  assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
+  if (log_is_enabled(Trace, cds, unshareable)) {
+    ResourceMark rm;
+    log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
+  }
+  set_java_mirror(NULL);
+}
+
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(is_shared(), "must be set");
   TRACE_RESTORE_ID(this);
+  if (log_is_enabled(Trace, cds, unshareable)) {
+    ResourceMark rm;
+    log_trace(cds, unshareable)("restore: %s", external_name());
+  }
 
   // If an exception happened during CDS restore, some of these fields may already be
   // set.  We leave the class on the CLD list, even if incomplete so that we don't

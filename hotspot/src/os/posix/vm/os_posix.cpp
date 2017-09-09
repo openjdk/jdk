@@ -24,13 +24,17 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "prims/jvm.h"
-#include "semaphore_posix.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+
+#ifndef __APPLE__
+// POSIX unamed semaphores are not supported on OS X.
+#include "semaphore_posix.hpp"
+#endif
 
 #include <dlfcn.h>
 #include <pthread.h>

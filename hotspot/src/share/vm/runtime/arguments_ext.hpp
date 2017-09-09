@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public:
   // Otherwise returns false.
   static inline bool process_options(const JavaVMOption *option) { return false; }
   static inline void report_unsupported_options() { }
+  static inline bool using_AppCDS() { return false; }
 };
 
 void ArgumentsExt::set_gc_specific_flags() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -163,7 +162,6 @@ class decode_env {
   bool          _print_pc;
   bool          _print_bytes;
   address       _cur_insn;
-  int           _total_ticks;
   int           _bytes_per_line; // arch-specific formatting option
 
   static bool match(const char* event, const char* tag) {
@@ -213,18 +211,6 @@ class decode_env {
       _nm->print_code_comment_on(st, COMMENT_COLUMN, pc0, pc);
       // this calls reloc_string_for which calls oop::print_value_on
     }
-
-    // Output pc bucket ticks if we have any
-    if (total_ticks() != 0) {
-      address bucket_pc = FlatProfiler::bucket_start_for(pc);
-      if (bucket_pc != NULL && bucket_pc > pc0 && bucket_pc <= pc) {
-        int bucket_count = FlatProfiler::bucket_count_for(pc0);
-        if (bucket_count != 0) {
-          st->bol();
-          st->print_cr("%3.1f%% [%d]", bucket_count*100.0/total_ticks(), bucket_count);
-        }
-      }
-    }
     // follow each complete insn by a nice newline
     st->cr();
   }
@@ -233,8 +219,6 @@ class decode_env {
 
   outputStream* output() { return _output; }
   address cur_insn() { return _cur_insn; }
-  int total_ticks() { return _total_ticks; }
-  void set_total_ticks(int n) { _total_ticks = n; }
   const char* options() { return _option_buf; }
 };
 
@@ -560,20 +544,6 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   }
 #endif
   env.output()->print_cr("  [" PTR_FORMAT ", " PTR_FORMAT "]  " JLONG_FORMAT " bytes", p2i(p), p2i(end), ((jlong)(end - p)));
-
-  // If there has been profiling, print the buckets.
-  if (FlatProfiler::bucket_start_for(p) != NULL) {
-    unsigned char* p1 = p;
-    int total_bucket_count = 0;
-    while (p1 < end) {
-      unsigned char* p0 = p1;
-      p1 += pd_instruction_alignment();
-      address bucket_pc = FlatProfiler::bucket_start_for(p1);
-      if (bucket_pc != NULL && bucket_pc > p0 && bucket_pc <= p1)
-        total_bucket_count += FlatProfiler::bucket_count_for(p0);
-    }
-    env.set_total_ticks(total_bucket_count);
-  }
 
   // Print constant table.
   if (nm->consts_size() > 0) {
